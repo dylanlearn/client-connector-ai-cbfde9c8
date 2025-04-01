@@ -11,6 +11,11 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import SignupConfirmation from "./pages/SignupConfirmation";
 import Dashboard from "./pages/Dashboard";
+import Projects from "./pages/Projects";
+import Clients from "./pages/Clients";
+import Analytics from "./pages/Analytics";
+import Templates from "./pages/Templates";
+import Settings from "./pages/Settings";
 import NewProject from "./pages/NewProject";
 import ProjectQuestionnaire from "./pages/ProjectQuestionnaire";
 import QuestionnairePreview from "./pages/QuestionnairePreview";
@@ -40,6 +45,46 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/projects" 
+                element={
+                  <ProtectedRoute>
+                    <Projects />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/clients" 
+                element={
+                  <ProtectedRoute>
+                    <Clients />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/templates" 
+                element={
+                  <ProtectedRoute>
+                    <Templates />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 } 
               />
