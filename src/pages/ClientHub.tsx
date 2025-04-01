@@ -1,14 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Circle, FileText, Palette, Store, AlertCircle } from "lucide-react";
+import { FileText, Palette, Store } from "lucide-react";
 import { toast } from 'sonner';
 import { validateClientToken, getClientTasks, updateTaskStatus, ClientTask, TaskStatus } from '@/utils/client-service';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import LoadingView from '@/components/client-hub/LoadingView';
+import AccessDeniedView from '@/components/client-hub/AccessDeniedView';
+import TaskCard from '@/components/client-hub/TaskCard';
+import WhatNextSection from '@/components/client-hub/WhatNextSection';
 
 const ClientHubPage = () => {
   const location = useLocation();
@@ -133,42 +132,17 @@ const ClientHubPage = () => {
   };
 
   if (isValidatingAccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <Skeleton className="h-8 w-64 mx-auto mb-4" />
-          <Skeleton className="h-4 w-72 mx-auto mb-12" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
-          </div>
-          <Skeleton className="h-64 mb-8" />
-        </div>
-      </div>
-    );
+    return <LoadingView />;
   }
 
   if (accessDenied) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <Alert variant="destructive" className="mb-8">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>
-              This client hub link is invalid or has expired. Please contact your designer for a new link.
-            </AlertDescription>
-          </Alert>
-          <Button 
-            onClick={() => navigate('/')}
-            className="mx-auto block"
-          >
-            Return to Home
-          </Button>
-        </div>
-      </div>
-    );
+    return <AccessDeniedView />;
   }
+
+  const handleTaskButtonClick = (taskType: string, path: string) => {
+    navigateTo(path, taskType);
+    markTaskCompleted(taskType);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -182,143 +156,51 @@ const ClientHubPage = () => {
 
         {isLoadingTasks ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Skeleton className="h-64" />
-            <Skeleton className="h-64" />
+            <div><LoadingView /></div>
+            <div><LoadingView /></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Card className={taskStatus.intakeForm ? "border-green-500" : ""}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl font-semibold">Project Intake Form</CardTitle>
-                  {taskStatus.intakeForm ? (
-                    <CheckCircle2 className="h-6 w-6 text-green-500" />
-                  ) : (
-                    <Circle className="h-6 w-6 text-gray-300" />
-                  )}
-                </div>
-                <CardDescription>
-                  Tell us about your project needs and goals
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Answer questions about your business, target audience, and project requirements to help us understand what you need.
-                </p>
-                {tasks?.find(t => t.taskType === 'intakeForm')?.designerNotes && (
-                  <div className="text-sm italic text-gray-500 mb-4 bg-gray-50 p-3 rounded-md">
-                    <strong>Designer Note:</strong> {tasks.find(t => t.taskType === 'intakeForm')?.designerNotes}
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={() => {
-                    navigateTo('/intake', 'intakeForm');
-                    markTaskCompleted('intakeForm');
-                  }}
-                  className="w-full"
-                  variant={taskStatus.intakeForm ? "outline" : "default"}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  {taskStatus.intakeForm ? "Review Your Answers" : "Start Questionnaire"}
-                </Button>
-              </CardFooter>
-            </Card>
+            <TaskCard 
+              title="Project Intake Form"
+              description="Tell us about your project needs and goals"
+              icon={<FileText className="h-4 w-4" />}
+              isCompleted={taskStatus.intakeForm}
+              btnText={taskStatus.intakeForm ? "Review Your Answers" : "Start Questionnaire"}
+              designerNotes={tasks?.find(t => t.taskType === 'intakeForm')?.designerNotes}
+              onButtonClick={() => handleTaskButtonClick('intakeForm', '/intake')}
+              taskType="intakeForm"
+            />
 
-            <Card className={taskStatus.designPicker ? "border-green-500" : ""}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl font-semibold">Design Preferences</CardTitle>
-                  {taskStatus.designPicker ? (
-                    <CheckCircle2 className="h-6 w-6 text-green-500" />
-                  ) : (
-                    <Circle className="h-6 w-6 text-gray-300" />
-                  )}
-                </div>
-                <CardDescription>
-                  Select design elements that match your style
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Browse through different design options and select the ones that resonate with your brand's aesthetic and vision.
-                </p>
-                {tasks?.find(t => t.taskType === 'designPicker')?.designerNotes && (
-                  <div className="text-sm italic text-gray-500 mb-4 bg-gray-50 p-3 rounded-md">
-                    <strong>Designer Note:</strong> {tasks.find(t => t.taskType === 'designPicker')?.designerNotes}
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={() => {
-                    navigateTo('/design-picker', 'designPicker');
-                    markTaskCompleted('designPicker');
-                  }}
-                  className="w-full"
-                  variant={taskStatus.designPicker ? "outline" : "default"}
-                >
-                  <Palette className="mr-2 h-4 w-4" />
-                  {taskStatus.designPicker ? "Review Your Selections" : "Select Designs"}
-                </Button>
-              </CardFooter>
-            </Card>
+            <TaskCard 
+              title="Design Preferences"
+              description="Select design elements that match your style"
+              icon={<Palette className="h-4 w-4" />}
+              isCompleted={taskStatus.designPicker}
+              btnText={taskStatus.designPicker ? "Review Your Selections" : "Select Designs"}
+              designerNotes={tasks?.find(t => t.taskType === 'designPicker')?.designerNotes}
+              onButtonClick={() => handleTaskButtonClick('designPicker', '/design-picker')}
+              taskType="designPicker"
+            />
           </div>
         )}
 
         {isLoadingTasks ? (
-          <Skeleton className="h-64 mb-8" />
+          <div><LoadingView /></div>
         ) : (
-          <Card className={taskStatus.templates ? "border-green-500" : ""}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl font-semibold">Explore Templates</CardTitle>
-                {taskStatus.templates ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-500" />
-                ) : (
-                  <Circle className="h-6 w-6 text-gray-300" />
-                )}
-              </div>
-              <CardDescription>
-                Browse our template marketplace for inspiration
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
-                Explore our collection of professionally designed templates that can serve as a starting point for your project.
-              </p>
-              {tasks?.find(t => t.taskType === 'templates')?.designerNotes && (
-                <div className="text-sm italic text-gray-500 mb-4 bg-gray-50 p-3 rounded-md">
-                  <strong>Designer Note:</strong> {tasks.find(t => t.taskType === 'templates')?.designerNotes}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={() => {
-                  navigateTo('/templates', 'templates');
-                  markTaskCompleted('templates');
-                }}
-                className="w-full"
-                variant={taskStatus.templates ? "outline" : "default"}
-              >
-                <Store className="mr-2 h-4 w-4" />
-                {taskStatus.templates ? "Review Templates" : "Browse Templates"}
-              </Button>
-            </CardFooter>
-          </Card>
+          <TaskCard 
+            title="Explore Templates"
+            description="Browse our template marketplace for inspiration"
+            icon={<Store className="h-4 w-4" />}
+            isCompleted={taskStatus.templates}
+            btnText={taskStatus.templates ? "Review Templates" : "Browse Templates"}
+            designerNotes={tasks?.find(t => t.taskType === 'templates')?.designerNotes}
+            onButtonClick={() => handleTaskButtonClick('templates', '/templates')}
+            taskType="templates"
+          />
         )}
 
-        <div className="mt-8 p-6 bg-white rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">What happens next?</h2>
-          <p className="text-gray-600 mb-4">
-            After you complete these tasks, your designer will receive your preferences and feedback. They'll use this information to create personalized design recommendations for your project.
-          </p>
-          <p className="text-gray-600">
-            You'll be notified when your designer has updates to share with you. Thank you for helping us understand your vision!
-          </p>
-        </div>
+        <WhatNextSection />
       </div>
     </div>
   );
