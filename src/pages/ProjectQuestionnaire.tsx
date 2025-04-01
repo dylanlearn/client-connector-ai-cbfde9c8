@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { GripVertical, Plus, Trash2, Settings, LinkIcon, Copy } from "lucide-react";
 
 const defaultQuestions = [
