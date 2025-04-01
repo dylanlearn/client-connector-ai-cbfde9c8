@@ -1,4 +1,3 @@
-
 import { createContext, useContext } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { useAuthState } from "@/hooks/use-auth-state";
@@ -15,13 +14,12 @@ type AuthContextType = {
   signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { session, user, profile, isLoading: stateLoading, setProfile } = useAuthState();
   const { signIn, signInWithGoogle, signUp, signOut, isLoading: actionLoading } = useAuthActions(setProfile);
   
-  // Combine loading states
   const isLoading = stateLoading || actionLoading;
 
   return (
