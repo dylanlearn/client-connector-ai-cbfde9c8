@@ -26,82 +26,40 @@ interface SpecificQuestionsStepProps {
   onPrevious: () => void;
 }
 
-// Define schema types to match IntakeFormData interface
-type SaasSchema = z.ZodObject<{
-  mainFeatures: z.ZodString;
-  competitors: z.ZodString;
-  userAccountsRequired: z.ZodBoolean;
-  pricingTiers: z.ZodString;
-  freeTrialOffered: z.ZodBoolean;
-}>;
-
-type EcommerceSchema = z.ZodObject<{
-  mainFeatures: z.ZodString;
-  competitors: z.ZodString;
-  estimatedProducts: z.ZodString;
-  paymentProcessors: z.ZodString;
-  shippingIntegration: z.ZodBoolean;
-}>;
-
-type BusinessSchema = z.ZodObject<{
-  mainFeatures: z.ZodString;
-  competitors: z.ZodString;
-  serviceOfferings: z.ZodString;
-  contactFormRequired: z.ZodBoolean;
-  hasPhysicalLocation: z.ZodBoolean;
-}>;
-
-type PortfolioSchema = z.ZodObject<{
-  mainFeatures: z.ZodString;
-  competitors: z.ZodString;
-  projectCategories: z.ZodString;
-  contactInformation: z.ZodString;
-  resumeUploadRequired: z.ZodBoolean;
-}>;
-
-type BaseSchema = z.ZodObject<{
-  mainFeatures: z.ZodString;
-  competitors: z.ZodString;
-}>;
-
 // Dynamic schema based on site type
-const getFormSchema = (siteType: string): BaseSchema | SaasSchema | EcommerceSchema | BusinessSchema | PortfolioSchema => {
-  const baseSchema = {
+const getFormSchema = (siteType: string) => {
+  const baseSchema = z.object({
     mainFeatures: z.string().min(1, "Please list your main features"),
     competitors: z.string().optional(),
-  };
+  });
 
   switch (siteType) {
     case "saas":
-      return z.object({
-        ...baseSchema,
+      return baseSchema.extend({
         userAccountsRequired: z.boolean().default(true),
         pricingTiers: z.string().min(1, "Please describe your pricing tiers"),
         freeTrialOffered: z.boolean().default(false),
       });
     case "ecommerce":
-      return z.object({
-        ...baseSchema,
+      return baseSchema.extend({
         estimatedProducts: z.string().min(1, "Please specify how many products"),
         paymentProcessors: z.string().min(1, "Please specify payment processors"),
         shippingIntegration: z.boolean().default(false),
       });
     case "business":
-      return z.object({
-        ...baseSchema,
+      return baseSchema.extend({
         serviceOfferings: z.string().min(1, "Please list your services"),
         contactFormRequired: z.boolean().default(true),
         hasPhysicalLocation: z.boolean().default(false),
       });
     case "portfolio":
-      return z.object({
-        ...baseSchema,
+      return baseSchema.extend({
         projectCategories: z.string().min(1, "Please list your project categories"),
         contactInformation: z.string().min(1, "Please provide contact information"),
         resumeUploadRequired: z.boolean().default(false),
       });
     default:
-      return z.object(baseSchema);
+      return baseSchema;
   }
 };
 
@@ -120,37 +78,37 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
       case "saas":
         return {
           ...baseValues,
-          userAccountsRequired: formData.userAccountsRequired !== undefined ? formData.userAccountsRequired : true,
+          userAccountsRequired: formData.userAccountsRequired ?? true,
           pricingTiers: formData.pricingTiers || "",
-          freeTrialOffered: formData.freeTrialOffered !== undefined ? formData.freeTrialOffered : false,
+          freeTrialOffered: formData.freeTrialOffered ?? false,
         };
       case "ecommerce":
         return {
           ...baseValues,
           estimatedProducts: formData.estimatedProducts || "",
           paymentProcessors: formData.paymentProcessors || "",
-          shippingIntegration: formData.shippingIntegration !== undefined ? formData.shippingIntegration : false,
+          shippingIntegration: formData.shippingIntegration ?? false,
         };
       case "business":
         return {
           ...baseValues,
           serviceOfferings: formData.serviceOfferings || "",
-          contactFormRequired: formData.contactFormRequired !== undefined ? formData.contactFormRequired : true,
-          hasPhysicalLocation: formData.hasPhysicalLocation !== undefined ? formData.hasPhysicalLocation : false,
+          contactFormRequired: formData.contactFormRequired ?? true,
+          hasPhysicalLocation: formData.hasPhysicalLocation ?? false,
         };
       case "portfolio":
         return {
           ...baseValues,
           projectCategories: formData.projectCategories || "",
           contactInformation: formData.contactInformation || "",
-          resumeUploadRequired: formData.resumeUploadRequired !== undefined ? formData.resumeUploadRequired : false,
+          resumeUploadRequired: formData.resumeUploadRequired ?? false,
         };
       default:
         return baseValues;
     }
   };
 
-  // Set up form with correct type to match the schema
+  // Set up form with the schema type
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: getDefaultValues(),
