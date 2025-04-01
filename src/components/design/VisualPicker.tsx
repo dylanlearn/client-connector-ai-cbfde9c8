@@ -43,6 +43,8 @@ const VisualPicker = ({ options, onSelect, category, className }: VisualPickerPr
   const currentOption = filteredOptions[currentIndex];
 
   const handleLike = () => {
+    onSelect(currentOption);
+    
     if (currentIndex < filteredOptions.length - 1) {
       setDirection("right");
       setTimeout(() => {
@@ -54,7 +56,6 @@ const VisualPicker = ({ options, onSelect, category, className }: VisualPickerPr
       // End of options
       toast.success("You've seen all options!");
     }
-    onSelect(currentOption);
   };
 
   const handleDislike = () => {
@@ -123,6 +124,13 @@ const VisualPicker = ({ options, onSelect, category, className }: VisualPickerPr
       return `translate-x-[${offsetX}px] rotate-[${offsetX * 0.1}deg]`;
     }
     return "";
+  };
+
+  const restartSwiping = () => {
+    setCurrentIndex(0);
+    setDirection("");
+    setOffsetX(0);
+    toast.info("Starting from the beginning");
   };
 
   return (
@@ -202,6 +210,17 @@ const VisualPicker = ({ options, onSelect, category, className }: VisualPickerPr
           <Check className="h-6 w-6 text-green-500" />
         </Button>
       </div>
+      
+      {currentIndex === filteredOptions.length - 1 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={restartSwiping}
+          className="mt-4"
+        >
+          See options again
+        </Button>
+      )}
     </div>
   );
 };
