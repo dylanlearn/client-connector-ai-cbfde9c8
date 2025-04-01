@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -24,8 +23,7 @@ const HeroSection = () => {
               AI-Powered Design
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              <span className="text-gradient">Sync Your Design</span>
-              <br /> Process With Our Process
+              <span className="text-gradient">Sync Your Design With Our Process</span>
             </h1>
             <p className="text-xl text-gray-700 mb-8 max-w-xl">
               The AI-powered platform that transforms chaotic client briefs into structured, actionable design insights.
