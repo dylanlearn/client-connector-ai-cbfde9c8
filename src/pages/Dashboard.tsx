@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,10 +18,26 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem(LAST_TAB_KEY) || "overview";
   });
+  const [loading, setLoading] = useState(false);
 
+  // Store active tab in localStorage
   useEffect(() => {
     localStorage.setItem(LAST_TAB_KEY, activeTab);
   }, [activeTab]);
+
+  // Handle tab change with loading state and scroll to top
+  const handleTabChange = (value: string) => {
+    setLoading(true);
+    setActiveTab(value);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Simulate loading time (remove this in production and replace with actual data fetching)
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
+  };
 
   return (
     <DashboardLayout>
@@ -34,7 +51,7 @@ const Dashboard = () => {
 
       <Tabs 
         defaultValue={activeTab} 
-        onValueChange={setActiveTab} 
+        onValueChange={handleTabChange} 
         className="space-y-4"
       >
         <TabsList>
@@ -43,7 +60,7 @@ const Dashboard = () => {
           <TabsTrigger value="tips">Tips</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" isLoading={loading && activeTab === "overview"} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <Card>
               <CardHeader className={isMobile ? "px-4 py-4" : ""}>
@@ -143,7 +160,7 @@ const Dashboard = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="stats">
+        <TabsContent value="stats" isLoading={loading && activeTab === "stats"}>
           <Card>
             <CardHeader>
               <CardTitle>Your Statistics</CardTitle>
@@ -163,7 +180,7 @@ const Dashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="tips">
+        <TabsContent value="tips" isLoading={loading && activeTab === "tips"}>
           <Card>
             <CardHeader>
               <CardTitle>Quick Tips</CardTitle>
