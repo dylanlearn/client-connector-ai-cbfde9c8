@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -32,8 +33,8 @@ const HeroSection = () => {
               <Button size="lg" className="button-gradient rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all" onClick={() => navigate("/signup")}>
                 Start For Free
               </Button>
-              <Button size="lg" variant="outline" className="border-gradient rounded-xl" onClick={() => navigate("/demo")}>
-                See Demo
+              <Button size="lg" variant="outline" className="border-gradient rounded-xl" onClick={() => navigate("/design-picker")}>
+                Try Design Picker
               </Button>
             </div>
           </div>

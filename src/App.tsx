@@ -24,6 +24,7 @@ import QuestionnaireResults from "./pages/QuestionnaireResults";
 import Onboarding from "./pages/Onboarding";
 import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import IntakeForm from "./pages/IntakeForm";
+import DesignPicker from "./pages/DesignPicker";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -54,6 +55,7 @@ const App = () => (
                 <Route path="/signup/confirmation" element={<SignupConfirmation />} />
                 <Route path="/templates" element={<Templates />} />
                 <Route path="/intake" element={<IntakeForm />} />
+                <Route path="/design-picker" element={<DesignPicker />} />
                 
                 {/* Protected routes with dashboard layout */}
                 <Route path="/dashboard" element={<ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute>} />
