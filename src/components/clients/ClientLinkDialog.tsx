@@ -1,11 +1,6 @@
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { toast } from "sonner";
-import { createClientAccessLink, ClientAccessLink } from "@/utils/client-service";
 import {
   Dialog,
   DialogContent,
@@ -14,18 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Mail, Phone, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import { useProjects } from "@/hooks/use-projects";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Project } from "@/types/project";
+import { ClientAccessLink } from "@/types/client";
+import { useClientLink } from "@/hooks/use-client-link";
+import ProjectSelector from "./link-dialog/ProjectSelector";
+import ClientInfoFields from "./link-dialog/ClientInfoFields";
+import DeliveryMethodsSection from "./link-dialog/DeliveryMethodsSection";
 
 interface ClientLinkDialogProps {
   open: boolean;
@@ -38,151 +28,28 @@ export default function ClientLinkDialog({
   onOpenChange,
   onLinkCreated
 }: ClientLinkDialogProps) {
-  const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
-  const [clientPhone, setClientPhone] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [deliveryMethods, setDeliveryMethods] = useState<{email: boolean, sms: boolean}>({
-    email: true,
-    sms: false
-  });
-  const [isSending, setIsSending] = useState<{[key: string]: boolean}>({});
-  const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
   const { projects, isLoading: isLoadingProjects } = useProjects();
-
-  const handleDeliveryMethodChange = (method: 'email' | 'sms', checked: boolean) => {
-    setDeliveryMethods(prev => ({
-      ...prev,
-      [method]: checked
-    }));
-  };
-
-  // Prefill client information if a project is selected
-  useEffect(() => {
-    if (selectedProjectId) {
-      const selectedProject = projects.find(p => p.id === selectedProjectId);
-      if (selectedProject) {
-        setClientName(selectedProject.client_name);
-        setClientEmail(selectedProject.client_email);
-      }
-    }
-  }, [selectedProjectId, projects]);
-
-  const sendClientLink = async (linkId: string, type: 'email' | 'sms', recipient: string) => {
-    setIsSending(prev => ({ ...prev, [type]: true }));
-    
-    try {
-      const response = await supabase.functions.invoke('send-client-link', {
-        body: {
-          linkId,
-          deliveryType: type,
-          recipient
-        }
-      });
-      
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-      
-      toast.success(`Link sent to client via ${type === 'email' ? 'email' : 'SMS'}`);
-    } catch (error) {
-      console.error(`Error sending link via ${type}:`, error);
-      toast.error(`Failed to send link via ${type}. Please try again.`);
-    } finally {
-      setIsSending(prev => ({ ...prev, [type]: false }));
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!user || !clientName.trim() || !clientEmail.trim()) {
-      toast.error("Please enter client name and email");
-      return;
-    }
-
-    // If SMS delivery is selected, validate phone number
-    if (deliveryMethods.sms && !clientPhone.trim()) {
-      toast.error("Please enter client phone number for SMS delivery");
-      return;
-    }
-
-    // Simple phone validation if provided
-    if (clientPhone) {
-      const phoneRegex = /^\+?[0-9\s\-\(\)]+$/;
-      if (!phoneRegex.test(clientPhone)) {
-        toast.error("Please enter a valid phone number");
-        return;
-      }
-    }
-
-    // Ensure at least one delivery method is selected
-    if (!deliveryMethods.email && !deliveryMethods.sms) {
-      toast.error("Please select at least one delivery method");
-      return;
-    }
-
-    setIsCreating(true);
-    try {
-      const { link, linkId } = await createClientAccessLink(
-        user.id, 
-        clientEmail, 
-        clientName, 
-        clientPhone, 
-        deliveryMethods,
-        selectedProjectId
-      );
-      
-      if (link && linkId) {
-        // Create a mock ClientAccessLink object for the UI
-        const newLink: ClientAccessLink = {
-          id: linkId,
-          designerId: user.id,
-          projectId: selectedProjectId,
-          projectTitle: selectedProjectId 
-            ? projects.find(p => p.id === selectedProjectId)?.title || null 
-            : null,
-          clientEmail,
-          clientName,
-          clientPhone: clientPhone || null,
-          token: link.split("clientToken=")[1]?.split("&")[0] || "",
-          createdAt: new Date(),
-          expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)),
-          lastAccessedAt: null,
-          status: "active"
-        };
-        
-        onLinkCreated(newLink);
-        
-        // Automatically send the link via selected delivery methods
-        if (deliveryMethods.email) {
-          await sendClientLink(linkId, 'email', clientEmail);
-        }
-        
-        if (deliveryMethods.sms && clientPhone) {
-          await sendClientLink(linkId, 'sms', clientPhone);
-        }
-        
-        resetForm();
-        toast.success("Client hub link created and sent to the client!");
-      }
-    } catch (error) {
-      console.error("Error creating client link:", error);
-      toast.error("Failed to create client link");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const resetForm = () => {
-    setClientName("");
-    setClientEmail("");
-    setClientPhone("");
-    setSelectedProjectId(null);
-    setDeliveryMethods({
-      email: true,
-      sms: false
-    });
-  };
+  
+  const {
+    clientName,
+    setClientName,
+    clientEmail,
+    setClientEmail,
+    clientPhone,
+    setClientPhone,
+    selectedProjectId,
+    setSelectedProjectId,
+    deliveryMethods,
+    handleDeliveryMethodChange,
+    isCreating,
+    handleCreate,
+    resetForm
+  } = useClientLink({
+    userId: user?.id || '',
+    projects,
+    onLinkCreated
+  });
 
   return (
     <Dialog open={open} onOpenChange={(value) => {
@@ -199,112 +66,26 @@ export default function ClientLinkDialog({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="project-select" className="text-right">
-              Project
-            </Label>
-            <div className="col-span-3">
-              <Select 
-                value={selectedProjectId || ""} 
-                onValueChange={(value) => setSelectedProjectId(value || null)}
-              >
-                <SelectTrigger id="project-select">
-                  <SelectValue placeholder="Select a project (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingProjects ? (
-                    <SelectItem value="loading" disabled>Loading projects...</SelectItem>
-                  ) : projects.length === 0 ? (
-                    <SelectItem value="none" disabled>No projects available</SelectItem>
-                  ) : (
-                    <>
-                      <SelectItem value="">No project</SelectItem>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">
-                Selecting a project will prefill client details
-              </p>
-            </div>
-          </div>
+          <ProjectSelector
+            selectedProjectId={selectedProjectId}
+            setSelectedProjectId={setSelectedProjectId}
+            projects={projects}
+            isLoading={isLoadingProjects}
+          />
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client-name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="client-name"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              className="col-span-3"
-              placeholder="Client Name"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client-email" className="text-right">
-              Email
-            </Label>
-            <Input
-              id="client-email"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-              className="col-span-3"
-              placeholder="client@example.com"
-              type="email"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client-phone" className="text-right">
-              Phone
-            </Label>
-            <Input
-              id="client-phone"
-              value={clientPhone}
-              onChange={(e) => setClientPhone(e.target.value)}
-              className="col-span-3"
-              placeholder="+1 (555) 123-4567"
-              type="tel"
-            />
-          </div>
+          <ClientInfoFields
+            clientName={clientName}
+            setClientName={setClientName}
+            clientEmail={clientEmail}
+            setClientEmail={setClientEmail}
+            clientPhone={clientPhone}
+            setClientPhone={setClientPhone}
+          />
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">
-              Delivery
-            </Label>
-            <div className="col-span-3 space-y-2">
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  checked={deliveryMethods.email} 
-                  onCheckedChange={(checked) => handleDeliveryMethodChange('email', checked)}
-                  id="email-delivery"
-                />
-                <Label htmlFor="email-delivery" className="flex items-center cursor-pointer">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Email
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  checked={deliveryMethods.sms} 
-                  onCheckedChange={(checked) => handleDeliveryMethodChange('sms', checked)}
-                  id="sms-delivery"
-                />
-                <Label htmlFor="sms-delivery" className="flex items-center cursor-pointer">
-                  <Phone className="h-4 w-4 mr-2" />
-                  SMS
-                </Label>
-              </div>
-            </div>
-          </div>
+          <DeliveryMethodsSection
+            deliveryMethods={deliveryMethods}
+            onDeliveryMethodChange={handleDeliveryMethodChange}
+          />
         </div>
         
         <DialogFooter>
@@ -330,4 +111,4 @@ export default function ClientLinkDialog({
       </DialogContent>
     </Dialog>
   );
-};
+}

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClientAccessLink } from "@/types/client";
@@ -150,6 +151,7 @@ export const validateClientToken = async (
 // Get all client links for a designer
 export const getClientLinks = async (designerId: string): Promise<ClientAccessLink[] | null> => {
   try {
+    // Make sure to explicitly name all columns to avoid potential type errors
     const { data, error } = await supabase
       .from('client_access_links')
       .select(`

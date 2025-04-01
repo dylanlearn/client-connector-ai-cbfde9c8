@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -52,8 +51,10 @@ export default function ClientsManager() {
               toast.info(`New client link created`);
             } else if (payload.eventType === 'UPDATE') {
               // Only show toast if status changed (e.g., from active to expired)
-              if ((payload.old as any).status !== (payload.new as any).status) {
-                toast.info(`Client link status changed to ${(payload.new as any).status}`);
+              const oldStatus = (payload.old as any).status;
+              const newStatus = (payload.new as any).status;
+              if (oldStatus !== newStatus) {
+                toast.info(`Client link status changed to ${newStatus}`);
               }
             }
           }
