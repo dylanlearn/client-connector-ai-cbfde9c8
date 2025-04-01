@@ -4,11 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
-import { SaasFormSchema } from "../schema/formSchemas";
 import BaseFields from "./BaseFields";
 
 interface SaasFieldsProps {
-  form: UseFormReturn<SaasFormSchema>;
+  form: UseFormReturn<any>;
 }
 
 const SaasFields = ({ form }: SaasFieldsProps) => {
@@ -29,7 +28,7 @@ const SaasFields = ({ form }: SaasFieldsProps) => {
             </div>
             <FormControl>
               <Switch
-                checked={field.value}
+                checked={!!field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>
@@ -69,7 +68,7 @@ const SaasFields = ({ form }: SaasFieldsProps) => {
             </div>
             <FormControl>
               <Switch
-                checked={field.value}
+                checked={!!field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>

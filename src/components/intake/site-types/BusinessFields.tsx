@@ -4,11 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
-import { BusinessFormSchema } from "../schema/formSchemas";
 import BaseFields from "./BaseFields";
 
 interface BusinessFieldsProps {
-  form: UseFormReturn<BusinessFormSchema>;
+  form: UseFormReturn<any>;
 }
 
 const BusinessFields = ({ form }: BusinessFieldsProps) => {
@@ -48,7 +47,7 @@ const BusinessFields = ({ form }: BusinessFieldsProps) => {
             </div>
             <FormControl>
               <Switch
-                checked={field.value}
+                checked={!!field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>
@@ -69,7 +68,7 @@ const BusinessFields = ({ form }: BusinessFieldsProps) => {
             </div>
             <FormControl>
               <Switch
-                checked={field.value}
+                checked={!!field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>

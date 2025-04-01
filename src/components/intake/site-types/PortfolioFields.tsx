@@ -4,11 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
-import { PortfolioFormSchema } from "../schema/formSchemas";
 import BaseFields from "./BaseFields";
 
 interface PortfolioFieldsProps {
-  form: UseFormReturn<PortfolioFormSchema>;
+  form: UseFormReturn<any>;
 }
 
 const PortfolioFields = ({ form }: PortfolioFieldsProps) => {
@@ -70,7 +69,7 @@ const PortfolioFields = ({ form }: PortfolioFieldsProps) => {
             </div>
             <FormControl>
               <Switch
-                checked={field.value}
+                checked={!!field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>

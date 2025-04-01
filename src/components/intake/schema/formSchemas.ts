@@ -76,30 +76,30 @@ export const getDefaultValues = (siteType: string, formData: any) => {
     case "saas":
       return {
         ...baseValues,
-        userAccountsRequired: formData.userAccountsRequired === undefined ? true : formData.userAccountsRequired,
+        userAccountsRequired: formData.userAccountsRequired === undefined ? true : !!formData.userAccountsRequired,
         pricingTiers: formData.pricingTiers || "",
-        freeTrialOffered: formData.freeTrialOffered === undefined ? false : formData.freeTrialOffered,
+        freeTrialOffered: formData.freeTrialOffered === undefined ? false : !!formData.freeTrialOffered,
       };
     case "ecommerce":
       return {
         ...baseValues,
         estimatedProducts: formData.estimatedProducts || "",
         paymentProcessors: formData.paymentProcessors || "",
-        shippingIntegration: formData.shippingIntegration === undefined ? false : formData.shippingIntegration,
+        shippingIntegration: formData.shippingIntegration === undefined ? false : !!formData.shippingIntegration,
       };
     case "business":
       return {
         ...baseValues,
         serviceOfferings: formData.serviceOfferings || "",
-        contactFormRequired: formData.contactFormRequired === undefined ? true : formData.contactFormRequired,
-        hasPhysicalLocation: formData.hasPhysicalLocation === undefined ? false : formData.hasPhysicalLocation,
+        contactFormRequired: formData.contactFormRequired === undefined ? true : !!formData.contactFormRequired,
+        hasPhysicalLocation: formData.hasPhysicalLocation === undefined ? false : !!formData.hasPhysicalLocation,
       };
     case "portfolio":
       return {
         ...baseValues,
         projectCategories: formData.projectCategories || "",
         contactInformation: formData.contactInformation || "",
-        resumeUploadRequired: formData.resumeUploadRequired === undefined ? false : formData.resumeUploadRequired,
+        resumeUploadRequired: formData.resumeUploadRequired === undefined ? false : !!formData.resumeUploadRequired,
       };
     default:
       return baseValues;

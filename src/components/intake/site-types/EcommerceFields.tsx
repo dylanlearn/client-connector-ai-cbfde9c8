@@ -4,11 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
-import { EcommerceFormSchema } from "../schema/formSchemas";
 import BaseFields from "./BaseFields";
 
 interface EcommerceFieldsProps {
-  form: UseFormReturn<EcommerceFormSchema>;
+  form: UseFormReturn<any>;
 }
 
 const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
@@ -60,7 +59,7 @@ const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
             </div>
             <FormControl>
               <Switch
-                checked={field.value}
+                checked={!!field.value}
                 onCheckedChange={field.onChange}
               />
             </FormControl>
