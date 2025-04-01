@@ -11,6 +11,7 @@ import { createClientAccessLink } from "@/utils/client-service";
 
 const ShareAnalyticsLink = () => {
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [linkId, setLinkId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -35,9 +36,10 @@ const ShareAnalyticsLink = () => {
 
     setIsCreating(true);
     try {
-      const link = await createClientAccessLink(user.id, clientEmail, clientName);
-      if (link) {
-        setShareLink(link);
+      const result = await createClientAccessLink(user.id, clientEmail, clientName);
+      if (result && result.link) {
+        setShareLink(result.link);
+        setLinkId(result.linkId);
         setIsDialogOpen(false);
         toast.success("Client hub link generated! It will expire in 14 days.");
       }

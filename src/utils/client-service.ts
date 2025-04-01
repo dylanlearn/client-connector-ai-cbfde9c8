@@ -40,5 +40,6 @@ export type {
   ClientTaskProgress,
   TaskCardProps,
   WhatNextSectionProps,
-  LoadingViewProps 
+  LoadingViewProps,
+  ClientLinkResult
 } from "@/types/client";

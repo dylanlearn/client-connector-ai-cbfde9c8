@@ -14,6 +14,11 @@ export interface ClientAccessLink {
   status: string;
 }
 
+export interface ClientLinkResult {
+  link: string | null;
+  linkId: string | null;
+}
+
 export interface ClientTask {
   id: string;
   linkId: string;
