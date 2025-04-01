@@ -6,6 +6,7 @@ import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
+import TemplatesShowcase from "@/components/landing/TemplatesShowcase";
 import Footer from "@/components/landing/Footer";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
@@ -90,6 +91,7 @@ const Index = () => {
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
+        <TemplatesShowcase />
         <TestimonialsSection />
         <PricingSection />
       </main>
