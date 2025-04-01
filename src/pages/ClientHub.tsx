@@ -19,17 +19,19 @@ const ClientHubPage = () => {
   const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
-    // If in development mode, skip the client token check
-    const urlParams = new URLSearchParams(window.location.search);
+    // Check for development mode parameter first
+    const urlParams = new URLSearchParams(location.search);
     const devParam = urlParams.get('dev');
     
     if (devParam === 'true') {
+      console.log("Development mode activated");
       setDevMode(true);
-      return;
+      return; // Skip other checks when in dev mode
     }
     
-    // If someone accesses this page without a client token, redirect them
+    // If not in dev mode and no client token, redirect
     if (!clientAccessMode && !devMode) {
+      console.log("No client access mode and not in dev mode, redirecting");
       toast.error("This page is only available for client access.");
       navigate('/?clientHubError=true');
       return;
@@ -40,7 +42,7 @@ const ClientHubPage = () => {
     if (savedStatus) {
       setTaskStatus(JSON.parse(savedStatus));
     }
-  }, [clientAccessMode, clientToken, navigate, devMode]);
+  }, [clientAccessMode, clientToken, navigate, location.search, devMode]);
 
   const saveTaskStatus = (updatedStatus) => {
     setTaskStatus(updatedStatus);
