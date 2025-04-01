@@ -23,7 +23,10 @@ export function useClientAccess() {
     // Reset error state on new parameters
     setError(null);
 
+    console.log('URL parameters:', { token, dId });
+
     if (!token || !dId) {
+      console.error('Missing required parameters: clientToken or designerId');
       setAccessDenied(true);
       setIsValidatingAccess(false);
       setError(new Error('Missing required parameters: clientToken or designerId'));
@@ -36,7 +39,10 @@ export function useClientAccess() {
     const validateAccess = async () => {
       setIsValidatingAccess(true);
       try {
+        console.log('Validating access with token:', token, 'and designerId:', dId);
         const isValid = await validateClientToken(token, dId);
+        console.log('Validation result:', isValid);
+        
         if (!isValid) {
           setAccessDenied(true);
           toast.error("This link is invalid or has expired.");

@@ -14,16 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientLinkDialogProps {
   open: boolean;
@@ -43,6 +36,7 @@ export default function ClientLinkDialog({
     email: true,
     sms: false
   });
+  const [isSending, setIsSending] = useState<{[key: string]: boolean}>({});
   const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
 
@@ -51,6 +45,31 @@ export default function ClientLinkDialog({
       ...prev,
       [method]: checked
     }));
+  };
+
+  const sendClientLink = async (linkId: string, type: 'email' | 'sms', recipient: string) => {
+    setIsSending(prev => ({ ...prev, [type]: true }));
+    
+    try {
+      const response = await supabase.functions.invoke('send-client-link', {
+        body: {
+          linkId,
+          deliveryType: type,
+          recipient
+        }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      toast.success(`Link sent to client via ${type === 'email' ? 'email' : 'SMS'}`);
+    } catch (error) {
+      console.error(`Error sending link via ${type}:`, error);
+      toast.error(`Failed to send link via ${type}. Please try again.`);
+    } finally {
+      setIsSending(prev => ({ ...prev, [type]: false }));
+    }
   };
 
   const handleCreate = async () => {
@@ -82,7 +101,7 @@ export default function ClientLinkDialog({
 
     setIsCreating(true);
     try {
-      const linkUrl = await createClientAccessLink(
+      const { link, linkId } = await createClientAccessLink(
         user.id, 
         clientEmail, 
         clientName, 
@@ -90,18 +109,15 @@ export default function ClientLinkDialog({
         deliveryMethods
       );
       
-      if (linkUrl) {
-        toast.success("Client hub link generated! It will expire in 14 days.");
-        
+      if (link && linkId) {
         // Create a mock ClientAccessLink object for the UI
-        // In a real implementation, we would get the full object from the API
         const newLink: ClientAccessLink = {
-          id: Math.random().toString(), // This is just for the UI
+          id: linkId,
           designerId: user.id,
           clientEmail,
           clientName,
           clientPhone: clientPhone || null,
-          token: linkUrl.split("clientToken=")[1]?.split("&")[0] || "",
+          token: link.split("clientToken=")[1]?.split("&")[0] || "",
           createdAt: new Date(),
           expiresAt: new Date(new Date().setDate(new Date().getDate() + 14)),
           lastAccessedAt: null,
@@ -109,7 +125,18 @@ export default function ClientLinkDialog({
         };
         
         onLinkCreated(newLink);
+        
+        // Automatically send the link via selected delivery methods
+        if (deliveryMethods.email) {
+          await sendClientLink(linkId, 'email', clientEmail);
+        }
+        
+        if (deliveryMethods.sms && clientPhone) {
+          await sendClientLink(linkId, 'sms', clientPhone);
+        }
+        
         resetForm();
+        toast.success("Client hub link created and sent to the client!");
       }
     } catch (error) {
       console.error("Error creating client link:", error);
@@ -138,7 +165,7 @@ export default function ClientLinkDialog({
         <DialogHeader>
           <DialogTitle>Create Client Portal Link</DialogTitle>
           <DialogDescription>
-            Enter your client's details to generate a personalized access link.
+            Enter your client's details to generate and send a personalized access link.
           </DialogDescription>
         </DialogHeader>
         
@@ -226,7 +253,14 @@ export default function ClientLinkDialog({
                     (deliveryMethods.sms && !clientPhone.trim()) ||
                     (!deliveryMethods.email && !deliveryMethods.sms)}
           >
-            {isCreating ? "Creating..." : "Create Link"}
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create & Send Link"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

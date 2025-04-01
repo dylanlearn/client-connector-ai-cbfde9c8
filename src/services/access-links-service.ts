@@ -17,7 +17,7 @@ export const createClientAccessLink = async (
   clientName: string,
   clientPhone: string | null = null,
   deliveryMethods: { email: boolean, sms: boolean } = { email: true, sms: false }
-): Promise<string | null> => {
+): Promise<{ link: string | null, linkId: string | null }> => {
   try {
     // Create an expiry date 14 days from now
     const expiresAt = new Date();
@@ -42,7 +42,7 @@ export const createClientAccessLink = async (
     if (error) {
       console.error('Error creating client access link:', error);
       toast.error('Failed to create client access link');
-      return null;
+      return { link: null, linkId: null };
     }
 
     // Create default tasks for this client
@@ -57,13 +57,14 @@ export const createClientAccessLink = async (
       await recordLinkDelivery(data.id, 'sms', clientPhone);
     }
     
-    // Return the sharable link
+    // Return the sharable link and the link ID
     const baseUrl = window.location.origin;
-    return `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
+    const link = `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
+    return { link, linkId: data.id };
   } catch (error) {
     console.error('Error in createClientAccessLink:', error);
     toast.error('An unexpected error occurred');
-    return null;
+    return { link: null, linkId: null };
   }
 };
 
@@ -103,6 +104,13 @@ export const validateClientToken = async (
   designerId: string
 ): Promise<boolean> => {
   try {
+    console.log('Validating token:', token, 'for designer:', designerId);
+    
+    if (!token || !designerId) {
+      console.error('Missing token or designerId');
+      return false;
+    }
+    
     const { data, error } = await supabase
       .from('client_access_links')
       .select('id, expires_at, status')
@@ -110,6 +118,8 @@ export const validateClientToken = async (
       .eq('designer_id', designerId)
       .eq('status', 'active')
       .maybeSingle();
+    
+    console.log('Token validation result:', data, error);
 
     if (error || !data) {
       console.error('Error validating client token:', error);
@@ -187,5 +197,31 @@ export const getLinkDeliveries = async (linkId: string): Promise<any[] | null> =
   } catch (error) {
     console.error('Error in getLinkDeliveries:', error);
     return null;
+  }
+};
+
+// Resend a client link
+export const resendClientLink = async (
+  linkId: string,
+  deliveryType: 'email' | 'sms',
+  recipient: string
+): Promise<boolean> => {
+  try {
+    const response = await supabase.functions.invoke('send-client-link', {
+      body: {
+        linkId,
+        deliveryType,
+        recipient
+      }
+    });
+    
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error resending client link via ${deliveryType}:`, error);
+    return false;
   }
 };

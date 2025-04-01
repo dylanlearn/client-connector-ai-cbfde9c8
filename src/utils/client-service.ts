@@ -7,7 +7,8 @@ import {
   validateClientToken,
   getClientLinks,
   recordLinkDelivery,
-  getLinkDeliveries
+  getLinkDeliveries,
+  resendClientLink
 } from "@/services/access-links-service";
 
 import {
@@ -24,6 +25,7 @@ export {
   getClientLinks,
   recordLinkDelivery,
   getLinkDeliveries,
+  resendClientLink,
   createDefaultClientTasks,
   getClientTasks,
   updateTaskStatus,
