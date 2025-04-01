@@ -1,12 +1,11 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const questions = [
@@ -42,6 +41,35 @@ const questions = [
   },
 ];
 
+const generateFollowUp = (questionId: string, answer: string): string | null => {
+  if (!answer || answer.length > 50) return null;
+  
+  // Simple content-based follow-ups
+  if (questionId === "q1") {
+    if (answer.toLowerCase().includes("ecommerce") || answer.toLowerCase().includes("shop")) {
+      return "Could you specify what kind of products you'll be selling and if you have any specific requirements for the shopping experience?";
+    }
+    return "Could you elaborate on the specific functions or features your website should have to fulfill this purpose?";
+  } 
+  
+  if (questionId === "q2") {
+    if (answer.toLowerCase().includes("everyone") || answer.toLowerCase().includes("all")) {
+      return "Targeting everyone often means reaching no one effectively. Could you specify the primary demographics or user groups that would most benefit from your product/service?";
+    }
+    return "What are the specific needs or pain points of this target audience that your website should address?";
+  }
+  
+  if (questionId === "q3") {
+    return "Which of these goals would you consider your top priority, and how would you measure success?";
+  }
+  
+  if (questionId === "q4") {
+    return "For these websites you like, are there specific sections or features that you particularly want to emulate?";
+  }
+  
+  return null;
+};
+
 const QuestionnairePreview = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -67,31 +95,35 @@ const QuestionnairePreview = () => {
     // Check if current answer needs AI follow-up
     if (
       answers[question.id] &&
-      answers[question.id].length < 20 &&
       !aiFollowUp &&
-      currentQuestion < 2
+      currentQuestion < questions.length - 1
     ) {
       setIsThinking(true);
       
       // Simulate AI thinking and generating a follow-up
       setTimeout(() => {
         setIsThinking(false);
-        if (question.id === "q1") {
-          setAiFollowUp("Could you elaborate on the specific functions or features your website should have to fulfill this purpose?");
-        } else if (question.id === "q2") {
-          setAiFollowUp("What are the specific needs or pain points of this target audience that your website should address?");
+        const followUpQuestion = generateFollowUp(question.id, answers[question.id]);
+        if (followUpQuestion) {
+          setAiFollowUp(followUpQuestion);
+        } else {
+          moveToNextQuestion();
         }
       }, 1500);
       
       return;
     }
 
+    moveToNextQuestion();
+  };
+
+  const moveToNextQuestion = () => {
     // Move to next question or finish
     if (aiFollowUp) {
       // Save follow-up answer and clear for next question
       setAnswers({
         ...answers,
-        [`${question.id}_followup`]: followUpAnswer,
+        [`${questions[currentQuestion].id}_followup`]: followUpAnswer,
       });
       setAiFollowUp(null);
       setFollowUpAnswer("");

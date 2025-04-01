@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { 
   FileText, Download, Copy, ArrowUpRight, Palette, 
-  Layout, Type, FileImage, Share2, CheckCircle
+  Layout, Type, FileImage, Share2, CheckCircle, MessageSquare, Zap
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useEffect, useState } from "react";
+import { useAI, AIAnalysis } from "@/contexts/AIContext";
+import AIChat from "@/components/ai/AIChat";
+import AIAnalysisSummary from "@/components/ai/AIAnalysisSummary";
+import AIInsightCard from "@/components/ai/AIInsightCard";
 
-// Mock data that would come from the questionnaire
 const projectData = {
   name: "Acme Inc. Website Redesign",
   client: "Acme Inc.",
@@ -42,7 +45,6 @@ const projectData = {
   aiSummary: "Based on the responses, Acme Inc. needs a professional B2B website that balances modern design with clear communication about complex products. The client values clean layouts, strong CTAs, and a professional but approachable tone similar to SaaS companies like Asana and Slack.\n\nTheir brand identity centers around blues and oranges, suggesting they want to convey both trust (blue) and energy/innovation (orange). The target audience of operations managers and business owners will respond well to content that emphasizes ROI, reliability, and efficiency gains.\n\nRecommended approach: Create a clean, conversion-focused design with clear navigation, prominent CTAs, and visual explanations of complex products. Include social proof elements like testimonials and case studies to build credibility."
 };
 
-// AI-generated style recommendations
 const styleRecommendations = {
   colors: [
     { name: "Primary Blue", hex: "#3A5FCD", swatch: "bg-[#3A5FCD]" },
@@ -66,7 +68,6 @@ const styleRecommendations = {
   ]
 };
 
-// Component designs from inspiration references
 const componentSuggestions = [
   {
     name: "Hero Section",
@@ -98,6 +99,29 @@ const componentSuggestions = [
 const QuestionnaireResults = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { analyzeResponses, analysis, isProcessing } = useAI();
+  const [aiReady, setAiReady] = useState(false);
+
+  useEffect(() => {
+    const runAnalysis = async () => {
+      try {
+        const questionsData = projectData.answers.reduce((acc, item, index) => {
+          acc[`question_${index + 1}`] = item.answer;
+          if (item.followup) {
+            acc[`question_${index + 1}_followup`] = item.followup;
+          }
+          return acc;
+        }, {} as Record<string, string>);
+        
+        await analyzeResponses(questionsData);
+        setAiReady(true);
+      } catch (error) {
+        console.error("Error running AI analysis:", error);
+      }
+    };
+
+    runAnalysis();
+  }, []);
 
   const handleExport = (format: string) => {
     toast({
@@ -107,6 +131,7 @@ const QuestionnaireResults = () => {
   };
 
   const handleCopy = () => {
+    navigator.clipboard.writeText(projectData.aiSummary);
     toast({
       title: "Summary copied",
       description: "The summary has been copied to your clipboard.",
@@ -141,6 +166,10 @@ const QuestionnaireResults = () => {
                 <TabsTrigger value="summary" className="flex-1">Summary</TabsTrigger>
                 <TabsTrigger value="answers" className="flex-1">Client Answers</TabsTrigger>
                 <TabsTrigger value="design" className="flex-1">Design Recommendations</TabsTrigger>
+                <TabsTrigger value="ai-insights" className="flex-1">
+                  <Zap className="h-4 w-4 mr-2" />
+                  AI Insights
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="summary">
@@ -305,6 +334,66 @@ const QuestionnaireResults = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+              
+              <TabsContent value="ai-insights">
+                <div className="space-y-8">
+                  {isProcessing ? (
+                    <Card className="p-8">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="relative w-16 h-16 mb-4">
+                          <div className="absolute inset-0 border-4 border-indigo-200 rounded-full"></div>
+                          <div className="absolute inset-0 border-4 border-indigo-600 rounded-full animate-spin" style={{ borderTopColor: 'transparent' }}></div>
+                        </div>
+                        <h3 className="text-xl font-medium mb-2">AI Processing Responses</h3>
+                        <p className="text-gray-500 text-center max-w-md">
+                          Our AI is analyzing client responses to generate insights and recommendations.
+                          This should only take a moment.
+                        </p>
+                      </div>
+                    </Card>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {analysis && (
+                          <AIAnalysisSummary analysis={analysis} />
+                        )}
+                        
+                        <AIInsightCard 
+                          title="Design Recommendations" 
+                          insights={[
+                            "Use large hero sections with clear CTAs",
+                            "Incorporate visual elements that reinforce trust and reliability",
+                            "Focus on clear typography with good readability",
+                            "Use color accents strategically to highlight key elements",
+                            "Include visual explanations for complex features"
+                          ]} 
+                          icon={<Layout className="h-5 w-5" />}
+                        />
+                      </div>
+                      
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <MessageSquare className="h-5 w-5 mr-2" />
+                            AI Assistant Chat
+                          </CardTitle>
+                          <CardDescription>
+                            Ask follow-up questions about the analysis or get specific recommendations
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <AIChat 
+                            title="" 
+                            placeholder="Ask a question about the client's responses or design preferences..."
+                            initialMessage="I've analyzed the client's responses. You can ask me specific questions about their preferences, or for recommendations on design elements, content strategy, or any other aspect of the project."
+                            className="border-0 shadow-none p-0"
+                          />
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           </div>
