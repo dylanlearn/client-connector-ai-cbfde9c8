@@ -16,22 +16,10 @@ const ClientHubPage = () => {
     designPicker: false,
     templates: false
   });
-  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
-    // Check for development mode parameter first
-    const urlParams = new URLSearchParams(location.search);
-    const devParam = urlParams.get('dev');
-    
-    if (devParam === 'true') {
-      console.log("Development mode activated");
-      setDevMode(true);
-      return; // Skip other checks when in dev mode
-    }
-    
-    // If not in dev mode and no client token, redirect
-    if (!clientAccessMode && !devMode) {
-      console.log("No client access mode and not in dev mode, redirecting");
+    // If someone accesses this page without a client token, redirect them
+    if (!clientAccessMode) {
       toast.error("This page is only available for client access.");
       navigate('/?clientHubError=true');
       return;
@@ -42,7 +30,7 @@ const ClientHubPage = () => {
     if (savedStatus) {
       setTaskStatus(JSON.parse(savedStatus));
     }
-  }, [clientAccessMode, clientToken, navigate, location.search, devMode]);
+  }, [clientAccessMode, clientToken, navigate]);
 
   const saveTaskStatus = (updatedStatus) => {
     setTaskStatus(updatedStatus);
@@ -50,11 +38,9 @@ const ClientHubPage = () => {
   };
 
   const navigateTo = (path) => {
-    // Preserve the client token and designer ID in the URL or add dev mode
+    // Preserve the client token and designer ID in the URL
     if (clientToken && designerId) {
       navigate(`${path}?clientToken=${clientToken}&designerId=${designerId}`);
-    } else {
-      navigate(`${path}?dev=true`);
     }
   };
 
@@ -65,15 +51,6 @@ const ClientHubPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      {devMode && (
-        <div className="max-w-4xl mx-auto mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
-          <h2 className="text-lg font-medium text-yellow-800">Development Mode</h2>
-          <p className="text-yellow-700">
-            You're viewing the Client Hub in development mode. Normally, this page is only accessible with a valid client token.
-          </p>
-        </div>
-      )}
-      
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Your Design Journey</h1>

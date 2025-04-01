@@ -94,20 +94,6 @@ const Index = () => {
       <main className="flex-1">
         <HeroSection />
         
-        <div className="max-w-6xl mx-auto p-4 my-4">
-          <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-            <h3 className="text-lg font-medium mb-2">Temporary Development Link</h3>
-            <p className="text-sm text-gray-600 mb-3">This link is temporarily available for development purposes only.</p>
-            <Button 
-              onClick={() => navigate("/client-hub?dev=true")} 
-              variant="secondary"
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
-            >
-              View Client Hub Page
-            </Button>
-          </div>
-        </div>
-        
         <FeaturesSection />
         <HowItWorksSection />
         <TestimonialsSection />
