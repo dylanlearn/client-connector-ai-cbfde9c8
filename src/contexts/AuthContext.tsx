@@ -115,11 +115,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Improved Google sign-in with better configuration
+      // Get the current host for proper redirection
+      const redirectUrl = new URL('/dashboard', window.location.origin).toString();
+      console.log("Google sign-in redirect URL:", redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
