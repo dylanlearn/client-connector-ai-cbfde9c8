@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 import HeroSection from "@/components/landing/HeroSection";
@@ -98,7 +99,7 @@ const Index = () => {
             <h3 className="text-lg font-medium mb-2">Temporary Development Link</h3>
             <p className="text-sm text-gray-600 mb-3">This link is temporarily available for development purposes only.</p>
             <a 
-              href="/client-hub" 
+              href="/client-hub?dev=true" 
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
             >
               View Client Hub Page

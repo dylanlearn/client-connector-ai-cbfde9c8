@@ -16,30 +16,44 @@ const ClientHubPage = () => {
     designPicker: false,
     templates: false
   });
+  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
+    // If in development mode, skip the client token check
+    const urlParams = new URLSearchParams(window.location.search);
+    const devParam = urlParams.get('dev');
+    
+    if (devParam === 'true') {
+      setDevMode(true);
+      return;
+    }
+    
     // If someone accesses this page without a client token, redirect them
-    if (!clientAccessMode) {
+    if (!clientAccessMode && !devMode) {
       toast.error("This page is only available for client access.");
-      navigate('/');
+      navigate('/?clientHubError=true');
       return;
     }
 
     // Check local storage for completed tasks
-    const savedStatus = localStorage.getItem(`taskStatus-${clientToken}`);
+    const savedStatus = localStorage.getItem(`taskStatus-${clientToken || 'dev-mode'}`);
     if (savedStatus) {
       setTaskStatus(JSON.parse(savedStatus));
     }
-  }, [clientAccessMode, clientToken, navigate]);
+  }, [clientAccessMode, clientToken, navigate, devMode]);
 
   const saveTaskStatus = (updatedStatus) => {
     setTaskStatus(updatedStatus);
-    localStorage.setItem(`taskStatus-${clientToken}`, JSON.stringify(updatedStatus));
+    localStorage.setItem(`taskStatus-${clientToken || 'dev-mode'}`, JSON.stringify(updatedStatus));
   };
 
   const navigateTo = (path) => {
-    // Preserve the client token and designer ID in the URL
-    navigate(`${path}?clientToken=${clientToken}&designerId=${designerId}`);
+    // Preserve the client token and designer ID in the URL or add dev mode
+    if (clientToken && designerId) {
+      navigate(`${path}?clientToken=${clientToken}&designerId=${designerId}`);
+    } else {
+      navigate(`${path}?dev=true`);
+    }
   };
 
   const markTaskCompleted = (task) => {
@@ -49,6 +63,15 @@ const ClientHubPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {devMode && (
+        <div className="max-w-4xl mx-auto mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+          <h2 className="text-lg font-medium text-yellow-800">Development Mode</h2>
+          <p className="text-yellow-700">
+            You're viewing the Client Hub in development mode. Normally, this page is only accessible with a valid client token.
+          </p>
+        </div>
+      )}
+      
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Your Design Journey</h1>
