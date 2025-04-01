@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,8 +24,46 @@ interface SpecificQuestionsStepProps {
   onPrevious: () => void;
 }
 
+// Define schema types based on the IntakeFormData interface
+type SaasFormSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodOptional<z.ZodString>;
+  userAccountsRequired: z.ZodBoolean;
+  pricingTiers: z.ZodString;
+  freeTrialOffered: z.ZodBoolean;
+}>;
+
+type EcommerceFormSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodOptional<z.ZodString>;
+  estimatedProducts: z.ZodString;
+  paymentProcessors: z.ZodString;
+  shippingIntegration: z.ZodBoolean;
+}>;
+
+type BusinessFormSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodOptional<z.ZodString>;
+  serviceOfferings: z.ZodString;
+  contactFormRequired: z.ZodBoolean;
+  hasPhysicalLocation: z.ZodBoolean;
+}>;
+
+type PortfolioFormSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodOptional<z.ZodString>;
+  projectCategories: z.ZodString;
+  contactInformation: z.ZodString;
+  resumeUploadRequired: z.ZodBoolean;
+}>;
+
+type BaseFormSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodOptional<z.ZodString>;
+}>;
+
 // Dynamic schema based on site type
-const getFormSchema = (siteType: string) => {
+const getFormSchema = (siteType: string): SaasFormSchema | EcommerceFormSchema | BusinessFormSchema | PortfolioFormSchema | BaseFormSchema => {
   // Base fields that all site types have
   const baseSchema = {
     mainFeatures: z.string().min(1, "Please list your main features"),
@@ -129,7 +166,7 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
     return () => subscription.unsubscribe();
   }, [form, updateFormData]);
 
-  function onSubmit(values: any) {
+  function onSubmit(values: Partial<IntakeFormData>) {
     updateFormData(values);
     onNext();
   }

@@ -9,7 +9,7 @@ export interface IntakeFormData {
   targetAudience?: string;
   launchDate?: string;
   
-  // Step 3: Specific Questions (based on site type)
+  // Step 3: Specific Questions (base fields for all site types)
   mainFeatures?: string;
   competitors?: string;
   
