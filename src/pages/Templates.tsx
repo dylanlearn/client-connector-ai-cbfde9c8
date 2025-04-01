@@ -48,12 +48,26 @@ const Templates = () => {
 
   const handlePurchaseComplete = async (purchaseData) => {
     try {
-      // Record the purchase in Supabase
-      const { error } = await supabase.from("template_purchases").insert({
-        user_id: user?.id || purchaseData.guestUserId, // Use authenticated user or generate a guest ID
+      // Rather than directly using the template_purchases table,
+      // we'll use a custom function for now to record the purchase
+      // This is a temporary workaround until we update the type definitions
+      
+      console.log("Recording purchase:", {
+        user_id: user?.id || purchaseData.guestUserId,
         template_id: selectedTemplate.id,
         price_paid: selectedTemplate.price,
-        transaction_id: `tr_${Date.now()}` // In a real app, this would come from the payment processor
+        customer_name: purchaseData.name,
+        customer_email: purchaseData.email,
+        transaction_id: `tr_${Date.now()}`
+      });
+      
+      // Use a custom RPC function or projects table temporarily
+      // Instead of: supabase.from("template_purchases").insert({...})
+      const { error } = await supabase.rpc('record_template_purchase', {
+        p_user_id: user?.id || purchaseData.guestUserId,
+        p_template_id: selectedTemplate.id,
+        p_price_paid: selectedTemplate.price,
+        p_transaction_id: `tr_${Date.now()}`
       });
 
       if (error) throw error;
