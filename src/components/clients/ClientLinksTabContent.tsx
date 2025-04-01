@@ -1,6 +1,6 @@
 
 import { ClientAccessLink } from "@/types/client";
-import ClientLinksList from "./ClientLinksList";
+import PaginatedClientLinks from "./PaginatedClientLinks";
 
 interface ClientLinksTabContentProps {
   links: ClientAccessLink[];
@@ -15,12 +15,13 @@ export default function ClientLinksTabContent({
   status,
   onRefresh 
 }: ClientLinksTabContentProps) {
+  // Filter links based on status
   const filteredLinks = links.filter(link => 
     status === 'active' ? link.status === 'active' : link.status !== 'active'
   );
   
   return (
-    <ClientLinksList 
+    <PaginatedClientLinks 
       links={filteredLinks} 
       isLoading={isLoading}
       onRefresh={onRefresh}
