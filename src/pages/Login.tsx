@@ -22,6 +22,9 @@ const Login = () => {
   const [showConfirmationSuccess, setShowConfirmationSuccess] = useState(false);
   const isMobile = useIsMobile();
   const { signIn, signInWithGoogle, isLoading, user } = useAuth();
+  
+  // Get the redirect path from location state, default to /dashboard
+  const from = (location.state as { from?: string })?.from || "/dashboard";
 
   // Check if user just confirmed their email
   useEffect(() => {
@@ -38,9 +41,9 @@ const Login = () => {
     }
   }, [location.search, toast]);
 
-  // If user is already logged in, redirect to dashboard
+  // If user is already logged in, redirect to the intended destination or dashboard
   if (user) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to={from} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,8 +60,8 @@ const Login = () => {
     
     try {
       await signIn(email, password);
+      // The redirect will happen automatically due to the Navigate component above
     } catch (error) {
-      // Error is handled in the signIn function
       console.error("Login error:", error);
     }
   };
@@ -67,6 +70,7 @@ const Login = () => {
     try {
       setGoogleError(null);
       await signInWithGoogle();
+      // The redirect will happen via the Supabase OAuth flow
     } catch (error: any) {
       console.error("Google login error:", error);
       setGoogleError(error?.message || "Failed to connect to Google. Please try again.");

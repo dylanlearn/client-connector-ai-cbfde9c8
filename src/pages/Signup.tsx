@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useNavigate, Link, Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,10 +22,13 @@ const Signup = () => {
   const [googleError, setGoogleError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { signUp, signInWithGoogle, isLoading, user } = useAuth();
+  
+  // Get the redirect path from location state, default to /dashboard
+  const from = (location.state as { from?: string })?.from || "/dashboard";
 
-  // If user is already logged in, redirect to dashboard
+  // If user is already logged in, redirect to the intended destination or dashboard
   if (user) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to={from} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { getRedirectUrl, getEmailConfirmationRedirectUrl } from "@/utils/auth-utils";
@@ -8,7 +8,11 @@ import { getRedirectUrl, getEmailConfirmationRedirectUrl } from "@/utils/auth-ut
 export const useAuthActions = (setProfile: (profile: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Get the redirect path from location state, default to /dashboard
+  const from = (location.state as { from?: string })?.from || "/dashboard";
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -32,7 +36,8 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
         description: "Welcome back to DezignSync!",
       });
       
-      navigate("/dashboard");
+      // Navigate to the intended destination
+      navigate(from, { replace: true });
     } catch (error) {
       console.error("Error signing in:", error);
     } finally {

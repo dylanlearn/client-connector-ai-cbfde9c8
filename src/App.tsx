@@ -25,8 +25,16 @@ import Onboarding from "./pages/Onboarding";
 import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 const queryClient = new QueryClient();
+
+// Helper function to create protected routes with DashboardLayout
+const ProtectedDashboardRoute = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <DashboardLayout>{children}</DashboardLayout>
+  </ProtectedRoute>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -38,101 +46,27 @@ const App = () => (
             <Sonner />
             <Layout>
               <Routes>
+                {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/signup/confirmation" element={<SignupConfirmation />} />
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/projects" 
-                  element={
-                    <ProtectedRoute>
-                      <Projects />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/clients" 
-                  element={
-                    <ProtectedRoute>
-                      <Clients />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/analytics" 
-                  element={
-                    <ProtectedRoute>
-                      <Analytics />
-                    </ProtectedRoute>
-                  } 
-                />
-                {/* Made templates accessible without authentication */}
                 <Route path="/templates" element={<Templates />} />
-                <Route 
-                  path="/settings" 
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/new-project" 
-                  element={
-                    <ProtectedRoute>
-                      <NewProject />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/project-questionnaire" 
-                  element={
-                    <ProtectedRoute>
-                      <ProjectQuestionnaire />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/questionnaire-preview" 
-                  element={
-                    <ProtectedRoute>
-                      <QuestionnairePreview />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/questionnaire-results" 
-                  element={
-                    <ProtectedRoute>
-                      <QuestionnaireResults />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/ai-design-suggestions" 
-                  element={
-                    <ProtectedRoute>
-                      <AIDesignSuggestions />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/onboarding" 
-                  element={
-                    <ProtectedRoute>
-                      <Onboarding />
-                    </ProtectedRoute>
-                  } 
-                />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                
+                {/* Protected routes with dashboard layout */}
+                <Route path="/dashboard" element={<ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute>} />
+                <Route path="/projects" element={<ProtectedDashboardRoute><Projects /></ProtectedDashboardRoute>} />
+                <Route path="/clients" element={<ProtectedDashboardRoute><Clients /></ProtectedDashboardRoute>} />
+                <Route path="/analytics" element={<ProtectedDashboardRoute><Analytics /></ProtectedDashboardRoute>} />
+                <Route path="/settings" element={<ProtectedDashboardRoute><Settings /></ProtectedDashboardRoute>} />
+                <Route path="/new-project" element={<ProtectedDashboardRoute><NewProject /></ProtectedDashboardRoute>} />
+                <Route path="/project-questionnaire" element={<ProtectedDashboardRoute><ProjectQuestionnaire /></ProtectedDashboardRoute>} />
+                <Route path="/questionnaire-preview" element={<ProtectedDashboardRoute><QuestionnairePreview /></ProtectedDashboardRoute>} />
+                <Route path="/questionnaire-results" element={<ProtectedDashboardRoute><QuestionnaireResults /></ProtectedDashboardRoute>} />
+                <Route path="/ai-design-suggestions" element={<ProtectedDashboardRoute><AIDesignSuggestions /></ProtectedDashboardRoute>} />
+                <Route path="/onboarding" element={<ProtectedDashboardRoute><Onboarding /></ProtectedDashboardRoute>} />
+                
+                {/* Catch-all route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

@@ -1,15 +1,11 @@
 
-import { useAuthState } from './use-auth-state';
-import { Session, User } from '@supabase/supabase-js';
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 
-export interface AuthState {
-  session: Session | null;
-  user: User | null;
-  profile: any | null;
-  isLoading: boolean;
-}
-
-export const useAuth = (): AuthState => {
-  const authState = useAuthState();
-  return authState;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
