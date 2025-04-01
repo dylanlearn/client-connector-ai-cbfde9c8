@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { useProjects } from "@/hooks/use-projects";
+import { CreateProjectData } from "@/types/project";
 
 const projectTypes = [
   { value: "website", label: "Website" },
@@ -23,6 +25,8 @@ const projectTypes = [
 const NewProject = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { createProject } = useProjects();
+  
   const [projectName, setProjectName] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -35,20 +39,29 @@ const NewProject = () => {
     setIsLoading(true);
 
     try {
-      // Simulate project creation - replace with actual Supabase integration in the future
-      setTimeout(() => {
+      if (!projectName || !clientName || !clientEmail || !projectType) {
         toast({
-          title: "Project created",
-          description: "Your new project has been created successfully.",
+          title: "Missing fields",
+          description: "Please fill in all required fields",
+          variant: "destructive",
         });
-        navigate("/project-questionnaire");
-      }, 1500);
+        setIsLoading(false);
+        return;
+      }
+
+      const projectData: CreateProjectData = {
+        title: projectName,
+        client_name: clientName,
+        client_email: clientEmail,
+        project_type: projectType,
+        description: projectDescription || null,
+      };
+
+      await createProject.mutateAsync(projectData);
+      navigate("/project-questionnaire");
     } catch (error) {
-      toast({
-        title: "Failed to create project",
-        description: "An error occurred. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Error creating project:", error);
+      // Error is already handled by the mutation
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +88,7 @@ const NewProject = () => {
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="projectName">Project Name</Label>
+                  <Label htmlFor="projectName">Project Name*</Label>
                   <Input
                     id="projectName"
                     placeholder="E.g., Client Website Redesign"
@@ -87,7 +100,7 @@ const NewProject = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="clientName">Client Name</Label>
+                    <Label htmlFor="clientName">Client Name*</Label>
                     <Input
                       id="clientName"
                       placeholder="E.g., Acme Inc."
@@ -97,7 +110,7 @@ const NewProject = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="clientEmail">Client Email</Label>
+                    <Label htmlFor="clientEmail">Client Email*</Label>
                     <Input
                       id="clientEmail"
                       type="email"
@@ -110,7 +123,7 @@ const NewProject = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="projectType">Project Type</Label>
+                  <Label htmlFor="projectType">Project Type*</Label>
                   <Select onValueChange={setProjectType} required>
                     <SelectTrigger id="projectType">
                       <SelectValue placeholder="Select project type" />
@@ -141,8 +154,8 @@ const NewProject = () => {
                 <Button type="button" variant="outline" onClick={() => navigate("/dashboard")}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Creating..." : "Continue to Questionnaire Setup"}
+                <Button type="submit" disabled={isLoading || createProject.isPending}>
+                  {isLoading || createProject.isPending ? "Creating..." : "Continue to Questionnaire Setup"}
                 </Button>
               </CardFooter>
             </form>
