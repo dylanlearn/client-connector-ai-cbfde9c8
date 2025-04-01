@@ -1,16 +1,43 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Trash2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import BaseFields from "./BaseFields";
+import { useAuth } from "@/hooks/use-auth";
 
 interface EcommerceFieldsProps {
   form: UseFormReturn<any>;
 }
 
 const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
+  const { profile } = useAuth();
+  const isPro = profile?.role === 'pro';
+  const [customQuestions, setCustomQuestions] = useState<string[]>([]);
+  const [newQuestion, setNewQuestion] = useState('');
+
+  const addCustomQuestion = () => {
+    if (newQuestion.trim()) {
+      setCustomQuestions([...customQuestions, newQuestion.trim()]);
+      setNewQuestion('');
+      
+      // Update the form with the custom questions
+      const currentCustomQuestions = form.getValues('customQuestions') || [];
+      form.setValue('customQuestions', [...currentCustomQuestions, newQuestion.trim()]);
+    }
+  };
+
+  const removeCustomQuestion = (index: number) => {
+    const updatedQuestions = customQuestions.filter((_, i) => i !== index);
+    setCustomQuestions(updatedQuestions);
+    
+    // Update the form with the updated list
+    form.setValue('customQuestions', updatedQuestions);
+  };
+
   return (
     <>
       <BaseFields form={form} />
@@ -66,6 +93,56 @@ const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
           </FormItem>
         )}
       />
+      
+      {isPro && (
+        <div className="mt-8 border-t pt-6">
+          <h3 className="text-base font-medium mb-4">Pro Feature: Custom Questions</h3>
+          <FormDescription className="mb-4">
+            Add your own custom questions to the questionnaire. These will be asked in addition to the AI-generated questions.
+          </FormDescription>
+          
+          <div className="space-y-4">
+            {customQuestions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Your Custom Questions:</p>
+                <ul className="space-y-2">
+                  {customQuestions.map((question, index) => (
+                    <li key={index} className="flex items-center justify-between rounded-md border p-3">
+                      <span>{question}</span>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => removeCustomQuestion(index)}
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <div className="flex space-x-2">
+              <Input
+                value={newQuestion}
+                onChange={(e) => setNewQuestion(e.target.value)}
+                placeholder="Enter a custom question here..."
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                onClick={addCustomQuestion}
+                disabled={!newQuestion.trim()}
+                size="sm"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
