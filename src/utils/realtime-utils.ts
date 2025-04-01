@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -10,9 +9,8 @@ export const enableRealtimeForTable = async (tableName: string): Promise<boolean
     // First, allow full replica identity for the table to ensure we get complete 
     // before/after data with real-time events
     const { error: replicaError } = await supabase.rpc(
-      'alter_table_replica_identity', // Custom RPC function
-      { table_name: tableName },
-      { count: 'exact' } // This allows using custom RPC functions not in the TypeScript definition
+      'alter_table_replica_identity' as any,
+      { table_name: tableName }
     );
     
     if (replicaError) {
@@ -22,9 +20,8 @@ export const enableRealtimeForTable = async (tableName: string): Promise<boolean
     
     // Then add the table to the realtime publication
     const { error: pubError } = await supabase.rpc(
-      'add_table_to_realtime_publication', // Custom RPC function
-      { table_name: tableName },
-      { count: 'exact' } // This allows using custom RPC functions not in the TypeScript definition
+      'add_table_to_realtime_publication' as any,
+      { table_name: tableName }
     );
     
     if (pubError) {
