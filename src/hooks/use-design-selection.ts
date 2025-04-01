@@ -15,15 +15,29 @@ export const useDesignSelection = (maxSelections: number = 4) => {
   const [attemptedSelection, setAttemptedSelection] = useState<DesignOption | null>(null);
 
   const handleSelectDesign = (option: DesignOption) => {
-    if (
-      Object.keys(selectedDesigns).length >= maxSelections && 
-      !selectedDesigns[option.category]
-    ) {
+    // Check if this category is already selected
+    if (selectedDesigns[option.category]) {
+      // Update the existing selection with the new option
+      setSelectedDesigns(prev => ({
+        ...prev,
+        [option.category]: {
+          ...option,
+          rank: prev[option.category]?.rank || null,
+          notes: prev[option.category]?.notes || ""
+        }
+      }));
+      toast.success(`Updated ${option.category} selection`);
+      return;
+    }
+    
+    // Check if we've reached the maximum selections
+    if (Object.keys(selectedDesigns).length >= maxSelections) {
       setAttemptedSelection(option);
       setShowLimitDialog(true);
       return;
     }
     
+    // Add the new selection
     setSelectedDesigns(prev => ({
       ...prev,
       [option.category]: {
@@ -32,6 +46,8 @@ export const useDesignSelection = (maxSelections: number = 4) => {
         notes: prev[option.category]?.notes || ""
       }
     }));
+    
+    toast.success(`Added ${option.category} design. ${maxSelections - Object.keys(selectedDesigns).length - 1} selections remaining.`);
   };
 
   const confirmReplaceSelection = () => {
@@ -44,7 +60,11 @@ export const useDesignSelection = (maxSelections: number = 4) => {
         
         setSelectedDesigns({
           ...newSelections,
-          [attemptedSelection.category]: attemptedSelection
+          [attemptedSelection.category]: {
+            ...attemptedSelection,
+            rank: null,
+            notes: ""
+          }
         });
         
         toast.success(`Replaced ${randomCategory} design with ${attemptedSelection.category} design`);
