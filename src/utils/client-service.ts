@@ -102,15 +102,16 @@ export const validateClientToken = async (
       .select('id, expires_at, status')
       .eq('token', token)
       .eq('designer_id', designerId)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .maybeSingle();
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       console.error('Error validating client token:', error);
       return false;
     }
 
     // Check if the link has expired
-    const expiresAt = new Date(data[0].expires_at);
+    const expiresAt = new Date(data.expires_at);
     if (expiresAt < new Date()) {
       console.log('Client access link has expired');
       return false;
@@ -120,7 +121,7 @@ export const validateClientToken = async (
     await supabase
       .from('client_access_links')
       .update({ last_accessed_at: new Date().toISOString() })
-      .eq('id', data[0].id);
+      .eq('id', data.id);
 
     return true;
   } catch (error) {
@@ -140,9 +141,10 @@ export const getClientTasks = async (
       .from('client_access_links')
       .select('id')
       .eq('token', token)
-      .eq('designer_id', designerId);
+      .eq('designer_id', designerId)
+      .maybeSingle();
 
-    if (linkError || !linkData || linkData.length === 0) {
+    if (linkError || !linkData) {
       console.error('Error getting client link:', linkError);
       return null;
     }
@@ -151,7 +153,7 @@ export const getClientTasks = async (
     const { data, error } = await supabase
       .from('client_tasks')
       .select('*')
-      .eq('link_id', linkData[0].id);
+      .eq('link_id', linkData.id);
 
     if (error) {
       console.error('Error getting client tasks:', error);
