@@ -9,7 +9,7 @@ import {
   recordLinkDelivery,
   getLinkDeliveries,
   resendClientLink
-} from "@/services/access-links-service";
+} from "@/services/clients";
 
 import {
   createDefaultClientTasks,
