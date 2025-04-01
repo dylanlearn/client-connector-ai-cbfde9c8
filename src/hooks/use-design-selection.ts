@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { DesignOption } from "@/components/design/VisualPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { UserPreference } from "./use-analytics";
 
 export type RankedDesignOption = DesignOption & {
   rank?: number | null;
@@ -46,7 +47,7 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
       if (data && data.length > 0) {
         const loadedDesigns: Record<string, RankedDesignOption> = {};
         
-        data.forEach(item => {
+        data.forEach((item: UserPreference) => {
           loadedDesigns[item.id] = {
             id: item.design_option_id,
             title: item.title,
