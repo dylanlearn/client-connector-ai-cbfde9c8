@@ -41,8 +41,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 p-4 w-full overflow-x-hidden">
+      <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <svg viewBox="0 0 24 24" className="h-6 w-6 text-indigo-600" fill="currentColor">
