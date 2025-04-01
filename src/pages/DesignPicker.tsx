@@ -16,7 +16,7 @@ import VisualPicker, { DesignOption } from "@/components/design/VisualPicker";
 import RankedSelections from "@/components/design/RankedSelections";
 import SelectionLimitDialog from "@/components/design/SelectionLimitDialog";
 import SelectionProgress from "@/components/design/SelectionProgress";
-import { useDesignSelection } from "@/hooks/use-design-selection";
+import { useDesignSelection, RankedDesignOption } from "@/hooks/use-design-selection";
 import { designOptions } from "@/data/design-options";
 
 const DesignPicker = () => {
