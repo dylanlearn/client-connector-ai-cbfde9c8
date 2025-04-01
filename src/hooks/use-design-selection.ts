@@ -4,8 +4,10 @@ import { DesignOption } from "@/components/design/VisualPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { UserPreference } from "./use-analytics";
+import { useNavigate } from "react-router-dom";
 
 const VALID_CATEGORIES = ['hero', 'navbar', 'about', 'footer', 'font'];
+const CLIENT_ALLOWED_ROUTES = ['/intake', '/design-picker', '/templates', '/'];
 
 export type RankedDesignOption = DesignOption & {
   rank?: number | null;
@@ -20,6 +22,9 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
   const { user } = useAuth();
   const [clientAccessMode, setClientAccessMode] = useState(false);
   const [viewOnlyMode, setViewOnlyMode] = useState(false);
+  const [clientToken, setClientToken] = useState<string | null>(null);
+  const [designerId, setDesignerId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const getSelectionsByCategory = () => {
     const countByCategory: Record<string, number> = {};
@@ -33,17 +38,25 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const clientToken = urlParams.get('clientToken');
-    const designerId = urlParams.get('designerId');
+    const token = urlParams.get('clientToken');
+    const dId = urlParams.get('designerId');
     
-    if (clientToken && designerId) {
+    if (token && dId) {
+      setClientToken(token);
+      setDesignerId(dId);
       setClientAccessMode(true);
       setViewOnlyMode(true);
-      loadSharedPreferences(designerId);
+      loadSharedPreferences(dId);
+      
+      const currentPath = window.location.pathname;
+      if (!CLIENT_ALLOWED_ROUTES.includes(currentPath) && currentPath !== '/client-hub') {
+        toast.warning("This area is restricted. Redirecting to your hub.");
+        navigate('/client-hub');
+      }
     } else {
       loadSavedPreferences();
     }
-  }, [user?.id]);
+  }, [user?.id, navigate]);
 
   const loadSharedPreferences = async (designerId: string) => {
     try {
@@ -193,7 +206,7 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
       expiresAt.setHours(expiresAt.getHours() + 24);
       
       const baseUrl = window.location.origin;
-      const shareLink = `${baseUrl}/analytics?clientToken=${token}&designerId=${user.id}`;
+      const shareLink = `${baseUrl}/client-hub?clientToken=${token}&designerId=${user.id}`;
       
       return shareLink;
     } catch (error) {
@@ -298,6 +311,8 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     attemptedSelection,
     viewOnlyMode,
     clientAccessMode,
+    clientToken,
+    designerId,
     ...calculateCompleteness(),
     getSelectionsByCategory,
     handleSelectDesign,

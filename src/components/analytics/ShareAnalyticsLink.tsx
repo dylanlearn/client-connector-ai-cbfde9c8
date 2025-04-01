@@ -15,7 +15,7 @@ const ShareAnalyticsLink = () => {
     const link = await generateClientShareLink();
     if (link) {
       setShareLink(link);
-      toast.success("Share link generated! It will expire in 24 hours.");
+      toast.success("Client hub link generated! It will expire in 24 hours.");
     }
   };
 
@@ -67,7 +67,7 @@ const ShareAnalyticsLink = () => {
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        This link gives temporary view-only access to your analytics for 24 hours.
+        This link gives your client access to the client hub for 24 hours to complete tasks and view their design journey.
       </p>
     </div>
   );
