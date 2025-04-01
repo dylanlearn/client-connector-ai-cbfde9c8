@@ -9,6 +9,8 @@ import {
   ClientTask, 
   TaskStatus 
 } from '@/utils/client-service';
+import { createRealtimeSubscription } from '@/utils/realtime-utils';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useClientHub() {
   const location = useLocation();
@@ -59,6 +61,63 @@ export function useClientHub() {
 
     validateAccess();
   }, [location.search]);
+
+  useEffect(() => {
+    if (!clientToken || !designerId || accessDenied) return;
+    
+    // Set up real-time subscription for task updates
+    const { unsubscribe } = createRealtimeSubscription(
+      'client-tasks-updates',
+      'client_tasks',
+      `link_id=in.(select id from client_access_links where token='${clientToken}' and designer_id='${designerId}')`, 
+      (payload) => {
+        console.log('Task updated in real-time:', payload);
+        
+        if (payload.new && tasks) {
+          // Update the tasks array with the new task
+          const taskId = payload.new.id;
+          const updatedTasks = tasks.map(task => 
+            task.id === taskId 
+              ? { 
+                  ...task, 
+                  status: payload.new.status as TaskStatus,
+                  completedAt: payload.new.completed_at ? new Date(payload.new.completed_at) : null,
+                  designerNotes: payload.new.designer_notes
+                }
+              : task
+          );
+          
+          setTasks(updatedTasks);
+          
+          // Update task status
+          if (payload.new.status === 'completed') {
+            const taskType = payload.new.task_type;
+            if (taskType in taskStatus) {
+              setTaskStatus(prev => ({
+                ...prev,
+                [taskType]: true
+              }));
+              
+              toast.success(`Task "${getTaskName(taskType)}" completed!`);
+            }
+          }
+        }
+      }
+    );
+    
+    return () => {
+      unsubscribe();
+    };
+  }, [clientToken, designerId, accessDenied, tasks]);
+
+  const getTaskName = (taskType: string): string => {
+    switch (taskType) {
+      case 'intakeForm': return 'Project Intake Form';
+      case 'designPicker': return 'Design Preferences';
+      case 'templates': return 'Templates';
+      default: return taskType;
+    }
+  };
 
   const loadClientTasks = async (token: string, designerId: string) => {
     setIsLoadingTasks(true);

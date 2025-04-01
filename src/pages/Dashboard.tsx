@@ -10,6 +10,7 @@ import { useDashboardTabs } from "@/hooks/use-dashboard-tabs";
 import OverviewTab from "@/components/dashboard/tabs/OverviewTab";
 import StatsTab from "@/components/dashboard/tabs/StatsTab";
 import TipsTab from "@/components/dashboard/tabs/TipsTab";
+import ClientsTab from "@/components/dashboard/tabs/ClientsTab";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -34,12 +35,17 @@ const Dashboard = () => {
       >
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="stats">Stats</TabsTrigger>
           <TabsTrigger value="tips">Tips</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" isLoading={loading && activeTab === "overview"}>
           <OverviewTab projects={projects} />
+        </TabsContent>
+
+        <TabsContent value="clients" isLoading={loading && activeTab === "clients"}>
+          <ClientsTab />
         </TabsContent>
 
         <TabsContent value="stats" isLoading={loading && activeTab === "stats"}>

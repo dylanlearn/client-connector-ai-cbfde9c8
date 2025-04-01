@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { UserPlus, RefreshCw, Share2 } from "lucide-react";
 import { getClientLinks, ClientAccessLink } from "@/utils/client-service";
+import { supabase } from "@/integrations/supabase/client";
 import ClientLinkDialog from "./ClientLinkDialog";
 import ClientLinksList from "./ClientLinksList";
 
@@ -18,6 +20,77 @@ export default function ClientsManager() {
   useEffect(() => {
     if (user) {
       loadClientLinks();
+      
+      // Set up real-time subscription for client links changes
+      const linksChannel = supabase.channel('public:client_access_links')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'client_access_links',
+            filter: `designer_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Client links changed:', payload);
+            // Reload links when changes occur
+            loadClientLinks();
+            
+            // Show toast notification based on the event
+            if (payload.eventType === 'INSERT') {
+              toast.info(`New client link created`);
+            } else if (payload.eventType === 'UPDATE') {
+              // Only show toast if status changed (e.g., from active to expired)
+              if ((payload.old as any).status !== (payload.new as any).status) {
+                toast.info(`Client link status changed to ${(payload.new as any).status}`);
+              }
+            }
+          }
+        )
+        .subscribe();
+        
+      // Set up real-time subscription for client tasks changes
+      const tasksChannel = supabase.channel('public:client_tasks')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'client_tasks',
+            filter: `status=eq.completed`
+          },
+          async (payload) => {
+            // We need to check if this task belongs to one of our clients
+            try {
+              const { data: linkData } = await supabase
+                .from('client_access_links')
+                .select('client_name, client_email')
+                .eq('id', (payload.new as any).link_id)
+                .eq('designer_id', user.id)
+                .single();
+                
+              if (linkData) {
+                const taskType = (payload.new as any).task_type;
+                const taskName = taskType === 'intakeForm' 
+                  ? 'Project Intake Form' 
+                  : taskType === 'designPicker' 
+                    ? 'Design Preferences' 
+                    : 'Template Selection';
+                
+                toast.success(`${linkData.client_name} completed ${taskName}`);
+              }
+            } catch (error) {
+              // Silently fail - likely means this task isn't related to this designer
+              console.log('Task update not relevant to current user');
+            }
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        supabase.removeChannel(linksChannel);
+        supabase.removeChannel(tasksChannel);
+      };
     }
   }, [user]);
   
