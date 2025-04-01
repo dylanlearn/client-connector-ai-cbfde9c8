@@ -10,7 +10,7 @@ const DashboardHeader = () => {
 
   return (
     <header className="border-b bg-white">
-      <div className="h-16 flex items-center justify-between px-4 md:px-6">
+      <div className="flex items-center justify-between px-4 md:px-6 h-16">
         <div className="flex items-center gap-4">
           <div className="block md:hidden">
             <SidebarTrigger />
