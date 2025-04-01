@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/use-projects";
 import { CreateProjectData } from "@/types/project";
+import { useAuth } from '@/hooks/use-auth-state';
 
 const projectTypes = [
   { value: "website", label: "Website" },
@@ -26,6 +27,7 @@ const NewProject = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { createProject } = useProjects();
+  const { user } = useAuth();
   
   const [projectName, setProjectName] = useState("");
   const [clientName, setClientName] = useState("");
@@ -49,6 +51,16 @@ const NewProject = () => {
         return;
       }
 
+      if (!user) {
+        toast({
+          title: "Authentication error",
+          description: "You must be logged in to create a project",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const projectData: CreateProjectData = {
         title: projectName,
         client_name: clientName,
@@ -57,7 +69,11 @@ const NewProject = () => {
         description: projectDescription || null,
       };
 
-      await createProject.mutateAsync(projectData);
+      await createProject.mutateAsync({
+        ...projectData,
+        user_id: user.id
+      });
+      
       navigate("/project-questionnaire");
     } catch (error) {
       console.error("Error creating project:", error);
