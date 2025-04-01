@@ -127,11 +127,14 @@ const handler = async (req: Request): Promise<Response> => {
           formattedPhone = `+${formattedPhone}`;
         }
         
+        console.log(`Sending SMS to ${formattedPhone} with link: ${clientHubLink}`);
+        
         // Send SMS using Twilio
         const message = await client.messages.create({
           body: `${linkData.client_name}, your designer has shared a project with you. Access your design hub here: ${clientHubLink}`,
           from: twilioPhone,
-          to: formattedPhone
+          to: formattedPhone,
+          statusCallback: `${supabaseUrl}/functions/v1/update-sms-status`
         });
         
         console.log("SMS sent successfully:", message.sid);

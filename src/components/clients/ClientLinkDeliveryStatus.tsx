@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, AlertTriangle, Check, Clock } from "lucide-react";
+import { Mail, Phone, AlertTriangle, Check, Clock, ExternalLink } from "lucide-react";
 import { getLinkDeliveries } from "@/utils/client-service";
 import { 
   Tooltip,
@@ -14,8 +14,18 @@ interface ClientLinkDeliveryStatusProps {
   linkId: string;
 }
 
+interface DeliveryInfo {
+  id: string;
+  delivery_type: 'email' | 'sms';
+  status: 'pending' | 'sent' | 'delivered' | 'error';
+  recipient: string;
+  sent_at: string | null;
+  delivered_at: string | null;
+  error_message: string | null;
+}
+
 export default function ClientLinkDeliveryStatus({ linkId }: ClientLinkDeliveryStatusProps) {
-  const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [deliveries, setDeliveries] = useState<DeliveryInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
@@ -61,19 +71,30 @@ export default function ClientLinkDeliveryStatus({ linkId }: ClientLinkDeliveryS
         const isPending = delivery.status === 'pending';
         const isError = delivery.status === 'error';
         const isSent = delivery.status === 'sent';
+        const isDelivered = delivery.status === 'delivered';
+        
+        // Determine the appropriate badge variant and icon
+        let badgeVariant: "destructive" | "default" | "secondary" | "outline" = "secondary";
+        let statusIcon = <Clock className="h-3 w-3" />;
+        
+        if (isError) {
+          badgeVariant = "destructive";
+          statusIcon = <AlertTriangle className="h-3 w-3" />;
+        } else if (isSent || isDelivered) {
+          badgeVariant = "default";
+          statusIcon = <Check className="h-3 w-3" />;
+        }
         
         return (
           <TooltipProvider key={delivery.id}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge 
-                  variant={isError ? "destructive" : isSent ? "default" : "secondary"}
+                  variant={badgeVariant}
                   className="flex items-center gap-1 text-xs cursor-help"
                 >
                   {isSms ? <Phone className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                  {isError ? <AlertTriangle className="h-3 w-3" /> : 
-                   isPending ? <Clock className="h-3 w-3" /> : 
-                   isSent ? <Check className="h-3 w-3" /> : null}
+                  {statusIcon}
                 </Badge>
               </TooltipTrigger>
               <TooltipContent>
@@ -82,10 +103,15 @@ export default function ClientLinkDeliveryStatus({ linkId }: ClientLinkDeliveryS
                     {isSms ? "SMS" : "Email"} {
                       isPending ? "Sending..." : 
                       isError ? "Failed" : 
+                      isDelivered ? "Delivered" :
                       isSent ? "Sent" : delivery.status
                     }
                   </p>
-                  {delivery.recipient && <p className="text-xs">{delivery.recipient}</p>}
+                  {delivery.recipient && (
+                    <p className="text-xs">
+                      To: {delivery.recipient}
+                    </p>
+                  )}
                   {isError && delivery.error_message && (
                     <p className="text-xs text-red-500 max-w-[200px] break-words">
                       Error: {delivery.error_message}
@@ -94,6 +120,11 @@ export default function ClientLinkDeliveryStatus({ linkId }: ClientLinkDeliveryS
                   {isSent && delivery.sent_at && (
                     <p className="text-xs">
                       Sent: {new Date(delivery.sent_at).toLocaleString()}
+                    </p>
+                  )}
+                  {isDelivered && delivery.delivered_at && (
+                    <p className="text-xs">
+                      Delivered: {new Date(delivery.delivered_at).toLocaleString()}
                     </p>
                   )}
                 </div>
