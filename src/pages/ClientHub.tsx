@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { validateClientToken, getClientTasks, updateTaskStatus, ClientTask } fro
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { TaskStatus } from '@/types/client';
 
 const ClientHubPage = () => {
   const location = useLocation();
@@ -129,7 +129,7 @@ const ClientHubPage = () => {
       if (tasks) {
         const updatedTasks = tasks.map(t => 
           t.id === taskObj.id 
-            ? { ...t, status: 'completed', completedAt: new Date() } 
+            ? { ...t, status: 'completed' as TaskStatus, completedAt: new Date() } 
             : t
         );
         setTasks(updatedTasks);

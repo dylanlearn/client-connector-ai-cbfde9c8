@@ -1,30 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-export interface ClientAccessLink {
-  id: string;
-  designerId: string;
-  clientEmail: string;
-  clientName: string;
-  token: string;
-  createdAt: Date;
-  expiresAt: Date;
-  lastAccessedAt: Date | null;
-  status: string;
-}
-
-export interface ClientTask {
-  id: string;
-  linkId: string;
-  taskType: 'intakeForm' | 'designPicker' | 'templates';
-  status: 'pending' | 'in_progress' | 'completed';
-  completedAt: Date | null;
-  designerNotes: string | null;
-  clientResponse: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { ClientAccessLink, ClientTask, TaskStatus } from "@/types/client";
 
 // Generate a unique token for client access
 const generateToken = () => {
@@ -113,16 +90,15 @@ export const validateClientToken = async (
       .select('id, expires_at, status')
       .eq('token', token)
       .eq('designer_id', designerId)
-      .eq('status', 'active')
-      .single();
+      .eq('status', 'active');
 
-    if (error || !data) {
+    if (error || !data || data.length === 0) {
       console.error('Error validating client token:', error);
       return false;
     }
 
     // Check if the link has expired
-    const expiresAt = new Date(data.expires_at);
+    const expiresAt = new Date(data[0].expires_at);
     if (expiresAt < new Date()) {
       console.log('Client access link has expired');
       return false;
@@ -132,7 +108,7 @@ export const validateClientToken = async (
     await supabase
       .from('client_access_links')
       .update({ last_accessed_at: new Date().toISOString() })
-      .eq('id', data.id);
+      .eq('id', data[0].id);
 
     return true;
   } catch (error) {
@@ -152,10 +128,9 @@ export const getClientTasks = async (
       .from('client_access_links')
       .select('id')
       .eq('token', token)
-      .eq('designer_id', designerId)
-      .single();
+      .eq('designer_id', designerId);
 
-    if (linkError || !linkData) {
+    if (linkError || !linkData || linkData.length === 0) {
       console.error('Error getting client link:', linkError);
       return null;
     }
@@ -164,7 +139,7 @@ export const getClientTasks = async (
     const { data, error } = await supabase
       .from('client_tasks')
       .select('*')
-      .eq('link_id', linkData.id);
+      .eq('link_id', linkData[0].id);
 
     if (error) {
       console.error('Error getting client tasks:', error);
@@ -174,8 +149,8 @@ export const getClientTasks = async (
     return data.map(task => ({
       id: task.id,
       linkId: task.link_id,
-      taskType: task.task_type,
-      status: task.status,
+      taskType: task.task_type as 'intakeForm' | 'designPicker' | 'templates',
+      status: task.status as TaskStatus,
       completedAt: task.completed_at ? new Date(task.completed_at) : null,
       designerNotes: task.designer_notes,
       clientResponse: task.client_response,
@@ -191,7 +166,7 @@ export const getClientTasks = async (
 // Update task status
 export const updateTaskStatus = async (
   taskId: string,
-  status: 'pending' | 'in_progress' | 'completed',
+  status: TaskStatus,
   clientResponse?: any
 ): Promise<boolean> => {
   try {
