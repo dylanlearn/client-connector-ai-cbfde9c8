@@ -1,42 +1,44 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const isMobile = useIsMobile();
+  const { signIn, isLoading, user } = useAuth();
+
+  // If user is already logged in, redirect to dashboard
+  if (user) {
+    return <Navigate to="/dashboard" />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Simulate login - replace with actual Supabase auth in the future
-      setTimeout(() => {
-        toast({
-          title: "Login successful",
-          description: "Welcome back to DezignSync!",
-        });
-        navigate("/dashboard");
-      }, 1500);
-    } catch (error) {
+    
+    if (!email || !password) {
       toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
+        title: "Missing fields",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      await signIn(email, password);
+    } catch (error) {
+      // Error is handled in the signIn function
+      console.error("Login error:", error);
     }
   };
 
