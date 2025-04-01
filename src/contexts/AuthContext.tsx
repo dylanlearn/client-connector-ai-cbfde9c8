@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User, Provider } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -11,6 +11,7 @@ type AuthContextType = {
   profile: any | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state change event:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -37,6 +39,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id);
           }, 0);
+        } else {
+          setProfile(null);
         }
       }
     );
@@ -58,9 +62,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // Using explicit type casting to avoid TypeScript errors with table names
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
-        .from('profiles' as any)
+        .from('profiles')
         .select("*")
         .eq("id", userId)
         .single();
@@ -70,6 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      console.log("Profile data retrieved:", data);
       setProfile(data);
     } catch (error) {
       console.error("Error in fetchUserProfile:", error);
@@ -102,6 +107,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error("Error signing in:", error);
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard',
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Google login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      // No need to navigate here, the OAuth redirect will handle it
+      // The auth state change listener will update the state
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
       setIsLoading(false);
     }
   };
@@ -172,6 +204,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         profile,
         isLoading,
         signIn,
+        signInWithGoogle,
         signUp,
         signOut
       }}
