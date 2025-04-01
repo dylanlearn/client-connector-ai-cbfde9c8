@@ -25,6 +25,7 @@ export const fetchUserProfile = async (userId: string) => {
 };
 
 export const getRedirectUrl = () => {
+  // Use the current origin to ensure it works in any environment
   const currentOrigin = window.location.origin;
   return `${currentOrigin}/dashboard`;
 };
