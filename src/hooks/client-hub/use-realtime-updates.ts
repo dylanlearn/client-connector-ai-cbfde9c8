@@ -67,11 +67,6 @@ export function useRealtimeUpdates(
               setRealtimeError(error instanceof Error ? error : new Error('Error processing realtime update'));
             }
           }
-        },
-        (error) => {
-          console.error("Realtime subscription error:", error);
-          setRealtimeError(error instanceof Error ? error : new Error('Realtime subscription error'));
-          setIsConnected(false);
         }
       );
       
