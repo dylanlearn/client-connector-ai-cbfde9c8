@@ -19,6 +19,7 @@ export type Database = {
           expires_at: string
           id: string
           last_accessed_at: string | null
+          project_id: string | null
           status: string
           token: string
         }
@@ -31,6 +32,7 @@ export type Database = {
           expires_at: string
           id?: string
           last_accessed_at?: string | null
+          project_id?: string | null
           status?: string
           token: string
         }
@@ -43,10 +45,19 @@ export type Database = {
           expires_at?: string
           id?: string
           last_accessed_at?: string | null
+          project_id?: string | null
           status?: string
           token?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_access_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_link_deliveries: {
         Row: {

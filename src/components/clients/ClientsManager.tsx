@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { UserPlus, RefreshCw, Share2 } from "lucide-react";
-import { getClientLinks, ClientAccessLink } from "@/utils/client-service";
+import { UserPlus, RefreshCw } from "lucide-react";
+import { getClientLinks } from "@/utils/client-service";
 import { supabase } from "@/integrations/supabase/client";
 import ClientLinkDialog from "./ClientLinkDialog";
 import ClientLinksList from "./ClientLinksList";
 import { setupRealtimeForClientTables } from "@/utils/realtime-utils";
+import { ClientAccessLink } from "@/types/client";
 
 export default function ClientsManager() {
   const { user } = useAuth();

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClientAccessLink } from "@/types/client";
@@ -154,7 +153,17 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
     const { data, error } = await supabase
       .from('client_access_links')
       .select(`
-        *,
+        id,
+        designer_id,
+        project_id,
+        client_name,
+        client_email,
+        client_phone,
+        token,
+        created_at,
+        expires_at,
+        last_accessed_at,
+        status,
         projects:project_id (
           title
         )
