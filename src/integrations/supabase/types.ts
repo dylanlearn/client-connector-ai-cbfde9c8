@@ -9,6 +9,72 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      design_analytics: {
+        Row: {
+          average_rank: number
+          category: string
+          design_option_id: string
+          id: string
+          selection_count: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          average_rank: number
+          category: string
+          design_option_id: string
+          id?: string
+          selection_count?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          average_rank?: number
+          category?: string
+          design_option_id?: string
+          id?: string
+          selection_count?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      design_preferences: {
+        Row: {
+          category: string
+          created_at: string
+          design_option_id: string
+          id: string
+          notes: string | null
+          rank: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          design_option_id: string
+          id?: string
+          notes?: string | null
+          rank?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          design_option_id?: string
+          id?: string
+          notes?: string | null
+          rank?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

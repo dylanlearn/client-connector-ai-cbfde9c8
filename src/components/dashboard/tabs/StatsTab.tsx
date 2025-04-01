@@ -5,10 +5,35 @@ import { BarChart3, LayoutGrid, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PreferenceOverview from "@/components/analytics/PreferenceOverview";
+import TopRankedDesigns from "@/components/analytics/TopRankedDesigns";
+import CategoryDistribution from "@/components/analytics/CategoryDistribution";
+import { useAnalytics } from "@/hooks/use-analytics";
 
 const StatsTab = () => {
   const navigate = useNavigate();
-  const hasStats = false; // This would normally come from a hook or context
+  const { analytics, isLoading } = useAnalytics();
+  const hasStats = !isLoading && analytics && analytics.length > 0;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Statistics</CardTitle>
+          <CardDescription>
+            Overview of your activity and engagement
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6 py-4">
+            <div className="h-4 w-1/3 bg-muted animate-pulse rounded"></div>
+            <div className="h-24 w-full bg-muted animate-pulse rounded"></div>
+            <div className="h-4 w-1/2 bg-muted animate-pulse rounded"></div>
+            <div className="h-24 w-full bg-muted animate-pulse rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!hasStats) {
     return (
@@ -47,53 +72,21 @@ const StatsTab = () => {
       </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
+        <Card className="h-[300px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">Top Ranked Elements</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="bg-amber-100 p-2 rounded-full">
-                  <Star className="h-4 w-4 text-amber-500" />
-                </div>
-                <span className="text-sm font-medium">Modern Hero #3</span>
-              </div>
-              <span className="text-sm text-muted-foreground">Ranked #1 (12×)</span>
-            </div>
-            <Button 
-              variant="link" 
-              size="sm" 
-              onClick={() => navigate("/analytics")}
-              className="mt-4 px-0"
-            >
-              View all rankings
-            </Button>
+          <CardContent className="h-[calc(300px-70px)]">
+            <TopRankedDesigns />
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="h-[300px]">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Category Breakdown</CardTitle>
+            <CardTitle className="text-base font-medium">Category Distribution</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="bg-purple-100 p-2 rounded-full">
-                  <LayoutGrid className="h-4 w-4 text-purple-500" />
-                </div>
-                <span className="text-sm font-medium">Hero Sections</span>
-              </div>
-              <span className="text-sm text-muted-foreground">32% preference</span>
-            </div>
-            <Button 
-              variant="link" 
-              size="sm" 
-              onClick={() => navigate("/analytics")}
-              className="mt-4 px-0"
-            >
-              View full breakdown
-            </Button>
+          <CardContent className="h-[calc(300px-70px)]">
+            <CategoryDistribution />
           </CardContent>
         </Card>
       </div>

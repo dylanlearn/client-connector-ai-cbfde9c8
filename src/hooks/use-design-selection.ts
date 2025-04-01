@@ -2,10 +2,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DesignOption } from "@/components/design/VisualPicker";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 export type RankedDesignOption = DesignOption & {
-  rank?: number;
-  notes?: string;
+  rank?: number | null;
+  notes?: string | null;
 };
 
 export const useDesignSelection = (maxSelectionsByCategory: Record<string, number>) => {
@@ -13,6 +15,7 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
   const [selectionLimitReached, setSelectionLimitReached] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [attemptedSelection, setAttemptedSelection] = useState<DesignOption | null>(null);
+  const { user } = useAuth();
 
   // Count selections by category
   const getSelectionsByCategory = () => {
@@ -23,6 +26,97 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     });
     
     return countByCategory;
+  };
+
+  // Function to load saved design preferences from Supabase
+  const loadSavedPreferences = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('design_preferences')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error loading design preferences:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const loadedDesigns: Record<string, RankedDesignOption> = {};
+        
+        data.forEach(item => {
+          loadedDesigns[item.id] = {
+            id: item.design_option_id,
+            title: item.title,
+            description: "",
+            imageUrl: "",
+            category: item.category,
+            rank: item.rank,
+            notes: item.notes
+          };
+        });
+        
+        setSelectedDesigns(loadedDesigns);
+        toast.info(`Loaded ${data.length} saved design preferences`);
+      }
+    } catch (error) {
+      console.error('Error loading saved preferences:', error);
+    }
+  };
+
+  // Load saved preferences when user changes
+  useEffect(() => {
+    loadSavedPreferences();
+  }, [user?.id]);
+
+  // Function to save design preference to Supabase
+  const saveDesignPreference = async (designId: string, design: RankedDesignOption) => {
+    if (!user) {
+      toast.error('You must be logged in to save preferences');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('design_preferences')
+        .upsert({
+          id: designId,
+          user_id: user.id,
+          design_option_id: design.id as string,
+          category: design.category,
+          title: design.title,
+          rank: design.rank,
+          notes: design.notes
+        });
+
+      if (error) {
+        console.error('Error saving design preference:', error);
+        toast.error('Failed to save design preference');
+      }
+    } catch (error) {
+      console.error('Error in saveDesignPreference:', error);
+    }
+  };
+
+  // Function to delete design preference from Supabase
+  const deleteDesignPreference = async (designId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('design_preferences')
+        .delete()
+        .eq('id', designId);
+
+      if (error) {
+        console.error('Error removing design preference:', error);
+        toast.error('Failed to remove design preference');
+      }
+    } catch (error) {
+      console.error('Error in deleteDesignPreference:', error);
+    }
   };
 
   const handleSelectDesign = (option: DesignOption) => {
@@ -49,14 +143,19 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     
     // Add the new selection
     const newId = `${option.category}-${Date.now()}`;
+    const newDesign = {
+      ...option,
+      rank: null,
+      notes: ""
+    };
+    
     setSelectedDesigns(prev => ({
       ...prev,
-      [newId]: {
-        ...option,
-        rank: null,
-        notes: ""
-      }
+      [newId]: newDesign
     }));
+    
+    // Save to Supabase
+    saveDesignPreference(newId, newDesign);
     
     toast.success(`Added ${option.category} design. ${maxForCategory - currentCategoryCount - 1} more ${option.category} selections available.`);
   };
@@ -74,12 +173,22 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     delete newSelections[designId];
     setSelectedDesigns(newSelections);
     
+    // Delete from Supabase
+    deleteDesignPreference(designId);
+    
     const selectionsByCategory = getSelectionsByCategory();
     const categoryCount = (selectionsByCategory[design.category] || 0) - 1;
     const maxForCategory = maxSelectionsByCategory[design.category] || 4;
     
     toast.info(`Removed ${design.category} design. You can add ${maxForCategory - categoryCount} more.`);
   };
+
+  // Update Supabase when ranks or notes change
+  useEffect(() => {
+    Object.entries(selectedDesigns).forEach(([designId, design]) => {
+      saveDesignPreference(designId, design);
+    });
+  }, [selectedDesigns]);
 
   // Calculate total completeness across all categories
   const calculateCompleteness = () => {
