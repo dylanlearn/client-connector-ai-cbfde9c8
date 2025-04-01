@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +18,14 @@ const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
   const isPro = profile?.role === 'pro';
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [newQuestion, setNewQuestion] = useState('');
+
+  // Restore custom questions from form data when component mounts
+  useEffect(() => {
+    const savedCustomQuestions = form.getValues('customQuestions');
+    if (savedCustomQuestions && Array.isArray(savedCustomQuestions)) {
+      setCustomQuestions(savedCustomQuestions);
+    }
+  }, [form]);
 
   const addCustomQuestion = () => {
     if (newQuestion.trim()) {

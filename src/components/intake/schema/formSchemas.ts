@@ -24,6 +24,7 @@ export const ecommerceSchema = z.object({
   estimatedProducts: z.string().min(1, "Please specify how many products"),
   paymentProcessors: z.string().min(1, "Please specify payment processors"),
   shippingIntegration: z.boolean().default(false),
+  customQuestions: z.array(z.string()).optional(),
 });
 
 // Business specific schema
@@ -86,6 +87,7 @@ export const getDefaultValues = (siteType: string, formData: any) => {
         estimatedProducts: formData.estimatedProducts || "",
         paymentProcessors: formData.paymentProcessors || "",
         shippingIntegration: formData.shippingIntegration === undefined ? false : !!formData.shippingIntegration,
+        customQuestions: formData.customQuestions || [],
       };
     case "business":
       return {

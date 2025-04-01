@@ -22,6 +22,7 @@ export interface IntakeFormData {
   estimatedProducts?: string;
   paymentProcessors?: string;
   shippingIntegration?: boolean;
+  customQuestions?: string[];
   
   // Business specific
   serviceOfferings?: string;

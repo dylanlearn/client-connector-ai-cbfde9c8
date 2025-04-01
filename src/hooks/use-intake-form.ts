@@ -21,6 +21,18 @@ export function useIntakeForm() {
     setFormData(prev => ({ ...prev, ...data }));
   }, []);
 
+  // Clear form data (used after submission or manual reset)
+  const clearFormData = useCallback(() => {
+    localStorage.removeItem("intakeFormData");
+    localStorage.removeItem("intakeFormStep");
+    setFormData({});
+  }, []);
+  
+  // Check if the form has been started
+  const hasStartedForm = useCallback(() => {
+    return Object.keys(formData).length > 0;
+  }, [formData]);
+
   // Submit the complete form
   const submitForm = async () => {
     setIsLoading(true);
@@ -30,8 +42,8 @@ export function useIntakeForm() {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
       // Clear form data after successful submission
-      // localStorage.removeItem("intakeFormData");
-      // localStorage.removeItem("intakeFormStep");
+      // Commented out to allow for viewing results after submission
+      // clearFormData();
       
       return formData;
     } catch (error) {
@@ -46,6 +58,8 @@ export function useIntakeForm() {
     formData,
     updateFormData,
     submitForm,
+    clearFormData,
+    hasStartedForm,
     isLoading
   };
 }

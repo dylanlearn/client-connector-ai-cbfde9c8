@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SiteTypeStep from "@/components/intake/SiteTypeStep";
 import GeneralQuestionsStep from "@/components/intake/GeneralQuestionsStep";
 import SpecificQuestionsStep from "@/components/intake/SpecificQuestionsStep";
@@ -19,9 +20,17 @@ import { useIntakeForm } from "@/hooks/use-intake-form";
 const IntakeForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { formData, updateFormData, submitForm, isLoading } = useIntakeForm();
+  const { formData, updateFormData, submitForm, clearFormData, hasStartedForm, isLoading } = useIntakeForm();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+
+  // Check for existing form data and show resume dialog
+  useEffect(() => {
+    if (hasStartedForm() && localStorage.getItem("intakeFormStep")) {
+      setShowResumeDialog(true);
+    }
+  }, [hasStartedForm]);
 
   // Set the initial step based on saved progress
   useEffect(() => {
@@ -37,6 +46,20 @@ const IntakeForm = () => {
     // Scroll to top on step change
     window.scrollTo(0, 0);
   }, [currentStep]);
+
+  const handleStartNewForm = () => {
+    clearFormData();
+    setCurrentStep(1);
+    setShowResumeDialog(false);
+  };
+
+  const handleResumeForm = () => {
+    const savedStep = localStorage.getItem("intakeFormStep");
+    if (savedStep) {
+      setCurrentStep(parseInt(savedStep));
+    }
+    setShowResumeDialog(false);
+  };
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -86,6 +109,21 @@ const IntakeForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resume Previous Form?</AlertDialogTitle>
+            <AlertDialogDescription>
+              We found a previously started form. Would you like to resume where you left off or start a new form?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleStartNewForm}>Start New</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResumeForm}>Resume</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Project Intake Form</h1>
