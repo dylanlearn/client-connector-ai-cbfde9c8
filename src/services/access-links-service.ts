@@ -16,7 +16,8 @@ export const createClientAccessLink = async (
   clientEmail: string,
   clientName: string,
   clientPhone: string | null = null,
-  deliveryMethods: { email: boolean, sms: boolean } = { email: true, sms: false }
+  deliveryMethods: { email: boolean, sms: boolean } = { email: true, sms: false },
+  projectId: string | null = null
 ): Promise<{ link: string | null, linkId: string | null }> => {
   try {
     // Create an expiry date 7 days from now (changed from 14 days)
@@ -32,6 +33,7 @@ export const createClientAccessLink = async (
         client_email: clientEmail,
         client_name: clientName,
         client_phone: clientPhone,
+        project_id: projectId,
         token: token,
         expires_at: expiresAt.toISOString(),
         status: 'active'
@@ -151,7 +153,12 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
   try {
     const { data, error } = await supabase
       .from('client_access_links')
-      .select('*')
+      .select(`
+        *,
+        projects:project_id (
+          title
+        )
+      `)
       .eq('designer_id', designerId)
       .order('created_at', { ascending: false });
 
@@ -163,6 +170,8 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
     return data.map(link => ({
       id: link.id,
       designerId: link.designer_id,
+      projectId: link.project_id,
+      projectTitle: link.projects ? link.projects.title : null,
       clientName: link.client_name,
       clientEmail: link.client_email,
       clientPhone: link.client_phone,

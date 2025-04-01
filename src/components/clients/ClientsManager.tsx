@@ -74,7 +74,7 @@ export default function ClientsManager() {
             try {
               const { data: linkData } = await supabase
                 .from('client_access_links')
-                .select('client_name, client_email')
+                .select('client_name, client_email, project_id')
                 .eq('id', (payload.new as any).link_id)
                 .eq('designer_id', user.id)
                 .single();
@@ -87,7 +87,21 @@ export default function ClientsManager() {
                     ? 'Design Preferences' 
                     : 'Template Selection';
                 
-                toast.success(`${linkData.client_name} completed ${taskName}`);
+                let notificationMessage = `${linkData.client_name} completed ${taskName}`;
+                
+                if (linkData.project_id) {
+                  const { data: projectData } = await supabase
+                    .from('projects')
+                    .select('title')
+                    .eq('id', linkData.project_id)
+                    .single();
+                    
+                  if (projectData) {
+                    notificationMessage += ` for project "${projectData.title}"`;
+                  }
+                }
+                
+                toast.success(notificationMessage);
               }
             } catch (error) {
               // Silently fail - likely means this task isn't related to this designer
@@ -109,7 +123,7 @@ export default function ClientsManager() {
     if (!user) return;
     
     try {
-      // Use a direct database query instead of RPC function
+      // Use a direct database query with type assertion
       const { data, error } = await supabase
         .from('client_access_links')
         .update({ status: 'expired' })

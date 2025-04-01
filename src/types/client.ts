@@ -4,6 +4,8 @@ export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 export interface ClientAccessLink {
   id: string;
   designerId: string;
+  projectId: string | null;
+  projectTitle: string | null;
   clientName: string;
   clientEmail: string;
   clientPhone: string | null;

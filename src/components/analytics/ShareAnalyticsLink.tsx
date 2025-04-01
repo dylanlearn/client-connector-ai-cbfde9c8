@@ -8,6 +8,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { createClientAccessLink } from "@/utils/client-service";
+import { useProjects } from "@/hooks/use-projects";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 
 const ShareAnalyticsLink = () => {
   const [shareLink, setShareLink] = useState<string | null>(null);
@@ -17,7 +25,20 @@ const ShareAnalyticsLink = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const { projects, isLoading: isLoadingProjects } = useProjects();
+
+  // Prefill client information if a project is selected
+  useEffect(() => {
+    if (selectedProjectId) {
+      const selectedProject = projects.find(p => p.id === selectedProjectId);
+      if (selectedProject) {
+        setClientName(selectedProject.client_name);
+        setClientEmail(selectedProject.client_email);
+      }
+    }
+  }, [selectedProjectId, projects]);
 
   const handleGenerateLink = async () => {
     if (!user) {
@@ -36,7 +57,15 @@ const ShareAnalyticsLink = () => {
 
     setIsCreating(true);
     try {
-      const result = await createClientAccessLink(user.id, clientEmail, clientName);
+      const result = await createClientAccessLink(
+        user.id, 
+        clientEmail, 
+        clientName,
+        null,
+        { email: true, sms: false },
+        selectedProjectId
+      );
+      
       if (result && result.link) {
         setShareLink(result.link);
         setLinkId(result.linkId);
@@ -108,6 +137,41 @@ const ShareAnalyticsLink = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="project-select" className="text-right">
+                Project
+              </Label>
+              <div className="col-span-3">
+                <Select 
+                  value={selectedProjectId || ""} 
+                  onValueChange={(value) => setSelectedProjectId(value || null)}
+                >
+                  <SelectTrigger id="project-select">
+                    <SelectValue placeholder="Select a project (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingProjects ? (
+                      <SelectItem value="loading" disabled>Loading projects...</SelectItem>
+                    ) : projects.length === 0 ? (
+                      <SelectItem value="none" disabled>No projects available</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="">No project</SelectItem>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.title}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selecting a project will prefill client details
+                </p>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="client-name" className="text-right">
                 Name

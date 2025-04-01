@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,15 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Mail, Phone, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useProjects } from "@/hooks/use-projects";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Project } from "@/types/project";
 
 interface ClientLinkDialogProps {
   open: boolean;
@@ -32,6 +41,7 @@ export default function ClientLinkDialog({
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [deliveryMethods, setDeliveryMethods] = useState<{email: boolean, sms: boolean}>({
     email: true,
     sms: false
@@ -39,6 +49,7 @@ export default function ClientLinkDialog({
   const [isSending, setIsSending] = useState<{[key: string]: boolean}>({});
   const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
+  const { projects, isLoading: isLoadingProjects } = useProjects();
 
   const handleDeliveryMethodChange = (method: 'email' | 'sms', checked: boolean) => {
     setDeliveryMethods(prev => ({
@@ -46,6 +57,17 @@ export default function ClientLinkDialog({
       [method]: checked
     }));
   };
+
+  // Prefill client information if a project is selected
+  useEffect(() => {
+    if (selectedProjectId) {
+      const selectedProject = projects.find(p => p.id === selectedProjectId);
+      if (selectedProject) {
+        setClientName(selectedProject.client_name);
+        setClientEmail(selectedProject.client_email);
+      }
+    }
+  }, [selectedProjectId, projects]);
 
   const sendClientLink = async (linkId: string, type: 'email' | 'sms', recipient: string) => {
     setIsSending(prev => ({ ...prev, [type]: true }));
@@ -106,7 +128,8 @@ export default function ClientLinkDialog({
         clientEmail, 
         clientName, 
         clientPhone, 
-        deliveryMethods
+        deliveryMethods,
+        selectedProjectId
       );
       
       if (link && linkId) {
@@ -114,12 +137,16 @@ export default function ClientLinkDialog({
         const newLink: ClientAccessLink = {
           id: linkId,
           designerId: user.id,
+          projectId: selectedProjectId,
+          projectTitle: selectedProjectId 
+            ? projects.find(p => p.id === selectedProjectId)?.title || null 
+            : null,
           clientEmail,
           clientName,
           clientPhone: clientPhone || null,
           token: link.split("clientToken=")[1]?.split("&")[0] || "",
           createdAt: new Date(),
-          expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)), // Changed from 14 to 7 days
+          expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)),
           lastAccessedAt: null,
           status: "active"
         };
@@ -150,6 +177,7 @@ export default function ClientLinkDialog({
     setClientName("");
     setClientEmail("");
     setClientPhone("");
+    setSelectedProjectId(null);
     setDeliveryMethods({
       email: true,
       sms: false
@@ -171,6 +199,41 @@ export default function ClientLinkDialog({
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="project-select" className="text-right">
+              Project
+            </Label>
+            <div className="col-span-3">
+              <Select 
+                value={selectedProjectId || ""} 
+                onValueChange={(value) => setSelectedProjectId(value || null)}
+              >
+                <SelectTrigger id="project-select">
+                  <SelectValue placeholder="Select a project (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingProjects ? (
+                    <SelectItem value="loading" disabled>Loading projects...</SelectItem>
+                  ) : projects.length === 0 ? (
+                    <SelectItem value="none" disabled>No projects available</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="">No project</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Selecting a project will prefill client details
+              </p>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="client-name" className="text-right">
               Name

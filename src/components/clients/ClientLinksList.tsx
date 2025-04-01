@@ -1,43 +1,22 @@
-import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ArrowUpRight, 
-  Copy, 
-  MoreHorizontal, 
-  Check,
-  RefreshCcw,
-  Clock,
-  Mail,
-  Phone,
-  Trash,
-  Archive,
-  AlertCircle
-} from "lucide-react";
+
+import { useState } from "react";
 import { ClientAccessLink, resendClientLink } from "@/utils/client-service";
-import { formatDistanceToNow, format } from "date-fns";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { formatDistanceToNow } from "date-fns";
 import ClientLinkDeliveryStatus from "./ClientLinkDeliveryStatus";
+import { Copy, Send, Mail, Phone, Loader2, PlusCircle, Briefcase } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 interface ClientLinksListProps {
   links: ClientAccessLink[];
@@ -46,332 +25,201 @@ interface ClientLinksListProps {
 }
 
 export default function ClientLinksList({ links, isLoading, onRefresh }: ClientLinksListProps) {
-  const [expandedLink, setExpandedLink] = useState<string | null>(null);
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
-  const [resendingTo, setResendingTo] = useState<{[key: string]: boolean}>({});
-  const [dialogOpen, setDialogOpen] = useState<{id: string | null, action: 'remove' | 'finish' | null}>({
-    id: null,
-    action: null
-  });
+  const [sendingStatus, setSendingStatus] = useState<Record<string, {email?: boolean, sms?: boolean}>>({});
+  const navigate = useNavigate();
+
+  const handleCopyLink = async (token: string, designerId: string) => {
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
+    
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copied to clipboard");
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+      toast.error("Failed to copy link");
+    }
+  };
+  
+  const handleResendLink = async (linkId: string, type: 'email' | 'sms', recipient: string) => {
+    setSendingStatus(prev => ({
+      ...prev,
+      [linkId]: {
+        ...prev[linkId],
+        [type]: true
+      }
+    }));
+    
+    try {
+      const success = await resendClientLink(linkId, type, recipient);
+      
+      if (success) {
+        toast.success(`Link sent to client via ${type === 'email' ? 'email' : 'SMS'}`);
+        onRefresh();
+      } else {
+        throw new Error(`Failed to send link via ${type}`);
+      }
+    } catch (error) {
+      toast.error(`Failed to send link: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSendingStatus(prev => ({
+        ...prev,
+        [linkId]: {
+          ...prev[linkId],
+          [type]: false
+        }
+      }));
+    }
+  };
+
+  const handleCreateProject = () => {
+    navigate('/new-project');
+  };
 
   if (isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 3 }).map((_, index) => (
-          <Skeleton key={index} className="h-32 w-full" />
+          <div key={index} className="p-4 border rounded-lg">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     );
   }
-
+  
   if (links.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">No client links found in this category</p>
+      <div className="text-center py-10 border rounded-lg">
+        <div className="space-y-3">
+          <div className="bg-primary/10 h-12 w-12 rounded-full inline-flex items-center justify-center">
+            <PlusCircle className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="text-lg font-medium">No client links found</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Create a client portal link to share with your clients and track their progress.
+          </p>
+          <div className="pt-3">
+            <Button variant="outline" onClick={handleCreateProject}>
+              <Briefcase className="mr-2 h-4 w-4" />
+              Create a Project First
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
-
-  const generateClientHubLink = (link: ClientAccessLink): string => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/client-hub?clientToken=${link.token}&designerId=${link.designerId}`;
-  };
-
-  const copyToClipboard = (link: ClientAccessLink) => {
-    const hubLink = generateClientHubLink(link);
-    navigator.clipboard.writeText(hubLink);
-    setCopiedLink(link.id);
-    toast.success("Link copied to clipboard");
-    
-    setTimeout(() => {
-      setCopiedLink(null);
-    }, 2000);
-  };
-
-  const handleResend = async (link: ClientAccessLink, type: 'email' | 'sms', recipient: string) => {
-    setResendingTo(prev => ({ ...prev, [`${link.id}-${type}`]: true }));
-    
-    try {
-      const success = await resendClientLink(link.id, type, recipient);
-      
-      if (success) {
-        toast.success(`Link resent to client via ${type === 'email' ? 'email' : 'SMS'}`);
-        onRefresh();
-      } else {
-        throw new Error("Failed to resend link");
-      }
-    } catch (error) {
-      console.error(`Error resending link via ${type}:`, error);
-      toast.error(`Failed to resend link. Please try again.`);
-    } finally {
-      setResendingTo(prev => ({ ...prev, [`${link.id}-${type}`]: false }));
-    }
-  };
-
-  const toggleExpanded = (linkId: string) => {
-    setExpandedLink(prev => prev === linkId ? null : linkId);
-  };
-
-  const getLinkStatusColor = (link: ClientAccessLink): string => {
-    if (link.status !== 'active') {
-      return 'text-red-500 bg-red-50';
-    }
-    
-    const now = new Date();
-    const expiresIn = Math.ceil((link.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (expiresIn <= 3) {
-      return 'text-orange-500 bg-orange-50';
-    }
-    
-    return 'text-green-500 bg-green-50';
-  };
-
-  const handleRemoveClient = async (linkId: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_access_links')
-        .update({ status: 'deleted' })
-        .eq('id', linkId);
-      
-      if (error) throw error;
-      
-      toast.success("Client has been removed");
-      setDialogOpen({ id: null, action: null });
-      onRefresh();
-    } catch (error) {
-      console.error("Error removing client:", error);
-      toast.error("Failed to remove client");
-    }
-  };
-
-  const handleFinishClient = async (linkId: string) => {
-    try {
-      const { error } = await supabase
-        .from('client_access_links')
-        .update({ status: 'completed' })
-        .eq('id', linkId);
-      
-      if (error) throw error;
-      
-      toast.success("Client project marked as completed");
-      setDialogOpen({ id: null, action: null });
-      onRefresh();
-    } catch (error) {
-      console.error("Error completing client project:", error);
-      toast.error("Failed to complete client project");
-    }
-  };
-
+  
   return (
-    <>
-      <div className="space-y-4">
-        {links.map(link => (
-          <Card key={link.id} className="overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center">
-                    <h3 className="text-lg font-semibold truncate">{link.clientName}</h3>
-                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${getLinkStatusColor(link)}`}>
-                      {link.status === 'active' 
-                        ? `Expires in ${formatDistanceToNow(link.expiresAt)}`
-                        : link.status === 'completed'
-                          ? 'Completed'
-                          : link.status === 'deleted'
-                            ? 'Removed'
-                            : 'Expired'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground truncate">{link.clientEmail}</p>
+    <div className="border rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Client</TableHead>
+            <TableHead>Project</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Last Access</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {links.map((link) => (
+            <TableRow key={link.id}>
+              <TableCell>
+                <div>
+                  <div className="font-medium">{link.clientName}</div>
+                  <div className="text-sm text-muted-foreground">{link.clientEmail}</div>
                   {link.clientPhone && (
-                    <p className="text-sm text-muted-foreground truncate">{link.clientPhone}</p>
+                    <div className="text-sm text-muted-foreground">{link.clientPhone}</div>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Created {formatDistanceToNow(link.createdAt, { addSuffix: true })}
-                  </p>
                 </div>
-                
-                <div className="flex gap-2 shrink-0">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => copyToClipboard(link)}
-                    className="h-8 px-2"
+              </TableCell>
+              <TableCell>
+                {link.projectTitle ? (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" />
+                    {link.projectTitle}
+                  </Badge>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Not assigned</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <Badge 
+                  variant={link.status === 'active' ? 'default' : 'secondary'}
+                  className="capitalize"
+                >
+                  {link.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {formatDistanceToNow(link.createdAt, { addSuffix: true })}
+              </TableCell>
+              <TableCell>
+                {formatDistanceToNow(link.expiresAt, { addSuffix: true })}
+              </TableCell>
+              <TableCell>
+                {link.lastAccessedAt 
+                  ? formatDistanceToNow(link.lastAccessedAt, { addSuffix: true })
+                  : "Never"
+                }
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyLink(link.token, link.designerId)}
+                    title="Copy link"
                   >
-                    {copiedLink === link.id ? (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Copied
-                      </>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleResendLink(link.id, 'email', link.clientEmail)}
+                    disabled={!!sendingStatus[link.id]?.email}
+                    title="Send via email"
+                  >
+                    {sendingStatus[link.id]?.email ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-1" />
-                        Copy
-                      </>
+                      <Mail className="h-4 w-4" />
                     )}
                   </Button>
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open(generateClientHubLink(link), '_blank')}
-                    className="h-8 px-2"
-                    disabled={link.status !== 'active'}
-                  >
-                    <ArrowUpRight className="h-4 w-4 mr-1" />
-                    Open
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="h-8 w-8"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => toggleExpanded(link.id)}>
-                        {expandedLink === link.id ? "Hide details" : "View details"}
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      
-                      {link.status === 'active' && (
-                        <>
-                          <DropdownMenuLabel>Resend Link</DropdownMenuLabel>
-                          {link.clientEmail && (
-                            <DropdownMenuItem 
-                              onClick={() => handleResend(link, 'email', link.clientEmail)}
-                              disabled={resendingTo[`${link.id}-email`]}
-                            >
-                              {resendingTo[`${link.id}-email`] ? (
-                                <>
-                                  <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
-                                  Sending...
-                                </>
-                              ) : (
-                                <>
-                                  <Mail className="h-4 w-4 mr-2" />
-                                  Email
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          )}
-                          
-                          {link.clientPhone && (
-                            <DropdownMenuItem 
-                              onClick={() => handleResend(link, 'sms', link.clientPhone!)}
-                              disabled={resendingTo[`${link.id}-sms`]}
-                            >
-                              {resendingTo[`${link.id}-sms`] ? (
-                                <>
-                                  <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
-                                  Sending...
-                                </>
-                              ) : (
-                                <>
-                                  <Phone className="h-4 w-4 mr-2" />
-                                  SMS
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          )}
-                          
-                          <DropdownMenuSeparator />
-                        </>
+                  {link.clientPhone && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleResendLink(link.id, 'sms', link.clientPhone!)}
+                      disabled={!!sendingStatus[link.id]?.sms}
+                      title="Send via SMS"
+                    >
+                      {sendingStatus[link.id]?.sms ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Phone className="h-4 w-4" />
                       )}
-                      
-                      <DropdownMenuLabel>Client Status</DropdownMenuLabel>
-                      <DropdownMenuItem 
-                        onClick={() => setDialogOpen({ id: link.id, action: 'finish' })}
-                        className="text-blue-600"
-                        disabled={link.status === 'completed' || link.status === 'deleted'}
-                      >
-                        <Archive className="h-4 w-4 mr-2" />
-                        Mark as Completed
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => setDialogOpen({ id: link.id, action: 'remove' })}
-                        className="text-red-600"
-                        disabled={link.status === 'deleted'}
-                      >
-                        <Trash className="h-4 w-4 mr-2" />
-                        Remove Client
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    </Button>
+                  )}
                 </div>
-              </div>
-              
-              {expandedLink === link.id && (
-                <div className="mt-4 pt-4 border-t">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Link Details</h4>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p>Created: {format(link.createdAt, 'PPpp')}</p>
-                        <p>Expires: {format(link.expiresAt, 'PPpp')}</p>
-                        {link.lastAccessedAt && (
-                          <p>Last accessed: {format(link.lastAccessedAt, 'PPpp')}</p>
-                        )}
-                        <p>Status: {link.status}</p>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Delivery Status</h4>
-                      <ClientLinkDeliveryStatus 
-                        linkId={link.id} 
-                        onResend={(type, recipient) => handleResend(link, type, recipient)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <AlertDialog 
-        open={!!dialogOpen.id} 
-        onOpenChange={(open) => !open && setDialogOpen({ id: null, action: null })}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {dialogOpen.action === 'remove' 
-                ? 'Remove Client' 
-                : 'Mark Project as Completed'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {dialogOpen.action === 'remove' 
-                ? 'Are you sure you want to remove this client? This action will delete their access to the client hub and all associated data.'
-                : 'Are you sure you want to mark this project as completed? The client will no longer be able to access the client hub.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (dialogOpen.action === 'remove' && dialogOpen.id) {
-                  handleRemoveClient(dialogOpen.id);
-                } else if (dialogOpen.action === 'finish' && dialogOpen.id) {
-                  handleFinishClient(dialogOpen.id);
-                }
-              }}
-              className={dialogOpen.action === 'remove' ? 'bg-red-600 hover:bg-red-700' : ''}
-            >
-              {dialogOpen.action === 'remove' ? 'Remove' : 'Complete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+                
+                <ClientLinkDeliveryStatus linkId={link.id} />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
