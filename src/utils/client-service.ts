@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClientAccessLink, ClientTask, TaskStatus } from "@/types/client";
+import { PostgrestError } from "@supabase/supabase-js";
 
 // Generate a unique token for client access
 const generateToken = () => {
@@ -58,19 +59,29 @@ export const createClientAccessLink = async (
 const createDefaultClientTasks = async (linkId: string): Promise<void> => {
   try {
     const defaultTasks = [
-      { task_type: 'intakeForm', designer_notes: 'Please complete the intake form to help us understand your project needs.' },
-      { task_type: 'designPicker', designer_notes: 'Select design elements that match your style preferences.' },
-      { task_type: 'templates', designer_notes: 'Browse our template marketplace for inspiration.' }
+      { 
+        link_id: linkId, 
+        task_type: 'intakeForm', 
+        designer_notes: 'Please complete the intake form to help us understand your project needs.',
+        status: 'pending'
+      },
+      { 
+        link_id: linkId, 
+        task_type: 'designPicker', 
+        designer_notes: 'Select design elements that match your style preferences.',
+        status: 'pending'
+      },
+      { 
+        link_id: linkId, 
+        task_type: 'templates', 
+        designer_notes: 'Browse our template marketplace for inspiration.',
+        status: 'pending'
+      }
     ];
     
     const { error } = await supabase
       .from('client_tasks')
-      .insert(defaultTasks.map(task => ({
-        link_id: linkId,
-        task_type: task.task_type,
-        designer_notes: task.designer_notes,
-        status: 'pending'
-      })));
+      .insert(defaultTasks);
 
     if (error) {
       console.error('Error creating default client tasks:', error);
