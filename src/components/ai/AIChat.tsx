@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Send, Lightbulb } from "lucide-react";
+import { MessageSquare, Send, Lightbulb, Bot } from "lucide-react";
 import { useAI, AIMessage } from "@/contexts/AIContext";
 
 interface AIChatProps {
@@ -37,19 +37,21 @@ const AIChat = ({
   };
 
   return (
-    <Card className={`flex flex-col h-full ${className}`}>
+    <Card className={`glass-card flex flex-col h-full backdrop-blur-lg ${className}`}>
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center text-lg font-semibold">
-          <MessageSquare className="h-5 w-5 mr-2" />
-          {title}
+          <div className="bg-gradient-primary p-2 rounded-full mr-3">
+            <Bot className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-gradient">{title}</span>
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="flex-grow overflow-auto pb-0">
+      <CardContent className="flex-grow overflow-auto pb-0 px-4 scrollbar-thin">
         <div className="space-y-4">
           {messages.length === 0 && initialMessage && (
-            <div className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg">
-              <div className="bg-blue-100 text-blue-700 p-2 rounded-full">
+            <div className="flex items-start gap-3 bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-100">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-2 rounded-full">
                 <Lightbulb className="h-4 w-4" />
               </div>
               <div className="text-sm text-blue-800">{initialMessage}</div>
@@ -61,16 +63,16 @@ const AIChat = ({
               key={message.id}
               className={`flex items-start gap-3 ${
                 message.role === "assistant"
-                  ? "bg-muted/50 p-3 rounded-lg"
+                  ? "bg-muted/30 p-4 rounded-lg backdrop-blur-sm border border-purple-100/20"
                   : ""
               }`}
             >
               <div
                 className={`${
                   message.role === "assistant"
-                    ? "bg-primary/10 text-primary"
-                    : "bg-blue-500 text-white"
-                } p-2 rounded-full flex-shrink-0`}
+                    ? "bg-gradient-to-r from-[#8439e9] to-[#6142e7] text-white"
+                    : "bg-gradient-to-r from-[#ee682b] to-[#8439e9] text-white"
+                } p-2 rounded-full flex-shrink-0 shadow-md`}
               >
                 {message.role === "assistant" ? (
                   <MessageSquare className="h-4 w-4" />
@@ -78,36 +80,36 @@ const AIChat = ({
                   <div className="w-4 h-4 flex items-center justify-center text-xs">U</div>
                 )}
               </div>
-              <div className="text-sm">{message.content}</div>
+              <div className="text-sm leading-relaxed">{message.content}</div>
             </div>
           ))}
           
           {isProcessing && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg backdrop-blur-sm">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                <div className="w-2 h-2 bg-gradient-to-r from-[#ee682b] to-[#8439e9] rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                <div className="w-2 h-2 bg-gradient-to-r from-[#8439e9] to-[#6142e7] rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                <div className="w-2 h-2 bg-gradient-to-r from-[#6142e7] to-[#ee682b] rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
-              <span>Thinking...</span>
+              <span className="text-sm text-muted-foreground">Processing...</span>
             </div>
           )}
         </div>
       </CardContent>
       
-      <CardFooter className="pt-4">
+      <CardFooter className="pt-4 px-4">
         <div className="flex w-full gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="flex-grow min-h-[60px] resize-none"
+            className="flex-grow min-h-[60px] resize-none rounded-xl bg-muted/30 backdrop-blur-sm border-gradient focus-visible:ring-1 focus-visible:ring-primary"
           />
           <Button
             onClick={handleSend}
             disabled={isProcessing || input.trim() === ""}
-            className="self-end"
+            className="self-end button-gradient rounded-xl"
           >
             <Send className="h-4 w-4" />
           </Button>

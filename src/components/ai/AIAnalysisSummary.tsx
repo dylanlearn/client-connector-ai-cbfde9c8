@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AIAnalysis } from "@/contexts/AIContext";
-import { MessageSquare, Zap, Smile, Frown } from "lucide-react";
+import { MessageSquare, Zap, Smile, Frown, Lightbulb } from "lucide-react";
 
 interface AIAnalysisSummaryProps {
   analysis: AIAnalysis;
@@ -46,11 +46,13 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
   };
 
   return (
-    <Card className={`${className}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-primary" />
-          AI Analysis Summary
+    <Card className={`glass-card ${className}`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <div className="bg-gradient-primary p-2 rounded-full">
+            <MessageSquare className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-gradient">AI Analysis Summary</span>
         </CardTitle>
         <CardDescription>
           Based on client responses and communication style
@@ -75,7 +77,7 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div
-                      className="bg-primary h-1.5 rounded-full"
+                      className="bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] h-1.5 rounded-full"
                       style={{ width: `${value * 100}%` }}
                     ></div>
                   </div>
@@ -98,12 +100,12 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
-                  className={`h-1.5 rounded-full ${
+                  className={`h-1.5 rounded-full bg-gradient-to-r ${
                     clarity > 0.7
-                      ? "bg-green-500"
+                      ? "from-[#8439e9] to-[#6142e7]"
                       : clarity > 0.4
-                      ? "bg-amber-500"
-                      : "bg-red-500"
+                      ? "from-[#ee682b] to-[#8439e9]"
+                      : "from-red-500 to-[#ee682b]"
                   }`}
                   style={{ width: `${clarity * 100}%` }}
                 ></div>
