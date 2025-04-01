@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -6,12 +5,19 @@ import {
   LayoutGrid,
   Heading1, 
   Navigation,
-  AlertCircle
+  AlertCircle,
+  X,
+  Check,
+  Star,
+  Edit,
+  Save
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import VisualPicker, { DesignOption } from "@/components/design/VisualPicker";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -24,7 +30,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Expanded design options with 8 for each category
+type RankedDesignOption = DesignOption & {
+  rank?: number;
+  notes?: string;
+};
+
 const designOptions: DesignOption[] = [
   // Hero section options
   {
@@ -318,18 +328,20 @@ const designOptions: DesignOption[] = [
 ];
 
 const DesignPicker = () => {
-  const [selectedDesigns, setSelectedDesigns] = useState<Record<string, DesignOption>>({});
+  const [selectedDesigns, setSelectedDesigns] = useState<Record<string, RankedDesignOption>>({});
   const [activeCategory, setActiveCategory] = useState<DesignOption["category"]>("hero");
   const [selectionLimitReached, setSelectionLimitReached] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [attemptedSelection, setAttemptedSelection] = useState<DesignOption | null>(null);
+  const [editingRank, setEditingRank] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState<string | null>(null);
+  const [tempRank, setTempRank] = useState<number | null>(null);
+  const [tempNotes, setTempNotes] = useState<string>("");
   const navigate = useNavigate();
 
-  // Maximum number of selections allowed
   const MAX_SELECTIONS = 4;
 
   const handleSelectDesign = (option: DesignOption) => {
-    // Check if we're already at the limit and this is a new category
     if (
       Object.keys(selectedDesigns).length >= MAX_SELECTIONS && 
       !selectedDesigns[option.category]
@@ -339,16 +351,18 @@ const DesignPicker = () => {
       return;
     }
     
-    // If replacing an existing selection in the same category, allow it
     setSelectedDesigns(prev => ({
       ...prev,
-      [option.category]: option
+      [option.category]: {
+        ...option,
+        rank: prev[option.category]?.rank || null,
+        notes: prev[option.category]?.notes || ""
+      }
     }));
   };
 
   const confirmReplaceSelection = () => {
     if (attemptedSelection) {
-      // Remove a random selection to make room for the new one
       const categories = Object.keys(selectedDesigns);
       if (categories.length > 0) {
         const randomCategory = categories[0];
@@ -368,18 +382,88 @@ const DesignPicker = () => {
   };
 
   const handleComplete = () => {
-    console.log("Selected designs:", selectedDesigns);
-    // Here you would typically save the selections and redirect
+    const unrankedSelections = Object.values(selectedDesigns).filter(design => !design.rank);
+    
+    if (unrankedSelections.length > 0) {
+      toast.error("Please rank all your selections before continuing");
+      return;
+    }
+    
+    console.log("Selected designs with ranks and notes:", selectedDesigns);
     toast.success("Your design selections have been saved!");
     navigate("/dashboard");
   };
 
-  // Calculate progress
+  const handleRemoveDesign = (category: string) => {
+    const newSelections = { ...selectedDesigns };
+    delete newSelections[category];
+    setSelectedDesigns(newSelections);
+    toast.info(`Removed ${category} design. You can add ${MAX_SELECTIONS - Object.keys(newSelections).length} more.`);
+  };
+
+  const startEditRank = (category: string) => {
+    setEditingRank(category);
+    setTempRank(selectedDesigns[category]?.rank || null);
+  };
+
+  const startEditNotes = (category: string) => {
+    setEditingNotes(category);
+    setTempNotes(selectedDesigns[category]?.notes || "");
+  };
+
+  const saveRank = () => {
+    if (editingRank && tempRank) {
+      const designWithSameRank = Object.entries(selectedDesigns).find(
+        ([cat, design]) => cat !== editingRank && design.rank === tempRank
+      );
+
+      if (designWithSameRank) {
+        const [swappedCategory, swappedDesign] = designWithSameRank;
+        setSelectedDesigns(prev => ({
+          ...prev,
+          [editingRank]: {
+            ...prev[editingRank],
+            rank: tempRank
+          },
+          [swappedCategory]: {
+            ...prev[swappedCategory],
+            rank: prev[editingRank]?.rank || null
+          }
+        }));
+        
+        toast.info(`Swapped rank ${tempRank} between ${editingRank} and ${swappedCategory}`);
+      } else {
+        setSelectedDesigns(prev => ({
+          ...prev,
+          [editingRank]: {
+            ...prev[editingRank],
+            rank: tempRank
+          }
+        }));
+      }
+    }
+    setEditingRank(null);
+    setTempRank(null);
+  };
+
+  const saveNotes = () => {
+    if (editingNotes) {
+      setSelectedDesigns(prev => ({
+        ...prev,
+        [editingNotes]: {
+          ...prev[editingNotes],
+          notes: tempNotes
+        }
+      }));
+    }
+    setEditingNotes(null);
+    setTempNotes("");
+  };
+
   const totalCategories = Array.from(new Set(designOptions.map(option => option.category))).length;
   const completedCategories = Object.keys(selectedDesigns).length;
   const progress = (completedCategories / MAX_SELECTIONS) * 100;
 
-  // Check if we've reached the selection limit
   useEffect(() => {
     setSelectionLimitReached(Object.keys(selectedDesigns).length >= MAX_SELECTIONS);
   }, [selectedDesigns]);
@@ -392,6 +476,10 @@ const DesignPicker = () => {
     font: <span className="text-xl font-bold">Aa</span>
   };
 
+  const usedRanks = Object.values(selectedDesigns)
+    .map(design => design.rank)
+    .filter(rank => !!rank) as number[];
+
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="text-center mb-8">
@@ -400,7 +488,6 @@ const DesignPicker = () => {
           Swipe to select your preferred design elements (max 4 selections)
         </p>
         
-        {/* Progress bar */}
         <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
           <div 
             className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out"
@@ -494,19 +581,101 @@ const DesignPicker = () => {
         </Button>
       </div>
 
-      {/* Selected designs summary */}
       {completedCategories > 0 && (
         <div className="mt-8 p-4 border rounded-lg bg-muted/50">
-          <h3 className="font-medium mb-2">Your selections ({completedCategories}/{MAX_SELECTIONS}):</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h3 className="font-medium mb-4">Your Ranked Selections ({completedCategories}/{MAX_SELECTIONS}):</h3>
+          <div className="space-y-4">
             {Object.entries(selectedDesigns).map(([category, design]) => (
-              <div key={design.id} className="flex items-center gap-3 p-2 bg-background rounded border">
-                <div className="w-10 h-10 flex items-center justify-center bg-primary/10 rounded">
-                  {categoryIcons[category as keyof typeof categoryIcons]}
+              <div key={design.id} className="bg-background rounded border overflow-hidden">
+                <div className="flex items-center border-b p-2">
+                  <div className="w-10 h-10 flex items-center justify-center bg-primary/10 rounded mr-3">
+                    {categoryIcons[category as keyof typeof categoryIcons]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{design.title}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{category}</p>
+                  </div>
+                  
+                  <div className="flex items-center ml-4">
+                    {editingRank === category ? (
+                      <div className="flex items-center gap-2">
+                        <select 
+                          value={tempRank || ""} 
+                          onChange={(e) => setTempRank(parseInt(e.target.value))}
+                          className="w-16 h-8 rounded border px-2 text-sm"
+                        >
+                          <option value="">Rank</option>
+                          {[1, 2, 3, 4].map(rank => (
+                            <option 
+                              key={rank} 
+                              value={rank}
+                              disabled={usedRanks.includes(rank) && design.rank !== rank}
+                            >
+                              {rank}
+                            </option>
+                          ))}
+                        </select>
+                        <Button size="icon" variant="ghost" onClick={saveRank} className="h-8 w-8">
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        {design.rank ? (
+                          <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded mr-2">
+                            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                            <span className="font-bold">{design.rank}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground mr-2">Not ranked</span>
+                        )}
+                        <Button size="icon" variant="ghost" onClick={() => startEditRank(category)} className="h-8 w-8">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    <Button size="icon" variant="ghost" className="text-red-500 h-8 w-8 ml-2" onClick={() => handleRemoveDesign(category)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{design.title}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{category}</p>
+                
+                <div className="p-3 bg-muted/30">
+                  {editingNotes === category ? (
+                    <div className="space-y-2">
+                      <Textarea 
+                        placeholder="Add notes about this design..." 
+                        value={tempNotes}
+                        onChange={(e) => setTempNotes(e.target.value)}
+                        className="min-h-[80px] text-sm"
+                      />
+                      <div className="flex justify-end">
+                        <Button size="sm" variant="outline" onClick={() => setEditingNotes(null)} className="mr-2">
+                          Cancel
+                        </Button>
+                        <Button size="sm" onClick={saveNotes}>
+                          Save Notes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {design.notes ? (
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm whitespace-pre-line">{design.notes}</p>
+                          <Button size="icon" variant="ghost" onClick={() => startEditNotes(category)} className="h-8 w-8 ml-2 flex-shrink-0">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="ghost" size="sm" onClick={() => startEditNotes(category)} className="text-sm">
+                          <Edit className="h-3 w-3 mr-1" />
+                          Add Notes
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -514,7 +683,6 @@ const DesignPicker = () => {
         </div>
       )}
 
-      {/* Alert dialog for selection limit */}
       <AlertDialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
