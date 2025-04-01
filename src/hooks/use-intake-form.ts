@@ -18,31 +18,7 @@ export function useIntakeForm() {
 
   // Update form data (debounced to prevent excessive localStorage writes)
   const updateFormData = useCallback((data: Partial<IntakeFormData>) => {
-    setFormData(prev => {
-      // Handle boolean fields correctly
-      const updatedData: Partial<IntakeFormData> = { ...data };
-      
-      // Ensure boolean values are properly typed
-      for (const key in updatedData) {
-        if (typeof updatedData[key as keyof IntakeFormData] === 'string' && 
-            (key === 'userAccountsRequired' || 
-             key === 'freeTrialOffered' || 
-             key === 'shippingIntegration' || 
-             key === 'contactFormRequired' || 
-             key === 'hasPhysicalLocation' || 
-             key === 'resumeUploadRequired' ||
-             key === 'logoUpload' ||
-             key === 'existingBranding')) {
-          const value = updatedData[key as keyof IntakeFormData];
-          updatedData[key as keyof IntakeFormData] = 
-            value === 'true' ? true : 
-            value === 'false' ? false : 
-            Boolean(value);
-        }
-      }
-      
-      return { ...prev, ...updatedData };
-    });
+    setFormData(prev => ({ ...prev, ...data }));
   }, []);
 
   // Submit the complete form
