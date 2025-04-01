@@ -1,10 +1,17 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Mail, Phone, Loader2 } from "lucide-react";
+import { Copy, Mail, Phone, Loader2, MoreVertical } from "lucide-react";
 import { resendClientLink } from "@/utils/client-service";
 import { toast } from "sonner";
 import ClientLinkDeliveryStatus from "./ClientLinkDeliveryStatus";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 interface ClientLinkActionsProps {
   linkId: string;
@@ -24,6 +31,7 @@ export default function ClientLinkActions({
   onRefresh 
 }: ClientLinkActionsProps) {
   const [sendingStatus, setSendingStatus] = useState<{email?: boolean, sms?: boolean}>({});
+  const isMobile = useIsMobile();
 
   const handleCopyLink = async () => {
     const baseUrl = window.location.origin;
@@ -63,6 +71,54 @@ export default function ClientLinkActions({
     }
   };
 
+  // For mobile view use dropdown menu
+  if (isMobile) {
+    return (
+      <div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleCopyLink}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy link
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleResendLink('email', clientEmail)}
+              disabled={!!sendingStatus.email}
+            >
+              {sendingStatus.email ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4 mr-2" />
+              )}
+              Send email
+            </DropdownMenuItem>
+            {clientPhone && (
+              <DropdownMenuItem 
+                onClick={() => handleResendLink('sms', clientPhone)}
+                disabled={!!sendingStatus.sms}
+              >
+                {sendingStatus.sms ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Phone className="h-4 w-4 mr-2" />
+                )}
+                Send SMS
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <ClientLinkDeliveryStatus linkId={linkId} />
+      </div>
+    );
+  }
+
+  // Desktop view with buttons
   return (
     <div>
       <div className="flex justify-end gap-2">

@@ -5,6 +5,7 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
 import { Briefcase } from "lucide-react";
 import ClientLinkActions from "./ClientLinkActions";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ClientLinkRowProps {
   link: ClientAccessLink;
@@ -12,20 +13,22 @@ interface ClientLinkRowProps {
 }
 
 export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <TableRow>
       <TableCell>
         <div>
           <div className="font-medium">{link.clientName}</div>
-          <div className="text-sm text-muted-foreground">{link.clientEmail}</div>
+          <div className="text-sm text-muted-foreground truncate max-w-[200px]">{link.clientEmail}</div>
           {link.clientPhone && (
             <div className="text-sm text-muted-foreground">{link.clientPhone}</div>
           )}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className={isMobile ? "hidden sm:table-cell" : ""}>
         {link.projectTitle ? (
-          <Badge variant="outline" className="flex items-center gap-1">
+          <Badge variant="outline" className="flex items-center gap-1 whitespace-nowrap">
             <Briefcase className="h-3 w-3" />
             {link.projectTitle}
           </Badge>
@@ -41,13 +44,13 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
           {link.status}
         </Badge>
       </TableCell>
-      <TableCell>
+      <TableCell className="hidden md:table-cell">
         {formatDistanceToNow(link.createdAt, { addSuffix: true })}
       </TableCell>
-      <TableCell>
+      <TableCell className="hidden md:table-cell">
         {formatDistanceToNow(link.expiresAt, { addSuffix: true })}
       </TableCell>
-      <TableCell>
+      <TableCell className="hidden lg:table-cell">
         {link.lastAccessedAt 
           ? formatDistanceToNow(link.lastAccessedAt, { addSuffix: true })
           : "Never"

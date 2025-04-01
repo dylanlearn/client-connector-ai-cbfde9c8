@@ -10,6 +10,7 @@ import {
 import ClientLinkRow from "./ClientLinkRow";
 import ClientLinksEmptyState from "./ClientLinksEmptyState";
 import ClientLinksLoadingState from "./ClientLinksLoadingState";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ClientLinksListProps {
   links: ClientAccessLink[];
@@ -18,6 +19,8 @@ interface ClientLinksListProps {
 }
 
 export default function ClientLinksList({ links, isLoading, onRefresh }: ClientLinksListProps) {
+  const isMobile = useIsMobile();
+  
   if (isLoading) {
     return <ClientLinksLoadingState />;
   }
@@ -27,16 +30,16 @@ export default function ClientLinksList({ links, isLoading, onRefresh }: ClientL
   }
   
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-hidden overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Client</TableHead>
-            <TableHead>Project</TableHead>
+            <TableHead className="hidden sm:table-cell">Project</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Expires</TableHead>
-            <TableHead>Last Access</TableHead>
+            <TableHead className="hidden md:table-cell">Created</TableHead>
+            <TableHead className="hidden md:table-cell">Expires</TableHead>
+            <TableHead className="hidden lg:table-cell">Last Access</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>

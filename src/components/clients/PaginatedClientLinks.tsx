@@ -4,6 +4,7 @@ import { ClientAccessLink } from "@/types/client";
 import ClientLinksList from "./ClientLinksList";
 import ClientLinksEmptyState from "./ClientLinksEmptyState";
 import ClientLinksLoadingState from "./ClientLinksLoadingState";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { 
   Pagination, 
   PaginationContent, 
@@ -26,6 +27,7 @@ export default function PaginatedClientLinks({
   onRefresh 
 }: PaginatedClientLinksProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const isMobile = useIsMobile();
   const itemsPerPage = 10;
   
   // Handle loading and empty states
@@ -52,7 +54,7 @@ export default function PaginatedClientLinks({
   // Generate page numbers for pagination
   const generatePaginationItems = () => {
     const items = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = isMobile ? 3 : 5;
     
     // Always show first page
     items.push(
@@ -126,7 +128,7 @@ export default function PaginatedClientLinks({
       
       {totalPages > 1 && (
         <Pagination className="mt-4">
-          <PaginationContent>
+          <PaginationContent className="flex-wrap gap-2">
             <PaginationItem>
               <PaginationPrevious 
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -134,7 +136,15 @@ export default function PaginatedClientLinks({
               />
             </PaginationItem>
             
-            {generatePaginationItems()}
+            {!isMobile && generatePaginationItems()}
+            
+            {isMobile && (
+              <PaginationItem>
+                <span className="flex items-center justify-center h-9 px-3">
+                  {currentPage} / {totalPages}
+                </span>
+              </PaginationItem>
+            )}
             
             <PaginationItem>
               <PaginationNext 
