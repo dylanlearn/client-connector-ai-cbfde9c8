@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { useProjects } from "@/hooks/use-projects";
 import { CreateProjectData } from "@/types/project";
-import { useAuth } from '@/hooks/use-auth-state';
+import { useAuth } from '@/hooks/use-auth';
 
 const projectTypes = [
   { value: "website", label: "Website" },

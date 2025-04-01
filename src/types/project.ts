@@ -12,7 +12,8 @@ export interface Project {
   updated_at: string;
 }
 
-export type CreateProjectData = Omit<Project, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'status'> & {
+export type CreateProjectData = Omit<Project, 'id' | 'created_at' | 'updated_at'> & {
+  user_id: string;
   status?: Project['status'];
 };
 
