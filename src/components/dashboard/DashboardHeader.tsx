@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +13,7 @@ const DashboardHeader = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/login");
+    // No need to navigate here as the signOut function now handles the redirect
   };
 
   return (

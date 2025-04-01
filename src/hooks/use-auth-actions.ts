@@ -138,7 +138,7 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
       }
       
       setProfile(null);
-      navigate("/login");
+      navigate("/"); // Redirect to landing page instead of login
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
