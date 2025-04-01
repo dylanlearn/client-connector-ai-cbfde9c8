@@ -20,7 +20,15 @@ import { designOptions } from "@/data/design-options";
 const DesignPicker = () => {
   const [activeCategory, setActiveCategory] = useState<DesignOption["category"]>("hero");
   const navigate = useNavigate();
-  const MAX_SELECTIONS = 4;
+  
+  // Define selection limits by category
+  const selectionLimits = {
+    hero: 4,
+    navbar: 4,
+    about: 4,
+    footer: 4,
+    font: 2
+  };
 
   const {
     selectedDesigns,
@@ -28,11 +36,14 @@ const DesignPicker = () => {
     selectionLimitReached,
     showLimitDialog,
     setShowLimitDialog,
+    attemptedSelection,
     completedCategories,
+    maxSelections,
+    getSelectionsByCategory,
     handleSelectDesign,
     confirmReplaceSelection,
     handleRemoveDesign
-  } = useDesignSelection(MAX_SELECTIONS);
+  } = useDesignSelection(selectionLimits);
 
   const handleComplete = () => {
     const unrankedSelections = Object.values(selectedDesigns).filter(design => !design.rank);
@@ -55,11 +66,14 @@ const DesignPicker = () => {
     font: <span className="text-xl font-bold">Aa</span>
   };
 
+  // Get counts by category to display in the tabs
+  const selectionsByCategory = getSelectionsByCategory();
+
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <SelectionProgress 
         completedCategories={completedCategories} 
-        maxSelections={MAX_SELECTIONS}
+        maxSelections={maxSelections}
         selectionLimitReached={selectionLimitReached}
       />
 
@@ -67,23 +81,23 @@ const DesignPicker = () => {
         <TabsList className="grid grid-cols-5 mb-8">
           <TabsTrigger value="hero" className="flex flex-col items-center gap-1 py-3">
             {categoryIcons.hero}
-            <span className="text-xs">Hero</span>
+            <span className="text-xs">Hero {selectionsByCategory.hero || 0}/{selectionLimits.hero}</span>
           </TabsTrigger>
           <TabsTrigger value="navbar" className="flex flex-col items-center gap-1 py-3">
             {categoryIcons.navbar}
-            <span className="text-xs">Navbar</span>
+            <span className="text-xs">Navbar {selectionsByCategory.navbar || 0}/{selectionLimits.navbar}</span>
           </TabsTrigger>
           <TabsTrigger value="about" className="flex flex-col items-center gap-1 py-3">
             {categoryIcons.about}
-            <span className="text-xs">About</span>
+            <span className="text-xs">About {selectionsByCategory.about || 0}/{selectionLimits.about}</span>
           </TabsTrigger>
           <TabsTrigger value="footer" className="flex flex-col items-center gap-1 py-3">
             {categoryIcons.footer}
-            <span className="text-xs">Footer</span>
+            <span className="text-xs">Footer {selectionsByCategory.footer || 0}/{selectionLimits.footer}</span>
           </TabsTrigger>
           <TabsTrigger value="font" className="flex flex-col items-center gap-1 py-3">
             {categoryIcons.font}
-            <span className="text-xs">Fonts</span>
+            <span className="text-xs">Fonts {selectionsByCategory.font || 0}/{selectionLimits.font}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -132,9 +146,7 @@ const DesignPicker = () => {
         >
           {completedCategories === 0 ? 
             "Select at least one element" : 
-            completedCategories < MAX_SELECTIONS ? 
-              `Complete with ${completedCategories} selections` : 
-              "Complete Selection"}
+            "Complete Selection"}
         </Button>
       </div>
 
@@ -149,7 +161,8 @@ const DesignPicker = () => {
         open={showLimitDialog} 
         onOpenChange={setShowLimitDialog}
         onConfirm={confirmReplaceSelection}
-        maxSelections={MAX_SELECTIONS}
+        attemptedSelection={attemptedSelection}
+        maxSelectionsByCategory={selectionLimits}
       />
     </div>
   );

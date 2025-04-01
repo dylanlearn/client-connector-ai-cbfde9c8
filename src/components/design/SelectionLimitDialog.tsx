@@ -9,28 +9,35 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DesignOption } from "./VisualPicker";
 
 interface SelectionLimitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  maxSelections: number;
+  attemptedSelection: DesignOption | null;
+  maxSelectionsByCategory: Record<string, number>;
 }
 
 const SelectionLimitDialog = ({ 
   open, 
   onOpenChange, 
   onConfirm, 
-  maxSelections 
+  attemptedSelection,
+  maxSelectionsByCategory
 }: SelectionLimitDialogProps) => {
+  if (!attemptedSelection) return null;
+  
+  const maxForCategory = maxSelectionsByCategory[attemptedSelection.category] || 4;
+  
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Selection Limit Reached</AlertDialogTitle>
+          <AlertDialogTitle>Category Selection Limit Reached</AlertDialogTitle>
           <AlertDialogDescription>
-            You've already selected the maximum of {maxSelections} design elements. 
-            Please remove an existing selection first if you want to add a new one.
+            You've already selected the maximum of {maxForCategory} {attemptedSelection.category} elements.
+            Please remove an existing {attemptedSelection.category} selection first if you want to add a new one.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
