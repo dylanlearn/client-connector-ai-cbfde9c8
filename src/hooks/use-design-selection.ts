@@ -48,19 +48,27 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
         const loadedDesigns: Record<string, RankedDesignOption> = {};
         
         data.forEach((item: UserPreference) => {
-          loadedDesigns[item.id] = {
-            id: item.design_option_id,
-            title: item.title,
-            description: "",
-            imageUrl: "",
-            category: item.category,
-            rank: item.rank,
-            notes: item.notes
-          };
+          // Type validation to ensure category is one of the allowed values
+          const isValidCategory = ['hero', 'navbar', 'about', 'footer', 'font'].includes(item.category);
+          
+          if (isValidCategory) {
+            loadedDesigns[item.id] = {
+              id: item.design_option_id,
+              title: item.title,
+              description: "",
+              imageUrl: "",
+              // Cast the category to the specific union type
+              category: item.category as DesignOption["category"],
+              rank: item.rank,
+              notes: item.notes
+            };
+          } else {
+            console.warn(`Skipping invalid category: ${item.category}`);
+          }
         });
         
         setSelectedDesigns(loadedDesigns);
-        toast.info(`Loaded ${data.length} saved design preferences`);
+        toast.info(`Loaded ${Object.keys(loadedDesigns).length} saved design preferences`);
       }
     } catch (error) {
       console.error('Error loading saved preferences:', error);
