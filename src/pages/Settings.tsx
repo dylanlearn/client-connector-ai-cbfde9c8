@@ -19,6 +19,14 @@ const Settings = () => {
   const [role, setRole] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Enable realtime for the profiles table
+  useEffect(() => {
+    const enableRealtime = async () => {
+      await supabase.rpc('enable_realtime_for_table', { table_name: 'profiles' });
+    };
+    enableRealtime();
+  }, []);
+
   useEffect(() => {
     if (profile) {
       setName(profile.name || "");
@@ -54,6 +62,10 @@ const Settings = () => {
     }
   };
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
@@ -83,7 +95,7 @@ const Settings = () => {
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
               placeholder="Your name"
             />
           </div>

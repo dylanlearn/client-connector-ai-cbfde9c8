@@ -32,3 +32,15 @@ export const getRedirectUrl = () => {
 export const getEmailConfirmationRedirectUrl = () => {
   return "https://client-connector-ai.lovable.app/login?confirmed=true";
 };
+
+// Function to enable realtime updates on a table
+export const enableRealtimeForTable = async (tableName: string) => {
+  try {
+    await supabase.rpc('enable_realtime_for_table', { table_name: tableName });
+    console.log(`Realtime enabled for ${tableName}`);
+    return true;
+  } catch (error) {
+    console.error(`Error enabling realtime for ${tableName}:`, error);
+    return false;
+  }
+};
