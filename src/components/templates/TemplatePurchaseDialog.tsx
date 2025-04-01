@@ -9,14 +9,13 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { PurchaseFormValues } from "@/hooks/use-template-purchase";
 
 // Form validation schema
 const purchaseFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
 });
-
-type PurchaseFormValues = z.infer<typeof purchaseFormSchema>;
 
 interface TemplatePurchaseDialogProps {
   open: boolean;
@@ -28,16 +27,17 @@ interface TemplatePurchaseDialogProps {
     price: number;
   };
   onPurchaseComplete: (data: PurchaseFormValues & { guestUserId?: string }) => void;
+  isProcessing?: boolean;
 }
 
 const TemplatePurchaseDialog = ({ 
   open, 
   onOpenChange, 
   template, 
-  onPurchaseComplete 
+  onPurchaseComplete,
+  isProcessing = false
 }: TemplatePurchaseDialogProps) => {
   const { user } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Initialize the form with user data if available
   const form = useForm<PurchaseFormValues>({
@@ -49,17 +49,9 @@ const TemplatePurchaseDialog = ({
   });
 
   const onSubmit = async (data: PurchaseFormValues) => {
-    setIsProcessing(true);
-    
     try {
-      // In a real implementation, this would process payment via Stripe, etc.
-      // For this example, we'll just simulate a successful purchase
-      
       // Generate a UUID-like identifier for guest purchases
       const guestUserId = !user ? `guest_${Date.now()}_${Math.random().toString(36).substring(2, 15)}` : undefined;
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       onPurchaseComplete({
         ...data,
@@ -69,8 +61,6 @@ const TemplatePurchaseDialog = ({
       form.reset();
     } catch (error) {
       console.error("Error processing purchase:", error);
-    } finally {
-      setIsProcessing(false);
     }
   };
 

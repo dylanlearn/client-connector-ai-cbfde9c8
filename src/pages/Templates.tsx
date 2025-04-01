@@ -1,15 +1,13 @@
 
-import { useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import TemplatePurchaseDialog from "@/components/templates/TemplatePurchaseDialog";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import PublicTemplateMarketplace from "@/components/templates/PublicTemplateMarketplace";
 import TemplateGrid from "@/components/templates/TemplateGrid";
+import { useTemplatePurchase } from "@/hooks/use-template-purchase";
 
 // Mock template data - would be fetched from Supabase in production
 const mockTemplates = [
@@ -37,71 +35,15 @@ const mockTemplates = [
 ];
 
 const Templates = () => {
-  const { toast } = useToast();
   const { user } = useAuth();
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
-
-  const handlePurchaseClick = (template) => {
-    setSelectedTemplate(template);
-    setIsPurchaseDialogOpen(true);
-  };
-
-  const handlePurchaseComplete = async (purchaseData) => {
-    try {
-      // Rather than directly using the template_purchases table,
-      // we'll use a custom function for now to record the purchase
-      // This is a temporary workaround until we update the type definitions
-      
-      console.log("Recording purchase:", {
-        user_id: user?.id || purchaseData.guestUserId,
-        template_id: selectedTemplate.id,
-        price_paid: selectedTemplate.price,
-        customer_name: purchaseData.name,
-        customer_email: purchaseData.email,
-        transaction_id: `tr_${Date.now()}`
-      });
-      
-      // Using a direct fetch call to work around TypeScript limitations
-      // This bypasses the type checking that's causing the error
-      const response = await fetch(
-        `${process.env.SUPABASE_URL || "https://bmkhbqxukiakhafqllux.supabase.co"}/rest/v1/rpc/record_template_purchase`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJta2hicXh1a2lha2hhZnFsbHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0ODY2OTksImV4cCI6MjA1OTA2MjY5OX0.uqt5fokVkLgGQOlqF2BLiMgW4ZSy9gxkZXy35o97iXI",
-            'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token || "")}`,
-          },
-          body: JSON.stringify({
-            p_user_id: user?.id || purchaseData.guestUserId,
-            p_template_id: selectedTemplate.id,
-            p_price_paid: selectedTemplate.price,
-            p_transaction_id: `tr_${Date.now()}`
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to record purchase');
-      }
-
-      toast({
-        title: "Purchase Successful!",
-        description: `You now have access to the ${selectedTemplate.title} template.`,
-      });
-      
-      setIsPurchaseDialogOpen(false);
-    } catch (error) {
-      console.error("Purchase error:", error);
-      toast({
-        title: "Purchase Failed",
-        description: "There was a problem processing your purchase. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
+  const {
+    selectedTemplate,
+    isPurchaseDialogOpen,
+    isProcessing,
+    handlePurchaseClick,
+    handlePurchaseComplete,
+    setIsPurchaseDialogOpen
+  } = useTemplatePurchase();
 
   // Render different layouts based on authentication status
   if (!user) {
@@ -117,6 +59,7 @@ const Templates = () => {
             onOpenChange={setIsPurchaseDialogOpen}
             template={selectedTemplate}
             onPurchaseComplete={handlePurchaseComplete}
+            isProcessing={isProcessing}
           />
         )}
       </>
@@ -155,6 +98,7 @@ const Templates = () => {
           onOpenChange={setIsPurchaseDialogOpen}
           template={selectedTemplate}
           onPurchaseComplete={handlePurchaseComplete}
+          isProcessing={isProcessing}
         />
       )}
     </DashboardLayout>
