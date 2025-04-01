@@ -78,6 +78,74 @@ export type Database = {
         }
         Relationships: []
       }
+      template_purchases: {
+        Row: {
+          id: string
+          price_paid: number
+          purchase_date: string
+          template_id: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          price_paid: number
+          purchase_date?: string
+          template_id: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          price_paid?: number
+          purchase_date?: string
+          template_id?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_purchases_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          preview_image_url: string | null
+          price: number
+          status: Database["public"]["Enums"]["template_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          preview_image_url?: string | null
+          price: number
+          status?: Database["public"]["Enums"]["template_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          preview_image_url?: string | null
+          price?: number
+          status?: Database["public"]["Enums"]["template_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -89,8 +157,18 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      record_template_purchase: {
+        Args: {
+          p_user_id: string
+          p_template_id: string
+          p_price_paid: number
+          p_transaction_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
+      template_status: "active" | "archived" | "draft"
       user_role: "free" | "pro" | "template-buyer"
     }
     CompositeTypes: {
