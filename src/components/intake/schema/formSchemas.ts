@@ -7,6 +7,9 @@ export const baseSchema = {
   competitors: z.string().optional(),
 };
 
+// Create a proper Zod object for the base schema to use for type inference
+export const baseObjectSchema = z.object(baseSchema);
+
 // SaaS specific schema
 export const saasSchema = z.object({
   ...baseSchema,
@@ -51,7 +54,7 @@ export const getFormSchema = (siteType: string) => {
     case "portfolio":
       return portfolioSchema;
     default:
-      return z.object(baseSchema);
+      return baseObjectSchema;
   }
 };
 
@@ -60,7 +63,7 @@ export type SaasFormSchema = z.infer<typeof saasSchema>;
 export type EcommerceFormSchema = z.infer<typeof ecommerceSchema>;
 export type BusinessFormSchema = z.infer<typeof businessSchema>;
 export type PortfolioFormSchema = z.infer<typeof portfolioSchema>;
-export type BaseFormSchema = z.infer<typeof z.object(baseSchema)>;
+export type BaseFormSchema = z.infer<typeof baseObjectSchema>;
 
 // Get type-safe default values based on site type and existing data
 export const getDefaultValues = (siteType: string, formData: any) => {
