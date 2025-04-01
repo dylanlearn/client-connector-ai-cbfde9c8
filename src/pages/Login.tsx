@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, Navigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,17 +9,34 @@ import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [showConfirmationSuccess, setShowConfirmationSuccess] = useState(false);
   const isMobile = useIsMobile();
   const { signIn, signInWithGoogle, isLoading, user } = useAuth();
+
+  // Check if user just confirmed their email
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const confirmed = params.get('confirmed');
+    
+    if (confirmed === 'true') {
+      setShowConfirmationSuccess(true);
+      toast({
+        title: "Email confirmed",
+        description: "Your email has been successfully confirmed. You can now sign in.",
+        variant: "default",
+      });
+    }
+  }, [location.search, toast]);
 
   // If user is already logged in, redirect to dashboard
   if (user) {
@@ -79,6 +96,13 @@ const Login = () => {
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{googleError}</AlertDescription>
+              </Alert>
+            )}
+            
+            {showConfirmationSuccess && (
+              <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-green-700">Your email has been confirmed successfully. You can now sign in.</AlertDescription>
               </Alert>
             )}
             

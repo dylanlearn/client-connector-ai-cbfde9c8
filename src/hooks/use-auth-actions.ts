@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { getRedirectUrl } from "@/utils/auth-utils";
+import { getRedirectUrl, getEmailConfirmationRedirectUrl } from "@/utils/auth-utils";
 
 export const useAuthActions = (setProfile: (profile: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -85,6 +85,11 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
   const signUp = async (email: string, password: string, name: string) => {
     try {
       setIsLoading(true);
+      
+      // Use the email confirmation redirect URL for signup
+      const confirmationRedirectUrl = getEmailConfirmationRedirectUrl();
+      console.log("Email confirmation redirect URL:", confirmationRedirectUrl);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -92,6 +97,7 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
           data: {
             name,
           },
+          emailRedirectTo: confirmationRedirectUrl,
         },
       });
 
@@ -106,10 +112,10 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
 
       toast({
         title: "Account created",
-        description: "Welcome to DezignSync! You're all set to get started.",
+        description: "Please check your email to confirm your account.",
       });
       
-      navigate("/onboarding");
+      navigate("/signup/confirmation", { state: { email } });
     } catch (error) {
       console.error("Error signing up:", error);
     } finally {

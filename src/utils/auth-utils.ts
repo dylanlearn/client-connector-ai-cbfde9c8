@@ -28,3 +28,10 @@ export const getRedirectUrl = () => {
   const currentOrigin = window.location.origin;
   return `${currentOrigin}/dashboard`;
 };
+
+// Add a specific function for email confirmation redirect
+export const getEmailConfirmationRedirectUrl = () => {
+  // Use the current origin to ensure it works in any environment
+  const currentOrigin = window.location.origin;
+  return `${currentOrigin}/login?confirmed=true`;
+};
