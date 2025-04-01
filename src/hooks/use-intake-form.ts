@@ -2,10 +2,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { IntakeFormData } from "@/types/intake-form";
 
+// The key used for storing form data in localStorage
+const STORAGE_KEY_FORM_DATA = "intakeFormData";
+const STORAGE_KEY_FORM_STEP = "intakeFormStep";
+
 export function useIntakeForm() {
   const [formData, setFormData] = useState<IntakeFormData>(() => {
     // Initialize from localStorage if available
-    const savedData = localStorage.getItem("intakeFormData");
+    const savedData = localStorage.getItem(STORAGE_KEY_FORM_DATA);
     return savedData ? JSON.parse(savedData) : {};
   });
   
@@ -13,18 +17,18 @@ export function useIntakeForm() {
 
   // Save form data to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("intakeFormData", JSON.stringify(formData));
+    localStorage.setItem(STORAGE_KEY_FORM_DATA, JSON.stringify(formData));
   }, [formData]);
 
-  // Update form data (debounced to prevent excessive localStorage writes)
+  // Update form data
   const updateFormData = useCallback((data: Partial<IntakeFormData>) => {
     setFormData(prev => ({ ...prev, ...data }));
   }, []);
 
   // Clear form data (used after submission or manual reset)
   const clearFormData = useCallback(() => {
-    localStorage.removeItem("intakeFormData");
-    localStorage.removeItem("intakeFormStep");
+    localStorage.removeItem(STORAGE_KEY_FORM_DATA);
+    localStorage.removeItem(STORAGE_KEY_FORM_STEP);
     setFormData({});
   }, []);
   
@@ -32,6 +36,22 @@ export function useIntakeForm() {
   const hasStartedForm = useCallback(() => {
     return Object.keys(formData).length > 0;
   }, [formData]);
+
+  // Get the current form step from localStorage
+  const getSavedStep = useCallback(() => {
+    const savedStep = localStorage.getItem(STORAGE_KEY_FORM_STEP);
+    return savedStep ? parseInt(savedStep) : 1;
+  }, []);
+
+  // Save the current form step to localStorage
+  const saveCurrentStep = useCallback((step: number) => {
+    localStorage.setItem(STORAGE_KEY_FORM_STEP, step.toString());
+  }, []);
+
+  // Check if there's a form in progress
+  const hasInProgressForm = useCallback(() => {
+    return hasStartedForm() && localStorage.getItem(STORAGE_KEY_FORM_STEP) !== null;
+  }, [hasStartedForm]);
 
   // Submit the complete form
   const submitForm = async () => {
@@ -60,6 +80,9 @@ export function useIntakeForm() {
     submitForm,
     clearFormData,
     hasStartedForm,
-    isLoading
+    isLoading,
+    getSavedStep,
+    saveCurrentStep,
+    hasInProgressForm
   };
 }

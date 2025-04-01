@@ -16,36 +16,52 @@ import SpecificQuestionsStep from "@/components/intake/SpecificQuestionsStep";
 import DesignPreferencesStep from "@/components/intake/DesignPreferencesStep";
 import CompletionStep from "@/components/intake/CompletionStep";
 import { useIntakeForm } from "@/hooks/use-intake-form";
+import { useLocation } from "react-router-dom";
 
 const IntakeForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const { formData, updateFormData, submitForm, clearFormData, hasStartedForm, isLoading } = useIntakeForm();
+  const { 
+    formData, 
+    updateFormData, 
+    submitForm, 
+    clearFormData, 
+    hasStartedForm, 
+    isLoading,
+    getSavedStep,
+    saveCurrentStep,
+    hasInProgressForm
+  } = useIntakeForm();
+  
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   const [showResumeDialog, setShowResumeDialog] = useState(false);
 
   // Check for existing form data and show resume dialog
   useEffect(() => {
-    if (hasStartedForm() && localStorage.getItem("intakeFormStep")) {
+    // Don't show the resume dialog on the index page
+    if (location.pathname !== "/" && hasInProgressForm()) {
       setShowResumeDialog(true);
     }
-  }, [hasStartedForm]);
+  }, [hasInProgressForm, location.pathname]);
 
   // Set the initial step based on saved progress
   useEffect(() => {
-    const savedStep = localStorage.getItem("intakeFormStep");
-    if (savedStep) {
-      setCurrentStep(parseInt(savedStep));
+    if (!showResumeDialog) {
+      const savedStep = getSavedStep();
+      if (savedStep > 1) {
+        setCurrentStep(savedStep);
+      }
     }
-  }, []);
+  }, [getSavedStep, showResumeDialog]);
 
   // Save current step to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("intakeFormStep", currentStep.toString());
+    saveCurrentStep(currentStep);
     // Scroll to top on step change
     window.scrollTo(0, 0);
-  }, [currentStep]);
+  }, [currentStep, saveCurrentStep]);
 
   const handleStartNewForm = () => {
     clearFormData();
@@ -54,10 +70,8 @@ const IntakeForm = () => {
   };
 
   const handleResumeForm = () => {
-    const savedStep = localStorage.getItem("intakeFormStep");
-    if (savedStep) {
-      setCurrentStep(parseInt(savedStep));
-    }
+    const savedStep = getSavedStep();
+    setCurrentStep(savedStep);
     setShowResumeDialog(false);
   };
 
