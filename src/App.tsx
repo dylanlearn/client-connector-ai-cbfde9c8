@@ -72,14 +72,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/templates" 
-                element={
-                  <ProtectedRoute>
-                    <Templates />
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Made templates accessible without authentication */}
+              <Route path="/templates" element={<Templates />} />
               <Route 
                 path="/settings" 
                 element={

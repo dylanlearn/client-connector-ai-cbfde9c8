@@ -9,6 +9,7 @@ import TemplatePurchaseDialog from "@/components/templates/TemplatePurchaseDialo
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 // Mock template data - would be fetched from Supabase in production
 const mockTemplates = [
@@ -102,6 +103,97 @@ const Templates = () => {
     }
   };
 
+  // Create a simplified template marketplace layout for non-authenticated users
+  const PublicTemplateMarketplace = () => (
+    <div className="min-h-screen bg-gray-50">
+      <header className="border-b bg-white sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <Link to="/" className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="currentColor">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            <span className="font-bold text-xl">DezignSync</span>
+          </Link>
+          <div className="flex gap-4">
+            <Button variant="outline" asChild>
+              <Link to="/login">Log In</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/signup">Sign Up</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
+            <h1 className="text-2xl md:text-3xl font-bold">Template Marketplace</h1>
+          </div>
+
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Featured Templates</CardTitle>
+              <CardDescription>
+                Pre-made templates to jumpstart your design process
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {mockTemplates.map((template) => (
+                  <Card key={template.id} className="overflow-hidden border hover:shadow-md transition-shadow">
+                    <div className="aspect-video bg-muted">
+                      <img 
+                        src={template.previewImageUrl} 
+                        alt={template.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-lg">{template.title}</CardTitle>
+                      <CardDescription className="line-clamp-2">{template.description}</CardDescription>
+                    </CardHeader>
+                    <CardFooter className="p-4 pt-0 flex justify-between items-center">
+                      <span className="font-bold text-lg">${template.price}</span>
+                      <Button onClick={() => handlePurchaseClick(template)}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Purchase
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      <footer className="bg-gray-100 border-t py-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-500">© {new Date().getFullYear()} DezignSync. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+
+  // Render different layouts based on authentication status
+  if (!user) {
+    return (
+      <>
+        <PublicTemplateMarketplace />
+        {selectedTemplate && (
+          <TemplatePurchaseDialog 
+            open={isPurchaseDialogOpen}
+            onOpenChange={setIsPurchaseDialogOpen}
+            template={selectedTemplate}
+            onPurchaseComplete={handlePurchaseComplete}
+          />
+        )}
+      </>
+    );
+  }
+
+  // For authenticated users, show the Dashboard layout
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
