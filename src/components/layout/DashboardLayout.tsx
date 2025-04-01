@@ -9,7 +9,9 @@ import {
   Zap, 
   Crown, 
   PaintBucket,
-  LayoutDashboard
+  LayoutDashboard,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { 
   SidebarProvider, 
@@ -29,8 +31,10 @@ import {
   SidebarMenuSubButton,
   SidebarInset
 } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -40,14 +44,28 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const currentPath = location.pathname;
+  const [syncProOpen, setSyncProOpen] = useState(
+    currentPath === "/projects" || 
+    currentPath === "/clients" || 
+    currentPath === "/analytics"
+  );
 
   const isActive = (path: string) => {
     return currentPath === path || currentPath.startsWith(path + '/');
   };
   
   const isProSection = (path: string) => {
-    return path === "/analytics" || path === "/clients";
+    return path === "/projects" || path === "/clients" || path === "/analytics";
+  };
+
+  const handleSyncProClick = () => {
+    setSyncProOpen(!syncProOpen);
+    if (!syncProOpen && !isProSection(currentPath)) {
+      // If opening the submenu and not already on a pro section page, navigate to projects
+      navigate("/projects");
+    }
   };
   
   return (
@@ -81,15 +99,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                       <span>Dashboard</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => navigate("/projects")}
-                      isActive={isActive("/projects")}
-                    >
-                      <FileText size={20} />
-                      <span>Projects</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -104,22 +113,54 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton 
-                      onClick={() => navigate("/clients")}
-                      isActive={isActive("/clients")}
+                      onClick={handleSyncProClick}
+                      className="justify-between"
                     >
-                      <Users size={20} />
-                      <span>Clients</span>
+                      <div className="flex items-center">
+                        <Crown size={20} className="mr-2" />
+                        <span>Pro Features</span>
+                      </div>
+                      {syncProOpen ? (
+                        <ChevronDown size={16} />
+                      ) : (
+                        <ChevronRight size={16} />
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => navigate("/analytics")}
-                      isActive={isActive("/analytics")}
-                    >
-                      <BarChart3 size={20} />
-                      <span>Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  
+                  {syncProOpen && (
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          onClick={() => navigate("/projects")}
+                          isActive={isActive("/projects")}
+                        >
+                          <FileText size={16} />
+                          <span>Projects</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          onClick={() => navigate("/clients")}
+                          isActive={isActive("/clients")}
+                        >
+                          <Users size={16} />
+                          <span>Clients</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          onClick={() => navigate("/analytics")}
+                          isActive={isActive("/analytics")}
+                        >
+                          <BarChart3 size={16} />
+                          <span>Analytics</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
