@@ -58,8 +58,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      // Using explicit type casting to avoid TypeScript errors with table names
       const { data, error } = await supabase
-        .from("profiles")
+        .from('profiles' as any)
         .select("*")
         .eq("id", userId)
         .single();
