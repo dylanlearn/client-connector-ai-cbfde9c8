@@ -2,7 +2,7 @@
 import React from 'react';
 import { WhatNextSectionProps } from "@/types/client";
 
-const WhatNextSection: React.FC<WhatNextSectionProps> = () => {
+const WhatNextSection: React.FC<WhatNextSectionProps> = ({ isComplete }) => {
   return (
     <div className="mt-8 p-6 bg-white rounded-lg shadow-sm border border-gray-200">
       <h2 className="text-xl font-semibold mb-4">What happens next?</h2>

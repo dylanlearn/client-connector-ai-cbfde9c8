@@ -1,3 +1,4 @@
+
 import { createContext, useContext } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { useAuthState } from "@/hooks/use-auth-state";
@@ -10,7 +11,7 @@ type AuthContextType = {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, phoneNumber: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 

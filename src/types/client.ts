@@ -1,3 +1,4 @@
+
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface ClientAccessLink {
@@ -29,18 +30,27 @@ export interface ClientTaskProgress {
   completed: number;
   total: number;
   percentage: number;
+  intakeForm?: boolean;
+  designPicker?: boolean;
+  templates?: boolean;
 }
 
 export interface TaskCardProps {
   title: string;
   description: string;
   status: TaskStatus;
-  onClick: () => void;
+  onClick?: () => void;
   icon?: React.ReactNode;
+  // Add the missing properties
+  isCompleted: boolean;
+  btnText: string;
+  designerNotes?: string;
+  onButtonClick: () => void;
+  taskType: string;
 }
 
 export interface WhatNextSectionProps {
-  isComplete: boolean;
+  isComplete?: boolean;
 }
 
 export interface LoadingViewProps {

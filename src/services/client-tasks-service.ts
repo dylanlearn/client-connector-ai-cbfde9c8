@@ -135,10 +135,18 @@ export const getClientTasksProgress = async (linkId: string): Promise<ClientTask
       return null;
     }
 
-    const progress: ClientTaskProgress = {};
-    data.forEach(task => {
-      progress[task.task_type] = task.status === 'completed';
-    });
+    const completedTasks = data.filter(task => task.status === 'completed').length;
+    const totalTasks = data.length;
+    const percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+    const progress: ClientTaskProgress = {
+      completed: completedTasks,
+      total: totalTasks,
+      percentage: percentage,
+      intakeForm: data.find(t => t.task_type === 'intakeForm')?.status === 'completed',
+      designPicker: data.find(t => t.task_type === 'designPicker')?.status === 'completed',
+      templates: data.find(t => t.task_type === 'templates')?.status === 'completed'
+    };
 
     return progress;
   } catch (error) {

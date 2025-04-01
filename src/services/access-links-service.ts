@@ -76,7 +76,7 @@ export const recordLinkDelivery = async (
 ): Promise<boolean> => {
   try {
     const { data, error } = await supabase.rpc(
-      'record_client_link_delivery',
+      'record_client_link_delivery' as any,
       {
         p_link_id: linkId,
         p_delivery_type: deliveryType,
@@ -153,8 +153,8 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
     return data.map(link => ({
       id: link.id,
       designerId: link.designer_id,
-      clientEmail: link.client_email,
       clientName: link.client_name,
+      clientEmail: link.client_email,
       clientPhone: link.client_phone,
       token: link.token,
       createdAt: new Date(link.created_at),
@@ -171,11 +171,12 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
 // Get delivery information for a client link
 export const getLinkDeliveries = async (linkId: string): Promise<any[] | null> => {
   try {
-    const { data, error } = await supabase
-      .from('client_link_deliveries')
+    // Use type assertion to handle the new table
+    const { data, error } = await (supabase
+      .from('client_link_deliveries' as any)
       .select('*')
       .eq('link_id', linkId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })) as any;
 
     if (error) {
       console.error('Error getting link deliveries:', error);
