@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Copy, Check, ExternalLink } from "lucide-react";
-import { ClientAccessLink } from "@/utils/client-service";
+import { ClientAccessLink } from "@/types/client";
 import { toast } from "sonner";
 
 interface ClientLinksListProps {

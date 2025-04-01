@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { UserPlus, RefreshCw, Share2 } from "lucide-react";
-import { ClientAccessLink, getClientLinks } from "@/utils/client-service";
+import { getClientLinks } from "@/utils/client-service";
+import { ClientAccessLink } from "@/types/client";
 import ClientLinkDialog from "./ClientLinkDialog";
 import ClientLinksList from "./ClientLinksList";
 

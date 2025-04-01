@@ -9,6 +9,86 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      client_access_links: {
+        Row: {
+          client_email: string
+          client_name: string
+          created_at: string
+          designer_id: string
+          expires_at: string
+          id: string
+          last_accessed_at: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          client_email: string
+          client_name: string
+          created_at?: string
+          designer_id: string
+          expires_at: string
+          id?: string
+          last_accessed_at?: string | null
+          status?: string
+          token: string
+        }
+        Update: {
+          client_email?: string
+          client_name?: string
+          created_at?: string
+          designer_id?: string
+          expires_at?: string
+          id?: string
+          last_accessed_at?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      client_tasks: {
+        Row: {
+          client_response: Json | null
+          completed_at: string | null
+          created_at: string
+          designer_notes: string | null
+          id: string
+          link_id: string
+          status: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          client_response?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          designer_notes?: string | null
+          id?: string
+          link_id: string
+          status?: string
+          task_type: string
+          updated_at?: string
+        }
+        Update: {
+          client_response?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          designer_notes?: string | null
+          id?: string
+          link_id?: string
+          status?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_tasks_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "client_access_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_analytics: {
         Row: {
           average_rank: number

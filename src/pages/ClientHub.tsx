@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Circle, FileText, Palette, Store, AlertCircle } from "lucide-react";
 import { toast } from 'sonner';
-import { validateClientToken, getClientTasks, updateTaskStatus, ClientTask } from '@/utils/client-service';
+import { validateClientToken, getClientTasks, updateTaskStatus } from '@/utils/client-service';
+import { ClientTask, TaskStatus } from '@/types/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { TaskStatus } from '@/types/client';
 
 const ClientHubPage = () => {
   const location = useLocation();
@@ -26,7 +26,6 @@ const ClientHubPage = () => {
   const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
-    // Extract client token and designer ID from the URL
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('clientToken');
     const dId = urlParams.get('designerId');
@@ -40,7 +39,6 @@ const ClientHubPage = () => {
     setClientToken(token);
     setDesignerId(dId);
 
-    // Validate the token
     const validateAccess = async () => {
       setIsValidatingAccess(true);
       try {
@@ -69,7 +67,6 @@ const ClientHubPage = () => {
       if (clientTasks) {
         setTasks(clientTasks);
         
-        // Update task status based on fetched tasks
         const statusMap = {
           intakeForm: false,
           designPicker: false,
@@ -93,39 +90,33 @@ const ClientHubPage = () => {
   };
 
   const navigateTo = (path: string, taskType: string) => {
-    // Find the task ID for the taskType
     const task = tasks?.find(t => t.taskType === taskType);
     if (!task) {
       toast.error(`Task not found for ${taskType}`);
       return;
     }
     
-    // Update the task status to in_progress if it's not completed yet
     if (task.status !== 'completed') {
       updateTaskStatus(task.id, 'in_progress');
     }
     
-    // Navigate to the task page with the client token and designer ID
     if (clientToken && designerId) {
       navigate(`${path}?clientToken=${clientToken}&designerId=${designerId}&taskId=${task.id}`);
     }
   };
 
   const markTaskCompleted = async (task: string) => {
-    // Find the task ID for the taskType
     const taskObj = tasks?.find(t => t.taskType === task);
     if (!taskObj) {
       toast.error(`Task not found for ${task}`);
       return;
     }
     
-    // Update the task status to completed
     const success = await updateTaskStatus(taskObj.id, 'completed');
     if (success) {
       const updatedStatus = { ...taskStatus, [task]: true };
       setTaskStatus(updatedStatus);
       
-      // Update the task in the tasks array
       if (tasks) {
         const updatedTasks = tasks.map(t => 
           t.id === taskObj.id 
@@ -141,7 +132,6 @@ const ClientHubPage = () => {
     }
   };
 
-  // If access is being validated, show a loading state
   if (isValidatingAccess) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -158,7 +148,6 @@ const ClientHubPage = () => {
     );
   }
 
-  // If access is denied, show an error message
   if (accessDenied) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

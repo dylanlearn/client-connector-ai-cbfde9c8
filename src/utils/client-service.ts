@@ -68,7 +68,8 @@ const createDefaultClientTasks = async (linkId: string): Promise<void> => {
       .insert(defaultTasks.map(task => ({
         link_id: linkId,
         task_type: task.task_type,
-        designer_notes: task.designer_notes
+        designer_notes: task.designer_notes,
+        status: 'pending'
       })));
 
     if (error) {
