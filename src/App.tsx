@@ -15,6 +15,7 @@ import ProjectQuestionnaire from "./pages/ProjectQuestionnaire";
 import QuestionnairePreview from "./pages/QuestionnairePreview";
 import QuestionnaireResults from "./pages/QuestionnaireResults";
 import Onboarding from "./pages/Onboarding";
+import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -69,6 +70,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <QuestionnaireResults />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/ai-design-suggestions" 
+                element={
+                  <ProtectedRoute>
+                    <AIDesignSuggestions />
                   </ProtectedRoute>
                 } 
               />
