@@ -5,10 +5,12 @@ import {
   Layout, 
   LayoutGrid,
   Heading1, 
-  Navigation
+  Navigation,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import VisualPicker, { DesignOption } from "@/components/design/VisualPicker";
 import RankedSelections from "@/components/design/RankedSelections";
@@ -68,6 +70,23 @@ const DesignPicker = () => {
 
   // Get counts by category to display in the tabs
   const selectionsByCategory = getSelectionsByCategory();
+
+  // Group selected designs by category
+  const getDesignsByCategory = () => {
+    const designsByCategory: Record<string, RankedDesignOption[]> = {};
+    
+    Object.entries(selectedDesigns).forEach(([id, design]) => {
+      if (!designsByCategory[design.category]) {
+        designsByCategory[design.category] = [];
+      }
+      designsByCategory[design.category].push({...design, id});
+    });
+    
+    return designsByCategory;
+  };
+
+  const designsByCategory = getDesignsByCategory();
+  const categories = Object.keys(selectionLimits) as DesignOption["category"][];
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
@@ -150,12 +169,58 @@ const DesignPicker = () => {
         </Button>
       </div>
 
-      <RankedSelections 
-        selectedDesigns={selectedDesigns}
-        setSelectedDesigns={setSelectedDesigns}
-        categoryIcons={categoryIcons}
-        handleRemoveDesign={handleRemoveDesign}
-      />
+      {/* Collapsible Sections for Selected Designs */}
+      <div className="mt-10">
+        <h2 className="text-2xl font-bold mb-4">Your Selections</h2>
+        
+        <Accordion type="multiple" className="w-full">
+          {categories.map(category => {
+            const designs = designsByCategory[category] || [];
+            if (designs.length === 0) return null;
+            
+            return (
+              <AccordionItem key={category} value={category}>
+                <AccordionTrigger className="py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="mr-2">{categoryIcons[category]}</span>
+                    <span className="font-medium capitalize">{category} Selections</span>
+                    <span className="text-muted-foreground ml-2">({designs.length}/{selectionLimits[category]})</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-4 pt-2">
+                    {designs.map((design) => (
+                      <div key={design.id} className="border rounded-lg p-3 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-muted w-16 h-12 rounded-md overflow-hidden">
+                            <img 
+                              src={design.imageUrl} 
+                              alt={design.title} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="font-medium">{design.title}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-1">{design.description}</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleRemoveDesign(design.id as string)}
+                          className="text-destructive border-destructive hover:bg-destructive/10"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      </div>
 
       <SelectionLimitDialog 
         open={showLimitDialog} 
