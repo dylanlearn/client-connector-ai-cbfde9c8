@@ -10,6 +10,7 @@ import { getClientLinks, ClientAccessLink } from "@/utils/client-service";
 import { supabase } from "@/integrations/supabase/client";
 import ClientLinkDialog from "./ClientLinkDialog";
 import ClientLinksList from "./ClientLinksList";
+import { setupRealtimeForClientTables } from "@/utils/realtime-utils";
 
 export default function ClientsManager() {
   const { user } = useAuth();
@@ -20,6 +21,15 @@ export default function ClientsManager() {
   useEffect(() => {
     if (user) {
       loadClientLinks();
+      
+      // Initialize realtime setup
+      setupRealtimeForClientTables().catch(error => {
+        console.error("Error setting up realtime:", error);
+      });
+      
+      // Check for expired links initially and every hour
+      checkExpiredLinks();
+      const expirationTimer = setInterval(checkExpiredLinks, 60 * 60 * 1000);
       
       // Set up real-time subscription for client links changes
       const linksChannel = supabase.channel('public:client_access_links')
@@ -88,11 +98,32 @@ export default function ClientsManager() {
         .subscribe();
       
       return () => {
+        clearInterval(expirationTimer);
         supabase.removeChannel(linksChannel);
         supabase.removeChannel(tasksChannel);
       };
     }
   }, [user]);
+  
+  const checkExpiredLinks = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('check_and_expire_client_links');
+      
+      if (error) {
+        console.error("Error checking expired links:", error);
+        return;
+      }
+      
+      if (data && data > 0) {
+        console.log(`${data} client links marked as expired`);
+        loadClientLinks();
+      }
+    } catch (error) {
+      console.error("Error in checkExpiredLinks:", error);
+    }
+  };
   
   const loadClientLinks = async () => {
     if (!user) return;

@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientAccess = () => {
   const [clientLink, setClientLink] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
@@ -44,10 +45,29 @@ const ClientAccess = () => {
         return;
       }
       
-      // If we have a token but no designer ID, try to navigate to the client hub with just the token
+      // If we just have a token, try to find the corresponding designer ID
       if (token && !designerId) {
-        navigate(`/client-hub?clientToken=${token}`);
-        return;
+        try {
+          const { data, error } = await supabase
+            .from('client_access_links')
+            .select('designer_id')
+            .eq('token', token)
+            .eq('status', 'active')
+            .maybeSingle();
+            
+          if (error) throw error;
+          
+          if (data && data.designer_id) {
+            designerId = data.designer_id;
+          } else {
+            toast.error("This access link has expired or is invalid");
+            return;
+          }
+        } catch (error) {
+          console.error("Error fetching designer ID:", error);
+          toast.error("Unable to validate this access link");
+          return;
+        }
       }
       
       // If we have both token and designer ID, navigate to the client hub

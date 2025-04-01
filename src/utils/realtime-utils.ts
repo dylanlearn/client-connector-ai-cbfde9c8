@@ -2,107 +2,103 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Sets up a table for realtime updates.
+ * Ensures a table is set up for realtime updates.
+ * Sets REPLICA IDENTITY to FULL and adds the table to the realtime publication.
  * 
- * @param table The name of the table to enable realtime for
- * @returns A promise that resolves when the operation is complete
+ * @param tableName The name of the table to enable realtime for
+ * @returns Promise that resolves when the operation is complete
  */
-export const setupRealtimeForTable = async (table: string): Promise<void> => {
+export const setupTableForRealtime = async (tableName: string): Promise<boolean> => {
   try {
-    // Set REPLICA IDENTITY to FULL to get complete row data in realtime events
-    await supabase.rpc(
-      'alter_table_replica_identity' as any,
-      { table_name: table, identity_type: 'FULL' }
+    // Set REPLICA IDENTITY to FULL to ensure complete row data in events
+    const { error: replicaError } = await supabase.rpc(
+      'alter_table_replica_identity',
+      { table_name: tableName, identity_type: 'FULL' }
     );
     
-    // Add the table to the realtime publication
-    await supabase.rpc(
-      'add_table_to_realtime_publication' as any,
-      { table_name: table }
+    if (replicaError) {
+      console.error(`Error setting REPLICA IDENTITY for ${tableName}:`, replicaError);
+      return false;
+    }
+    
+    // Add table to realtime publication
+    const { error: pubError } = await supabase.rpc(
+      'add_table_to_publication',
+      { table_name: tableName, publication_name: 'supabase_realtime' }
     );
     
-    console.log(`Realtime set up for table: ${table}`);
+    if (pubError) {
+      console.error(`Error adding ${tableName} to publication:`, pubError);
+      return false;
+    }
+    
+    console.log(`Table ${tableName} set up for realtime successfully`);
+    return true;
   } catch (error) {
-    console.error(`Error setting up realtime for table ${table}:`, error);
-    throw error;
+    console.error(`Error setting up realtime for ${tableName}:`, error);
+    return false;
   }
 };
 
 /**
- * Creates a realtime subscription for a specific condition
+ * Sets up realtime for all client-related tables
+ */
+export const setupRealtimeForClientTables = async (): Promise<void> => {
+  try {
+    // Set up realtime for all client-related tables
+    await Promise.all([
+      setupTableForRealtime('client_access_links'),
+      setupTableForRealtime('client_tasks'),
+      setupTableForRealtime('client_link_deliveries')
+    ]);
+    
+    console.log('All client tables set up for realtime');
+  } catch (error) {
+    console.error('Error setting up realtime for client tables:', error);
+  }
+};
+
+/**
+ * Creates a realtime subscription for a table with specified conditions
+ * 
+ * @param channelName Unique name for this subscription channel
+ * @param tableName The name of the table to subscribe to
+ * @param filterString Filter string to apply (e.g. "column=eq.value")
+ * @param callback Function to call when an event occurs
+ * @returns Unsubscribe function
  */
 export const createRealtimeSubscription = (
   channelName: string,
   tableName: string,
   filterString: string,
-  callback: (payload: any) => void,
-  errorCallback?: (error: Error) => void
+  callback: (payload: any) => void
 ) => {
-  let retryCount = 0;
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY = 2000; // 2 seconds
-  
-  const setupSubscription = () => {
-    try {
-      const channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: tableName,
-            filter: filterString,
-          },
-          callback
-        )
-        .subscribe((status) => {
-          console.log(`Realtime subscription status (${channelName}):`, status);
-          
-          if (status === 'SUBSCRIBED') {
-            console.log(`Successfully subscribed to ${channelName}`);
-            retryCount = 0;
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            const error = new Error(`Subscription error: ${status}`);
-            console.error(error);
-            
-            if (errorCallback) {
-              errorCallback(error);
-            }
-            
-            // Retry subscription if under max retries
-            if (retryCount < MAX_RETRIES) {
-              retryCount++;
-              console.log(`Retrying subscription (${retryCount}/${MAX_RETRIES})...`);
-              
-              setTimeout(() => {
-                supabase.removeChannel(channel);
-                setupSubscription();
-              }, RETRY_DELAY * retryCount);
-            }
-          }
-        });
+  try {
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: tableName,
+          filter: filterString
+        },
+        callback
+      )
+      .subscribe();
 
-      return {
-        unsubscribe: () => {
-          console.log(`Unsubscribing from ${channelName}`);
-          supabase.removeChannel(channel);
-        },
-      };
-    } catch (error) {
-      console.error(`Error creating realtime subscription for ${channelName}:`, error);
-      
-      if (errorCallback) {
-        errorCallback(error instanceof Error ? error : new Error(`Subscription setup error: ${error}`));
+    return {
+      unsubscribe: () => {
+        supabase.removeChannel(channel);
       }
-      
-      return {
-        unsubscribe: () => {
-          console.log(`Dummy unsubscribe from failed ${channelName} subscription`);
-        },
-      };
-    }
-  };
-  
-  return setupSubscription();
+    };
+  } catch (error) {
+    console.error(`Error creating realtime subscription for ${channelName}:`, error);
+    return {
+      unsubscribe: () => {
+        console.log(`Error creating subscription, nothing to unsubscribe from`);
+      }
+    };
+  }
 };
