@@ -26,6 +26,7 @@ import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import IntakeForm from "./pages/IntakeForm";
 import DesignPicker from "./pages/DesignPicker";
 import ClientHub from "./pages/ClientHub";
+import ClientAccess from "./pages/ClientAccess";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/intake" element={<IntakeForm />} />
                 <Route path="/design-picker" element={<DesignPicker />} />
                 <Route path="/client-hub" element={<ClientHub />} />
+                <Route path="/client-access" element={<ClientAccess />} />
                 
                 {/* Protected routes with dashboard layout */}
                 <Route path="/dashboard" element={<ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute>} />

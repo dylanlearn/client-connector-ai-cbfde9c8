@@ -1,13 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DesignOption } from "@/components/design/VisualPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { UserPreference } from "./use-analytics";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { updateTaskStatus } from "@/utils/client-service";
 
 const VALID_CATEGORIES = ['hero', 'navbar', 'about', 'footer', 'font'];
-const CLIENT_ALLOWED_ROUTES = ['/intake', '/design-picker', '/templates', '/'];
+const CLIENT_ALLOWED_ROUTES = ['/intake', '/design-picker', '/templates', '/client-hub'];
 
 export type RankedDesignOption = DesignOption & {
   rank?: number | null;
@@ -24,7 +26,9 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
   const [viewOnlyMode, setViewOnlyMode] = useState(false);
   const [clientToken, setClientToken] = useState<string | null>(null);
   const [designerId, setDesignerId] = useState<string | null>(null);
+  const [taskId, setTaskId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const getSelectionsByCategory = () => {
     const countByCategory: Record<string, number> = {};
@@ -40,23 +44,29 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('clientToken');
     const dId = urlParams.get('designerId');
+    const tId = urlParams.get('taskId');
     
     if (token && dId) {
       setClientToken(token);
       setDesignerId(dId);
       setClientAccessMode(true);
-      setViewOnlyMode(true);
+      setViewOnlyMode(false); // Clients should be able to make selections
+      
+      if (tId) {
+        setTaskId(tId);
+      }
+      
       loadSharedPreferences(dId);
       
       const currentPath = window.location.pathname;
-      if (!CLIENT_ALLOWED_ROUTES.includes(currentPath) && currentPath !== '/client-hub') {
+      if (!CLIENT_ALLOWED_ROUTES.includes(currentPath)) {
         toast.warning("This area is restricted. Redirecting to your hub.");
         navigate('/client-hub');
       }
     } else {
       loadSavedPreferences();
     }
-  }, [user?.id, navigate]);
+  }, [user?.id, navigate, location.search]);
 
   const loadSharedPreferences = async (designerId: string) => {
     try {
@@ -139,7 +149,10 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
   };
 
   const saveDesignPreference = async (designId: string, design: RankedDesignOption) => {
-    if (!user) {
+    // In client access mode, we're saving to the designer's account
+    const userId = clientAccessMode && designerId ? designerId : user?.id;
+    
+    if (!userId) {
       toast.error('You must be logged in to save preferences');
       return;
     }
@@ -154,7 +167,7 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
         .from('design_preferences')
         .upsert({
           id: designId,
-          user_id: user.id,
+          user_id: userId,
           design_option_id: design.id as string,
           category: design.category,
           title: design.title,
@@ -172,7 +185,10 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
   };
 
   const deleteDesignPreference = async (designId: string) => {
-    if (!user) return;
+    // In client access mode, we're deleting from the designer's account
+    const userId = clientAccessMode && designerId ? designerId : user?.id;
+    
+    if (!userId) return;
     
     if (viewOnlyMode) {
       toast.error('You are in view-only mode and cannot delete preferences');
@@ -299,8 +315,21 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
 
   useEffect(() => {
     const { completedCategories, maxSelections } = calculateCompleteness();
-    setSelectionLimitReached(completedCategories >= maxSelections);
-  }, [selectedDesigns, maxSelectionsByCategory]);
+    const isComplete = completedCategories >= maxSelections;
+    setSelectionLimitReached(isComplete);
+    
+    // If task is attached and selections are complete, mark the task as completed
+    if (isComplete && clientAccessMode && taskId) {
+      updateTaskStatus(taskId, 'completed', {
+        selectedDesigns: Object.values(selectedDesigns).map(design => ({
+          id: design.id,
+          category: design.category,
+          title: design.title
+        }))
+      });
+      toast.success("Design selections saved to your client profile");
+    }
+  }, [selectedDesigns, maxSelectionsByCategory, clientAccessMode, taskId]);
 
   return {
     selectedDesigns,

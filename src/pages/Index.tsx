@@ -8,16 +8,24 @@ import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import TemplatesShowcase from "@/components/landing/TemplatesShowcase";
 import Footer from "@/components/landing/Footer";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, ExternalLink } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showClientError, setShowClientError] = useState(false);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+
+  useEffect(() => {
+    // Check for client hub error parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    setShowClientError(urlParams.get('clientHubError') === 'true');
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -35,6 +43,14 @@ const Index = () => {
             <a href="#how-it-works" className="text-sm font-medium hover:text-primary transition-colors">How It Works</a>
             <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">Pricing</a>
             <Link to="/design-picker" className="text-sm font-medium hover:text-primary transition-colors">Design Picker</Link>
+            <Button 
+              variant="outline" 
+              className="text-sm font-medium"
+              onClick={() => navigate("/client-access")}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Client Access
+            </Button>
           </nav>
           
           <div className="hidden md:flex items-center gap-4">
@@ -82,6 +98,17 @@ const Index = () => {
               >
                 Design Picker
               </Link>
+              <Button 
+                variant="outline" 
+                className="text-sm font-medium justify-start"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/client-access");
+                }}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Client Access
+              </Button>
               <div className="flex flex-col space-y-3 pt-2">
                 <Button variant="outline" onClick={() => navigate("/login")}>Log In</Button>
                 <Button onClick={() => navigate("/signup")}>Get Started</Button>
@@ -92,6 +119,17 @@ const Index = () => {
       </header>
 
       <main className="flex-1">
+        {showClientError && (
+          <div className="max-w-6xl mx-auto p-4 mt-6">
+            <Alert variant="destructive">
+              <AlertTitle>Client Hub Access Error</AlertTitle>
+              <AlertDescription>
+                The client hub link you attempted to use is invalid or has expired. Please contact your designer for a new link.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+        
         <HeroSection />
         
         <FeaturesSection />
