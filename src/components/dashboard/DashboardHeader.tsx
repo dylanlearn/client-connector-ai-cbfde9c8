@@ -8,6 +8,7 @@ import { Crown, Menu } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 const DashboardHeader = () => {
   const { user, signOut, profile } = useAuth();
@@ -25,7 +26,12 @@ const DashboardHeader = () => {
   const isPro = false; // Replace with actual logic to check if user has a Pro plan
 
   return (
-    <header className="border-b bg-white">
+    <motion.header 
+      className="border-b bg-white"
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <div className="h-16 flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4">
           <div className="block md:hidden">
@@ -33,58 +39,72 @@ const DashboardHeader = () => {
           </div>
           
           <nav className="hidden md:flex gap-4 md:gap-6 text-sm">
-            <Link
-              to="/dashboard"
-              className={`hover:text-primary transition-colors ${
-                location.pathname === "/dashboard" ? "text-primary font-medium" : "text-muted-foreground"
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/new-project"
-              className={`hover:text-primary transition-colors ${
-                location.pathname === "/new-project" ? "text-primary font-medium" : "text-muted-foreground"
-              }`}
-            >
-              New Project
-            </Link>
-            <Link
-              to="/ai-design-suggestions"
-              className={`hover:text-primary transition-colors ${
-                location.pathname === "/ai-design-suggestions" ? "text-primary font-medium" : "text-muted-foreground"
-              }`}
-            >
-              AI Assistant
-            </Link>
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Link
+                to="/dashboard"
+                className={`hover:text-primary transition-colors ${
+                  location.pathname === "/dashboard" ? "text-primary font-medium" : "text-muted-foreground"
+                }`}
+              >
+                Dashboard
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Link
+                to="/new-project"
+                className={`hover:text-primary transition-colors ${
+                  location.pathname === "/new-project" ? "text-primary font-medium" : "text-muted-foreground"
+                }`}
+              >
+                New Project
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Link
+                to="/ai-design-suggestions"
+                className={`hover:text-primary transition-colors ${
+                  location.pathname === "/ai-design-suggestions" ? "text-primary font-medium" : "text-muted-foreground"
+                }`}
+              >
+                AI Assistant
+              </Link>
+            </motion.div>
           </nav>
         </div>
         
         <div className="flex items-center gap-4">
           {/* Plan badge */}
           {isPro ? (
-            <div className="hidden md:flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">
-              <Crown size={12} className="mr-1" />
-              Pro Plan
-            </div>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="hidden md:flex items-center gap-1 text-xs"
-              onClick={() => navigate("/settings")}
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="hidden md:flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium"
             >
               <Crown size={12} className="mr-1" />
-              Upgrade
-            </Button>
+              Pro Plan
+            </motion.div>
+          ) : (
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="hidden md:flex items-center gap-1 text-xs"
+                onClick={() => navigate("/settings")}
+              >
+                <Crown size={12} className="mr-1" />
+                Upgrade
+              </Button>
+            </motion.div>
           )}
           
           <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-            <DropdownMenuTrigger>
-              <Avatar className="h-9 w-9">
-                <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={profile?.name || user?.user_metadata?.name} />
-                <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || user?.user_metadata?.name?.charAt(0).toUpperCase() || "DS"}</AvatarFallback>
-              </Avatar>
+            <DropdownMenuTrigger asChild>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Avatar className="h-9 w-9 cursor-pointer">
+                  <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={profile?.name || user?.user_metadata?.name} />
+                  <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || user?.user_metadata?.name?.charAt(0).toUpperCase() || "DS"}</AvatarFallback>
+                </Avatar>
+              </motion.div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{profile?.name || user?.user_metadata?.name || user?.email}</DropdownMenuLabel>
@@ -115,7 +135,7 @@ const DashboardHeader = () => {
           </DropdownMenu>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 };
 
