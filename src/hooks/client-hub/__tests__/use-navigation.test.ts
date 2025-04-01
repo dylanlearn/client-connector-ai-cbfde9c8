@@ -4,13 +4,15 @@ import { renderHook, act } from '@testing-library/react-hooks';
 import { useNavigation } from '../use-navigation';
 
 // Mock react-router-dom's useNavigate
+const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
 }));
 
 describe('useNavigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigate.mockClear();
   });
 
   it('should initialize with null navigation error', () => {
@@ -19,17 +21,13 @@ describe('useNavigation', () => {
   });
 
   it('should handle successful navigation', () => {
-    const mockNavigate = vi.fn();
-    vi.mock('react-router-dom', () => ({
-      useNavigate: () => mockNavigate,
-    }));
-
     const { result } = renderHook(() => useNavigation());
     
     act(() => {
       result.current.navigateTo('/test-path', 'client-token', 'designer-id', 'task-id');
     });
     
+    expect(mockNavigate).toHaveBeenCalledWith('/test-path?clientToken=client-token&designerId=designer-id&taskId=task-id');
     expect(result.current.navigationError).toBeNull();
   });
 
