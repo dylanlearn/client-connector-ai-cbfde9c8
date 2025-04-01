@@ -1,12 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
-import { createClientAccessLink } from "@/utils/client-service";
-import { ClientAccessLink } from "@/types/client";
+import { createClientAccessLink, ClientAccessLink } from "@/utils/client-service";
 import {
   Dialog,
   DialogContent,

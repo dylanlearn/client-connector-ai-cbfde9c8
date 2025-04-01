@@ -1,11 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Circle, FileText, Palette, Store, AlertCircle } from "lucide-react";
 import { toast } from 'sonner';
-import { validateClientToken, getClientTasks, updateTaskStatus } from '@/utils/client-service';
-import { ClientTask, TaskStatus } from '@/types/client';
+import { validateClientToken, getClientTasks, updateTaskStatus, ClientTask, TaskStatus } from '@/utils/client-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

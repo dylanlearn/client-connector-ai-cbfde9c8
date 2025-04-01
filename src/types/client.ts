@@ -24,3 +24,7 @@ export interface ClientTask {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface ClientTaskProgress {
+  [key: string]: boolean;
+}
