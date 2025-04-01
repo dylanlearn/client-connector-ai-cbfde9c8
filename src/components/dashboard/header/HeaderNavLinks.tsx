@@ -14,7 +14,11 @@ export const HeaderNavLinks = () => {
   return (
     <nav className="hidden md:flex gap-4 md:gap-6 text-sm">
       {navLinks.map((link) => (
-        <motion.div key={link.path} whileHover={{ y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+        <motion.div 
+          key={link.path} 
+          whileHover={{ y: -2 }} 
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+        >
           <Link
             to={link.path}
             className={`hover:text-primary transition-colors ${

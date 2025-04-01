@@ -1,5 +1,4 @@
 
-import { motion } from "framer-motion";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HeaderNavLinks } from "./header/HeaderNavLinks";
 import { PlanBadge } from "./header/PlanBadge";
@@ -10,12 +9,7 @@ const DashboardHeader = () => {
   const isPro = false; // Replace with actual logic to check if user has a Pro plan
 
   return (
-    <motion.header 
-      className="border-b bg-white"
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <header className="border-b bg-white">
       <div className="h-16 flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4">
           <div className="block md:hidden">
@@ -29,7 +23,7 @@ const DashboardHeader = () => {
           <UserMenu />
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 };
 
