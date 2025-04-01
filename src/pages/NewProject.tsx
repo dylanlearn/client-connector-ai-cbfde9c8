@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -66,12 +67,11 @@ const NewProject = () => {
         client_email: clientEmail,
         project_type: projectType,
         description: projectDescription || null,
+        user_id: user.id,
+        status: 'draft'
       };
 
-      await createProject.mutateAsync({
-        ...projectData,
-        user_id: user.id
-      });
+      await createProject.mutateAsync(projectData);
       
       navigate("/project-questionnaire");
     } catch (error) {
