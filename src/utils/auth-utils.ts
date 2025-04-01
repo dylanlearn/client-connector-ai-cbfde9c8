@@ -36,7 +36,17 @@ export const getEmailConfirmationRedirectUrl = () => {
 // Function to enable realtime updates on a table
 export const enableRealtimeForTable = async (tableName: string) => {
   try {
-    await supabase.rpc('enable_realtime_for_table', { table_name: tableName });
+    // Use channel-based approach instead of RPC
+    const channel = supabase.channel(`realtime:${tableName}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public',
+        table: tableName 
+      }, payload => {
+        console.log('Change received!', payload);
+      })
+      .subscribe();
+      
     console.log(`Realtime enabled for ${tableName}`);
     return true;
   } catch (error) {

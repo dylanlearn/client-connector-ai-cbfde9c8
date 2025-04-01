@@ -3,14 +3,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 interface FormValues {
   prompt: string;
@@ -121,7 +120,7 @@ const DesignSuggestions = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Any industry</SelectItem>
+                        <SelectItem value="any">Any industry</SelectItem>
                         <SelectItem value="tech">Technology</SelectItem>
                         <SelectItem value="healthcare">Healthcare</SelectItem>
                         <SelectItem value="finance">Finance</SelectItem>
@@ -151,7 +150,7 @@ const DesignSuggestions = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Any style</SelectItem>
+                        <SelectItem value="any">Any style</SelectItem>
                         <SelectItem value="minimalist">Minimalist</SelectItem>
                         <SelectItem value="modern">Modern</SelectItem>
                         <SelectItem value="corporate">Corporate</SelectItem>

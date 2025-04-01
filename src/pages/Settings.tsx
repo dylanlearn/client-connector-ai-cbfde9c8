@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { enableRealtimeForTable } from "@/utils/auth-utils";
 
 const Settings = () => {
   const { user, profile } = useAuth();
@@ -21,10 +22,10 @@ const Settings = () => {
 
   // Enable realtime for the profiles table
   useEffect(() => {
-    const enableRealtime = async () => {
-      await supabase.rpc('enable_realtime_for_table', { table_name: 'profiles' });
+    const setup = async () => {
+      await enableRealtimeForTable('profiles');
     };
-    enableRealtime();
+    setup();
   }, []);
 
   useEffect(() => {
