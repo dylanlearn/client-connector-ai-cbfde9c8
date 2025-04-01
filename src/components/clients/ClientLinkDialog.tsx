@@ -119,7 +119,7 @@ export default function ClientLinkDialog({
           clientPhone: clientPhone || null,
           token: link.split("clientToken=")[1]?.split("&")[0] || "",
           createdAt: new Date(),
-          expiresAt: new Date(new Date().setDate(new Date().getDate() + 14)),
+          expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)), // Changed from 14 to 7 days
           lastAccessedAt: null,
           status: "active"
         };
@@ -166,6 +166,7 @@ export default function ClientLinkDialog({
           <DialogTitle>Create Client Portal Link</DialogTitle>
           <DialogDescription>
             Enter your client's details to generate and send a personalized access link.
+            The link will expire in 7 days.
           </DialogDescription>
         </DialogHeader>
         

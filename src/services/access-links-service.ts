@@ -19,9 +19,9 @@ export const createClientAccessLink = async (
   deliveryMethods: { email: boolean, sms: boolean } = { email: true, sms: false }
 ): Promise<{ link: string | null, linkId: string | null }> => {
   try {
-    // Create an expiry date 14 days from now
+    // Create an expiry date 7 days from now (changed from 14 days)
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 14);
+    expiresAt.setDate(expiresAt.getDate() + 7);
     
     const token = generateToken();
     

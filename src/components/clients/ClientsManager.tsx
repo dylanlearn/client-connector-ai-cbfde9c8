@@ -109,15 +109,22 @@ export default function ClientsManager() {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase.rpc('check_and_expire_client_links');
+      // Use a direct database query instead of RPC function
+      const { data, error } = await supabase
+        .from('client_access_links')
+        .update({ status: 'expired' })
+        .eq('designer_id', user.id)
+        .eq('status', 'active')
+        .lt('expires_at', new Date().toISOString())
+        .select('id');
       
       if (error) {
         console.error("Error checking expired links:", error);
         return;
       }
       
-      if (data && data > 0) {
-        console.log(`${data} client links marked as expired`);
+      if (data && data.length > 0) {
+        console.log(`${data.length} client links marked as expired`);
         loadClientLinks();
       }
     } catch (error) {

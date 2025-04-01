@@ -41,7 +41,7 @@ const ShareAnalyticsLink = () => {
         setShareLink(result.link);
         setLinkId(result.linkId);
         setIsDialogOpen(false);
-        toast.success("Client hub link generated! It will expire in 14 days.");
+        toast.success("Client hub link generated! It will expire in 7 days.");
       }
     } finally {
       setIsCreating(false);
@@ -96,7 +96,7 @@ const ShareAnalyticsLink = () => {
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        This link gives your client access to the client hub for 14 days to complete tasks and view their design journey.
+        This link gives your client access to the client hub for 7 days to complete tasks and view their design journey.
       </p>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

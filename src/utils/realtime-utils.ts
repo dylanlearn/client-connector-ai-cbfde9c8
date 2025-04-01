@@ -12,7 +12,7 @@ export const setupTableForRealtime = async (tableName: string): Promise<boolean>
   try {
     // Set REPLICA IDENTITY to FULL to ensure complete row data in events
     const { error: replicaError } = await supabase.rpc(
-      'alter_table_replica_identity',
+      'alter_table_replica_identity' as any,
       { table_name: tableName, identity_type: 'FULL' }
     );
     
@@ -23,7 +23,7 @@ export const setupTableForRealtime = async (tableName: string): Promise<boolean>
     
     // Add table to realtime publication
     const { error: pubError } = await supabase.rpc(
-      'add_table_to_publication',
+      'add_table_to_publication' as any,
       { table_name: tableName, publication_name: 'supabase_realtime' }
     );
     
