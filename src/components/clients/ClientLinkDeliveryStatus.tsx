@@ -40,7 +40,7 @@ export default function ClientLinkDeliveryStatus({ linkId }: ClientLinkDeliveryS
         return (
           <Badge 
             key={delivery.id} 
-            variant={isError ? "destructive" : isSuccess ? "success" : "secondary"}
+            variant={isError ? "destructive" : isSuccess ? "default" : "secondary"}
             className="flex items-center gap-1 text-xs"
             title={delivery.error_message || `${delivery.delivery_type} delivery ${delivery.status}`}
           >
