@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { IntakeFormData } from "@/types/intake-form";
 
@@ -28,38 +27,44 @@ interface SpecificQuestionsStepProps {
 
 // Dynamic schema based on site type
 const getFormSchema = (siteType: string) => {
-  const baseSchema = z.object({
+  // Base fields that all site types have
+  const baseSchema = {
     mainFeatures: z.string().min(1, "Please list your main features"),
     competitors: z.string().optional(),
-  });
+  };
 
+  // Add specific fields based on site type
   switch (siteType) {
     case "saas":
-      return baseSchema.extend({
+      return z.object({
+        ...baseSchema,
         userAccountsRequired: z.boolean().default(true),
         pricingTiers: z.string().min(1, "Please describe your pricing tiers"),
         freeTrialOffered: z.boolean().default(false),
       });
     case "ecommerce":
-      return baseSchema.extend({
+      return z.object({
+        ...baseSchema,
         estimatedProducts: z.string().min(1, "Please specify how many products"),
         paymentProcessors: z.string().min(1, "Please specify payment processors"),
         shippingIntegration: z.boolean().default(false),
       });
     case "business":
-      return baseSchema.extend({
+      return z.object({
+        ...baseSchema,
         serviceOfferings: z.string().min(1, "Please list your services"),
         contactFormRequired: z.boolean().default(true),
         hasPhysicalLocation: z.boolean().default(false),
       });
     case "portfolio":
-      return baseSchema.extend({
+      return z.object({
+        ...baseSchema,
         projectCategories: z.string().min(1, "Please list your project categories"),
         contactInformation: z.string().min(1, "Please provide contact information"),
         resumeUploadRequired: z.boolean().default(false),
       });
     default:
-      return baseSchema;
+      return z.object(baseSchema);
   }
 };
 
@@ -78,30 +83,30 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
       case "saas":
         return {
           ...baseValues,
-          userAccountsRequired: formData.userAccountsRequired ?? true,
+          userAccountsRequired: formData.userAccountsRequired === undefined ? true : formData.userAccountsRequired,
           pricingTiers: formData.pricingTiers || "",
-          freeTrialOffered: formData.freeTrialOffered ?? false,
+          freeTrialOffered: formData.freeTrialOffered === undefined ? false : formData.freeTrialOffered,
         };
       case "ecommerce":
         return {
           ...baseValues,
           estimatedProducts: formData.estimatedProducts || "",
           paymentProcessors: formData.paymentProcessors || "",
-          shippingIntegration: formData.shippingIntegration ?? false,
+          shippingIntegration: formData.shippingIntegration === undefined ? false : formData.shippingIntegration,
         };
       case "business":
         return {
           ...baseValues,
           serviceOfferings: formData.serviceOfferings || "",
-          contactFormRequired: formData.contactFormRequired ?? true,
-          hasPhysicalLocation: formData.hasPhysicalLocation ?? false,
+          contactFormRequired: formData.contactFormRequired === undefined ? true : formData.contactFormRequired,
+          hasPhysicalLocation: formData.hasPhysicalLocation === undefined ? false : formData.hasPhysicalLocation,
         };
       case "portfolio":
         return {
           ...baseValues,
           projectCategories: formData.projectCategories || "",
           contactInformation: formData.contactInformation || "",
-          resumeUploadRequired: formData.resumeUploadRequired ?? false,
+          resumeUploadRequired: formData.resumeUploadRequired === undefined ? false : formData.resumeUploadRequired,
         };
       default:
         return baseValues;
