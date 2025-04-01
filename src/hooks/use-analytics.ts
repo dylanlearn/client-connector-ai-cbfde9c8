@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -29,35 +29,51 @@ export type UserPreference = {
 export const useAnalytics = () => {
   const { user } = useAuth();
   const [isRealtime, setIsRealtime] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
-  // Fetch analytics data
+  // Fetch analytics data with caching and proper keys
   const {
     data: analytics,
     isLoading: isLoadingAnalytics,
     error: analyticsError,
     refetch: refetchAnalytics
   } = useQuery({
-    queryKey: ['design-analytics'],
+    queryKey: ['design-analytics', user?.id, lastUpdated],
     queryFn: async () => {
+      if (!user) return [];
+      
+      // Only fetch analytics for this user's design preferences
+      const { data: userPrefs } = await supabase
+        .from('design_preferences')
+        .select('design_option_id')
+        .eq('user_id', user.id);
+      
+      if (!userPrefs || userPrefs.length === 0) return [];
+      
+      const designOptionIds = userPrefs.map(pref => pref.design_option_id);
+      
       const { data, error } = await supabase
         .from('design_analytics')
         .select('*')
+        .in('design_option_id', designOptionIds)
         .order('selection_count', { ascending: false });
 
       if (error) throw error;
       return data as DesignAnalytics[];
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch user preferences
+  // Fetch user preferences with caching
   const {
     data: userPreferences,
     isLoading: isLoadingPreferences,
     error: preferencesError,
     refetch: refetchPreferences
   } = useQuery({
-    queryKey: ['user-preferences'],
+    queryKey: ['user-preferences', user?.id, lastUpdated],
     queryFn: async () => {
       if (!user) return [];
 
@@ -70,49 +86,15 @@ export const useAnalytics = () => {
       return data as UserPreference[];
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
   });
 
-  // Setup realtime subscription - OPTIMIZED FOR USER-SPECIFIC DATA ONLY
+  // Setup optimized realtime subscription - ONLY for user's own data
   useEffect(() => {
     if (!user) return;
 
-    // Only subscribe to analytics changes that affect THIS user's preferences
-    // We first need to get the design_option_ids this user has selected
-    const getUserDesignOptionIds = async () => {
-      const { data } = await supabase
-        .from('design_preferences')
-        .select('design_option_id')
-        .eq('user_id', user.id);
-      
-      return data?.map(item => item.design_option_id) || [];
-    };
-
-    getUserDesignOptionIds().then(designOptionIds => {
-      // Only create analytics subscription if user has preferences
-      if (designOptionIds.length > 0) {
-        const analyticsChannel = supabase.channel('user-analytics-changes')
-          .on('postgres_changes', 
-            { 
-              event: '*', 
-              schema: 'public', 
-              table: 'design_analytics',
-              filter: `design_option_id=in.(${designOptionIds.map(id => `"${id}"`).join(',')})` 
-            },
-            (payload) => {
-              console.log('User-specific analytics update:', payload);
-              refetchAnalytics();
-              setIsRealtime(true);
-            }
-          )
-          .subscribe();
-
-        return () => {
-          supabase.removeChannel(analyticsChannel);
-        };
-      }
-    });
-
-    // User's own preferences subscription - this is properly filtered by user_id
+    // Only subscribe to the user's own preferences
     const preferencesChannel = supabase.channel('user-preferences-changes')
       .on('postgres_changes',
         { 
@@ -123,9 +105,7 @@ export const useAnalytics = () => {
         },
         (payload) => {
           console.log('User preferences update:', payload);
-          refetchPreferences();
-          // Also refetch analytics as they may be affected
-          refetchAnalytics();
+          setLastUpdated(new Date()); // Trigger refetch via key change
           setIsRealtime(true);
         }
       )
@@ -134,73 +114,79 @@ export const useAnalytics = () => {
     return () => {
       supabase.removeChannel(preferencesChannel);
     };
-  }, [user, refetchAnalytics, refetchPreferences]);
+  }, [user]);
 
-  // Helper functions for processing data
-  const getTopRankedDesigns = (limit = 5) => {
-    if (!analytics) return [];
-    
-    return analytics
-      .sort((a, b) => a.average_rank - b.average_rank)
-      .slice(0, limit)
-      .map(item => ({
-        title: item.title,
-        averageRank: item.average_rank,
-        count: item.selection_count
-      }));
-  };
+  // Memoized helper functions to prevent unnecessary recalculations
+  const getTopRankedDesigns = useMemo(() => {
+    return (limit = 5) => {
+      if (!analytics) return [];
+      
+      return analytics
+        .sort((a, b) => a.average_rank - b.average_rank)
+        .slice(0, limit)
+        .map(item => ({
+          title: item.title,
+          averageRank: item.average_rank,
+          count: item.selection_count
+        }));
+    };
+  }, [analytics]);
 
-  const getCategoryDistribution = () => {
-    if (!analytics) return [];
-    
-    const categories: Record<string, number> = {};
-    
-    analytics.forEach(item => {
-      if (!categories[item.category]) {
-        categories[item.category] = 0;
-      }
-      categories[item.category] += item.selection_count;
-    });
-    
-    // Convert to percentage
-    const total = Object.values(categories).reduce((sum, count) => sum + count, 0);
-    
-    return Object.entries(categories).map(([name, value]) => {
-      const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-      return {
-        name,
-        value: percentage,
-        // Maintain consistent colors from our gradient
-        color: name === 'hero' ? '#ee682b' : 
-               name === 'navbar' ? '#ec7f00' : 
-               name === 'about' ? '#af5cf7' : 
-               name === 'footer' ? '#8439e9' : 
-               '#6142e7'
-      };
-    });
-  };
+  const getCategoryDistribution = useMemo(() => {
+    return () => {
+      if (!analytics) return [];
+      
+      const categories: Record<string, number> = {};
+      
+      analytics.forEach(item => {
+        if (!categories[item.category]) {
+          categories[item.category] = 0;
+        }
+        categories[item.category] += item.selection_count;
+      });
+      
+      // Convert to percentage
+      const total = Object.values(categories).reduce((sum, count) => sum + count, 0);
+      
+      return Object.entries(categories).map(([name, value]) => {
+        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+        return {
+          name,
+          value: percentage,
+          // Maintain consistent colors from our gradient
+          color: name === 'hero' ? '#ee682b' : 
+                 name === 'navbar' ? '#ec7f00' : 
+                 name === 'about' ? '#af5cf7' : 
+                 name === 'footer' ? '#8439e9' : 
+                 '#6142e7'
+        };
+      });
+    };
+  }, [analytics]);
 
-  const getPreferenceOverview = () => {
-    if (!analytics) return [];
-    
-    const categories = ['Hero', 'Navbar', 'About', 'Footer', 'Font'];
-    const categoryData: Record<string, { count: number, total: number }> = {};
-    
-    analytics.forEach(item => {
-      const cat = item.category.charAt(0).toUpperCase() + item.category.slice(1);
-      if (!categoryData[cat]) {
-        categoryData[cat] = { count: 0, total: 0 };
-      }
-      categoryData[cat].count += item.selection_count;
-      categoryData[cat].total += 1;
-    });
-    
-    return categories.map(category => {
-      const data = categoryData[category] || { count: 0, total: 0 };
-      const percentage = data.total > 0 ? Math.round((data.count / (data.total * 5)) * 100) : 0;
-      return { category, percentage };
-    });
-  };
+  const getPreferenceOverview = useMemo(() => {
+    return () => {
+      if (!analytics) return [];
+      
+      const categories = ['Hero', 'Navbar', 'About', 'Footer', 'Font'];
+      const categoryData: Record<string, { count: number, total: number }> = {};
+      
+      analytics.forEach(item => {
+        const cat = item.category.charAt(0).toUpperCase() + item.category.slice(1);
+        if (!categoryData[cat]) {
+          categoryData[cat] = { count: 0, total: 0 };
+        }
+        categoryData[cat].count += item.selection_count;
+        categoryData[cat].total += 1;
+      });
+      
+      return categories.map(category => {
+        const data = categoryData[category] || { count: 0, total: 0 };
+        const percentage = data.total > 0 ? Math.round((data.count / (data.total * 5)) * 100) : 0;
+        return { category, percentage };
+      });
+    };
+  }, [analytics]);
 
   return {
     analytics,
