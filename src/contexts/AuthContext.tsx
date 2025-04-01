@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Session, User, Provider } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -114,10 +114,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signInWithGoogle = async () => {
     try {
       setIsLoading(true);
+      
+      // Improved Google sign-in with better configuration
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/dashboard',
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
@@ -127,13 +133,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: error.message,
           variant: "destructive",
         });
+        console.error("Google OAuth error:", error);
+        setIsLoading(false);
         throw error;
       }
-
-      // No need to navigate here, the OAuth redirect will handle it
-      // The auth state change listener will update the state
+      
+      // Google OAuth flow will handle redirection
+      // No need to navigate programmatically
     } catch (error) {
-      console.error("Error signing in with Google:", error);
+      console.error("Error in Google sign-in:", error);
+      toast({
+        title: "Google login error",
+        description: "Could not connect to Google. Please try again.",
+        variant: "destructive",
+      });
       setIsLoading(false);
     }
   };

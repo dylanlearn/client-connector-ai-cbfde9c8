@@ -9,6 +9,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { signUp, signInWithGoogle, isLoading, user } = useAuth();
 
@@ -55,9 +58,11 @@ const Signup = () => {
 
   const handleGoogleSignIn = async () => {
     try {
+      setGoogleError(null);
       await signInWithGoogle();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google login error:", error);
+      setGoogleError(error?.message || "Failed to connect to Google. Please try again.");
     }
   };
 
@@ -80,6 +85,13 @@ const Signup = () => {
           </CardHeader>
           
           <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
+            {googleError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{googleError}</AlertDescription>
+              </Alert>
+            )}
+            
             {/* Google Sign In Button */}
             <Button 
               type="button" 
