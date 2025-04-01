@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb } from "lucide-react";
+import { Zap } from "lucide-react";
 
 interface AIInsightCardProps {
   title: string;
@@ -14,7 +14,7 @@ const AIInsightCard = ({
   title,
   insights,
   className = "",
-  icon = <Lightbulb className="h-5 w-5" />,
+  icon = <Zap className="h-5 w-5" />,
 }: AIInsightCardProps) => {
   return (
     <Card className={`glass-card hover-card-animate ${className}`}>

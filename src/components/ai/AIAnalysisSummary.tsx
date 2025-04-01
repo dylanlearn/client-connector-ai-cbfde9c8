@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AIAnalysis } from "@/contexts/AIContext";
-import { MessageSquare, Zap, Smile, Frown, Lightbulb } from "lucide-react";
+import { MessageSquare, Zap, Smile, Frown } from "lucide-react";
 
 interface AIAnalysisSummaryProps {
   analysis: AIAnalysis;
@@ -117,7 +116,7 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
         {keyInsights && keyInsights.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-sm font-medium flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
+              <Zap className="h-4 w-4 text-amber-500" />
               Key Insights
             </h4>
             <ul className="space-y-1.5 text-sm">
