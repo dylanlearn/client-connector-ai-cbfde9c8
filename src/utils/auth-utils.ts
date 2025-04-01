@@ -25,14 +25,10 @@ export const fetchUserProfile = async (userId: string) => {
 };
 
 export const getRedirectUrl = () => {
-  // Use the current origin to ensure it works in any environment
-  const currentOrigin = window.location.origin;
-  return `${currentOrigin}/dashboard`;
+  return "https://client-connector-ai.lovable.app/dashboard";
 };
 
 // Add a specific function for email confirmation redirect
 export const getEmailConfirmationRedirectUrl = () => {
-  // Use the current origin to ensure it works in any environment
-  const currentOrigin = window.location.origin;
-  return `${currentOrigin}/login?confirmed=true`;
+  return "https://client-connector-ai.lovable.app/login?confirmed=true";
 };
