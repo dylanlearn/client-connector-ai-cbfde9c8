@@ -27,4 +27,12 @@ export {
 };
 
 // Re-export types
-export type { ClientAccessLink, ClientTask, TaskStatus } from "@/types/client";
+export type { 
+  ClientAccessLink, 
+  ClientTask, 
+  TaskStatus, 
+  ClientTaskProgress,
+  TaskCardProps,
+  WhatNextSectionProps,
+  LoadingViewProps 
+} from "@/types/client";

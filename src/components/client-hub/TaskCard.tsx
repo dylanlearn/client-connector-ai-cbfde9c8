@@ -3,18 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle } from "lucide-react";
-import { ClientTask } from "@/types/client";
-
-interface TaskCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  isCompleted: boolean;
-  btnText: string;
-  designerNotes?: string | null;
-  onButtonClick: () => void;
-  taskType: string;
-}
+import { TaskCardProps } from "@/types/client";
 
 const TaskCard: React.FC<TaskCardProps> = ({
   title,

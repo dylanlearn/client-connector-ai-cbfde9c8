@@ -28,3 +28,22 @@ export interface ClientTask {
 export interface ClientTaskProgress {
   [key: string]: boolean;
 }
+
+export interface TaskCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  isCompleted: boolean;
+  btnText: string;
+  designerNotes?: string | null;
+  onButtonClick: () => void;
+  taskType: string;
+}
+
+export interface WhatNextSectionProps {
+  // For future customization options
+}
+
+export interface LoadingViewProps {
+  message?: string;
+}

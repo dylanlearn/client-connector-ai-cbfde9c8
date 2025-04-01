@@ -1,9 +1,14 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FileText, Palette, Store } from "lucide-react";
 import { toast } from 'sonner';
-import { validateClientToken, getClientTasks, updateTaskStatus, ClientTask, TaskStatus } from '@/utils/client-service';
+import { 
+  validateClientToken, 
+  getClientTasks, 
+  updateTaskStatus,
+  ClientTask, 
+  TaskStatus 
+} from '@/utils/client-service';
 import LoadingView from '@/components/client-hub/LoadingView';
 import AccessDeniedView from '@/components/client-hub/AccessDeniedView';
 import TaskCard from '@/components/client-hub/TaskCard';
@@ -132,7 +137,7 @@ const ClientHubPage = () => {
   };
 
   if (isValidatingAccess) {
-    return <LoadingView />;
+    return <LoadingView message="Validating your access..." />;
   }
 
   if (accessDenied) {
