@@ -26,8 +26,46 @@ interface SpecificQuestionsStepProps {
   onPrevious: () => void;
 }
 
+// Define schema types to match IntakeFormData interface
+type SaasSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodString;
+  userAccountsRequired: z.ZodBoolean;
+  pricingTiers: z.ZodString;
+  freeTrialOffered: z.ZodBoolean;
+}>;
+
+type EcommerceSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodString;
+  estimatedProducts: z.ZodString;
+  paymentProcessors: z.ZodString;
+  shippingIntegration: z.ZodBoolean;
+}>;
+
+type BusinessSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodString;
+  serviceOfferings: z.ZodString;
+  contactFormRequired: z.ZodBoolean;
+  hasPhysicalLocation: z.ZodBoolean;
+}>;
+
+type PortfolioSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodString;
+  projectCategories: z.ZodString;
+  contactInformation: z.ZodString;
+  resumeUploadRequired: z.ZodBoolean;
+}>;
+
+type BaseSchema = z.ZodObject<{
+  mainFeatures: z.ZodString;
+  competitors: z.ZodString;
+}>;
+
 // Dynamic schema based on site type
-const getFormSchema = (siteType: string) => {
+const getFormSchema = (siteType: string): BaseSchema | SaasSchema | EcommerceSchema | BusinessSchema | PortfolioSchema => {
   const baseSchema = {
     mainFeatures: z.string().min(1, "Please list your main features"),
     competitors: z.string().optional(),
@@ -51,9 +89,9 @@ const getFormSchema = (siteType: string) => {
     case "business":
       return z.object({
         ...baseSchema,
+        serviceOfferings: z.string().min(1, "Please list your services"),
         contactFormRequired: z.boolean().default(true),
         hasPhysicalLocation: z.boolean().default(false),
-        serviceOfferings: z.string().min(1, "Please list your services"),
       });
     case "portfolio":
       return z.object({
@@ -96,9 +134,9 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
       case "business":
         return {
           ...baseValues,
+          serviceOfferings: formData.serviceOfferings || "",
           contactFormRequired: formData.contactFormRequired !== undefined ? formData.contactFormRequired : true,
           hasPhysicalLocation: formData.hasPhysicalLocation !== undefined ? formData.hasPhysicalLocation : false,
-          serviceOfferings: formData.serviceOfferings || "",
         };
       case "portfolio":
         return {
@@ -112,6 +150,7 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
     }
   };
 
+  // Set up form with correct type to match the schema
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: getDefaultValues(),
@@ -121,7 +160,7 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (Object.values(value).some(v => v !== undefined)) {
-        updateFormData(value);
+        updateFormData(value as Partial<IntakeFormData>);
       }
     });
     return () => subscription.unsubscribe();
