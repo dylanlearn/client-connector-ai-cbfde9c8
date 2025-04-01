@@ -3,7 +3,7 @@ import React from 'react';
 import { FileText, Palette, Store } from "lucide-react";
 import TaskCard from './TaskCard';
 import LoadingView from './LoadingView';
-import { ClientTask } from '@/types/client';
+import { ClientTask, TaskStatus } from '@/types/client';
 
 interface TasksSectionProps {
   isLoading: boolean;
@@ -22,6 +22,11 @@ const TasksSection: React.FC<TasksSectionProps> = ({
   tasks, 
   onTaskButtonClick 
 }) => {
+  // Helper function to determine task status
+  const getTaskStatus = (isCompleted: boolean): TaskStatus => {
+    return isCompleted ? 'completed' : 'pending';
+  };
+  
   return (
     <>
       {isLoading ? (
@@ -36,6 +41,7 @@ const TasksSection: React.FC<TasksSectionProps> = ({
             description="Tell us about your project needs and goals"
             icon={<FileText className="h-4 w-4" />}
             isCompleted={taskStatus.intakeForm}
+            status={getTaskStatus(taskStatus.intakeForm)}
             btnText={taskStatus.intakeForm ? "Review Your Answers" : "Start Questionnaire"}
             designerNotes={tasks?.find(t => t.taskType === 'intakeForm')?.designerNotes}
             onButtonClick={() => onTaskButtonClick('intakeForm', '/intake')}
@@ -47,6 +53,7 @@ const TasksSection: React.FC<TasksSectionProps> = ({
             description="Select design elements that match your style"
             icon={<Palette className="h-4 w-4" />}
             isCompleted={taskStatus.designPicker}
+            status={getTaskStatus(taskStatus.designPicker)}
             btnText={taskStatus.designPicker ? "Review Your Selections" : "Select Designs"}
             designerNotes={tasks?.find(t => t.taskType === 'designPicker')?.designerNotes}
             onButtonClick={() => onTaskButtonClick('designPicker', '/design-picker')}
@@ -63,6 +70,7 @@ const TasksSection: React.FC<TasksSectionProps> = ({
           description="Browse our template marketplace for inspiration"
           icon={<Store className="h-4 w-4" />}
           isCompleted={taskStatus.templates}
+          status={getTaskStatus(taskStatus.templates)}
           btnText={taskStatus.templates ? "Review Templates" : "Browse Templates"}
           designerNotes={tasks?.find(t => t.taskType === 'templates')?.designerNotes}
           onButtonClick={() => onTaskButtonClick('templates', '/templates')}
