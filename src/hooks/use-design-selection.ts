@@ -42,8 +42,8 @@ export const useDesignSelection = (maxSelections: number = 4) => {
       ...prev,
       [option.category]: {
         ...option,
-        rank: prev[option.category]?.rank || null,
-        notes: prev[option.category]?.notes || ""
+        rank: null,
+        notes: ""
       }
     }));
     
