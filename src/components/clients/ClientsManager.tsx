@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -74,12 +73,17 @@ export default function ClientsManager() {
           async (payload) => {
             // We need to check if this task belongs to one of our clients
             try {
-              const { data: linkData } = await supabase
+              const { data: linkData, error } = await supabase
                 .from('client_access_links')
                 .select('client_name, client_email, project_id')
                 .eq('id', (payload.new as any).link_id)
                 .eq('designer_id', user.id)
                 .single();
+                
+              if (error) {
+                console.error("Error fetching link data:", error);
+                return;
+              }
                 
               if (linkData) {
                 const taskType = (payload.new as any).task_type;
@@ -92,13 +96,13 @@ export default function ClientsManager() {
                 let notificationMessage = `${linkData.client_name} completed ${taskName}`;
                 
                 if (linkData.project_id) {
-                  const { data: projectData } = await supabase
+                  const { data: projectData, error: projectError } = await supabase
                     .from('projects')
                     .select('title')
                     .eq('id', linkData.project_id)
                     .single();
                     
-                  if (projectData) {
+                  if (!projectError && projectData) {
                     notificationMessage += ` for project "${projectData.title}"`;
                   }
                 }
@@ -107,7 +111,7 @@ export default function ClientsManager() {
               }
             } catch (error) {
               // Silently fail - likely means this task isn't related to this designer
-              console.log('Task update not relevant to current user');
+              console.log('Task update not relevant to current user or error occurred:', error);
             }
           }
         )

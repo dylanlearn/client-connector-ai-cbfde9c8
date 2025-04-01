@@ -78,8 +78,8 @@ export const recordLinkDelivery = async (
   status: string = 'pending'
 ): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc(
-      'record_client_link_delivery' as any,
+    const { error } = await supabase.rpc(
+      'record_client_link_delivery',
       {
         p_link_id: linkId,
         p_delivery_type: deliveryType,
@@ -151,25 +151,10 @@ export const validateClientToken = async (
 // Get all client links for a designer
 export const getClientLinks = async (designerId: string): Promise<ClientAccessLink[] | null> => {
   try {
-    // Make sure to explicitly name all columns to avoid potential type errors
+    // Use a simpler query first without the join that's causing issues
     const { data, error } = await supabase
       .from('client_access_links')
-      .select(`
-        id,
-        designer_id,
-        project_id,
-        client_name,
-        client_email,
-        client_phone,
-        token,
-        created_at,
-        expires_at,
-        last_accessed_at,
-        status,
-        projects:project_id (
-          title
-        )
-      `)
+      .select('*')
       .eq('designer_id', designerId)
       .order('created_at', { ascending: false });
 
@@ -178,11 +163,32 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
       return null;
     }
 
+    // Then for links with project_id, fetch the project titles in a separate query
+    const projectIds = data
+      .filter(link => link.project_id)
+      .map(link => link.project_id);
+    
+    let projectTitles: Record<string, string> = {};
+    
+    if (projectIds.length > 0) {
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, title')
+        .in('id', projectIds);
+        
+      if (!projectsError && projectsData) {
+        projectTitles = projectsData.reduce((acc, project) => {
+          acc[project.id] = project.title;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+    }
+
     return data.map(link => ({
       id: link.id,
       designerId: link.designer_id,
       projectId: link.project_id,
-      projectTitle: link.projects ? link.projects.title : null,
+      projectTitle: link.project_id ? projectTitles[link.project_id] || null : null,
       clientName: link.client_name,
       clientEmail: link.client_email,
       clientPhone: link.client_phone,
@@ -201,12 +207,11 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
 // Get delivery information for a client link
 export const getLinkDeliveries = async (linkId: string): Promise<any[] | null> => {
   try {
-    // Use type assertion to handle the new table
-    const { data, error } = await (supabase
-      .from('client_link_deliveries' as any)
+    const { data, error } = await supabase
+      .from('client_link_deliveries')
       .select('*')
       .eq('link_id', linkId)
-      .order('created_at', { ascending: false })) as any;
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error getting link deliveries:', error);
