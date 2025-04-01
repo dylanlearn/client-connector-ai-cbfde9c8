@@ -87,7 +87,7 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, phoneNumber: string) => {
     try {
       setIsLoading(true);
       
@@ -101,6 +101,7 @@ export const useAuthActions = (setProfile: (profile: any) => void) => {
         options: {
           data: {
             name,
+            phone_number: phoneNumber,
           },
           emailRedirectTo: confirmationRedirectUrl,
         },

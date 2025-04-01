@@ -14,7 +14,9 @@ const generateToken = () => {
 export const createClientAccessLink = async (
   designerId: string,
   clientEmail: string,
-  clientName: string
+  clientName: string,
+  clientPhone: string | null = null,
+  deliveryMethods: { email: boolean, sms: boolean } = { email: true, sms: false }
 ): Promise<string | null> => {
   try {
     // Create an expiry date 14 days from now
@@ -29,6 +31,7 @@ export const createClientAccessLink = async (
         designer_id: designerId,
         client_email: clientEmail,
         client_name: clientName,
+        client_phone: clientPhone,
         token: token,
         expires_at: expiresAt.toISOString(),
         status: 'active'
@@ -45,6 +48,15 @@ export const createClientAccessLink = async (
     // Create default tasks for this client
     await createDefaultClientTasks(data.id);
     
+    // Record delivery methods
+    if (deliveryMethods.email) {
+      await recordLinkDelivery(data.id, 'email', clientEmail);
+    }
+    
+    if (deliveryMethods.sms && clientPhone) {
+      await recordLinkDelivery(data.id, 'sms', clientPhone);
+    }
+    
     // Return the sharable link
     const baseUrl = window.location.origin;
     return `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
@@ -52,6 +64,36 @@ export const createClientAccessLink = async (
     console.error('Error in createClientAccessLink:', error);
     toast.error('An unexpected error occurred');
     return null;
+  }
+};
+
+// Record a delivery attempt for a client link
+export const recordLinkDelivery = async (
+  linkId: string,
+  deliveryType: 'email' | 'sms',
+  recipient: string,
+  status: string = 'pending'
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc(
+      'record_client_link_delivery',
+      {
+        p_link_id: linkId,
+        p_delivery_type: deliveryType,
+        p_recipient: recipient,
+        p_status: status
+      }
+    );
+
+    if (error) {
+      console.error(`Error recording ${deliveryType} delivery:`, error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`Error in recordLinkDelivery for ${deliveryType}:`, error);
+    return false;
   }
 };
 
@@ -113,6 +155,7 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
       designerId: link.designer_id,
       clientEmail: link.client_email,
       clientName: link.client_name,
+      clientPhone: link.client_phone,
       token: link.token,
       createdAt: new Date(link.created_at),
       expiresAt: new Date(link.expires_at),
@@ -121,6 +164,27 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
     }));
   } catch (error) {
     console.error('Error in getClientLinks:', error);
+    return null;
+  }
+};
+
+// Get delivery information for a client link
+export const getLinkDeliveries = async (linkId: string): Promise<any[] | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('client_link_deliveries')
+      .select('*')
+      .eq('link_id', linkId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error getting link deliveries:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getLinkDeliveries:', error);
     return null;
   }
 };

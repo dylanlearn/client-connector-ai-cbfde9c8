@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Mail, Phone } from "lucide-react";
 
 interface ClientLinkDialogProps {
   open: boolean;
@@ -27,18 +38,58 @@ export default function ClientLinkDialog({
 }: ClientLinkDialogProps) {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [deliveryMethods, setDeliveryMethods] = useState<{email: boolean, sms: boolean}>({
+    email: true,
+    sms: false
+  });
   const [isCreating, setIsCreating] = useState(false);
   const { user } = useAuth();
 
+  const handleDeliveryMethodChange = (method: 'email' | 'sms', checked: boolean) => {
+    setDeliveryMethods(prev => ({
+      ...prev,
+      [method]: checked
+    }));
+  };
+
   const handleCreate = async () => {
     if (!user || !clientName.trim() || !clientEmail.trim()) {
-      toast.error("Please enter both client name and email");
+      toast.error("Please enter client name and email");
+      return;
+    }
+
+    // If SMS delivery is selected, validate phone number
+    if (deliveryMethods.sms && !clientPhone.trim()) {
+      toast.error("Please enter client phone number for SMS delivery");
+      return;
+    }
+
+    // Simple phone validation if provided
+    if (clientPhone) {
+      const phoneRegex = /^\+?[0-9\s\-\(\)]+$/;
+      if (!phoneRegex.test(clientPhone)) {
+        toast.error("Please enter a valid phone number");
+        return;
+      }
+    }
+
+    // Ensure at least one delivery method is selected
+    if (!deliveryMethods.email && !deliveryMethods.sms) {
+      toast.error("Please select at least one delivery method");
       return;
     }
 
     setIsCreating(true);
     try {
-      const linkUrl = await createClientAccessLink(user.id, clientEmail, clientName);
+      const linkUrl = await createClientAccessLink(
+        user.id, 
+        clientEmail, 
+        clientName, 
+        clientPhone, 
+        deliveryMethods
+      );
+      
       if (linkUrl) {
         toast.success("Client hub link generated! It will expire in 14 days.");
         
@@ -49,6 +100,7 @@ export default function ClientLinkDialog({
           designerId: user.id,
           clientEmail,
           clientName,
+          clientPhone: clientPhone || null,
           token: linkUrl.split("clientToken=")[1]?.split("&")[0] || "",
           createdAt: new Date(),
           expiresAt: new Date(new Date().setDate(new Date().getDate() + 14)),
@@ -70,6 +122,11 @@ export default function ClientLinkDialog({
   const resetForm = () => {
     setClientName("");
     setClientEmail("");
+    setClientPhone("");
+    setDeliveryMethods({
+      email: true,
+      sms: false
+    });
   };
 
   return (
@@ -112,6 +169,51 @@ export default function ClientLinkDialog({
               type="email"
             />
           </div>
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="client-phone" className="text-right">
+              Phone
+            </Label>
+            <Input
+              id="client-phone"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+              className="col-span-3"
+              placeholder="+1 (555) 123-4567"
+              type="tel"
+            />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">
+              Delivery
+            </Label>
+            <div className="col-span-3 space-y-2">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  checked={deliveryMethods.email} 
+                  onCheckedChange={(checked) => handleDeliveryMethodChange('email', checked)}
+                  id="email-delivery"
+                />
+                <Label htmlFor="email-delivery" className="flex items-center cursor-pointer">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  checked={deliveryMethods.sms} 
+                  onCheckedChange={(checked) => handleDeliveryMethodChange('sms', checked)}
+                  id="sms-delivery"
+                />
+                <Label htmlFor="sms-delivery" className="flex items-center cursor-pointer">
+                  <Phone className="h-4 w-4 mr-2" />
+                  SMS
+                </Label>
+              </div>
+            </div>
+          </div>
         </div>
         
         <DialogFooter>
@@ -120,7 +222,9 @@ export default function ClientLinkDialog({
           </Button>
           <Button 
             onClick={handleCreate} 
-            disabled={isCreating || !clientName.trim() || !clientEmail.trim()}
+            disabled={isCreating || !clientName.trim() || !clientEmail.trim() || 
+                    (deliveryMethods.sms && !clientPhone.trim()) ||
+                    (!deliveryMethods.email && !deliveryMethods.sms)}
           >
             {isCreating ? "Creating..." : "Create Link"}
           </Button>
@@ -128,4 +232,4 @@ export default function ClientLinkDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

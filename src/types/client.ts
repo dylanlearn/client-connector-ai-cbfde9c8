@@ -1,11 +1,11 @@
-
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface ClientAccessLink {
   id: string;
   designerId: string;
-  clientEmail: string;
   clientName: string;
+  clientEmail: string;
+  clientPhone: string | null;
   token: string;
   createdAt: Date;
   expiresAt: Date;
@@ -16,32 +16,31 @@ export interface ClientAccessLink {
 export interface ClientTask {
   id: string;
   linkId: string;
-  taskType: 'intakeForm' | 'designPicker' | 'templates';
+  taskType: string;
   status: TaskStatus;
-  completedAt: Date | null;
-  designerNotes: string | null;
-  clientResponse: any;
+  clientResponse?: any;
+  designerNotes?: string;
   createdAt: Date;
   updatedAt: Date;
+  completedAt: Date | null;
 }
 
 export interface ClientTaskProgress {
-  [key: string]: boolean;
+  completed: number;
+  total: number;
+  percentage: number;
 }
 
 export interface TaskCardProps {
   title: string;
   description: string;
-  icon: React.ReactNode;
-  isCompleted: boolean;
-  btnText: string;
-  designerNotes?: string | null;
-  onButtonClick: () => void;
-  taskType: string;
+  status: TaskStatus;
+  onClick: () => void;
+  icon?: React.ReactNode;
 }
 
 export interface WhatNextSectionProps {
-  // For future customization options
+  isComplete: boolean;
 }
 
 export interface LoadingViewProps {

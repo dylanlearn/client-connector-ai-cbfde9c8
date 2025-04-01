@@ -19,6 +19,7 @@ const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [googleError, setGoogleError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { signUp, signInWithGoogle, isLoading, user } = useAuth();
@@ -34,7 +35,7 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phoneNumber) {
       toast({
         title: "Missing fields",
         description: "Please fill in all fields",
@@ -51,9 +52,20 @@ const Signup = () => {
       });
       return;
     }
+
+    // Simple phone validation
+    const phoneRegex = /^\+?[0-9\s\-\(\)]+$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
-      await signUp(email, password, name);
+      await signUp(email, password, name, phoneNumber);
     } catch (error) {
       // Error is handled in the signUp function
       console.error("Signup error:", error);
@@ -140,6 +152,18 @@ const Signup = () => {
                     placeholder="hello@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className="h-10"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     className="h-10"
                     required
                   />

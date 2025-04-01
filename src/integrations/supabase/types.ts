@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           client_email: string
           client_name: string
+          client_phone: string | null
           created_at: string
           designer_id: string
           expires_at: string
@@ -24,6 +25,7 @@ export type Database = {
         Insert: {
           client_email: string
           client_name: string
+          client_phone?: string | null
           created_at?: string
           designer_id: string
           expires_at: string
@@ -35,6 +37,7 @@ export type Database = {
         Update: {
           client_email?: string
           client_name?: string
+          client_phone?: string | null
           created_at?: string
           designer_id?: string
           expires_at?: string
@@ -44,6 +47,50 @@ export type Database = {
           token?: string
         }
         Relationships: []
+      }
+      client_link_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          delivery_type: string
+          error_message: string | null
+          id: string
+          link_id: string
+          recipient: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          delivery_type: string
+          error_message?: string | null
+          id?: string
+          link_id: string
+          recipient: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          delivery_type?: string
+          error_message?: string | null
+          id?: string
+          link_id?: string
+          recipient?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_link_deliveries_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "client_access_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_tasks: {
         Row: {
@@ -162,6 +209,7 @@ export type Database = {
           email: string
           id: string
           name: string | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -171,6 +219,7 @@ export type Database = {
           email: string
           id: string
           name?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -180,6 +229,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -302,6 +352,15 @@ export type Database = {
           user_id: string
         }
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      record_client_link_delivery: {
+        Args: {
+          p_link_id: string
+          p_delivery_type: string
+          p_recipient: string
+          p_status?: string
+        }
+        Returns: string
       }
       record_template_purchase: {
         Args: {
