@@ -30,13 +30,13 @@ const SelectionLimitDialog = ({
           <AlertDialogTitle>Selection Limit Reached</AlertDialogTitle>
           <AlertDialogDescription>
             You've already selected the maximum of {maxSelections} design elements. 
-            Would you like to replace one of your existing selections?
+            Please remove an existing selection first if you want to add a new one.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
-            Replace a Selection
+            OK
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

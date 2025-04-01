@@ -52,22 +52,21 @@ export const useDesignSelection = (maxSelections: number = 4) => {
 
   const confirmReplaceSelection = () => {
     if (attemptedSelection) {
-      const categories = Object.keys(selectedDesigns);
-      if (categories.length > 0) {
-        const randomCategory = categories[0];
-        const newSelections = { ...selectedDesigns };
-        delete newSelections[randomCategory];
-        
-        setSelectedDesigns({
-          ...newSelections,
+      // We need to replace a selection with the attempted one
+      // Instead of removing a random one, let the user choose which one to replace
+      // For now, we'll just add it if there's room, otherwise we don't do anything
+      if (Object.keys(selectedDesigns).length < maxSelections) {
+        setSelectedDesigns(prev => ({
+          ...prev,
           [attemptedSelection.category]: {
             ...attemptedSelection,
             rank: null,
             notes: ""
           }
-        });
-        
-        toast.success(`Replaced ${randomCategory} design with ${attemptedSelection.category} design`);
+        }));
+        toast.success(`Added ${attemptedSelection.category} design`);
+      } else {
+        toast.info(`Please remove a selection first before adding ${attemptedSelection.category}`);
       }
     }
     setShowLimitDialog(false);
