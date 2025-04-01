@@ -72,34 +72,66 @@ export const useAnalytics = () => {
     enabled: !!user,
   });
 
-  // Setup realtime subscription
+  // Setup realtime subscription - OPTIMIZED FOR USER-SPECIFIC DATA ONLY
   useEffect(() => {
     if (!user) return;
 
-    const analyticsChannel = supabase.channel('analytics-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'design_analytics' },
+    // Only subscribe to analytics changes that affect THIS user's preferences
+    // We first need to get the design_option_ids this user has selected
+    const getUserDesignOptionIds = async () => {
+      const { data } = await supabase
+        .from('design_preferences')
+        .select('design_option_id')
+        .eq('user_id', user.id);
+      
+      return data?.map(item => item.design_option_id) || [];
+    };
+
+    getUserDesignOptionIds().then(designOptionIds => {
+      // Only create analytics subscription if user has preferences
+      if (designOptionIds.length > 0) {
+        const analyticsChannel = supabase.channel('user-analytics-changes')
+          .on('postgres_changes', 
+            { 
+              event: '*', 
+              schema: 'public', 
+              table: 'design_analytics',
+              filter: `design_option_id=in.(${designOptionIds.map(id => `"${id}"`).join(',')})` 
+            },
+            (payload) => {
+              console.log('User-specific analytics update:', payload);
+              refetchAnalytics();
+              setIsRealtime(true);
+            }
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(analyticsChannel);
+        };
+      }
+    });
+
+    // User's own preferences subscription - this is properly filtered by user_id
+    const preferencesChannel = supabase.channel('user-preferences-changes')
+      .on('postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'design_preferences', 
+          filter: `user_id=eq.${user.id}` 
+        },
         (payload) => {
-          console.log('Analytics update:', payload);
+          console.log('User preferences update:', payload);
+          refetchPreferences();
+          // Also refetch analytics as they may be affected
           refetchAnalytics();
           setIsRealtime(true);
         }
       )
       .subscribe();
 
-    const preferencesChannel = supabase.channel('preferences-changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'design_preferences', filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          console.log('Preferences update:', payload);
-          refetchPreferences();
-          setIsRealtime(true);
-        }
-      )
-      .subscribe();
-
     return () => {
-      supabase.removeChannel(analyticsChannel);
       supabase.removeChannel(preferencesChannel);
     };
   }, [user, refetchAnalytics, refetchPreferences]);

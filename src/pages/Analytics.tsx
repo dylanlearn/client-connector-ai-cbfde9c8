@@ -1,5 +1,5 @@
 
-import { BarChart3, PieChart, ChevronRight, LayoutGrid, Star, Zap } from "lucide-react";
+import { BarChart3, PieChart, ChevronRight, LayoutGrid, Star, Zap, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,14 +7,17 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import DesignPreferenceChart from "@/components/analytics/DesignPreferenceChart"; 
 import TopRankedDesigns from "@/components/analytics/TopRankedDesigns";
 import CategoryDistribution from "@/components/analytics/CategoryDistribution";
+import ShareAnalyticsLink from "@/components/analytics/ShareAnalyticsLink";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/hooks/use-auth";
+import { useDesignSelection } from "@/hooks/use-design-selection";
 
 const Analytics = () => {
   const hasProData = false; // This would determine if user has access to Pro features
   const { analytics, userPreferences, isLoading, isRealtime } = useAnalytics();
   const { user } = useAuth();
+  const { clientAccessMode, viewOnlyMode } = useDesignSelection({});
 
   return (
     <DashboardLayout>
@@ -27,8 +30,15 @@ const Analytics = () => {
               Live Data
             </div>
           )}
+          {clientAccessMode && (
+            <div className="flex items-center ml-4 text-sm text-amber-600 bg-amber-100 px-2 py-1 rounded">
+              <Share2 className="w-4 h-4 mr-1" />
+              Client View Mode
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
+          {!viewOnlyMode && <ShareAnalyticsLink />}
           <Button variant="outline">
             <PieChart className="mr-2 h-4 w-4" />
             Overview

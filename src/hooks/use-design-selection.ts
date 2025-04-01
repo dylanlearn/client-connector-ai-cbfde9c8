@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { DesignOption } from "@/components/design/VisualPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { UserPreference } from "./use-analytics";
+
+const VALID_CATEGORIES = ['hero', 'navbar', 'about', 'footer', 'font'];
 
 export type RankedDesignOption = DesignOption & {
   rank?: number | null;
@@ -17,8 +18,9 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [attemptedSelection, setAttemptedSelection] = useState<DesignOption | null>(null);
   const { user } = useAuth();
+  const [clientAccessMode, setClientAccessMode] = useState(false);
+  const [viewOnlyMode, setViewOnlyMode] = useState(false);
 
-  // Count selections by category
   const getSelectionsByCategory = () => {
     const countByCategory: Record<string, number> = {};
     
@@ -29,7 +31,59 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     return countByCategory;
   };
 
-  // Function to load saved design preferences from Supabase
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientToken = urlParams.get('clientToken');
+    const designerId = urlParams.get('designerId');
+    
+    if (clientToken && designerId) {
+      setClientAccessMode(true);
+      setViewOnlyMode(true);
+      loadSharedPreferences(designerId);
+    } else {
+      loadSavedPreferences();
+    }
+  }, [user?.id]);
+
+  const loadSharedPreferences = async (designerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('design_preferences')
+        .select('*')
+        .eq('user_id', designerId);
+
+      if (error) {
+        console.error('Error loading shared design preferences:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const loadedDesigns: Record<string, RankedDesignOption> = {};
+        
+        data.forEach((item: UserPreference) => {
+          if (VALID_CATEGORIES.includes(item.category)) {
+            loadedDesigns[item.id] = {
+              id: item.design_option_id,
+              title: item.title,
+              description: "",
+              imageUrl: "",
+              category: item.category as DesignOption["category"],
+              rank: item.rank,
+              notes: item.notes
+            };
+          } else {
+            console.warn(`Skipping invalid category: ${item.category}`);
+          }
+        });
+        
+        setSelectedDesigns(loadedDesigns);
+        toast.info(`Viewing designer's ${Object.keys(loadedDesigns).length} design selections`);
+      }
+    } catch (error) {
+      console.error('Error loading shared preferences:', error);
+    }
+  };
+
   const loadSavedPreferences = async () => {
     if (!user) return;
 
@@ -48,16 +102,12 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
         const loadedDesigns: Record<string, RankedDesignOption> = {};
         
         data.forEach((item: UserPreference) => {
-          // Type validation to ensure category is one of the allowed values
-          const isValidCategory = ['hero', 'navbar', 'about', 'footer', 'font'].includes(item.category);
-          
-          if (isValidCategory) {
+          if (VALID_CATEGORIES.includes(item.category)) {
             loadedDesigns[item.id] = {
               id: item.design_option_id,
               title: item.title,
               description: "",
               imageUrl: "",
-              // Cast the category to the specific union type
               category: item.category as DesignOption["category"],
               rank: item.rank,
               notes: item.notes
@@ -75,15 +125,14 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     }
   };
 
-  // Load saved preferences when user changes
-  useEffect(() => {
-    loadSavedPreferences();
-  }, [user?.id]);
-
-  // Function to save design preference to Supabase
   const saveDesignPreference = async (designId: string, design: RankedDesignOption) => {
     if (!user) {
       toast.error('You must be logged in to save preferences');
+      return;
+    }
+
+    if (viewOnlyMode) {
+      toast.error('You are in view-only mode and cannot save changes');
       return;
     }
 
@@ -109,9 +158,13 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     }
   };
 
-  // Function to delete design preference from Supabase
   const deleteDesignPreference = async (designId: string) => {
     if (!user) return;
+    
+    if (viewOnlyMode) {
+      toast.error('You are in view-only mode and cannot delete preferences');
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -128,12 +181,33 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     }
   };
 
+  const generateClientShareLink = async () => {
+    if (!user) {
+      toast.error('You must be logged in to generate a share link');
+      return null;
+    }
+    
+    try {
+      const token = Math.random().toString(36).substring(2, 15);
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+      
+      const baseUrl = window.location.origin;
+      const shareLink = `${baseUrl}/analytics?clientToken=${token}&designerId=${user.id}`;
+      
+      return shareLink;
+    } catch (error) {
+      console.error('Error generating share link:', error);
+      toast.error('Failed to generate share link');
+      return null;
+    }
+  };
+
   const handleSelectDesign = (option: DesignOption) => {
     const selectionsByCategory = getSelectionsByCategory();
     const currentCategoryCount = selectionsByCategory[option.category] || 0;
     const maxForCategory = maxSelectionsByCategory[option.category] || 4;
 
-    // Check if this specific item is already selected
     const isAlreadySelected = Object.values(selectedDesigns).some(
       design => design.id === option.id
     );
@@ -143,14 +217,12 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
       return;
     }
     
-    // Check if we've reached the maximum selections for this category
     if (currentCategoryCount >= maxForCategory) {
       setAttemptedSelection(option);
       setShowLimitDialog(true);
       return;
     }
     
-    // Add the new selection
     const newId = `${option.category}-${Date.now()}`;
     const newDesign = {
       ...option,
@@ -163,7 +235,6 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
       [newId]: newDesign
     }));
     
-    // Save to Supabase
     saveDesignPreference(newId, newDesign);
     
     toast.success(`Added ${option.category} design. ${maxForCategory - currentCategoryCount - 1} more ${option.category} selections available.`);
@@ -182,7 +253,6 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     delete newSelections[designId];
     setSelectedDesigns(newSelections);
     
-    // Delete from Supabase
     deleteDesignPreference(designId);
     
     const selectionsByCategory = getSelectionsByCategory();
@@ -192,14 +262,12 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     toast.info(`Removed ${design.category} design. You can add ${maxForCategory - categoryCount} more.`);
   };
 
-  // Update Supabase when ranks or notes change
   useEffect(() => {
     Object.entries(selectedDesigns).forEach(([designId, design]) => {
       saveDesignPreference(designId, design);
     });
   }, [selectedDesigns]);
 
-  // Calculate total completeness across all categories
   const calculateCompleteness = () => {
     const selectionsByCategory = getSelectionsByCategory();
     let totalSelected = 0;
@@ -228,10 +296,13 @@ export const useDesignSelection = (maxSelectionsByCategory: Record<string, numbe
     showLimitDialog,
     setShowLimitDialog,
     attemptedSelection,
+    viewOnlyMode,
+    clientAccessMode,
     ...calculateCompleteness(),
     getSelectionsByCategory,
     handleSelectDesign,
     confirmReplaceSelection,
-    handleRemoveDesign
+    handleRemoveDesign,
+    generateClientShareLink
   };
 };
