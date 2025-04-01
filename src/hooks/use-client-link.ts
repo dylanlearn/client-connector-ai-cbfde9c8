@@ -16,6 +16,7 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
+  const [personalMessage, setPersonalMessage] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [deliveryMethods, setDeliveryMethods] = useState<{email: boolean, sms: boolean}>({
     email: true,
@@ -50,7 +51,8 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
         body: {
           linkId,
           deliveryType: type,
-          recipient
+          recipient,
+          personalMessage: personalMessage.trim() || null
         }
       });
       
@@ -94,6 +96,12 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       return;
     }
 
+    // Validate personal message length
+    if (personalMessage.length > 150) {
+      toast.error("Personal message must be 150 characters or less");
+      return;
+    }
+
     setIsCreating(true);
     try {
       const { link, linkId } = await createClientAccessLink(
@@ -102,7 +110,8 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
         clientName, 
         clientPhone, 
         deliveryMethods,
-        selectedProjectId
+        selectedProjectId,
+        personalMessage.trim() || null
       );
       
       if (link && linkId) {
@@ -117,6 +126,7 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
           clientEmail,
           clientName,
           clientPhone: clientPhone || null,
+          personalMessage: personalMessage.trim() || null,
           token: link.split("clientToken=")[1]?.split("&")[0] || "",
           createdAt: new Date(),
           expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)),
@@ -150,6 +160,7 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
     setClientName("");
     setClientEmail("");
     setClientPhone("");
+    setPersonalMessage("");
     setSelectedProjectId(null);
     setDeliveryMethods({
       email: true,
@@ -164,6 +175,8 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
     setClientEmail,
     clientPhone,
     setClientPhone,
+    personalMessage,
+    setPersonalMessage,
     selectedProjectId,
     setSelectedProjectId,
     deliveryMethods,

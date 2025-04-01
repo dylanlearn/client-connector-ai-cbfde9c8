@@ -38,6 +38,8 @@ export default function ClientLinkDialog({
     setClientEmail,
     clientPhone,
     setClientPhone,
+    personalMessage,
+    setPersonalMessage,
     selectedProjectId,
     setSelectedProjectId,
     deliveryMethods,
@@ -80,6 +82,8 @@ export default function ClientLinkDialog({
             setClientEmail={setClientEmail}
             clientPhone={clientPhone}
             setClientPhone={setClientPhone}
+            personalMessage={personalMessage}
+            setPersonalMessage={setPersonalMessage}
           />
 
           <DeliveryMethodsSection

@@ -14,6 +14,7 @@ interface SendLinkRequest {
   linkId: string;
   deliveryType: 'email' | 'sms';
   recipient: string;
+  personalMessage?: string | null;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -27,7 +28,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { linkId, deliveryType, recipient }: SendLinkRequest = await req.json();
+    const { linkId, deliveryType, recipient, personalMessage }: SendLinkRequest = await req.json();
     
     if (!linkId || !deliveryType || !recipient) {
       throw new Error("Missing required parameters");
@@ -78,24 +79,39 @@ const handler = async (req: Request): Promise<Response> => {
         
         const resend = new Resend(resendApiKey);
         
+        // Build email content with optional personal message
+        let emailHtml = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #4338ca;">Your Design Project Is Ready</h1>
+            <p>Hello ${linkData.client_name},</p>
+            <p>Your designer has shared a project with you. Click the button below to access your design hub:</p>
+        `;
+        
+        // Add personal message if provided
+        if (personalMessage) {
+          emailHtml += `
+            <div style="padding: 15px; background-color: #f9fafb; border-left: 4px solid #4338ca; margin: 20px 0;">
+              <p style="font-style: italic; margin: 0;">"${personalMessage}"</p>
+            </div>
+          `;
+        }
+        
+        emailHtml += `
+            <div style="margin: 30px 0;">
+              <a href="${clientHubLink}" style="background-color: #4338ca; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Access Your Design Hub</a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #6b7280;">${clientHubLink}</p>
+            <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">This link will expire in 7 days.</p>
+          </div>
+        `;
+        
         // Send email using Resend
         const emailResponse = await resend.emails.send({
           from: "DezignSync <noreply@dezignsync.app>",
           to: recipient,
           subject: `${linkData.client_name}, access your design project`,
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #4338ca;">Your Design Project Is Ready</h1>
-              <p>Hello ${linkData.client_name},</p>
-              <p>Your designer has shared a project with you. Click the button below to access your design hub:</p>
-              <div style="margin: 30px 0;">
-                <a href="${clientHubLink}" style="background-color: #4338ca; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Access Your Design Hub</a>
-              </div>
-              <p>Or copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; color: #6b7280;">${clientHubLink}</p>
-              <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">This link will expire in 7 days.</p>
-            </div>
-          `,
+          html: emailHtml,
         });
         
         console.log("Email sent successfully:", emailResponse);
@@ -129,9 +145,20 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log(`Sending SMS to ${formattedPhone} with link: ${clientHubLink}`);
         
-        // Send SMS using Twilio with improved message format that includes client name
+        // Construct SMS message with optional personal message
+        let smsBody = `Hello ${linkData.client_name}, your designer has shared a project with you on DezignSync.`;
+        
+        // Add personal message if provided
+        if (personalMessage) {
+          smsBody += ` "${personalMessage}"`;
+        }
+        
+        // Add the link
+        smsBody += ` Access your design hub here: ${clientHubLink}`;
+        
+        // Send SMS using Twilio
         const message = await client.messages.create({
-          body: `Hello ${linkData.client_name}, your designer has shared a project with you on DezignSync. Access your design hub here: ${clientHubLink}`,
+          body: smsBody,
           from: twilioPhone,
           to: formattedPhone,
           statusCallback: `${supabaseUrl}/functions/v1/update-sms-status`

@@ -1,71 +1,72 @@
 
-/**
- * Functions for creating client access links
- */
-
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { ClientLinkResult } from "@/types/client";
-import { generateToken } from "./token-generation";
-import { recordLinkDelivery } from "./client-link-delivery";
-import { createDefaultClientTasks } from "../client-tasks-service";
 
-// Create a new client access link
+interface DeliveryMethods {
+  email: boolean;
+  sms: boolean;
+}
+
+/**
+ * Creates a client access link and returns the link URL and ID
+ */
 export const createClientAccessLink = async (
   designerId: string,
   clientEmail: string,
   clientName: string,
   clientPhone: string | null = null,
-  deliveryMethods: { email: boolean, sms: boolean } = { email: true, sms: false },
-  projectId: string | null = null
-): Promise<ClientLinkResult> => {
+  deliveryMethods: DeliveryMethods = { email: true, sms: false },
+  projectId: string | null = null,
+  personalMessage: string | null = null
+): Promise<{ link: string; linkId: string }> => {
   try {
-    // Create an expiry date 7 days from now
+    // Generate a unique token for the client
+    const token = generateUniqueToken();
+    
+    // Calculate expiration date (7 days)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    const token = generateToken();
-    
+    // Insert the link into the database
     const { data, error } = await supabase
       .from('client_access_links')
       .insert({
         designer_id: designerId,
+        token,
         client_email: clientEmail,
         client_name: clientName,
         client_phone: clientPhone,
-        project_id: projectId,
-        token: token,
+        status: 'active',
         expires_at: expiresAt.toISOString(),
-        status: 'active'
+        project_id: projectId,
+        personal_message: personalMessage
       })
       .select('id')
       .single();
-
+    
     if (error) {
-      console.error('Error creating client access link:', error);
-      toast.error('Failed to create client access link');
-      return { link: null, linkId: null };
-    }
-
-    // Create default tasks for this client
-    await createDefaultClientTasks(data.id);
-    
-    // Record delivery methods
-    if (deliveryMethods.email) {
-      await recordLinkDelivery(data.id, 'email', clientEmail);
+      throw new Error(`Failed to create client access link: ${error.message}`);
     }
     
-    if (deliveryMethods.sms && clientPhone) {
-      await recordLinkDelivery(data.id, 'sms', clientPhone);
-    }
-    
-    // Return the sharable link and the link ID
+    // Get the base URL from environment or use a default
     const baseUrl = window.location.origin;
-    const link = `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
-    return { link, linkId: data.id };
+    
+    // Generate the full URL to send to the client
+    const clientHubLink = `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
+    
+    return {
+      link: clientHubLink,
+      linkId: data.id
+    };
   } catch (error) {
-    console.error('Error in createClientAccessLink:', error);
-    toast.error('An unexpected error occurred');
-    return { link: null, linkId: null };
+    console.error("Error creating client access link:", error);
+    throw error;
   }
+};
+
+/**
+ * Generates a unique token for client authentication
+ */
+const generateUniqueToken = (): string => {
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
 };
