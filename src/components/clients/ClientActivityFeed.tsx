@@ -149,7 +149,8 @@ export default function ClientActivityFeed() {
   
   // Helper function to get status badge variant
   const getStatusBadgeVariant = (status: 'in_progress' | 'completed') => {
-    return status === 'completed' ? 'success' : 'secondary';
+    // Fix: Use only allowed badge variants ('default', 'secondary', 'destructive', 'outline')
+    return status === 'completed' ? 'default' : 'secondary';
   };
   
   // Render loading state
