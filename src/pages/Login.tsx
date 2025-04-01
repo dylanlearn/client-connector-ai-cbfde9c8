@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,13 +52,13 @@ const Login = () => {
           </Link>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Sign in to your DezignSync account</CardDescription>
+        <Card className={isMobile ? "shadow-md" : "shadow-lg"}>
+          <CardHeader className={isMobile ? "px-4 py-5" : ""}>
+            <CardTitle className={isMobile ? "text-xl" : "text-2xl"}>Welcome back</CardTitle>
+            <CardDescription className={isMobile ? "text-sm" : ""}>Sign in to your DezignSync account</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -65,6 +67,7 @@ const Login = () => {
                   placeholder="hello@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-10"
                   required
                 />
               </div>
@@ -80,11 +83,12 @@ const Login = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="h-10"
                   required
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className={`flex flex-col space-y-4 ${isMobile ? "px-4 pb-5" : ""}`}>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign in"}
               </Button>

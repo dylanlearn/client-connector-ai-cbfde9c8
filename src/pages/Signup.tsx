@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +53,13 @@ const Signup = () => {
           </Link>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Create an account</CardTitle>
-            <CardDescription>Get started with DezignSync for free</CardDescription>
+        <Card className={isMobile ? "shadow-md" : "shadow-lg"}>
+          <CardHeader className={isMobile ? "px-4 py-5" : ""}>
+            <CardTitle className={isMobile ? "text-xl" : "text-2xl"}>Create an account</CardTitle>
+            <CardDescription className={isMobile ? "text-sm" : ""}>Get started with DezignSync for free</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className={`space-y-4 ${isMobile ? "px-4" : ""}`}>
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
@@ -65,6 +67,7 @@ const Signup = () => {
                   placeholder="Jane Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="h-10"
                   required
                 />
               </div>
@@ -76,6 +79,7 @@ const Signup = () => {
                   placeholder="hello@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="h-10"
                   required
                 />
               </div>
@@ -86,12 +90,13 @@ const Signup = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="h-10"
                   required
                 />
                 <p className="text-xs text-gray-500">Must be at least 8 characters</p>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className={`flex flex-col space-y-4 ${isMobile ? "px-4 pb-5" : ""}`}>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create account"}
               </Button>
