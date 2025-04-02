@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BillingCycle, useSubscription } from "@/hooks/use-subscription";
+import { type BillingCycle, useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/components/ui/use-toast";
 import { BillingCycleToggle } from "./BillingCycleToggle";
 import { PricingDisplay } from "./PricingDisplay";

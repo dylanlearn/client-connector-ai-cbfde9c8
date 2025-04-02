@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { BillingCycle } from "@/types/subscription";
+import { type BillingCycle } from "@/types/subscription";
 import { createSubscriptionCheckout } from "@/utils/subscription-utils";
 
 type ToastType = {

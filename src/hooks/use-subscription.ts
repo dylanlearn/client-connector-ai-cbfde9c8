@@ -21,8 +21,7 @@ const useNavigate = () => {
 };
 
 // Properly re-export enums and types using the correct syntax
-export { SubscriptionStatus, BillingCycle };
-export type { SubscriptionInfo };
+export type { SubscriptionStatus, BillingCycle, SubscriptionInfo };
 
 export const useSubscription = () => {
   const { toast } = useToast();

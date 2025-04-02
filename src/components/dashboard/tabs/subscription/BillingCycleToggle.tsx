@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { BillingCycle } from "@/hooks/use-subscription";
+import { type BillingCycle } from "@/hooks/use-subscription";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface BillingCycleToggleProps {
