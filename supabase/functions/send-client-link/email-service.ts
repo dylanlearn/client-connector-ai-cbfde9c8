@@ -50,7 +50,7 @@ export async function sendEmail(
     </div>
   `;
   
-  // Send email using Resend
+  // Send email using Resend with your verified domain
   const emailResponse = await resend.emails.send({
     from: "DezignSync <noreply@dezignsync.app>",
     to: recipient,
