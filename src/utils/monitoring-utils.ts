@@ -205,13 +205,26 @@ const createRateLimitCounter = async (
  */
 const decrementRateLimitCounter = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await (supabase
+    // First, get the current counter
+    const { data, error: getError } = await (supabase
       .from('rate_limit_counters' as any)
-      .update({ tokens: supabase.rpc('decrement', { x: 1 }) })
+      .select('tokens')
+      .eq('id', id)
+      .single()) as any;
+      
+    if (getError) {
+      console.error('Error getting rate limit counter:', getError);
+      return false;
+    }
+    
+    // Then update with decremented value
+    const { error: updateError } = await (supabase
+      .from('rate_limit_counters' as any)
+      .update({ tokens: Math.max(0, data.tokens - 1) })
       .eq('id', id)) as any;
       
-    if (error) {
-      console.error('Error updating rate limit counter:', error);
+    if (updateError) {
+      console.error('Error updating rate limit counter:', updateError);
       return false;
     }
     
