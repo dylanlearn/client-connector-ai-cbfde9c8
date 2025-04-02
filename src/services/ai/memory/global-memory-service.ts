@@ -18,7 +18,7 @@ export const GlobalMemoryService = {
   /**
    * Store an anonymized memory
    */
-  storeAnonymizedMemory: GlobalMemoryStorage.storeMemory,
+  storeAnonymizedMemory: GlobalMemoryStorage.storeAnonymizedMemory,
   
   /**
    * Get global memories based on query options
