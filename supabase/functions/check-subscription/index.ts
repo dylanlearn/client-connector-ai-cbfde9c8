@@ -2,14 +2,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
 import { corsHeaders } from "./cors.ts";
-import { handleAdminUser, handleAdminAssignedAccess, handleRegularUser } from "./user-handlers.ts";
+import { 
+  handleAdminUser, 
+  handleAdminAssignedAccess, 
+  handleRegularUser,
+  updateUserToAdmin,
+  isAdminEmail
+} from "./user-handlers.ts";
 import { verifyUser } from "./auth.ts";
+import { log, LogLevel, createErrorResponse } from "./monitoring.ts";
 
+// Environment configuration
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+// Initialize Supabase client with service role for admin access
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Main function handler
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -21,12 +31,11 @@ serve(async (req) => {
     const { user, error: authError } = await verifyUser(req, supabase);
     
     if (authError || !user) {
+      log(LogLevel.ERROR, "Authentication failed", { error: authError?.message });
       throw new Error(authError?.message || 'Invalid token or user not found');
     }
     
-    console.log("Checking subscription for user:", user.id);
-    console.log("User email:", user.email);
-    console.log("User metadata:", user.user_metadata);
+    log(LogLevel.INFO, "Checking subscription for user", { userId: user.id, email: user.email });
     
     // Fetch profile data
     const { data: profileData, error: profileError } = await supabase
@@ -35,18 +44,21 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
       
-    console.log("Profile data:", profileData);
-    console.log("Profile error:", profileError);
+    if (profileError) {
+      log(LogLevel.WARN, "Error fetching profile data", { error: profileError.message, userId: user.id });
+    } else {
+      log(LogLevel.DEBUG, "Profile data retrieved", { profileData, userId: user.id });
+    }
     
     // Check if user is admin
     if (!profileError && profileData?.role === 'admin') {
-      console.log("User is admin, granting full access");
+      log(LogLevel.INFO, "User is admin, granting full access", { userId: user.id });
       return handleAdminUser();
     }
     
     // Check for admin-assigned subscription status
     if (!profileError) {
-      const adminAssignedResponse = await handleAdminAssignedAccess(profileData);
+      const adminAssignedResponse = handleAdminAssignedAccess(profileData);
       if (adminAssignedResponse) {
         return adminAssignedResponse;
       }
@@ -56,42 +68,21 @@ serve(async (req) => {
     const userEmail = user.email || profileData?.email || user.user_metadata?.email;
     
     // Check if the email is in the admin list
-    const adminEmails = ["dylanmohseni0@gmail.com"];
-    
-    if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
-      console.log("Email found in admin list. Updating profile to admin and granting access.");
+    if (isAdminEmail(userEmail)) {
+      log(LogLevel.INFO, "Email found in admin list, updating profile", { email: userEmail, userId: user.id });
       
-      // Update the user's profile to have admin role
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', user.id);
-        
-      if (updateError) {
-        console.error("Error updating profile to admin:", updateError);
+      const updated = await updateUserToAdmin(user.id, userEmail, supabase);
+      
+      if (updated) {
+        log(LogLevel.INFO, "User successfully updated to admin role", { userId: user.id });
+        return handleAdminUser();
       }
-      
-      return handleAdminUser();
     }
 
     // Handle regular user subscription status
     return await handleRegularUser(user.id, profileData, supabase);
     
   } catch (error) {
-    console.error('Error checking subscription:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      subscription: 'free',
-      isActive: false,
-      inTrial: false,
-      expiresAt: null,
-      willCancel: false,
-      isAdmin: false,
-      adminAssigned: false,
-      adminAssignedStatus: null
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200, // Return 200 even on error with default values to prevent UI failures
-    });
+    return createErrorResponse(error);
   }
 });
