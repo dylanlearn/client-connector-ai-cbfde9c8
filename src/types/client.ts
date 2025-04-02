@@ -66,3 +66,19 @@ export interface WhatNextSectionProps {
 export interface LoadingViewProps {
   message?: string;
 }
+
+export interface ClientOverview {
+  totalClients: number;
+  activeClients: number;
+  completedTasks: number;
+  pendingTasks: number;
+  completionRate: number;
+}
+
+export interface ClientProgressItem {
+  clientName: string;
+  email: string;
+  completed: number;
+  total: number;
+  lastActive: Date | null;
+}

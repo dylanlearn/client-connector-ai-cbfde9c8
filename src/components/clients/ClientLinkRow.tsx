@@ -15,6 +15,18 @@ interface ClientLinkRowProps {
 export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
   const isMobile = useIsMobile();
   
+  // Helper function to determine badge variant
+  const getBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'completed':
+        return 'secondary'; // Instead of 'success' which doesn't exist
+      default:
+        return 'outline';
+    }
+  };
+  
   return (
     <TableRow>
       <TableCell>
@@ -38,7 +50,7 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
       </TableCell>
       <TableCell>
         <Badge 
-          variant={link.status === 'active' ? 'default' : link.status === 'completed' ? 'success' : 'secondary'}
+          variant={getBadgeVariant(link.status)}
           className="capitalize"
         >
           {link.status}
