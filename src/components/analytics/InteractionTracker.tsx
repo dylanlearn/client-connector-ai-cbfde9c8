@@ -1,7 +1,8 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useInteractionTracking } from "@/hooks/use-interaction-tracking";
 import { useAuth } from "@/hooks/use-auth";
+import { useDeviceDetection } from "@/hooks/tracking/use-device-detection";
 
 /**
  * Hidden component that tracks user interactions for analytics
@@ -18,44 +19,8 @@ const InteractionTracker = () => {
     trackScroll
   } = useInteractionTracking();
   
-  // State to store device information
-  const [deviceInfo, setDeviceInfo] = useState({
-    width: 0,
-    height: 0,
-    deviceType: 'unknown'
-  });
-  
-  // Detect device info on mount
-  useEffect(() => {
-    const getDeviceType = () => {
-      const width = window.innerWidth;
-      let deviceType = 'desktop';
-      
-      if (width < 768) {
-        deviceType = 'mobile';
-      } else if (width < 1024) {
-        deviceType = 'tablet';
-      }
-      
-      return {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        deviceType
-      };
-    };
-    
-    setDeviceInfo(getDeviceType());
-    
-    // Update on resize
-    const handleResize = () => {
-      setDeviceInfo(getDeviceType());
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
+  // Use our new device detection hook
+  const deviceInfo = useDeviceDetection();
   
   // Track click events
   useEffect(() => {
