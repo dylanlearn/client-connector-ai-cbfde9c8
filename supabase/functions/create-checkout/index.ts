@@ -10,7 +10,7 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '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';
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const stripe = new Stripe(stripeSecretKey, {

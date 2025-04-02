@@ -1,5 +1,5 @@
 
-project_id = "your-project-id"
+project_id = "bmkhbqxukiakhafqllux"
 
 [api]
 enabled = true
@@ -45,3 +45,7 @@ enable_confirmations = false
 enabled = false
 port = 54327
 vector_port = 54328
+
+[functions.stripe-webhook]
+verify_jwt = false
+
