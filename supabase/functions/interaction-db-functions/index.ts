@@ -18,96 +18,45 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Create interaction tracking RPC functions
-    const setupFunctions = async () => {
-      // Create track_interaction function
+    // We're now using direct table operations instead of RPC functions
+    // This function's main purpose is to setup RLS policies if needed
+    
+    const setupTablePermissions = async () => {
+      // Ensure RLS is enabled on the interaction_events table
       await supabase.rpc('stored_procedure', {
         sql: `
-          CREATE OR REPLACE FUNCTION track_interaction(
-            p_user_id UUID,
-            p_event_type TEXT,
-            p_page_url TEXT,
-            p_x_position INT,
-            p_y_position INT,
-            p_element_selector TEXT DEFAULT '',
-            p_session_id TEXT DEFAULT '',
-            p_metadata JSONB DEFAULT '{}'
-          )
-          RETURNS VOID
-          LANGUAGE plpgsql
-          SECURITY DEFINER
-          AS $$
-          BEGIN
-            INSERT INTO interaction_events (
-              user_id,
-              event_type,
-              page_url,
-              x_position,
-              y_position,
-              element_selector,
-              session_id,
-              metadata
-            ) VALUES (
-              p_user_id,
-              p_event_type,
-              p_page_url,
-              p_x_position,
-              p_y_position,
-              p_element_selector,
-              p_session_id,
-              p_metadata
-            );
-          END;
-          $$;
-        `
-      });
-      
-      // Create get_interaction_events function
-      await supabase.rpc('stored_procedure', {
-        sql: `
-          CREATE OR REPLACE FUNCTION get_interaction_events(
-            p_user_id UUID,
-            p_event_type TEXT DEFAULT NULL,
-            p_page_url TEXT DEFAULT NULL,
-            p_limit INT DEFAULT 100
-          )
-          RETURNS SETOF interaction_events
-          LANGUAGE plpgsql
-          SECURITY DEFINER
-          AS $$
-          DECLARE
-            query_text TEXT;
-          BEGIN
-            query_text := 'SELECT * FROM interaction_events WHERE user_id = ''' || p_user_id || '''';
-            
-            IF p_event_type IS NOT NULL THEN
-              query_text := query_text || ' AND event_type = ''' || p_event_type || '''';
-            END IF;
-            
-            IF p_page_url IS NOT NULL THEN
-              query_text := query_text || ' AND page_url = ''' || p_page_url || '''';
-            END IF;
-            
-            query_text := query_text || ' ORDER BY timestamp DESC LIMIT ' || p_limit;
-            
-            RETURN QUERY EXECUTE query_text;
-          END;
-          $$;
+          ALTER TABLE IF EXISTS public.interaction_events ENABLE ROW LEVEL SECURITY;
+          
+          -- Drop any existing policies
+          DROP POLICY IF EXISTS "Users can view their own interactions" ON public.interaction_events;
+          DROP POLICY IF EXISTS "Users can insert their own interactions" ON public.interaction_events;
+          
+          -- Create policy for users to view their own interactions
+          CREATE POLICY "Users can view their own interactions" 
+            ON public.interaction_events 
+            FOR SELECT 
+            USING (auth.uid() = user_id);
+          
+          -- Create policy for users to insert their own interactions
+          CREATE POLICY "Users can insert their own interactions" 
+            ON public.interaction_events 
+            FOR INSERT 
+            WITH CHECK (auth.uid() = user_id);
         `
       });
     };
     
-    await setupFunctions();
+    await setupTablePermissions();
     
     return new Response(
-      JSON.stringify({ success: true, message: "Interaction tracking functions created successfully" }),
+      JSON.stringify({ success: true, message: "Interaction table RLS policies configured successfully" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       }
     );
   } catch (error) {
-    console.error("Error creating functions:", error);
+    console.error("Error configuring interaction tables:", error);
     
     return new Response(
       JSON.stringify({ success: false, error: error.message }),

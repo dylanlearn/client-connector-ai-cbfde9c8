@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAIMemory } from "@/contexts/ai/hooks";
@@ -32,17 +33,19 @@ export const useInteractionTracking = () => {
     if (!user) return;
     
     try {
-      // Use RPC function to track interaction
-      const { error } = await supabase.rpc('track_interaction', {
-        p_user_id: user.id,
-        p_event_type: eventType,
-        p_page_url: window.location.pathname,
-        p_x_position: position.x,
-        p_y_position: position.y,
-        p_element_selector: elementSelector || '',
-        p_session_id: sessionId(),
-        p_metadata: metadata || {}
-      });
+      // Use direct table insert instead of RPC
+      const { error } = await supabase
+        .from('interaction_events')
+        .insert({
+          user_id: user.id,
+          event_type: eventType,
+          page_url: window.location.pathname,
+          x_position: position.x,
+          y_position: position.y,
+          element_selector: elementSelector || '',
+          session_id: sessionId(),
+          metadata: metadata || {}
+        });
 
       if (error) {
         console.error('Error tracking interaction:', error);
