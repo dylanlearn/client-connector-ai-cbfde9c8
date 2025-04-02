@@ -72,7 +72,7 @@ const Pricing = () => {
               />
             </button>
             <span className={`text-sm font-medium ${billingCycle === "annual" ? "text-indigo-600" : "text-gray-500"}`}>
-              Annual <span className="text-green-500 text-xs">(Save {billingCycle === "annual" ? plan === "basic" ? "15%" : "22%" : ""})</span>
+              Annual <span className="text-green-500 text-xs">(Save {billingCycle === "annual" ? "15-22%" : ""})</span>
             </span>
           </div>
         </div>
