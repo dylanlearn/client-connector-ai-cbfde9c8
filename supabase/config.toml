@@ -8,65 +8,28 @@ schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
-shadow_port = 54320
-major_version = 15
-
-[realtime]
-enabled = true
 
 [studio]
 enabled = true
 port = 54323
-api_url = "http://127.0.0.1"
+api_url = "http://localhost"
 
 [inbucket]
 enabled = true
 port = 54324
-smtp_port = 54325
-pop3_port = 54326
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
 
 [storage]
 enabled = true
 
-[auth]
-enabled = true
-site_url = "https://dezignsync.com"
-# Add these required configuration values for email auth
-additional_redirect_urls = ["https://dezignsync.com/login", "https://dezignsync.com/dashboard", "https://dezignsync.com/signup-confirmation"]
-jwt_expiry = 3600
-enable_signup = true
-
-# Update this section to follow the expected format
-[auth.email]
-# Instead of just 'enabled = true', we need to include the proper settings
-enable_signup = true
-enable_confirmations = false
-double_confirm_changes = true
-
-[analytics]
-enabled = false
-port = 54327
-vector_port = 54328
-backend = "postgres"
-
-# Set this to disable JWT verification in the Edge Functions
-[functions.create-checkout]
+[functions]
+serve_function_console = true
+[functions.design-suggestions]
 verify_jwt = true
-
-[functions.check-subscription]
+[functions.generate-with-openai]
 verify_jwt = true
-
-[functions.cancel-subscription]
-verify_jwt = true
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.admin-invitations]
-verify_jwt = true
-
-[functions.redeem-invitation]
-verify_jwt = true
-
-[functions.send-client-link]
+[functions.analyze-memory-patterns]
 verify_jwt = true

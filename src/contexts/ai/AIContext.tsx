@@ -1,12 +1,13 @@
 
 import React, { createContext, useState, ReactNode, useCallback } from "react";
-import { AIContextType } from "@/types/ai";
+import { AIContextType, AIMemoryContext } from "@/types/ai";
 import { 
   useAIMessages,
   useAIAnalysis,
   useDesignRecommendations,
   useContentGeneration,
-  useFeedbackSummary
+  useFeedbackSummary,
+  useAIMemory
 } from "./hooks";
 
 export const AIContext = createContext<AIContextType | undefined>(undefined);
@@ -44,6 +45,12 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     summarizeFeedback 
   } = useFeedbackSummary();
 
+  const {
+    memoryContext,
+    storeMemory,
+    resetMemoryContext
+  } = useAIMemory();
+
   // Determine overall processing state
   const isProcessing = 
     isMessageProcessing || 
@@ -57,7 +64,8 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     resetMessages();
     resetAnalysis();
     resetDesignRecommendations();
-  }, [resetMessages, resetAnalysis, resetDesignRecommendations]);
+    resetMemoryContext();
+  }, [resetMessages, resetAnalysis, resetDesignRecommendations, resetMemoryContext]);
 
   return (
     <AIContext.Provider
@@ -66,11 +74,13 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         isProcessing,
         analysis,
         designRecommendations,
+        memoryContext,
         simulateResponse,
         analyzeResponses,
         generateDesignRecommendations,
         generateContent,
         summarizeFeedback,
+        storeMemory,
         reset
       }}
     >

@@ -33,15 +33,38 @@ export interface DesignRecommendation {
   }>;
 }
 
+export interface AIMemoryContext {
+  userMemories?: Array<{
+    content: string;
+    category: string;
+    timestamp: Date;
+    metadata?: Record<string, any>;
+  }>;
+  projectMemories?: Array<{
+    content: string;
+    category: string;
+    timestamp: Date;
+    metadata?: Record<string, any>;
+  }>;
+  globalInsights?: Array<{
+    content: string;
+    category: string;
+    relevanceScore: number;
+    frequency: number;
+  }>;
+}
+
 export interface AIContextType {
   messages: AIMessage[];
   isProcessing: boolean;
   analysis: AIAnalysis | null;
   designRecommendations: DesignRecommendation | null;
+  memoryContext?: AIMemoryContext;
   simulateResponse: (userPrompt: string) => Promise<void>;
   analyzeResponses: (questionnaireData: Record<string, any>) => Promise<AIAnalysis>;
   generateDesignRecommendations: (questionnaire: Record<string, any>) => Promise<DesignRecommendation>;
   generateContent: (options: any) => Promise<string>;
   summarizeFeedback: (feedback: string) => Promise<string[]>;
+  storeMemory: (content: string, category: string, projectId?: string, metadata?: Record<string, any>) => Promise<void>;
   reset: () => void;
 }
