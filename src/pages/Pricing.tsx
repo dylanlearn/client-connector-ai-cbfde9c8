@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useSubscription, BillingCycle } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
@@ -8,13 +8,17 @@ import { PricingPlan } from "@/components/pricing/PricingPlan";
 import { BillingToggle } from "@/components/pricing/BillingToggle";
 import { PricingHeader } from "@/components/pricing/PricingHeader";
 import { DemoNotice } from "@/components/pricing/DemoNotice";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Pricing = () => {
   const { startSubscription, isLoading } = useSubscription();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [showDemoNotice, setShowDemoNotice] = useState(false);
+  const [showSubscriptionNeeded, setShowSubscriptionNeeded] = useState(false);
 
   const handleSelectPlan = (planType: "basic" | "pro" | "templates") => {
     if (planType === "templates") {
@@ -38,8 +42,14 @@ const Pricing = () => {
       setShowDemoNotice(true);
     }, 1000);
     
+    // Check if the user needs a subscription
+    const needSubscription = searchParams.get('needSubscription');
+    if (needSubscription === 'true') {
+      setShowSubscriptionNeeded(true);
+    }
+    
     return () => clearTimeout(timer);
-  }, []);
+  }, [searchParams]);
 
   // Define the pricing plans
   const pricingPlans = [
@@ -87,6 +97,16 @@ const Pricing = () => {
       
       <main className="flex-1 container mx-auto px-4 py-12">
         {showDemoNotice && <DemoNotice />}
+
+        {showSubscriptionNeeded && (
+          <Alert variant="destructive" className="mb-8 max-w-3xl mx-auto">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Subscription Required</AlertTitle>
+            <AlertDescription>
+              You need an active subscription to access the dashboard and app features. Please select a plan below.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="text-center mb-16">
           <h1 className="text-4xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent">

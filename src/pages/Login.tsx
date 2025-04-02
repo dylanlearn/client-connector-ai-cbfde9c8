@@ -1,36 +1,38 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, Link, Navigate, useLocation } from "react-router-dom";
+import { useNavigate, Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/hooks/use-auth"; // Updated import
+import { useAuth } from "@/hooks/use-auth"; 
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getPostLoginRedirect } from "@/utils/auth-utils";
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [showConfirmationSuccess, setShowConfirmationSuccess] = useState(false);
+  const [showSubscriptionNeeded, setShowSubscriptionNeeded] = useState(false);
   const isMobile = useIsMobile();
-  const { signIn, signInWithGoogle, isLoading, user } = useAuth();
+  const { signIn, signInWithGoogle, isLoading, user, profile } = useAuth();
   
   // Get the redirect path from location state, default to /dashboard
   const from = (location.state as { from?: string })?.from || "/dashboard";
 
-  // Check if user just confirmed their email
+  // Check URL parameters
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const confirmed = params.get('confirmed');
-    
+    // Handle email confirmation success
+    const confirmed = searchParams.get('confirmed');
     if (confirmed === 'true') {
       setShowConfirmationSuccess(true);
       toast({
@@ -39,11 +41,23 @@ const Login = () => {
         variant: "default",
       });
     }
-  }, [location.search, toast]);
+    
+    // Handle subscription needed notification
+    const needSubscription = searchParams.get('needSubscription');
+    if (needSubscription === 'true') {
+      setShowSubscriptionNeeded(true);
+      toast({
+        title: "Subscription Required",
+        description: "You need an active subscription to access the dashboard.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, toast]);
 
-  // If user is already logged in, redirect to the intended destination or dashboard
+  // If user is already logged in, redirect to the appropriate destination
   if (user) {
-    return <Navigate to={from} replace />;
+    const redirectPath = getPostLoginRedirect(profile, from);
+    return <Navigate to={redirectPath} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,6 +121,13 @@ const Login = () => {
               <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <AlertDescription className="text-green-700">Your email has been confirmed successfully. You can now sign in.</AlertDescription>
+              </Alert>
+            )}
+            
+            {showSubscriptionNeeded && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>You need an active subscription to access the dashboard. Please subscribe to a plan.</AlertDescription>
               </Alert>
             )}
             

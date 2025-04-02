@@ -54,3 +54,26 @@ export const enableRealtimeForTable = async (tableName: string) => {
     return false;
   }
 };
+
+// New utility function to check if a user has an active/paid role
+export const isUserActive = (profile: any | null): boolean => {
+  if (!profile) return false;
+  
+  // Check if the user has a paid subscription status
+  const hasActivePlan = profile.subscription_status === 'basic' || 
+                        profile.subscription_status === 'pro';
+  
+  // Check if the user has a privileged role
+  const hasPrivilegedRole = profile.role === 'admin';
+  
+  return hasActivePlan || hasPrivilegedRole;
+};
+
+// Helper function to get the appropriate post-login redirect based on user status
+export const getPostLoginRedirect = (profile: any | null, defaultPath: string = '/dashboard'): string => {
+  if (isUserActive(profile)) {
+    return defaultPath;
+  }
+  
+  return '/pricing?needSubscription=true';
+};
