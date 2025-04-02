@@ -21,16 +21,137 @@ serve(async (req) => {
     // Create SQL functions for interaction events
     const setupRpcFunctions = async () => {
       // Create query_interaction_events function
-      await supabase.rpc('create_query_interaction_events_function', {});
+      await supabase.rpc('stored_procedure', {
+        sql: `
+          CREATE OR REPLACE FUNCTION query_interaction_events(query_text TEXT)
+          RETURNS SETOF interaction_events
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          AS $$
+          BEGIN
+            RETURN QUERY EXECUTE query_text;
+          END;
+          $$;
+        `
+      });
       
       // Create insert_interaction_event function
-      await supabase.rpc('create_insert_interaction_event_function', {});
+      await supabase.rpc('stored_procedure', {
+        sql: `
+          CREATE OR REPLACE FUNCTION insert_interaction_event(
+            p_user_id UUID,
+            p_event_type TEXT,
+            p_page_url TEXT,
+            p_x_position INT,
+            p_y_position INT,
+            p_element_selector TEXT,
+            p_session_id TEXT,
+            p_metadata JSONB DEFAULT NULL
+          )
+          RETURNS VOID
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          AS $$
+          BEGIN
+            INSERT INTO interaction_events (
+              user_id,
+              event_type,
+              page_url,
+              x_position,
+              y_position,
+              element_selector,
+              session_id,
+              metadata
+            ) VALUES (
+              p_user_id,
+              p_event_type,
+              p_page_url,
+              p_x_position,
+              p_y_position,
+              p_element_selector,
+              p_session_id,
+              p_metadata
+            );
+          END;
+          $$;
+        `
+      });
       
       // Create get_interaction_events function
-      await supabase.rpc('create_get_interaction_events_function', {});
+      await supabase.rpc('stored_procedure', {
+        sql: `
+          CREATE OR REPLACE FUNCTION get_interaction_events(
+            p_user_id UUID,
+            p_event_type TEXT DEFAULT NULL,
+            p_page_url TEXT DEFAULT NULL,
+            p_limit INT DEFAULT 100
+          )
+          RETURNS SETOF interaction_events
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          AS $$
+          DECLARE
+            query_text TEXT;
+          BEGIN
+            query_text := 'SELECT * FROM interaction_events WHERE user_id = ''' || p_user_id || '''';
+            
+            IF p_event_type IS NOT NULL THEN
+              query_text := query_text || ' AND event_type = ''' || p_event_type || '''';
+            END IF;
+            
+            IF p_page_url IS NOT NULL THEN
+              query_text := query_text || ' AND page_url = ''' || p_page_url || '''';
+            END IF;
+            
+            query_text := query_text || ' ORDER BY timestamp DESC LIMIT ' || p_limit;
+            
+            RETURN QUERY EXECUTE query_text;
+          END;
+          $$;
+        `
+      });
       
-      // Create track_interaction function
-      await supabase.rpc('create_track_interaction_function', {});
+      // Create track_interaction function (simplified version)
+      await supabase.rpc('stored_procedure', {
+        sql: `
+          CREATE OR REPLACE FUNCTION track_interaction(
+            p_user_id UUID,
+            p_event_type TEXT,
+            p_page_url TEXT,
+            p_x_position INT,
+            p_y_position INT,
+            p_element_selector TEXT DEFAULT '',
+            p_session_id TEXT DEFAULT '',
+            p_metadata JSONB DEFAULT '{}'
+          )
+          RETURNS VOID
+          LANGUAGE plpgsql
+          SECURITY DEFINER
+          AS $$
+          BEGIN
+            INSERT INTO interaction_events (
+              user_id,
+              event_type,
+              page_url,
+              x_position,
+              y_position,
+              element_selector,
+              session_id,
+              metadata
+            ) VALUES (
+              p_user_id,
+              p_event_type,
+              p_page_url,
+              p_x_position,
+              p_y_position,
+              p_element_selector,
+              p_session_id,
+              p_metadata
+            );
+          END;
+          $$;
+        `
+      });
     };
     
     await setupRpcFunctions();

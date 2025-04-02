@@ -33,16 +33,19 @@ export const useInteractionTracking = () => {
     if (!user) return;
     
     try {
-      // Use RPC function to insert interaction event
-      const { error } = await supabase.rpc('track_interaction', {
-        p_user_id: user.id,
-        p_event_type: eventType,
-        p_page_url: window.location.pathname,
-        p_x_position: position.x,
-        p_y_position: position.y,
-        p_element_selector: elementSelector || '',
-        p_session_id: sessionId(),
-        p_metadata: metadata || {}
+      // Use stored procedure to insert interaction event
+      const { error } = await supabase.rpc('stored_procedure', {
+        sql: `SELECT track_interaction($1, $2, $3, $4, $5, $6, $7, $8)`,
+        params: [
+          user.id,
+          eventType,
+          window.location.pathname,
+          position.x,
+          position.y,
+          elementSelector || '',
+          sessionId(),
+          metadata || {}
+        ]
       });
 
       if (error) {

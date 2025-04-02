@@ -63,12 +63,13 @@ export const fetchInteractionEvents = async (
     
     query += ` ORDER BY timestamp DESC LIMIT ${limit}`;
     
-    const { data, error } = await supabase.rpc('query_interaction_events', { 
-      query_text: query 
+    const { data, error } = await supabase.rpc('stored_procedure', { 
+      sql: `SELECT * FROM query_interaction_events($1)`,
+      params: [query]
     });
     
     if (error) throw error;
-    return data as InteractionEvent[];
+    return (data as unknown) as InteractionEvent[];
   } catch (error) {
     console.error('Error fetching interaction events:', error);
     return [];
@@ -87,15 +88,18 @@ export const storeInteractionEvent = async (
 ): Promise<void> => {
   try {
     // Use SQL to insert directly
-    const { error } = await supabase.rpc('insert_interaction_event', {
-      p_user_id: userId,
-      p_event_type: eventType,
-      p_page_url: pageUrl,
-      p_x_position: position.x,
-      p_y_position: position.y,
-      p_element_selector: elementSelector,
-      p_session_id: sessionId,
-      p_metadata: metadata || {}
+    const { error } = await supabase.rpc('stored_procedure', {
+      sql: `SELECT insert_interaction_event($1, $2, $3, $4, $5, $6, $7, $8)`,
+      params: [
+        userId,
+        eventType,
+        pageUrl,
+        position.x,
+        position.y,
+        elementSelector,
+        sessionId,
+        metadata || {}
+      ]
     });
     
     if (error) throw error;

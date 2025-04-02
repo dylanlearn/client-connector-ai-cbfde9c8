@@ -20,16 +20,10 @@ pool_mode = "transaction"
 default_pool_size = 20
 max_client_conn = 100
 
-[realtime]
-enabled = true
-ip_address = "0.0.0.0"
-port = 54323
-
 [studio]
 enabled = true
 port = 54324
 api_url = "http://localhost"
-config_api_keys = {}
 
 [inbucket]
 enabled = true
@@ -48,22 +42,12 @@ additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
-email_template_directory = "supabase/templates"
 
 [auth.email]
-enabled = true
-double_confirm_changes = true
 enable_confirmations = false
 
 [auth.sms]
-enabled = false
-
-[auth.external.google]
-enabled = false
-client_id = ""
-secret = ""
-redirect_uri = ""
-url = ""
+enable = false
 
 [functions]
 enabled = true
@@ -74,3 +58,6 @@ verify_jwt = true
 
 [functions.interaction-db-functions]
 verify_jwt = false
+
+[realtime]
+enabled = true
