@@ -1,14 +1,36 @@
 
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate as useReactRouterNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { getRedirectUrl, getEmailConfirmationRedirectUrl } from "@/utils/auth-utils";
 
+// A safe wrapper for useNavigate that won't throw errors outside of Router context
+const useNavigate = () => {
+  try {
+    return useReactRouterNavigate();
+  } catch (error) {
+    // Return a no-op function when outside of Router context
+    return () => {
+      console.warn("Navigation attempted outside Router context");
+    };
+  }
+};
+
+// A safe wrapper for useLocation that won't throw errors outside of Router context
+const useLocationSafe = () => {
+  try {
+    return useLocation();
+  } catch (error) {
+    // Return a default location object when outside of Router context
+    return { state: { from: "/dashboard" }, pathname: "/" };
+  }
+};
+
 export const useAuthActions = (setProfile: (profile: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocationSafe();
   const { toast } = useToast();
   
   // Get the redirect path from location state, default to /dashboard

@@ -29,8 +29,8 @@ import RequireSubscription from "@/components/auth/RequireSubscription";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Index />} />
@@ -153,8 +153,8 @@ function App() {
         </Routes>
         <Toaster />
         <SonnerToaster position="top-right" />
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
