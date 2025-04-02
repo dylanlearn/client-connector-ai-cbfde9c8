@@ -9,7 +9,8 @@ import {
   ChevronDown,
   ChevronRight,
   Crown,
-  PaintBucket
+  PaintBucket,
+  ShieldCheck
 } from "lucide-react";
 import {
   SidebarGroup,
@@ -22,6 +23,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SidebarNavigationProps {
   currentPath: string;
@@ -29,6 +31,7 @@ interface SidebarNavigationProps {
 
 const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [syncProOpen, setSyncProOpen] = useState(
     currentPath === "/projects" || 
     currentPath === "/clients" || 
@@ -50,6 +53,9 @@ const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
     }
   };
 
+  // Check if user has admin role
+  const isAdmin = profile?.role === "admin";
+
   return (
     <>
       {/* Sync Section */}
@@ -69,6 +75,20 @@ const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
                 <span>Dashboard</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
+            {/* Admin Panel Link - Only visible to admins */}
+            {isAdmin && (
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={() => navigate("/admin")}
+                  isActive={isActive("/admin")}
+                  className="text-indigo-600"
+                >
+                  <ShieldCheck size={20} />
+                  <span>Admin Panel</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>

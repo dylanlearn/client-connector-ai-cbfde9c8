@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ShieldCheck } from "lucide-react";
 
 export const UserMenu = () => {
   const { user, signOut, profile } = useAuth();
@@ -16,6 +17,9 @@ export const UserMenu = () => {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Check if user has admin role
+  const isAdmin = profile?.role === "admin";
 
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -34,6 +38,14 @@ export const UserMenu = () => {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>{profile?.name || user?.user_metadata?.name || user?.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {isAdmin && (
+          <DropdownMenuItem onClick={() => navigate("/admin")} className="text-indigo-600">
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            Admin Panel
+          </DropdownMenuItem>
+        )}
+        
         <DropdownMenuItem onClick={() => navigate("/settings")}>
           Account Settings
         </DropdownMenuItem>
