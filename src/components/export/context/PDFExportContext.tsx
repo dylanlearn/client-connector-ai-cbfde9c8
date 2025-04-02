@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { generatePDF, PDFGenerationOptions, applyPDFTemplate, PDFStylingTemplate } from "@/utils/pdf-export";
 import { useAuth } from "@/hooks/use-auth";
@@ -50,7 +51,8 @@ export const PDFExportProvider = ({
   const [pdfOptions, setPdfOptions] = useState<PDFGenerationOptions>({
     quality: 2,
     showProgress: true,
-    margin: 5
+    margin: 5,
+    filename: filename
   });
 
   useEffect(() => {
@@ -88,6 +90,11 @@ export const PDFExportProvider = ({
 
     generateInitialPDF();
   }, [isOpen, pdfBlob, contentId, filename, pdfOptions]);
+
+  // Update filename when prop changes
+  useEffect(() => {
+    setPdfOptions(prev => ({ ...prev, filename }));
+  }, [filename]);
 
   const handleRegenerate = async () => {
     setIsLoading(true);
@@ -129,7 +136,7 @@ export const PDFExportProvider = ({
   const copyLinkToClipboard = () => {
     if (pdfUrl) {
       navigator.clipboard.writeText(pdfUrl);
-      // Toast is handled in the component to keep this file focused on state management
+      toast.success("Link copied to clipboard");
     }
   };
 

@@ -108,6 +108,8 @@ function PDFExportDialogContent() {
             <PDFExternalServices 
               handleDownload={handleDownload}
               pdfUrl={pdfUrl}
+              pdfBlob={pdfBlob}
+              filename={pdfOptions.filename || "document"}
               onCopyLink={copyLinkToClipboard}
             />
           </TabsContent>
