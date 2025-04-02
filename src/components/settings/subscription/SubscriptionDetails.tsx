@@ -20,6 +20,15 @@ export function SubscriptionDetails({
   willCancel, 
   isActive 
 }: SubscriptionDetailsProps) {
+  // Format the status for display
+  const getDisplayStatus = (status: string) => {
+    switch(status) {
+      case 'sync': return 'Sync';
+      case 'sync-pro': return 'Sync Pro';
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
   return (
     <div className="rounded-lg border p-4">
       <h3 className="font-semibold mb-3">Subscription Details</h3>
@@ -27,7 +36,7 @@ export function SubscriptionDetails({
         <div className="space-y-3">
           <div>
             <div className="text-sm text-muted-foreground">Plan</div>
-            <div className="font-medium capitalize">{status}</div>
+            <div className="font-medium capitalize">{getDisplayStatus(status)}</div>
           </div>
           {inTrial && (
             <Alert className="bg-amber-50 text-amber-800 border-amber-200">

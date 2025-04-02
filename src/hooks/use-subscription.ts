@@ -44,15 +44,15 @@ export const useSubscription = () => {
   const hasAdminRole = profile?.role === 'admin' || isAdminRole;
   
   // Enhanced check for admin-assigned subscription status in profile
-  const hasAssignedProAccess = 
-    profile?.role === 'pro' || 
-    profile?.subscription_status === 'pro' || 
-    subscriptionInfo.adminAssignedStatus === 'pro';
+  const hasAssignedSyncProAccess = 
+    profile?.role === 'sync-pro' || 
+    profile?.subscription_status === 'sync-pro' || 
+    subscriptionInfo.adminAssignedStatus === 'sync-pro';
     
-  const hasAssignedBasicAccess = 
-    profile?.role === 'basic' || 
-    profile?.subscription_status === 'basic' || 
-    subscriptionInfo.adminAssignedStatus === 'basic';
+  const hasAssignedSyncAccess = 
+    profile?.role === 'sync' || 
+    profile?.subscription_status === 'sync' || 
+    subscriptionInfo.adminAssignedStatus === 'sync';
   
   // Log detailed information for admin role and subscription status
   useEffect(() => {
@@ -65,8 +65,8 @@ export const useSubscription = () => {
         "adminAssigned from subscriptionInfo": subscriptionInfo.adminAssigned,
         "adminAssignedStatus from subscriptionInfo": subscriptionInfo.adminAssignedStatus,
         "hasAdminRole": hasAdminRole,
-        "hasAssignedProAccess": hasAssignedProAccess,
-        "hasAssignedBasicAccess": hasAssignedBasicAccess,
+        "hasAssignedSyncProAccess": hasAssignedSyncProAccess,
+        "hasAssignedSyncAccess": hasAssignedSyncAccess,
         "subscription status": subscriptionInfo.status,
         "is subscription active": subscriptionInfo.isActive
       });
@@ -78,8 +78,8 @@ export const useSubscription = () => {
     isAdminRole, 
     subscriptionInfo, 
     hasAdminRole, 
-    hasAssignedProAccess, 
-    hasAssignedBasicAccess
+    hasAssignedSyncProAccess, 
+    hasAssignedSyncAccess
   ]);
   
   // Manual refresh function for debugging and recovery
@@ -104,14 +104,14 @@ export const useSubscription = () => {
   const isActive = 
     hasAdminRole || 
     subscriptionInfo.isActive || 
-    hasAssignedProAccess || 
-    hasAssignedBasicAccess;
+    hasAssignedSyncProAccess || 
+    hasAssignedSyncAccess;
   
   // Determine effective subscription status based on all sources
-  const effectiveStatus = hasAssignedProAccess 
-    ? "pro" 
-    : (hasAssignedBasicAccess 
-        ? "basic" 
+  const effectiveStatus = hasAssignedSyncProAccess 
+    ? "sync-pro" 
+    : (hasAssignedSyncAccess 
+        ? "sync" 
         : subscriptionInfo.status);
   
   return {

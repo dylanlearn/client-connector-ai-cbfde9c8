@@ -23,4 +23,4 @@ export type BillingCycle = "monthly" | "annual";
 /**
  * Subscription status types
  */
-export type SubscriptionStatus = "free" | "basic" | "pro" | "template-buyer" | "trial";
+export type SubscriptionStatus = "free" | "sync" | "sync-pro" | "template-buyer" | "trial";

@@ -29,8 +29,8 @@ const RoleManagementGuide = () => {
           <AlertDescription>
             <ul className="list-disc pl-5 mt-2">
               <li><strong>Free:</strong> Basic access to the platform without paid features</li>
-              <li><strong>Basic:</strong> Standard tier with core features</li>
-              <li><strong>Pro:</strong> Full access to all premium features</li>
+              <li><strong>Sync:</strong> Standard tier with core features</li>
+              <li><strong>Sync Pro:</strong> Full access to all premium features</li>
               <li><strong>Trial:</strong> Temporary access to premium features</li>
               <li><strong>Template Buyer:</strong> Access to purchased templates</li>
               <li><strong>Admin:</strong> Complete administrative access to all features and settings</li>

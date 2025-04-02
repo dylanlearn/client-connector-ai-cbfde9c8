@@ -73,9 +73,24 @@ async function handleUpdateUserRole({ userId, role }) {
   }
 
   // Valid roles check - Updated to include all valid subscription types
-  const validRoles = ['free', 'basic', 'pro', 'template-buyer', 'trial', 'admin'];
+  const validRoles = ['free', 'sync', 'sync-pro', 'template-buyer', 'trial', 'admin'];
   if (!validRoles.includes(role)) {
     throw new Error(`Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`);
+  }
+
+  // Map role to subscription_status
+  let subscription_status;
+  switch (role) {
+    case 'admin':
+      subscription_status = 'sync-pro'; // admins always get sync-pro subscription status
+      break;
+    case 'sync':
+    case 'sync-pro':
+    case 'trial':
+      subscription_status = role;
+      break;
+    default:
+      subscription_status = 'free';
   }
 
   // Update both role and subscription_status to ensure consistency
@@ -83,7 +98,7 @@ async function handleUpdateUserRole({ userId, role }) {
     .from('profiles')
     .update({ 
       role,
-      subscription_status: role !== 'admin' ? role : 'pro' // admins always get pro subscription status
+      subscription_status
     })
     .eq('id', userId)
     .select()

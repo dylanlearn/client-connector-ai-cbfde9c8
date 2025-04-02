@@ -22,7 +22,7 @@ import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 // Define the type for role to include all available subscription types
-type UserRole = "free" | "basic" | "pro" | "template-buyer" | "admin" | "trial";
+type UserRole = "free" | "sync" | "sync-pro" | "template-buyer" | "admin" | "trial";
 
 type User = {
   id: string;
@@ -109,9 +109,9 @@ export function UserManagement() {
     switch (role) {
       case "admin":
         return "destructive";
-      case "pro":
+      case "sync-pro":
         return "default";
-      case "basic":
+      case "sync":
         return "secondary";
       case "trial":
         return "outline";
@@ -189,8 +189,8 @@ export function UserManagement() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="free">Free</SelectItem>
-                          <SelectItem value="basic">Basic</SelectItem>
-                          <SelectItem value="pro">Pro</SelectItem>
+                          <SelectItem value="sync">Sync</SelectItem>
+                          <SelectItem value="sync-pro">Sync Pro</SelectItem>
                           <SelectItem value="trial">Trial</SelectItem>
                           <SelectItem value="template-buyer">Template Buyer</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>

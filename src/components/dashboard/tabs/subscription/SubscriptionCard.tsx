@@ -32,15 +32,15 @@ export const SubscriptionCard = ({
   ];
   
   const handleUpgrade = () => {
-    if (status === "pro") {
+    if (status === "sync-pro") {
       toast({
         title: "Already subscribed",
-        description: "You already have a Pro subscription.",
+        description: "You already have a Sync Pro subscription.",
       });
       return;
     }
     
-    startSubscription("pro", billingCycle);
+    startSubscription("sync-pro", billingCycle);
   };
   
   return (
@@ -49,7 +49,7 @@ export const SubscriptionCard = ({
         <CardTitle className={isMobile ? "text-lg" : ""}>Upgrade to Sync Pro</CardTitle>
         <CardDescription className={isMobile ? "text-sm" : ""}>
           Unlock advanced features for your design workflow
-          {inTrial && status === "pro" && <span className="ml-2 text-green-600 font-medium">• Trial Active</span>}
+          {inTrial && status === "sync-pro" && <span className="ml-2 text-green-600 font-medium">• Trial Active</span>}
         </CardDescription>
       </CardHeader>
       <CardContent className={isMobile ? "px-4 pt-0 pb-4" : ""}>
@@ -71,14 +71,14 @@ export const SubscriptionCard = ({
           />
           
           <div className="mt-4">
-            {status === "pro" ? (
+            {status === "sync-pro" ? (
               <Button className="w-full md:w-auto text-sm" disabled>Already Subscribed</Button>
             ) : (
               <Button 
                 className="w-full md:w-auto text-sm" 
                 onClick={handleUpgrade}
               >
-                {inTrial ? "Continue with Pro" : "Start 3-Day Free Trial"}
+                {inTrial ? "Continue with Sync Pro" : "Start 3-Day Free Trial"}
               </Button>
             )}
             <p className="text-xs text-gray-500 mt-2">

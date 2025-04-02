@@ -15,7 +15,7 @@ export const PlanBadge = ({ isPro }: PlanBadgeProps) => {
     return (
       <div className="hidden md:flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">
         <Crown size={12} className="mr-1" />
-        Pro Plan
+        Sync Pro
       </div>
     );
   }

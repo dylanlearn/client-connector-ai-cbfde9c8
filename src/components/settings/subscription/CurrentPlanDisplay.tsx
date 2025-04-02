@@ -16,13 +16,22 @@ export function CurrentPlanDisplay({
   willCancel, 
   expiresAt 
 }: CurrentPlanDisplayProps) {
+  // Format the status for display
+  const getDisplayStatus = (status: string) => {
+    switch(status) {
+      case 'sync': return 'Sync';
+      case 'sync-pro': return 'Sync Pro';
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-1">
         <h3 className="text-lg font-medium">Current Plan</h3>
         <div className="flex items-center gap-2">
           <Badge variant={status === "free" ? "outline" : "default"} className="capitalize">
-            {status}
+            {getDisplayStatus(status)}
           </Badge>
           {inTrial && (
             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">

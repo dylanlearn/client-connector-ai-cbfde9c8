@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,14 +6,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { BillingCycle } from "@/types/subscription";
 
 interface PlanSelectorProps {
-  startSubscription: (plan: "basic" | "pro", billingCycle: BillingCycle) => Promise<void>;
+  startSubscription: (plan: "sync" | "sync-pro", billingCycle: BillingCycle) => Promise<void>;
 }
 
 export function PlanSelector({ startSubscription }: PlanSelectorProps) {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
-  const getPriceDisplay = (plan: "basic" | "pro", cycle: BillingCycle) => {
-    if (plan === "basic") {
+  const getPriceDisplay = (plan: "sync" | "sync-pro", cycle: BillingCycle) => {
+    if (plan === "sync") {
       return cycle === "monthly" ? "$29/month" : "$290/year";
     } else {
       return cycle === "monthly" ? "$69/month" : "$690/year";
@@ -41,9 +42,9 @@ export function PlanSelector({ startSubscription }: PlanSelectorProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border rounded-lg p-4 flex flex-col h-full">
           <div className="flex justify-between items-start mb-2">
-            <h4 className="font-semibold">Basic</h4>
+            <h4 className="font-semibold">Sync</h4>
             <div className="text-right">
-              <div className="font-bold">{getPriceDisplay("basic", billingCycle)}</div>
+              <div className="font-bold">{getPriceDisplay("sync", billingCycle)}</div>
             </div>
           </div>
           <ul className="space-y-2 text-sm my-3 flex-grow">
@@ -61,11 +62,11 @@ export function PlanSelector({ startSubscription }: PlanSelectorProps) {
             </li>
           </ul>
           <Button 
-            onClick={() => startSubscription("basic", billingCycle)}
+            onClick={() => startSubscription("sync", billingCycle)}
             variant="outline"
             className="w-full mt-auto"
           >
-            Choose Basic
+            Choose Sync
           </Button>
         </div>
         
@@ -74,9 +75,9 @@ export function PlanSelector({ startSubscription }: PlanSelectorProps) {
             Popular
           </div>
           <div className="flex justify-between items-start mb-2">
-            <h4 className="font-semibold">Pro</h4>
+            <h4 className="font-semibold">Sync Pro</h4>
             <div className="text-right">
-              <div className="font-bold">{getPriceDisplay("pro", billingCycle)}</div>
+              <div className="font-bold">{getPriceDisplay("sync-pro", billingCycle)}</div>
             </div>
           </div>
           <ul className="space-y-2 text-sm my-3 flex-grow">
@@ -98,10 +99,10 @@ export function PlanSelector({ startSubscription }: PlanSelectorProps) {
             </li>
           </ul>
           <Button 
-            onClick={() => startSubscription("pro", billingCycle)}
+            onClick={() => startSubscription("sync-pro", billingCycle)}
             className="w-full mt-auto"
           >
-            Choose Pro
+            Choose Sync Pro
           </Button>
         </div>
       </div>
