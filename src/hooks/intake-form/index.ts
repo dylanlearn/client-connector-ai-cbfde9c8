@@ -44,11 +44,17 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
   useEffect(() => {
     if (!user) return;
 
+    const toastWrapper = {
+      toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => {
+        toast(props);
+      }
+    };
+
     const channel = createRealtimeSubscription(
       formId,
       formData.lastUpdated,
       (newData) => setFormData(newData),
-      { toast }
+      { toast: toastWrapper }
     );
     
     return () => {
@@ -60,10 +66,16 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
   useEffect(() => {
     if (!user || Object.keys(formData).length <= 1) return;
 
+    const toastWrapper = {
+      toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => {
+        toast(props);
+      }
+    };
+
     const saveToSupabase = async () => {
       setIsSaving(true);
       try {
-        await saveFormToSupabase(formData, user.id, formId, { toast });
+        await saveFormToSupabase(formData, user.id, formId, { toast: toastWrapper });
       } finally {
         setIsSaving(false);
       }
@@ -95,13 +107,20 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
 
     setIsLoading(true);
     try {
-      // Adapter function to match the expected signature
+      const toastWrapper = {
+        toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => {
+          toast(props);
+        }
+      };
+
+      // Create an adapter function to match the expected signature
       const adaptedUpdateTaskStatus = async (
         taskId: string, 
         status: string, 
         data: any
       ): Promise<void> => {
         await clientUpdateTaskStatus(taskId, status as TaskStatus, data);
+        return;
       };
 
       return await submitCompleteForm(
@@ -110,7 +129,7 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
         formId, 
         taskId || null,
         adaptedUpdateTaskStatus,
-        { toast }
+        { toast: toastWrapper }
       );
     } finally {
       setIsLoading(false);

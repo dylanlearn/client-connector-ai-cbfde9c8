@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -13,6 +14,7 @@ import EcommerceFields from "./site-types/EcommerceFields";
 import BusinessFields from "./site-types/BusinessFields";
 import PortfolioFields from "./site-types/PortfolioFields";
 import BaseFields from "./site-types/BaseFields";
+import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-helpers";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;

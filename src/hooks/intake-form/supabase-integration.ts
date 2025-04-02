@@ -23,7 +23,7 @@ export const saveFormToSupabase = async (
     
     // Upsert to Supabase
     const { error } = await supabase
-      .from('project_intake_forms')
+      .from('intake_forms')
       .upsert({
         form_id: formId,
         user_id: userId,
@@ -56,13 +56,13 @@ export const createRealtimeSubscription = (
   options: SupabaseIntegrationOptions
 ) => {
   // Subscribe to intake_forms table changes for this specific form
-  const channel = supabase.channel('public:project_intake_forms')
+  const channel = supabase.channel('public:intake_forms')
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
-        table: 'project_intake_forms',
+        table: 'intake_forms',
         filter: `form_id=eq.${formId}`,
       },
       (payload) => {
@@ -71,11 +71,11 @@ export const createRealtimeSubscription = (
         // Only update if the change was made by someone else
         // to avoid circular updates
         const newData = payload.new as any;
-        if (newData && newData.last_updated > (currentLastUpdated || '')) {
-          const updatedData = {
+        if (newData && newData.last_updated && newData.last_updated > (currentLastUpdated || '')) {
+          const updatedData = newData.form_data ? {
             ...newData.form_data,
             lastUpdated: newData.last_updated,
-          };
+          } : { lastUpdated: newData.last_updated };
           
           onFormUpdate(updatedData);
           
