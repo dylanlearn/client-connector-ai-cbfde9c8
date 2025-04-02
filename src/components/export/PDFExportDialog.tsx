@@ -48,7 +48,7 @@ function PDFExportDialogContent() {
     handleDownload: deliveryHandleDownload,
     handleEmailSend,
     handleSMSSend
-  } = usePDFDelivery("");
+  } = usePDFDelivery(pdfOptions?.filename || "document");
   
   const handleCloseDialog = (setIsOpen: (open: boolean) => void) => {
     setIsOpen(false);
