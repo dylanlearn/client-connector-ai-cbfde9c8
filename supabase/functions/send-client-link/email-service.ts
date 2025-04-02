@@ -50,9 +50,18 @@ export async function sendEmail(
     </div>
   `;
   
-  // Send email using Resend with your verified domain
+  // Use one of these options for the "from" field:
+  // Option 1: When domain is verified (original)
+  // from: "DezignRoom <owner@dezignroom.org>",
+  
+  // Option 2: While waiting for domain verification (temporary)
+  // Change this to your Resend account email to use Resend's default domain
+  const fromAddress = "onboarding@resend.dev";
+  const fromName = "DezignRoom";
+  
+  // Send email using Resend with your verified domain or default domain
   const emailResponse = await resend.emails.send({
-    from: "DezignRoom <owner@dezignroom.org>",
+    from: `${fromName} <${fromAddress}>`,
     to: recipient,
     subject: `${clientName}, access your design project`,
     html: emailHtml,
