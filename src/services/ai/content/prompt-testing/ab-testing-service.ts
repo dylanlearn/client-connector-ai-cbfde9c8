@@ -1,6 +1,10 @@
-
 import { v4 as uuidv4 } from "uuid";
-import { PromptDBService } from "./db-service";
+import { 
+  PromptDBService, 
+  PromptTestsService,
+  PromptVariantsService, 
+  PromptAnalyticsService 
+} from "./db-service";
 
 export type PromptTestStatus = 'active' | 'paused' | 'completed';
 
@@ -46,7 +50,7 @@ export const PromptABTestingService = {
    */
   getActiveTest: async (contentType: string): Promise<PromptTest | null> => {
     try {
-      const data = await PromptDBService.getActiveTest(contentType);
+      const data = await PromptTestsService.getActiveTest(contentType);
       
       if (!data) return null;
       
@@ -98,7 +102,7 @@ export const PromptABTestingService = {
         if (random <= cumulativeWeight) {
           // Record an impression for this variant
           if (userId) {
-            await PromptDBService.recordImpression(test.id, variant.id, userId);
+            await PromptAnalyticsService.recordImpression(test.id, variant.id, userId);
           }
           return variant;
         }
@@ -117,7 +121,7 @@ export const PromptABTestingService = {
    */
   recordImpression: async (testId: string, variantId: string, userId: string): Promise<void> => {
     try {
-      await PromptDBService.recordImpression(testId, variantId, userId);
+      await PromptAnalyticsService.recordImpression(testId, variantId, userId);
     } catch (error) {
       console.error("Error recording impression:", error);
     }
@@ -134,7 +138,7 @@ export const PromptABTestingService = {
     tokenUsage?: number
   ): Promise<void> => {
     try {
-      await PromptDBService.recordSuccess(testId, variantId, userId, latencyMs, tokenUsage);
+      await PromptAnalyticsService.recordSuccess(testId, variantId, userId, latencyMs, tokenUsage);
     } catch (error) {
       console.error("Error recording success:", error);
     }
@@ -150,7 +154,7 @@ export const PromptABTestingService = {
     errorType?: string
   ): Promise<void> => {
     try {
-      await PromptDBService.recordFailure(testId, variantId, userId, errorType);
+      await PromptAnalyticsService.recordFailure(testId, variantId, userId, errorType);
     } catch (error) {
       console.error("Error recording failure:", error);
     }
@@ -169,7 +173,7 @@ export const PromptABTestingService = {
   ): Promise<string | null> => {
     try {
       // Create the test
-      const newTest = await PromptDBService.createTest({
+      const newTest = await PromptTestsService.createTest({
         name,
         description,
         content_type: contentType,
@@ -189,7 +193,7 @@ export const PromptABTestingService = {
         weight: variant.weight
       }));
       
-      const createdVariants = await PromptDBService.createVariants(variantsWithTestId);
+      const createdVariants = await PromptVariantsService.createVariants(variantsWithTestId);
       
       if (!createdVariants) {
         console.error("Failed to create variants");
@@ -209,11 +213,11 @@ export const PromptABTestingService = {
   getTestResults: async (testId: string): Promise<PromptTestResult[] | null> => {
     try {
       // Get the test data
-      const testData = await PromptDBService.getTest(testId);
+      const testData = await PromptTestsService.getTest(testId);
       if (!testData) return null;
       
       // Get impressions count by variant
-      const impressions = await PromptDBService.getImpressions(testId);
+      const impressions = await PromptAnalyticsService.getImpressions(testId);
       
       // Process impressions to count them by variant
       const impressionCounts: Record<string, number> = {};

@@ -34,7 +34,7 @@ const PromptTestManager = () => {
         name: test.name,
         description: test.description,
         contentType: test.content_type,
-        status: test.status as PromptTestStatus, // Fix type error here
+        status: test.status as PromptTestStatus, // Fixed TypeScript error here
         variants: test.variants.map((v: any) => ({
           id: v.id,
           name: v.name,
