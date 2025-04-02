@@ -77,3 +77,13 @@ export const getPostLoginRedirect = (profile: any | null, defaultPath: string = 
   
   return '/pricing?needSubscription=true';
 };
+
+// Make sure user auth state is valid before proceeding with routing
+export const validateAuthState = (user: User | null, profile: any | null): boolean => {
+  if (!user) return false;
+  
+  // Make sure we have a user profile
+  if (!profile) return false;
+  
+  return true;
+};

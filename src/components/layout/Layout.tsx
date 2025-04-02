@@ -1,5 +1,5 @@
 
-import { ReactNode } from "react";
+import { ReactNode, memo } from "react";
 import { useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import FormResumeHandler from "../shared/FormResumeHandler";
@@ -22,4 +22,5 @@ const Layout = ({ children }: LayoutProps) => {
   );
 };
 
-export default Layout;
+// Use memo to prevent unnecessary re-renders
+export default memo(Layout);
