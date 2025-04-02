@@ -9,13 +9,13 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "sonner";
 import { createClientAccessLink } from "@/utils/client-service";
 import { useAuth } from "@/hooks/use-auth";
+import ClientInfoFields from "./link-dialog/ClientInfoFields";
+import DeliveryMethodsSection from "./link-dialog/DeliveryMethodsSection";
+import ProjectSelector from "./link-dialog/ProjectSelector";
 
 interface ClientAddDialogProps {
   open: boolean;
@@ -59,7 +59,7 @@ const ClientAddDialog = ({ open, onOpenChange }: ClientAddDialogProps) => {
     
     try {
       // Create a client access link using the existing service with the correct parameters
-      const result = await createClientAccessLink(
+      await createClientAccessLink(
         user.id,
         formData.clientEmail,
         formData.clientName,
@@ -99,84 +99,33 @@ const ClientAddDialog = ({ open, onOpenChange }: ClientAddDialogProps) => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid gap-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clientName" className="text-right">
-                Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="clientName"
-                name="clientName"
-                value={formData.clientName}
-                onChange={handleChange}
-                className="col-span-3"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clientEmail" className="text-right">
-                Email <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="clientEmail"
-                name="clientEmail"
-                type="email"
-                value={formData.clientEmail}
-                onChange={handleChange}
-                className="col-span-3"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="clientPhone" className="text-right">
-                Phone
-              </Label>
-              <Input
-                id="clientPhone"
-                name="clientPhone"
-                value={formData.clientPhone}
-                onChange={handleChange}
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="industry" className="text-right">
-                Industry
-              </Label>
-              <Select
-                value={formData.industry}
-                onValueChange={handleIndustryChange}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select industry" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="healthcare">Healthcare</SelectItem>
-                  <SelectItem value="education">Education</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="personalMessage" className="text-right">
-                Notes
-              </Label>
-              <Input
-                id="personalMessage"
-                name="personalMessage"
-                value={formData.personalMessage}
-                onChange={handleChange}
-                className="col-span-3"
-              />
-            </div>
+          {/* Client Info Fields */}
+          <ClientInfoFields 
+            clientName={formData.clientName}
+            setClientName={(value) => setFormData(prev => ({ ...prev, clientName: value }))}
+            clientEmail={formData.clientEmail}
+            setClientEmail={(value) => setFormData(prev => ({ ...prev, clientEmail: value }))}
+            clientPhone={formData.clientPhone}
+            setClientPhone={(value) => setFormData(prev => ({ ...prev, clientPhone: value }))}
+            personalMessage={formData.personalMessage}
+            setPersonalMessage={(value) => setFormData(prev => ({ ...prev, personalMessage: value }))}
+          />
+          
+          {/* Industry Selector - Using standard Select from ui */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <ProjectSelector
+              selectedProjectId={null}
+              setSelectedProjectId={() => {}}
+              projects={[]}
+              isLoading={false}
+            />
           </div>
+          
+          {/* Delivery Methods */}
+          <DeliveryMethodsSection
+            deliveryMethods={{ email: true, sms: false }}
+            onDeliveryMethodChange={() => {}}
+          />
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
