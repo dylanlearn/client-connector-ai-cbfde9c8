@@ -5,15 +5,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
 import BaseFields from "./BaseFields";
+import TooltipHelper from "../TooltipHelper";
 
 interface SaasFieldsProps {
   form: UseFormReturn<any>;
+  showTooltips?: boolean;
 }
 
-const SaasFields = ({ form }: SaasFieldsProps) => {
+const SaasFields = ({ form, showTooltips = false }: SaasFieldsProps) => {
+  const exampleAnswers = {
+    pricingTiers: "Free: Basic features, Pro ($29/mo): Advanced features, Enterprise ($99/mo): Custom solutions and priority support"
+  };
+
   return (
     <>
-      <BaseFields form={form} />
+      <BaseFields form={form} showTooltips={showTooltips} />
       
       <FormField
         control={form.control}
@@ -41,7 +47,14 @@ const SaasFields = ({ form }: SaasFieldsProps) => {
         name="pricingTiers"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Pricing Tiers</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Pricing Tiers</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.pricingTiers}</div>} 
+                />
+              )}
+            </div>
             <FormControl>
               <Textarea
                 placeholder="Describe your pricing structure (e.g., Free, Pro, Enterprise)"

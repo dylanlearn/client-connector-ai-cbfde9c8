@@ -5,22 +5,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
 import BaseFields from "./BaseFields";
+import TooltipHelper from "../TooltipHelper";
 
 interface PortfolioFieldsProps {
   form: UseFormReturn<any>;
+  showTooltips?: boolean;
 }
 
-const PortfolioFields = ({ form }: PortfolioFieldsProps) => {
+const PortfolioFields = ({ form, showTooltips = false }: PortfolioFieldsProps) => {
+  const exampleAnswers = {
+    projectCategories: "Web Design, Mobile Apps, Brand Identity, UI/UX Design, Photography",
+    contactInformation: "Email, phone number, social media profiles, contact form with option to schedule a consultation"
+  };
+
   return (
     <>
-      <BaseFields form={form} />
+      <BaseFields form={form} showTooltips={showTooltips} />
       
       <FormField
         control={form.control}
         name="projectCategories"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Project Categories</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Project Categories</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.projectCategories}</div>} 
+                />
+              )}
+            </div>
             <FormControl>
               <Textarea
                 placeholder="e.g., Design, Photography, Development"
@@ -42,7 +56,14 @@ const PortfolioFields = ({ form }: PortfolioFieldsProps) => {
         name="contactInformation"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Contact Information</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Contact Information</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.contactInformation}</div>} 
+                />
+              )}
+            </div>
             <FormControl>
               <Textarea
                 placeholder="What contact information would you like to display?"

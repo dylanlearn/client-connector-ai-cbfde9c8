@@ -5,22 +5,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { UseFormReturn } from "react-hook-form";
 import BaseFields from "./BaseFields";
+import TooltipHelper from "../TooltipHelper";
 
 interface BusinessFieldsProps {
   form: UseFormReturn<any>;
+  showTooltips?: boolean;
 }
 
-const BusinessFields = ({ form }: BusinessFieldsProps) => {
+const BusinessFields = ({ form, showTooltips = false }: BusinessFieldsProps) => {
+  const exampleAnswers = {
+    serviceOfferings: "Website design, SEO optimization, content creation, branding, logo design, monthly website maintenance"
+  };
+
   return (
     <>
-      <BaseFields form={form} />
+      <BaseFields form={form} showTooltips={showTooltips} />
       
       <FormField
         control={form.control}
         name="serviceOfferings"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Service Offerings</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Service Offerings</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.serviceOfferings}</div>} 
+                />
+              )}
+            </div>
             <FormControl>
               <Textarea
                 placeholder="List the services your business provides"

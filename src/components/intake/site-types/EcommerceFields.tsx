@@ -8,16 +8,23 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import BaseFields from "./BaseFields";
 import { useAuth } from "@/hooks/use-auth";
+import TooltipHelper from "../TooltipHelper";
 
 interface EcommerceFieldsProps {
   form: UseFormReturn<any>;
+  showTooltips?: boolean;
 }
 
-const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
+const EcommerceFields = ({ form, showTooltips = false }: EcommerceFieldsProps) => {
   const { profile } = useAuth();
   const isPro = profile?.role === 'pro';
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [newQuestion, setNewQuestion] = useState('');
+
+  const exampleAnswers = {
+    estimatedProducts: "50-100 products with variations for size and color",
+    paymentProcessors: "Stripe for credit cards, PayPal for alternative payments, and considering Apple Pay for mobile checkout"
+  };
 
   // Restore custom questions from form data when component mounts
   useEffect(() => {
@@ -48,14 +55,21 @@ const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
 
   return (
     <>
-      <BaseFields form={form} />
+      <BaseFields form={form} showTooltips={showTooltips} />
       
       <FormField
         control={form.control}
         name="estimatedProducts"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Estimated Products</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Estimated Products</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.estimatedProducts}</div>} 
+                />
+              )}
+            </div>
             <FormControl>
               <Input placeholder="How many products will you sell?" {...field} />
             </FormControl>
@@ -69,7 +83,14 @@ const EcommerceFields = ({ form }: EcommerceFieldsProps) => {
         name="paymentProcessors"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Payment Processors</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Payment Processors</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.paymentProcessors}</div>} 
+                />
+              )}
+            </div>
             <FormControl>
               <Input placeholder="e.g., Stripe, PayPal, Square" {...field} />
             </FormControl>
