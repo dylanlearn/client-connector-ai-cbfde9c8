@@ -5,39 +5,39 @@ import { IntakeFormData } from "@/types/intake-form";
 // Define the schema for different site types
 export const getFormSchema = (siteType: string) => {
   const baseSchema = z.object({
-    businessName: z.string().min(2, "Business name must be at least 2 characters"),
-    industry: z.string().min(2, "Industry must be at least 2 characters"),
+    projectName: z.string().min(2, "Project name must be at least 2 characters"),
+    projectDescription: z.string().min(2, "Project description must be at least 2 characters"),
     targetAudience: z.string().min(2, "Target audience must be at least 2 characters"),
   });
 
   switch (siteType) {
     case "saas":
       return baseSchema.extend({
-        productFeatures: z.string().min(10, "Please describe your product features"),
-        subscriptionModel: z.string().optional(),
-        competitorUrls: z.string().optional(),
-        demoAccount: z.boolean().optional(),
+        mainFeatures: z.string().min(10, "Please describe your main features"),
+        pricingTiers: z.string().optional(),
+        competitors: z.string().optional(),
+        userAccountsRequired: z.boolean().optional(),
       });
     case "ecommerce":
       return baseSchema.extend({
-        productCategories: z.string().min(2, "Product categories must be at least 2 characters"),
-        shippingDetails: z.string().optional(),
-        paymentOptions: z.string().optional(),
-        inventorySize: z.string().optional(),
+        estimatedProducts: z.string().min(2, "Product information must be at least 2 characters"),
+        paymentProcessors: z.string().optional(),
+        shippingIntegration: z.boolean().optional(),
+        customQuestions: z.array(z.string()).optional(),
       });
     case "business":
       return baseSchema.extend({
-        services: z.string().min(10, "Please describe your services"),
-        companyHistory: z.string().optional(),
-        teamSize: z.string().optional(),
-        locationsServed: z.string().optional(),
+        serviceOfferings: z.string().min(10, "Please describe your services"),
+        contactFormRequired: z.boolean().optional(),
+        hasPhysicalLocation: z.boolean().optional(),
+        mainFeatures: z.string().optional(),
       });
     case "portfolio":
       return baseSchema.extend({
-        workCategories: z.string().min(2, "Work categories must be at least 2 characters"),
-        projectHighlights: z.string().optional(),
-        careerGoals: z.string().optional(),
-        awards: z.string().optional(),
+        projectCategories: z.string().min(2, "Project categories must be at least 2 characters"),
+        contactInformation: z.string().optional(),
+        resumeUploadRequired: z.boolean().optional(),
+        mainFeatures: z.string().optional(),
       });
     default:
       return baseSchema;
@@ -47,8 +47,8 @@ export const getFormSchema = (siteType: string) => {
 // Get default values for the form based on site type and existing form data
 export const getDefaultValues = (siteType: string, formData: IntakeFormData) => {
   const baseDefaults = {
-    businessName: formData.businessName || "",
-    industry: formData.industry || "",
+    projectName: formData.projectName || "",
+    projectDescription: formData.projectDescription || "",
     targetAudience: formData.targetAudience || "",
   };
 
@@ -56,34 +56,34 @@ export const getDefaultValues = (siteType: string, formData: IntakeFormData) => 
     case "saas":
       return {
         ...baseDefaults,
-        productFeatures: formData.productFeatures || "",
-        subscriptionModel: formData.subscriptionModel || "",
-        competitorUrls: formData.competitorUrls || "",
-        demoAccount: formData.demoAccount || false,
+        mainFeatures: formData.mainFeatures || "",
+        pricingTiers: formData.pricingTiers || "",
+        competitors: formData.competitors || "",
+        userAccountsRequired: formData.userAccountsRequired || false,
       };
     case "ecommerce":
       return {
         ...baseDefaults,
-        productCategories: formData.productCategories || "",
-        shippingDetails: formData.shippingDetails || "",
-        paymentOptions: formData.paymentOptions || "",
-        inventorySize: formData.inventorySize || "",
+        estimatedProducts: formData.estimatedProducts || "",
+        paymentProcessors: formData.paymentProcessors || "",
+        shippingIntegration: formData.shippingIntegration || false,
+        customQuestions: formData.customQuestions || [],
       };
     case "business":
       return {
         ...baseDefaults,
-        services: formData.services || "",
-        companyHistory: formData.companyHistory || "",
-        teamSize: formData.teamSize || "",
-        locationsServed: formData.locationsServed || "",
+        serviceOfferings: formData.serviceOfferings || "",
+        contactFormRequired: formData.contactFormRequired || false,
+        hasPhysicalLocation: formData.hasPhysicalLocation || false,
+        mainFeatures: formData.mainFeatures || "",
       };
     case "portfolio":
       return {
         ...baseDefaults,
-        workCategories: formData.workCategories || "",
-        projectHighlights: formData.projectHighlights || "",
-        careerGoals: formData.careerGoals || "",
-        awards: formData.awards || "",
+        projectCategories: formData.projectCategories || "",
+        contactInformation: formData.contactInformation || "",
+        resumeUploadRequired: formData.resumeUploadRequired || false,
+        mainFeatures: formData.mainFeatures || "",
       };
     default:
       return baseDefaults;

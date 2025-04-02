@@ -39,7 +39,9 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, i
         updateFormData(value as Partial<IntakeFormData>);
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [form, updateFormData]);
 
   function onSubmit(values: any) {
