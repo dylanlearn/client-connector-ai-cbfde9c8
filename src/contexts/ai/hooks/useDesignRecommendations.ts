@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { DesignRecommendation } from "@/types/ai";
+import { DesignRecommendation, ComponentSuggestion } from "@/types/ai";
 import { 
   AIAnalyzerService,
   AIDesignService 

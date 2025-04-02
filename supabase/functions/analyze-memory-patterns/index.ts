@@ -15,12 +15,53 @@ serve(async (req) => {
 
   try {
     // Get request data
-    const { category, limit = 100 } = await req.json();
+    const { category, limit = 100, forceRefresh = false } = await req.json();
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // If forceRefresh is false, check for recent analysis
+    if (!forceRefresh) {
+      // Check for recent analysis (less than 15 minutes old)
+      const { data: recentAnalysis, error: checkError } = await supabase
+        .from("memory_analysis_results")
+        .select("insights, analyzed_at")
+        .eq("category", category)
+        .order("analyzed_at", { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (!checkError && recentAnalysis) {
+        const analysisTime = new Date(recentAnalysis.analyzed_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - analysisTime.getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+        
+        // If analysis is recent, return the cached results
+        if (timeDiff < fifteenMinutes) {
+          console.log(`Using cached analysis for ${category} from ${analysisTime.toISOString()}`);
+          
+          // Extract insights, ensuring they're strings
+          const insights = Array.isArray(recentAnalysis.insights?.results) 
+            ? recentAnalysis.insights.results.map((item: any) => String(item)) 
+            : ["No insights available"];
+          
+          return new Response(
+            JSON.stringify({
+              insights,
+              sourceCount: 0,
+              cached: true
+            }),
+            {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            }
+          );
+        }
+      }
+    }
 
     // Fetch memories for analysis
     const { data: memories, error } = await supabase
@@ -50,8 +91,6 @@ serve(async (req) => {
     }
 
     // Generate insights from memories
-    // In a real implementation, this would likely call a more sophisticated
-    // AI service like OpenAI to analyze patterns
     const insights = analyzeMemoriesForInsights(memories, category);
     
     // Store analysis results

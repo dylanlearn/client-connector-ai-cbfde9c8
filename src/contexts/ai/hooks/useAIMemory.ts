@@ -139,7 +139,8 @@ export const useAIMemory = () => {
                     ? {
                         ...insight,
                         content: insights.join('\n'),
-                        timestamp: new Date(),
+                        relevanceScore: 1.0, // Boost relevance for fresh insights
+                        frequency: insight.frequency + 1
                       }
                     : insight
                 )

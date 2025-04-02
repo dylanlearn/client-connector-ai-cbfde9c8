@@ -1,48 +1,45 @@
 
-import { GlobalMemory, MemoryCategory, MemoryQueryOptions } from "./memory-types";
-import { GlobalMemoryStorage } from "./global/global-memory-storage";
-import { GlobalMemoryRetrieval } from "./global/global-memory-retrieval";
-import { GlobalMemoryFeedback } from "./global/global-memory-feedback";
-import { GlobalMemoryInsights } from "./global/global-memory-insights";
-import { GlobalMemoryRealtime } from "./global/global-memory-realtime";
+import { supabase } from "@/integrations/supabase/client";
+import { MemoryCategory, MemoryQueryOptions, GlobalMemory } from "./memory-types";
+import { 
+  GlobalMemoryBase,
+  GlobalMemoryFeedback,
+  GlobalMemoryInsights,
+  GlobalMemoryRealtime,
+  GlobalMemoryRetrieval,
+  GlobalMemoryStorage
+} from "./global";
 
 /**
- * Service for managing anonymized global AI memory
- * This layer learns from aggregated feedback, successful outputs, and interaction patterns
+ * Service for managing global AI memory
+ * This is the anonymous, platform-wide learning layer
  */
 export const GlobalMemoryService = {
   /**
-   * Store an anonymized memory entry in the global layer
+   * Store an anonymized memory
    */
-  storeAnonymizedMemory: GlobalMemoryStorage.storeAnonymizedMemory,
-
+  storeAnonymizedMemory: GlobalMemoryStorage.storeMemory,
+  
   /**
-   * Retrieve global memories based on query options
+   * Get global memories based on query options
    */
   getMemories: GlobalMemoryRetrieval.getMemories,
-
+  
   /**
-   * Process user feedback to improve global memory relevance scores
+   * Process user feedback on a memory (positive or negative)
    */
   processUserFeedback: GlobalMemoryFeedback.processUserFeedback,
-
+  
   /**
-   * Analyze global memories to extract insights using AI
+   * Analyze global memories to extract insights
    */
   analyzeInsights: GlobalMemoryInsights.analyzeInsights,
   
   /**
-   * Real-time functionality for global memory
+   * Realtime functionality for memory updates
    */
   realtime: {
-    /**
-     * Subscribe to real-time memory insights
-     */
     subscribeToInsights: GlobalMemoryRealtime.subscribeToInsights,
-    
-    /**
-     * Trigger a real-time analysis update
-     */
     triggerAnalysisUpdate: GlobalMemoryRealtime.triggerAnalysisUpdate
   }
 };
