@@ -60,21 +60,36 @@ const FeedbackAnalysisCard = ({ result, onExport }: FeedbackAnalysisCardProps) =
                 <span>Positive</span>
                 <span>{Math.round(toneAnalysis.positive * 100)}%</span>
               </div>
-              <Progress value={toneAnalysis.positive * 100} className="h-2 bg-gray-200" indicatorClassName="bg-green-500" />
+              <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-green-500" 
+                  style={{ width: `${toneAnalysis.positive * 100}%` }}
+                />
+              </div>
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Neutral</span>
                 <span>{Math.round(toneAnalysis.neutral * 100)}%</span>
               </div>
-              <Progress value={toneAnalysis.neutral * 100} className="h-2 bg-gray-200" indicatorClassName="bg-blue-500" />
+              <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-blue-500" 
+                  style={{ width: `${toneAnalysis.neutral * 100}%` }}
+                />
+              </div>
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>Negative</span>
                 <span>{Math.round(toneAnalysis.negative * 100)}%</span>
               </div>
-              <Progress value={toneAnalysis.negative * 100} className="h-2 bg-gray-200" indicatorClassName="bg-red-500" />
+              <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-red-500" 
+                  style={{ width: `${toneAnalysis.negative * 100}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>

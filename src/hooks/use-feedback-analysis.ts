@@ -22,27 +22,25 @@ export const useFeedbackAnalysis = () => {
     
     try {
       // Show toast for long-running process
-      const toastId = toast.loading("Analyzing feedback...");
+      toast.loading("Analyzing feedback...");
       
       const result = await FeedbackAnalysisService.analyzeFeedback(feedbackText);
       
       setAnalysisResult(result);
       
-      // Update toast based on analysis result
+      // Dismiss loading toast and show appropriate message based on analysis result
+      toast.dismiss();
+      
       if (result.toneAnalysis.urgent) {
-        toast.update(toastId, { 
-          id: toastId,
-          title: "Urgent feedback detected", 
+        toast("Urgent feedback detected", {
           description: "This feedback contains time-sensitive items",
           duration: 5000,
-          isLoading: false,
           action: {
             label: "View",
             onClick: () => console.log("View urgent feedback")
           },
         });
       } else {
-        toast.dismiss(toastId);
         toast.success("Feedback analyzed successfully");
       }
       
