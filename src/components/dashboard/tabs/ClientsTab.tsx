@@ -4,6 +4,7 @@ import { useClientProgress } from "@/hooks/use-client-progress";
 import ClientActivityFeed from "@/components/clients/ClientActivityFeed";
 import ClientStatsOverview from "./clients/ClientStatsOverview";
 import ClientProgressSection from "./clients/ClientProgressSection";
+import { ContentCard } from "@/components/ui/content-card";
 
 export default function ClientsTab() {
   const {
@@ -26,7 +27,10 @@ export default function ClientsTab() {
       
       {/* Client activity and progress */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ClientActivityFeed />
+        <ContentCard title="Recent Activity">
+          <ClientActivityFeed />
+        </ContentCard>
+        
         <ClientProgressSection
           clientProgress={clientProgress}
           isLoading={isLoadingProgress}

@@ -1,107 +1,73 @@
 
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { ClientTaskProgress } from "@/types/client";
+import { ClientProgressItem } from "./ClientProgressItem";
 import { Skeleton } from "@/components/ui/skeleton";
-import ClientProgressItem from "./ClientProgressItem";
-
-interface ClientProgressItem {
-  clientName: string;
-  email: string;
-  completed: number;
-  total: number;
-  lastActive: Date | null;
-}
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ContentCard } from "@/components/ui/content-card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Users } from "lucide-react";
 
 interface ClientProgressSectionProps {
-  clientProgress: ClientProgressItem[] | undefined;
+  clientProgress: ClientTaskProgress[] | null;
   isLoading: boolean;
   limit?: number;
 }
 
-export default function ClientProgressSection({ 
-  clientProgress, 
+export default function ClientProgressSection({
+  clientProgress,
   isLoading,
-  limit = 5
+  limit = 3
 }: ClientProgressSectionProps) {
-  const navigate = useNavigate();
+  const displayProgress = clientProgress?.slice(0, limit) || [];
   
-  const handleCreateClientClick = () => {
-    navigate('/clients');
-  };
-
-  const handleSeeAllClick = () => {
-    navigate('/clients');
-  };
+  if (isLoading) {
+    return (
+      <ContentCard title="Client Progress">
+        <div className="space-y-4">
+          {[...Array(3)].map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full" />
+          ))}
+        </div>
+      </ContentCard>
+    );
+  }
   
-  // Limit the number of clients shown to the specified limit
-  const limitedProgress = clientProgress?.slice(0, limit);
-  const hasMoreClients = clientProgress && clientProgress.length > limit;
+  if (!clientProgress || clientProgress.length === 0) {
+    return (
+      <ContentCard title="Client Progress">
+        <EmptyState
+          icon={<Users className="h-6 w-6 text-muted-foreground" />}
+          title="No client progress"
+          description="You don't have any active clients with progress to track yet."
+          action={{
+            label: "Add Client",
+            onClick: () => window.location.href = "/clients"
+          }}
+        />
+      </ContentCard>
+    );
+  }
   
   return (
-    <Card className="h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle>Client Progress</CardTitle>
-          <CardDescription>Task completion by client</CardDescription>
-        </div>
-        <Button size="sm" onClick={handleCreateClientClick}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          New Client
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="space-y-2">
-                <Skeleton className="h-4 w-[200px]" />
-                <Skeleton className="h-2 w-full" />
-              </div>
-            ))}
-          </div>
-        ) : limitedProgress && limitedProgress.length > 0 ? (
-          <div className="space-y-4">
-            {limitedProgress.map((client, index) => (
-              <ClientProgressItem
-                key={index}
-                clientName={client.clientName}
-                email={client.email}
-                completed={client.completed}
-                total={client.total}
-                lastActive={client.lastActive}
-                onClick={() => navigate(`/clients?client=${client.email}`)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
-            <p className="text-muted-foreground">No active clients</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-4"
-              onClick={handleCreateClientClick}
-            >
-              Add Your First Client
-            </Button>
-          </div>
-        )}
-      </CardContent>
-      {hasMoreClients && (
-        <CardFooter className="pt-0">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full" 
-            onClick={handleSeeAllClick}
-          >
-            See all clients
+    <ContentCard 
+      title="Client Progress" 
+      footer={
+        <div className="w-full flex justify-end">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/clients">
+              View All <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
-        </CardFooter>
-      )}
-    </Card>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        {displayProgress.map((progress, index) => (
+          <ClientProgressItem key={index} progress={progress} />
+        ))}
+      </div>
+    </ContentCard>
   );
 }
