@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalMemory, MemoryCategory, MemoryQueryOptions } from "./memory-types";
 import { v4 as uuidv4 } from "uuid";
@@ -18,7 +19,21 @@ export const GlobalMemoryService = {
     metadata: Record<string, any> = {}
   ): Promise<GlobalMemory | null> => {
     try {
+      // Before trying to use the database, create a memory object we can return
+      // if the database operations fail (temporary workaround until tables are created)
+      const memoryEntry: GlobalMemory = {
+        id: uuidv4(),
+        content,
+        category,
+        timestamp: new Date(),
+        frequency: 1,
+        relevanceScore,
+        metadata
+      };
+
       // Check for similar existing memories to update frequency
+      // This is commented out until the database table exists
+      /*
       const { data: existingMemories } = await supabase
         .from('global_memories')
         .select('*')
@@ -51,16 +66,6 @@ export const GlobalMemoryService = {
         return data as GlobalMemory;
       } else {
         // Create new memory entry
-        const memoryEntry: GlobalMemory = {
-          id: uuidv4(),
-          content,
-          category,
-          timestamp: new Date(),
-          frequency: 1,
-          relevanceScore,
-          metadata
-        };
-
         const { data, error } = await supabase
           .from('global_memories')
           .insert(memoryEntry)
@@ -70,6 +75,11 @@ export const GlobalMemoryService = {
         if (error) throw error;
         return data as GlobalMemory;
       }
+      */
+      
+      // For now, return the in-memory object since the tables don't exist yet
+      console.log("Simulating global memory storage:", memoryEntry);
+      return memoryEntry;
     } catch (error) {
       console.error("Error storing global memory:", error);
       return null;
@@ -91,6 +101,8 @@ export const GlobalMemoryService = {
         relevanceThreshold = 0.3 
       } = options;
       
+      // This is commented out until the database table exists
+      /*
       let query = supabase
         .from('global_memories')
         .select('*')
@@ -125,6 +137,11 @@ export const GlobalMemoryService = {
 
       if (error) throw error;
       return data as GlobalMemory[];
+      */
+      
+      // For now, return an empty array since the table doesn't exist yet
+      console.log("Simulating global memory retrieval with options:", options);
+      return [];
     } catch (error) {
       console.error("Error retrieving global memories:", error);
       return [];
@@ -140,6 +157,8 @@ export const GlobalMemoryService = {
     feedbackDetails?: string
   ): Promise<boolean> => {
     try {
+      // This is commented out until the database table exists
+      /*
       const { data: memory, error: fetchError } = await supabase
         .from('global_memories')
         .select('*')
@@ -169,6 +188,9 @@ export const GlobalMemoryService = {
         .eq('id', memoryId);
 
       if (updateError) throw updateError;
+      */
+      
+      console.log("Simulating global memory feedback processing for ID:", memoryId, "Positive:", isPositive);
       return true;
     } catch (error) {
       console.error("Error processing feedback for global memory:", error);
@@ -184,6 +206,8 @@ export const GlobalMemoryService = {
     limit: number = 100
   ): Promise<string[]> => {
     try {
+      // This is commented out until the database table exists
+      /*
       // Fetch most relevant memories from the specified category
       const { data, error } = await supabase
         .from('global_memories')
@@ -202,6 +226,9 @@ export const GlobalMemoryService = {
       // Use AI to analyze patterns in the global memories
       const memories = data as GlobalMemory[];
       const memoryContents = memories.map(m => m.content).join("\n");
+      */
+      
+      const memoryContents = "Sample memory content for testing";
       
       const promptContent = `
         Analyze the following collection of design insights and extract key patterns, trends, 
@@ -220,6 +247,9 @@ export const GlobalMemoryService = {
       // Use GPT-4o for in-depth analysis
       const model = selectModelForFeature(AIFeatureType.DataAnalytics);
       
+      // For now, let's return a placeholder until the edge function is implemented
+      // In production, we would call the edge function:
+      /*
       const { data: aiResponse, error: aiError } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -235,6 +265,10 @@ export const GlobalMemoryService = {
       if (aiError) throw aiError;
       
       return JSON.parse(aiResponse.response);
+      */
+      
+      console.log("Simulating memory pattern analysis for category:", category);
+      return ["Users prefer clean, minimalist layouts", "Dark mode is preferred for extended usage", "Accessibility considerations are important across all designs"];
     } catch (error) {
       console.error("Error analyzing global memory insights:", error);
       return ["Error analyzing insights from global memory"];

@@ -27,9 +27,12 @@ enabled = true
 
 [functions]
 serve_function_console = true
+
+[functions.analyze-memory-patterns]
+verify_jwt = true
+
 [functions.design-suggestions]
 verify_jwt = true
+
 [functions.generate-with-openai]
-verify_jwt = true
-[functions.analyze-memory-patterns]
 verify_jwt = true

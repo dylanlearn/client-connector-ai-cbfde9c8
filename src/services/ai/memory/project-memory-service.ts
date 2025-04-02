@@ -29,6 +29,8 @@ export const ProjectMemoryService = {
         metadata
       };
 
+      // This is commented out until the database table exists
+      /*
       const { data, error } = await supabase
         .from('project_memories')
         .insert(memoryEntry)
@@ -37,6 +39,11 @@ export const ProjectMemoryService = {
 
       if (error) throw error;
       return data as ProjectMemory;
+      */
+      
+      // For now, return the in-memory object since the tables don't exist yet
+      console.log("Simulating project memory storage:", memoryEntry);
+      return memoryEntry;
     } catch (error) {
       console.error("Error storing project memory:", error);
       return null;
@@ -53,6 +60,8 @@ export const ProjectMemoryService = {
     try {
       const { categories, limit = 50, timeframe, metadata } = options;
       
+      // This is commented out until the database table exists
+      /*
       let query = supabase
         .from('project_memories')
         .select('*')
@@ -85,6 +94,11 @@ export const ProjectMemoryService = {
 
       if (error) throw error;
       return data as ProjectMemory[];
+      */
+      
+      // For now, return an empty array since the table doesn't exist yet
+      console.log("Simulating project memory retrieval for project:", projectId);
+      return [];
     } catch (error) {
       console.error("Error retrieving project memories:", error);
       return [];
@@ -96,12 +110,17 @@ export const ProjectMemoryService = {
    */
   deleteMemory: async (memoryId: string): Promise<boolean> => {
     try {
+      // This is commented out until the database table exists
+      /*
       const { error } = await supabase
         .from('project_memories')
         .delete()
         .eq('id', memoryId);
 
       if (error) throw error;
+      */
+      
+      console.log("Simulating project memory deletion for ID:", memoryId);
       return true;
     } catch (error) {
       console.error("Error deleting project memory:", error);
