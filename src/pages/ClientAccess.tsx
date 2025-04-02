@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertMessage } from "@/components/ui/alert-message";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -122,11 +121,9 @@ const ClientAccess = () => {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Alert className="mt-4">
-              <AlertDescription>
-                If you don't have an access link, please contact your designer to request one.
-              </AlertDescription>
-            </Alert>
+            <AlertMessage type="info" className="mt-4">
+              If you don't have an access link, please contact your designer to request one.
+            </AlertMessage>
           </CardFooter>
         </Card>
         

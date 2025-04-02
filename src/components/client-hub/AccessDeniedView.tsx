@@ -2,8 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertMessage } from "@/components/ui/alert-message";
 
 const AccessDeniedView: React.FC = () => {
   const navigate = useNavigate();
@@ -11,16 +10,12 @@ const AccessDeniedView: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        <Alert variant="destructive" className="mb-8">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            This client hub link is invalid or has expired. Please contact your designer for a new link.
-          </AlertDescription>
-        </Alert>
+        <AlertMessage type="error" title="Access Denied">
+          This client hub link is invalid or has expired. Please contact your designer for a new link.
+        </AlertMessage>
         <Button 
           onClick={() => navigate('/')}
-          className="mx-auto block"
+          className="mx-auto block mt-8"
         >
           Return to Home
         </Button>

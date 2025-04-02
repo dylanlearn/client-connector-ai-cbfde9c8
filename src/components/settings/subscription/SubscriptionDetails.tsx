@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertMessage } from "@/components/ui/alert-message";
 
 interface SubscriptionDetailsProps {
   status: string;
@@ -39,11 +39,9 @@ export function SubscriptionDetails({
             <div className="font-medium capitalize">{getDisplayStatus(status)}</div>
           </div>
           {inTrial && (
-            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
-              <AlertDescription>
-                You're currently in a trial period ending on {expiresAt && format(new Date(expiresAt), "MMM d, yyyy")}.
-              </AlertDescription>
-            </Alert>
+            <AlertMessage type="warning" className="text-amber-800">
+              You're currently in a trial period ending on {expiresAt && format(new Date(expiresAt), "MMM d, yyyy")}.
+            </AlertMessage>
           )}
         </div>
         <div className="space-y-3">
@@ -58,11 +56,9 @@ export function SubscriptionDetails({
             </div>
           </div>
           {willCancel && (
-            <Alert className="bg-blue-50 text-blue-800 border-blue-200">
-              <AlertDescription>
-                Your subscription will remain active until {expiresAt && format(new Date(expiresAt), "MMM d, yyyy")}.
-              </AlertDescription>
-            </Alert>
+            <AlertMessage type="info" className="text-blue-800">
+              Your subscription will remain active until {expiresAt && format(new Date(expiresAt), "MMM d, yyyy")}.
+            </AlertMessage>
           )}
         </div>
       </div>
