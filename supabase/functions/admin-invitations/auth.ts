@@ -30,7 +30,7 @@ export async function verifyAdminUser(authHeader: string | null) {
     throw new Error(`Error fetching profile: ${profileError.message}`);
   }
 
-  if (profile.role !== 'pro') {
+  if (profile.role !== 'admin') {
     throw new Error('Unauthorized: Admin access required');
   }
 

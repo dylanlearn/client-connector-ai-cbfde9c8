@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InvitationManager } from "@/components/admin/InvitationManager";
+import { UserManagement } from "@/components/admin/UserManagement";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -94,10 +95,7 @@ const AdminPanel = () => {
           </TabsContent>
           
           <TabsContent value="users">
-            <div className="rounded-lg border p-8 text-center">
-              <h3 className="font-medium text-lg mb-2">User Management</h3>
-              <p className="text-muted-foreground">User management features coming soon</p>
-            </div>
+            <UserManagement />
           </TabsContent>
           
           <TabsContent value="settings">
