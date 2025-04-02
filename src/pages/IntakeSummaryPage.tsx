@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Check } from "lucide-react";  // Added Check import
 import { useIntakeForm } from "@/hooks/intake-form";
 import { useIntakeSummary } from "@/hooks/intake-form/useIntakeSummary";
 import AISummaryResult from "@/components/intake/AISummaryResult";
