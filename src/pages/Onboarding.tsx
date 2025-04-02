@@ -34,14 +34,14 @@ const OnboardingSteps = [
         label: "Sync Basic", 
         description: "Perfect for individuals",
         features: ["3 active projects", "Basic questionnaires", "Client portal"],
-        price: "Free" 
+        price: "$35/month" 
       },
       { 
         id: "syncPro", 
         label: "Sync Pro", 
         description: "Ideal for freelancers",
         features: ["Unlimited projects", "Advanced AI analysis", "Custom branding", "Priority support"],
-        price: "$19/month" 
+        price: "$69/month" 
       },
     ],
     buttonText: "Continue",

@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 const plans = [
   {
     name: "Sync",
-    price: "Free",
+    price: "$35",
+    period: "/month",
     description: "Perfect for freelancers and small teams",
     features: [
       "AI-powered client questionnaire",
