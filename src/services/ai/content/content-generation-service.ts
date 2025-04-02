@@ -39,7 +39,7 @@ export const AIContentGenerationService = {
         .select('content')
         .eq('cache_key', effectiveCacheKey)
         .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid errors
       
       if (!cacheError && cachedContent) {
         console.log('Cache hit for content generation:', effectiveCacheKey);
@@ -82,84 +82,123 @@ export const AIContentGenerationService = {
       
       // Add timeout for the API call
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout (increased from 5s)
       
-      try {
-        const { data, error } = await supabase.functions.invoke("generate-with-openai", {
-          body: {
-            messages: [{
-              role: "user",
-              content: promptContent
-            }],
-            systemPrompt,
-            temperature: 0.7,
-            model,
-            maxTokens: Math.min(maxLength * 2, 500), // Limit token usage
-          },
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (error) throw error;
-        
-        const generatedContent = data.response.trim();
-        const endTime = Date.now();
-        const latencyMs = endTime - startTime;
-        
-        // Store in database cache with 30-minute expiration
-        const expiresAt = new Date();
-        expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-        
-        // Get user ID if logged in
-        const session = await supabase.auth.getSession();
-        const userId = session.data.session?.user.id;
-        
-        // Insert into cache
-        await supabase.from('ai_content_cache').insert({
-          cache_key: effectiveCacheKey,
-          content: generatedContent,
-          content_type: type,
-          expires_at: expiresAt.toISOString(),
-          user_id: userId,
-          metadata: { tone, context, keywords }
-        });
-        
-        // Log metrics for analytics
-        if (userId) {
-          await supabase.from('ai_generation_metrics').insert({
-            feature_type: featureType,
-            model_used: model,
-            latency_ms: latencyMs,
-            success: true,
-            user_id: userId,
-            prompt_tokens: data.usage?.prompt_tokens,
-            completion_tokens: data.usage?.completion_tokens,
-            total_tokens: data.usage?.total_tokens
+      // Implement retry logic for transient errors
+      const MAX_RETRIES = 2;
+      let retryCount = 0;
+      let lastError: Error | null = null;
+      
+      while (retryCount <= MAX_RETRIES) {
+        try {
+          const { data, error } = await supabase.functions.invoke("generate-with-openai", {
+            body: {
+              messages: [{
+                role: "user",
+                content: promptContent
+              }],
+              systemPrompt,
+              temperature: 0.7,
+              model,
+              maxTokens: Math.min(maxLength * 2, 500), // Limit token usage
+            },
           });
+          
+          clearTimeout(timeoutId);
+          
+          if (error) throw error;
+          
+          const generatedContent = data.response.trim();
+          const endTime = Date.now();
+          const latencyMs = endTime - startTime;
+          
+          // Store in database cache with 30-minute expiration
+          const expiresAt = new Date();
+          expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+          
+          // Get user ID if logged in
+          const session = await supabase.auth.getSession();
+          const userId = session.data.session?.user.id;
+          
+          // Insert into cache with error handling
+          try {
+            await supabase.from('ai_content_cache').insert({
+              cache_key: effectiveCacheKey,
+              content: generatedContent,
+              content_type: type,
+              expires_at: expiresAt.toISOString(),
+              user_id: userId,
+              metadata: { tone, context, keywords }
+            });
+          } catch (cacheError) {
+            console.error("Failed to store in cache, but continuing:", cacheError);
+            // Non-critical error, continue without failing
+          }
+          
+          // Log metrics for analytics (also non-critical)
+          if (userId) {
+            try {
+              await supabase.from('ai_generation_metrics').insert({
+                feature_type: featureType,
+                model_used: model,
+                latency_ms: latencyMs,
+                success: true,
+                user_id: userId,
+                prompt_tokens: data.usage?.prompt_tokens,
+                completion_tokens: data.usage?.completion_tokens,
+                total_tokens: data.usage?.total_tokens
+              });
+            } catch (metricsError) {
+              console.error("Failed to log metrics, but continuing:", metricsError);
+              // Non-critical error, continue without failing
+            }
+          }
+          
+          return generatedContent;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          lastError = error instanceof Error ? error : new Error('Unknown error');
+          console.error(`AI generation attempt ${retryCount + 1} failed:`, error);
+          
+          if (retryCount < MAX_RETRIES) {
+            // Exponential backoff: 1s, 2s, 4s
+            const delayMs = 1000 * Math.pow(2, retryCount);
+            console.log(`Retrying in ${delayMs}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            retryCount++;
+          } else {
+            // Log error metrics if user is logged in (non-critical)
+            try {
+              const session = await supabase.auth.getSession();
+              const userId = session.data.session?.user.id;
+              
+              if (userId) {
+                await supabase.from('ai_generation_metrics').insert({
+                  feature_type: featureType,
+                  model_used: model,
+                  latency_ms: Date.now() - startTime,
+                  success: false,
+                  error_type: error.name || 'unknown',
+                  error_message: error.message,
+                  user_id: userId
+                });
+              }
+            } catch (metricsError) {
+              console.error("Failed to log error metrics:", metricsError);
+            }
+            
+            // Break out of the retry loop after maximum retries
+            break;
+          }
         }
-        
-        return generatedContent;
-      } catch (timeoutError) {
-        clearTimeout(timeoutId);
-        console.error("AI generation timed out:", timeoutError);
-        
-        // Log error metrics if user is logged in
-        const session = await supabase.auth.getSession();
-        const userId = session.data.session?.user.id;
-        
-        if (userId) {
-          await supabase.from('ai_generation_metrics').insert({
-            feature_type: featureType,
-            model_used: model,
-            latency_ms: 5000, // Timeout value
-            success: false,
-            error_type: 'timeout',
-            user_id: userId
-          });
-        }
-        
-        throw new Error("AI generation timed out. Please try again.");
       }
+      
+      // If we've exhausted all retries, throw the last error
+      if (lastError) {
+        throw lastError;
+      }
+      
+      throw new Error("Unknown error during content generation");
     } catch (error) {
       console.error("Error generating content:", error);
       // Return a more helpful fallback based on the type

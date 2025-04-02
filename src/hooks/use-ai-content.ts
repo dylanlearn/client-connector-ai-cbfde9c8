@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AIGeneratorService } from '@/services/ai';
 import { toast } from 'sonner';
@@ -19,7 +18,7 @@ export interface UseAIContentOptions {
   
   /**
    * Timeout in milliseconds before giving up
-   * @default 8000
+   * @default 10000
    */
   timeout?: number;
   
@@ -34,6 +33,13 @@ export interface UseAIContentOptions {
    * @default 1800000 (30 minutes)
    */
   cacheTTL?: number;
+  
+  /**
+   * When true, fallback content will be returned on error
+   * rather than throwing
+   * @default true
+   */
+  useFallbacks?: boolean;
 }
 
 interface ContentRequest {
@@ -52,13 +58,15 @@ export function useAIContent(options: UseAIContentOptions = {}) {
   const {
     autoRetry = true,
     maxRetries = 2,
-    timeout = 8000,
+    timeout = 10000, // Increased timeout for better reliability
     showToasts = false,
     cacheTTL = 30 * 60 * 1000, // 30 minutes
+    useFallbacks = true
   } = options;
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryCountRef = useRef(0);
   const requestTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -150,12 +158,23 @@ export function useAIContent(options: UseAIContentOptions = {}) {
         toast.error('Failed to generate AI content');
       }
       
-      // Return fallback content
-      return `Example ${request.type || 'content'}`;
+      // Return fallback content if fallbacks are enabled
+      if (useFallbacks) {
+        const fallbacks = {
+          header: `Example ${request.type || 'header'}`,
+          tagline: "Brief, compelling tagline example",
+          cta: "Sign up for free",
+          description: `Sample description for ${request.context || 'this field'}`
+        };
+        return fallbacks[request.type] || `Example ${request.type}`;
+      }
+      
+      // Otherwise, re-throw the error
+      throw error;
     } finally {
       setIsGenerating(false);
     }
-  }, [autoRetry, maxRetries, timeout, showToasts]);
+  }, [autoRetry, maxRetries, timeout, showToasts, useFallbacks]);
 
   const cancelGeneration = useCallback(() => {
     if (abortControllerRef.current) {
@@ -172,27 +191,65 @@ export function useAIContent(options: UseAIContentOptions = {}) {
   }, []);
 
   // Function to manually trigger cache cleanup (for admin/development purposes)
-  const cleanupCache = useCallback(async (): Promise<boolean> => {
+  const cleanupCache = useCallback(async (): Promise<{success: boolean, message: string, entriesRemoved?: number}> => {
     try {
-      const { error } = await supabase.functions.invoke("cleanup-expired-cache");
+      setIsCleaningUp(true);
+      const { data, error } = await supabase.functions.invoke("cleanup-expired-cache");
+      
+      setIsCleaningUp(false);
       
       if (error) {
         console.error("Failed to trigger cache cleanup:", error);
-        return false;
+        if (showToasts) {
+          toast.error("Cache cleanup failed");
+        }
+        return { 
+          success: false, 
+          message: `Failed to clean up cache: ${error.message}`
+        };
       }
       
-      return true;
+      if (showToasts) {
+        toast.success(`Cache cleanup complete. Removed ${data?.entriesRemoved || 0} entries.`);
+      }
+      
+      return { 
+        success: true, 
+        message: "Cache cleanup successful",
+        entriesRemoved: data?.entriesRemoved
+      };
     } catch (error) {
+      setIsCleaningUp(false);
       console.error("Error triggering cache cleanup:", error);
-      return false;
+      if (showToasts) {
+        toast.error("Cache cleanup failed");
+      }
+      return { 
+        success: false, 
+        message: `Error cleaning up cache: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
     }
-  }, []);
+  }, [showToasts]);
+
+  // Schedule regular cache cleanup (for admin users)
+  const scheduleRegularCleanup = useCallback(async (intervalMinutes: number = 60): Promise<NodeJS.Timeout> => {
+    // First immediate run
+    await cleanupCache();
+    
+    // Then schedule recurring cleanup
+    return setInterval(async () => {
+      console.log(`Running scheduled cache cleanup (every ${intervalMinutes} minutes)`);
+      await cleanupCache();
+    }, intervalMinutes * 60 * 1000);
+  }, [cleanupCache]);
 
   return {
     generate,
     cancelGeneration,
     cleanupCache,
+    scheduleRegularCleanup,
     isGenerating,
+    isCleaningUp,
     error: lastError
   };
 }
