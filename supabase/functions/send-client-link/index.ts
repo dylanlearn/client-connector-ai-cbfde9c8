@@ -24,8 +24,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Missing Supabase credentials");
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { linkId, deliveryType, recipient, personalMessage }: SendLinkRequest = await req.json();
@@ -44,10 +49,14 @@ const handler = async (req: Request): Promise<Response> => {
       .from('client_access_links')
       .select('token, designer_id, client_name')
       .eq('id', linkId)
-      .single();
+      .maybeSingle();
     
-    if (linkError || !linkData) {
-      throw new Error(`Link not found: ${linkError?.message}`);
+    if (linkError) {
+      throw new Error(`Database error: ${linkError.message}`);
+    }
+    
+    if (!linkData) {
+      throw new Error("Link not found");
     }
     
     // Record the delivery attempt
@@ -76,52 +85,13 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (deliveryType === 'email') {
       try {
-        // Initialize Resend with API key
-        const resendApiKey = Deno.env.get("RESEND_API_KEY");
-        if (!resendApiKey) {
-          throw new Error("Resend API key not configured");
-        }
-        
-        const resend = new Resend(resendApiKey);
-        
-        // Build email content with optional personal message
-        let emailHtml = `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #4338ca;">Your Design Project Is Ready</h1>
-            <p>Hello ${linkData.client_name},</p>
-            <p>Your designer has shared a project with you. Click the button below to access your design hub:</p>
-        `;
-        
-        // Add personal message if provided
-        if (personalMessage) {
-          emailHtml += `
-            <div style="padding: 15px; background-color: #f9fafb; border-left: 4px solid #4338ca; margin: 20px 0;">
-              <p style="font-style: italic; margin: 0;">"${personalMessage}"</p>
-            </div>
-          `;
-        }
-        
-        emailHtml += `
-            <div style="margin: 30px 0;">
-              <a href="${clientHubLink}" style="background-color: #4338ca; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Access Your Design Hub</a>
-            </div>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #6b7280;">${clientHubLink}</p>
-            <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">This link will expire in 7 days.</p>
-          </div>
-        `;
-        
-        // Send email using Resend
-        const emailResponse = await resend.emails.send({
-          from: "DezignSync <noreply@dezignsync.app>",
-          to: recipient,
-          subject: `${linkData.client_name}, access your design project`,
-          html: emailHtml,
-        });
-        
-        console.log("Email sent successfully:", emailResponse);
+        deliveryResult = await sendEmail(
+          recipient, 
+          linkData.client_name, 
+          clientHubLink, 
+          personalMessage
+        );
         status = 'sent';
-        deliveryResult = emailResponse;
       } catch (error) {
         console.error("Error sending email:", error);
         status = 'error';
@@ -131,47 +101,13 @@ const handler = async (req: Request): Promise<Response> => {
     } 
     else if (deliveryType === 'sms') {
       try {
-        // Initialize Twilio with credentials
-        const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-        const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-        const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
-        
-        if (!accountSid || !authToken || !twilioPhone) {
-          throw new Error("Twilio credentials not configured");
-        }
-        
-        const client = new Twilio(accountSid, authToken);
-        
-        // Format phone number (ensure it has + prefix)
-        let formattedPhone = recipient;
-        if (!formattedPhone.startsWith('+')) {
-          formattedPhone = `+${formattedPhone}`;
-        }
-        
-        console.log(`Sending actual SMS to ${formattedPhone}`);
-        
-        // Construct SMS message with optional personal message
-        let smsBody = `Hello ${linkData.client_name}, your designer has shared a project with you on DezignSync.`;
-        
-        // Add personal message if provided
-        if (personalMessage) {
-          smsBody += ` "${personalMessage}"`;
-        }
-        
-        // Add the link
-        smsBody += ` Access your design hub here: ${clientHubLink}`;
-        
-        // Send SMS using Twilio
-        const message = await client.messages.create({
-          body: smsBody,
-          from: twilioPhone,
-          to: formattedPhone,
-          statusCallback: `${supabaseUrl}/functions/v1/update-sms-status`
-        });
-        
-        console.log("SMS sent successfully:", message.sid);
+        deliveryResult = await sendSMS(
+          recipient, 
+          linkData.client_name, 
+          clientHubLink, 
+          personalMessage
+        );
         status = 'sent';
-        deliveryResult = { messageId: message.sid };
       } catch (error) {
         console.error("Error sending SMS:", error);
         status = 'error';
@@ -244,5 +180,108 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+// Helper function to send email
+async function sendEmail(
+  recipient: string, 
+  clientName: string, 
+  clientHubLink: string, 
+  personalMessage: string | null
+): Promise<any> {
+  // Initialize Resend with API key
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) {
+    throw new Error("Resend API key not configured");
+  }
+  
+  const resend = new Resend(resendApiKey);
+  
+  // Build email content with optional personal message
+  let emailHtml = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #4338ca;">Your Design Project Is Ready</h1>
+      <p>Hello ${clientName},</p>
+      <p>Your designer has shared a project with you. Click the button below to access your design hub:</p>
+  `;
+  
+  // Add personal message if provided
+  if (personalMessage) {
+    emailHtml += `
+      <div style="padding: 15px; background-color: #f9fafb; border-left: 4px solid #4338ca; margin: 20px 0;">
+        <p style="font-style: italic; margin: 0;">"${personalMessage}"</p>
+      </div>
+    `;
+  }
+  
+  emailHtml += `
+      <div style="margin: 30px 0;">
+        <a href="${clientHubLink}" style="background-color: #4338ca; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Access Your Design Hub</a>
+      </div>
+      <p>Or copy and paste this link into your browser:</p>
+      <p style="word-break: break-all; color: #6b7280;">${clientHubLink}</p>
+      <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">This link will expire in 7 days.</p>
+    </div>
+  `;
+  
+  // Send email using Resend
+  const emailResponse = await resend.emails.send({
+    from: "DezignSync <noreply@dezignsync.app>",
+    to: recipient,
+    subject: `${clientName}, access your design project`,
+    html: emailHtml,
+  });
+  
+  console.log("Email sent successfully:", emailResponse);
+  return emailResponse;
+}
+
+// Helper function to send SMS
+async function sendSMS(
+  recipient: string, 
+  clientName: string, 
+  clientHubLink: string, 
+  personalMessage: string | null
+): Promise<any> {
+  // Initialize Twilio with credentials
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+  
+  if (!accountSid || !authToken || !twilioPhone) {
+    throw new Error("Twilio credentials not configured");
+  }
+  
+  const client = new Twilio(accountSid, authToken);
+  
+  // Format phone number (ensure it has + prefix)
+  let formattedPhone = recipient;
+  if (!formattedPhone.startsWith('+')) {
+    formattedPhone = `+${formattedPhone}`;
+  }
+  
+  console.log(`Sending SMS to ${formattedPhone}`);
+  
+  // Construct SMS message with optional personal message
+  let smsBody = `Hello ${clientName}, your designer has shared a project with you on DezignSync.`;
+  
+  // Add personal message if provided
+  if (personalMessage) {
+    smsBody += ` "${personalMessage}"`;
+  }
+  
+  // Add the link
+  smsBody += ` Access your design hub here: ${clientHubLink}`;
+  
+  // Send SMS using Twilio
+  const message = await client.messages.create({
+    body: smsBody,
+    from: twilioPhone,
+    to: formattedPhone,
+    statusCallback: `${Deno.env.get("SUPABASE_URL")}/functions/v1/update-sms-status`
+  });
+  
+  console.log("SMS sent successfully:", message.sid);
+  return { messageId: message.sid };
+}
 
 serve(handler);
