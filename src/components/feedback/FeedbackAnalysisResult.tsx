@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle2, AlertTriangle, Clock, HelpCircle, AlertCircle, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import { FeedbackAnalysisResult } from "@/services/ai/content/feedback-analysis-service";
 import { toast } from "sonner";
 
