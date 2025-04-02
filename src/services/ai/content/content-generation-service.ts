@@ -33,7 +33,7 @@ export const AIContentGenerationService = {
       const effectiveCacheKey = cacheKey || 
         `${type}-${tone}-${context}-${keywords.join(',')}-${maxLength}`;
       
-      // Check database cache first
+      // Check database cache first using maybeSingle() to avoid errors if not found
       const { data: cachedContent, error: cacheError } = await supabase
         .from('ai_content_cache')
         .select('content')
