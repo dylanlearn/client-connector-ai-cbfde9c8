@@ -4,4 +4,5 @@ export * from './useAIAnalysis';
 export * from './useDesignRecommendations';
 export * from './useContentGeneration';
 export * from './useFeedbackSummary';
+export * from './useFeedbackAnalysis';
 export * from './memory';
