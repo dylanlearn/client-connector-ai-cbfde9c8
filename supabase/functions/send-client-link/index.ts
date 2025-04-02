@@ -34,6 +34,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required parameters");
     }
     
+    // Validate personal message length
+    if (personalMessage && personalMessage.length > 150) {
+      throw new Error("Personal message must be 150 characters or less");
+    }
+    
     // Get the link details
     const { data: linkData, error: linkError } = await supabase
       .from('client_access_links')

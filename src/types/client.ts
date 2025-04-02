@@ -1,3 +1,4 @@
+
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface ClientAccessLink {
@@ -13,6 +14,9 @@ export interface ClientAccessLink {
   status: 'active' | 'expired';
   projectId: string | null;
   projectTitle: string | null;
+  /**
+   * Optional personal message to the client (max 150 characters)
+   */
   personalMessage: string | null;
 }
 

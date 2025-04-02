@@ -19,6 +19,11 @@ export const createClientAccessLink = async (
   personalMessage: string | null = null
 ): Promise<{ link: string; linkId: string }> => {
   try {
+    // Validate personal message length
+    if (personalMessage && personalMessage.length > 150) {
+      throw new Error("Personal message must be 150 characters or less");
+    }
+    
     // Generate a unique token for the client
     const token = generateUniqueToken();
     
