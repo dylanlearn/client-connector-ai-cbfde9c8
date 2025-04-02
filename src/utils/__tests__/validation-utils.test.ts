@@ -1,4 +1,5 @@
 
+import { describe, it, expect } from 'vitest';
 import { validatePersonalMessage, VALIDATION_CONSTANTS } from '../validation-utils';
 
 describe('Validation Utilities', () => {
