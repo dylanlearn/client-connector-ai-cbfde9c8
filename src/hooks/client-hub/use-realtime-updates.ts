@@ -32,8 +32,8 @@ export function useRealtimeUpdates(
     if (!clientToken || !designerId) return;
     
     let unsubscribeFunction: () => void = () => {};
-    let connectionTimeoutId: number;
-    let reconnectTimeoutId: number;
+    let connectionTimeoutId: ReturnType<typeof setTimeout>;
+    let reconnectTimeoutId: ReturnType<typeof setTimeout>;
     
     const setupSubscription = () => {
       setRealtimeError(null);
@@ -106,7 +106,7 @@ export function useRealtimeUpdates(
               setRealtimeError(new Error('Failed to establish realtime connection after multiple attempts'));
             }
           }
-        }, 5000) as unknown as number;
+        }, 5000);
         
       } catch (error) {
         console.error("Error setting up realtime subscription:", error);
