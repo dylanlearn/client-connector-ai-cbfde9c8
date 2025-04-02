@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { MonitoringState } from "@/components/admin/prompt-testing/MonitoringState";
@@ -6,7 +5,7 @@ import { RateLimiterStatus } from "@/components/admin/monitoring/RateLimiterStat
 import { ApiUsageMetrics } from "@/components/admin/monitoring/ApiUsageMetrics";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { recordSystemStatus } from "@/utils/monitoring-utils";
+import { recordSystemStatus, MonitoringConfiguration } from "@/utils/monitoring/system-status";
 
 interface MonitoringComponentConfig {
   component: string;
@@ -20,13 +19,11 @@ export function MonitoringDashboard() {
   const [monitoringComponents, setMonitoringComponents] = useState<MonitoringComponentConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch monitoring configurations
   useEffect(() => {
     const fetchMonitoringConfig = async () => {
       setIsLoading(true);
       
       try {
-        // Use type assertion for tables not in TypeScript types
         const { data, error } = await (supabase
           .from('monitoring_configuration' as any)
           .select('*')
@@ -36,11 +33,9 @@ export function MonitoringDashboard() {
           throw error;
         }
         
-        // If we have components, use them
         if (data && data.length > 0) {
           setMonitoringComponents(data);
         } else {
-          // Otherwise, set some default components
           const defaultComponents = [
             { component: 'api', warning_threshold: 80, critical_threshold: 95, check_interval: 60, enabled: true },
             { component: 'database', warning_threshold: 70, critical_threshold: 90, check_interval: 120, enabled: true },
@@ -49,12 +44,10 @@ export function MonitoringDashboard() {
           
           setMonitoringComponents(defaultComponents);
           
-          // Insert default components with type assertion
           await Promise.all(defaultComponents.map(component => 
             (supabase.from('monitoring_configuration' as any).upsert(component)) as any
           ));
           
-          // Generate some initial data for these components
           await Promise.all(defaultComponents.map(component => {
             const value = Math.floor(Math.random() * component.warning_threshold);
             const status = value < component.warning_threshold ? "normal" : 
