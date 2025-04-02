@@ -1,5 +1,6 @@
 
 import { useLocation } from "react-router-dom";
+import { memo } from "react";
 import {
   Sidebar,
   SidebarHeader as SidebarHeaderWrapper,
@@ -10,7 +11,11 @@ import SidebarHeader from "./SidebarHeader";
 import SidebarNavigation from "./SidebarNavigation";
 import SidebarFooter from "./SidebarFooter";
 
-const AppSidebar = () => {
+/**
+ * Main application sidebar component
+ * Memoized to prevent unnecessary re-renders during page navigation
+ */
+const AppSidebar = memo(() => {
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -29,6 +34,8 @@ const AppSidebar = () => {
       </SidebarFooterWrapper>
     </Sidebar>
   );
-};
+});
+
+AppSidebar.displayName = "AppSidebar";
 
 export default AppSidebar;

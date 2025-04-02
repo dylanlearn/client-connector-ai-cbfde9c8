@@ -1,4 +1,5 @@
 
+import { memo } from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import AppSidebar from "./sidebar/AppSidebar";
@@ -7,7 +8,11 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+/**
+ * Dashboard-specific layout component with sidebar and header
+ * Memoized to prevent unnecessary re-renders when children update
+ */
+const DashboardLayout = memo(({ children }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
@@ -24,6 +29,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
     </SidebarProvider>
   );
-};
+});
+
+DashboardLayout.displayName = "DashboardLayout";
 
 export default DashboardLayout;

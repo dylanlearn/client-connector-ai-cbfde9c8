@@ -4,13 +4,18 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
 import { isUserActive, validateAuthState } from "@/utils/auth-utils";
 import { useToast } from "@/components/ui/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
 
 interface RequireSubscriptionProps {
   children: React.ReactNode;
 }
 
-const RequireSubscription = ({ children }: RequireSubscriptionProps) => {
+/**
+ * Component that specifically checks for subscription status
+ * Memoized to prevent unnecessary re-renders during routing checks
+ */
+const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   const { isLoading: subscriptionLoading } = useSubscription();
   const { user, isLoading: authLoading, profile } = useAuth();
   const location = useLocation();
@@ -24,20 +29,11 @@ const RequireSubscription = ({ children }: RequireSubscriptionProps) => {
     }
   }, [subscriptionLoading, authLoading]);
   
-  // Don't render anything until we've completed the initial checks
-  if (!isInitialized) {
+  // Loading state during initialization or auth/subscription checks
+  if (!isInitialized || subscriptionLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-  
-  // Don't redirect while things are loading
-  if (subscriptionLoading || authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <LoadingIndicator size="lg" />
       </div>
     );
   }
@@ -66,6 +62,8 @@ const RequireSubscription = ({ children }: RequireSubscriptionProps) => {
   
   // Render children if user is authenticated and has an active subscription
   return <>{children}</>;
-};
+});
+
+RequireSubscription.displayName = "RequireSubscription";
 
 export default RequireSubscription;

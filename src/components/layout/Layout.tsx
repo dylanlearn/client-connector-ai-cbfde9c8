@@ -8,7 +8,11 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+/**
+ * Base application layout component
+ * Memoized to prevent unnecessary re-renders when children update
+ */
+const Layout = memo(({ children }: LayoutProps) => {
   const location = useLocation();
   const isIndexPage = location.pathname === "/";
 
@@ -20,7 +24,8 @@ const Layout = ({ children }: LayoutProps) => {
       </div>
     </SidebarProvider>
   );
-};
+});
 
-// Use memo to prevent unnecessary re-renders
-export default memo(Layout);
+Layout.displayName = "Layout";
+
+export default Layout;

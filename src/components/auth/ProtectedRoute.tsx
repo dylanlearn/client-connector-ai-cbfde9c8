@@ -3,13 +3,18 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { isUserActive, validateAuthState } from "@/utils/auth-utils";
 import { useToast } from "@/components/ui/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+/**
+ * Route protection component that checks user authentication and subscription status
+ * Memoized to prevent unnecessary re-renders during routing
+ */
+const ProtectedRoute = memo(({ children }: ProtectedRouteProps) => {
   const { user, isLoading, profile } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
@@ -22,20 +27,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
   }, [isLoading]);
   
-  // Don't render anything until we've completed the initial auth check
-  if (!isInitialized) {
+  // Loading display during initialization
+  if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-  
-  // Show loading state if authentication is still being checked
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <LoadingIndicator size="lg" />
       </div>
     );
   }
@@ -64,6 +60,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   
   // Render children if user is authenticated and has an active plan
   return <>{children}</>;
-};
+});
+
+ProtectedRoute.displayName = "ProtectedRoute";
 
 export default ProtectedRoute;

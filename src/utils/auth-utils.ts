@@ -2,7 +2,31 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
-export const fetchUserProfile = async (userId: string) => {
+/**
+ * Type definition for user profile subscription status
+ */
+export type SubscriptionStatus = 'free' | 'basic' | 'pro' | 'template-buyer' | 'trial';
+
+/**
+ * Type definition for user profile role
+ */
+export type UserRole = 'free' | 'pro' | 'admin' | 'template-buyer';
+
+/**
+ * User profile type with subscription status and role
+ */
+export interface UserProfile {
+  id: string;
+  email?: string;
+  subscription_status?: SubscriptionStatus;
+  role?: UserRole;
+  [key: string]: any; // For other potential profile fields
+}
+
+/**
+ * Fetches a user's profile from the database
+ */
+export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
     console.log("Fetching profile for user:", userId);
     const { data, error } = await supabase
@@ -17,26 +41,33 @@ export const fetchUserProfile = async (userId: string) => {
     }
 
     console.log("Profile data retrieved:", data);
-    return data;
+    return data as UserProfile;
   } catch (error) {
     console.error("Error in fetchUserProfile:", error);
     return null;
   }
 };
 
-export const getRedirectUrl = () => {
+/**
+ * Gets the redirect URL for authentication
+ */
+export const getRedirectUrl = (): string => {
   return "https://client-connector-ai.lovable.app/dashboard";
 };
 
-// Add a specific function for email confirmation redirect
-export const getEmailConfirmationRedirectUrl = () => {
+/**
+ * Gets the email confirmation redirect URL
+ */
+export const getEmailConfirmationRedirectUrl = (): string => {
   return "https://client-connector-ai.lovable.app/login?confirmed=true";
 };
 
-// Function to enable realtime updates on a table
-export const enableRealtimeForTable = async (tableName: string) => {
+/**
+ * Enables realtime updates for a database table
+ */
+export const enableRealtimeForTable = async (tableName: string): Promise<boolean> => {
   try {
-    // Use channel-based approach instead of RPC
+    // Use channel-based approach for realtime updates
     const channel = supabase.channel(`realtime:${tableName}`)
       .on('postgres_changes', { 
         event: '*', 
@@ -55,8 +86,10 @@ export const enableRealtimeForTable = async (tableName: string) => {
   }
 };
 
-// New utility function to check if a user has an active/paid role
-export const isUserActive = (profile: any | null): boolean => {
+/**
+ * Checks if a user has an active subscription or privileged role
+ */
+export const isUserActive = (profile: UserProfile | null): boolean => {
   if (!profile) return false;
   
   // Check if the user has a paid subscription status
@@ -69,8 +102,10 @@ export const isUserActive = (profile: any | null): boolean => {
   return hasActivePlan || hasPrivilegedRole;
 };
 
-// Helper function to get the appropriate post-login redirect based on user status
-export const getPostLoginRedirect = (profile: any | null, defaultPath: string = '/dashboard'): string => {
+/**
+ * Gets the appropriate post-login redirect based on user status
+ */
+export const getPostLoginRedirect = (profile: UserProfile | null, defaultPath: string = '/dashboard'): string => {
   if (isUserActive(profile)) {
     return defaultPath;
   }
@@ -78,8 +113,10 @@ export const getPostLoginRedirect = (profile: any | null, defaultPath: string = 
   return '/pricing?needSubscription=true';
 };
 
-// Make sure user auth state is valid before proceeding with routing
-export const validateAuthState = (user: User | null, profile: any | null): boolean => {
+/**
+ * Validates the user's authentication state before proceeding with routing
+ */
+export const validateAuthState = (user: User | null, profile: UserProfile | null): boolean => {
   if (!user) return false;
   
   // Make sure we have a user profile

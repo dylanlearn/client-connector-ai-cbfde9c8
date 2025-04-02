@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+
+import { ReactNode, memo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -10,13 +11,17 @@ interface DashboardTabContentProps {
   className?: string;
 }
 
-export default function DashboardTabContent({
+/**
+ * Shared component for dashboard tab content with consistent styling
+ * Memoized to prevent unnecessary re-renders when parent tabs change
+ */
+const DashboardTabContent = memo(({
   title,
   description,
   isLoading = false,
   children,
   className
-}: DashboardTabContentProps) {
+}: DashboardTabContentProps) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -41,4 +46,8 @@ export default function DashboardTabContent({
   
   // Otherwise just return the children
   return <div className={className}>{children}</div>;
-}
+});
+
+DashboardTabContent.displayName = "DashboardTabContent";
+
+export default DashboardTabContent;

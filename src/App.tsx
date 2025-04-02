@@ -1,11 +1,9 @@
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "sonner";
+import { AppProviders } from "@/providers/AppProviders";
 import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import SignupConfirmation from "@/pages/SignupConfirmation";
@@ -28,11 +26,25 @@ import Onboarding from "@/pages/Onboarding";
 import RequireSubscription from "@/components/auth/RequireSubscription";
 import Pricing from "@/pages/Pricing";
 import AdminPanel from "@/pages/AdminPanel";
+import { lazy, Suspense } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+
+// Use React.lazy for code splitting of routes that aren't part of the critical path
+const LazyAdminPanel = lazy(() => import("@/pages/AdminPanel"));
+const LazyAnalytics = lazy(() => import("@/pages/Analytics"));
+const LazyAIDesignSuggestions = lazy(() => import("@/pages/AIDesignSuggestions"));
+
+// Loading component for lazy-loaded routes
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingSpinner size="lg" />
+  </div>
+);
 
 function App() {
   return (
     <Router>
-      <AuthProvider>
+      <AppProviders>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Index />} />
@@ -46,10 +58,12 @@ function App() {
           <Route path="/client-access" element={<ClientAccess />} />
           <Route path="/client-hub" element={<ClientHub />} />
           
-          {/* Admin routes */}
+          {/* Admin routes - lazy loaded */}
           <Route path="/admin" element={
             <ProtectedRoute>
-              <AdminPanel />
+              <Suspense fallback={<PageLoader />}>
+                <LazyAdminPanel />
+              </Suspense>
             </ProtectedRoute>
           } />
           
@@ -129,7 +143,9 @@ function App() {
           <Route path="/analytics" element={
             <ProtectedRoute>
               <RequireSubscription>
-                <Analytics />
+                <Suspense fallback={<PageLoader />}>
+                  <LazyAnalytics />
+                </Suspense>
               </RequireSubscription>
             </ProtectedRoute>
           } />
@@ -137,7 +153,9 @@ function App() {
           <Route path="/ai-suggestions" element={
             <ProtectedRoute>
               <RequireSubscription>
-                <AIDesignSuggestions />
+                <Suspense fallback={<PageLoader />}>
+                  <LazyAIDesignSuggestions />
+                </Suspense>
               </RequireSubscription>
             </ProtectedRoute>
           } />
@@ -161,9 +179,7 @@ function App() {
           {/* Catch all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <Toaster />
-        <SonnerToaster position="top-right" />
-      </AuthProvider>
+      </AppProviders>
     </Router>
   );
 }

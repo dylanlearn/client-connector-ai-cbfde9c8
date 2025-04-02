@@ -4,7 +4,11 @@ import { StrictMode } from 'react'
 import App from './App.tsx'
 import './index.css'
 
-createRoot(document.getElementById("root")!).render(
+// Create root once and store it
+const root = createRoot(document.getElementById("root")!);
+
+// Render the app with StrictMode for better development experience
+root.render(
   <StrictMode>
     <App />
   </StrictMode>
