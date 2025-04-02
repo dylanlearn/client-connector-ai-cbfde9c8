@@ -88,6 +88,12 @@ verify_jwt = false
 [functions.cancel-subscription]
 verify_jwt = true
 
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.upgrade-team-members]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327

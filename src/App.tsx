@@ -1,88 +1,161 @@
 
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AIProvider } from "@/contexts/AIContext";
+import { Toaster as SonnerToaster } from "sonner";
+import Index from "@/pages/Index";
+import Dashboard from "@/pages/Dashboard";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Layout from "./components/layout/Layout";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import SignupConfirmation from "./pages/SignupConfirmation";
-import Dashboard from "./pages/Dashboard";
-import Projects from "./pages/Projects";
-import Clients from "./pages/Clients";
-import Analytics from "./pages/Analytics";
-import Templates from "./pages/Templates";
-import Settings from "./pages/Settings";
-import NewProject from "./pages/NewProject";
-import ProjectQuestionnaire from "./pages/ProjectQuestionnaire";
-import QuestionnairePreview from "./pages/QuestionnairePreview";
-import QuestionnaireResults from "./pages/QuestionnaireResults";
-import Onboarding from "./pages/Onboarding";
-import AIDesignSuggestions from "./pages/AIDesignSuggestions";
-import IntakeForm from "./pages/IntakeForm";
-import DesignPicker from "./pages/DesignPicker";
-import ClientHub from "./pages/ClientHub";
-import ClientAccess from "./pages/ClientAccess";
-import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import DashboardLayout from "./components/layout/DashboardLayout";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import SignupConfirmation from "@/pages/SignupConfirmation";
+import NotFound from "@/pages/NotFound";
+import IntakeForm from "@/pages/IntakeForm";
+import DesignPicker from "@/pages/DesignPicker";
+import Clients from "@/pages/Clients";
+import Projects from "@/pages/Projects";
+import NewProject from "@/pages/NewProject";
+import QuestionnaireResults from "@/pages/QuestionnaireResults";
+import ProjectQuestionnaire from "@/pages/ProjectQuestionnaire";
+import QuestionnairePreview from "@/pages/QuestionnairePreview";
+import ClientHub from "@/pages/ClientHub";
+import ClientAccess from "@/pages/ClientAccess";
+import Templates from "@/pages/Templates";
+import Settings from "@/pages/Settings";
+import Analytics from "@/pages/Analytics";
+import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
+import Onboarding from "@/pages/Onboarding";
+import RequireSubscription from "@/components/auth/RequireSubscription";
 
-const queryClient = new QueryClient();
-
-// Helper function to create protected routes with DashboardLayout
-const ProtectedDashboardRoute = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute>
-    <DashboardLayout>{children}</DashboardLayout>
-  </ProtectedRoute>
-);
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AIProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <Layout>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/signup/confirmation" element={<SignupConfirmation />} />
-                <Route path="/templates" element={<Templates />} />
-                <Route path="/intake" element={<IntakeForm />} />
-                <Route path="/design-picker" element={<DesignPicker />} />
-                <Route path="/client-hub" element={<ClientHub />} />
-                <Route path="/client-access" element={<ClientAccess />} />
-                
-                {/* Protected routes with dashboard layout */}
-                <Route path="/dashboard" element={<ProtectedDashboardRoute><Dashboard /></ProtectedDashboardRoute>} />
-                <Route path="/projects" element={<ProtectedDashboardRoute><Projects /></ProtectedDashboardRoute>} />
-                <Route path="/clients" element={<ProtectedDashboardRoute><Clients /></ProtectedDashboardRoute>} />
-                <Route path="/analytics" element={<ProtectedDashboardRoute><Analytics /></ProtectedDashboardRoute>} />
-                <Route path="/settings" element={<ProtectedDashboardRoute><Settings /></ProtectedDashboardRoute>} />
-                <Route path="/new-project" element={<ProtectedDashboardRoute><NewProject /></ProtectedDashboardRoute>} />
-                <Route path="/project-questionnaire" element={<ProtectedDashboardRoute><ProjectQuestionnaire /></ProtectedDashboardRoute>} />
-                <Route path="/questionnaire-preview" element={<ProtectedDashboardRoute><QuestionnairePreview /></ProtectedDashboardRoute>} />
-                <Route path="/questionnaire-results" element={<ProtectedDashboardRoute><QuestionnaireResults /></ProtectedDashboardRoute>} />
-                <Route path="/ai-design-suggestions" element={<ProtectedDashboardRoute><AIDesignSuggestions /></ProtectedDashboardRoute>} />
-                <Route path="/onboarding" element={<ProtectedDashboardRoute><Onboarding /></ProtectedDashboardRoute>} />
-                
-                {/* Catch-all route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
-          </AuthProvider>
-        </BrowserRouter>
-      </AIProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/signup-confirmation" element={<SignupConfirmation />} />
+          <Route path="/templates" element={<Templates />} />
+          
+          {/* Client portal routes - protected by client token */}
+          <Route path="/client-access" element={<ClientAccess />} />
+          <Route path="/client-hub" element={<ClientHub />} />
+          
+          {/* Protected routes requiring authentication AND subscription */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <Dashboard />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/projects" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <Projects />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/new-project" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <NewProject />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/project/:projectId/questionnaire" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <ProjectQuestionnaire />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/project/:projectId/questionnaire/preview" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <QuestionnairePreview />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/project/:projectId/questionnaire/results" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <QuestionnaireResults />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/clients" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <Clients />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/intake-form" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <IntakeForm />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/design-picker" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <DesignPicker />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <Analytics />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/ai-suggestions" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <AIDesignSuggestions />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <Settings />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <Onboarding />
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          {/* Catch all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+        <SonnerToaster position="top-right" />
+      </Router>
+    </AuthProvider>
+  );
+}
 
 export default App;

@@ -6,9 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { BillingCycle, useSubscription } from "@/hooks/use-subscription";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useToast } from "@/components/ui/use-toast";
 
 const PricingSection = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user } = useAuth();
   const { status, startSubscription } = useSubscription();
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
@@ -88,10 +90,25 @@ const PricingSection = () => {
     }
 
     if (!user) {
-      navigate("/signup");
+      // For non-authenticated users, start the subscription flow directly
+      // This will create an account during the payment process
+      if (planType) {
+        try {
+          // For users without an account, we'll redirect to Stripe which will handle account creation
+          // after successful payment
+          window.location.href = `/api/create-checkout?plan=${planType}&billingCycle=${billingCycle}`;
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "There was a problem starting your subscription. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
       return;
     }
 
+    // For authenticated users, continue with the normal flow
     if (planType && (status === "free" || (status === "basic" && planType === "pro"))) {
       startSubscription(planType, billingCycle);
     } else {
