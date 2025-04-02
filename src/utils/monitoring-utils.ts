@@ -1,125 +1,58 @@
 
-/**
- * Advanced monitoring utilities for enterprise-level application performance monitoring
- */
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-export type MonitoringEventType = 'request' | 'response' | 'error' | 'performance' | 'user-action' | 'system';
-export type SystemStatus = 'normal' | 'warning' | 'critical';
+// Define types for tables not included in the generated types
+export type SystemStatus = "normal" | "warning" | "critical";
 
-/**
- * Structured logging object for consistent monitoring data
- */
-export interface MonitoringEvent {
-  timestamp: string;
-  level: LogLevel;
-  type: MonitoringEventType;
-  message: string;
-  data?: Record<string, any>;
-  userId?: string;
-  sessionId?: string;
-  requestId?: string;
-  route?: string;
-  duration?: number;
-}
-
-/**
- * System monitoring record for database persistence
- */
-export interface SystemMonitoringRecord {
-  event_type: string;
+interface SystemMonitoringRecord {
   component: string;
   status: SystemStatus;
   value?: number;
   threshold?: number;
   message?: string;
   metadata?: Record<string, any>;
+  event_type?: string;
+  created_at?: string;
+  id?: string;
+}
+
+interface MonitoringConfiguration {
+  component: string;
+  warning_threshold: number;
+  critical_threshold: number;
+  check_interval: number;
+  enabled: boolean;
+  notification_enabled: boolean;
+}
+
+interface RateLimitCounter {
+  id: string;
+  key: string;
+  endpoint: string;
+  tokens: number;
+  last_refill: string;
+  user_id?: string;
+  ip_address?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiUsageMetric {
+  id: string;
+  endpoint: string;
+  method: string;
+  status_code: number;
+  response_time_ms: number;
+  request_timestamp: string;
+  user_id?: string;
+  ip_address?: string;
+  error_message?: string;
+  request_payload?: any;
 }
 
 /**
- * Creates a structured log event
- */
-export const createMonitoringEvent = (
-  level: LogLevel,
-  type: MonitoringEventType,
-  message: string,
-  data?: Record<string, any>,
-  userId?: string
-): MonitoringEvent => {
-  const sessionId = typeof window !== 'undefined' ? sessionStorage.getItem('analytics_session_id') : undefined;
-  
-  return {
-    timestamp: new Date().toISOString(),
-    level,
-    type,
-    message,
-    data,
-    userId,
-    sessionId,
-    route: typeof window !== 'undefined' ? window.location.pathname : undefined
-  };
-};
-
-/**
- * In-memory event buffer with configurable size
- */
-const eventBuffer: MonitoringEvent[] = [];
-const MAX_BUFFER_SIZE = 100;
-
-/**
- * Records a monitoring event in memory and optionally to the database
- */
-export const recordMonitoringEvent = async (event: MonitoringEvent, persistToDb = false): Promise<void> => {
-  // Add to buffer
-  eventBuffer.push(event);
-  
-  // Keep buffer size limited
-  if (eventBuffer.length > MAX_BUFFER_SIZE) {
-    eventBuffer.shift();
-  }
-  
-  // In development, also log to console for visibility
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[${event.level.toUpperCase()}] ${event.message}`, event);
-  }
-  
-  // Persist to database if requested and we have a user ID
-  if (persistToDb && event.userId && event.type === 'system') {
-    try {
-      const { data, error } = await supabase.from('system_monitoring').insert({
-        event_type: event.type,
-        component: event.data?.component || 'unknown',
-        status: event.data?.status || 'normal',
-        value: event.data?.value,
-        threshold: event.data?.threshold,
-        message: event.message,
-        metadata: event.data || {}
-      });
-
-      if (error) {
-        console.error('Error persisting monitoring event:', error);
-      }
-    } catch (error) {
-      console.error('Failed to persist monitoring event:', error);
-    }
-  }
-};
-
-/**
- * Get recent monitoring events from memory
- */
-export const getRecentEvents = (count: number = 10, level?: LogLevel): MonitoringEvent[] => {
-  if (level) {
-    return [...eventBuffer].filter(e => e.level === level).slice(-count);
-  }
-  return [...eventBuffer].slice(-count);
-};
-
-/**
- * Record system monitoring data to the database
+ * Record a system status event in the database
  */
 export const recordSystemStatus = async (
   component: string,
@@ -130,234 +63,192 @@ export const recordSystemStatus = async (
   metadata?: Record<string, any>
 ): Promise<boolean> => {
   try {
-    // Get the current user
-    const { data: { user } } = await supabase.auth.getUser();
+    // Prepare the record
+    const record: SystemMonitoringRecord = {
+      component,
+      status,
+      value,
+      threshold,
+      message,
+      metadata,
+      event_type: 'status_update',
+    };
     
-    // Create a monitoring event
-    const event = createMonitoringEvent(
-      status === 'critical' ? 'error' : status === 'warning' ? 'warn' : 'info',
-      'system',
-      message || `System component ${component} is ${status}`,
-      { component, status, value, threshold, ...metadata },
-      user?.id
-    );
-    
-    // Record the event with persistence
-    await recordMonitoringEvent(event, true);
-    
-    // Show toast for warning and critical events
-    if (status !== 'normal') {
-      toast[status === 'critical' ? 'error' : 'warning'](
-        status === 'critical' ? 'System Alert' : 'System Warning',
-        { description: message || `System component ${component} is ${status}` }
-      );
+    // Insert into the database using type assertion
+    const { error } = await (supabase
+      .from('system_monitoring' as any)
+      .insert(record as any));
+      
+    if (error) {
+      console.error('Error recording system status:', error);
+      return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Error recording system status:', error);
+    console.error('Error in recordSystemStatus:', error);
     return false;
   }
 };
 
 /**
- * Get system monitoring configuration from the database
+ * Get configuration for a monitoring component
  */
-export const getMonitoringConfiguration = async (component: string): Promise<{
-  warning_threshold: number;
-  critical_threshold: number;
-  enabled: boolean;
-} | null> => {
+export const getMonitoringConfiguration = async (component: string): Promise<MonitoringConfiguration | null> => {
   try {
-    const { data, error } = await supabase
-      .from('monitoring_configuration')
-      .select('warning_threshold, critical_threshold, enabled')
+    const { data, error } = await (supabase
+      .from('monitoring_configuration' as any)
+      .select('*')
       .eq('component', component)
-      .maybeSingle();
+      .maybeSingle()) as any;
       
     if (error) {
       console.error('Error fetching monitoring configuration:', error);
       return null;
     }
     
-    return data;
+    return data as MonitoringConfiguration;
   } catch (error) {
-    console.error('Failed to get monitoring configuration:', error);
+    console.error('Error in getMonitoringConfiguration:', error);
     return null;
   }
 };
 
 /**
- * Helper functions for common monitoring scenarios
+ * Check API rate limits
  */
-export const monitor = {
-  debug: (message: string, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('debug', 'user-action', message, data, userId)),
+export const checkRateLimits = async (
+  endpoint: string,
+  key: string,
+  limit: number = 10
+): Promise<boolean> => {
+  try {
+    // First, get the current rate limit counter
+    const { data, error } = await (supabase
+      .from('rate_limit_counters' as any)
+      .select('*')
+      .eq('endpoint', endpoint)
+      .eq('key', key)
+      .maybeSingle()) as any;
+      
+    if (error) {
+      console.error('Error checking rate limits:', error);
+      return false;
+    }
     
-  info: (message: string, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('info', 'user-action', message, data, userId)),
+    const counter = data as RateLimitCounter | null;
     
-  warn: (message: string, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('warn', 'user-action', message, data, userId)),
+    if (!counter) {
+      // No counter exists, create a new one
+      await createRateLimitCounter(endpoint, key, limit);
+      return true;
+    }
     
-  error: (message: string, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('error', 'error', message, data, userId)),
+    // Check if tokens are available
+    if (counter.tokens > 0) {
+      // Use a token and update the counter
+      await decrementRateLimitCounter(counter.id);
+      return true;
+    }
     
-  performance: (operation: string, durationMs: number, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('info', 'performance', `Performance: ${operation}`, {
-      ...data,
-      durationMs
-    }, userId)),
+    // Check if refill time has passed
+    const lastRefill = new Date(counter.last_refill);
+    const now = new Date();
+    const hoursSinceRefill = (now.getTime() - lastRefill.getTime()) / (1000 * 60 * 60);
     
-  request: (endpoint: string, method: string, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('info', 'request', `Request: ${method} ${endpoint}`, data, userId)),
+    if (hoursSinceRefill >= 1) {
+      // Refill tokens and update counter
+      await refillRateLimitCounter(counter.id, limit);
+      return true;
+    }
     
-  response: (endpoint: string, status: number, data?: Record<string, any>, userId?: string) => 
-    recordMonitoringEvent(createMonitoringEvent('info', 'response', `Response: ${status} from ${endpoint}`, data, userId)),
-    
-  system: async (component: string, status: SystemStatus, value: number, threshold: number, message?: string, metadata?: Record<string, any>) => {
-    return recordSystemStatus(component, status, value, threshold, message, metadata);
+    // Rate limit exceeded
+    return false;
+  } catch (error) {
+    console.error('Error in checkRateLimits:', error);
+    return false;
   }
 };
 
 /**
- * Enhanced rate limiter with database backing
+ * Create a new rate limit counter
  */
-export class RateLimiter {
-  private buckets: Map<string, { tokens: number; lastRefill: number }> = new Map();
-  
-  constructor(
-    private readonly maxTokens: number = 10,
-    private readonly refillRate: number = 1, // tokens per second
-    private readonly refillInterval: number = 1000, // ms
-    private readonly persistToDb: boolean = false
-  ) {}
-  
-  /**
-   * Check if a request should be allowed based on the rate limit
-   */
-  public async checkLimit(key: string, endpoint: string = 'default', userId?: string): Promise<boolean> {
-    const now = Date.now();
-    let bucket = this.buckets.get(key);
-    
-    // If persisting to DB and we have a userId, try to get from DB first
-    if (this.persistToDb && userId) {
-      try {
-        const { data, error } = await supabase
-          .from('rate_limit_counters')
-          .select('tokens, last_refill')
-          .eq('key', key)
-          .eq('endpoint', endpoint)
-          .eq('user_id', userId)
-          .maybeSingle();
-          
-        if (!error && data) {
-          bucket = { 
-            tokens: data.tokens, 
-            lastRefill: new Date(data.last_refill).getTime()
-          };
-          this.buckets.set(key, bucket);
-        }
-      } catch (error) {
-        console.error('Error fetching rate limit data:', error);
-      }
+const createRateLimitCounter = async (
+  endpoint: string,
+  key: string,
+  tokens: number
+): Promise<boolean> => {
+  try {
+    const { error } = await (supabase
+      .from('rate_limit_counters' as any)
+      .insert({
+        endpoint,
+        key,
+        tokens: tokens - 1, // Use one token immediately
+        last_refill: new Date().toISOString()
+      })) as any;
+      
+    if (error) {
+      console.error('Error creating rate limit counter:', error);
+      return false;
     }
     
-    if (!bucket) {
-      // First request for this key, initialize bucket
-      bucket = { tokens: this.maxTokens - 1, lastRefill: now };
-      this.buckets.set(key, bucket);
-      
-      // Persist to DB if needed
-      if (this.persistToDb && userId) {
-        this.persistBucket(key, bucket, endpoint, userId);
-      }
-      
-      return true;
-    }
-    
-    // Calculate tokens to add based on time since last refill
-    const elapsedTime = now - bucket.lastRefill;
-    const tokensToAdd = Math.floor((elapsedTime / this.refillInterval) * this.refillRate);
-    
-    if (tokensToAdd > 0) {
-      bucket.tokens = Math.min(this.maxTokens, bucket.tokens + tokensToAdd);
-      bucket.lastRefill = now;
-    }
-    
-    if (bucket.tokens >= 1) {
-      bucket.tokens -= 1;
-      
-      // Persist to DB if needed
-      if (this.persistToDb && userId) {
-        this.persistBucket(key, bucket, endpoint, userId);
-      }
-      
-      return true;
-    }
-    
+    return true;
+  } catch (error) {
+    console.error('Error in createRateLimitCounter:', error);
     return false;
   }
-  
-  /**
-   * Reset the bucket for a key
-   */
-  public async reset(key: string, endpoint: string = 'default', userId?: string): Promise<void> {
-    this.buckets.delete(key);
-    
-    // Remove from DB if persisting
-    if (this.persistToDb && userId) {
-      try {
-        await supabase
-          .from('rate_limit_counters')
-          .delete()
-          .eq('key', key)
-          .eq('endpoint', endpoint)
-          .eq('user_id', userId);
-      } catch (error) {
-        console.error('Error resetting rate limit data:', error);
-      }
-    }
-  }
-  
-  /**
-   * Persist bucket to database
-   */
-  private async persistBucket(
-    key: string, 
-    bucket: { tokens: number; lastRefill: number }, 
-    endpoint: string,
-    userId: string
-  ): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('rate_limit_counters')
-        .upsert({
-          key,
-          tokens: bucket.tokens,
-          last_refill: new Date(bucket.lastRefill).toISOString(),
-          endpoint,
-          user_id: userId,
-          ip_address: null // We could get this from the request in a real implementation
-        });
-        
-      if (error) {
-        console.error('Error persisting rate limit data:', error);
-      }
-    } catch (error) {
-      console.error('Failed to persist rate limit data:', error);
-    }
-  }
-}
-
-// Export a default rate limiter instance for API requests
-export const apiRateLimiter = new RateLimiter(100, 10, 1000);
-
-// Export a database-backed rate limiter for authenticated API requests
-export const dbBackedRateLimiter = new RateLimiter(100, 10, 1000, true);
+};
 
 /**
- * Record API usage metrics to the database
+ * Decrement the tokens in a rate limit counter
+ */
+const decrementRateLimitCounter = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await (supabase
+      .from('rate_limit_counters' as any)
+      .update({ tokens: supabase.rpc('decrement', { x: 1 }) })
+      .eq('id', id)) as any;
+      
+    if (error) {
+      console.error('Error updating rate limit counter:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in decrementRateLimitCounter:', error);
+    return false;
+  }
+};
+
+/**
+ * Refill the tokens in a rate limit counter
+ */
+const refillRateLimitCounter = async (id: string, tokens: number): Promise<boolean> => {
+  try {
+    const { error } = await (supabase
+      .from('rate_limit_counters' as any)
+      .update({
+        tokens: tokens - 1, // Use one token immediately
+        last_refill: new Date().toISOString()
+      })
+      .eq('id', id)) as any;
+      
+    if (error) {
+      console.error('Error refilling rate limit counter:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in refillRateLimitCounter:', error);
+    return false;
+  }
+};
+
+/**
+ * Record API usage metrics
  */
 export const recordApiUsage = async (
   endpoint: string,
@@ -365,58 +256,33 @@ export const recordApiUsage = async (
   statusCode: number,
   responseTimeMs: number,
   userId?: string,
-  payload?: any,
-  errorMessage?: string
-): Promise<void> => {
+  ipAddress?: string,
+  errorMessage?: string,
+  requestPayload?: any
+): Promise<boolean> => {
   try {
-    // Only persist if we have a userId
-    if (!userId) return;
-    
-    await supabase.from('api_usage_metrics').insert({
-      endpoint,
-      method,
-      status_code: statusCode,
-      response_time_ms: responseTimeMs,
-      user_id: userId,
-      request_payload: payload,
-      error_message: errorMessage
-    });
-  } catch (error) {
-    console.error('Error recording API usage:', error);
-  }
-};
-
-/**
- * Create a monitoring interceptor for API requests
- */
-export const createApiMonitoringInterceptor = (userId?: string) => {
-  const startTime = Date.now();
-  
-  return {
-    onSuccess: (endpoint: string, method: string, response: any) => {
-      const responseTime = Date.now() - startTime;
-      recordApiUsage(
+    const { error } = await (supabase
+      .from('api_usage_metrics' as any)
+      .insert({
         endpoint,
         method,
-        response.status || 200,
-        responseTime,
-        userId,
-        undefined
-      );
-      monitor.response(endpoint, response.status || 200, { responseTime }, userId);
-    },
-    onError: (endpoint: string, method: string, error: any) => {
-      const responseTime = Date.now() - startTime;
-      recordApiUsage(
-        endpoint,
-        method,
-        error.status || 500,
-        responseTime,
-        userId,
-        undefined,
-        error.message
-      );
-      monitor.error(`Error in ${method} ${endpoint}`, { error: error.message }, userId);
+        status_code: statusCode,
+        response_time_ms: responseTimeMs,
+        user_id: userId,
+        ip_address: ipAddress,
+        error_message: errorMessage,
+        request_payload: requestPayload,
+        request_timestamp: new Date().toISOString()
+      })) as any;
+      
+    if (error) {
+      console.error('Error recording API usage:', error);
+      return false;
     }
-  };
+    
+    return true;
+  } catch (error) {
+    console.error('Error in recordApiUsage:', error);
+    return false;
+  }
 };

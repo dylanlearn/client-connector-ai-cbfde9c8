@@ -50,7 +50,7 @@ export const generateMonitoringData = async (): Promise<boolean> => {
     });
     
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in generateMonitoringData:', error);
     toast.error("Failed to generate monitoring data", {
       description: error.message
@@ -97,7 +97,7 @@ export const clearMonitoringData = async (): Promise<boolean> => {
     });
     
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in clearMonitoringData:', error);
     toast.error("Failed to clear monitoring data", {
       description: error.message
@@ -111,10 +111,10 @@ export const clearMonitoringData = async (): Promise<boolean> => {
  */
 export const getMonitoringConfigurations = async (): Promise<any[]> => {
   try {
-    const { data, error } = await supabase
-      .from('monitoring_configuration')
+    const { data, error } = await (supabase
+      .from('monitoring_configuration' as any)
       .select('*')
-      .order('component');
+      .order('component')) as any;
       
     if (error) {
       console.error('Error fetching monitoring configurations:', error);
@@ -142,10 +142,10 @@ export const updateMonitoringConfiguration = async (
   }
 ): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('monitoring_configuration')
+    const { error } = await (supabase
+      .from('monitoring_configuration' as any)
       .update(config)
-      .eq('component', component);
+      .eq('component', component)) as any;
       
     if (error) {
       console.error('Error updating monitoring configuration:', error);
@@ -160,7 +160,7 @@ export const updateMonitoringConfiguration = async (
     });
     
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in updateMonitoringConfiguration:', error);
     toast.error("Failed to update configuration", {
       description: error.message

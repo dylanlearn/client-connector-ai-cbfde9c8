@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { MonitoringState } from "@/components/admin/prompt-testing/MonitoringState";
@@ -7,8 +8,16 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { recordSystemStatus } from "@/utils/monitoring-utils";
 
+interface MonitoringComponentConfig {
+  component: string;
+  warning_threshold: number;
+  critical_threshold: number;
+  check_interval: number;
+  enabled: boolean;
+}
+
 export function MonitoringDashboard() {
-  const [monitoringComponents, setMonitoringComponents] = useState<any[]>([]);
+  const [monitoringComponents, setMonitoringComponents] = useState<MonitoringComponentConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch monitoring configurations
@@ -17,10 +26,11 @@ export function MonitoringDashboard() {
       setIsLoading(true);
       
       try {
-        const { data, error } = await supabase
-          .from('monitoring_configuration')
+        // Use type assertion for tables not in TypeScript types
+        const { data, error } = await (supabase
+          .from('monitoring_configuration' as any)
           .select('*')
-          .order('component');
+          .order('component')) as any;
           
         if (error) {
           throw error;
@@ -39,9 +49,9 @@ export function MonitoringDashboard() {
           
           setMonitoringComponents(defaultComponents);
           
-          // Insert default components
+          // Insert default components with type assertion
           await Promise.all(defaultComponents.map(component => 
-            supabase.from('monitoring_configuration').upsert(component)
+            (supabase.from('monitoring_configuration' as any).upsert(component)) as any
           ));
           
           // Generate some initial data for these components

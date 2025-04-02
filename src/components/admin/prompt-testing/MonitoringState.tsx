@@ -16,6 +16,16 @@ interface MonitoringStateProps {
   persistToDb?: boolean;
 }
 
+interface SystemMonitoringRecord {
+  id: string;
+  component: string;
+  status: SystemStatus;
+  value: number;
+  threshold?: number;
+  message?: string;
+  created_at: string;
+}
+
 /**
  * Enhanced component that displays monitoring information about system state
  * Supports database persistence and auto-refresh
@@ -75,14 +85,14 @@ export function MonitoringState({
           }
         }
         
-        // Get latest monitoring data for this component
-        const { data, error } = await supabase
-          .from('system_monitoring')
+        // Get latest monitoring data for this component with type assertion
+        const { data, error } = await (supabase
+          .from('system_monitoring' as any)
           .select('*')
           .eq('component', component)
           .order('created_at', { ascending: false })
           .limit(1)
-          .maybeSingle();
+          .maybeSingle()) as any;
           
         if (error) {
           console.error('Error fetching monitoring data:', error);

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { BarChart2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,12 +10,24 @@ interface RateLimiterStatusProps {
   showDetails?: boolean;
 }
 
+interface RateLimitCounter {
+  id: string;
+  key: string;
+  endpoint: string;
+  tokens: number;
+  last_refill: string;
+  user_id?: string;
+  ip_address?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export function RateLimiterStatus({
   endpoint = "all",
   refreshInterval = 30,
   showDetails = true
 }: RateLimiterStatusProps) {
-  const [rateLimits, setRateLimits] = useState<any[]>([]);
+  const [rateLimits, setRateLimits] = useState<RateLimitCounter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +36,7 @@ export function RateLimiterStatus({
     setError(null);
     
     try {
-      let query = supabase.from('rate_limit_counters').select('*');
+      let query = supabase.from('rate_limit_counters' as any).select('*') as any;
       
       if (endpoint !== 'all') {
         query = query.eq('endpoint', endpoint);
@@ -58,7 +69,6 @@ export function RateLimiterStatus({
   const getLimiterHealth = () => {
     if (rateLimits.length === 0) return 'unknown';
     
-    // Check if any rate limits are close to being exhausted
     const nearExhaustion = rateLimits.some(limit => limit.tokens < 3);
     
     if (nearExhaustion) {

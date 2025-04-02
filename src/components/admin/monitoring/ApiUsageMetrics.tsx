@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Activity, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,11 +10,24 @@ interface ApiUsageMetricsProps {
   limit?: number;
 }
 
+interface ApiMetric {
+  id: string;
+  endpoint: string;
+  method: string;
+  status_code: number;
+  response_time_ms: number;
+  request_timestamp: string;
+  user_id?: string;
+  ip_address?: string;
+  error_message?: string;
+  request_payload?: any;
+}
+
 export function ApiUsageMetrics({
   refreshInterval = 30,
   limit = 10
 }: ApiUsageMetricsProps) {
-  const [metrics, setMetrics] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<ApiMetric[]>([]);
   const [summary, setSummary] = useState<any>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,12 +38,12 @@ export function ApiUsageMetrics({
     setError(null);
     
     try {
-      // Fetch the most recent API usage metrics
-      const { data: metricsData, error: metricsError } = await supabase
-        .from('api_usage_metrics')
+      // Fetch the most recent API usage metrics with type assertion
+      const { data: metricsData, error: metricsError } = await (supabase
+        .from('api_usage_metrics' as any)
         .select('*')
         .order('request_timestamp', { ascending: false })
-        .limit(limit);
+        .limit(limit)) as any;
         
       if (metricsError) {
         throw metricsError;
@@ -48,7 +60,7 @@ export function ApiUsageMetrics({
         // Calculate average response time
         let totalResponseTime = 0;
         
-        metricsData.forEach(metric => {
+        metricsData.forEach((metric: ApiMetric) => {
           // Endpoint counts
           endpointCounts[metric.endpoint] = (endpointCounts[metric.endpoint] || 0) + 1;
           
