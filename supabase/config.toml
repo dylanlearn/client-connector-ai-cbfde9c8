@@ -72,8 +72,8 @@ redirect_uri = ""
 # or any other third-party OIDC providers.
 url = ""
 
-[functions]
 # Port to serve Edge Functions on.
+[functions]
 port = 9000
 
 [functions.create-checkout]
