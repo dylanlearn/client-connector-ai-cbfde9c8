@@ -27,6 +27,7 @@ import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
 import Onboarding from "@/pages/Onboarding";
 import RequireSubscription from "@/components/auth/RequireSubscription";
 import Pricing from "@/pages/Pricing";
+import AdminPanel from "@/pages/AdminPanel";
 
 function App() {
   return (
@@ -44,6 +45,13 @@ function App() {
           {/* Client portal routes - protected by client token */}
           <Route path="/client-access" element={<ClientAccess />} />
           <Route path="/client-hub" element={<ClientHub />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
           
           {/* Protected routes requiring authentication AND subscription */}
           <Route path="/dashboard" element={

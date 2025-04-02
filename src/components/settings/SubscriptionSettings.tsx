@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { CreditCard, CheckCircle, AlertCircle, Calendar, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useSubscription, BillingCycle } from "@/hooks/use-subscription";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { RedeemInvitation } from "@/components/auth/RedeemInvitation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +39,6 @@ const SubscriptionSettings = () => {
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   
-  // Calculate pricing based on plan and billing cycle
   const getPriceDisplay = (plan: "basic" | "pro", cycle: BillingCycle) => {
     if (plan === "basic") {
       return cycle === "monthly" ? "$29/month" : "$290/year";
@@ -62,7 +61,6 @@ const SubscriptionSettings = () => {
         description: "Your subscription will remain active until the end of the current billing period.",
       });
       
-      // Refresh subscription data
       await refreshSubscription();
       setShowCancelDialog(false);
     } catch (error: any) {
@@ -290,6 +288,10 @@ const SubscriptionSettings = () => {
           )}
         </CardContent>
       </Card>
+      
+      <div className="mt-6">
+        <RedeemInvitation />
+      </div>
       
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>

@@ -61,3 +61,9 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.admin-invitations]
+verify_jwt = true
+
+[functions.redeem-invitation]
+verify_jwt = true
