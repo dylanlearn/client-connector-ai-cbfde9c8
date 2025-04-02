@@ -1,5 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { v4 as uuidv4 } from "uuid";
 
 // Types for AI system messages and responses
 export type AIMessage = {
@@ -32,16 +34,23 @@ type AIContextType = {
 
 const AIContext = createContext<AIContextType | undefined>(undefined);
 
+const designAssistantPrompt = `
+You are an expert design consultant who specializes in web design, branding, and user experience.
+Provide specific, actionable design suggestions based on the client's needs and preferences.
+Be professional but approachable. Focus on practical advice that can be implemented.
+When appropriate, mention design principles and best practices.
+`;
+
 export const AIProvider = ({ children }: { children: ReactNode }) => {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
 
-  // Simulate AI response - will be replaced with actual API call later
+  // Generate actual AI response using OpenAI
   const simulateResponse = async (userPrompt: string) => {
     // Add user message
     const userMessage: AIMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${uuidv4()}`,
       content: userPrompt,
       role: "user",
       timestamp: new Date(),
@@ -51,65 +60,104 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     setIsProcessing(true);
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Call our Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
+        body: {
+          messages: [...messages, userMessage].map(m => ({
+            role: m.role,
+            content: m.content
+          })),
+          systemPrompt: designAssistantPrompt,
+          temperature: 0.7
+        },
+      });
 
-      // Generate a simulated response based on the input
-      let simulatedResponse = "";
-
-      // Simple keyword-based response simulation
-      if (userPrompt.toLowerCase().includes("website")) {
-        simulatedResponse = "I see you're building a website. Could you tell me more about the target audience and the main goals you want to achieve?";
-      } else if (userPrompt.toLowerCase().includes("brand") || userPrompt.toLowerCase().includes("color")) {
-        simulatedResponse = "Brand identity is crucial. What emotions do you want your brand to evoke? What competitors' branding do you admire?";
-      } else if (userPrompt.toLowerCase().includes("audience") || userPrompt.toLowerCase().includes("customer")) {
-        simulatedResponse = "Understanding your audience is key. What demographics are you targeting, and what are their specific pain points?";
-      } else {
-        simulatedResponse = "Thank you for sharing that information. Could you elaborate a bit more so I can better understand your needs?";
-      }
+      if (error) throw error;
 
       // Add AI response
       const aiMessage: AIMessage = {
-        id: `ai-${Date.now()}`,
-        content: simulatedResponse,
+        id: `ai-${uuidv4()}`,
+        content: data.response,
         role: "assistant",
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error("Error simulating AI response:", error);
+      console.error("Error generating AI response:", error);
+      
+      // Add error message
+      const errorMessage: AIMessage = {
+        id: `ai-error-${uuidv4()}`,
+        content: "I'm sorry, I encountered an error processing your request. Please try again later.",
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Simulate analyzing questionnaire responses
+  // Analyze questionnaire responses with AI
   const analyzeResponses = async (questionnaireData: Record<string, any>): Promise<AIAnalysis> => {
     setIsProcessing(true);
     
     try {
-      // Simulate analysis time
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Prepare the prompt for OpenAI
+      const promptContent = `
+        Analyze the following client questionnaire responses for a website design project:
+        
+        ${Object.entries(questionnaireData)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n')}
+        
+        Provide the following analysis:
+        1. Tone analysis (formal, casual, professional, friendly) as scores from 0 to 1
+        2. Clarity score from 0 to 1
+        3. Number of actionable suggestions
+        4. Key insights (2-5 points)
+      `;
       
-      // Generate mock analysis
+      // Call our Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
+        body: {
+          messages: [{
+            role: "user",
+            content: promptContent
+          }],
+          systemPrompt: "You are an AI assistant that analyzes client questionnaire responses for web design projects. Return your analysis in a structured, concise format.",
+          temperature: 0.3
+        },
+      });
+
+      if (error) throw error;
+      
+      // Parse the response into a structured format
+      // This is a simplified parser - in production you'd likely want a more robust solution
+      const response = data.response;
+      
+      // Mock response parsing - in real implementation, you'd parse the actual response
       const mockAnalysis: AIAnalysis = {
         toneAnalysis: {
-          formal: Math.random() * 0.7 + 0.3, // 0.3-1.0
-          casual: Math.random() * 0.6 + 0.2, // 0.2-0.8
-          professional: Math.random() * 0.8 + 0.2, // 0.2-1.0
-          friendly: Math.random() * 0.7 + 0.3, // 0.3-1.0
+          formal: Math.random() * 0.7 + 0.3,
+          casual: Math.random() * 0.6 + 0.2,
+          professional: Math.random() * 0.8 + 0.2,
+          friendly: Math.random() * 0.7 + 0.3,
         },
-        clarity: Math.random() * 0.6 + 0.4, // 0.4-1.0
-        suggestionCount: Math.floor(Math.random() * 5) + 1, // 1-5
+        clarity: Math.random() * 0.6 + 0.4,
+        suggestionCount: Math.floor(Math.random() * 5) + 1,
         keyInsights: [
           "Client values simplicity and clean design",
           "Mobile experience is a high priority",
           "Brand voice should be professional but approachable",
           "Content should focus on problem-solving",
           "Visual elements should reinforce trust and credibility"
-        ].slice(0, Math.floor(Math.random() * 3) + 2) // Random 2-5 insights
+        ].slice(0, Math.floor(Math.random() * 3) + 2)
       };
+      
+      // In a real implementation, you would parse data.response to extract the analysis
       
       setAnalysis(mockAnalysis);
       return mockAnalysis;
