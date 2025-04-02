@@ -32,6 +32,7 @@ serve(async (req) => {
 
     // Get the action from the request body
     const { action, ...data } = await req.json();
+    console.log(`Processing admin action: ${action}`, data);
 
     // Route to the appropriate handler based on the action
     switch (action) {
@@ -58,6 +59,7 @@ async function handleListUsers() {
     .order('created_at', { ascending: false });
 
   if (error) {
+    console.error('Error listing users:', error.message);
     throw new Error(`Error listing users: ${error.message}`);
   }
 
@@ -68,14 +70,26 @@ async function handleListUsers() {
 }
 
 async function handleUpdateUserRole({ userId, role }) {
+  console.log(`Updating user role: userId=${userId}, role=${role}`);
+  
   if (!userId || !role) {
-    throw new Error('User ID and role are required');
+    console.error('Missing required parameters: userId and role are required');
+    return new Response(JSON.stringify({ error: 'User ID and role are required' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    });
   }
 
   // Valid roles check - Updated to include all valid subscription types
   const validRoles = ['free', 'sync', 'sync-pro', 'template-buyer', 'trial', 'admin'];
   if (!validRoles.includes(role)) {
-    throw new Error(`Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`);
+    console.error(`Invalid role provided: ${role}`);
+    return new Response(JSON.stringify({ 
+      error: `Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}` 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    });
   }
 
   // Map role to subscription_status
@@ -93,6 +107,8 @@ async function handleUpdateUserRole({ userId, role }) {
       subscription_status = 'free';
   }
 
+  console.log(`Mapped subscription_status: ${subscription_status}`);
+
   // Update both role and subscription_status to ensure consistency
   const { data, error } = await supabase
     .from('profiles')
@@ -101,13 +117,17 @@ async function handleUpdateUserRole({ userId, role }) {
       subscription_status
     })
     .eq('id', userId)
-    .select()
-    .single();
+    .select();
 
   if (error) {
-    throw new Error(`Error updating user role: ${error.message}`);
+    console.error('Error updating user role:', error.message);
+    return new Response(JSON.stringify({ error: `Error updating user role: ${error.message}` }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 
+  console.log('User role updated successfully:', data);
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     status: 200,

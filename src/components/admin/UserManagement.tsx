@@ -56,6 +56,7 @@ export function UserManagement() {
 
       setUsers(data || []);
     } catch (error: any) {
+      console.error("Error fetching users:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to fetch users",
@@ -69,6 +70,7 @@ export function UserManagement() {
   const updateUserRole = async (userId: string, role: UserRole) => {
     setIsUpdating(userId);
     try {
+      console.log(`Updating user ${userId} to role ${role}`);
       const { data, error } = await supabase.functions.invoke("admin-user-management", {
         body: { 
           action: "update_user_role",
@@ -78,12 +80,37 @@ export function UserManagement() {
       });
 
       if (error) {
+        console.error("Role update error:", error);
         throw error;
       }
 
       // Update the user in the local state
       setUsers(
-        users.map((user) => (user.id === userId ? { ...user, role } : user))
+        users.map((user) => {
+          if (user.id === userId) {
+            // Map subscription status based on role
+            let subscription_status;
+            switch (role) {
+              case 'admin':
+                subscription_status = 'sync-pro';
+                break;
+              case 'sync':
+              case 'sync-pro':
+              case 'trial':
+                subscription_status = role;
+                break;
+              default:
+                subscription_status = 'free';
+            }
+            
+            return { 
+              ...user, 
+              role,
+              subscription_status
+            };
+          }
+          return user;
+        })
       );
 
       toast({
@@ -91,6 +118,7 @@ export function UserManagement() {
         description: `User role updated to ${role}`,
       });
     } catch (error: any) {
+      console.error("Failed to update user role:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to update user role",
