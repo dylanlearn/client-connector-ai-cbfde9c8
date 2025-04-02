@@ -1,5 +1,6 @@
 import { PromptDBService } from "../db-service";
 import type { PromptVariant } from "./types";
+import { mapDbTestToPromptTest, mapDbVariantToPromptVariant } from "../utils/type-mappers";
 
 /**
  * Functions for selecting tests and variants for A/B testing
@@ -10,7 +11,8 @@ export const PromptTestSelector = {
    */
   getActiveTest: async (contentType: string) => {
     try {
-      return await PromptDBService.getActiveTest(contentType);
+      const dbTest = await PromptDBService.getActiveTest(contentType);
+      return dbTest ? mapDbTestToPromptTest(dbTest) : null;
     } catch (error) {
       console.error("Error getting active test:", error);
       return null;
@@ -22,7 +24,8 @@ export const PromptTestSelector = {
    */
   getAllTests: async () => {
     try {
-      return await PromptDBService.getAllTests();
+      const dbTests = await PromptDBService.getAllTests();
+      return dbTests.map(mapDbTestToPromptTest);
     } catch (error) {
       console.error("Error getting all tests:", error);
       return [];
@@ -35,20 +38,20 @@ export const PromptTestSelector = {
   selectVariant: async (contentType: string, userId?: string): Promise<PromptVariant | null> => {
     try {
       // Get the active test for this content type
-      const test = await PromptDBService.getActiveTest(contentType);
-      if (!test) return null;
+      const dbTest = await PromptDBService.getActiveTest(contentType);
+      if (!dbTest) return null;
       
       // If no user ID is provided, just return the control variant
       if (!userId) {
-        const controlVariant = test.variants.find(v => v.isControl);
-        return controlVariant || null;
+        const controlVariant = dbTest.variants.find(v => v.is_control);
+        return controlVariant ? mapDbVariantToPromptVariant(controlVariant) : null;
       }
       
       // Record an impression for each user to keep stats accurate
       // (We'll actually decide on the variant first though)
       
       // Use weighted random selection
-      const variants = test.variants;
+      const variants = dbTest.variants;
       const totalWeight = variants.reduce((sum, variant) => sum + variant.weight, 0);
       let randomValue = Math.random() * totalWeight;
       
@@ -58,10 +61,10 @@ export const PromptTestSelector = {
         if (randomValue <= 0) {
           // Record the impression
           if (userId) {
-            await PromptDBService.recordImpression(test.id, variant.id, userId);
+            await PromptDBService.recordImpression(dbTest.id, variant.id, userId);
           }
           
-          return variant;
+          return mapDbVariantToPromptVariant(variant);
         }
       }
       
@@ -70,10 +73,10 @@ export const PromptTestSelector = {
       
       // Record the impression
       if (userId && fallbackVariant) {
-        await PromptDBService.recordImpression(test.id, fallbackVariant.id, userId);
+        await PromptDBService.recordImpression(dbTest.id, fallbackVariant.id, userId);
       }
       
-      return fallbackVariant || null;
+      return fallbackVariant ? mapDbVariantToPromptVariant(fallbackVariant) : null;
     } catch (error) {
       console.error("Error selecting variant:", error);
       return null;

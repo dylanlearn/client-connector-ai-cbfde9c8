@@ -11,6 +11,9 @@ import {
   PromptTestResult,
   PromptVariant
 } from "@/services/ai/content/prompt-testing/ab-testing-service";
+import { PromptDBService } from "@/services/ai/content/prompt-testing/db-service";
+import { mapDbTestToPromptTest } from "@/services/ai/content/prompt-testing/utils/type-mappers";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export function PromptTestingAnalytics() {
   const [tests, setTests] = useState<PromptTest[]>([]);
@@ -34,13 +37,13 @@ export function PromptTestingAnalytics() {
   const fetchTests = async () => {
     setIsLoading(true);
     try {
-      // This is a placeholder - we would need to add this method to the service
-      const testsData = await PromptDBService.getAllTests();
-      setTests(testsData || []);
+      const dbTests = await PromptDBService.getAllTests();
+      const mappedTests = dbTests.map(mapDbTestToPromptTest);
+      setTests(mappedTests);
       
       // Auto-select the first test if available
-      if (testsData && testsData.length > 0) {
-        setSelectedTest(testsData[0].id);
+      if (mappedTests && mappedTests.length > 0) {
+        setSelectedTest(mappedTests[0].id);
       }
     } catch (error) {
       console.error("Error fetching tests:", error);
@@ -85,8 +88,8 @@ export function PromptTestingAnalytics() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        <span>Loading prompt tests...</span>
+        <LoadingSpinner size="lg" />
+        <span className="ml-2">Loading prompt tests...</span>
       </div>
     );
   }
@@ -154,8 +157,8 @@ export function PromptTestingAnalytics() {
           <CardContent>
             {isLoadingResults ? (
               <div className="flex justify-center items-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                <span>Loading results...</span>
+                <LoadingSpinner size="md" />
+                <span className="ml-2">Loading results...</span>
               </div>
             ) : testResults && testResults.length > 0 ? (
               <Table>
@@ -198,6 +201,3 @@ export function PromptTestingAnalytics() {
     </div>
   );
 }
-
-// Need to import the service
-import { PromptDBService } from "@/services/ai/content/prompt-testing/db-service";
