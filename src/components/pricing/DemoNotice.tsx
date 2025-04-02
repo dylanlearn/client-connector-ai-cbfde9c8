@@ -4,10 +4,9 @@ import { AlertMessage } from "@/components/ui/alert-message";
 export const DemoNotice = () => {
   return (
     <div className="mb-8">
-      <AlertMessage type="info" title="Demo Mode">
+      <AlertMessage type="success" title="Live Mode Active">
         <p>
-          Stripe integration requires API keys to be configured in the Supabase Edge Function.
-          The subscription buttons will show an error message in this demo environment.
+          Stripe integration is now configured with live API keys. Subscriptions and payments will be processed in real-time.
         </p>
       </AlertMessage>
     </div>
