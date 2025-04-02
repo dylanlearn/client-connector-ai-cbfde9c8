@@ -36,7 +36,14 @@ export const GlobalMemoryInsights = {
           // If analysis is recent, return the cached results
           if (timeDiff < fifteenMinutes) {
             console.log(`Using cached analysis for ${category} from ${analysisTime.toISOString()}`);
-            return existingAnalysis.insights.results || [];
+            // Safely handle the insights data regardless of type
+            const insightsData = existingAnalysis.insights;
+            if (typeof insightsData === 'object' && insightsData !== null && 'results' in insightsData) {
+              return insightsData.results as string[] || [];
+            } else if (Array.isArray(insightsData)) {
+              return insightsData;
+            }
+            return [];
           }
         }
       }
@@ -76,7 +83,7 @@ export const GlobalMemoryInsights = {
           return ["Error analyzing insights from global memory"];
         }
         
-        return analysisData.insights;
+        return analysisData.insights || [];
       } catch (aiError) {
         console.error("Error analyzing global memory insights:", aiError);
         // Fallback to returning sample insights

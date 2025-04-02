@@ -1,3 +1,4 @@
+
 export interface AIMessage {
   id: string;
   createdAt: Date;
@@ -6,9 +7,33 @@ export interface AIMessage {
 }
 
 export interface AIAnalysis {
-  summary: string;
+  summary?: string;
   keyInsights: string[];
-  suggestedActions: string[];
+  suggestedActions?: string[];
+  toneAnalysis?: {
+    formal: number;
+    casual: number;
+    professional: number;
+    friendly: number;
+  };
+  clarity?: number;
+  suggestionCount?: number;
+  contradictions?: string[];
+}
+
+export interface DesignRecommendation {
+  colorPalette: Array<{
+    name: string;
+    hex: string;
+    usage?: string;
+  }>;
+  typography: {
+    headings: string;
+    body: string;
+    accents?: string;
+  };
+  layouts?: string[];
+  components?: string[];
 }
 
 export interface AIMemory {
@@ -38,7 +63,7 @@ export interface AIContextType {
   messages: AIMessage[];
   isProcessing: boolean;
   analysis: AIAnalysis | null;
-  designRecommendations: string[] | null;
+  designRecommendations: DesignRecommendation[] | null;
   memoryContext: AIMemoryContext | undefined;
   isRealtime?: boolean;
   simulateResponse: (prompt: string) => Promise<void>;

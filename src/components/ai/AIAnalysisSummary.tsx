@@ -38,7 +38,7 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
   };
 
   const getClarityDescription = () => {
-    if (!clarity) return "Not analyzed";
+    if (clarity === undefined) return "Not analyzed";
     if (clarity > 0.8) return "Excellent";
     if (clarity > 0.6) return "Good";
     if (clarity > 0.4) return "Average";
@@ -73,12 +73,12 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
                 <div key={tone} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span>{tone.charAt(0).toUpperCase() + tone.slice(1)}</span>
-                    <span className="font-medium">{Math.round(value * 100)}%</span>
+                    <span className="font-medium">{Math.round(Number(value) * 100)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div
                       className="bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] h-1.5 rounded-full"
-                      style={{ width: `${value * 100}%` }}
+                      style={{ width: `${Number(value) * 100}%` }}
                     ></div>
                   </div>
                 </div>
@@ -96,18 +96,18 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span>{getClarityDescription()}</span>
-                <span className="font-medium">{Math.round(clarity * 100)}%</span>
+                <span className="font-medium">{Math.round(Number(clarity) * 100)}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
                   className={`h-1.5 rounded-full bg-gradient-to-r ${
-                    clarity > 0.7
+                    Number(clarity) > 0.7
                       ? "from-[#8439e9] to-[#6142e7]"
-                      : clarity > 0.4
+                      : Number(clarity) > 0.4
                       ? "from-[#ee682b] to-[#8439e9]"
                       : "from-red-500 to-[#ee682b]"
                   }`}
-                  style={{ width: `${clarity * 100}%` }}
+                  style={{ width: `${Number(clarity) * 100}%` }}
                 ></div>
               </div>
             </div>

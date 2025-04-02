@@ -7,7 +7,7 @@ import {
 } from "@/services/ai";
 
 export const useDesignRecommendations = () => {
-  const [designRecommendations, setDesignRecommendations] = useState<DesignRecommendation | null>(null);
+  const [designRecommendations, setDesignRecommendations] = useState<DesignRecommendation[] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const generateDesignRecommendations = async (questionnaire: Record<string, any>): Promise<DesignRecommendation> => {
@@ -59,7 +59,7 @@ export const useDesignRecommendations = () => {
         components
       };
       
-      setDesignRecommendations(recommendations);
+      setDesignRecommendations([recommendations]);
       return recommendations;
     } catch (error) {
       console.error("Error generating design recommendations:", error);
@@ -83,7 +83,7 @@ export const useDesignRecommendations = () => {
         ]
       };
       
-      setDesignRecommendations(fallbackRecommendations);
+      setDesignRecommendations([fallbackRecommendations]);
       return fallbackRecommendations;
     } finally {
       setIsProcessing(false);

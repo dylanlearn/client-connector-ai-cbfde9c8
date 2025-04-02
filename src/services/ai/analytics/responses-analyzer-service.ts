@@ -73,13 +73,19 @@ export const AIResponsesAnalyzerService = {
       
       try {
         // Try to parse the response as JSON directly
-        return JSON.parse(data.response);
+        const parsedData = JSON.parse(data.response);
+        return {
+          toneAnalysis: parsedData.toneAnalysis,
+          clarity: parsedData.clarity,
+          suggestionCount: parsedData.suggestionCount,
+          keyInsights: parsedData.keyInsights || [],
+          contradictions: parsedData.contradictions
+        };
       } catch (parseError) {
         console.error("Failed to parse AI response as JSON:", parseError);
         
         // Return a basic structure if parsing fails
         return {
-          clarity: 0.5,
           keyInsights: ["Error analyzing responses"],
           contradictions: ["Could not identify contradictions"]
         };
@@ -87,7 +93,6 @@ export const AIResponsesAnalyzerService = {
     } catch (error) {
       console.error("Error in AIAnalyzerService:", error);
       return {
-        clarity: 0.5,
         keyInsights: ["Error analyzing responses"]
       };
     }

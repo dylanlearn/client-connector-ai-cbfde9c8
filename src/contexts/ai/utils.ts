@@ -8,21 +8,21 @@ export const createUserMessage = (content: string): AIMessage => ({
   id: `user-${uuidv4()}`,
   content,
   role: "user",
-  timestamp: new Date(),
+  createdAt: new Date(),
 });
 
 export const createAssistantMessage = (content: string): AIMessage => ({
   id: `ai-${uuidv4()}`,
   content,
   role: "assistant",
-  timestamp: new Date(),
+  createdAt: new Date(),
 });
 
 export const createErrorMessage = (): AIMessage => ({
   id: `ai-error-${uuidv4()}`,
   content: "I'm sorry, I encountered an error processing your request. Please try again later.",
   role: "assistant",
-  timestamp: new Date(),
+  createdAt: new Date(),
 });
 
 export const generateAIResponse = async (
@@ -59,6 +59,11 @@ export const generateAIResponse = async (
 };
 
 export const parseFallbackAnalysis = (): AIAnalysis => ({
+  keyInsights: [
+    "Client values simplicity and clean design",
+    "Mobile experience is a high priority",
+    "Brand voice should be professional but approachable"
+  ].slice(0, Math.floor(Math.random() * 3) + 2),
   toneAnalysis: {
     formal: Math.random() * 0.7 + 0.3,
     casual: Math.random() * 0.6 + 0.2,
@@ -66,10 +71,5 @@ export const parseFallbackAnalysis = (): AIAnalysis => ({
     friendly: Math.random() * 0.7 + 0.3,
   },
   clarity: Math.random() * 0.6 + 0.4,
-  suggestionCount: Math.floor(Math.random() * 5) + 1,
-  keyInsights: [
-    "Client values simplicity and clean design",
-    "Mobile experience is a high priority",
-    "Brand voice should be professional but approachable"
-  ].slice(0, Math.floor(Math.random() * 3) + 2)
+  suggestionCount: Math.floor(Math.random() * 5) + 1
 });

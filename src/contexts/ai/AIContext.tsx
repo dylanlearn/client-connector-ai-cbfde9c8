@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, ReactNode, useCallback } from "react";
-import { AIContextType, AIMemoryContext } from "@/types/ai";
+import { AIContextType, AIMemoryContext, AIAnalysis, DesignRecommendation } from "@/types/ai";
 import { 
   useAIMessages,
   useAIAnalysis,
@@ -24,14 +24,14 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
   const { 
     analysis, 
     isProcessing: isAnalysisProcessing, 
-    analyzeResponses, 
+    analyzeResponses: analyzeResponsesInternal, 
     resetAnalysis 
   } = useAIAnalysis();
   
   const { 
     designRecommendations, 
     isProcessing: isDesignProcessing, 
-    generateDesignRecommendations, 
+    generateDesignRecommendations: generateDesignRecommendationsInternal, 
     resetDesignRecommendations 
   } = useDesignRecommendations();
   
@@ -42,7 +42,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
   
   const { 
     isProcessing: isFeedbackProcessing, 
-    summarizeFeedback 
+    summarizeFeedback: summarizeFeedbackInternal 
   } = useFeedbackSummary();
 
   const {
@@ -52,6 +52,26 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     storeMemory,
     resetMemoryContext
   } = useAIMemory();
+
+  // Wrapper for analyzeResponses to match expected interface
+  const analyzeResponses = async (responses: Record<string, string>): Promise<void> => {
+    await analyzeResponsesInternal(responses);
+  };
+
+  // Wrapper for generateDesignRecommendations to match expected interface
+  const generateDesignRecommendations = async (prompt: string): Promise<void> => {
+    // Convert prompt to a simple questionnaire object
+    const questionnaire = { prompt };
+    await generateDesignRecommendationsInternal(questionnaire);
+  };
+
+  // Wrapper for summarizeFeedback to match expected interface
+  const summarizeFeedback = async (feedback: string[]): Promise<string> => {
+    // Join array into string for processing if internal expects a string
+    const feedbackText = feedback.join("\n");
+    const result = await summarizeFeedbackInternal(feedbackText);
+    return result;
+  };
 
   // Determine overall processing state
   const isProcessing = 

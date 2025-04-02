@@ -30,7 +30,8 @@ export const AIMemoryService = {
     store: GlobalMemoryService.storeAnonymizedMemory,
     get: GlobalMemoryService.getMemories,
     processFeedback: GlobalMemoryService.processUserFeedback,
-    analyzeInsights: GlobalMemoryService.analyzeInsights
+    analyzeInsights: GlobalMemoryService.analyzeInsights,
+    realtime: GlobalMemoryService.realtime
   },
   
   /**
