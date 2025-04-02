@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { updateTaskStatus as clientUpdateTaskStatus } from "@/services/client-tasks-service";
+import { TaskStatus } from "@/types/client";
 import { 
   saveStep, 
   getSavedStep, 
@@ -56,17 +57,26 @@ export const useIntakeForm = () => {
   );
 
   // Initialize form submission
+  // Create an adapter function for updateTaskStatus to match the expected signature
+  const adaptedUpdateTaskStatus = async (
+    taskId: string, 
+    status: TaskStatus, 
+    data: any
+  ): Promise<void> => {
+    await clientUpdateTaskStatus(taskId, status, data);
+  };
+
   const { submitForm } = useFormSubmission(
     user?.id,
     formId,
     formDataCache,
     setIsLoading,
     toastAdapter,
-    clientUpdateTaskStatus
+    adaptedUpdateTaskStatus
   );
 
   // Override updateFormData to trigger Supabase sync
-  const enhancedUpdateFormData = useCallback((data: Partial<IntakeFormData>) => {
+  const enhancedUpdateFormData = useCallback((data: Partial<any>) => {
     const updatedData = updateFormData(data);
     scheduleSave();
     return updatedData;

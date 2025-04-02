@@ -56,7 +56,9 @@ export const useFormSync = (
     const subscription = createRealtimeSubscription(
       formId,
       formData.lastUpdated,
-      (newData) => setFormData(prevData => ({...prevData, ...newData})),
+      (newData) => {
+        setFormData((prevData) => ({...prevData, ...newData}));
+      },
       { toast: toastAdapter }
     );
     

@@ -1,19 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { IntakeFormData } from "@/types/intake-form";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import SaasFields from "./site-types/SaasFields";
-import EcommerceFields from "./site-types/EcommerceFields";
-import BusinessFields from "./site-types/BusinessFields";
-import PortfolioFields from "./site-types/PortfolioFields";
-import BaseFields from "./site-types/BaseFields";
+import SiteTypeFields from "./site-type-fields/SiteTypeFields";
 import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-helpers";
 
 interface SpecificQuestionsStepProps {
@@ -24,7 +16,13 @@ interface SpecificQuestionsStepProps {
   isSaving?: boolean;
 }
 
-const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, isSaving }: SpecificQuestionsStepProps) => {
+const SpecificQuestionsStep = ({ 
+  formData, 
+  updateFormData, 
+  onNext, 
+  onPrevious, 
+  isSaving 
+}: SpecificQuestionsStepProps) => {
   const siteType = formData.siteType || "business";
   const schema = getFormSchema(siteType);
   
@@ -33,6 +31,7 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, i
     defaultValues: getDefaultValues(siteType, formData),
   });
 
+  // Set up form field watching
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (Object.values(value).some(v => v !== undefined)) {
@@ -40,28 +39,13 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, i
       }
     });
     return () => {
-      subscription.unsubscribe?.();
+      subscription?.unsubscribe?.();
     };
   }, [form, updateFormData]);
 
-  function onSubmit(values: any) {
+  const onSubmit = (values: any) => {
     updateFormData(values);
     onNext();
-  }
-
-  const renderSiteTypeFields = () => {
-    switch (siteType) {
-      case "saas":
-        return <SaasFields form={form} />;
-      case "ecommerce":
-        return <EcommerceFields form={form} />;
-      case "business":
-        return <BusinessFields form={form} />;
-      case "portfolio":
-        return <PortfolioFields form={form} />;
-      default:
-        return <BaseFields form={form} />;
-    }
   };
 
   return (
@@ -71,7 +55,7 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, i
           These questions are tailored to your {getSiteTypeName(siteType)} project. Please provide as much detail as possible.
         </div>
         
-        {renderSiteTypeFields()}
+        <SiteTypeFields siteType={siteType} form={form} />
 
         <div className="flex justify-between pt-4">
           <Button type="button" variant="outline" onClick={onPrevious}>

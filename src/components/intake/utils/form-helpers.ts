@@ -17,12 +17,15 @@ export const getFormSchema = (siteType: string) => {
         pricingTiers: z.string().optional(),
         competitors: z.string().optional(),
         userAccountsRequired: z.boolean().optional(),
+        freeTrialOffered: z.boolean().optional(),
       });
     case "ecommerce":
       return baseSchema.extend({
         estimatedProducts: z.string().min(2, "Product information must be at least 2 characters"),
         paymentProcessors: z.string().optional(),
         shippingIntegration: z.boolean().optional(),
+        mainFeatures: z.string().optional(),
+        competitors: z.string().optional(),
         customQuestions: z.array(z.string()).optional(),
       });
     case "business":
@@ -31,6 +34,7 @@ export const getFormSchema = (siteType: string) => {
         contactFormRequired: z.boolean().optional(),
         hasPhysicalLocation: z.boolean().optional(),
         mainFeatures: z.string().optional(),
+        competitors: z.string().optional(),
       });
     case "portfolio":
       return baseSchema.extend({
@@ -38,6 +42,7 @@ export const getFormSchema = (siteType: string) => {
         contactInformation: z.string().optional(),
         resumeUploadRequired: z.boolean().optional(),
         mainFeatures: z.string().optional(),
+        competitors: z.string().optional(),
       });
     default:
       return baseSchema;
@@ -60,6 +65,7 @@ export const getDefaultValues = (siteType: string, formData: IntakeFormData) => 
         pricingTiers: formData.pricingTiers || "",
         competitors: formData.competitors || "",
         userAccountsRequired: formData.userAccountsRequired || false,
+        freeTrialOffered: formData.freeTrialOffered || false,
       };
     case "ecommerce":
       return {
@@ -67,6 +73,8 @@ export const getDefaultValues = (siteType: string, formData: IntakeFormData) => 
         estimatedProducts: formData.estimatedProducts || "",
         paymentProcessors: formData.paymentProcessors || "",
         shippingIntegration: formData.shippingIntegration || false,
+        mainFeatures: formData.mainFeatures || "",
+        competitors: formData.competitors || "",
         customQuestions: formData.customQuestions || [],
       };
     case "business":
@@ -76,6 +84,7 @@ export const getDefaultValues = (siteType: string, formData: IntakeFormData) => 
         contactFormRequired: formData.contactFormRequired || false,
         hasPhysicalLocation: formData.hasPhysicalLocation || false,
         mainFeatures: formData.mainFeatures || "",
+        competitors: formData.competitors || "",
       };
     case "portfolio":
       return {
@@ -84,6 +93,7 @@ export const getDefaultValues = (siteType: string, formData: IntakeFormData) => 
         contactInformation: formData.contactInformation || "",
         resumeUploadRequired: formData.resumeUploadRequired || false,
         mainFeatures: formData.mainFeatures || "",
+        competitors: formData.competitors || "",
       };
     default:
       return baseDefaults;
