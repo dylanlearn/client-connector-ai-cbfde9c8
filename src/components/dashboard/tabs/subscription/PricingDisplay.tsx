@@ -1,5 +1,5 @@
 
-import { type BillingCycle } from "@/hooks/use-subscription";
+import { BillingCycle } from "@/types/subscription";
 
 interface PricingDisplayProps {
   billingCycle: BillingCycle;

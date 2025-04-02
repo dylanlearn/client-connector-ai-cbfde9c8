@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { BillingCycle } from "@/hooks/use-subscription";
+import { BillingCycle } from "@/types/subscription";
 
 interface PlanSelectorProps {
   startSubscription: (plan: "basic" | "pro", billingCycle: BillingCycle) => Promise<void>;

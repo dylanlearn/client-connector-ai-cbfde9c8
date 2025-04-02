@@ -7,6 +7,9 @@ import { useSubscriptionActions } from "@/hooks/subscription/use-subscription-ac
 import { fetchSubscriptionStatus } from "@/utils/subscription-utils";
 import { SubscriptionInfo } from "@/types/subscription";
 
+// Re-export the BillingCycle type
+export { type BillingCycle, type SubscriptionStatus } from "@/types/subscription";
+
 export const useSubscription = () => {
   // Get auth context
   const { user, session, profile } = useAuth();

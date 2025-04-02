@@ -1,5 +1,5 @@
 
-import { BillingCycle } from "@/hooks/use-subscription";
+import { BillingCycle } from "@/types/subscription";
 
 interface BillingToggleProps {
   billingCycle: BillingCycle;
