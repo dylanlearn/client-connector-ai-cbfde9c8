@@ -50,8 +50,8 @@ enabled = true
 enabled = true
 port = 54328
 
-[[functions.analyze-interaction-patterns]]
+[functions.analyze-interaction-patterns]
 verify_jwt = true
 
-[[functions.interaction-db-functions]]
+[functions.interaction-db-functions]
 verify_jwt = false
