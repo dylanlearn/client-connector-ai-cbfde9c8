@@ -110,7 +110,22 @@ async function handleUpdateUserRole({ userId, role }) {
   console.log(`Mapped subscription_status: ${subscription_status}`);
 
   try {
-    // Update both role and subscription_status to ensure consistency
+    // First get the current profile to preserve all other fields
+    const { data: currentProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching current profile:', fetchError.message);
+      return new Response(JSON.stringify({ error: `Error fetching current profile: ${fetchError.message}` }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    // Update only role and subscription_status, preserving all other fields
     const { data, error } = await supabase
       .from('profiles')
       .update({ 

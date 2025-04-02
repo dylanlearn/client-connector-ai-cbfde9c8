@@ -1,105 +1,124 @@
 
-// This edge function sets up necessary RPC functions for the application
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
 
+// Setup Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// CORS headers
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  // Handle CORS
-  if (req.method === "OPTIONS") {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
-
   try {
-    // Setup RPC functions for realtime
-    await setupRealtimeFunctions(supabase);
+    // Create the necessary database functions for realtime support
+    await createRealtimeSupportFunctions();
     
-    // Setup functions for link expiration
-    await setupLinkExpirationFunction(supabase);
+    // Enable realtime for profiles table
+    await enableRealtimeForProfiles();
     
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Successfully set up realtime functions and enabled realtime for profiles"
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
-    console.error("Error setting up RPC functions:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+    console.error('Error in setup-rpc-functions:', error);
+    return new Response(JSON.stringify({ 
+      success: false,
+      error: error.message 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
 });
 
-async function setupRealtimeFunctions(supabase: any) {
-  // Create function to set REPLICA IDENTITY
-  await supabase.rpc(
-    'stored_procedure',
-    {
-      sql: `
-        CREATE OR REPLACE FUNCTION alter_table_replica_identity(table_name text, identity_type text)
-        RETURNS void
-        LANGUAGE plpgsql
-        SECURITY DEFINER
-        AS $$
-        BEGIN
-          EXECUTE format('ALTER TABLE %I REPLICA IDENTITY %s', table_name, identity_type);
-        END;
-        $$;
-      `
-    }
-  );
+async function createRealtimeSupportFunctions() {
+  // Create function to alter replica identity
+  const alterReplicaFunctionSql = `
+    CREATE OR REPLACE FUNCTION alter_table_replica_identity(table_name text, identity_type text)
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    AS $$
+    BEGIN
+      EXECUTE 'ALTER TABLE ' || quote_ident(table_name) || ' REPLICA IDENTITY ' || identity_type;
+    END;
+    $$;
+  `;
 
   // Create function to add table to publication
-  await supabase.rpc(
-    'stored_procedure',
-    {
-      sql: `
-        CREATE OR REPLACE FUNCTION add_table_to_publication(table_name text, publication_name text)
-        RETURNS void
-        LANGUAGE plpgsql
-        SECURITY DEFINER
-        AS $$
-        BEGIN
-          EXECUTE format('ALTER PUBLICATION %I ADD TABLE %I', publication_name, table_name);
-        END;
-        $$;
-      `
-    }
-  );
+  const addToPublicationFunctionSql = `
+    CREATE OR REPLACE FUNCTION add_table_to_publication(table_name text, publication_name text)
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    AS $$
+    BEGIN
+      EXECUTE 'ALTER PUBLICATION ' || quote_ident(publication_name) || ' ADD TABLE ' || quote_ident(table_name);
+    END;
+    $$;
+  `;
+
+  // Execute the SQL to create functions
+  const { error: alterFunctionError } = await supabase.rpc('exec_sql', { 
+    sql: alterReplicaFunctionSql 
+  });
+  
+  if (alterFunctionError) {
+    console.error('Error creating alter_table_replica_identity function:', alterFunctionError);
+    throw new Error(`Failed to create alter_table_replica_identity function: ${alterFunctionError.message}`);
+  }
+  
+  const { error: addFunctionError } = await supabase.rpc('exec_sql', { 
+    sql: addToPublicationFunctionSql 
+  });
+  
+  if (addFunctionError) {
+    console.error('Error creating add_table_to_publication function:', addFunctionError);
+    throw new Error(`Failed to create add_table_to_publication function: ${addFunctionError.message}`);
+  }
+  
+  console.log('Successfully created realtime support functions');
 }
 
-async function setupLinkExpirationFunction(supabase: any) {
-  // Create function to check for expired links
-  await supabase.rpc(
-    'stored_procedure',
-    {
-      sql: `
-        CREATE OR REPLACE FUNCTION check_and_expire_client_links()
-        RETURNS integer
-        LANGUAGE plpgsql
-        SECURITY DEFINER
-        AS $$
-        DECLARE
-          expired_count integer;
-        BEGIN
-          UPDATE client_access_links
-          SET status = 'expired'
-          WHERE expires_at < NOW()
-          AND status = 'active';
-          
-          GET DIAGNOSTICS expired_count = ROW_COUNT;
-          RETURN expired_count;
-        END;
-        $$;
-      `
+async function enableRealtimeForProfiles() {
+  try {
+    // Set REPLICA IDENTITY to FULL
+    const { error: replicaError } = await supabase.rpc('exec_sql', { 
+      sql: "ALTER TABLE profiles REPLICA IDENTITY FULL;" 
+    });
+    
+    if (replicaError) {
+      console.error('Error setting REPLICA IDENTITY for profiles:', replicaError);
+      throw new Error(`Failed to set REPLICA IDENTITY: ${replicaError.message}`);
     }
-  );
+    
+    // Add to publication
+    const { error: pubError } = await supabase.rpc('exec_sql', { 
+      sql: "ALTER PUBLICATION supabase_realtime ADD TABLE profiles;" 
+    });
+    
+    if (pubError) {
+      console.error('Error adding profiles to publication:', pubError);
+      throw new Error(`Failed to add to publication: ${pubError.message}`);
+    }
+    
+    console.log('Successfully enabled realtime for profiles table');
+  } catch (error) {
+    console.error('Error enabling realtime for profiles:', error);
+    throw error;
+  }
 }

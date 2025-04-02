@@ -12,6 +12,38 @@ export function useUserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    
+    // Set up realtime subscriptions for profile changes
+    const channel = supabase.channel('public:profiles')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log('Profile update detected:', payload);
+          
+          // Refresh the user list to get the latest data
+          fetchUsers();
+          
+          // Show toast notification for updates
+          if (payload.eventType === 'UPDATE') {
+            const userName = (payload.new as any).name || 'User';
+            toast({
+              title: "User Updated",
+              description: `${userName}'s profile has been updated.`,
+            });
+          }
+        }
+      )
+      .subscribe();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchUsers = async () => {
