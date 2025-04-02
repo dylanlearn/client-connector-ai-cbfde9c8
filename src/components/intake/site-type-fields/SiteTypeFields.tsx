@@ -9,23 +9,24 @@ import BaseFields from "../site-types/BaseFields";
 interface SiteTypeFieldsProps {
   siteType: string;
   form: UseFormReturn<any>;
+  showTooltips?: boolean;
 }
 
 /**
  * A component that renders the appropriate fields based on the site type
  */
-const SiteTypeFields = ({ siteType, form }: SiteTypeFieldsProps) => {
+const SiteTypeFields = ({ siteType, form, showTooltips = false }: SiteTypeFieldsProps) => {
   switch (siteType) {
     case "saas":
-      return <SaasFields form={form} />;
+      return <SaasFields form={form} showTooltips={showTooltips} />;
     case "ecommerce":
-      return <EcommerceFields form={form} />;
+      return <EcommerceFields form={form} showTooltips={showTooltips} />;
     case "business":
-      return <BusinessFields form={form} />;
+      return <BusinessFields form={form} showTooltips={showTooltips} />;
     case "portfolio":
-      return <PortfolioFields form={form} />;
+      return <PortfolioFields form={form} showTooltips={showTooltips} />;
     default:
-      return <BaseFields form={form} />;
+      return <BaseFields form={form} showTooltips={showTooltips} />;
   }
 };
 

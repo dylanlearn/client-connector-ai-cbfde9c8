@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useIntakeForm } from "@/hooks/intake-form";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function FormResumeHandler() {
   const [showResumeDialog, setShowResumeDialog] = useState(false);
@@ -30,7 +32,13 @@ export default function FormResumeHandler() {
   }, [location.pathname, hasInProgressForm]);
 
   const handleResumeForm = () => {
-    navigate("/intake");
+    navigate("/intake-form");
+    setShowResumeDialog(false);
+  };
+
+  const handleNewProject = () => {
+    clearFormData();
+    navigate("/intake-form");
     setShowResumeDialog(false);
   };
 
@@ -47,19 +55,22 @@ export default function FormResumeHandler() {
     <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Resume Unfinished Form?</AlertDialogTitle>
+          <AlertDialogTitle>Resume Unfinished Project</AlertDialogTitle>
           <AlertDialogDescription>
-            You have an unfinished intake form. Would you like to resume where you left off?
+            You have an unfinished intake form. Would you like to resume where you left off or start a new project?
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <AlertDialogFooter className="flex-col space-y-2 sm:space-y-0 sm:flex-row">
           <div className="flex flex-col space-y-2 w-full sm:flex-row sm:space-y-0 sm:space-x-2">
             <AlertDialogCancel onClick={handleIgnore} className="sm:w-auto">
               Not Now
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleResumeForm} className="sm:w-auto">
-              Resume Form
+              Resume Project
             </AlertDialogAction>
+            <Button onClick={handleNewProject} variant="outline" className="sm:w-auto">
+              Start New Project
+            </Button>
           </div>
           <button 
             onClick={handleClearForm}

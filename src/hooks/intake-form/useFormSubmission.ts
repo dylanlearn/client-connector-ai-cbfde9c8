@@ -1,9 +1,10 @@
 
 import { useCallback } from "react";
-import { IntakeFormData } from "@/types/intake-form";
-import { TaskStatus } from "@/types/client";
-import { ToastAdapter } from "./types";
 import { submitCompleteForm } from "./supabase-integration";
+import { useProjects } from "@/hooks/use-projects";
+import { useParams } from "react-router-dom";
+import { TaskStatus } from "@/types/client";
+import { IntakeFormData } from "@/types/intake-form";
 
 /**
  * Hook for handling form submission
@@ -13,38 +14,61 @@ export const useFormSubmission = (
   formId: string,
   formDataCache: React.MutableRefObject<IntakeFormData>,
   setIsLoading: (loading: boolean) => void,
-  toastAdapter: ToastAdapter,
+  toastAdapter: any,
   updateTaskStatus: (taskId: string, status: TaskStatus, data: any) => Promise<void>
 ) => {
-  // Submit the complete form with offline support
-  const submitForm = useCallback(async (): Promise<IntakeFormData> => {
+  const { taskId } = useParams();
+  const { createProject } = useProjects();
+
+  const submitForm = useCallback(async () => {
     if (!userId) {
-      throw new Error("User must be authenticated to submit form");
+      throw new Error("User not authenticated");
     }
 
     setIsLoading(true);
     try {
-      // Create an adapter function to match the expected signature
-      const adaptedUpdateTaskStatus = async (
-        taskId: string, 
-        status: string, 
-        data: any
-      ): Promise<void> => {
-        await updateTaskStatus(taskId, status as TaskStatus, data);
-      };
-
-      return await submitCompleteForm(
-        formDataCache.current, 
-        userId, 
-        formId, 
-        null, // taskId is passed from the parent component
-        adaptedUpdateTaskStatus,
-        { toast: toastAdapter }
+      // Submit form data to Supabase
+      const result = await submitCompleteForm(
+        formDataCache.current,
+        userId,
+        formId,
+        taskId || null,
+        updateTaskStatus,
+        toastAdapter
       );
+
+      // Create a new project based on the form data
+      if (result.projectName) {
+        await createProject.mutateAsync({
+          user_id: userId,
+          title: result.projectName || "New Website Project",
+          client_name: "Self",
+          client_email: "",
+          project_type: result.siteType || "website",
+          description: result.projectDescription || "",
+          status: "active",
+          // Save the form ID in the metadata to link back to the intake form
+          intake_form_id: formId
+        });
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [userId, formId, formDataCache, setIsLoading, toastAdapter, updateTaskStatus]);
+  }, [
+    userId,
+    formId,
+    formDataCache,
+    taskId,
+    updateTaskStatus,
+    setIsLoading,
+    toastAdapter,
+    createProject
+  ]);
 
   return {
     submitForm

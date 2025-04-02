@@ -7,6 +7,9 @@ import { Form } from "@/components/ui/form";
 import { IntakeFormData } from "@/types/intake-form";
 import SiteTypeFields from "./site-type-fields/SiteTypeFields";
 import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-helpers";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -25,6 +28,7 @@ const SpecificQuestionsStep = ({
 }: SpecificQuestionsStepProps) => {
   const siteType = formData.siteType || "business";
   const schema = getFormSchema(siteType);
+  const [showTooltips, setShowTooltips] = useState(false);
   
   const form = useForm({
     resolver: zodResolver(schema),
@@ -55,7 +59,18 @@ const SpecificQuestionsStep = ({
           These questions are tailored to your {getSiteTypeName(siteType)} project. Please provide as much detail as possible.
         </div>
         
-        <SiteTypeFields siteType={siteType} form={form} />
+        <div className="flex items-center justify-end space-x-2 mb-4">
+          <Label htmlFor="show-examples" className="text-sm text-gray-500">
+            Show example answers
+          </Label>
+          <Switch
+            id="show-examples"
+            checked={showTooltips}
+            onCheckedChange={setShowTooltips}
+          />
+        </div>
+        
+        <SiteTypeFields siteType={siteType} form={form} showTooltips={showTooltips} />
 
         <div className="flex justify-between pt-4">
           <Button type="button" variant="outline" onClick={onPrevious}>

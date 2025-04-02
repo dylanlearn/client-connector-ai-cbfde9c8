@@ -1,27 +1,50 @@
 
-import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import TooltipHelper from "../TooltipHelper";
 
 interface BaseFieldsProps {
   form: UseFormReturn<any>;
+  showTooltips?: boolean;
 }
 
-const BaseFields = ({ form }: BaseFieldsProps) => {
+const BaseFields = ({ form, showTooltips = false }: BaseFieldsProps) => {
+  const exampleAnswers = {
+    mainFeatures: "User authentication, profile management, content publishing, analytics dashboard, social sharing capabilities",
+    competitors: "Website A offers similar services but lacks mobile responsiveness. Website B has better analytics but their UI is more complex."
+  };
+
   return (
-    <>
+    <div className="space-y-4">
       <FormField
         control={form.control}
         name="mainFeatures"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Main Features</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Main Features</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.mainFeatures}</div>} 
+                />
+              )}
+            </div>
+            <FormDescription>
+              What are the key features or functionality you want on your website?
+            </FormDescription>
             <FormControl>
               <Textarea
-                placeholder="What are the key features you need for your site?"
+                placeholder="List the most important features..."
                 className="resize-none"
-                rows={3}
+                rows={4}
                 {...field}
               />
             </FormControl>
@@ -35,12 +58,22 @@ const BaseFields = ({ form }: BaseFieldsProps) => {
         name="competitors"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Competitors or Inspiration</FormLabel>
+            <div className="flex items-center">
+              <FormLabel>Competitors</FormLabel>
+              {showTooltips && (
+                <TooltipHelper 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.competitors}</div>} 
+                />
+              )}
+            </div>
+            <FormDescription>
+              List any competitors or similar websites that you like or want to reference.
+            </FormDescription>
             <FormControl>
               <Textarea
-                placeholder="Are there any similar websites you like or want to compete with?"
+                placeholder="Enter competitors or reference websites..."
                 className="resize-none"
-                rows={2}
+                rows={3}
                 {...field}
               />
             </FormControl>
@@ -48,7 +81,7 @@ const BaseFields = ({ form }: BaseFieldsProps) => {
           </FormItem>
         )}
       />
-    </>
+    </div>
   );
 };
 
