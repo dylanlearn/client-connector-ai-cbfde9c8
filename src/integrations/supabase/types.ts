@@ -278,6 +278,45 @@ export type Database = {
           },
         ]
       }
+      api_usage_metrics: {
+        Row: {
+          endpoint: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          method: string
+          request_payload: Json | null
+          request_timestamp: string
+          response_time_ms: number
+          status_code: number
+          user_id: string | null
+        }
+        Insert: {
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          method: string
+          request_payload?: Json | null
+          request_timestamp?: string
+          response_time_ms: number
+          status_code: number
+          user_id?: string | null
+        }
+        Update: {
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          method?: string
+          request_payload?: Json | null
+          request_timestamp?: string
+          response_time_ms?: number
+          status_code?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_access_links: {
         Row: {
           client_email: string
@@ -620,6 +659,42 @@ export type Database = {
         }
         Relationships: []
       }
+      monitoring_configuration: {
+        Row: {
+          check_interval: number
+          component: string
+          created_at: string
+          critical_threshold: number
+          enabled: boolean
+          id: string
+          notification_enabled: boolean
+          updated_at: string
+          warning_threshold: number
+        }
+        Insert: {
+          check_interval: number
+          component: string
+          created_at?: string
+          critical_threshold: number
+          enabled?: boolean
+          id?: string
+          notification_enabled?: boolean
+          updated_at?: string
+          warning_threshold: number
+        }
+        Update: {
+          check_interval?: number
+          component?: string
+          created_at?: string
+          critical_threshold?: number
+          enabled?: boolean
+          id?: string
+          notification_enabled?: boolean
+          updated_at?: string
+          warning_threshold?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -725,6 +800,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_counters: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: string | null
+          key: string
+          last_refill: string
+          tokens: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address?: string | null
+          key: string
+          last_refill?: string
+          tokens?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: string | null
+          key?: string
+          last_refill?: string
+          tokens?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -771,6 +882,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_monitoring: {
+        Row: {
+          component: string
+          created_at: string
+          event_type: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          status: string
+          threshold: number | null
+          value: number | null
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          event_type: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          status: string
+          threshold?: number | null
+          value?: number | null
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          status?: string
+          threshold?: number | null
+          value?: number | null
+        }
+        Relationships: []
       }
       template_purchases: {
         Row: {
