@@ -80,7 +80,7 @@ async function handleUpdateUserRole({ userId, role }) {
     });
   }
 
-  // Valid roles check - Verify these match your database enum types
+  // Define valid roles - ensure these match your database enum types
   const validRoles = ['free', 'sync', 'sync-pro', 'template-buyer', 'trial', 'admin'];
   if (!validRoles.includes(role)) {
     console.error(`Invalid role provided: ${role}`);
@@ -92,19 +92,14 @@ async function handleUpdateUserRole({ userId, role }) {
     });
   }
 
-  // Map role to subscription_status
-  let subscription_status;
-  switch (role) {
-    case 'admin':
-      subscription_status = 'sync-pro'; // admins always get sync-pro subscription status
-      break;
-    case 'sync':
-    case 'sync-pro':
-    case 'trial':
-      subscription_status = role;
-      break;
-    default:
-      subscription_status = 'free';
+  // Simplified mapping for subscription_status
+  let subscription_status = role;
+  
+  // Special cases
+  if (role === 'admin') {
+    subscription_status = 'sync-pro'; // admins get sync-pro status
+  } else if (role === 'template-buyer') {
+    subscription_status = 'free'; // template buyers get free status
   }
 
   console.log(`Mapped subscription_status: ${subscription_status}`);
