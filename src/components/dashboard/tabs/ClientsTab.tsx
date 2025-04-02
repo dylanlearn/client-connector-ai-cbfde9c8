@@ -1,5 +1,6 @@
 
 import { useClientOverview } from "@/hooks/use-client-overview";
+import { useClientProgress } from "@/hooks/use-client-progress";
 import ClientActivityFeed from "@/components/clients/ClientActivityFeed";
 import ClientStatsOverview from "./clients/ClientStatsOverview";
 import ClientProgressSection from "./clients/ClientProgressSection";
@@ -7,10 +8,13 @@ import ClientProgressSection from "./clients/ClientProgressSection";
 export default function ClientsTab() {
   const {
     clientOverview,
-    clientProgress,
-    isLoadingOverview,
-    isLoadingProgress
+    isLoadingOverview
   } = useClientOverview();
+
+  const {
+    clientProgress,
+    isLoading: isLoadingProgress
+  } = useClientProgress();
   
   return (
     <div className="space-y-6">
@@ -26,6 +30,7 @@ export default function ClientsTab() {
         <ClientProgressSection
           clientProgress={clientProgress}
           isLoading={isLoadingProgress}
+          limit={5}
         />
       </div>
     </div>

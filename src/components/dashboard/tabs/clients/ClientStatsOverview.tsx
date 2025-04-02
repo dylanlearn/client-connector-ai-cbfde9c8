@@ -1,6 +1,7 @@
 
 import { ClientOverview } from "@/types/client";
 import ClientStatCard from "./ClientStatCard";
+import { Users, CheckSquare, AlertCircle, BarChart } from "lucide-react";
 
 interface ClientStatsOverviewProps {
   clientOverview: ClientOverview | null;
@@ -13,25 +14,33 @@ export default function ClientStatsOverview({ clientOverview, isLoading }: Clien
       <ClientStatCard 
         title="Total Clients" 
         value={clientOverview?.totalClients || 0} 
-        isLoading={isLoading} 
+        isLoading={isLoading}
+        icon={<Users className="h-4 w-4" />}
+        description="All-time clients"
       />
       
       <ClientStatCard 
         title="Active Clients" 
         value={clientOverview?.activeClients || 0} 
-        isLoading={isLoading} 
+        isLoading={isLoading}
+        icon={<Users className="h-4 w-4" />}
+        description="Current active projects"
       />
       
       <ClientStatCard 
         title="Tasks Completed" 
         value={clientOverview?.completedTasks || 0} 
-        isLoading={isLoading} 
+        isLoading={isLoading}
+        icon={<CheckSquare className="h-4 w-4" />}
+        description={`${clientOverview?.pendingTasks || 0} pending`}
       />
       
       <ClientStatCard 
         title="Overall Completion" 
         value={`${Math.round(clientOverview?.completionRate || 0)}%`} 
-        isLoading={isLoading} 
+        isLoading={isLoading}
+        icon={<BarChart className="h-4 w-4" />}
+        description="Average task completion"
       />
     </div>
   );
