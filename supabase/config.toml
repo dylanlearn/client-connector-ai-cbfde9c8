@@ -46,10 +46,12 @@ refresh_token_reuse_interval = 10
 [realtime]
 enabled = true
 
+# Correct functions section format
 [functions]
 enabled = true
 port = 54328
 
+# Function-specific configurations
 [functions.analyze-interaction-patterns]
 verify_jwt = true
 
