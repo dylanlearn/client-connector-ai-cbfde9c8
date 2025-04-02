@@ -18,18 +18,40 @@ export const validateClientToken = async (
       return false;
     }
     
-    const { data, error } = await supabase
-      .from('client_access_links')
-      .select('id, expires_at, status')
-      .eq('token', token)
-      .eq('designer_id', designerId)
-      .eq('status', 'active')
-      .maybeSingle();
+    // Retry logic for token validation to handle intermittent connection issues
+    let attempts = 0;
+    let success = false;
+    let data = null;
+    let error = null;
+    
+    while (attempts < 3 && !success) {
+      const result = await supabase
+        .from('client_access_links')
+        .select('id, expires_at, status')
+        .eq('token', token)
+        .eq('designer_id', designerId)
+        .eq('status', 'active')
+        .maybeSingle();
+      
+      data = result.data;
+      error = result.error;
+      
+      if (error) {
+        console.error(`Error validating client token (attempt ${attempts + 1}):`, error);
+        attempts++;
+        // Wait a bit before retrying
+        if (attempts < 3) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } else {
+        success = true;
+      }
+    }
     
     console.log('Token validation result:', data, error);
 
     if (error || !data) {
-      console.error('Error validating client token:', error);
+      console.error('Error validating client token after retries:', error);
       return false;
     }
 
@@ -37,6 +59,15 @@ export const validateClientToken = async (
     const expiresAt = new Date(data.expires_at);
     if (expiresAt < new Date()) {
       console.log('Client access link has expired');
+      
+      // Update the status to expired if it's still active
+      if (data.status === 'active') {
+        await supabase
+          .from('client_access_links')
+          .update({ status: 'expired' })
+          .eq('id', data.id);
+      }
+      
       return false;
     }
 

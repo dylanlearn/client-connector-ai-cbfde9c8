@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useClientAccess } from './client-hub/use-client-access';
 import { useClientTasks } from './client-hub/use-client-tasks';
@@ -28,7 +28,8 @@ export function useClientHub() {
     taskStatus, 
     markTaskCompleted,
     error: tasksError,
-    isUpdating
+    isUpdating,
+    loadClientTasks
   } = useClientTasks(clientToken, designerId);
   
   // Set up state for realtime updates
@@ -50,6 +51,9 @@ export function useClientHub() {
 
   // Unified error state
   const [errors, setErrors] = useState<{[key: string]: Error | null}>({});
+  
+  // Flag to prevent duplicate task completion
+  const [processingTasks, setProcessingTasks] = useState<{[key: string]: boolean}>({});
   
   // Update unified error state
   useEffect(() => {
@@ -87,45 +91,67 @@ export function useClientHub() {
     }
   }, [accessError, tasksError, realtimeError, navigationError, errors]);
 
-  // Handle task button click - optimized to be more efficient
-  const handleTaskButtonClick = async (taskType: string, path: string) => {
+  // Handle task button click with improved reliability
+  const handleTaskButtonClick = useCallback(async (taskType: string, path: string) => {
+    // Prevent duplicate processing for the same task
+    if (processingTasks[taskType]) {
+      return;
+    }
+    
     if (!clientToken || !designerId) {
       toast.error("Unable to access this feature. Missing authorization.");
       return;
     }
+    
+    setProcessingTasks(prev => ({ ...prev, [taskType]: true }));
     
     try {
       const task = tasks?.find(t => t.taskType === taskType);
       if (!task) {
         console.error(`Task not found for ${taskType}`);
         toast.error(`Task information not available. Please refresh the page.`);
+        setProcessingTasks(prev => ({ ...prev, [taskType]: false }));
         return;
       }
       
       // Navigate first to improve perceived performance
       navigateTo(path, clientToken, designerId, task.id);
       
-      // Then update status in the background
-      if (task.status !== 'completed') {
-        // Only attempt to mark as in_progress - don't block on this
-        updateTaskStatus(task.id, 'in_progress').catch(error => {
+      // Then update status to in_progress
+      if (task.status !== 'completed' && task.status !== 'in_progress') {
+        try {
+          await updateTaskStatus(task.id, 'in_progress');
+          console.log(`Task ${taskType} updated to in_progress`);
+          
+          // Refresh tasks to get latest status
+          setTimeout(() => {
+            loadClientTasks(clientToken, designerId);
+          }, 500);
+        } catch (error) {
           console.error("Error updating task status to in_progress:", error);
-          // Don't block the user experience if this fails
-        });
-        
-        // Also queue up completed status update - don't await or block on this
-        setTimeout(() => {
-          markTaskCompleted(taskType).catch(error => {
-            console.error("Error marking task as completed:", error);
-            // Don't block the user experience if this fails
-          });
-        }, 300); // Small delay to avoid database contention
+        }
       }
+      
+      // Update task to completed after a short delay
+      setTimeout(async () => {
+        try {
+          if (task.status !== 'completed') {
+            await markTaskCompleted(taskType);
+            console.log(`Task ${taskType} marked as completed`);
+          }
+        } catch (error) {
+          console.error("Error marking task as completed:", error);
+        } finally {
+          setProcessingTasks(prev => ({ ...prev, [taskType]: false }));
+        }
+      }, 1500);
+      
     } catch (error) {
       console.error("Error in handleTaskButtonClick:", error);
       toast.error("An error occurred. Please try again.");
+      setProcessingTasks(prev => ({ ...prev, [taskType]: false }));
     }
-  };
+  }, [clientToken, designerId, tasks, navigateTo, markTaskCompleted, processingTasks, loadClientTasks]);
 
   return {
     clientToken,

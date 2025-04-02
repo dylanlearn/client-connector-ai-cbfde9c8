@@ -17,11 +17,15 @@ const handler = async (req: Request): Promise<Response> => {
   const corsResponse = handleCorsRequest(req);
   if (corsResponse) return corsResponse;
 
+  let supabase;
+  let requestData: SendLinkRequest | null = null;
+
   try {
-    const supabase = initSupabaseClient();
+    supabase = initSupabaseClient();
     
     // Parse request body
-    const { linkId, deliveryType, recipient, personalMessage }: SendLinkRequest = await req.json();
+    requestData = await req.json();
+    const { linkId, deliveryType, recipient, personalMessage } = requestData;
     
     if (!linkId || !deliveryType || !recipient) {
       throw new Error("Missing required parameters");
@@ -86,15 +90,19 @@ const handler = async (req: Request): Promise<Response> => {
           personalMessage
         );
         status = 'sent';
+      } else {
+        throw new Error(`Unsupported delivery type: ${deliveryType}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error sending ${deliveryType}:`, error);
       status = 'error';
-      errorMessage = error.message;
+      errorMessage = error.message || "Unknown sending error";
       throw error;
     } finally {
       // Update delivery status regardless of outcome
-      await updateDeliveryStatus(supabase, deliveryRecord, status, errorMessage);
+      if (deliveryRecord) {
+        await updateDeliveryStatus(supabase, deliveryRecord, status, errorMessage);
+      }
     }
     
     return new Response(JSON.stringify({ 
@@ -109,18 +117,19 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in send-client-link function:", error);
     
     // Try to update the delivery record with error status if possible
-    try {
-      const { linkId, deliveryType, recipient } = await req.json();
-      const supabase = initSupabaseClient();
-      await updateFailedDelivery(supabase, linkId, deliveryType, recipient, error.message);
-    } catch (updateError) {
-      console.error("Failed to update delivery status:", updateError);
+    if (supabase && requestData) {
+      try {
+        const { linkId, deliveryType, recipient } = requestData;
+        await updateFailedDelivery(supabase, linkId, deliveryType, recipient, error.message || "Unknown error");
+      } catch (updateError) {
+        console.error("Failed to update delivery status:", updateError);
+      }
     }
     
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message 
+        error: error.message || "Unknown error occurred" 
       }),
       {
         status: 500,
