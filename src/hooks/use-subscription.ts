@@ -5,10 +5,10 @@ import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useSubscriptionStatus } from "@/hooks/subscription/use-subscription-status";
 import { useSubscriptionActions } from "@/hooks/subscription/use-subscription-actions";
 import { fetchSubscriptionStatus } from "@/utils/subscription-utils";
-import { SubscriptionInfo } from "@/types/subscription";
+import { SubscriptionInfo, BillingCycle, SubscriptionStatus } from "@/types/subscription";
 
-// Re-export the BillingCycle type
-export { type BillingCycle, type SubscriptionStatus } from "@/types/subscription";
+// Re-export the types
+export type { BillingCycle, SubscriptionStatus } from "@/types/subscription";
 
 export const useSubscription = () => {
   // Get auth context
@@ -94,6 +94,6 @@ export const useSubscription = () => {
     
     // Actions
     refreshSubscription,
-    startSubscription
+    startSubscription // Make sure to include startSubscription here
   };
 };
