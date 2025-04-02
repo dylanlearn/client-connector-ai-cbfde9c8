@@ -1,14 +1,17 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSubscription } from "@/hooks/use-subscription";
+import { BillingCycle, useSubscription } from "@/hooks/use-subscription";
 import { useToast } from "@/components/ui/use-toast";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const UpgradeCard = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { status, inTrial, startSubscription } = useSubscription();
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   
   const handleUpgrade = () => {
     if (status === "pro") {
@@ -19,8 +22,13 @@ const UpgradeCard = () => {
       return;
     }
     
-    startSubscription("pro");
+    startSubscription("pro", billingCycle);
   };
+
+  // Calculate price based on billing cycle
+  const price = billingCycle === "monthly" ? "$69" : "$690";
+  const period = billingCycle === "monthly" ? "/month" : "/year";
+  const savingsText = billingCycle === "annual" ? "Save 16% with annual billing" : "";
   
   return (
     <Card className="md:col-span-2">
@@ -33,11 +41,29 @@ const UpgradeCard = () => {
       </CardHeader>
       <CardContent className={isMobile ? "px-4 pt-0 pb-4" : ""}>
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 md:p-6 rounded-lg">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
             <h3 className="font-bold text-base md:text-lg">Pro features include:</h3>
-            <div className="text-right">
-              <span className="text-sm text-gray-500">From</span>
-              <div className="font-bold text-lg md:text-xl">$69<span className="text-sm font-normal">/month</span></div>
+            <div className="w-full md:w-auto">
+              <div className="flex justify-center md:justify-end mb-2">
+                <ToggleGroup 
+                  type="single" 
+                  value={billingCycle}
+                  onValueChange={(value) => value && setBillingCycle(value as BillingCycle)}
+                  className="border rounded-md"
+                >
+                  <ToggleGroupItem value="monthly" size="sm" className="text-xs px-3">
+                    Monthly
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="annual" size="sm" className="text-xs px-3">
+                    Annual
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              <div className="text-center md:text-right">
+                <span className="text-sm text-gray-500">From</span>
+                <div className="font-bold text-lg md:text-xl">{price}<span className="text-sm font-normal">{period}</span></div>
+                {savingsText && <p className="text-xs text-green-600">{savingsText}</p>}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">

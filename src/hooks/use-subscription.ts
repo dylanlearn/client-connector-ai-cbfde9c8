@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export type SubscriptionStatus = "free" | "basic" | "pro";
+export type BillingCycle = "monthly" | "annual";
 
 export interface SubscriptionInfo {
   status: SubscriptionStatus;
@@ -58,7 +59,7 @@ export const useSubscription = () => {
     }
   };
 
-  const startSubscription = async (plan: "basic" | "pro", returnUrl?: string) => {
+  const startSubscription = async (plan: "basic" | "pro", billingCycle: BillingCycle = "monthly", returnUrl?: string) => {
     if (!user || !session) {
       toast({
         title: "Authentication required",
@@ -71,7 +72,7 @@ export const useSubscription = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { plan, returnUrl },
+        body: { plan, billingCycle, returnUrl },
       });
 
       if (error) {

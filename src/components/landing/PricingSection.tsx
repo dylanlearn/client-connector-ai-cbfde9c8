@@ -1,70 +1,85 @@
 
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { useSubscription } from "@/hooks/use-subscription";
-
-const plans = [
-  {
-    name: "Sync",
-    price: "$35",
-    period: "/month",
-    description: "Perfect for freelancers and small teams",
-    features: [
-      "AI-powered client questionnaire",
-      "Visual inspiration selector",
-      "Basic brand style detection",
-      "Project brief generation",
-      "PDF export",
-      "Up to 3 projects"
-    ],
-    cta: "Start 3-Day Free Trial",
-    plan: "basic",
-    highlight: false
-  },
-  {
-    name: "Sync Pro",
-    price: "$69",
-    period: "/month",
-    description: "For growing design teams and agencies",
-    features: [
-      "Everything in Sync, plus:",
-      "Unlimited projects",
-      "Advanced AI analysis",
-      "Client readiness score",
-      "Export to Figma & Webflow",
-      "Project analytics",
-      "Team collaboration",
-      "Client portal",
-      "Priority support"
-    ],
-    cta: "Start 3-Day Free Trial",
-    plan: "pro",
-    highlight: true
-  },
-  {
-    name: "Templates",
-    price: "From $29",
-    description: "Industry-specific template packs",
-    features: [
-      "Pre-built industry templates",
-      "Compatible with Sync questionnaires",
-      "Editable Webflow templates",
-      "Design system included",
-      "Commercial license",
-      "Regular updates",
-      "Support included"
-    ],
-    cta: "Browse Templates",
-    highlight: false
-  }
-];
+import { BillingCycle, useSubscription } from "@/hooks/use-subscription";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const PricingSection = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { status, startSubscription } = useSubscription();
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  
+  // Calculate pricing based on billing cycle
+  const pricingData = {
+    basic: {
+      monthly: "$35",
+      annual: "$350",
+    },
+    pro: {
+      monthly: "$69",
+      annual: "$690",
+    }
+  };
+
+  const plans = [
+    {
+      name: "Sync",
+      price: pricingData.basic[billingCycle],
+      period: billingCycle === "monthly" ? "/month" : "/year",
+      description: "Perfect for freelancers and small teams",
+      features: [
+        "AI-powered client questionnaire",
+        "Visual inspiration selector",
+        "Basic brand style detection",
+        "Project brief generation",
+        "PDF export",
+        "Up to 3 projects"
+      ],
+      cta: "Start 3-Day Free Trial",
+      plan: "basic",
+      highlight: false
+    },
+    {
+      name: "Sync Pro",
+      price: pricingData.pro[billingCycle],
+      period: billingCycle === "monthly" ? "/month" : "/year",
+      description: "For growing design teams and agencies",
+      features: [
+        "Everything in Sync, plus:",
+        "Unlimited projects",
+        "Advanced AI analysis",
+        "Client readiness score",
+        "Export to Figma & Webflow",
+        "Project analytics",
+        "Team collaboration",
+        "Client portal",
+        "Priority support"
+      ],
+      cta: "Start 3-Day Free Trial",
+      plan: "pro",
+      highlight: true
+    },
+    {
+      name: "Templates",
+      price: "From $29",
+      description: "Industry-specific template packs",
+      features: [
+        "Pre-built industry templates",
+        "Compatible with Sync questionnaires",
+        "Editable Webflow templates",
+        "Design system included",
+        "Commercial license",
+        "Regular updates",
+        "Support included"
+      ],
+      cta: "Browse Templates",
+      highlight: false
+    }
+  ];
 
   const handlePlanClick = (planName: string, planType?: "basic" | "pro") => {
     if (planName === "Templates") {
@@ -78,7 +93,7 @@ const PricingSection = () => {
     }
 
     if (planType && (status === "free" || (status === "basic" && planType === "pro"))) {
-      startSubscription(planType);
+      startSubscription(planType, billingCycle);
     } else {
       navigate("/dashboard");
     }
@@ -87,11 +102,26 @@ const PricingSection = () => {
   return (
     <section id="pricing" className="py-20 bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Choose the plan that fits your needs. Start with a 3-day free trial.
           </p>
+          <div className="flex justify-center items-center">
+            <ToggleGroup 
+              type="single" 
+              value={billingCycle}
+              onValueChange={(value) => value && setBillingCycle(value as BillingCycle)}
+              className="border rounded-md"
+            >
+              <ToggleGroupItem value="monthly" className="px-4 py-2">
+                Monthly
+              </ToggleGroupItem>
+              <ToggleGroupItem value="annual" className="px-4 py-2">
+                Annual <span className="text-xs text-green-600 font-medium ml-1">Save 16%</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

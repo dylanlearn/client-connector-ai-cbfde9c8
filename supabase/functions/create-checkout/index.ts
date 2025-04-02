@@ -17,6 +17,18 @@ const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2022-11-15',
 });
 
+// Define price IDs for each plan and billing cycle
+const PRICE_IDS = {
+  basic: {
+    monthly: 'price_1R9GjqGIjvxkEjenfwEAsrH2',
+    annual: 'price_1R9GtVGIjvxkEjenbNyQJ1XF'
+  },
+  pro: {
+    monthly: 'price_1R9GkPGIjvxkEjenzH97qZ06',
+    annual: 'price_1R9GrLGIjvxkEjeni9lgeNEk'
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -38,11 +50,15 @@ serve(async (req) => {
       throw new Error('Invalid token or user not found');
     }
 
-    // Get the plan from the request body
-    const { plan, returnUrl } = await req.json();
+    // Get the plan and billing cycle from the request body
+    const { plan, billingCycle = 'monthly', returnUrl } = await req.json();
     
     if (!plan || (plan !== 'basic' && plan !== 'pro')) {
       throw new Error('Invalid or missing plan parameter');
+    }
+
+    if (billingCycle !== 'monthly' && billingCycle !== 'annual') {
+      throw new Error('Invalid billing cycle. Must be "monthly" or "annual"');
     }
 
     // Get or create the customer in Stripe
@@ -96,10 +112,12 @@ serve(async (req) => {
       }
     }
 
-    // Set up the price ID based on the selected plan
-    const priceId = plan === 'basic' 
-      ? 'price_basic' // Replace with your actual Stripe price ID for basic plan
-      : 'price_pro';  // Replace with your actual Stripe price ID for pro plan
+    // Set up the price ID based on the selected plan and billing cycle
+    const priceId = PRICE_IDS[plan][billingCycle];
+    
+    if (!priceId) {
+      throw new Error(`Invalid price ID for plan: ${plan} and billing cycle: ${billingCycle}`);
+    }
 
     // Create a checkout session with a free trial
     const session = await stripe.checkout.sessions.create({
