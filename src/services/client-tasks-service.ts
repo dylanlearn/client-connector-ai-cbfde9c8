@@ -69,6 +69,7 @@ export const getClientTasks = async (
       return null;
     }
 
+    // Map the data with proper type casting for clientResponse
     return data.map(task => ({
       id: task.id,
       linkId: task.link_id,
@@ -76,10 +77,10 @@ export const getClientTasks = async (
       status: task.status as TaskStatus,
       completedAt: task.completed_at ? new Date(task.completed_at) : null,
       designerNotes: task.designer_notes,
-      clientResponse: task.client_response,
+      clientResponse: task.client_response, // This is now compatible with the updated type
       createdAt: new Date(task.created_at),
       updatedAt: new Date(task.updated_at)
-    }));
+    })) as ClientTask[]; // Explicit cast to ClientTask[]
   } catch (error) {
     console.error('Error in getClientTasks:', error);
     return null;

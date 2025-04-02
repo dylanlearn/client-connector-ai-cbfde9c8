@@ -163,6 +163,7 @@ export function useClientHub() {
     accessDenied,
     handleTaskButtonClick,
     isUpdating,
+    error: tasksError || accessError || realtimeError || navigationError, // Add consolidated error property
     errors,
     isRealtimeConnected: isConnected
   };

@@ -1,3 +1,4 @@
+
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface ClientAccessLink {
@@ -29,7 +30,7 @@ export interface ClientTask {
   linkId: string;
   taskType: 'intakeForm' | 'designPicker' | 'templates' | string;
   status: TaskStatus;
-  clientResponse?: Record<string, unknown>;
+  clientResponse?: any; // Changed from Record<string, unknown> to any to be more flexible
   designerNotes?: string;
   createdAt: Date;
   updatedAt: Date;
