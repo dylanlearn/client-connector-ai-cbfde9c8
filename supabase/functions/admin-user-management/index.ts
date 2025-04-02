@@ -101,6 +101,7 @@ async function handleUpdateUserRole({ userId, role }) {
   } else if (role === 'template-buyer') {
     subscription_status = 'free'; // template buyers get free status
   }
+  // 'trial' will map directly to 'trial' subscription_status with the default mapping
 
   console.log(`Mapped subscription_status: ${subscription_status}`);
 

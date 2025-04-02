@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -59,20 +58,14 @@ export function useUserManagement() {
       setUsers(
         users.map((user) => {
           if (user.id === userId) {
-            // Map subscription status based on role
-            let subscription_status;
-            switch (role) {
-              case 'admin':
-                subscription_status = 'sync-pro';
-                break;
-              case 'sync':
-              case 'sync-pro':
-              case 'trial':
-                subscription_status = role;
-                break;
-              default:
-                subscription_status = 'free';
+            // Map subscription status based on role - keeping in sync with backend logic
+            let subscription_status = role;
+            if (role === 'admin') {
+              subscription_status = 'sync-pro';
+            } else if (role === 'template-buyer') {
+              subscription_status = 'free';
             }
+            // 'trial' maps directly to 'trial'
             
             return { 
               ...user, 
