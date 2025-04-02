@@ -26,7 +26,7 @@ export function AlertMessage({
       case "warning":
         return <AlertTriangle className="h-4 w-4 text-amber-600" />;
       case "error":
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
       case "info":
       default:
         return <Info className="h-4 w-4 text-blue-600" />;

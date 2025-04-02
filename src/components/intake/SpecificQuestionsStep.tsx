@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -85,7 +86,7 @@ const SpecificQuestionsStep = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="text-sm text-gray-600 mb-4">
+        <div className="text-sm text-muted-foreground mb-4">
           These questions are tailored to your {getSiteTypeName(siteType)} project. Please provide as much detail as possible.
         </div>
         
