@@ -5,7 +5,8 @@ import { RateLimiterStatus } from "@/components/admin/monitoring/RateLimiterStat
 import { ApiUsageMetrics } from "@/components/admin/monitoring/ApiUsageMetrics";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { recordSystemStatus, MonitoringConfiguration } from "@/utils/monitoring/system-status";
+import { recordSystemStatus } from "@/utils/monitoring/system-status";
+import { MonitoringConfiguration } from "@/utils/monitoring/types";
 
 interface MonitoringComponentConfig {
   component: string;
