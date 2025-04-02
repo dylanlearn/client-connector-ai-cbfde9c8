@@ -114,6 +114,170 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_prompt_impressions: {
+        Row: {
+          id: string
+          test_id: string
+          timestamp: string
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          id?: string
+          test_id: string
+          timestamp?: string
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          id?: string
+          test_id?: string
+          timestamp?: string
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_impressions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_impressions_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_results: {
+        Row: {
+          error_type: string | null
+          id: string
+          latency_ms: number | null
+          successful: boolean
+          test_id: string
+          timestamp: string
+          token_usage: number | null
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          error_type?: string | null
+          id?: string
+          latency_ms?: number | null
+          successful?: boolean
+          test_id: string
+          timestamp?: string
+          token_usage?: number | null
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          error_type?: string | null
+          id?: string
+          latency_ms?: number | null
+          successful?: boolean
+          test_id?: string
+          timestamp?: string
+          token_usage?: number | null
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_results_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_tests: {
+        Row: {
+          confidence_threshold: number | null
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          min_sample_size: number | null
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          confidence_threshold?: number | null
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          min_sample_size?: number | null
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          confidence_threshold?: number | null
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          min_sample_size?: number | null
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_prompt_variants: {
+        Row: {
+          id: string
+          is_control: boolean
+          name: string
+          prompt_text: string
+          system_prompt: string | null
+          test_id: string
+          weight: number
+        }
+        Insert: {
+          id?: string
+          is_control?: boolean
+          name: string
+          prompt_text: string
+          system_prompt?: string | null
+          test_id: string
+          weight?: number
+        }
+        Update: {
+          id?: string
+          is_control?: boolean
+          name?: string
+          prompt_text?: string
+          system_prompt?: string | null
+          test_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_variants_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_access_links: {
         Row: {
           client_email: string

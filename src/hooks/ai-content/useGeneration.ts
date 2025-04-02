@@ -29,7 +29,6 @@ export function useGeneration({
   const requestTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
 
-  // Cleanup function
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -42,18 +41,15 @@ export function useGeneration({
   }, []);
 
   const generate = useCallback(async (request: ContentRequest): Promise<string> => {
-    // Reset state
     setIsGenerating(true);
     setLastError(null);
     retryCountRef.current = 0;
     
-    // Create abort controller for the request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
     
-    // Set timeout
     if (requestTimeoutRef.current) {
       clearTimeout(requestTimeoutRef.current);
     }
@@ -74,7 +70,6 @@ export function useGeneration({
       }
     }, timeout);
     
-    // Get A/B test prompt variant if enabled
     let testVariantId: string | undefined;
     if (enableABTesting && user) {
       try {
@@ -87,14 +82,11 @@ export function useGeneration({
         }
       } catch (error) {
         console.error("Error getting A/B test variant:", error);
-        // Continue with default prompt if there's an error
       }
     }
     
-    // Function to attempt generation with retry logic
     const attemptGeneration = async (retryCount: number): Promise<string> => {
       try {
-        // Generate cache key based on request
         const cacheKey = `ai-content-${request.type}-${request.context}-${request.tone}-${testVariantId || 'default'}-${retryCount}`;
         
         const startTime = Date.now();
@@ -105,19 +97,17 @@ export function useGeneration({
           testVariantId
         });
         
-        // Calculate latency for A/B test metrics
         const latencyMs = Date.now() - startTime;
         
-        // Record success for A/B testing if we're using a test variant
         if (testVariantId && user) {
           await AIGeneratorService.recordPromptTestSuccess(
+            test.id, 
             testVariantId, 
             user.id, 
             latencyMs
           );
         }
         
-        // Clear timeout on success
         if (requestTimeoutRef.current) {
           clearTimeout(requestTimeoutRef.current);
           requestTimeoutRef.current = null;
@@ -125,7 +115,6 @@ export function useGeneration({
         
         return content;
       } catch (error) {
-        // Record failure for A/B testing if we're using a test variant
         if (testVariantId && user) {
           await AIGeneratorService.recordPromptTestFailure(
             testVariantId, 
@@ -134,18 +123,15 @@ export function useGeneration({
           );
         }
         
-        // Handle retries
         if (autoRetry && retryCount < maxRetries) {
           console.log(`Retrying AI generation (${retryCount + 1}/${maxRetries})...`);
           
-          // Exponential backoff
           const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
           await new Promise(resolve => setTimeout(resolve, backoffDelay));
           
           return attemptGeneration(retryCount + 1);
         }
         
-        // We've exhausted retries or retries are disabled
         throw error;
       }
     };
@@ -165,7 +151,6 @@ export function useGeneration({
         });
       }
       
-      // Return fallback content if fallbacks are enabled
       if (useFallbacks) {
         const fallbacks = {
           header: `Example ${request.type || 'header'}`,
@@ -176,7 +161,6 @@ export function useGeneration({
         return fallbacks[request.type as keyof typeof fallbacks] || `Example ${request.type}`;
       }
       
-      // Otherwise, re-throw the error
       throw error;
     } finally {
       setIsGenerating(false);

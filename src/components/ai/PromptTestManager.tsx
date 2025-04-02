@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Plus, Trash, Pencil, BarChart3, Trophy } from "lucide-react";
 import { AIGeneratorService } from "@/services/ai";
 import { PromptTest, PromptVariant } from "@/services/ai/content/prompt-testing/ab-testing-service";
+import { supabase } from "@/integrations/supabase/client";
 
 const PromptTestManager = () => {
   const [activeTests, setActiveTests] = useState<PromptTest[]>([]);
@@ -22,7 +22,6 @@ const PromptTestManager = () => {
   const [showNewTestForm, setShowNewTestForm] = useState(false);
   const { toast } = useToast();
   
-  // Form state for new test
   const [newTest, setNewTest] = useState({
     name: '',
     description: '',
@@ -45,7 +44,6 @@ const PromptTestManager = () => {
     ]
   });
   
-  // Load active tests
   useEffect(() => {
     const loadTests = async () => {
       setIsLoading(true);
@@ -93,7 +91,6 @@ const PromptTestManager = () => {
     loadTests();
   }, [toast]);
   
-  // Handle creating a new test
   const handleCreateTest = async () => {
     if (!newTest.name || newTest.variants.some(v => !v.promptText)) {
       toast({
@@ -119,7 +116,6 @@ const PromptTestManager = () => {
           description: "A/B prompt test has been created successfully."
         });
         
-        // Reload tests
         const { data, error } = await supabase
           .from('ai_prompt_tests')
           .select('*, variants:ai_prompt_variants(*)')
@@ -150,7 +146,6 @@ const PromptTestManager = () => {
           setActiveTests([newTestData, ...activeTests]);
         }
         
-        // Reset form
         setNewTest({
           name: '',
           description: '',
@@ -188,7 +183,6 @@ const PromptTestManager = () => {
     }
   };
   
-  // Handle adding a new variant to the form
   const handleAddVariant = () => {
     setNewTest({
       ...newTest,
@@ -205,7 +199,6 @@ const PromptTestManager = () => {
     });
   };
   
-  // Handle removing a variant from the form
   const handleRemoveVariant = (index: number) => {
     if (newTest.variants.length <= 2) {
       toast({
@@ -225,7 +218,6 @@ const PromptTestManager = () => {
     });
   };
   
-  // Handle updating a variant in the form
   const handleUpdateVariant = (index: number, field: string, value: any) => {
     const newVariants = [...newTest.variants];
     newVariants[index] = {
@@ -251,7 +243,6 @@ const PromptTestManager = () => {
         </Button>
       </div>
       
-      {/* New Test Form */}
       {showNewTestForm && (
         <Card>
           <CardHeader>
@@ -262,7 +253,6 @@ const PromptTestManager = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Test Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="test-name">Test Name</Label>
@@ -303,7 +293,6 @@ const PromptTestManager = () => {
                 />
               </div>
               
-              {/* Variants */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Prompt Variants</h3>
@@ -337,7 +326,6 @@ const PromptTestManager = () => {
                               id={`is-control-${index}`}
                               checked={variant.isControl}
                               onCheckedChange={(checked) => {
-                                // If setting this as control, unset others
                                 if (checked) {
                                   const newVariants = newTest.variants.map((v, i) => ({
                                     ...v,
@@ -374,7 +362,7 @@ const PromptTestManager = () => {
                             rows={4}
                           />
                           <p className="text-xs text-muted-foreground">
-                            Use {{type}}, {{tone}}, {{context}}, {{keywords}}, and {{maxLength}} as placeholders.
+                            Use &#123;&#123;type&#125;&#125;, &#123;&#123;tone&#125;&#125;, &#123;&#123;context&#125;&#125;, &#123;&#123;keywords&#125;&#125;, and &#123;&#123;maxLength&#125;&#125; as placeholders.
                           </p>
                         </div>
                         
@@ -427,7 +415,6 @@ const PromptTestManager = () => {
         </Card>
       )}
       
-      {/* Active Tests */}
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -499,7 +486,6 @@ const PromptTestManager = () => {
                   </TabsContent>
                   <TabsContent value="results" className="pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* Placeholder for results - would be populated with real data */}
                       {test.variants.map((variant, index) => (
                         <Card key={variant.id}>
                           <CardHeader className="pb-2">

@@ -246,16 +246,23 @@ export const PromptABTestingService = {
    */
   getTestResults: async (testId: string): Promise<PromptTestResult[] | null> => {
     try {
-      // Get raw data from the database
-      const { data: impressions, error: impressionsError } = await supabase
+      // Get impressions count by variant
+      const { data: impressionsData, error: impressionsError } = await supabase
         .from('ai_prompt_impressions')
-        .select('variant_id, count')
-        .eq('test_id', testId)
-        .count();
+        .select('variant_id')
+        .eq('test_id', testId);
       
       if (impressionsError) throw impressionsError;
       
-      const { data: results, error: resultsError } = await supabase
+      // Process impressions to count them by variant
+      const impressionCounts: Record<string, number> = {};
+      impressionsData.forEach((imp: any) => {
+        const variantId = imp.variant_id;
+        impressionCounts[variantId] = (impressionCounts[variantId] || 0) + 1;
+      });
+      
+      // Get all results
+      const { data: resultsData, error: resultsError } = await supabase
         .from('ai_prompt_results')
         .select('variant_id, successful, latency_ms, token_usage')
         .eq('test_id', testId);
@@ -266,12 +273,12 @@ export const PromptABTestingService = {
       const variantMap = new Map<string, PromptTestResult>();
       
       // Initialize map with impressions
-      impressions.forEach((imp: any) => {
-        variantMap.set(imp.variant_id, {
+      Object.entries(impressionCounts).forEach(([variantId, count]) => {
+        variantMap.set(variantId, {
           id: uuidv4(),
           testId,
-          variantId: imp.variant_id,
-          impressions: imp.count,
+          variantId,
+          impressions: count,
           successes: 0,
           failures: 0,
           averageLatencyMs: 0,
@@ -284,7 +291,7 @@ export const PromptABTestingService = {
       let tokenSums = new Map<string, number>();
       let successCounts = new Map<string, number>();
       
-      results.forEach((result: any) => {
+      resultsData.forEach((result: any) => {
         const variantId = result.variant_id;
         const successful = result.successful;
         
@@ -294,7 +301,7 @@ export const PromptABTestingService = {
             id: uuidv4(),
             testId,
             variantId,
-            impressions: 0,
+            impressions: impressionCounts[variantId] || 0,
             successes: 0,
             failures: 0,
             averageLatencyMs: 0,
