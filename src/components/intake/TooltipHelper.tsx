@@ -115,7 +115,7 @@ const TooltipHelper = ({ content, position = "top", field, aiPowered = false }: 
         // Show static content if there's an error
         return (
           <div className="font-normal text-xs">
-            <span className="block text-destructive mb-1">{error}</span>
+            <span className="block text-amber-600 mb-1">{error}</span>
             {content}
           </div>
         );

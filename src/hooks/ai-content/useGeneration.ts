@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
 import { AIGeneratorService } from '@/services/ai';
 import { ContentRequest } from './types';
 
@@ -60,7 +60,11 @@ export function useGeneration({
         setIsGenerating(false);
         
         if (showToasts) {
-          toast.error('AI content generation timed out');
+          toast({
+            variant: "destructive",
+            title: "Generation Failed",
+            description: "AI content generation timed out"
+          });
         }
       }
     }, timeout);
@@ -108,7 +112,11 @@ export function useGeneration({
       setLastError(error instanceof Error ? error : new Error('Unknown error'));
       
       if (showToasts) {
-        toast.error('Failed to generate AI content');
+        toast({
+          variant: "destructive",
+          title: "Generation Failed",
+          description: "Failed to generate AI content"
+        });
       }
       
       // Return fallback content if fallbacks are enabled
