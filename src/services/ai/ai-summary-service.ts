@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { AIFeatureType, selectModelForFeature } from "./ai-model-selector";
 
 /**
  * Service for AI-powered summarization of client data
@@ -26,6 +27,9 @@ export const AISummaryService = {
         into clear, actionable briefs. You can take messy, vague, or disorganized input and transform
         it into a professional document that guides the design process.`;
       
+      // Use GPT-4o for summarizing questionnaire (content generation)
+      const model = selectModelForFeature(AIFeatureType.ContentGeneration);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -34,7 +38,7 @@ export const AISummaryService = {
           }],
           systemPrompt,
           temperature: 0.5,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
@@ -68,6 +72,9 @@ export const AISummaryService = {
         into clear, actionable tasks. You know how to interpret vague requests and transform them into
         specific action items with appropriate priorities.`;
       
+      // Use GPT-4o-mini for converting to action items (basic summarization)
+      const model = selectModelForFeature(AIFeatureType.Summarization);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -76,7 +83,7 @@ export const AISummaryService = {
           }],
           systemPrompt,
           temperature: 0.4,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
@@ -111,6 +118,9 @@ export const AISummaryService = {
       const systemPrompt = `You are an expert design consultant who specializes in iterative project planning.
         You excel at incorporating feedback while maintaining document cohesion and clarity.`;
       
+      // Use GPT-4o for creating revised briefs (content generation)
+      const model = selectModelForFeature(AIFeatureType.ContentGeneration);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -119,7 +129,7 @@ export const AISummaryService = {
           }],
           systemPrompt,
           temperature: 0.5,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       

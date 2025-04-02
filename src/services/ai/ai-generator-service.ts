@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { AIFeatureType, selectModelForFeature } from "./ai-model-selector";
 
 export interface ContentGenerationOptions {
   type: 'header' | 'tagline' | 'cta' | 'description';
@@ -41,6 +42,9 @@ export const AIGeneratorService = {
       const systemPrompt = `You are an expert copywriter specialized in creating compelling web content.
         You create concise, engaging copy that matches the specified tone and incorporates required keywords.`;
       
+      // Use GPT-4o for content generation
+      const model = selectModelForFeature(AIFeatureType.ContentGeneration);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -49,7 +53,7 @@ export const AIGeneratorService = {
           }],
           systemPrompt,
           temperature: 0.7,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
@@ -79,6 +83,9 @@ export const AIGeneratorService = {
       const systemPrompt = `You are an expert at interpreting client feedback and converting
         it into clear, actionable tasks for designers and developers. Be specific and practical.`;
       
+      // Use GPT-4o-mini for summarizing feedback
+      const model = selectModelForFeature(AIFeatureType.Summarization);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -87,7 +94,7 @@ export const AIGeneratorService = {
           }],
           systemPrompt,
           temperature: 0.4,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
@@ -128,6 +135,9 @@ export const AIGeneratorService = {
         clear project briefs from client questionnaires. You know how to interpret client needs
         and transform vague or inconsistent responses into a cohesive, actionable document.`;
       
+      // Use GPT-4o for generating project briefs (content generation)
+      const model = selectModelForFeature(AIFeatureType.ContentGeneration);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -136,7 +146,7 @@ export const AIGeneratorService = {
           }],
           systemPrompt,
           temperature: 0.5,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       

@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { AIMessage, AIAnalysis } from "@/types/ai";
 import { supabase } from "@/integrations/supabase/client";
+import { AIFeatureType, selectModelForFeature } from "@/services/ai/ai-model-selector";
 
 export const createUserMessage = (content: string): AIMessage => ({
   id: `user-${uuidv4()}`,
@@ -29,6 +30,9 @@ export const generateAIResponse = async (
   systemPrompt: string
 ) => {
   try {
+    // Use GPT-4o-mini for regular conversation
+    const model = selectModelForFeature(AIFeatureType.Conversation);
+    
     const { data, error } = await supabase.functions.invoke("generate-with-openai", {
       body: {
         messages: messages.map(m => ({
@@ -37,7 +41,7 @@ export const generateAIResponse = async (
         })),
         systemPrompt,
         temperature: 0.7,
-        model: 'gpt-4o-mini'
+        model
       },
     });
 

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { AIAnalysis } from "@/types/ai";
+import { AIFeatureType, selectModelForFeature } from "./ai-model-selector";
 
 /**
  * Service for analyzing client responses and extracting insights
@@ -52,6 +53,9 @@ export const AIAnalyzerService = {
         preferences, and contradictions in client feedback. You specialize in extracting meaningful insights 
         from questionnaire responses to guide the design process.`;
       
+      // Select the model - use GPT-4o for data analytics
+      const model = selectModelForFeature(AIFeatureType.DataAnalytics);
+      
       // Call the OpenAI edge function
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
@@ -61,7 +65,7 @@ export const AIAnalyzerService = {
           }],
           systemPrompt,
           temperature: 0.4,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
@@ -118,6 +122,9 @@ export const AIAnalyzerService = {
       
       const systemPrompt = `You are an expert in brand personality analysis. Extract and quantify personality traits from client descriptions.`;
       
+      // Select the model - use GPT-4o for brand personality detection (part of analytics)
+      const model = selectModelForFeature(AIFeatureType.DataAnalytics);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -126,7 +133,7 @@ export const AIAnalyzerService = {
           }],
           systemPrompt,
           temperature: 0.3,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
@@ -162,6 +169,9 @@ export const AIAnalyzerService = {
       const systemPrompt = `You are an expert at identifying contradictions in design requirements. 
         Your goal is to flag any inconsistencies in client requests to help create clear design directions.`;
       
+      // Select the model - use GPT-4o for contradiction detection (part of analytics)
+      const model = selectModelForFeature(AIFeatureType.DataAnalytics);
+      
       const { data, error } = await supabase.functions.invoke("generate-with-openai", {
         body: {
           messages: [{
@@ -170,7 +180,7 @@ export const AIAnalyzerService = {
           }],
           systemPrompt,
           temperature: 0.3,
-          model: 'gpt-4o-mini'
+          model
         },
       });
       
