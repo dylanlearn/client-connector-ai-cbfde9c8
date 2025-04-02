@@ -5,3 +5,4 @@ export { TestResults } from './TestResults';
 export { EmptyTestsState } from './EmptyTestsState';
 export { TestCardGrid } from './TestCardGrid';
 export { LoadingState } from './LoadingState';
+export { MonitoringState } from './MonitoringState';
