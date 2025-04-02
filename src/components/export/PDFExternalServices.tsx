@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Clipboard, Notion } from "lucide-react";
+import { ExternalLink, Clipboard } from "lucide-react";
 import { NotionExportDialog } from "./integration-dialogs/NotionExportDialog";
 
 interface PDFExternalServicesProps {

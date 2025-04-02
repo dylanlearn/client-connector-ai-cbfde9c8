@@ -11,6 +11,8 @@ export interface PDFGenerationOptions {
   margin?: number;
   /** Maximum canvas dimension to prevent memory issues */
   maxCanvasDimension?: number;
+  /** Filename for the exported PDF (without extension) */
+  filename?: string;
   /** Document styling options */
   styling?: {
     /** Header image URL (optional) */

@@ -1,7 +1,7 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { generatePDF, PDFGenerationOptions, applyPDFTemplate, PDFStylingTemplate } from "@/utils/pdf-export";
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 interface PDFExportContextType {
   isLoading: boolean;
@@ -56,14 +56,12 @@ export const PDFExportProvider = ({
   });
 
   useEffect(() => {
-    // If user is available and email is not set, initialize with user's email
     if (user?.email && !email) {
       setEmail(user.email);
     }
   }, [user, email]);
 
   useEffect(() => {
-    // Cleanup URL when dialog closes
     if (!isOpen && pdfUrl) {
       URL.revokeObjectURL(pdfUrl);
       setPdfUrl(null);
@@ -71,7 +69,6 @@ export const PDFExportProvider = ({
   }, [isOpen, pdfUrl]);
 
   useEffect(() => {
-    // Generate PDF when dialog opens
     const generateInitialPDF = async () => {
       if (isOpen && !pdfBlob) {
         setIsLoading(true);
@@ -91,7 +88,6 @@ export const PDFExportProvider = ({
     generateInitialPDF();
   }, [isOpen, pdfBlob, contentId, filename, pdfOptions]);
 
-  // Update filename when prop changes
   useEffect(() => {
     setPdfOptions(prev => ({ ...prev, filename }));
   }, [filename]);
@@ -102,7 +98,6 @@ export const PDFExportProvider = ({
       const blob = await generatePDF(contentId, filename, pdfOptions);
       setPdfBlob(blob);
       if (blob) {
-        // Revoke old URL if it exists
         if (pdfUrl) {
           URL.revokeObjectURL(pdfUrl);
         }
@@ -116,7 +111,7 @@ export const PDFExportProvider = ({
 
   const updatePdfOption = (key: keyof PDFGenerationOptions, value: any) => {
     setPdfOptions(prev => ({ ...prev, [key]: value }));
-    setPdfBlob(null); // Clear the cached PDF to force regeneration with new options
+    setPdfBlob(null);
     if (pdfUrl) {
       URL.revokeObjectURL(pdfUrl);
       setPdfUrl(null);
@@ -126,7 +121,7 @@ export const PDFExportProvider = ({
   const handleApplyTemplate = (template: PDFStylingTemplate) => {
     const updatedOptions = applyPDFTemplate(pdfOptions, template);
     setPdfOptions(updatedOptions);
-    setPdfBlob(null); // Clear cached PDF to force regeneration with new styling
+    setPdfBlob(null);
     if (pdfUrl) {
       URL.revokeObjectURL(pdfUrl);
       setPdfUrl(null);
