@@ -48,9 +48,11 @@ export const useSubscriptionStatus = (
       const data = await fetchSubscriptionStatus();
       
       console.log("useSubscription - Subscription data:", data);
+      
+      // Set subscription info with admin-assigned status flag if present
       setSubscriptionInfo({
         status: data.subscription,
-        isActive: data.isActive,
+        isActive: data.isActive || data.adminAssigned || false,
         inTrial: data.inTrial,
         expiresAt: data.expiresAt,
         willCancel: data.willCancel,

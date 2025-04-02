@@ -25,7 +25,8 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   const [isInitialized, setIsInitialized] = useState(false);
   
   console.log("RequireSubscription - Check details:", { 
-    "profile?.role": profile?.role, 
+    "profile?.role": profile?.role,
+    "profile?.subscription_status": profile?.subscription_status, 
     "isAdmin from subscription": isAdmin,
     "isAdmin from direct check": adminStatusDirect,
     "isActive": isActive,
@@ -59,18 +60,34 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     profile?.role === 'admin' || // Check profile directly
     isAdmin ||                   // Check from subscription hook
     adminStatusDirect;           // Check from admin status hook
+    
+  // Check for admin-assigned subscription access
+  const hasAdminAssignedAccess = 
+    profile?.role === 'pro' || 
+    profile?.role === 'basic' || 
+    profile?.subscription_status === 'pro' || 
+    profile?.subscription_status === 'basic';
   
   // Log detailed information for debugging
-  console.log("Admin access check:", {
+  console.log("Access check:", {
     "profile role": profile?.role,
+    "profile subscription_status": profile?.subscription_status,
     "isAdmin from subscription": isAdmin,
     "adminStatusDirect": adminStatusDirect,
-    "final hasAdminRole": hasAdminRole
+    "final hasAdminRole": hasAdminRole,
+    "hasAdminAssignedAccess": hasAdminAssignedAccess,
+    "isActive": isActive
   });
   
   // Check for admin status first - admins always have access
   if (hasAdminRole) {
     console.log("Admin user detected, granting access");
+    return <>{children}</>;
+  }
+  
+  // Check for admin-assigned subscription status
+  if (hasAdminAssignedAccess) {
+    console.log("User has admin-assigned subscription access, granting access");
     return <>{children}</>;
   }
   

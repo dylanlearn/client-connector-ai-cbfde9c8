@@ -64,6 +64,45 @@ serve(async (req) => {
         status: 200,
       });
     }
+    
+    // Check for admin-assigned subscription status
+    if (!profileError) {
+      // If user has pro role or pro subscription status assigned by admin
+      if (profileData?.role === 'pro' || profileData?.subscription_status === 'pro') {
+        console.log("User has admin-assigned pro access");
+        return new Response(JSON.stringify({
+          subscription: 'pro',
+          isActive: true,
+          inTrial: false,
+          expiresAt: null,
+          willCancel: false,
+          isAdmin: false,
+          role: profileData.role,
+          adminAssigned: true
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+      }
+      
+      // If user has basic role or basic subscription status assigned by admin
+      if (profileData?.role === 'basic' || profileData?.subscription_status === 'basic') {
+        console.log("User has admin-assigned basic access");
+        return new Response(JSON.stringify({
+          subscription: 'basic',
+          isActive: true,
+          inTrial: false,
+          expiresAt: null,
+          willCancel: false,
+          isAdmin: false,
+          role: profileData.role,
+          adminAssigned: true
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+      }
+    }
 
     // Special check for Google login admin (based on email)
     const userEmail = user.email || profileData?.email || user.user_metadata?.email;
@@ -98,7 +137,7 @@ serve(async (req) => {
       });
     }
 
-    // If not admin, check the subscription status
+    // If not admin or admin-assigned, check the subscription status
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('subscription_status, current_period_end, cancel_at_period_end')

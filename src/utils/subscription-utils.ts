@@ -14,6 +14,7 @@ export const fetchSubscriptionStatus = async () => {
       throw error;
     }
     
+    console.log("Subscription status response:", data);
     return data;
   } catch (error) {
     console.error("Error in fetchSubscriptionStatus:", error);

@@ -43,19 +43,26 @@ export const useSubscription = () => {
   // Explicit check for admin access from profile for redundancy
   const hasAdminRole = profile?.role === 'admin' || isAdminRole;
   
+  // Check for admin-assigned subscription status in profile
+  const hasAssignedProAccess = profile?.role === 'pro' || profile?.subscription_status === 'pro';
+  const hasAssignedBasicAccess = profile?.role === 'basic' || profile?.subscription_status === 'basic';
+  
   // Log detailed information for admin role and subscription status
   useEffect(() => {
     if (user) {
       console.log("Subscription hook state:", {
         "profile.role": profile?.role,
+        "profile.subscription_status": profile?.subscription_status,
         "isAdminRole from useAdminStatus": isAdminRole,
         "admin from subscriptionInfo": subscriptionInfo.isAdmin,
         "hasAdminRole": hasAdminRole,
+        "hasAssignedProAccess": hasAssignedProAccess,
+        "hasAssignedBasicAccess": hasAssignedBasicAccess,
         "subscription status": subscriptionInfo.status,
         "is subscription active": subscriptionInfo.isActive
       });
     }
-  }, [user, profile?.role, isAdminRole, subscriptionInfo, hasAdminRole]);
+  }, [user, profile?.role, profile?.subscription_status, isAdminRole, subscriptionInfo, hasAdminRole, hasAssignedProAccess, hasAssignedBasicAccess]);
   
   // Manual refresh function for debugging and recovery
   const refreshSubscription = async () => {
@@ -75,10 +82,13 @@ export const useSubscription = () => {
     }
   };
   
+  // Determine if user has active access, either through subscription, admin role, or admin-assigned access
+  const isActive = hasAdminRole || subscriptionInfo.isActive || hasAssignedProAccess || hasAssignedBasicAccess;
+  
   return {
     // Subscription status info
-    status: subscriptionInfo.status,
-    isActive: hasAdminRole || subscriptionInfo.isActive,
+    status: hasAssignedProAccess ? "pro" : (hasAssignedBasicAccess ? "basic" : subscriptionInfo.status),
+    isActive,
     inTrial: subscriptionInfo.inTrial,
     expiresAt: subscriptionInfo.expiresAt,
     willCancel: subscriptionInfo.willCancel,
