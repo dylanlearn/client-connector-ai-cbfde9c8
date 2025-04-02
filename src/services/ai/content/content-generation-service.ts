@@ -110,38 +110,53 @@ export const AIContentGenerationService = {
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + 30);
         
+        // Get user ID if logged in
+        const session = await supabase.auth.getSession();
+        const userId = session.data.session?.user.id;
+        
+        // Insert into cache
         await supabase.from('ai_content_cache').insert({
           cache_key: effectiveCacheKey,
           content: generatedContent,
           content_type: type,
           expires_at: expiresAt.toISOString(),
-          user_id: supabase.auth.getSession().then(({ data }) => data?.session?.user.id),
+          user_id: userId,
           metadata: { tone, context, keywords }
         });
         
         // Log metrics for analytics
-        await supabase.from('ai_generation_metrics').insert({
-          feature_type: featureType,
-          model_used: model,
-          latency_ms: latencyMs,
-          success: true,
-          user_id: supabase.auth.getSession().then(({ data }) => data?.session?.user.id),
-        });
+        if (userId) {
+          await supabase.from('ai_generation_metrics').insert({
+            feature_type: featureType,
+            model_used: model,
+            latency_ms: latencyMs,
+            success: true,
+            user_id: userId,
+            prompt_tokens: data.usage?.prompt_tokens,
+            completion_tokens: data.usage?.completion_tokens,
+            total_tokens: data.usage?.total_tokens
+          });
+        }
         
         return generatedContent;
       } catch (timeoutError) {
         clearTimeout(timeoutId);
         console.error("AI generation timed out:", timeoutError);
         
-        // Log error metrics
-        await supabase.from('ai_generation_metrics').insert({
-          feature_type: featureType,
-          model_used: model,
-          latency_ms: 5000, // Timeout value
-          success: false,
-          error_type: 'timeout',
-          user_id: supabase.auth.getSession().then(({ data }) => data?.session?.user.id),
-        });
+        // Log error metrics if user is logged in
+        const session = await supabase.auth.getSession();
+        const userId = session.data.session?.user.id;
+        
+        if (userId) {
+          await supabase.from('ai_generation_metrics').insert({
+            feature_type: featureType,
+            model_used: model,
+            latency_ms: 5000, // Timeout value
+            success: false,
+            error_type: 'timeout',
+            user_id: userId
+          });
+        }
         
         throw new Error("AI generation timed out. Please try again.");
       }
