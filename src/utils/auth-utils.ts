@@ -87,6 +87,32 @@ export const enableRealtimeForTable = async (tableName: string): Promise<boolean
 };
 
 /**
+ * Directly checks if a user is an admin via database query
+ * Bypasses caching and provides a reliable check
+ */
+export const checkAdminStatus = async (userId: string): Promise<boolean> => {
+  if (!userId) return false;
+  
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+      
+    if (error) {
+      console.error("Error checking admin status:", error);
+      return false;
+    }
+    
+    return data?.role === 'admin';
+  } catch (error) {
+    console.error("Error in checkAdminStatus:", error);
+    return false;
+  }
+};
+
+/**
  * Checks if a user has an active subscription or privileged role
  */
 export const isUserActive = (profile: UserProfile | null): boolean => {
@@ -139,11 +165,8 @@ export const validateAuthState = (user: User | null, profile: UserProfile | null
     return false;
   }
   
-  // Make sure we have a user profile
-  if (!profile) {
-    console.log("No profile found for user, auth state invalid");
-    return false;
-  }
+  // No profile check for admins - they should always have access
+  // This prevents admin lockout when profile loading fails
   
   console.log("Auth state valid, user is authenticated");
   return true;

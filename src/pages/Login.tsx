@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/use-auth"; 
+import { useAdminStatus } from "@/hooks/use-admin-status"; 
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +27,7 @@ const Login = () => {
   const [waitingForProfile, setWaitingForProfile] = useState(false);
   const isMobile = useIsMobile();
   const { signIn, signInWithGoogle, isLoading, user, profile } = useAuth();
+  const { isAdmin: adminStatusDirect, verifyAdminStatus } = useAdminStatus();
   
   // Get the redirect path from location state, default to /dashboard
   const from = (location.state as { from?: string })?.from || "/dashboard";
@@ -56,10 +57,22 @@ const Login = () => {
     }
   }, [searchParams, toast]);
 
+  // Check for admin status after login
+  useEffect(() => {
+    if (user && !profile && !waitingForProfile) {
+      setWaitingForProfile(true);
+      // Force admin check
+      verifyAdminStatus(true).then(isAdmin => {
+        console.log("Admin check after login:", isAdmin);
+      });
+    }
+  }, [user, profile, waitingForProfile, verifyAdminStatus]);
+
   // If user is already logged in, redirect to the appropriate destination
   if (user) {
     console.log("User logged in, user:", user.id);
     console.log("User profile:", profile);
+    console.log("Admin from direct check:", adminStatusDirect);
     console.log("From path:", from);
 
     // If we're still loading or waiting for profile data
@@ -78,8 +91,11 @@ const Login = () => {
       );
     }
     
+    // Direct check for admin role
+    const isUserAdmin = profile?.role === 'admin' || adminStatusDirect;
+    
     // Special handling for admin users
-    if (profile.role === 'admin') {
+    if (isUserAdmin) {
       console.log("Admin user detected, going directly to dashboard");
       return <Navigate to="/dashboard" replace />;
     }

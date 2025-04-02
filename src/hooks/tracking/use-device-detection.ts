@@ -2,48 +2,67 @@
 import { useState, useEffect } from 'react';
 
 export interface DeviceInfo {
-  width: number;
-  height: number;
-  deviceType: 'mobile' | 'tablet' | 'desktop';
+  deviceType: 'mobile' | 'tablet' | 'desktop' | string;
+  screenWidth: number;
+  screenHeight: number;
+  isMobile: boolean;
+  isTablet: boolean;
+  isDesktop: boolean;
+  userAgent: string;
 }
 
 /**
  * Hook for detecting device type and screen dimensions
  */
-export const useDeviceDetection = () => {
+export const useDeviceDetection = (): DeviceInfo => {
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
-    width: 0,
-    height: 0,
-    deviceType: 'desktop'
+    deviceType: 'desktop',
+    screenWidth: window.innerWidth,
+    screenHeight: window.innerHeight,
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    userAgent: navigator.userAgent
   });
-  
-  // Detect device info on mount and when window is resized
+
   useEffect(() => {
-    const getDeviceType = (): DeviceInfo => {
+    // Function to detect device type
+    const detectDevice = () => {
       const width = window.innerWidth;
-      let deviceType: 'mobile' | 'tablet' | 'desktop' = 'desktop';
+      const userAgent = navigator.userAgent;
       
-      if (width < 768) {
-        deviceType = 'mobile';
-      } else if (width < 1024) {
-        deviceType = 'tablet';
-      }
+      // Check for mobile devices
+      const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || width < 768;
       
-      return {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        deviceType
-      };
+      // Check for tablets
+      const isTablet = /iPad/i.test(userAgent) || (width >= 768 && width < 1024);
+      
+      // Default to desktop for other cases
+      const isDesktop = !isMobile && !isTablet;
+      
+      // Determine device type
+      let deviceType = 'desktop';
+      if (isMobile) deviceType = 'mobile';
+      if (isTablet) deviceType = 'tablet';
+      
+      setDeviceInfo({
+        deviceType,
+        screenWidth: width,
+        screenHeight: window.innerHeight,
+        isMobile,
+        isTablet,
+        isDesktop,
+        userAgent
+      });
     };
     
-    setDeviceInfo(getDeviceType());
+    // Initial detection
+    detectDevice();
     
     // Update on resize
-    const handleResize = () => {
-      setDeviceInfo(getDeviceType());
-    };
-    
+    const handleResize = () => detectDevice();
     window.addEventListener('resize', handleResize);
+    
     return () => {
       window.removeEventListener('resize', handleResize);
     };

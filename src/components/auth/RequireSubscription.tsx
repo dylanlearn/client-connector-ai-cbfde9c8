@@ -2,6 +2,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdminStatus } from "@/hooks/use-admin-status";
 import { validateAuthState } from "@/utils/auth-utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect, useState, memo } from "react";
@@ -17,26 +18,29 @@ interface RequireSubscriptionProps {
  */
 const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   const { isLoading: subscriptionLoading, isActive, isAdmin } = useSubscription();
+  const { isAdmin: adminStatusDirect, isVerifying } = useAdminStatus();
   const { user, isLoading: authLoading, profile } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
   
-  console.log("RequireSubscription - Profile:", profile);
-  console.log("RequireSubscription - isAdmin from useSubscription:", isAdmin);
-  console.log("RequireSubscription - profile role:", profile?.role);
-  console.log("RequireSubscription - isActive:", isActive);
-  console.log("RequireSubscription - current path:", location.pathname);
+  console.log("RequireSubscription - Check details:", { 
+    "profile?.role": profile?.role, 
+    "isAdmin from subscription": isAdmin,
+    "isAdmin from direct check": adminStatusDirect,
+    "isActive": isActive,
+    "current path": location.pathname 
+  });
   
   // Use effect to ensure component is fully mounted before checking auth
   useEffect(() => {
-    if (!subscriptionLoading && !authLoading) {
+    if (!subscriptionLoading && !authLoading && !isVerifying) {
       setIsInitialized(true);
     }
-  }, [subscriptionLoading, authLoading]);
+  }, [subscriptionLoading, authLoading, isVerifying]);
   
   // Loading state during initialization or auth/subscription checks
-  if (!isInitialized || subscriptionLoading || authLoading) {
+  if (!isInitialized || subscriptionLoading || authLoading || isVerifying) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingIndicator size="lg" />
@@ -50,24 +54,23 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
-  // Direct check for admin role in profile - this is the critical fix
-  const hasAdminRole = profile?.role === 'admin';
+  // Multiple redundant checks for admin status for reliability
+  const hasAdminRole = 
+    profile?.role === 'admin' || // Check profile directly
+    isAdmin ||                   // Check from subscription hook
+    adminStatusDirect;           // Check from admin status hook
   
   // Log detailed information for debugging
-  console.log("Admin check details:", {
-    "profile?.role": profile?.role,
-    "isAdmin from useSubscription": isAdmin,
-    "hasAdminRole": hasAdminRole
+  console.log("Admin access check:", {
+    "profile role": profile?.role,
+    "isAdmin from subscription": isAdmin,
+    "adminStatusDirect": adminStatusDirect,
+    "final hasAdminRole": hasAdminRole
   });
   
   // Check for admin status first - admins always have access
   if (hasAdminRole) {
-    console.log("Admin user detected via profile, granting access");
-    return <>{children}</>;
-  }
-  
-  if (isAdmin) {
-    console.log("Admin user detected via subscription hook, granting access");
+    console.log("Admin user detected, granting access");
     return <>{children}</>;
   }
   

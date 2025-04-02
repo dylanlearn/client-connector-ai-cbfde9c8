@@ -1,63 +1,91 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate as useReactRouterNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdminStatus } from "@/hooks/use-admin-status";
-import { useCheckoutStatus } from "@/hooks/use-checkout-status";
-import { useSubscriptionStatus, useSubscriptionActions } from "./subscription";
-import { SubscriptionInfo, SubscriptionStatus, BillingCycle } from "@/types/subscription";
-
-// A safe wrapper for useNavigate that won't throw errors outside of Router context
-const useNavigate = () => {
-  try {
-    return useReactRouterNavigate();
-  } catch (error) {
-    // Return a no-op function when outside of Router context
-    return () => {
-      console.warn("Navigation attempted outside Router context");
-    };
-  }
-};
-
-// Properly re-export enums and types using the correct syntax
-export type { SubscriptionStatus, BillingCycle, SubscriptionInfo };
+import { useSubscriptionStatus } from "@/hooks/subscription/use-subscription-status";
+import { fetchSubscriptionStatus } from "@/utils/subscription-utils";
+import { SubscriptionInfo } from "@/types/subscription";
 
 export const useSubscription = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { user, session } = useAuth();
-  const { isAdmin, isVerifying } = useAdminStatus();
-  const { checkSubscription, subscriptionInfo, setSubscriptionInfo } = useSubscriptionStatus(user, session, isAdmin);
-  const { startSubscription } = useSubscriptionActions(user, session, navigate, toast);
+  // Get auth context
+  const { user, session, profile } = useAuth();
   
-  // Handle checkout status from URL parameters
-  useCheckoutStatus();
-
+  // Use admin status hook for reliable admin detection
+  const { isAdmin: isAdminRole, isVerifying: isVerifyingAdmin } = useAdminStatus();
+  
+  // Initialize with default subscription status
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get subscription status from the hook
+  const { subscriptionInfo, checkSubscription } = useSubscriptionStatus(
+    user, 
+    session,
+    isAdminRole // Pass admin status to subscription hook
+  );
+  
+  // Combined loading state
+  const isLoading = subscriptionInfo.isLoading || isVerifyingAdmin || isRefreshing;
+  
+  // Refresh subscription info when user or admin status changes
   useEffect(() => {
-    // Skip subscription check during admin verification to avoid race conditions
-    if (user && !isVerifying) {
-      console.log("useSubscription - Have user data, checking subscription");
+    if (user && session) {
       checkSubscription();
-    } else {
-      console.log("useSubscription - Missing user data or verifying admin, waiting...");
-      setSubscriptionInfo(prev => ({ ...prev, isLoading: isVerifying }));
     }
+  }, [user?.id, session?.access_token, isAdminRole]);
+  
+  // Explicit check for admin access from profile for redundancy
+  const hasAdminRole = profile?.role === 'admin' || isAdminRole;
+  
+  // Log detailed information for admin role and subscription status
+  useEffect(() => {
+    if (user) {
+      console.log("Subscription hook state:", {
+        "profile.role": profile?.role,
+        "isAdminRole from useAdminStatus": isAdminRole,
+        "admin from subscriptionInfo": subscriptionInfo.isAdmin,
+        "hasAdminRole": hasAdminRole,
+        "subscription status": subscriptionInfo.status,
+        "is subscription active": subscriptionInfo.isActive
+      });
+    }
+  }, [user, profile?.role, isAdminRole, subscriptionInfo, hasAdminRole]);
+  
+  // Manual refresh function for debugging and recovery
+  const refreshSubscription = async () => {
+    if (!user || !session) return;
     
-    // Set up a subscription refresh timer to periodically check subscription status
-    const refreshTimer = setInterval(() => {
-      if (user && !isVerifying) {
-        console.log("useSubscription - Periodic refresh check");
-        checkSubscription();
-      }
-    }, 60000); // Check every minute
-    
-    return () => clearInterval(refreshTimer);
-  }, [user?.id, isAdmin, isVerifying, checkSubscription, setSubscriptionInfo]);
-
+    try {
+      setIsRefreshing(true);
+      const data = await fetchSubscriptionStatus();
+      console.log("Manual subscription refresh data:", data);
+      
+      // Force re-check of subscription status
+      await checkSubscription();
+    } catch (error) {
+      console.error("Error refreshing subscription:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+  
   return {
-    ...subscriptionInfo,
-    startSubscription,
-    refreshSubscription: checkSubscription,
+    // Subscription status info
+    status: subscriptionInfo.status,
+    isActive: hasAdminRole || subscriptionInfo.isActive,
+    inTrial: subscriptionInfo.inTrial,
+    expiresAt: subscriptionInfo.expiresAt,
+    willCancel: subscriptionInfo.willCancel,
+    
+    // Administrative status (explicit detection through multiple paths)
+    isAdmin: hasAdminRole,
+    isAdminFromAPI: subscriptionInfo.isAdmin,
+    isAdminFromProfile: profile?.role === 'admin',
+    
+    // Loading states
+    isLoading,
+    isRefreshing,
+    
+    // Actions
+    refreshSubscription
   };
 };

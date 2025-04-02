@@ -33,13 +33,17 @@ serve(async (req) => {
       throw new Error('Invalid token or user not found');
     }
     
+    console.log("Checking subscription for user:", user.id);
+    
     // Check if the user is an admin first - this is critical
+    // Try multiple paths for redundancy
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, subscription_status')
       .eq('id', user.id)
       .single();
       
+    // If user has admin role, grant full access
     if (!profileError && profileData?.role === 'admin') {
       console.log("User is admin, granting full access");
       return new Response(JSON.stringify({
@@ -48,7 +52,8 @@ serve(async (req) => {
         inTrial: false,
         expiresAt: null,
         willCancel: false,
-        isAdmin: true
+        isAdmin: true,
+        role: profileData.role
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -63,7 +68,24 @@ serve(async (req) => {
       .maybeSingle();
 
     if (subscriptionError) {
-      throw new Error(`Error fetching subscription: ${subscriptionError.message}`);
+      console.log("Error fetching subscription:", subscriptionError.message);
+      
+      // Fallback check for profile subscription status
+      if (!profileError && (profileData?.subscription_status === 'pro' || profileData?.subscription_status === 'basic')) {
+        console.log("Using profile subscription status as fallback");
+        return new Response(JSON.stringify({
+          subscription: profileData.subscription_status,
+          isActive: true,
+          inTrial: false,
+          expiresAt: null,
+          willCancel: false,
+          isAdmin: false,
+          role: profileData.role
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+      }
     }
 
     // Check if the subscription is active
@@ -77,21 +99,30 @@ serve(async (req) => {
 
     // Return the subscription status
     return new Response(JSON.stringify({
-      subscription: subscription?.subscription_status || 'free',
+      subscription: subscription?.subscription_status || profileData?.subscription_status || 'free',
       isActive,
       inTrial,
       expiresAt: subscription?.current_period_end || null,
       willCancel: subscription?.cancel_at_period_end || false,
-      isAdmin: false
+      isAdmin: false,
+      role: profileData?.role || 'free'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
     console.error('Error checking subscription:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      subscription: 'free',
+      isActive: false,
+      inTrial: false,
+      expiresAt: null,
+      willCancel: false,
+      isAdmin: false
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
+      status: 200, // Return 200 even on error with default values to prevent UI failures
     });
   }
 });

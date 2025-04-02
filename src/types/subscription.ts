@@ -1,9 +1,9 @@
 
-export type SubscriptionStatus = "free" | "basic" | "pro";
-export type BillingCycle = "monthly" | "annual";
-
+/**
+ * Information about a user's subscription status
+ */
 export interface SubscriptionInfo {
-  status: SubscriptionStatus;
+  status: "free" | "basic" | "pro" | "template-buyer" | "trial";
   isActive: boolean;
   inTrial: boolean;
   expiresAt: string | null;
