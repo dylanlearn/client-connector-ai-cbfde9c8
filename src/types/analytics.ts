@@ -125,3 +125,12 @@ export type TimelineEvent = {
   count: number;
   sessions: string[];
 }
+
+// Define a proper type for the interaction event types
+export type InteractionEventType = 'click' | 'hover' | 'scroll' | 'view' | 'movement';
+
+// Define DateRange to match the type expected by the DatePicker component
+export interface DateRangeWithRequiredDates {
+  from: Date;
+  to: Date;
+}

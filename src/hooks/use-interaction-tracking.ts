@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
 import { MemoryCategory } from "@/services/ai/memory";
 import { toast } from "sonner";
-import { InteractionEvent } from "@/types/analytics";
+import { InteractionEvent, InteractionEventType } from "@/types/analytics";
 
 /**
  * Hook for tracking user interactions for heatmaps and analytics
@@ -34,7 +34,7 @@ export const useInteractionTracking = () => {
    * Track a user interaction event (click, hover, etc.)
    */
   const trackInteraction = useCallback(async (
-    eventType: 'click' | 'hover' | 'scroll' | 'view' | 'movement',
+    eventType: InteractionEventType,
     position: { x: number, y: number },
     elementSelector?: string,
     metadata?: Record<string, any>
@@ -83,9 +83,16 @@ export const useInteractionTracking = () => {
       const eventsToSend = [...batchedEvents.current];
       batchedEvents.current = [];
       
-      const { error } = await supabase.rpc(
-        'batch_insert_interaction_events', 
-        { p_events: eventsToSend }
+      // Use a functions.invoke call instead of RPC for batch insertion
+      // since the RPC name might not be available
+      const { error } = await supabase.functions.invoke(
+        'interaction-db-functions', 
+        { 
+          body: { 
+            action: 'batch_insert',
+            events: eventsToSend 
+          } 
+        }
       );
       
       if (error) {
