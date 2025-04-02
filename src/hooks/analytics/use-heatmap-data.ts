@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { HeatmapDataPoint } from "@/types/analytics";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useHeatmapData = (userId: string | undefined) => {
   const [heatmapData, setHeatmapData] = useState<{
@@ -24,36 +24,42 @@ export const useHeatmapData = (userId: string | undefined) => {
     setIsLoading(true);
     
     try {
-      // Fetch click data
-      const { data: clickData, error: clickError } = await supabase
-        .from('interaction_events')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('event_type', 'click')
-        .eq('page_url', `/${selectedPage}`)
-        .order('timestamp', { ascending: false })
-        .limit(500);
+      // Use stored function to query interaction events safely
+      const fetchClickEvents = async () => {
+        const { data, error } = await supabase.rpc('get_interaction_events', {
+          p_user_id: userId,
+          p_event_type: 'click',
+          p_page_url: `/${selectedPage}`,
+          p_limit: 500
+        });
         
-      if (clickError) throw clickError;
+        if (error) throw error;
+        return data || [];
+      };
       
-      // Fetch hover data
-      const { data: hoverData, error: hoverError } = await supabase
-        .from('interaction_events')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('event_type', 'hover')
-        .eq('page_url', `/${selectedPage}`)
-        .order('timestamp', { ascending: false })
-        .limit(500);
+      const fetchHoverEvents = async () => {
+        const { data, error } = await supabase.rpc('get_interaction_events', {
+          p_user_id: userId,
+          p_event_type: 'hover',
+          p_page_url: `/${selectedPage}`,
+          p_limit: 500
+        });
         
-      if (hoverError) throw hoverError;
+        if (error) throw error;
+        return data || [];
+      };
+      
+      // Execute the queries in parallel
+      const [clickData, hoverData] = await Promise.all([
+        fetchClickEvents(),
+        fetchHoverEvents()
+      ]);
       
       // Create data points from the raw data
-      const clickPoints = processInteractionData(clickData || []);
-      const hoverPoints = processInteractionData(hoverData || []);
+      const clickPoints = processInteractionData(clickData);
+      const hoverPoints = processInteractionData(hoverData);
       
       // Generate synthetic attention data based on clicks and hovers
-      // In a real implementation, this would come from actual attention tracking
       const attentionPoints = generateAttentionData(clickPoints, hoverPoints);
       
       setHeatmapData({

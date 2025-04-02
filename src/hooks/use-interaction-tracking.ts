@@ -1,9 +1,9 @@
 
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
 import { useAIMemory } from "@/contexts/ai/hooks";
 import { v4 as uuidv4 } from "uuid";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Hook for tracking user interactions for heatmaps and analytics
@@ -33,16 +33,16 @@ export const useInteractionTracking = () => {
     if (!user) return;
     
     try {
-      // Store in Supabase
-      const { error } = await supabase.from('interaction_events').insert({
-        user_id: user.id,
-        event_type: eventType,
-        page_url: window.location.pathname,
-        element_selector: elementSelector || '',
-        x_position: position.x,
-        y_position: position.y,
-        session_id: sessionId(),
-        metadata: metadata || {}
+      // Use RPC function to insert interaction event
+      const { error } = await supabase.rpc('track_interaction', {
+        p_user_id: user.id,
+        p_event_type: eventType,
+        p_page_url: window.location.pathname,
+        p_x_position: position.x,
+        p_y_position: position.y,
+        p_element_selector: elementSelector || '',
+        p_session_id: sessionId(),
+        p_metadata: metadata || {}
       });
 
       if (error) {

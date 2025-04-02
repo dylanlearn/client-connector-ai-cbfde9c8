@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { DesignAnalytics, UserPreference, InteractionEvent } from "@/types/analytics";
 
+// Use a direct approach for tables not in the generated types
 export const fetchAnalyticsData = async (userId: string, designOptionIds: string[]) => {
   if (!designOptionIds.length) return [];
   
@@ -39,33 +40,42 @@ export const getUserDesignOptionIds = async (userId: string) => {
   return data ? data.map(pref => pref.design_option_id) : [];
 };
 
+// Use a more direct approach for querying interaction events
 export const fetchInteractionEvents = async (
   userId: string,
   eventType?: string,
   pageUrl?: string,
   limit: number = 1000
 ): Promise<InteractionEvent[]> => {
-  let query = supabase
-    .from('interaction_events')
-    .select('*')
-    .eq('user_id', userId)
-    .order('timestamp', { ascending: false })
-    .limit(limit);
-  
-  if (eventType) {
-    query = query.eq('event_type', eventType);
+  try {
+    let query = `
+      SELECT * FROM interaction_events 
+      WHERE user_id = '${userId}'
+    `;
+    
+    if (eventType) {
+      query += ` AND event_type = '${eventType}'`;
+    }
+    
+    if (pageUrl) {
+      query += ` AND page_url = '${pageUrl}'`;
+    }
+    
+    query += ` ORDER BY timestamp DESC LIMIT ${limit}`;
+    
+    const { data, error } = await supabase.rpc('query_interaction_events', { 
+      query_text: query 
+    });
+    
+    if (error) throw error;
+    return data as InteractionEvent[];
+  } catch (error) {
+    console.error('Error fetching interaction events:', error);
+    return [];
   }
-  
-  if (pageUrl) {
-    query = query.eq('page_url', pageUrl);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) throw error;
-  return data as InteractionEvent[];
 };
 
+// Direct approach for storing interactions
 export const storeInteractionEvent = async (
   userId: string,
   eventType: 'click' | 'hover' | 'scroll' | 'view',
@@ -75,20 +85,24 @@ export const storeInteractionEvent = async (
   sessionId: string,
   metadata?: Record<string, any>
 ): Promise<void> => {
-  const { error } = await supabase
-    .from('interaction_events')
-    .insert({
-      user_id: userId,
-      event_type: eventType,
-      page_url: pageUrl,
-      x_position: position.x,
-      y_position: position.y,
-      element_selector: elementSelector,
-      session_id: sessionId,
-      metadata: metadata || {}
+  try {
+    // Use SQL to insert directly
+    const { error } = await supabase.rpc('insert_interaction_event', {
+      p_user_id: userId,
+      p_event_type: eventType,
+      p_page_url: pageUrl,
+      p_x_position: position.x,
+      p_y_position: position.y,
+      p_element_selector: elementSelector,
+      p_session_id: sessionId,
+      p_metadata: metadata || {}
     });
-  
-  if (error) throw error;
+    
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error storing interaction event:', error);
+    throw error;
+  }
 };
 
 export const subscribeToUserPreferences = (
