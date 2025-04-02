@@ -24,19 +24,20 @@ const BaseFields = ({ form, showTooltips = false, aiPowered = false }: BaseField
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <FormField
         control={form.control}
         name="mainFeatures"
         render={({ field }) => (
           <FormItem>
             <div className="flex items-center">
-              <FormLabel>Main Features</FormLabel>
+              <FormLabel className="text-base font-medium">Main Features</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
                   content={<div className="font-normal italic text-xs">Example: {exampleAnswers.mainFeatures}</div>}
                   field="Main Features"
                   aiPowered={aiPowered}
+                  position="top"
                 />
               )}
             </div>
@@ -46,7 +47,7 @@ const BaseFields = ({ form, showTooltips = false, aiPowered = false }: BaseField
             <FormControl>
               <Textarea
                 placeholder="List the most important features..."
-                className="resize-none"
+                className="resize-none min-h-[100px]"
                 rows={4}
                 {...field}
               />
@@ -62,12 +63,13 @@ const BaseFields = ({ form, showTooltips = false, aiPowered = false }: BaseField
         render={({ field }) => (
           <FormItem>
             <div className="flex items-center">
-              <FormLabel>Competitors</FormLabel>
+              <FormLabel className="text-base font-medium">Competitors</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
                   content={<div className="font-normal italic text-xs">Example: {exampleAnswers.competitors}</div>}
                   field="Competitors"
                   aiPowered={aiPowered}
+                  position="top"
                 />
               )}
             </div>
@@ -77,7 +79,7 @@ const BaseFields = ({ form, showTooltips = false, aiPowered = false }: BaseField
             <FormControl>
               <Textarea
                 placeholder="Enter competitors or reference websites..."
-                className="resize-none"
+                className="resize-none min-h-[80px]"
                 rows={3}
                 {...field}
               />

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,8 @@ import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-h
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
+import { useAIContent } from "@/hooks/use-ai-content";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -30,7 +32,12 @@ const SpecificQuestionsStep = ({
   const schema = getFormSchema(siteType);
   const [showTooltips, setShowTooltips] = useState(false);
   const [aiPowered, setAiPowered] = useState(false);
+  const [isAiInitializing, setIsAiInitializing] = useState(false);
   const { toast } = useToast();
+  const { isGenerating } = useAIContent({
+    showToasts: true,
+    autoRetry: true
+  });
   
   const form = useForm({
     resolver: zodResolver(schema),
@@ -54,14 +61,28 @@ const SpecificQuestionsStep = ({
     onNext();
   };
 
+  // Initialize AI system with a delay to improve perceived performance
+  const initializeAI = useCallback(async () => {
+    setIsAiInitializing(true);
+    
+    // Short artificial delay to show the initialization process
+    await new Promise(resolve => setTimeout(resolve, 700));
+    
+    setAiPowered(true);
+    setIsAiInitializing(false);
+    
+    toast({
+      title: "AI-powered tooltips enabled",
+      description: "Hover over the info icons to see AI-generated example answers tailored to your project",
+      duration: 4000,
+    });
+  }, [toast]);
+
   const handleAIToggle = (enabled: boolean) => {
-    setAiPowered(enabled);
     if (enabled) {
-      toast({
-        title: "AI-powered tooltips enabled",
-        description: "Hover over the info icons to see AI-generated example answers",
-        duration: 3000,
-      });
+      initializeAI();
+    } else {
+      setAiPowered(false);
     }
   };
 
@@ -85,16 +106,25 @@ const SpecificQuestionsStep = ({
           </div>
           
           {showTooltips && (
-            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
-              <Label htmlFor="ai-powered" className="text-sm text-gray-500">
+            <div className="flex items-center space-x-3 mt-2 sm:mt-0">
+              <Label htmlFor="ai-powered" className={`text-sm ${isAiInitializing || aiPowered ? 'text-primary' : 'text-gray-500'}`}>
                 AI-powered examples
               </Label>
-              <Switch
-                id="ai-powered"
-                checked={aiPowered}
-                onCheckedChange={handleAIToggle}
-                className="data-[state=checked]:bg-primary"
-              />
+              
+              {isAiInitializing ? (
+                <div className="flex items-center space-x-2">
+                  <LoadingIndicator size="xs" color="border-primary" />
+                  <span className="text-xs text-primary">Initializing AI...</span>
+                </div>
+              ) : (
+                <Switch
+                  id="ai-powered"
+                  checked={aiPowered}
+                  onCheckedChange={handleAIToggle}
+                  className="data-[state=checked]:bg-primary"
+                  disabled={isAiInitializing || isGenerating}
+                />
+              )}
             </div>
           )}
         </div>
@@ -110,7 +140,7 @@ const SpecificQuestionsStep = ({
           <Button type="button" variant="outline" onClick={onPrevious}>
             Back
           </Button>
-          <Button type="submit">Continue</Button>
+          <Button type="submit" disabled={isAiInitializing}>Continue</Button>
         </div>
       </form>
     </Form>

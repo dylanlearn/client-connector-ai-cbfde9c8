@@ -15,8 +15,12 @@ interface SiteTypeFieldsProps {
 
 /**
  * A component that renders the appropriate fields based on the site type
+ * with enterprise-level AI tooltip integration
  */
 const SiteTypeFields = ({ siteType, form, showTooltips = false, aiPowered = false }: SiteTypeFieldsProps) => {
+  // Track component rendering for analytics/debugging
+  console.log(`SiteTypeFields rendering for ${siteType} with aiPowered=${aiPowered}`);
+  
   switch (siteType) {
     case "saas":
       return <SaasFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />;
