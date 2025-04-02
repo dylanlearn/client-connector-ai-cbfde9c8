@@ -120,7 +120,6 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
         data: any
       ): Promise<void> => {
         await clientUpdateTaskStatus(taskId, status as TaskStatus, data);
-        return;
       };
 
       return await submitCompleteForm(

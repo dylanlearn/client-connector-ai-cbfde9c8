@@ -65,12 +65,12 @@ export const createRealtimeSubscription = (
         table: 'intake_forms',
         filter: `form_id=eq.${formId}`,
       },
-      (payload) => {
+      (payload: any) => {
         console.log('Form data changed:', payload);
         
         // Only update if the change was made by someone else
         // to avoid circular updates
-        const newData = payload.new as any;
+        const newData = payload.new;
         if (newData && newData.last_updated && newData.last_updated > (currentLastUpdated || '')) {
           const updatedData = newData.form_data ? {
             ...newData.form_data,
