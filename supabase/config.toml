@@ -46,9 +46,11 @@ refresh_token_reuse_interval = 10
 [realtime]
 enabled = true
 
+# Functions configuration must be formatted correctly
+# General settings must go in this section
 [functions]
-enabled = true
 
+# Function-specific configurations - these must be in separate sections
 [functions.analyze-interaction-patterns]
 verify_jwt = true
 
