@@ -16,12 +16,19 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, systemPrompt, temperature = 0.7 } = await req.json();
+    const { messages, systemPrompt, temperature = 0.7, model = 'gpt-4o-mini' } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
         JSON.stringify({ error: 'Messages array is required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    if (!openAIApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key is not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
 
@@ -44,11 +51,7 @@ serve(async (req) => {
       });
     });
 
-    console.log('Sending to OpenAI:', JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: formattedMessages,
-      temperature
-    }));
+    console.log(`Sending to OpenAI with model: ${model}, temp: ${temperature}`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -57,7 +60,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model,
         messages: formattedMessages,
         temperature
       }),

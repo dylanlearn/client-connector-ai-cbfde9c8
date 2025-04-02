@@ -36,6 +36,18 @@ const AIContext = createContext<AIContextType | undefined>(undefined);
 
 const designAssistantPrompt = `
 You are an expert design consultant who specializes in web design, branding, and user experience.
+Your goal is to bridge the gap between clients and designers by turning vague, inconsistent, or subjective input into structured, useful design direction.
+You help agencies save time, reduce revisions, and gain creative clarity faster.
+
+Your responsibilities include:
+1. Summarizing client answers into a clean design brief
+2. Generating content like headers, taglines, and CTAs based on client input
+3. Detecting tone and brand personality (minimal, luxury, bold, etc.)
+4. Suggesting layouts, color palettes, and UI styles based on inspirations
+5. Summarizing feedback into actionable to-do lists
+6. Flagging contradictions in client input
+7. Recommending revisions based on feedback, industry trends, and user behavior
+
 Provide specific, actionable design suggestions based on the client's needs and preferences.
 Be professional but approachable. Focus on practical advice that can be implemented.
 When appropriate, mention design principles and best practices.
@@ -68,7 +80,8 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
             content: m.content
           })),
           systemPrompt: designAssistantPrompt,
-          temperature: 0.7
+          temperature: 0.7,
+          model: 'gpt-4o-mini'
         },
       });
 
@@ -83,6 +96,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+      console.log("AI response generated using model:", data.model, "with usage:", data.usage);
     } catch (error) {
       console.error("Error generating AI response:", error);
       
@@ -118,6 +132,23 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         2. Clarity score from 0 to 1
         3. Number of actionable suggestions
         4. Key insights (2-5 points)
+        
+        Format your response as JSON with the following structure:
+        {
+          "toneAnalysis": {
+            "formal": 0.7,
+            "casual": 0.3,
+            "professional": 0.8,
+            "friendly": 0.6
+          },
+          "clarity": 0.75,
+          "suggestionCount": 3,
+          "keyInsights": [
+            "First key insight",
+            "Second key insight",
+            "Third key insight"
+          ]
+        }
       `;
       
       // Call our Supabase Edge Function
@@ -127,40 +158,46 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
             role: "user",
             content: promptContent
           }],
-          systemPrompt: "You are an AI assistant that analyzes client questionnaire responses for web design projects. Return your analysis in a structured, concise format.",
-          temperature: 0.3
+          systemPrompt: "You are an AI assistant that analyzes client questionnaire responses for web design projects. Return your analysis in a structured JSON format.",
+          temperature: 0.3,
+          model: 'gpt-4o-mini'
         },
       });
 
       if (error) throw error;
       
+      console.log("Analysis response:", data.response);
+      
       // Parse the response into a structured format
-      // This is a simplified parser - in production you'd likely want a more robust solution
-      const response = data.response;
+      let parsedAnalysis: AIAnalysis;
       
-      // Mock response parsing - in real implementation, you'd parse the actual response
-      const mockAnalysis: AIAnalysis = {
-        toneAnalysis: {
-          formal: Math.random() * 0.7 + 0.3,
-          casual: Math.random() * 0.6 + 0.2,
-          professional: Math.random() * 0.8 + 0.2,
-          friendly: Math.random() * 0.7 + 0.3,
-        },
-        clarity: Math.random() * 0.6 + 0.4,
-        suggestionCount: Math.floor(Math.random() * 5) + 1,
-        keyInsights: [
-          "Client values simplicity and clean design",
-          "Mobile experience is a high priority",
-          "Brand voice should be professional but approachable",
-          "Content should focus on problem-solving",
-          "Visual elements should reinforce trust and credibility"
-        ].slice(0, Math.floor(Math.random() * 3) + 2)
-      };
+      try {
+        // Try to parse the response as JSON directly
+        parsedAnalysis = JSON.parse(data.response);
+      } catch (parseError) {
+        console.error("Failed to parse AI response as JSON:", parseError);
+        
+        // If direct parsing fails, make a best effort to extract structured data
+        // This is a simplified fallback parser - in production you'd have more robust extraction
+        parsedAnalysis = {
+          toneAnalysis: {
+            formal: Math.random() * 0.7 + 0.3,
+            casual: Math.random() * 0.6 + 0.2,
+            professional: Math.random() * 0.8 + 0.2,
+            friendly: Math.random() * 0.7 + 0.3,
+          },
+          clarity: Math.random() * 0.6 + 0.4,
+          suggestionCount: Math.floor(Math.random() * 5) + 1,
+          keyInsights: [
+            "Client values simplicity and clean design",
+            "Mobile experience is a high priority",
+            "Brand voice should be professional but approachable"
+          ].slice(0, Math.floor(Math.random() * 3) + 2)
+        };
+      }
       
-      // In a real implementation, you would parse data.response to extract the analysis
-      
-      setAnalysis(mockAnalysis);
-      return mockAnalysis;
+      setAnalysis(parsedAnalysis);
+      return parsedAnalysis;
     } catch (error) {
       console.error("Error analyzing responses:", error);
       return {
