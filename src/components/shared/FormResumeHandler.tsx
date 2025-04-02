@@ -11,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { useIntakeForm } from "@/hooks/use-intake-form";
+import { useIntakeForm } from "@/hooks/intake-form";
 import { useState } from "react";
 
 export default function FormResumeHandler() {

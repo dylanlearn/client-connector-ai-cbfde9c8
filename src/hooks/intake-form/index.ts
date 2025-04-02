@@ -1,154 +1,142 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { IntakeFormData } from "@/types/intake-form";
-import { useLocation } from "react-router-dom";
-import { updateTaskStatus } from "@/utils/client-service";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
-import { UseIntakeFormReturn } from "./types";
+import { TaskStatus } from "@/types/client";
+import { updateTaskStatus as clientUpdateTaskStatus } from "@/services/client-tasks-service";
 import { 
   loadFormData, 
   saveFormData, 
   saveStep, 
-  getSavedStep as getStep, 
+  getSavedStep, 
   clearFormStorage, 
   getFormId,
-  hasInProgressForm as hasInProgress
+  hasInProgressForm as checkInProgressForm
 } from "./storage-utils";
-import {
-  saveFormToSupabase,
+import { 
+  saveFormToSupabase, 
   createRealtimeSubscription,
   submitCompleteForm
 } from "./supabase-integration";
+import { UseIntakeFormReturn } from "./types";
 
-export function useIntakeForm(): UseIntakeFormReturn {
-  const { user } = useAuth();
-  const toast = useToast();
-  const [formId, setFormId] = useState<string>(() => getFormId());
-  
+/**
+ * Hook for managing intake form state and persistence
+ */
+export const useIntakeForm = (): UseIntakeFormReturn => {
   const [formData, setFormData] = useState<IntakeFormData>(() => loadFormData());
-  
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const location = useLocation();
-  const [taskId, setTaskId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { taskId } = useParams();
+  const formId = getFormId();
 
-  // Setup realtime subscription for form data changes
+  // Load form data from localStorage on initial render
+  useEffect(() => {
+    const initialData = loadFormData();
+    setFormData(initialData);
+  }, []);
+
+  // Setup realtime updates if user is authenticated
   useEffect(() => {
     if (!user) return;
-    
+
     const channel = createRealtimeSubscription(
       formId,
       formData.lastUpdated,
-      (updatedData) => {
-        // Update local state without triggering another save
-        setFormData(updatedData);
-        saveFormData(updatedData);
-      },
+      (newData) => setFormData(newData),
       { toast }
     );
-      
+    
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
-  }, [user, formId, formData.lastUpdated, toast]);
+  }, [formId, formData.lastUpdated, user, toast]);
 
-  // Extract task ID from URL if present
+  // Save form data to Supabase when it changes
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const taskIdParam = urlParams.get('taskId');
-    if (taskIdParam) {
-      setTaskId(taskIdParam);
-    }
-  }, [location.search]);
+    if (!user || Object.keys(formData).length <= 1) return;
 
-  // Save form data to Supabase
-  const saveToSupabase = useCallback(async (data: IntakeFormData) => {
-    if (!user) return;
-    
-    try {
+    const saveToSupabase = async () => {
       setIsSaving(true);
-      
-      // Add timestamps and IDs
-      const formToSave = {
-        ...data,
-        lastUpdated: new Date().toISOString(),
-        user_id: user.id,
-        form_id: formId,
-      };
-      
-      // Update localStorage with the updated timestamp
-      setFormData(formToSave);
-      saveFormData(formToSave);
-      
-      await saveFormToSupabase(formToSave, user.id, formId, { toast });
-      
-    } finally {
-      setIsSaving(false);
-    }
-  }, [user, formId, toast]);
+      try {
+        await saveFormToSupabase(formData, user.id, formId, { toast });
+      } finally {
+        setIsSaving(false);
+      }
+    };
 
-  // Debounced form save - saves 1 second after the last update
-  useEffect(() => {
-    if (!user || Object.keys(formData).length <= 1) return; // Skip if only formId is present
-    
-    const timer = setTimeout(() => {
-      saveToSupabase(formData);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [formData, saveToSupabase, user]);
+    // Debounce saving to Supabase
+    const timeoutId = setTimeout(saveToSupabase, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [formData, user, formId, toast]);
 
-  // Update form data
+  // Update form data and save to localStorage
   const updateFormData = useCallback((data: Partial<IntakeFormData>) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setFormData(prevData => {
+      const updatedData = {
+        ...prevData,
+        ...data,
+        lastUpdated: new Date().toISOString()
+      };
+      saveFormData(updatedData);
+      return updatedData;
+    });
   }, []);
-
-  // Clear form data (used after submission or manual reset)
-  const clearFormData = useCallback(() => {
-    clearFormStorage();
-    setFormData({});
-    setFormId(uuidv4());
-  }, []);
-  
-  // Check if the form has been started
-  const hasStartedForm = useCallback(() => {
-    return Object.keys(formData).length > 1; // More than just formId
-  }, [formData]);
-
-  // Get the current form step from localStorage
-  const getSavedStep = useCallback(() => {
-    return getStep();
-  }, []);
-
-  // Save the current form step to localStorage
-  const saveCurrentStep = useCallback((step: number) => {
-    saveStep(step);
-  }, []);
-
-  // Check if there's a form in progress
-  const hasInProgressForm = useCallback(() => {
-    return hasInProgress(formData);
-  }, [formData]);
 
   // Submit the complete form
-  const submitForm = async () => {
+  const submitForm = useCallback(async (): Promise<IntakeFormData> => {
+    if (!user) {
+      throw new Error("User must be authenticated to submit form");
+    }
+
     setIsLoading(true);
     try {
+      // Adapter function to match the expected signature
+      const adaptedUpdateTaskStatus = async (
+        taskId: string, 
+        status: string, 
+        data: any
+      ): Promise<void> => {
+        await clientUpdateTaskStatus(taskId, status as TaskStatus, data);
+      };
+
       return await submitCompleteForm(
         formData, 
-        user?.id || '', 
+        user.id, 
         formId, 
-        taskId,
-        updateTaskStatus,
+        taskId || null,
+        adaptedUpdateTaskStatus,
         { toast }
       );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [formData, user, formId, taskId, toast]);
+
+  // Clear form data
+  const clearFormData = useCallback(() => {
+    clearFormStorage();
+    setFormData({ formId });
+  }, [formId]);
+
+  // Check if the form has been started
+  const hasStartedForm = useCallback(() => {
+    return Object.keys(formData).length > 1;
+  }, [formData]);
+
+  // Check if there's a form in progress
+  const hasInProgressForm = useCallback(() => {
+    return checkInProgressForm(formData);
+  }, [formData]);
+
+  // Save current step
+  const saveCurrentStep = useCallback((step: number) => {
+    saveStep(step);
+  }, []);
 
   return {
     formData,
@@ -163,4 +151,4 @@ export function useIntakeForm(): UseIntakeFormReturn {
     hasInProgressForm,
     formId
   };
-}
+};
