@@ -16,7 +16,7 @@ export const useAIMemory = () => {
     resetMemoryContext
   } = useMemoryContext();
   
-  const { storeMemory } = useMemoryStorage();
+  const { storeMemory, storeInteractionMemory } = useMemoryStorage();
   
   const { 
     isRealtime,
@@ -37,6 +37,7 @@ export const useAIMemory = () => {
     isProcessing,
     isRealtime,
     storeMemory,
+    storeInteractionMemory,
     refreshMemoryContext,
     resetMemoryContext: resetMemory
   };

@@ -50,6 +50,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     isProcessing: isMemoryProcessing,
     isRealtime,
     storeMemory,
+    storeInteractionMemory,
     refreshMemoryContext,
     resetMemoryContext
   } = useAIMemory();
@@ -75,6 +76,16 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     return Array.isArray(result) ? result.join("\n") : result;
   };
 
+  // Track user interaction for analytics (simplified version)
+  const trackInteraction = async (
+    eventType: 'click' | 'hover' | 'scroll' | 'view',
+    elementSelector: string,
+    position: { x: number, y: number },
+    projectId?: string
+  ): Promise<void> => {
+    await storeInteractionMemory(eventType, elementSelector, position, projectId);
+  };
+
   // Determine overall processing state
   const isProcessing = 
     isMessageProcessing || 
@@ -92,9 +103,6 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     resetMemoryContext();
   }, [resetMessages, resetAnalysis, resetDesignRecommendations, resetMemoryContext]);
 
-  // The storeMemory function from useAIMemory now returns void instead of boolean,
-  // so it's directly compatible with the AIContextType
-
   return (
     <AIContext.Provider
       value={{
@@ -110,6 +118,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         generateContent,
         summarizeFeedback,
         storeMemory,
+        trackInteraction,
         reset
       }}
     >

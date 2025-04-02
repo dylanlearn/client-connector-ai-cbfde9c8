@@ -78,5 +78,6 @@ export interface AIContextType {
   generateContent: (prompt: string, contentType: string) => Promise<string>;
   summarizeFeedback: (feedback: string[]) => Promise<string>;
   storeMemory: (content: string, category: string, projectId?: string, metadata?: Record<string, any>) => Promise<void>;
+  trackInteraction?: (eventType: 'click' | 'hover' | 'scroll' | 'view', elementSelector: string, position: { x: number, y: number }, projectId?: string) => Promise<void>;
   reset: () => void;
 }

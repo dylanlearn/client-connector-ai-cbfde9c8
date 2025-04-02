@@ -10,11 +10,13 @@ import {
   getUserDesignOptionIds,
   subscribeToUserPreferences
 } from "./analytics/use-analytics-api";
+import { useSubscription } from "./use-subscription";
 
 export type { DesignAnalytics, UserPreference };
 
 export const useAnalytics = () => {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const [isRealtime, setIsRealtime] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -74,7 +76,10 @@ export const useAnalytics = () => {
   const {
     getTopRankedDesigns,
     getCategoryDistribution,
-    getPreferenceOverview
+    getPreferenceOverview,
+    getPreferenceTimeline,
+    getHeatmapData,
+    getConversionFunnelData
   } = useAnalyticsCalculations(analytics);
 
   return {
@@ -83,8 +88,12 @@ export const useAnalytics = () => {
     isLoading: isLoadingAnalytics || isLoadingPreferences,
     error: analyticsError || preferencesError,
     isRealtime,
+    isPro: isPro || (user?.role === 'admin'),
     getTopRankedDesigns,
     getCategoryDistribution,
-    getPreferenceOverview
+    getPreferenceOverview,
+    getPreferenceTimeline,
+    getHeatmapData,
+    getConversionFunnelData
   };
 };

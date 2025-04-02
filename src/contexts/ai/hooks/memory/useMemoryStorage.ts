@@ -45,7 +45,38 @@ export const useMemoryStorage = () => {
     }
   }, [user, refreshMemoryContext]);
 
+  /**
+   * Store an interaction event as a memory
+   * This is used for tracking user behavior for analytics
+   */
+  const storeInteractionMemory = useCallback(async (
+    eventType: 'click' | 'hover' | 'scroll' | 'view',
+    elementSelector: string,
+    position: { x: number, y: number },
+    projectId?: string,
+    pageUrl?: string
+  ): Promise<void> => {
+    if (!user?.id) return;
+    
+    const content = `User ${eventType} on ${elementSelector} at position (${position.x}, ${position.y})`;
+    const metadata = {
+      eventType,
+      elementSelector,
+      position,
+      pageUrl: pageUrl || window.location.pathname,
+      timestamp: new Date().toISOString()
+    };
+    
+    await storeMemory(
+      content,
+      MemoryCategory.InteractionPattern,
+      projectId,
+      metadata
+    );
+  }, [user, storeMemory]);
+
   return {
-    storeMemory
+    storeMemory,
+    storeInteractionMemory
   };
 };
