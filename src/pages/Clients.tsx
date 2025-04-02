@@ -14,11 +14,12 @@ const ClientsPage = () => {
   const { clientLinks, isLoading, loadClientLinks } = useClientLinks();
 
   // Transform client links into a more convenient format for our table
+  // Using camelCase property names as defined in the ClientAccessLink interface
   const clients = clientLinks.map(link => ({
     id: link.id,
-    name: link.client_name,
-    email: link.client_email,
-    phone: link.client_phone || 'N/A',
+    name: link.clientName,
+    email: link.clientEmail,
+    phone: link.clientPhone || 'N/A',
     industry: 'Design', // This is a placeholder, as industry isn't currently stored
     projects: 1, // This is a placeholder, as we're counting 1 project per client link
     revenue: '$0.00', // This is a placeholder, as revenue isn't currently stored

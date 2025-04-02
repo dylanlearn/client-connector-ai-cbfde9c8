@@ -58,14 +58,16 @@ const ClientAddDialog = ({ open, onOpenChange }: ClientAddDialogProps) => {
     setIsSubmitting(true);
     
     try {
-      // Create a client access link using the existing service
-      const result = await createClientAccessLink({
-        client_name: formData.clientName,
-        client_email: formData.clientEmail,
-        client_phone: formData.clientPhone,
-        personal_message: formData.personalMessage,
-        designer_id: user.id
-      });
+      // Create a client access link using the existing service with the correct parameters
+      const result = await createClientAccessLink(
+        user.id,
+        formData.clientEmail,
+        formData.clientName,
+        formData.clientPhone || null,
+        { email: true, sms: false },
+        null, // projectId
+        formData.personalMessage || null
+      );
       
       toast.success(`Client ${formData.clientName} added successfully`);
       onOpenChange(false);
