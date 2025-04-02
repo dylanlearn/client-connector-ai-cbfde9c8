@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AIGeneratorService } from '@/services/ai';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface UseAIContentOptions {
   /**
@@ -44,7 +45,7 @@ interface ContentRequest {
 }
 
 /**
- * Enterprise-grade hook for AI content generation with caching,
+ * Enterprise-grade hook for AI content generation with database caching,
  * timeout handling, retries, and performance optimization
  */
 export function useAIContent(options: UseAIContentOptions = {}) {
@@ -170,9 +171,27 @@ export function useAIContent(options: UseAIContentOptions = {}) {
     setIsGenerating(false);
   }, []);
 
+  // Function to manually trigger cache cleanup (for admin/development purposes)
+  const cleanupCache = useCallback(async (): Promise<boolean> => {
+    try {
+      const { error } = await supabase.functions.invoke("cleanup-expired-cache");
+      
+      if (error) {
+        console.error("Failed to trigger cache cleanup:", error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error triggering cache cleanup:", error);
+      return false;
+    }
+  }, []);
+
   return {
     generate,
     cancelGeneration,
+    cleanupCache,
     isGenerating,
     error: lastError
   };

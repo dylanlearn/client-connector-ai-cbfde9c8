@@ -11,59 +11,8 @@ export interface ContentGenerationOptions {
   cacheKey?: string; // Added for cache identification
 }
 
-// Cache for storing recently generated content
-type CacheEntry = {
-  content: string;
-  timestamp: number;
-  expiresAt: number;
-};
-
-// In-memory cache with expiration
-class ContentCache {
-  private cache: Map<string, CacheEntry> = new Map();
-  private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes
-
-  get(key: string): string | null {
-    const entry = this.cache.get(key);
-    
-    if (!entry) return null;
-    
-    // Check if entry is expired
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return entry.content;
-  }
-
-  set(key: string, content: string, ttl: number = this.DEFAULT_TTL): void {
-    const timestamp = Date.now();
-    const expiresAt = timestamp + ttl;
-    
-    this.cache.set(key, { content, timestamp, expiresAt });
-    
-    // Cleanup old entries periodically
-    if (this.cache.size % 10 === 0) {
-      this.cleanup();
-    }
-  }
-
-  private cleanup(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now > entry.expiresAt) {
-        this.cache.delete(key);
-      }
-    }
-  }
-}
-
-// Create singleton cache instance
-const contentCache = new ContentCache();
-
 /**
- * Service for generating AI-powered content with caching and performance optimizations
+ * Service for generating AI-powered content with database caching and performance optimizations
  */
 export const AIContentGenerationService = {
   /**
@@ -84,11 +33,17 @@ export const AIContentGenerationService = {
       const effectiveCacheKey = cacheKey || 
         `${type}-${tone}-${context}-${keywords.join(',')}-${maxLength}`;
       
-      // Check cache first
-      const cachedContent = contentCache.get(effectiveCacheKey);
-      if (cachedContent) {
+      // Check database cache first
+      const { data: cachedContent, error: cacheError } = await supabase
+        .from('ai_content_cache')
+        .select('content')
+        .eq('cache_key', effectiveCacheKey)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+      
+      if (!cacheError && cachedContent) {
         console.log('Cache hit for content generation:', effectiveCacheKey);
-        return cachedContent;
+        return cachedContent.content;
       }
       
       console.log('Cache miss for content generation:', effectiveCacheKey);
@@ -122,6 +77,9 @@ export const AIContentGenerationService = {
       
       const model = selectModelForFeature(featureType);
       
+      // Record the start time for latency tracking
+      const startTime = Date.now();
+      
       // Add timeout for the API call
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -145,14 +103,46 @@ export const AIContentGenerationService = {
         if (error) throw error;
         
         const generatedContent = data.response.trim();
+        const endTime = Date.now();
+        const latencyMs = endTime - startTime;
         
-        // Store in cache
-        contentCache.set(effectiveCacheKey, generatedContent);
+        // Store in database cache with 30-minute expiration
+        const expiresAt = new Date();
+        expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+        
+        await supabase.from('ai_content_cache').insert({
+          cache_key: effectiveCacheKey,
+          content: generatedContent,
+          content_type: type,
+          expires_at: expiresAt.toISOString(),
+          user_id: supabase.auth.getSession().then(({ data }) => data?.session?.user.id),
+          metadata: { tone, context, keywords }
+        });
+        
+        // Log metrics for analytics
+        await supabase.from('ai_generation_metrics').insert({
+          feature_type: featureType,
+          model_used: model,
+          latency_ms: latencyMs,
+          success: true,
+          user_id: supabase.auth.getSession().then(({ data }) => data?.session?.user.id),
+        });
         
         return generatedContent;
       } catch (timeoutError) {
         clearTimeout(timeoutId);
         console.error("AI generation timed out:", timeoutError);
+        
+        // Log error metrics
+        await supabase.from('ai_generation_metrics').insert({
+          feature_type: featureType,
+          model_used: model,
+          latency_ms: 5000, // Timeout value
+          success: false,
+          error_type: 'timeout',
+          user_id: supabase.auth.getSession().then(({ data }) => data?.session?.user.id),
+        });
+        
         throw new Error("AI generation timed out. Please try again.");
       }
     } catch (error) {
