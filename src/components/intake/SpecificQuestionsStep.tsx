@@ -40,7 +40,7 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, i
       }
     });
     return () => {
-      subscription.unsubscribe();
+      subscription.unsubscribe?.();
     };
   }, [form, updateFormData]);
 
