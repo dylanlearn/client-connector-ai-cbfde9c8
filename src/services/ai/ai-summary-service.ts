@@ -2,7 +2,8 @@
 import {
   AIQuestionnaireSummaryService,
   AIActionItemsService,
-  AIRevisedBriefService
+  AIRevisedBriefService,
+  IntakeSummaryService
 } from './summary';
 
 /**
@@ -16,5 +17,8 @@ export const AISummaryService = {
   convertToActionItems: AIActionItemsService.convertToActionItems,
   
   // Creating revised project briefs
-  createRevisedBrief: AIRevisedBriefService.createRevisedBrief
+  createRevisedBrief: AIRevisedBriefService.createRevisedBrief,
+  
+  // Intake form summarization
+  summarizeIntakeForm: IntakeSummaryService.summarizeIntakeForm
 };
