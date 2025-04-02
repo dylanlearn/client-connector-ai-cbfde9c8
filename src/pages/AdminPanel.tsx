@@ -32,7 +32,9 @@ const AdminPanel = () => {
           
         if (error) throw error;
         
-        if (data.role === "admin") {
+        // Here's where the error was - comparing with "admin" when that's not a valid role
+        // Instead, check if the role is "pro" which is an admin in this system
+        if (data.role === "pro") {
           setIsAdmin(true);
         } else {
           // Not an admin, redirect to dashboard
