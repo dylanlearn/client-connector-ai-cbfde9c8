@@ -17,11 +17,13 @@ import DesignPreferencesStep from "@/components/intake/DesignPreferencesStep";
 import CompletionStep from "@/components/intake/CompletionStep";
 import { useIntakeForm } from "@/hooks/use-intake-form";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 const IntakeForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { 
     formData, 
     updateFormData, 
@@ -29,6 +31,7 @@ const IntakeForm = () => {
     clearFormData, 
     hasStartedForm, 
     isLoading,
+    isSaving,
     getSavedStep,
     saveCurrentStep,
     hasInProgressForm
@@ -62,6 +65,18 @@ const IntakeForm = () => {
     // Scroll to top on step change
     window.scrollTo(0, 0);
   }, [currentStep, saveCurrentStep]);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access the intake form",
+        variant: "destructive",
+      });
+      navigate("/login?redirect=/intake-form");
+    }
+  }, [user, navigate]);
 
   const handleStartNewForm = () => {
     clearFormData();
@@ -107,17 +122,17 @@ const IntakeForm = () => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} />;
+        return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} isSaving={isSaving} />;
       case 2:
-        return <GeneralQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
+        return <GeneralQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} isSaving={isSaving} />;
       case 3:
-        return <SpecificQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
+        return <SpecificQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} isSaving={isSaving} />;
       case 4:
-        return <DesignPreferencesStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
+        return <DesignPreferencesStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} isSaving={isSaving} />;
       case 5:
         return <CompletionStep formData={formData} onComplete={handleComplete} onPrevious={handlePrevious} />;
       default:
-        return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} />;
+        return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} isSaving={isSaving} />;
     }
   };
 

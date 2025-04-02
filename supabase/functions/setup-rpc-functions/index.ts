@@ -26,9 +26,12 @@ serve(async (req) => {
     // Enable realtime for profiles table
     await enableRealtimeForProfiles();
     
+    // Enable realtime for intake_forms table
+    await enableRealtimeForIntakeForms();
+    
     return new Response(JSON.stringify({
       success: true,
-      message: "Successfully set up realtime functions and enabled realtime for profiles"
+      message: "Successfully set up realtime functions and enabled realtime for tables"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -119,6 +122,35 @@ async function enableRealtimeForProfiles() {
     console.log('Successfully enabled realtime for profiles table');
   } catch (error) {
     console.error('Error enabling realtime for profiles:', error);
+    throw error;
+  }
+}
+
+async function enableRealtimeForIntakeForms() {
+  try {
+    // Set REPLICA IDENTITY to FULL
+    const { error: replicaError } = await supabase.rpc('exec_sql', { 
+      sql: "ALTER TABLE intake_forms REPLICA IDENTITY FULL;" 
+    });
+    
+    if (replicaError) {
+      console.error('Error setting REPLICA IDENTITY for intake_forms:', replicaError);
+      throw new Error(`Failed to set REPLICA IDENTITY: ${replicaError.message}`);
+    }
+    
+    // Add to publication
+    const { error: pubError } = await supabase.rpc('exec_sql', { 
+      sql: "ALTER PUBLICATION supabase_realtime ADD TABLE intake_forms;" 
+    });
+    
+    if (pubError) {
+      console.error('Error adding intake_forms to publication:', pubError);
+      throw new Error(`Failed to add to publication: ${pubError.message}`);
+    }
+    
+    console.log('Successfully enabled realtime for intake_forms table');
+  } catch (error) {
+    console.error('Error enabling realtime for intake_forms:', error);
     throw error;
   }
 }

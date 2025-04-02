@@ -41,4 +41,8 @@ export interface IntakeFormData {
   existingBranding?: boolean;
   inspiration?: string;
   additionalNotes?: string;
+  
+  // Timestamps for real-time syncing
+  lastUpdated?: string;
+  formId?: string;
 }
