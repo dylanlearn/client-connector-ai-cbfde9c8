@@ -5,6 +5,7 @@ import ClientActivityFeed from "@/components/clients/ClientActivityFeed";
 import ClientStatsOverview from "./clients/ClientStatsOverview";
 import ClientProgressSection from "./clients/ClientProgressSection";
 import { ContentCard } from "@/components/ui/content-card";
+import { ClientTaskProgress } from "@/types/client";
 
 export default function ClientsTab() {
   const {
@@ -16,6 +17,21 @@ export default function ClientsTab() {
     clientProgress,
     isLoading: isLoadingProgress
   } = useClientProgress();
+  
+  // Convert ClientProgressItem[] to ClientTaskProgress[]
+  const formattedProgress: ClientTaskProgress[] = clientProgress ? 
+    clientProgress.map(item => ({
+      clientName: item.clientName,
+      email: item.email,
+      completed: item.completed,
+      total: item.total,
+      percentage: (item.completed / (item.total || 1)) * 100,
+      lastActive: item.lastActive,
+      // Add these properties to match ClientTaskProgress interface
+      intakeForm: false,
+      designPicker: false,
+      templates: false
+    })) : [];
   
   return (
     <div className="space-y-6">
@@ -32,7 +48,7 @@ export default function ClientsTab() {
         </ContentCard>
         
         <ClientProgressSection
-          clientProgress={clientProgress}
+          clientProgress={formattedProgress}
           isLoading={isLoadingProgress}
           limit={5}
         />

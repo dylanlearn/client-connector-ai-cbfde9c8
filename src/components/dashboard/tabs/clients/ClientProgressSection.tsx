@@ -65,7 +65,14 @@ export default function ClientProgressSection({
     >
       <div className="space-y-4">
         {displayProgress.map((progress, index) => (
-          <ClientProgressItem key={index} progress={progress} />
+          <ClientProgressItem 
+            key={index} 
+            clientName={progress.clientName || "Unnamed Client"}
+            email={progress.email}
+            completed={progress.completed}
+            total={progress.total}
+            lastActive={progress.lastActive}
+          />
         ))}
       </div>
     </ContentCard>

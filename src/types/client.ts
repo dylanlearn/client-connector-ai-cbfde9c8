@@ -38,12 +38,24 @@ export interface ClientTask {
 }
 
 export interface ClientTaskProgress {
+  clientName?: string;
+  email?: string;
   completed: number;
   total: number;
   percentage: number;
+  lastActive?: Date | null;
   intakeForm?: boolean;
   designPicker?: boolean;
   templates?: boolean;
+}
+
+export interface ClientProgressItem {
+  clientName: string;
+  email?: string;
+  completed: number;
+  total: number;
+  percentage?: number;
+  lastActive: Date | null;
 }
 
 export interface TaskCardProps {
@@ -73,12 +85,4 @@ export interface ClientOverview {
   completedTasks: number;
   pendingTasks: number;
   completionRate: number;
-}
-
-export interface ClientProgressItem {
-  clientName: string;
-  email: string;
-  completed: number;
-  total: number;
-  lastActive: Date | null;
 }

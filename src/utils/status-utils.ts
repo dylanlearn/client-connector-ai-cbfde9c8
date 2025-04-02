@@ -53,7 +53,7 @@ export const getStatusConfig = (status: StatusType): StatusConfig => {
       };
     default:
       // For custom status types, create a capitalized label
-      const statusString = String(status);
+      const statusString = String(status || '');
       return {
         label: statusString.charAt(0).toUpperCase() + statusString.slice(1),
         variant: 'default',

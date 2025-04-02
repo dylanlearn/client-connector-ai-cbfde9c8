@@ -4,10 +4,11 @@ import { Progress } from "@/components/ui/progress";
 import { Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-interface ClientProgressItemProps {
+export interface ClientProgressItemProps {
   clientName: string;
   completed: number;
   total: number;
+  percentage?: number;  // Add this to match ClientTaskProgress
   lastActive?: Date | null;
   email?: string;
   onClick?: () => void;

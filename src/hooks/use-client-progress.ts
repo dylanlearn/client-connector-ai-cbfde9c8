@@ -44,12 +44,14 @@ export function useClientProgress() {
         const progressData: ClientProgressItem[] = data.map(client => {
           const tasks = client.client_tasks || [];
           const completed = tasks.filter(task => task.status === 'completed').length;
+          const total = tasks.length;
           
           return {
             clientName: client.client_name,
             email: client.client_email,
             completed,
-            total: tasks.length,
+            total,
+            percentage: total > 0 ? (completed / total) * 100 : 0,
             lastActive: client.last_accessed_at ? new Date(client.last_accessed_at) : null
           };
         });
