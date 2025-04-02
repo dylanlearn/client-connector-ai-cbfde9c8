@@ -1,5 +1,6 @@
-
-import { useCallback } from "react";
+import { useState, useCallback } from 'react';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { MemoryCategory } from '@/services/ai/memory';
 import { useMemoryContext } from "./useMemoryContext";
 import { useMemoryStorage } from "./useMemoryStorage";
 import { useRealtimeMemory } from "./useRealtimeMemory";
@@ -22,6 +23,24 @@ export const useAIMemory = () => {
     isRealtime,
     resetRealtimeSubscriptions
   } = useRealtimeMemory();
+
+  /**
+   * Store user interaction events in memory
+   */
+  const storeInteractionMemory = useCallback(async (
+    eventType: 'click' | 'hover' | 'scroll' | 'view' | 'movement',
+    element: string,
+    position: { x: number, y: number }
+  ) => {
+    await storeMemory({
+      category: MemoryCategory.Interaction,
+      data: {
+        eventType,
+        element,
+        position
+      }
+    });
+  }, [storeMemory]);
 
   /**
    * Reset all memory state and subscriptions
