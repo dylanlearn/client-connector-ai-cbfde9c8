@@ -94,6 +94,6 @@ export const useSubscription = () => {
     
     // Actions
     refreshSubscription,
-    startSubscription // Make sure to include startSubscription here
+    startSubscription
   };
 };
