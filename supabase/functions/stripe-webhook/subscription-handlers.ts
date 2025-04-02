@@ -21,16 +21,16 @@ export async function handleSubscriptionChange(subscription: Stripe.Subscription
     }
 
     // Determine subscription status
-    let status: 'free' | 'basic' | 'pro';
+    let status: 'free' | 'sync' | 'sync-pro' | 'template-buyer' | 'trial';
     if (subscription.status !== 'active' && subscription.status !== 'trialing') {
       status = 'free';
     } else {
       // Get plan from the price ID
       const priceId = subscription.items.data[0]?.price.id;
-      if (priceId.includes('basic')) {
-        status = 'basic';
-      } else if (priceId.includes('pro')) {
-        status = 'pro';
+      if (priceId.includes('basic') || priceId.includes('sync_basic')) {
+        status = 'sync';
+      } else if (priceId.includes('pro') || priceId.includes('sync_pro')) {
+        status = 'sync-pro';
       } else {
         status = 'free';
       }

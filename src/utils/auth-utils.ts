@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { SubscriptionStatus } from "@/types/subscription";
 
 /**
  * Type definition for user profile subscription status
@@ -10,7 +10,7 @@ export type SubscriptionStatus = 'free' | 'basic' | 'pro' | 'template-buyer' | '
 /**
  * Type definition for user profile role
  */
-export type UserRole = 'free' | 'pro' | 'admin' | 'template-buyer';
+export type UserRole = 'free' | 'sync-pro' | 'admin' | 'template-buyer' | 'sync';
 
 /**
  * User profile type with subscription status and role
@@ -125,8 +125,8 @@ export const isUserActive = (profile: UserProfile | null): boolean => {
   }
   
   // Check if the user has a paid subscription status
-  const hasActivePlan = profile.subscription_status === 'basic' || 
-                        profile.subscription_status === 'pro';
+  const hasActivePlan = profile.subscription_status === 'sync' || 
+                        profile.subscription_status === 'sync-pro';
   
   return hasActivePlan;
 };
