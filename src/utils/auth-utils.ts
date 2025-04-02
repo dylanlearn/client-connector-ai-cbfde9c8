@@ -52,14 +52,14 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
  * Gets the redirect URL for authentication
  */
 export const getRedirectUrl = (): string => {
-  return "https://client-connector-ai.lovable.app/dashboard";
+  return "https://dezignsync.com/dashboard";
 };
 
 /**
  * Gets the email confirmation redirect URL
  */
 export const getEmailConfirmationRedirectUrl = (): string => {
-  return "https://client-connector-ai.lovable.app/login?confirmed=true";
+  return "https://dezignsync.com/login?confirmed=true";
 };
 
 /**

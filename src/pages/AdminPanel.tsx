@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import RoleManagementGuide from "@/components/admin/RoleManagementGuide";
 
 // Define the type for role to include 'admin' explicitly
 type UserRole = "free" | "pro" | "template-buyer" | "admin";
@@ -83,19 +84,21 @@ const AdminPanel = () => {
           </p>
         </div>
         
-        <Tabs defaultValue="invitations">
+        <RoleManagementGuide />
+        
+        <Tabs defaultValue="users">
           <TabsList className="mb-6">
-            <TabsTrigger value="invitations">Invitation Codes</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="invitations">Invitation Codes</TabsTrigger>
             <TabsTrigger value="settings">Application Settings</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="invitations">
-            <InvitationManager />
-          </TabsContent>
-          
           <TabsContent value="users">
             <UserManagement />
+          </TabsContent>
+          
+          <TabsContent value="invitations">
+            <InvitationManager />
           </TabsContent>
           
           <TabsContent value="settings">
