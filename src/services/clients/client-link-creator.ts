@@ -54,8 +54,8 @@ export const createClientAccessLink = async (
       throw new Error(`Failed to create client access link: ${error.message}`);
     }
     
-    // Get the base URL from environment or use a default
-    const baseUrl = window.location.origin;
+    // Get the base URL from environment or use the correct domain
+    const baseUrl = "https://dezignsync.com";
     
     // Generate the full URL to send to the client
     const clientHubLink = `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
