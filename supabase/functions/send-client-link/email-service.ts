@@ -52,7 +52,7 @@ export async function sendEmail(
   
   // Send email using Resend with your verified domain
   const emailResponse = await resend.emails.send({
-    from: "DezignSync <noreply@dezignsync.app>",
+    from: "DezignRoom <owner@dezignroom.org>",
     to: recipient,
     subject: `${clientName}, access your design project`,
     html: emailHtml,
