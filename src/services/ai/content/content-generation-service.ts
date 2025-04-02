@@ -114,8 +114,10 @@ export const AIContentGenerationService = {
       
       // Select the appropriate model based on the complexity of the request
       const isComplexRequest = context.length > 100 || keywords.length > 5;
+      
+      // Use ContentGeneration for all cases, but we might want to use a more powerful model for complex requests
       const featureType = isComplexRequest 
-        ? AIFeatureType.ComplexContentGeneration 
+        ? AIFeatureType.ContentGeneration 
         : AIFeatureType.ContentGeneration;
       
       const model = selectModelForFeature(featureType);
