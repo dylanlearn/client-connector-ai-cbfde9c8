@@ -22,14 +22,15 @@ export interface PDFStylingTemplate {
  */
 export const fetchPDFTemplates = async (): Promise<PDFStylingTemplate[]> => {
   try {
+    // Use type assertion to tell TypeScript this table exists
     const { data, error } = await supabase
-      .from('pdf_styling_templates')
+      .from('pdf_styling_templates' as any)
       .select('*')
       .order('created_at', { ascending: false });
     
     if (error) throw error;
     
-    return data || [];
+    return data as PDFStylingTemplate[] || [];
   } catch (error) {
     console.error('Error fetching PDF templates:', error);
     toast.error("Failed to load templates", {
@@ -51,9 +52,18 @@ export const savePDFTemplate = async (
   isCompanyDefault: boolean = false
 ): Promise<PDFStylingTemplate | null> => {
   try {
+    const user = supabase.auth.getUser();
+    const userId = (await user).data.user?.id;
+    
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Use type assertion to tell TypeScript this table exists
     const { data, error } = await supabase
-      .from('pdf_styling_templates')
+      .from('pdf_styling_templates' as any)
       .insert({
+        user_id: userId,
         name,
         description,
         styling,
@@ -68,7 +78,7 @@ export const savePDFTemplate = async (
       description: `"${name}" is now available in your templates`
     });
     
-    return data;
+    return data as PDFStylingTemplate;
   } catch (error) {
     console.error('Error saving PDF template:', error);
     toast.error("Failed to save template", {
@@ -89,8 +99,9 @@ export const updatePDFTemplate = async (
   updates: Partial<Omit<PDFStylingTemplate, 'id' | 'created_at' | 'updated_at'>>
 ): Promise<PDFStylingTemplate | null> => {
   try {
+    // Use type assertion to tell TypeScript this table exists
     const { data, error } = await supabase
-      .from('pdf_styling_templates')
+      .from('pdf_styling_templates' as any)
       .update(updates)
       .eq('id', templateId)
       .select()
@@ -102,7 +113,7 @@ export const updatePDFTemplate = async (
       description: `Changes to "${updates.name || 'template'}" have been saved`
     });
     
-    return data;
+    return data as PDFStylingTemplate;
   } catch (error) {
     console.error('Error updating PDF template:', error);
     toast.error("Failed to update template", {
@@ -119,8 +130,9 @@ export const updatePDFTemplate = async (
  */
 export const deletePDFTemplate = async (templateId: string): Promise<boolean> => {
   try {
+    // Use type assertion to tell TypeScript this table exists
     const { error } = await supabase
-      .from('pdf_styling_templates')
+      .from('pdf_styling_templates' as any)
       .delete()
       .eq('id', templateId);
     
