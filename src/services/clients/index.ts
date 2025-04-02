@@ -9,6 +9,7 @@ export * from './client-link-creator';
 export * from './client-link-validator';
 export * from './client-link-delivery';
 export * from './client-link-queries';
+export * from './client-status-manager';
 
 // Also export the validation utility from the main client services
 import { validatePersonalMessage, VALIDATION_CONSTANTS } from '@/utils/validation-utils';

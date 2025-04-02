@@ -11,7 +11,7 @@ export interface ClientAccessLink {
   createdAt: Date;
   expiresAt: Date;
   lastAccessedAt: Date | null;
-  status: 'active' | 'expired';
+  status: 'active' | 'completed' | 'expired';
   projectId: string | null;
   projectTitle: string | null;
   /**

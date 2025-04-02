@@ -38,7 +38,7 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
       </TableCell>
       <TableCell>
         <Badge 
-          variant={link.status === 'active' ? 'default' : 'secondary'}
+          variant={link.status === 'active' ? 'default' : link.status === 'completed' ? 'success' : 'secondary'}
           className="capitalize"
         >
           {link.status}
@@ -63,6 +63,7 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
           designerId={link.designerId}
           clientEmail={link.clientEmail}
           clientPhone={link.clientPhone}
+          status={link.status}
           onRefresh={onRefresh}
         />
       </TableCell>

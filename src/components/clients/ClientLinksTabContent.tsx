@@ -5,7 +5,7 @@ import PaginatedClientLinks from "./PaginatedClientLinks";
 interface ClientLinksTabContentProps {
   links: ClientAccessLink[];
   isLoading: boolean;
-  status: 'active' | 'expired';
+  status: 'active' | 'completed' | 'expired';
   onRefresh: () => void;
 }
 
@@ -17,7 +17,7 @@ export default function ClientLinksTabContent({
 }: ClientLinksTabContentProps) {
   // Filter links based on status
   const filteredLinks = links.filter(link => 
-    status === 'active' ? link.status === 'active' : link.status !== 'active'
+    link.status === status
   );
   
   return (

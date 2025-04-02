@@ -56,7 +56,8 @@ export default function ClientsManager() {
       
       <Tabs defaultValue="active" className="w-full">
         <TabsList>
-          <TabsTrigger value="active">Active Links</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="expired">Expired</TabsTrigger>
         </TabsList>
         
@@ -65,6 +66,15 @@ export default function ClientsManager() {
             links={clientLinks}
             isLoading={isLoading}
             status="active"
+            onRefresh={loadClientLinks}
+          />
+        </TabsContent>
+        
+        <TabsContent value="completed" className="mt-4">
+          <ClientLinksTabContent 
+            links={clientLinks}
+            isLoading={isLoading}
+            status="completed"
             onRefresh={loadClientLinks}
           />
         </TabsContent>

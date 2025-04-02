@@ -8,7 +8,11 @@ import {
   getClientLinks,
   recordLinkDelivery,
   getLinkDeliveries,
-  resendClientLink
+  resendClientLink,
+  updateClientLinkStatus,
+  deleteClientLink,
+  archiveProject,
+  deleteProject
 } from "@/services/clients";
 
 import {
@@ -29,7 +33,11 @@ export {
   createDefaultClientTasks,
   getClientTasks,
   updateTaskStatus,
-  getClientTasksProgress
+  getClientTasksProgress,
+  updateClientLinkStatus,
+  deleteClientLink,
+  archiveProject,
+  deleteProject
 };
 
 // Re-export types
