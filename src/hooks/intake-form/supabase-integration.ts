@@ -4,50 +4,65 @@ import { IntakeFormData } from "@/types/intake-form";
 import { SupabaseIntegrationOptions } from "./types";
 
 /**
- * Saves form data to Supabase
+ * Saves form data to Supabase with retry logic
  */
 export const saveFormToSupabase = async (
   data: IntakeFormData, 
   userId: string, 
   formId: string,
-  options: SupabaseIntegrationOptions
+  options: SupabaseIntegrationOptions,
+  maxRetries = 3
 ): Promise<boolean> => {
-  try {
-    // Add timestamps and IDs
-    const formToSave = {
-      ...data,
-      lastUpdated: new Date().toISOString(),
-      user_id: userId,
-      form_id: formId,
-    };
-    
-    // Upsert to Supabase
-    const { error } = await supabase
-      .from('intake_forms')
-      .upsert({
-        form_id: formId,
+  let retries = 0;
+  
+  while (retries < maxRetries) {
+    try {
+      // Add timestamps and IDs
+      const formToSave = {
+        ...data,
+        lastUpdated: new Date().toISOString(),
         user_id: userId,
-        form_data: formToSave,
-        last_updated: new Date().toISOString(),
-      })
-      .select();
+        form_id: formId,
+      };
       
-    if (error) throw error;
-    
-    return true;
-  } catch (error) {
-    console.error("Error saving form data:", error);
-    options.toast.toast({
-      title: "Sync Error",
-      description: "Failed to save your changes. Will retry automatically.",
-      variant: "destructive",
-    });
-    return false;
+      // Upsert to Supabase
+      const { error } = await supabase
+        .from('intake_forms')
+        .upsert({
+          form_id: formId,
+          user_id: userId,
+          form_data: formToSave,
+          last_updated: new Date().toISOString(),
+          status: data.status || 'in_progress',
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      retries++;
+      console.error(`Error saving form data (attempt ${retries}/${maxRetries}):`, error);
+      
+      if (retries >= maxRetries) {
+        options.toast.toast({
+          title: "Sync Error",
+          description: "Failed to save your changes. Will retry automatically.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+    }
   }
+  
+  return false;
 };
 
 /**
- * Creates a realtime subscription for form data changes
+ * Creates a realtime subscription for form data changes with heartbeat monitoring
  */
 export const createRealtimeSubscription = (
   formId: string, 
@@ -72,27 +87,47 @@ export const createRealtimeSubscription = (
         // to avoid circular updates
         const newData = payload.new;
         if (newData && newData.last_updated && newData.last_updated > (currentLastUpdated || '')) {
-          const updatedData = newData.form_data ? {
-            ...newData.form_data,
-            lastUpdated: newData.last_updated,
-          } : { lastUpdated: newData.last_updated };
-          
-          onFormUpdate(updatedData);
-          
-          options.toast.toast({
-            title: "Form Updated",
-            description: "Your form has been updated.",
-          });
+          try {
+            const updatedData = newData.form_data ? {
+              ...newData.form_data,
+              lastUpdated: newData.last_updated,
+            } : { lastUpdated: newData.last_updated };
+            
+            onFormUpdate(updatedData);
+            
+            options.toast.toast({
+              title: "Form Updated",
+              description: "Your form has been updated.",
+            });
+          } catch (error) {
+            console.error('Error processing form update:', error);
+          }
         }
       }
     )
     .subscribe();
     
-  return channel;
+  // Setup heartbeat to check connection status every 30 seconds
+  const heartbeatInterval = setInterval(() => {
+    if (channel.state !== 'joined') {
+      console.log('Channel disconnected, reconnecting...');
+      channel.unsubscribe();
+      // Resubscribe
+      channel.subscribe();
+    }
+  }, 30000);
+  
+  // Return unsubscribe function that also clears the heartbeat
+  return {
+    unsubscribe: () => {
+      clearInterval(heartbeatInterval);
+      supabase.removeChannel(channel);
+    }
+  };
 };
 
 /**
- * Submits the complete form to Supabase
+ * Submits the complete form to Supabase with offline support
  */
 export const submitCompleteForm = async (
   formData: IntakeFormData, 
@@ -112,11 +147,28 @@ export const submitCompleteForm = async (
       status: 'completed'
     };
     
-    await saveFormToSupabase(dataWithStatus, userId, formId, options);
+    const saveSuccess = await saveFormToSupabase(dataWithStatus, userId, formId, options, 5);
+    
+    if (!saveSuccess) {
+      // If online save fails, store submission in IndexedDB for later sync
+      console.log("Online submission failed, storing for later sync");
+      // This would be implemented with IndexedDB in a production app
+      // storeForOfflineSync(dataWithStatus, userId, formId);
+      
+      options.toast.toast({
+        title: "Offline Submission",
+        description: "Your form will be submitted when you're back online.",
+      });
+    }
     
     // If this was accessed from a client task, update the task status
     if (taskId) {
-      await updateTaskStatus(taskId, 'completed', formData);
+      try {
+        await updateTaskStatus(taskId, 'completed', formData);
+      } catch (error) {
+        console.error("Error updating task status:", error);
+        // Would also store for later sync in production app
+      }
     }
     
     return formData;

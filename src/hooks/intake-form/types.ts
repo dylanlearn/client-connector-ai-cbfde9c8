@@ -1,6 +1,16 @@
 
 import { IntakeFormData } from "@/types/intake-form";
 
+export interface SupabaseIntegrationOptions {
+  toast: {
+    toast: (props: { 
+      title: string; 
+      description: string; 
+      variant?: "default" | "destructive" 
+    }) => void;
+  };
+}
+
 export interface UseIntakeFormReturn {
   formData: IntakeFormData;
   updateFormData: (data: Partial<IntakeFormData>) => void;
@@ -15,8 +25,11 @@ export interface UseIntakeFormReturn {
   formId: string;
 }
 
-export interface SupabaseIntegrationOptions {
-  toast: {
-    toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => void;
-  };
-}
+export type OfflineSyncRecord = {
+  formData: IntakeFormData;
+  userId: string;
+  formId: string;
+  taskId: string | null;
+  operation: 'save' | 'submit';
+  timestamp: string;
+};
