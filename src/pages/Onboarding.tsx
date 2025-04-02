@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const OnboardingSteps = [
   {
@@ -60,6 +61,7 @@ const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedRole, setSelectedRole] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
+  const { startSubscription } = useSubscription();
 
   const handleContinue = () => {
     // Validation for step 1
@@ -86,6 +88,15 @@ const Onboarding = () => {
     if (currentStep === OnboardingSteps.length - 1) {
       navigate("/dashboard");
       return;
+    }
+
+    // Handle plan selection
+    if (currentStep === 2) {
+      if (selectedPlan === "syncPro") {
+        startSubscription("pro");
+      } else if (selectedPlan === "sync") {
+        startSubscription("basic");
+      }
     }
 
     // Move to next step
@@ -171,7 +182,8 @@ const Onboarding = () => {
                         <span className="font-bold text-lg">{field.label}</span>
                       </div>
                       <p className="text-gray-600 mb-4">{field.description}</p>
-                      <div className="text-2xl font-bold mb-4 text-indigo-600">{field.price}</div>
+                      <div className="text-2xl font-bold mb-2 text-indigo-600">{field.price}</div>
+                      <p className="text-xs text-gray-500 mb-4">Starts with a 3-day free trial</p>
                       <ul className="space-y-2">
                         {field.features.map((feature: string, i: number) => (
                           <li key={i} className="flex items-center gap-2">
@@ -198,7 +210,7 @@ const Onboarding = () => {
                     You've successfully set up your DezignSync account.
                   </p>
                   <p className="text-gray-600">
-                    You're now ready to create your first project and start collaborating with clients.
+                    Your 3-day free trial has started. You're now ready to create your first project and start collaborating with clients.
                   </p>
                 </div>
               )}

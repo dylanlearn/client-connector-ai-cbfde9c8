@@ -1,32 +1,5 @@
 
 project_id = "bmkhbqxukiakhafqllux"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[studio]
-port = 54323
-
-[inbucket]
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
-
-[storage]
-enabled = true
-
-[auth]
-enabled = true
-site_url = "http://localhost:3000"
-
-[functions]
-[functions.send-client-link]
-verify_jwt = true
-
-[functions.update-sms-status]
+[functions.stripe-webhook]
 verify_jwt = false

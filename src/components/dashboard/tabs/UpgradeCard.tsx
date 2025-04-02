@@ -2,15 +2,34 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/use-subscription";
+import { useToast } from "@/components/ui/use-toast";
 
 const UpgradeCard = () => {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const { status, inTrial, startSubscription } = useSubscription();
+  
+  const handleUpgrade = () => {
+    if (status === "pro") {
+      toast({
+        title: "Already subscribed",
+        description: "You already have a Pro subscription.",
+      });
+      return;
+    }
+    
+    startSubscription("pro");
+  };
   
   return (
     <Card className="md:col-span-2">
       <CardHeader className={isMobile ? "px-4 py-4" : ""}>
         <CardTitle className={isMobile ? "text-lg" : ""}>Upgrade to Sync Pro</CardTitle>
-        <CardDescription className={isMobile ? "text-sm" : ""}>Unlock advanced features for your design workflow</CardDescription>
+        <CardDescription className={isMobile ? "text-sm" : ""}>
+          Unlock advanced features for your design workflow
+          {inTrial && status === "pro" && <span className="ml-2 text-green-600 font-medium">• Trial Active</span>}
+        </CardDescription>
       </CardHeader>
       <CardContent className={isMobile ? "px-4 pt-0 pb-4" : ""}>
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 md:p-6 rounded-lg">
@@ -55,7 +74,21 @@ const UpgradeCard = () => {
               <span className={isMobile ? "text-sm" : ""}>Project analytics</span>
             </div>
           </div>
-          <Button className="mt-4 w-full md:w-auto text-sm">Upgrade Now</Button>
+          <div className="mt-4">
+            {status === "pro" ? (
+              <Button className="w-full md:w-auto text-sm" disabled>Already Subscribed</Button>
+            ) : (
+              <Button 
+                className="w-full md:w-auto text-sm" 
+                onClick={handleUpgrade}
+              >
+                {inTrial ? "Continue with Pro" : "Start 3-Day Free Trial"}
+              </Button>
+            )}
+            <p className="text-xs text-gray-500 mt-2">
+              Start with a 3-day free trial. Cancel anytime.
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

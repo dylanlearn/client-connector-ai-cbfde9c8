@@ -2,6 +2,8 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const plans = [
   {
@@ -17,7 +19,8 @@ const plans = [
       "PDF export",
       "Up to 3 projects"
     ],
-    cta: "Get Started",
+    cta: "Start 3-Day Free Trial",
+    plan: "basic",
     highlight: false
   },
   {
@@ -36,7 +39,8 @@ const plans = [
       "Client portal",
       "Priority support"
     ],
-    cta: "Go Pro",
+    cta: "Start 3-Day Free Trial",
+    plan: "pro",
     highlight: true
   },
   {
@@ -59,6 +63,26 @@ const plans = [
 
 const PricingSection = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { status, startSubscription } = useSubscription();
+
+  const handlePlanClick = (planName: string, planType?: "basic" | "pro") => {
+    if (planName === "Templates") {
+      navigate("/templates");
+      return;
+    }
+
+    if (!user) {
+      navigate("/signup");
+      return;
+    }
+
+    if (planType && (status === "free" || (status === "basic" && planType === "pro"))) {
+      startSubscription(planType);
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   return (
     <section id="pricing" className="py-20 bg-white">
@@ -66,7 +90,7 @@ const PricingSection = () => {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Choose the plan that fits your needs. Start for free or unlock advanced features with Sync Pro.
+            Choose the plan that fits your needs. Start with a 3-day free trial.
           </p>
         </div>
 
@@ -98,13 +122,20 @@ const PricingSection = () => {
                 ))}
               </ul>
 
-              <Button 
-                className={`w-full ${plan.highlight ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
-                variant={plan.highlight ? "default" : "outline"}
-                onClick={() => navigate(plan.name === "Templates" ? "/templates" : "/signup")}
-              >
-                {plan.cta}
-              </Button>
+              <div>
+                <Button 
+                  className={`w-full ${plan.highlight ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
+                  variant={plan.highlight ? "default" : "outline"}
+                  onClick={() => handlePlanClick(plan.name, plan.plan as any)}
+                >
+                  {plan.cta}
+                </Button>
+                {plan.name !== "Templates" && (
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    3-day free trial, then {plan.price}{plan.period}. Cancel anytime.
+                  </p>
+                )}
+              </div>
             </div>
           ))}
         </div>
