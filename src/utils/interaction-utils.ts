@@ -1,5 +1,6 @@
 
 import { InteractionEventType } from "@/types/analytics";
+import { DeviceInfo } from "@/hooks/tracking/use-device-detection";
 
 /**
  * Get a simple CSS selector for an element
@@ -45,6 +46,9 @@ export const createTrackingEvent = (
   elementSelector?: string,
   metadata?: Record<string, any>
 ) => {
+  // Extract deviceInfo from metadata if it exists
+  const deviceInfo: DeviceInfo | undefined = metadata?.deviceInfo;
+
   return {
     user_id: userId,
     event_type: eventType,
@@ -56,7 +60,7 @@ export const createTrackingEvent = (
     metadata: metadata || {},
     viewport_width: window.innerWidth,
     viewport_height: window.innerHeight,
-    device_type: metadata?.deviceInfo?.deviceType || 'unknown',
+    device_type: deviceInfo?.deviceType || 'unknown',
     scroll_depth: metadata?.scrollDepth || null
   };
 };

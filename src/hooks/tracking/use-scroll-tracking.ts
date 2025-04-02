@@ -1,6 +1,7 @@
 
 import { useCallback, useRef } from "react";
 import { useTrackInteraction } from "./use-track-interaction";
+import { DeviceInfo } from "./use-device-detection";
 
 /**
  * Hook for tracking scroll events
@@ -12,7 +13,7 @@ export const useScrollTracking = () => {
   /**
    * Track scroll events (throttled)
    */
-  const trackScroll = useCallback((deviceInfo?: any) => {
+  const trackScroll = useCallback((deviceInfo?: DeviceInfo) => {
     // Only track if scroll position changed significantly
     const currentScroll = window.scrollY;
     const scrollDifference = Math.abs(currentScroll - lastScrollPosition.current);

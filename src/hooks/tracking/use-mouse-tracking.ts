@@ -1,56 +1,50 @@
 
 import { useCallback, useRef } from "react";
 import { useTrackInteraction } from "./use-track-interaction";
+import { getElementSelector } from "@/utils/interaction-utils";
+import { DeviceInfo } from "./use-device-detection";
 
 /**
- * Hook for tracking mouse movements and clicks
+ * Hook for tracking mouse and click interactions
  */
 export const useMouseTracking = () => {
   const { trackInteraction } = useTrackInteraction();
-  const lastMousePosition = useRef<{ x: number, y: number } | null>(null);
+  const lastMousePosition = useRef({ x: 0, y: 0 });
   
   /**
-   * Track a click event
+   * Track mouse clicks with element information
    */
-  const trackClick = useCallback((e: MouseEvent | React.MouseEvent, deviceInfo?: any) => {
-    const elem = e.target as HTMLElement;
-    const rect = elem.getBoundingClientRect();
-    
-    // Import dynamically to avoid circular dependencies
-    const { getElementSelector } = require("@/utils/interaction-utils");
-    const selector = getElementSelector(elem);
+  const trackClick = useCallback((e: MouseEvent, deviceInfo?: DeviceInfo) => {
+    const target = e.target as HTMLElement;
+    const elementSelector = getElementSelector(target);
     
     trackInteraction('click', {
-      x: Math.round(e.clientX),
-      y: Math.round(e.clientY)
-    }, selector, {
-      elementType: elem.tagName,
-      innerText: elem.innerText?.substring(0, 100),
-      relativeX: Math.round(e.clientX - rect.left),
-      relativeY: Math.round(e.clientY - rect.top),
+      x: e.clientX,
+      y: e.clientY
+    }, elementSelector, {
       deviceInfo
     });
   }, [trackInteraction]);
-
+  
   /**
    * Track mouse movement (throttled)
    */
-  const trackMouseMovement = useCallback((e: MouseEvent, deviceInfo?: any) => {
-    // Only track if mouse has moved significantly (at least 50 pixels)
-    if (lastMousePosition.current) {
-      const dx = e.clientX - lastMousePosition.current.x;
-      const dy = e.clientY - lastMousePosition.current.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance < 50) return;
-    }
+  const trackMouseMovement = useCallback((e: MouseEvent, deviceInfo?: DeviceInfo) => {
+    // Skip if mouse hasn't moved significantly to reduce data
+    const dx = Math.abs(e.clientX - lastMousePosition.current.x);
+    const dy = Math.abs(e.clientY - lastMousePosition.current.y);
+    
+    if (dx < 50 && dy < 50) return;
     
     lastMousePosition.current = { x: e.clientX, y: e.clientY };
     
+    const target = e.target as HTMLElement;
+    const elementSelector = getElementSelector(target);
+    
     trackInteraction('movement', {
-      x: Math.round(e.clientX),
-      y: Math.round(e.clientY)
-    }, document.elementFromPoint(e.clientX, e.clientY)?.tagName || 'unknown', {
+      x: e.clientX,
+      y: e.clientY
+    }, elementSelector, {
       deviceInfo
     });
   }, [trackInteraction]);

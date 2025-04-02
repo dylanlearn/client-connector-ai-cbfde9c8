@@ -33,7 +33,7 @@ export type InteractionEvent = {
   session_id: string;
   metadata?: Record<string, any>;
   // Device information
-  device_type?: string;
+  device_type?: 'mobile' | 'tablet' | 'desktop' | string;
   viewport_width?: number;
   viewport_height?: number;
   scroll_depth?: number;
