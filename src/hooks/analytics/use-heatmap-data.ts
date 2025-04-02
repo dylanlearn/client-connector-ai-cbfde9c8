@@ -24,29 +24,31 @@ export const useHeatmapData = (userId: string | undefined) => {
     setIsLoading(true);
     
     try {
-      // Use the new RPC functions to query interaction events safely
+      // Use direct queries to fetch interaction events
       const fetchClickEvents = async () => {
-        const { data, error } = await supabase.rpc('get_interaction_events', {
-          p_user_id: userId,
-          p_event_type: 'click',
-          p_page_url: `/${selectedPage}`,
-          p_limit: 500
-        });
+        const { data, error } = await supabase
+          .from('interaction_events')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('event_type', 'click')
+          .eq('page_url', `/${selectedPage}`)
+          .limit(500);
         
         if (error) throw error;
-        return (data as any[]) || [];
+        return data || [];
       };
       
       const fetchHoverEvents = async () => {
-        const { data, error } = await supabase.rpc('get_interaction_events', {
-          p_user_id: userId,
-          p_event_type: 'hover',
-          p_page_url: `/${selectedPage}`,
-          p_limit: 500
-        });
+        const { data, error } = await supabase
+          .from('interaction_events')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('event_type', 'hover')
+          .eq('page_url', `/${selectedPage}`)
+          .limit(500);
         
         if (error) throw error;
-        return (data as any[]) || [];
+        return data || [];
       };
       
       // Execute the queries in parallel
@@ -56,8 +58,8 @@ export const useHeatmapData = (userId: string | undefined) => {
       ]);
       
       // Create data points from the raw data
-      const clickPoints = processInteractionData(clickData as any[]);
-      const hoverPoints = processInteractionData(hoverData as any[]);
+      const clickPoints = processInteractionData(clickData);
+      const hoverPoints = processInteractionData(hoverData);
       
       // Generate synthetic attention data based on clicks and hovers
       const attentionPoints = generateAttentionData(clickPoints, hoverPoints);

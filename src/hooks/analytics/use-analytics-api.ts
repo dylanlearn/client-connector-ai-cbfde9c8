@@ -39,7 +39,7 @@ export const getUserDesignOptionIds = async (userId: string) => {
   return data ? data.map(pref => pref.design_option_id) : [];
 };
 
-// Use the newly created RPC functions for interaction events
+// Use direct table queries for interaction events instead of RPC
 export const fetchInteractionEvents = async (
   userId: string,
   eventType?: string,
@@ -47,24 +47,22 @@ export const fetchInteractionEvents = async (
   limit: number = 1000
 ): Promise<InteractionEvent[]> => {
   try {
-    let query = `
-      SELECT * FROM interaction_events 
-      WHERE user_id = '${userId}'
-    `;
+    let query = supabase
+      .from('interaction_events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
     
     if (eventType) {
-      query += ` AND event_type = '${eventType}'`;
+      query = query.eq('event_type', eventType);
     }
     
     if (pageUrl) {
-      query += ` AND page_url = '${pageUrl}'`;
+      query = query.eq('page_url', pageUrl);
     }
     
-    query += ` ORDER BY timestamp DESC LIMIT ${limit}`;
-    
-    const { data, error } = await supabase.rpc('query_interaction_events', { 
-      query_text: query
-    });
+    const { data, error } = await query;
     
     if (error) throw error;
     return (data as InteractionEvent[]) || [];
@@ -74,7 +72,7 @@ export const fetchInteractionEvents = async (
   }
 };
 
-// Use the new RPC function for storing interactions
+// Use direct table insert for storing interactions
 export const storeInteractionEvent = async (
   userId: string,
   eventType: 'click' | 'hover' | 'scroll' | 'view',
@@ -85,17 +83,18 @@ export const storeInteractionEvent = async (
   metadata?: Record<string, any>
 ): Promise<void> => {
   try {
-    // Use the RPC function to insert interaction event
-    const { error } = await supabase.rpc('insert_interaction_event', {
-      p_user_id: userId,
-      p_event_type: eventType,
-      p_page_url: pageUrl,
-      p_x_position: position.x,
-      p_y_position: position.y,
-      p_element_selector: elementSelector,
-      p_session_id: sessionId,
-      p_metadata: metadata || {}
-    });
+    const { error } = await supabase
+      .from('interaction_events')
+      .insert({
+        user_id: userId,
+        event_type: eventType,
+        page_url: pageUrl,
+        x_position: position.x,
+        y_position: position.y,
+        element_selector: elementSelector,
+        session_id: sessionId,
+        metadata: metadata || {}
+      });
     
     if (error) throw error;
   } catch (error) {

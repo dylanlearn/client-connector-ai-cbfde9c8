@@ -18,35 +18,20 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Create SQL functions for interaction events
-    const setupRpcFunctions = async () => {
-      // Create query_interaction_events function
+    // Create interaction tracking RPC functions
+    const setupFunctions = async () => {
+      // Create track_interaction function
       await supabase.rpc('stored_procedure', {
         sql: `
-          CREATE OR REPLACE FUNCTION query_interaction_events(query_text TEXT)
-          RETURNS SETOF interaction_events
-          LANGUAGE plpgsql
-          SECURITY DEFINER
-          AS $$
-          BEGIN
-            RETURN QUERY EXECUTE query_text;
-          END;
-          $$;
-        `
-      });
-      
-      // Create insert_interaction_event function
-      await supabase.rpc('stored_procedure', {
-        sql: `
-          CREATE OR REPLACE FUNCTION insert_interaction_event(
+          CREATE OR REPLACE FUNCTION track_interaction(
             p_user_id UUID,
             p_event_type TEXT,
             p_page_url TEXT,
             p_x_position INT,
             p_y_position INT,
-            p_element_selector TEXT,
-            p_session_id TEXT,
-            p_metadata JSONB DEFAULT NULL
+            p_element_selector TEXT DEFAULT '',
+            p_session_id TEXT DEFAULT '',
+            p_metadata JSONB DEFAULT '{}'
           )
           RETURNS VOID
           LANGUAGE plpgsql
@@ -110,61 +95,19 @@ serve(async (req) => {
           $$;
         `
       });
-      
-      // Create track_interaction function (simplified version)
-      await supabase.rpc('stored_procedure', {
-        sql: `
-          CREATE OR REPLACE FUNCTION track_interaction(
-            p_user_id UUID,
-            p_event_type TEXT,
-            p_page_url TEXT,
-            p_x_position INT,
-            p_y_position INT,
-            p_element_selector TEXT DEFAULT '',
-            p_session_id TEXT DEFAULT '',
-            p_metadata JSONB DEFAULT '{}'
-          )
-          RETURNS VOID
-          LANGUAGE plpgsql
-          SECURITY DEFINER
-          AS $$
-          BEGIN
-            INSERT INTO interaction_events (
-              user_id,
-              event_type,
-              page_url,
-              x_position,
-              y_position,
-              element_selector,
-              session_id,
-              metadata
-            ) VALUES (
-              p_user_id,
-              p_event_type,
-              p_page_url,
-              p_x_position,
-              p_y_position,
-              p_element_selector,
-              p_session_id,
-              p_metadata
-            );
-          END;
-          $$;
-        `
-      });
     };
     
-    await setupRpcFunctions();
+    await setupFunctions();
     
     return new Response(
-      JSON.stringify({ success: true, message: "RPC functions created successfully" }),
+      JSON.stringify({ success: true, message: "Interaction tracking functions created successfully" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       }
     );
   } catch (error) {
-    console.error("Error creating RPC functions:", error);
+    console.error("Error creating functions:", error);
     
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
