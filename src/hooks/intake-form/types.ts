@@ -33,3 +33,12 @@ export type OfflineSyncRecord = {
   operation: 'save' | 'submit';
   timestamp: string;
 };
+
+// Add a strongly-typed toast adapter to convert from useToast to the expected format
+export interface ToastAdapter {
+  toast: (props: { 
+    title: string; 
+    description: string; 
+    variant?: "default" | "destructive" 
+  }) => void;
+}

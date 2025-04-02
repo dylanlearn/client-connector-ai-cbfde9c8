@@ -20,7 +20,7 @@ import {
   createRealtimeSubscription,
   submitCompleteForm
 } from "./supabase-integration";
-import { UseIntakeFormReturn } from "./types";
+import { UseIntakeFormReturn, ToastAdapter } from "./types";
 
 /**
  * Hook for managing intake form state and persistence with improved caching and error handling
@@ -37,6 +37,14 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
   const pendingChangesRef = useRef<boolean>(false);
   const formDataCache = useRef<IntakeFormData>(formData);
   
+  // Create a toast adapter to match the expected interface
+  const toastAdapter: ToastAdapter = {
+    toast: (props) => {
+      toast(props);
+      return { id: '', dismiss: () => {}, update: () => {} };
+    }
+  };
+  
   // Cache the form data
   useEffect(() => {
     formDataCache.current = formData;
@@ -52,23 +60,17 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
   useEffect(() => {
     if (!user) return;
 
-    const toastWrapper = {
-      toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => {
-        toast(props);
-      }
-    };
-
     const subscription = createRealtimeSubscription(
       formId,
       formData.lastUpdated,
       (newData) => setFormData(prevData => ({...prevData, ...newData})),
-      { toast: toastWrapper }
+      { toast: toastAdapter }
     );
     
     return () => {
       subscription.unsubscribe();
     };
-  }, [formId, formData.lastUpdated, user, toast]);
+  }, [formId, formData.lastUpdated, user, toastAdapter]);
 
   // Scheduler for saving to Supabase - more robust
   const scheduleSave = useCallback(() => {
@@ -84,15 +86,9 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
         return;
       }
       
-      const toastWrapper = {
-        toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => {
-          toast(props);
-        }
-      };
-      
       setIsSaving(true);
       try {
-        await saveFormToSupabase(formDataCache.current, user.id, formId, { toast: toastWrapper });
+        await saveFormToSupabase(formDataCache.current, user.id, formId, { toast: toastAdapter });
         pendingChangesRef.current = false;
       } catch (error) {
         console.error("Error saving to Supabase:", error);
@@ -104,7 +100,7 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
         setIsSaving(false);
       }
     }, 1000);
-  }, [user, formId, toast]);
+  }, [user, formId, toastAdapter]);
 
   // Watch for beforeunload event to warn user about unsaved changes
   useEffect(() => {
@@ -143,12 +139,6 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
 
     setIsLoading(true);
     try {
-      const toastWrapper = {
-        toast: (props: { title: string; description: string; variant?: "default" | "destructive" }) => {
-          toast(props);
-        }
-      };
-
       // Create an adapter function to match the expected signature
       const adaptedUpdateTaskStatus = async (
         taskId: string, 
@@ -164,12 +154,12 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
         formId, 
         taskId || null,
         adaptedUpdateTaskStatus,
-        { toast: toastWrapper }
+        { toast: toastAdapter }
       );
     } finally {
       setIsLoading(false);
     }
-  }, [user, formId, taskId, toast]);
+  }, [user, formId, taskId, toastAdapter]);
 
   // Clear form data
   const clearFormData = useCallback(() => {
