@@ -20,8 +20,8 @@ export const useMemoryStorage = () => {
     category: string, 
     projectId?: string,
     metadata: Record<string, any> = {}
-  ) => {
-    if (!user?.id) return false;
+  ): Promise<void> => {
+    if (!user?.id) return;
     
     try {
       // Map string category to enum
@@ -40,11 +40,8 @@ export const useMemoryStorage = () => {
       
       // Trigger real-time analysis update
       await AIMemoryService.global.realtime.triggerAnalysisUpdate(memoryCategory);
-      
-      return true;
     } catch (error) {
       console.error("Error storing memory:", error);
-      return false;
     }
   }, [user, refreshMemoryContext]);
 
