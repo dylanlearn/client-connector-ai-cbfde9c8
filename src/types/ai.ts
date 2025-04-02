@@ -21,6 +21,12 @@ export interface AIAnalysis {
   contradictions?: string[];
 }
 
+export interface ComponentSuggestion {
+  name: string;
+  description: string;
+  inspiration?: string;
+}
+
 export interface DesignRecommendation {
   colorPalette: Array<{
     name: string;
@@ -33,7 +39,7 @@ export interface DesignRecommendation {
     accents?: string;
   };
   layouts?: string[];
-  components?: string[];
+  components?: ComponentSuggestion[];
 }
 
 export interface AIMemory {

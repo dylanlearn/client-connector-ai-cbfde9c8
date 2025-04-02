@@ -39,9 +39,10 @@ export const GlobalMemoryInsights = {
             // Safely handle the insights data regardless of type
             const insightsData = existingAnalysis.insights;
             if (typeof insightsData === 'object' && insightsData !== null && 'results' in insightsData) {
-              return insightsData.results as string[] || [];
+              // Convert all items to strings to ensure type safety
+              return (insightsData.results as any[]).map(item => String(item));
             } else if (Array.isArray(insightsData)) {
-              return insightsData;
+              return insightsData.map(item => String(item));
             }
             return [];
           }
@@ -83,7 +84,8 @@ export const GlobalMemoryInsights = {
           return ["Error analyzing insights from global memory"];
         }
         
-        return analysisData.insights || [];
+        // Ensure all insights are strings
+        return (analysisData.insights || []).map((insight: any) => String(insight));
       } catch (aiError) {
         console.error("Error analyzing global memory insights:", aiError);
         // Fallback to returning sample insights

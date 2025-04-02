@@ -46,7 +46,7 @@ export const useDesignRecommendations = () => {
       const features = Object.values(questionnaire)
         .filter(value => typeof value === 'string') as string[];
       
-      const components = await AIDesignService.suggestComponents(
+      const componentsData = await AIDesignService.suggestComponents(
         questionnaire.siteType || 'business',
         features
       );
@@ -56,7 +56,7 @@ export const useDesignRecommendations = () => {
         colorPalette,
         typography,
         layouts,
-        components
+        components: componentsData
       };
       
       setDesignRecommendations([recommendations]);
@@ -80,6 +80,11 @@ export const useDesignRecommendations = () => {
           "Hero section with clear value proposition",
           "Feature grid with icons and brief descriptions",
           "Testimonials section with client quotes"
+        ],
+        components: [
+          { name: "Header Navigation", description: "Responsive navigation with dropdown menus", inspiration: "Modern SaaS websites" },
+          { name: "Hero Section", description: "Bold headline with supporting text and CTA", inspiration: "Landing page best practices" },
+          { name: "Feature Grid", description: "3-column layout highlighting key features", inspiration: "Product marketing pages" }
         ]
       };
       

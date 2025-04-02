@@ -70,7 +70,8 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     // Join array into string for processing if internal expects a string
     const feedbackText = feedback.join("\n");
     const result = await summarizeFeedbackInternal(feedbackText);
-    return result;
+    // Convert the string[] result to a single string for compatibility
+    return Array.isArray(result) ? result.join("\n") : result;
   };
 
   // Determine overall processing state
