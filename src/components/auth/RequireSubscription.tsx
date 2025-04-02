@@ -50,26 +50,37 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
-  // Check for admin status first - admins always have access
-  // Direct check for admin role in profile
+  // Direct check for admin role in profile - this is the critical fix
   const hasAdminRole = profile?.role === 'admin';
   
-  if (hasAdminRole || isAdmin) {
-    console.log("Admin user detected, granting access");
+  // Log detailed information for debugging
+  console.log("Admin check details:", {
+    "profile?.role": profile?.role,
+    "isAdmin from useSubscription": isAdmin,
+    "hasAdminRole": hasAdminRole
+  });
+  
+  // Check for admin status first - admins always have access
+  if (hasAdminRole) {
+    console.log("Admin user detected via profile, granting access");
+    return <>{children}</>;
+  }
+  
+  if (isAdmin) {
+    console.log("Admin user detected via subscription hook, granting access");
     return <>{children}</>;
   }
   
   // If user is authenticated but doesn't have an active status, redirect to pricing
   if (!isActive) {
     console.log("User does not have active subscription, redirecting to pricing");
+    
     // Show a toast notification
-    useEffect(() => {
-      toast({
-        title: "Subscription Required",
-        description: "You need an active subscription to access this content.",
-        variant: "destructive",
-      });
-    }, []);
+    toast({
+      title: "Subscription Required",
+      description: "You need an active subscription to access this content.",
+      variant: "destructive",
+    });
     
     return <Navigate to="/pricing?needSubscription=true" state={{ from: location.pathname }} replace />;
   }
