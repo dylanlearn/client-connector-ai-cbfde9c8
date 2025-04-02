@@ -32,9 +32,41 @@ export const useAdminStatus = () => {
     try {
       setIsVerifying(true);
       
+      console.log("Starting admin verification for user:", user.id);
+      console.log("User email:", user.email);
+      console.log("User metadata:", user.user_metadata);
+      
       // First check profile from context for performance
       if (profile?.role === 'admin') {
-        console.log("Admin status verified from profile");
+        console.log("Admin status verified from profile role");
+        setIsAdmin(true);
+        setLastVerified(now);
+        return true;
+      }
+      
+      // Check for admin for Google login based on email
+      const userEmail = user.email || profile?.email || user.user_metadata?.email;
+      const adminEmails = ["dylanmohseni0@gmail.com"]; // Add your admin emails here
+      
+      if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
+        console.log("Admin status verified from email match:", userEmail);
+        
+        // Update the user's profile to have admin role for future sessions
+        try {
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ role: 'admin' })
+            .eq('id', user.id);
+            
+          if (updateError) {
+            console.error("Error updating profile to admin:", updateError);
+          } else {
+            console.log("Successfully updated profile to admin role");
+          }
+        } catch (updateError) {
+          console.error("Exception updating profile to admin:", updateError);
+        }
+        
         setIsAdmin(true);
         setLastVerified(now);
         return true;
@@ -44,10 +76,12 @@ export const useAdminStatus = () => {
       console.log("Verifying admin status with database query");
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, email')
         .eq('id', user.id)
         .single();
         
+      console.log("Profile query result:", { profileData, profileError });
+      
       if (!profileError && profileData?.role === 'admin') {
         console.log("Admin status verified from database");
         setIsAdmin(true);
@@ -67,7 +101,7 @@ export const useAdminStatus = () => {
     } finally {
       setIsVerifying(false);
     }
-  }, [user?.id, profile?.role, isAdmin, lastVerified]);
+  }, [user, profile, isAdmin, lastVerified]);
   
   // Verify admin status on mount and when user/profile changes
   useEffect(() => {

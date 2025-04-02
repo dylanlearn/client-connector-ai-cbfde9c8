@@ -34,15 +34,20 @@ serve(async (req) => {
     }
     
     console.log("Checking subscription for user:", user.id);
+    console.log("User email:", user.email);
+    console.log("User metadata:", user.user_metadata);
     
     // Check if the user is an admin first - this is critical
     // Try multiple paths for redundancy
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('role, subscription_status')
+      .select('role, subscription_status, email')
       .eq('id', user.id)
       .single();
       
+    console.log("Profile data:", profileData);
+    console.log("Profile error:", profileError);
+    
     // If user has admin role, grant full access
     if (!profileError && profileData?.role === 'admin') {
       console.log("User is admin, granting full access");
@@ -54,6 +59,39 @@ serve(async (req) => {
         willCancel: false,
         isAdmin: true,
         role: profileData.role
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // Special check for Google login admin (based on email)
+    const userEmail = user.email || profileData?.email || user.user_metadata?.email;
+    
+    // Check if the email is in the admin list (add your admin emails here)
+    const adminEmails = ["dylanmohseni0@gmail.com"];
+    
+    if (userEmail && adminEmails.includes(userEmail.toLowerCase())) {
+      console.log("Email found in admin list. Updating profile to admin and granting access.");
+      
+      // Update the user's profile to have admin role
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', user.id);
+        
+      if (updateError) {
+        console.error("Error updating profile to admin:", updateError);
+      }
+      
+      return new Response(JSON.stringify({
+        subscription: 'pro',
+        isActive: true,
+        inTrial: false,
+        expiresAt: null,
+        willCancel: false,
+        isAdmin: true,
+        role: 'admin'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useSubscriptionStatus } from "@/hooks/subscription/use-subscription-status";
+import { useSubscriptionActions } from "@/hooks/subscription/use-subscription-actions";
 import { fetchSubscriptionStatus } from "@/utils/subscription-utils";
 import { SubscriptionInfo } from "@/types/subscription";
 
@@ -23,8 +24,11 @@ export const useSubscription = () => {
     isAdminRole // Pass admin status to subscription hook
   );
   
+  // Get subscription actions (like starting a new subscription)
+  const { startSubscription, isStarting } = useSubscriptionActions();
+  
   // Combined loading state
-  const isLoading = subscriptionInfo.isLoading || isVerifyingAdmin || isRefreshing;
+  const isLoading = subscriptionInfo.isLoading || isVerifyingAdmin || isRefreshing || isStarting;
   
   // Refresh subscription info when user or admin status changes
   useEffect(() => {
@@ -86,6 +90,7 @@ export const useSubscription = () => {
     isRefreshing,
     
     // Actions
-    refreshSubscription
+    refreshSubscription,
+    startSubscription
   };
 };

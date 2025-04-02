@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,12 +29,9 @@ const Login = () => {
   const { signIn, signInWithGoogle, isLoading, user, profile } = useAuth();
   const { isAdmin: adminStatusDirect, verifyAdminStatus } = useAdminStatus();
   
-  // Get the redirect path from location state, default to /dashboard
   const from = (location.state as { from?: string })?.from || "/dashboard";
 
-  // Check URL parameters
   useEffect(() => {
-    // Handle email confirmation success
     const confirmed = searchParams.get('confirmed');
     if (confirmed === 'true') {
       setShowConfirmationSuccess(true);
@@ -45,7 +42,6 @@ const Login = () => {
       });
     }
     
-    // Handle subscription needed notification
     const needSubscription = searchParams.get('needSubscription');
     if (needSubscription === 'true') {
       setShowSubscriptionNeeded(true);
@@ -57,25 +53,38 @@ const Login = () => {
     }
   }, [searchParams, toast]);
 
-  // Check for admin status after login
   useEffect(() => {
     if (user && !profile && !waitingForProfile) {
       setWaitingForProfile(true);
-      // Force admin check
       verifyAdminStatus(true).then(isAdmin => {
         console.log("Admin check after login:", isAdmin);
+        if (!isAdmin) {
+          setTimeout(() => {
+            console.log("Retrying admin check...");
+            verifyAdminStatus(true);
+          }, 2000);
+        }
       });
     }
   }, [user, profile, waitingForProfile, verifyAdminStatus]);
 
-  // If user is already logged in, redirect to the appropriate destination
+  useEffect(() => {
+    if (user) {
+      console.log("Login - User Details:", {
+        id: user.id,
+        email: user.email,
+        app_metadata: user.app_metadata,
+        user_metadata: user.user_metadata
+      });
+    }
+  }, [user]);
+
   if (user) {
     console.log("User logged in, user:", user.id);
     console.log("User profile:", profile);
     console.log("Admin from direct check:", adminStatusDirect);
     console.log("From path:", from);
 
-    // If we're still loading or waiting for profile data
     if (!profile) {
       if (!waitingForProfile) {
         setWaitingForProfile(true);
@@ -91,16 +100,17 @@ const Login = () => {
       );
     }
     
-    // Direct check for admin role
-    const isUserAdmin = profile?.role === 'admin' || adminStatusDirect;
+    const userEmail = user.email || profile?.email || user.user_metadata?.email;
+    const adminEmails = ["dylanmohseni0@gmail.com"];
+    const isEmailAdmin = userEmail && adminEmails.includes(userEmail.toLowerCase());
     
-    // Special handling for admin users
+    const isUserAdmin = profile?.role === 'admin' || adminStatusDirect || isEmailAdmin;
+    
     if (isUserAdmin) {
       console.log("Admin user detected, going directly to dashboard");
       return <Navigate to="/dashboard" replace />;
     }
     
-    // Regular user handling
     const redirectPath = getPostLoginRedirect(profile, from);
     console.log("Redirecting to:", redirectPath);
     return <Navigate to={redirectPath} replace />;
@@ -120,8 +130,6 @@ const Login = () => {
     
     try {
       await signIn(email, password);
-      // After sign in, the component will re-render and the redirect will happen 
-      // automatically due to the Navigate component above
     } catch (error) {
       console.error("Login error:", error);
     }
@@ -131,7 +139,6 @@ const Login = () => {
     try {
       setGoogleError(null);
       await signInWithGoogle();
-      // The redirect will happen via the Supabase OAuth flow
     } catch (error: any) {
       console.error("Google login error:", error);
       setGoogleError(error?.message || "Failed to connect to Google. Please try again.");
@@ -178,7 +185,6 @@ const Login = () => {
               </Alert>
             )}
             
-            {/* Google Sign In Button */}
             <Button 
               type="button" 
               variant="outline" 
