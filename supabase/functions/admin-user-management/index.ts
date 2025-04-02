@@ -80,7 +80,7 @@ async function handleUpdateUserRole({ userId, role }) {
     });
   }
 
-  // Valid roles check - Updated to include all valid subscription types
+  // Valid roles check - Verify these match your database enum types
   const validRoles = ['free', 'sync', 'sync-pro', 'template-buyer', 'trial', 'admin'];
   if (!validRoles.includes(role)) {
     console.error(`Invalid role provided: ${role}`);
@@ -109,27 +109,35 @@ async function handleUpdateUserRole({ userId, role }) {
 
   console.log(`Mapped subscription_status: ${subscription_status}`);
 
-  // Update both role and subscription_status to ensure consistency
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ 
-      role,
-      subscription_status
-    })
-    .eq('id', userId)
-    .select();
+  try {
+    // Update both role and subscription_status to ensure consistency
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ 
+        role,
+        subscription_status
+      })
+      .eq('id', userId)
+      .select();
 
-  if (error) {
-    console.error('Error updating user role:', error.message);
-    return new Response(JSON.stringify({ error: `Error updating user role: ${error.message}` }), {
+    if (error) {
+      console.error('Error updating user role:', error.message);
+      return new Response(JSON.stringify({ error: `Error updating user role: ${error.message}` }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    console.log('User role updated successfully:', data);
+    return new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
+  } catch (error) {
+    console.error('Exception updating user role:', error);
+    return new Response(JSON.stringify({ error: `Exception updating user role: ${error.message}` }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }
-
-  console.log('User role updated successfully:', data);
-  return new Response(JSON.stringify(data), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    status: 200,
-  });
 }
