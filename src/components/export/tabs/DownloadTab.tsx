@@ -36,7 +36,7 @@ export function DownloadTab({
       >
         <span className="flex items-center">
           <Settings className="mr-2 h-4 w-4" />
-          Advanced Options
+          Document Settings
         </span>
         <span>{showAdvanced ? "▲" : "▼"}</span>
       </Button>

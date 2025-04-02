@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { PDFGenerationOptions } from "@/utils/pdf-export";
+import { PDFStylingOptions } from "./PDFStylingOptions";
 
 interface AdvancedPDFOptionsProps {
   pdfOptions: PDFGenerationOptions;
@@ -53,6 +54,11 @@ export function AdvancedPDFOptions({
           onChange={(e) => updatePdfOption('margin', Number(e.target.value))}
         />
       </div>
+      
+      <PDFStylingOptions 
+        pdfOptions={pdfOptions} 
+        updatePdfOption={updatePdfOption} 
+      />
       
       {pdfBlob && (
         <Button 
