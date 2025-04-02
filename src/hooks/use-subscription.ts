@@ -38,14 +38,21 @@ export const useSubscription = () => {
     if (user && session) {
       checkSubscription();
     }
-  }, [user?.id, session?.access_token, isAdminRole]);
+  }, [user?.id, session?.access_token, isAdminRole, checkSubscription]);
   
   // Explicit check for admin access from profile for redundancy
   const hasAdminRole = profile?.role === 'admin' || isAdminRole;
   
-  // Check for admin-assigned subscription status in profile
-  const hasAssignedProAccess = profile?.role === 'pro' || profile?.subscription_status === 'pro';
-  const hasAssignedBasicAccess = profile?.role === 'basic' || profile?.subscription_status === 'basic';
+  // Enhanced check for admin-assigned subscription status in profile
+  const hasAssignedProAccess = 
+    profile?.role === 'pro' || 
+    profile?.subscription_status === 'pro' || 
+    subscriptionInfo.adminAssignedStatus === 'pro';
+    
+  const hasAssignedBasicAccess = 
+    profile?.role === 'basic' || 
+    profile?.subscription_status === 'basic' || 
+    subscriptionInfo.adminAssignedStatus === 'basic';
   
   // Log detailed information for admin role and subscription status
   useEffect(() => {
@@ -55,6 +62,8 @@ export const useSubscription = () => {
         "profile.subscription_status": profile?.subscription_status,
         "isAdminRole from useAdminStatus": isAdminRole,
         "admin from subscriptionInfo": subscriptionInfo.isAdmin,
+        "adminAssigned from subscriptionInfo": subscriptionInfo.adminAssigned,
+        "adminAssignedStatus from subscriptionInfo": subscriptionInfo.adminAssignedStatus,
         "hasAdminRole": hasAdminRole,
         "hasAssignedProAccess": hasAssignedProAccess,
         "hasAssignedBasicAccess": hasAssignedBasicAccess,
@@ -62,7 +71,16 @@ export const useSubscription = () => {
         "is subscription active": subscriptionInfo.isActive
       });
     }
-  }, [user, profile?.role, profile?.subscription_status, isAdminRole, subscriptionInfo, hasAdminRole, hasAssignedProAccess, hasAssignedBasicAccess]);
+  }, [
+    user, 
+    profile?.role, 
+    profile?.subscription_status, 
+    isAdminRole, 
+    subscriptionInfo, 
+    hasAdminRole, 
+    hasAssignedProAccess, 
+    hasAssignedBasicAccess
+  ]);
   
   // Manual refresh function for debugging and recovery
   const refreshSubscription = async () => {
@@ -82,12 +100,23 @@ export const useSubscription = () => {
     }
   };
   
-  // Determine if user has active access, either through subscription, admin role, or admin-assigned access
-  const isActive = hasAdminRole || subscriptionInfo.isActive || hasAssignedProAccess || hasAssignedBasicAccess;
+  // Enhanced determination if user has active access
+  const isActive = 
+    hasAdminRole || 
+    subscriptionInfo.isActive || 
+    hasAssignedProAccess || 
+    hasAssignedBasicAccess;
+  
+  // Determine effective subscription status based on all sources
+  const effectiveStatus = hasAssignedProAccess 
+    ? "pro" 
+    : (hasAssignedBasicAccess 
+        ? "basic" 
+        : subscriptionInfo.status);
   
   return {
-    // Subscription status info
-    status: hasAssignedProAccess ? "pro" : (hasAssignedBasicAccess ? "basic" : subscriptionInfo.status),
+    // Subscription status info with enhanced status determination
+    status: effectiveStatus,
     isActive,
     inTrial: subscriptionInfo.inTrial,
     expiresAt: subscriptionInfo.expiresAt,
@@ -98,12 +127,19 @@ export const useSubscription = () => {
     isAdminFromAPI: subscriptionInfo.isAdmin,
     isAdminFromProfile: profile?.role === 'admin',
     
+    // Admin-assigned subscription info
+    adminAssigned: subscriptionInfo.adminAssigned,
+    adminAssignedStatus: subscriptionInfo.adminAssignedStatus,
+    
     // Loading states
     isLoading,
     isRefreshing,
     
     // Actions
     refreshSubscription,
-    startSubscription
+    startSubscription,
+    
+    // Error state
+    error: subscriptionInfo.error
   };
 };

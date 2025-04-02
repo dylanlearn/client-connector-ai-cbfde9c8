@@ -10,6 +10,9 @@ export interface SubscriptionInfo {
   willCancel: boolean;
   isLoading: boolean;
   isAdmin: boolean;
+  adminAssigned?: boolean;
+  adminAssignedStatus?: SubscriptionStatus | null;
+  error?: string;
 }
 
 /**

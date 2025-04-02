@@ -19,10 +19,14 @@ const Analytics = () => {
   const { userPreferences, isLoading, isRealtime } = useAnalytics();
   const { user } = useAuth();
   const { clientAccessMode, viewOnlyMode } = useDesignSelection({});
-  const { status, isActive, isAdmin } = useSubscription();
+  const { status, isActive, isAdmin, adminAssignedStatus } = useSubscription();
   
-  // Determine if user has access to Pro features
-  const hasProData = (status === "pro" || status === "basic") || (user?.role === 'admin') || isAdmin;
+  // Enhanced determination if user has access to Pro features
+  const hasProData = 
+    status === "pro" || // Paid subscription is Pro
+    isAdmin || // User is an admin
+    (adminAssignedStatus === "pro") || // Admin explicitly assigned Pro
+    (user?.role === 'admin'); // User role in auth is admin
 
   // Define the tabs
   const tabs: TabItem[] = [

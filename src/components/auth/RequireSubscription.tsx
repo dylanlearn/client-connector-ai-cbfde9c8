@@ -17,7 +17,12 @@ interface RequireSubscriptionProps {
  * Memoized to prevent unnecessary re-renders during routing checks
  */
 const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
-  const { isLoading: subscriptionLoading, isActive, isAdmin } = useSubscription();
+  const { 
+    isLoading: subscriptionLoading, 
+    isActive, 
+    isAdmin,
+    status
+  } = useSubscription();
   const { isAdmin: adminStatusDirect, isVerifying } = useAdminStatus();
   const { user, isLoading: authLoading, profile } = useAuth();
   const location = useLocation();
@@ -29,6 +34,7 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     "profile?.subscription_status": profile?.subscription_status, 
     "isAdmin from subscription": isAdmin,
     "isAdmin from direct check": adminStatusDirect,
+    "subscription status": status,
     "isActive": isActive,
     "current path": location.pathname 
   });
@@ -61,12 +67,14 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     isAdmin ||                   // Check from subscription hook
     adminStatusDirect;           // Check from admin status hook
     
-  // Check for admin-assigned subscription access
+  // Check for admin-assigned subscription access - enhanced reliability
   const hasAdminAssignedAccess = 
     profile?.role === 'pro' || 
     profile?.role === 'basic' || 
     profile?.subscription_status === 'pro' || 
-    profile?.subscription_status === 'basic';
+    profile?.subscription_status === 'basic' ||
+    status === 'pro' ||
+    status === 'basic';
   
   // Log detailed information for debugging
   console.log("Access check:", {
@@ -75,6 +83,7 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     "isAdmin from subscription": isAdmin,
     "adminStatusDirect": adminStatusDirect,
     "final hasAdminRole": hasAdminRole,
+    "subscription status": status,
     "hasAdminAssignedAccess": hasAdminAssignedAccess,
     "isActive": isActive
   });

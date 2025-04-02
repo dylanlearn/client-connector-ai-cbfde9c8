@@ -78,7 +78,8 @@ serve(async (req) => {
           willCancel: false,
           isAdmin: false,
           role: profileData.role,
-          adminAssigned: true
+          adminAssigned: true,
+          adminAssignedStatus: 'pro'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -96,7 +97,8 @@ serve(async (req) => {
           willCancel: false,
           isAdmin: false,
           role: profileData.role,
-          adminAssigned: true
+          adminAssigned: true,
+          adminAssignedStatus: 'basic'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -157,7 +159,9 @@ serve(async (req) => {
           expiresAt: null,
           willCancel: false,
           isAdmin: false,
-          role: profileData.role
+          role: profileData.role,
+          adminAssigned: true,
+          adminAssignedStatus: profileData.subscription_status
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -174,7 +178,7 @@ serve(async (req) => {
                     Date.now() < new Date(subscription.current_period_end).getTime() && 
                     !subscription.cancel_at_period_end;
 
-    // Return the subscription status
+    // Return the subscription status with enhanced details
     return new Response(JSON.stringify({
       subscription: subscription?.subscription_status || profileData?.subscription_status || 'free',
       isActive,
@@ -182,7 +186,9 @@ serve(async (req) => {
       expiresAt: subscription?.current_period_end || null,
       willCancel: subscription?.cancel_at_period_end || false,
       isAdmin: false,
-      role: profileData?.role || 'free'
+      role: profileData?.role || 'free',
+      adminAssigned: false,
+      adminAssignedStatus: null
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -196,7 +202,9 @@ serve(async (req) => {
       inTrial: false,
       expiresAt: null,
       willCancel: false,
-      isAdmin: false
+      isAdmin: false,
+      adminAssigned: false,
+      adminAssignedStatus: null
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200, // Return 200 even on error with default values to prevent UI failures

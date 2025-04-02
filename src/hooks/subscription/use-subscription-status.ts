@@ -31,7 +31,7 @@ export const useSubscriptionStatus = (
       
       // If user is admin, set subscription status accordingly
       if (isAdmin) {
-        console.log("useSubscription - User is admin, setting pro access");
+        console.log("useSubscriptionStatus - User is admin, setting pro access");
         setSubscriptionInfo({
           status: "pro",
           isActive: true,
@@ -47,21 +47,30 @@ export const useSubscriptionStatus = (
       // For non-admin users, check subscription status
       const data = await fetchSubscriptionStatus();
       
-      console.log("useSubscription - Subscription data:", data);
+      console.log("useSubscriptionStatus - Subscription data:", data);
       
-      // Set subscription info with admin-assigned status flag if present
+      // Enhanced logic for admin-assigned subscription status
+      const hasAdminAssigned = data.adminAssigned || false;
+      const adminAssignedStatus = hasAdminAssigned ? data.subscription : null;
+      
       setSubscriptionInfo({
         status: data.subscription,
-        isActive: data.isActive || data.adminAssigned || false,
+        isActive: data.isActive || hasAdminAssigned || false,
         inTrial: data.inTrial,
         expiresAt: data.expiresAt,
         willCancel: data.willCancel,
         isLoading: false,
-        isAdmin: data.isAdmin || false
+        isAdmin: data.isAdmin || false,
+        adminAssigned: hasAdminAssigned,
+        adminAssignedStatus: adminAssignedStatus
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
-      setSubscriptionInfo(prev => ({ ...prev, isLoading: false }));
+      setSubscriptionInfo(prev => ({ 
+        ...prev, 
+        isLoading: false,
+        error: String(error)
+      }));
     }
   }, [user, session, isAdmin]);
 
