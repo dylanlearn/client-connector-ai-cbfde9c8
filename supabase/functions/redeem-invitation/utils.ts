@@ -12,3 +12,18 @@ export function calculateExpirationDate(): Date {
   return expiresAt;
 }
 
+// Helper function to format response
+export function formatResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status,
+  });
+}
+
+// Helper function to format error response
+export function formatErrorResponse(message: string, status = 400) {
+  return new Response(JSON.stringify({ error: message }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status,
+  });
+}

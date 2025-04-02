@@ -32,9 +32,8 @@ const AdminPanel = () => {
           
         if (error) throw error;
         
-        // Here's where the error was - comparing with "admin" when that's not a valid role
-        // Instead, check if the role is "pro" which is an admin in this system
-        if (data.role === "pro") {
+        // Check if the role is 'admin' - this is the correct value in the enum
+        if (data.role === "admin") {
           setIsAdmin(true);
         } else {
           // Not an admin, redirect to dashboard

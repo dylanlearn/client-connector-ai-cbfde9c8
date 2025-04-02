@@ -439,7 +439,7 @@ export type Database = {
     Enums: {
       subscription_status: "free" | "basic" | "pro"
       template_status: "active" | "archived" | "draft"
-      user_role: "free" | "pro" | "template-buyer"
+      user_role: "free" | "pro" | "template-buyer" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never

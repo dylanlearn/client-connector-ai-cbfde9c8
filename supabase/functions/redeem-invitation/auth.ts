@@ -22,3 +22,17 @@ export async function verifyUser(authHeader: string | null) {
   return user;
 }
 
+export async function verifyAdmin(userId: string) {
+  // Check if the user has admin role
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+    
+  if (error || !data) {
+    return false;
+  }
+  
+  return data.role === 'admin';
+}
