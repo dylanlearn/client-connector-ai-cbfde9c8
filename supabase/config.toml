@@ -46,14 +46,14 @@ refresh_token_reuse_interval = 10
 [realtime]
 enabled = true
 
-# Functions configuration
 [functions]
-# General functions configuration
 enabled = true
 
-# Function-specific configurations
 [functions.analyze-interaction-patterns]
 verify_jwt = true
 
 [functions.interaction-db-functions]
+verify_jwt = false
+
+[functions.setup-rpc-functions]
 verify_jwt = false
