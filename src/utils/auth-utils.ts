@@ -111,10 +111,10 @@ export const isUserActive = (profile: UserProfile | null): boolean => {
 export const getPostLoginRedirect = (profile: UserProfile | null, defaultPath: string = '/dashboard'): string => {
   console.log("getPostLoginRedirect called with profile:", profile, "and defaultPath:", defaultPath);
   
-  // If user is admin, always redirect to the requested path or dashboard
+  // Direct admin check - always redirect admins to the dashboard regardless of subscription
   if (profile?.role === 'admin') {
-    console.log("Admin user detected in getPostLoginRedirect, redirecting to:", defaultPath);
-    return defaultPath;
+    console.log("Admin user detected in getPostLoginRedirect, redirecting to dashboard");
+    return '/dashboard'; // Always send admins to dashboard, not the requested path
   }
   
   // Check if user has active subscription

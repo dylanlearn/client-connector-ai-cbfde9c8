@@ -51,8 +51,10 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   }
   
   // Check for admin status first - admins always have access
-  // We check both the isAdmin from useSubscription and the profile role
-  if (isAdmin || profile?.role === 'admin') {
+  // Direct check for admin role in profile
+  const hasAdminRole = profile?.role === 'admin';
+  
+  if (hasAdminRole || isAdmin) {
     console.log("Admin user detected, granting access");
     return <>{children}</>;
   }

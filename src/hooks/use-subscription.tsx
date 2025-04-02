@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate as useReactRouterNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -73,6 +74,29 @@ export const useSubscription = () => {
       
       // For non-admin users, check subscription normally
       console.log("useSubscription - User is not admin, checking subscription");
+      
+      // Make direct database check for admin role as a backup
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (!profileError && profileData?.role === 'admin') {
+        console.log("useSubscription - Direct DB check found admin role");
+        setSubscriptionInfo({
+          status: "pro",
+          isActive: true,
+          inTrial: false,
+          expiresAt: null,
+          willCancel: false,
+          isLoading: false,
+          isAdmin: true
+        });
+        return;
+      }
+      
+      // Continue with regular subscription check
       const { data, error } = await supabase.functions.invoke("check-subscription");
       
       if (error) {
