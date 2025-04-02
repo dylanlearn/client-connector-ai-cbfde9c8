@@ -10,9 +10,10 @@ import TooltipHelper from "../TooltipHelper";
 interface PortfolioFieldsProps {
   form: UseFormReturn<any>;
   showTooltips?: boolean;
+  aiPowered?: boolean;
 }
 
-const PortfolioFields = ({ form, showTooltips = false }: PortfolioFieldsProps) => {
+const PortfolioFields = ({ form, showTooltips = false, aiPowered = false }: PortfolioFieldsProps) => {
   const exampleAnswers = {
     projectCategories: "Web Design, Mobile Apps, Brand Identity, UI/UX Design, Photography",
     contactInformation: "Email, phone number, social media profiles, contact form with option to schedule a consultation"
@@ -20,7 +21,7 @@ const PortfolioFields = ({ form, showTooltips = false }: PortfolioFieldsProps) =
 
   return (
     <>
-      <BaseFields form={form} showTooltips={showTooltips} />
+      <BaseFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />
       
       <FormField
         control={form.control}
@@ -31,7 +32,9 @@ const PortfolioFields = ({ form, showTooltips = false }: PortfolioFieldsProps) =
               <FormLabel>Project Categories</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.projectCategories}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.projectCategories}</div>}
+                  field="Project Categories"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>
@@ -60,7 +63,9 @@ const PortfolioFields = ({ form, showTooltips = false }: PortfolioFieldsProps) =
               <FormLabel>Contact Information</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.contactInformation}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.contactInformation}</div>}
+                  field="Contact Information"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>

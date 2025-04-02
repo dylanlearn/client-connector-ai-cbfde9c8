@@ -10,16 +10,17 @@ import TooltipHelper from "../TooltipHelper";
 interface SaasFieldsProps {
   form: UseFormReturn<any>;
   showTooltips?: boolean;
+  aiPowered?: boolean;
 }
 
-const SaasFields = ({ form, showTooltips = false }: SaasFieldsProps) => {
+const SaasFields = ({ form, showTooltips = false, aiPowered = false }: SaasFieldsProps) => {
   const exampleAnswers = {
     pricingTiers: "Free: Basic features, Pro ($29/mo): Advanced features, Enterprise ($99/mo): Custom solutions and priority support"
   };
 
   return (
     <>
-      <BaseFields form={form} showTooltips={showTooltips} />
+      <BaseFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />
       
       <FormField
         control={form.control}
@@ -51,7 +52,9 @@ const SaasFields = ({ form, showTooltips = false }: SaasFieldsProps) => {
               <FormLabel>Pricing Tiers</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.pricingTiers}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.pricingTiers}</div>}
+                  field="Pricing Tiers"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>

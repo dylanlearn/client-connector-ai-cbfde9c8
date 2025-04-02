@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import SiteTypeFields from "./site-type-fields/SiteTypeFields";
 import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-helpers";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -29,6 +29,8 @@ const SpecificQuestionsStep = ({
   const siteType = formData.siteType || "business";
   const schema = getFormSchema(siteType);
   const [showTooltips, setShowTooltips] = useState(false);
+  const [aiPowered, setAiPowered] = useState(false);
+  const { toast } = useToast();
   
   const form = useForm({
     resolver: zodResolver(schema),
@@ -52,6 +54,17 @@ const SpecificQuestionsStep = ({
     onNext();
   };
 
+  const handleAIToggle = (enabled: boolean) => {
+    setAiPowered(enabled);
+    if (enabled) {
+      toast({
+        title: "AI-powered tooltips enabled",
+        description: "Hover over the info icons to see AI-generated example answers",
+        duration: 3000,
+      });
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -59,18 +72,39 @@ const SpecificQuestionsStep = ({
           These questions are tailored to your {getSiteTypeName(siteType)} project. Please provide as much detail as possible.
         </div>
         
-        <div className="flex items-center justify-end space-x-2 mb-4">
-          <Label htmlFor="show-examples" className="text-sm text-gray-500">
-            Show example answers
-          </Label>
-          <Switch
-            id="show-examples"
-            checked={showTooltips}
-            onCheckedChange={setShowTooltips}
-          />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="show-examples" className="text-sm text-gray-500">
+              Show example answers
+            </Label>
+            <Switch
+              id="show-examples"
+              checked={showTooltips}
+              onCheckedChange={setShowTooltips}
+            />
+          </div>
+          
+          {showTooltips && (
+            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+              <Label htmlFor="ai-powered" className="text-sm text-gray-500">
+                AI-powered examples
+              </Label>
+              <Switch
+                id="ai-powered"
+                checked={aiPowered}
+                onCheckedChange={handleAIToggle}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
+          )}
         </div>
         
-        <SiteTypeFields siteType={siteType} form={form} showTooltips={showTooltips} />
+        <SiteTypeFields 
+          siteType={siteType} 
+          form={form} 
+          showTooltips={showTooltips}
+          aiPowered={aiPowered && showTooltips}
+        />
 
         <div className="flex justify-between pt-4">
           <Button type="button" variant="outline" onClick={onPrevious}>

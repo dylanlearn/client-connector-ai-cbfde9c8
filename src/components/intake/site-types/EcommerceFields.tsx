@@ -13,9 +13,10 @@ import TooltipHelper from "../TooltipHelper";
 interface EcommerceFieldsProps {
   form: UseFormReturn<any>;
   showTooltips?: boolean;
+  aiPowered?: boolean;
 }
 
-const EcommerceFields = ({ form, showTooltips = false }: EcommerceFieldsProps) => {
+const EcommerceFields = ({ form, showTooltips = false, aiPowered = false }: EcommerceFieldsProps) => {
   const { profile } = useAuth();
   const isPro = profile?.role === 'pro';
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
@@ -55,7 +56,7 @@ const EcommerceFields = ({ form, showTooltips = false }: EcommerceFieldsProps) =
 
   return (
     <>
-      <BaseFields form={form} showTooltips={showTooltips} />
+      <BaseFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />
       
       <FormField
         control={form.control}
@@ -66,7 +67,9 @@ const EcommerceFields = ({ form, showTooltips = false }: EcommerceFieldsProps) =
               <FormLabel>Estimated Products</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.estimatedProducts}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.estimatedProducts}</div>}
+                  field="Estimated Products"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>
@@ -87,7 +90,9 @@ const EcommerceFields = ({ form, showTooltips = false }: EcommerceFieldsProps) =
               <FormLabel>Payment Processors</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.paymentProcessors}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.paymentProcessors}</div>}
+                  field="Payment Processors"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>

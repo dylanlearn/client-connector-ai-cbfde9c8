@@ -10,16 +10,17 @@ import TooltipHelper from "../TooltipHelper";
 interface BusinessFieldsProps {
   form: UseFormReturn<any>;
   showTooltips?: boolean;
+  aiPowered?: boolean;
 }
 
-const BusinessFields = ({ form, showTooltips = false }: BusinessFieldsProps) => {
+const BusinessFields = ({ form, showTooltips = false, aiPowered = false }: BusinessFieldsProps) => {
   const exampleAnswers = {
     serviceOfferings: "Website design, SEO optimization, content creation, branding, logo design, monthly website maintenance"
   };
 
   return (
     <>
-      <BaseFields form={form} showTooltips={showTooltips} />
+      <BaseFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />
       
       <FormField
         control={form.control}
@@ -30,7 +31,9 @@ const BusinessFields = ({ form, showTooltips = false }: BusinessFieldsProps) => 
               <FormLabel>Service Offerings</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.serviceOfferings}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.serviceOfferings}</div>}
+                  field="Service Offerings"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>

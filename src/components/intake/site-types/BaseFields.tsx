@@ -14,9 +14,10 @@ import TooltipHelper from "../TooltipHelper";
 interface BaseFieldsProps {
   form: UseFormReturn<any>;
   showTooltips?: boolean;
+  aiPowered?: boolean;
 }
 
-const BaseFields = ({ form, showTooltips = false }: BaseFieldsProps) => {
+const BaseFields = ({ form, showTooltips = false, aiPowered = false }: BaseFieldsProps) => {
   const exampleAnswers = {
     mainFeatures: "User authentication, profile management, content publishing, analytics dashboard, social sharing capabilities",
     competitors: "Website A offers similar services but lacks mobile responsiveness. Website B has better analytics but their UI is more complex."
@@ -33,7 +34,9 @@ const BaseFields = ({ form, showTooltips = false }: BaseFieldsProps) => {
               <FormLabel>Main Features</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.mainFeatures}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.mainFeatures}</div>}
+                  field="Main Features"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>
@@ -62,7 +65,9 @@ const BaseFields = ({ form, showTooltips = false }: BaseFieldsProps) => {
               <FormLabel>Competitors</FormLabel>
               {showTooltips && (
                 <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.competitors}</div>} 
+                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.competitors}</div>}
+                  field="Competitors"
+                  aiPowered={aiPowered}
                 />
               )}
             </div>
