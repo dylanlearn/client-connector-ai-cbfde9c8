@@ -90,7 +90,7 @@ serve(async (req) => {
       );
     }
 
-    // Generate insights from memories
+    // Generate insights from memories while preserving tone preferences
     const insights = analyzeMemoriesForInsights(memories, category);
     
     // Store analysis results
@@ -103,7 +103,7 @@ serve(async (req) => {
       });
 
     if (insertError) {
-      console.error("Error storing analysis results:", insertError);
+      console.log("Error storing analysis results:", insertError);
       // Continue anyway, as we still want to return insights
     }
 
@@ -134,12 +134,18 @@ serve(async (req) => {
 });
 
 /**
- * Analyze memories to extract insights
- * This is a simplified version that could be replaced with a more sophisticated AI analysis
+ * Analyze memories to extract insights while preserving client tone preferences
  */
 function analyzeMemoriesForInsights(memories: any[], category: string): string[] {
   // Count common patterns in memory content
   const contentPatterns: Record<string, number> = {};
+  const tonePreferences: Record<string, number> = {
+    formal: 0,
+    casual: 0,
+    professional: 0,
+    friendly: 0,
+    technical: 0
+  };
   
   // Extract key phrases and count occurrences
   memories.forEach(memory => {
@@ -151,7 +157,21 @@ function analyzeMemoriesForInsights(memories: any[], category: string): string[]
     keyPhrases.forEach(phrase => {
       contentPatterns[phrase] = (contentPatterns[phrase] || 0) + 1;
     });
+    
+    // Track tone preferences if available in metadata
+    if (memory.metadata && memory.metadata.toneIndicators) {
+      Object.entries(memory.metadata.toneIndicators).forEach(([tone, value]) => {
+        if (tone in tonePreferences) {
+          tonePreferences[tone] += Number(value);
+        }
+      });
+    }
   });
+  
+  // Get dominant tone preference (if any)
+  const dominantTone = Object.entries(tonePreferences)
+    .sort((a, b) => b[1] - a[1])
+    .filter(([_, value]) => Number(value) > 0)[0]?.[0] || null;
   
   // Generate insights based on category
   let insights: string[] = [];
@@ -160,6 +180,40 @@ function analyzeMemoriesForInsights(memories: any[], category: string): string[]
     .slice(0, 5)
     .map(([key]) => key);
   
+  // Apply the appropriate tone to insights based on preferences
+  const applyTone = (insights: string[]): string[] => {
+    if (!dominantTone) return insights;
+    
+    // Transform insights to match the dominant tone
+    return insights.map(insight => {
+      switch (dominantTone) {
+        case 'formal':
+          return insight.replace(/gets better/g, 'demonstrates improved performance')
+                       .replace(/popular/g, 'frequently preferred')
+                       .replace(/like/g, 'prefer');
+        case 'casual':
+          return insight.replace(/demonstrates/g, 'shows')
+                       .replace(/frequently preferred/g, 'popular')
+                       .replace(/utilize/g, 'use');
+        case 'professional':
+          return insight.replace(/like/g, 'prefer')
+                       .replace(/good/g, 'effective')
+                       .replace(/better/g, 'enhanced');
+        case 'friendly':
+          return insight.replace(/Users generally prefer/g, 'People tend to like')
+                       .replace(/demonstrates/g, 'shows')
+                       .replace(/utilize/g, 'use');
+        case 'technical':
+          return insight.replace(/clean/g, 'minimal')
+                       .replace(/looks better/g, 'renders more effectively')
+                       .replace(/like/g, 'select');
+        default:
+          return insight;
+      }
+    });
+  };
+  
+  // Generate base insights
   switch (category) {
     case "tone_preference":
       insights = [
@@ -197,7 +251,8 @@ function analyzeMemoriesForInsights(memories: any[], category: string): string[]
       ];
   }
   
-  return insights;
+  // Apply tone preferences to the insights
+  return applyTone(insights);
 }
 
 /**

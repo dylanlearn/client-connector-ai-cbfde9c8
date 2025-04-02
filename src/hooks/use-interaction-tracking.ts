@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAIMemory } from "@/contexts/ai/hooks";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
+import { MemoryCategory } from "@/services/ai/memory";
 
 /**
  * Hook for tracking user interactions for heatmaps and analytics
  */
 export const useInteractionTracking = () => {
   const { user } = useAuth();
-  const { storeInteractionMemory } = useAIMemory();
+  const { storeInteractionMemory, storeMemory } = useAIMemory();
   const sessionId = useCallback(() => {
     // Get or create a session ID stored in sessionStorage
     let id = sessionStorage.getItem('analytics_session_id');
@@ -81,6 +82,31 @@ export const useInteractionTracking = () => {
   }, [trackInteraction]);
 
   /**
+   * Track tone preferences based on user interactions with text content
+   */
+  const trackTonePreference = useCallback((
+    content: string,
+    rating: number,
+    context?: string
+  ) => {
+    if (!user) return;
+    
+    // Store tone preference in memory
+    storeMemory(
+      content,
+      MemoryCategory.TonePreference,
+      undefined,
+      {
+        rating,
+        context,
+        timestamp: new Date().toISOString()
+      }
+    );
+    
+    console.log('Tone preference tracked:', { content, rating, context });
+  }, [user, storeMemory]);
+
+  /**
    * Get a simple CSS selector for an element
    */
   const getElementSelector = (element: HTMLElement): string => {
@@ -102,6 +128,7 @@ export const useInteractionTracking = () => {
 
   return {
     trackInteraction,
-    trackClick
+    trackClick,
+    trackTonePreference
   };
 };
