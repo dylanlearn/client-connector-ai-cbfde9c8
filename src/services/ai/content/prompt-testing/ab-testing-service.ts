@@ -5,7 +5,7 @@ import { PromptTestResults } from './modules/test-results';
 import { PromptAnalyticsTracker } from './modules/analytics-tracker';
 
 // Re-export types from the types module
-export { PromptTestStatus, PromptVariant, PromptTest, PromptTestResult } from './modules/types';
+export type { PromptTestStatus, PromptVariant, PromptTest, PromptTestResult } from './modules/types';
 
 /**
  * Service for managing A/B testing of AI prompts with statistical significance tracking
