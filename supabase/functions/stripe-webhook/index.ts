@@ -11,7 +11,6 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const stripe = new Stripe(stripeSecretKey, {
@@ -19,155 +18,48 @@ const stripe = new Stripe(stripeSecretKey, {
 });
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
-  
-  // This webhook should not require authentication
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', {
-      headers: corsHeaders,
-      status: 405,
-    });
-  }
 
   try {
-    // Get the Stripe signature from the headers
+    const body = await req.text();
     const signature = req.headers.get('stripe-signature');
+
     if (!signature) {
-      throw new Error('No Stripe signature found');
+      throw new Error('Missing Stripe signature');
     }
 
-    // Get the raw request body as text
-    const body = await req.text();
-    
-    // Construct the event
+    // This should be your webhook signing secret from Stripe Dashboard
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
+    if (!webhookSecret) {
+      throw new Error('Missing Stripe webhook secret');
+    }
+
+    // Verify webhook signature
     let event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, endpointSecret);
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
       console.error(`Webhook signature verification failed: ${err.message}`);
-      return new Response(`Webhook signature verification failed: ${err.message}`, {
-        headers: corsHeaders,
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Handle the event
+    console.log(`Processing Stripe event: ${event.type}`);
+
+    // Handle the event based on its type
     switch (event.type) {
       case 'customer.subscription.created':
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object;
-        // Find the user by the Stripe customer ID
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('subscriptions')
-          .select('user_id')
-          .eq('stripe_customer_id', subscription.customer)
-          .single();
-
-        if (subscriptionError) {
-          throw new Error(`Error finding user: ${subscriptionError.message}`);
-        }
-
-        if (!subscriptionData) {
-          throw new Error(`No user found for customer ${subscription.customer}`);
-        }
-
-        // Determine the subscription status
-        let subscriptionStatus = 'free';
-        if (subscription.status === 'active' || subscription.status === 'trialing') {
-          // Check the plan/price to determine if it's basic or pro
-          const items = subscription.items.data;
-          if (items && items.length > 0) {
-            const priceId = items[0].price.id;
-            if (priceId === 'price_basic') {
-              subscriptionStatus = 'basic';
-            } else if (priceId === 'price_pro') {
-              subscriptionStatus = 'pro';
-            }
-          }
-        }
-
-        // Update the subscription in the database
-        const { error: updateError } = await supabase
-          .from('subscriptions')
-          .update({
-            stripe_subscription_id: subscription.id,
-            subscription_status: subscriptionStatus,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', subscriptionData.user_id);
-
-        if (updateError) {
-          throw new Error(`Error updating subscription: ${updateError.message}`);
-        }
-
-        // Also update the profile subscription_status
-        const { error: profileUpdateError } = await supabase
-          .from('profiles')
-          .update({
-            subscription_status: subscriptionStatus,
-          })
-          .eq('id', subscriptionData.user_id);
-
-        if (profileUpdateError) {
-          throw new Error(`Error updating profile: ${profileUpdateError.message}`);
-        }
-
+      case 'customer.subscription.updated':
+        await handleSubscriptionChange(event.data.object);
         break;
-      }
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        
-        // Find the user by the Stripe customer ID
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('subscriptions')
-          .select('user_id')
-          .eq('stripe_customer_id', subscription.customer)
-          .single();
-
-        if (subscriptionError) {
-          throw new Error(`Error finding user: ${subscriptionError.message}`);
-        }
-
-        if (!subscriptionData) {
-          throw new Error(`No user found for customer ${subscription.customer}`);
-        }
-
-        // Update the subscription to free in the database
-        const { error: updateError } = await supabase
-          .from('subscriptions')
-          .update({
-            subscription_status: 'free',
-            current_period_end: null,
-            current_period_start: null,
-            cancel_at_period_end: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', subscriptionData.user_id);
-
-        if (updateError) {
-          throw new Error(`Error updating subscription: ${updateError.message}`);
-        }
-
-        // Also update the profile subscription_status
-        const { error: profileUpdateError } = await supabase
-          .from('profiles')
-          .update({
-            subscription_status: 'free',
-          })
-          .eq('id', subscriptionData.user_id);
-
-        if (profileUpdateError) {
-          throw new Error(`Error updating profile: ${profileUpdateError.message}`);
-        }
-
+      case 'customer.subscription.deleted':
+        await handleSubscriptionCancelled(event.data.object);
         break;
-      }
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
@@ -184,3 +76,127 @@ serve(async (req) => {
     });
   }
 });
+
+async function handleSubscriptionChange(subscription: Stripe.Subscription) {
+  try {
+    // Find the user associated with this customer
+    const { data: subscriptionData, error: findError } = await supabase
+      .from('subscriptions')
+      .select('user_id')
+      .eq('stripe_customer_id', subscription.customer as string)
+      .maybeSingle();
+
+    if (findError) {
+      throw new Error(`Error finding subscription: ${findError.message}`);
+    }
+
+    if (!subscriptionData) {
+      console.error(`No subscription found for customer: ${subscription.customer}`);
+      return;
+    }
+
+    // Determine subscription status
+    let status: 'free' | 'basic' | 'pro';
+    if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+      status = 'free';
+    } else {
+      // Get plan from the price ID
+      const priceId = subscription.items.data[0]?.price.id;
+      if (priceId.includes('basic')) {
+        status = 'basic';
+      } else if (priceId.includes('pro')) {
+        status = 'pro';
+      } else {
+        status = 'free';
+      }
+    }
+
+    // Update the subscription record
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        stripe_subscription_id: subscription.id,
+        subscription_status: status,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', subscriptionData.user_id);
+
+    if (updateError) {
+      throw new Error(`Error updating subscription: ${updateError.message}`);
+    }
+
+    // Also update profile subscription status
+    const { error: profileUpdateError } = await supabase
+      .from('profiles')
+      .update({
+        subscription_status: status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', subscriptionData.user_id);
+
+    if (profileUpdateError) {
+      throw new Error(`Error updating profile status: ${profileUpdateError.message}`);
+    }
+
+    console.log(`Subscription updated successfully for user: ${subscriptionData.user_id}`);
+  } catch (error) {
+    console.error(`Error in handleSubscriptionChange: ${error.message}`);
+    throw error;
+  }
+}
+
+async function handleSubscriptionCancelled(subscription: Stripe.Subscription) {
+  try {
+    // Find the user associated with this customer
+    const { data: subscriptionData, error: findError } = await supabase
+      .from('subscriptions')
+      .select('user_id')
+      .eq('stripe_subscription_id', subscription.id)
+      .maybeSingle();
+
+    if (findError) {
+      throw new Error(`Error finding subscription: ${findError.message}`);
+    }
+
+    if (!subscriptionData) {
+      console.error(`No subscription found for subscription ID: ${subscription.id}`);
+      return;
+    }
+
+    // Update the subscription record
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        subscription_status: 'free',
+        cancel_at_period_end: false,
+        current_period_end: new Date().toISOString(), // End immediately
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', subscriptionData.user_id);
+
+    if (updateError) {
+      throw new Error(`Error updating subscription: ${updateError.message}`);
+    }
+
+    // Also update profile subscription status
+    const { error: profileUpdateError } = await supabase
+      .from('profiles')
+      .update({
+        subscription_status: 'free',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', subscriptionData.user_id);
+
+    if (profileUpdateError) {
+      throw new Error(`Error updating profile status: ${profileUpdateError.message}`);
+    }
+
+    console.log(`Subscription cancelled for user: ${subscriptionData.user_id}`);
+  } catch (error) {
+    console.error(`Error in handleSubscriptionCancelled: ${error.message}`);
+    throw error;
+  }
+}

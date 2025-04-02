@@ -225,6 +225,7 @@ export type Database = {
           name: string | null
           phone_number: string | null
           role: Database["public"]["Enums"]["user_role"]
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
           updated_at: string
         }
         Insert: {
@@ -235,6 +236,7 @@ export type Database = {
           name?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
         }
         Update: {
@@ -245,6 +247,7 @@ export type Database = {
           name?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
         }
         Relationships: []
@@ -287,6 +290,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       template_purchases: {
         Row: {
@@ -387,6 +437,7 @@ export type Database = {
       }
     }
     Enums: {
+      subscription_status: "free" | "basic" | "pro"
       template_status: "active" | "archived" | "draft"
       user_role: "free" | "pro" | "template-buyer"
     }
