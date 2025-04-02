@@ -3,10 +3,12 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { HeaderNavLinks } from "./header/HeaderNavLinks";
 import { PlanBadge } from "./header/PlanBadge";
 import { UserMenu } from "./header/UserMenu";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const DashboardHeader = () => {
-  // Determine if the user is on a pro plan - this would typically come from the user's subscription info
-  const isPro = false; // Replace with actual logic to check if user has a Pro plan
+  const { status } = useSubscription();
+  // Determine if the user is on a pro plan
+  const isPro = status === 'sync-pro';
 
   return (
     <header className="border-b bg-white flex items-center justify-between px-4 md:px-6 h-16">
