@@ -1,41 +1,27 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { IntakeFormData } from "@/types/intake-form";
+import { useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { TaskStatus } from "@/types/client";
 import { updateTaskStatus as clientUpdateTaskStatus } from "@/services/client-tasks-service";
 import { 
-  loadFormData, 
-  saveFormData, 
   saveStep, 
   getSavedStep, 
-  clearFormStorage, 
-  getFormId,
+  clearFormStorage,
   hasInProgressForm as checkInProgressForm
 } from "./storage-utils";
-import { 
-  saveFormToSupabase, 
-  createRealtimeSubscription,
-  submitCompleteForm
-} from "./supabase-integration";
-import { UseIntakeFormReturn, ToastAdapter } from "./types";
+import { ToastAdapter } from "./types";
+import { useIntakeFormState } from "./useIntakeFormState";
+import { useFormSync } from "./useFormSync";
+import { useFormSubmission } from "./useFormSubmission";
 
 /**
  * Hook for managing intake form state and persistence with improved caching and error handling
  */
-export const useIntakeForm = (): UseIntakeFormReturn => {
-  const [formData, setFormData] = useState<IntakeFormData>(() => loadFormData());
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+export const useIntakeForm = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { taskId } = useParams();
-  const formId = getFormId();
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingChangesRef = useRef<boolean>(false);
-  const formDataCache = useRef<IntakeFormData>(formData);
   
   // Create a toast adapter to match the expected interface
   const toastAdapter: ToastAdapter = {
@@ -45,121 +31,46 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
     }
   };
   
-  // Cache the form data
-  useEffect(() => {
-    formDataCache.current = formData;
-  }, [formData]);
+  // Initialize form state
+  const { 
+    formData, 
+    formDataCache, 
+    updateFormData, 
+    setFormData,
+    isLoading, 
+    setIsLoading,
+    isSaving, 
+    setIsSaving,
+    formId 
+  } = useIntakeFormState();
 
-  // Load form data from localStorage on initial render
-  useEffect(() => {
-    const initialData = loadFormData();
-    setFormData(initialData);
-  }, []);
+  // Initialize form sync
+  const { scheduleSave } = useFormSync(
+    user?.id,
+    formId,
+    formData,
+    formDataCache,
+    setFormData,
+    setIsSaving,
+    toastAdapter
+  );
 
-  // Setup realtime updates if user is authenticated
-  useEffect(() => {
-    if (!user) return;
+  // Initialize form submission
+  const { submitForm } = useFormSubmission(
+    user?.id,
+    formId,
+    formDataCache,
+    setIsLoading,
+    toastAdapter,
+    clientUpdateTaskStatus
+  );
 
-    const subscription = createRealtimeSubscription(
-      formId,
-      formData.lastUpdated,
-      (newData) => setFormData(prevData => ({...prevData, ...newData})),
-      { toast: toastAdapter }
-    );
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [formId, formData.lastUpdated, user, toastAdapter]);
-
-  // Scheduler for saving to Supabase - more robust
-  const scheduleSave = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    pendingChangesRef.current = true;
-    
-    saveTimeoutRef.current = setTimeout(async () => {
-      if (!user || Object.keys(formDataCache.current).length <= 1) {
-        pendingChangesRef.current = false;
-        return;
-      }
-      
-      setIsSaving(true);
-      try {
-        await saveFormToSupabase(formDataCache.current, user.id, formId, { toast: toastAdapter });
-        pendingChangesRef.current = false;
-      } catch (error) {
-        console.error("Error saving to Supabase:", error);
-        // Reschedule save if it fails
-        if (pendingChangesRef.current) {
-          saveTimeoutRef.current = setTimeout(() => scheduleSave(), 10000);
-        }
-      } finally {
-        setIsSaving(false);
-      }
-    }, 1000);
-  }, [user, formId, toastAdapter]);
-
-  // Watch for beforeunload event to warn user about unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (pendingChangesRef.current) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    };
-    
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  // Update form data and save to localStorage
-  const updateFormData = useCallback((data: Partial<IntakeFormData>) => {
-    setFormData(prevData => {
-      const updatedData = {
-        ...prevData,
-        ...data,
-        lastUpdated: new Date().toISOString()
-      };
-      saveFormData(updatedData);
-      formDataCache.current = updatedData;
-      scheduleSave();
-      return updatedData;
-    });
-  }, [scheduleSave]);
-
-  // Submit the complete form with offline support
-  const submitForm = useCallback(async (): Promise<IntakeFormData> => {
-    if (!user) {
-      throw new Error("User must be authenticated to submit form");
-    }
-
-    setIsLoading(true);
-    try {
-      // Create an adapter function to match the expected signature
-      const adaptedUpdateTaskStatus = async (
-        taskId: string, 
-        status: string, 
-        data: any
-      ): Promise<void> => {
-        await clientUpdateTaskStatus(taskId, status as TaskStatus, data);
-      };
-
-      return await submitCompleteForm(
-        formDataCache.current, 
-        user.id, 
-        formId, 
-        taskId || null,
-        adaptedUpdateTaskStatus,
-        { toast: toastAdapter }
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, formId, taskId, toastAdapter]);
+  // Override updateFormData to trigger Supabase sync
+  const enhancedUpdateFormData = useCallback((data: Partial<IntakeFormData>) => {
+    const updatedData = updateFormData(data);
+    scheduleSave();
+    return updatedData;
+  }, [updateFormData, scheduleSave]);
 
   // Clear form data
   const clearFormData = useCallback(() => {
@@ -167,7 +78,7 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
     const emptyForm = { formId };
     setFormData(emptyForm);
     formDataCache.current = emptyForm;
-  }, [formId]);
+  }, [formId, setFormData, formDataCache]);
 
   // Check if the form has been started
   const hasStartedForm = useCallback(() => {
@@ -186,8 +97,14 @@ export const useIntakeForm = (): UseIntakeFormReturn => {
 
   return {
     formData,
-    updateFormData,
-    submitForm,
+    updateFormData: enhancedUpdateFormData,
+    submitForm: async () => {
+      if (taskId) {
+        return submitForm();
+      } else {
+        return submitForm();
+      }
+    },
     clearFormData,
     hasStartedForm,
     isLoading,
