@@ -1,6 +1,6 @@
 
 import { ClientTaskProgress } from "@/types/client";
-import { ClientProgressItem } from "./ClientProgressItem";
+import ClientProgressItem from "./ClientProgressItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";

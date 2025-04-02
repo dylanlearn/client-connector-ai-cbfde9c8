@@ -1,13 +1,12 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import EmptyState from "@/components/dashboard/EmptyState";
-import { BarChart3, LayoutGrid, Star } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import PreferenceOverview from "@/components/analytics/PreferenceOverview";
 import TopRankedDesigns from "@/components/analytics/TopRankedDesigns";
 import CategoryDistribution from "@/components/analytics/CategoryDistribution";
 import { useAnalytics } from "@/hooks/use-analytics";
+import DashboardTabContent from "./DashboardTabContent";
 
 const StatsTab = () => {
   const navigate = useNavigate();
@@ -16,79 +15,62 @@ const StatsTab = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Statistics</CardTitle>
-          <CardDescription>
-            Overview of your activity and engagement
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6 py-4">
-            <div className="h-4 w-1/3 bg-muted animate-pulse rounded"></div>
-            <div className="h-24 w-full bg-muted animate-pulse rounded"></div>
-            <div className="h-4 w-1/2 bg-muted animate-pulse rounded"></div>
-            <div className="h-24 w-full bg-muted animate-pulse rounded"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <DashboardTabContent 
+        title="Your Statistics" 
+        description="Overview of your activity and engagement"
+        isLoading={true}
+      >
+        {null}
+      </DashboardTabContent>
     );
   }
 
   if (!hasStats) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Statistics</CardTitle>
-          <CardDescription>
-            Overview of your activity and engagement
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EmptyState 
-            title="No statistics yet"
-            description="Complete your first project to see statistics."
-            buttonText="Create Project"
-            buttonAction={() => navigate("/new-project")}
-            icon={BarChart3}
-          />
-        </CardContent>
-      </Card>
+      <DashboardTabContent 
+        title="Your Statistics" 
+        description="Overview of your activity and engagement"
+      >
+        <EmptyState 
+          title="No statistics yet"
+          description="Complete your first project to see statistics."
+          action={{
+            label: "Create Project",
+            onClick: () => navigate("/new-project")
+          }}
+          icon={<BarChart3 className="h-6 w-6 text-muted-foreground" />}
+        />
+      </DashboardTabContent>
     );
   }
   
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Design Preferences</CardTitle>
-          <CardDescription>
-            Summary of your most selected design elements
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PreferenceOverview />
-        </CardContent>
-      </Card>
+      <DashboardTabContent 
+        title="Design Preferences" 
+        description="Summary of your most selected design elements"
+      >
+        <PreferenceOverview />
+      </DashboardTabContent>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="h-[300px]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Top Ranked Elements</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[calc(300px-70px)]">
+        <DashboardTabContent 
+          title="Top Ranked Elements" 
+          className="h-[300px]"
+        >
+          <div className="h-[calc(300px-100px)]">
             <TopRankedDesigns />
-          </CardContent>
-        </Card>
+          </div>
+        </DashboardTabContent>
         
-        <Card className="h-[300px]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Category Distribution</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[calc(300px-70px)]">
+        <DashboardTabContent 
+          title="Category Distribution" 
+          className="h-[300px]"
+        >
+          <div className="h-[calc(300px-100px)]">
             <CategoryDistribution />
-          </CardContent>
-        </Card>
+          </div>
+        </DashboardTabContent>
       </div>
     </div>
   );

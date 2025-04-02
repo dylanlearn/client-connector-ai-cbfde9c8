@@ -46,9 +46,16 @@ export const getStatusConfig = (status: StatusType): StatusConfig => {
         color: 'text-gray-500'
       };
     case 'info':
-    default:
       return {
-        label: status === 'info' ? 'Info' : status.charAt(0).toUpperCase() + status.slice(1),
+        label: 'Info',
+        variant: 'default',
+        color: 'text-blue-800'
+      };
+    default:
+      // For custom status types, create a capitalized label
+      const statusString = String(status);
+      return {
+        label: statusString.charAt(0).toUpperCase() + statusString.slice(1),
         variant: 'default',
         color: 'text-blue-800'
       };

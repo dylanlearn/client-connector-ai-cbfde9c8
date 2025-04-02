@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,12 +10,41 @@ import OverviewTab from "@/components/dashboard/tabs/OverviewTab";
 import StatsTab from "@/components/dashboard/tabs/StatsTab";
 import TipsTab from "@/components/dashboard/tabs/TipsTab";
 import ClientsTab from "@/components/dashboard/tabs/ClientsTab";
+import { TabManager, TabItem } from "@/components/ui/tab-manager";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const isMobile = useIsMobile();
   const { activeTab, loading, handleTabChange } = useDashboardTabs();
+
+  // Define tabs configuration
+  const dashboardTabs: TabItem[] = [
+    {
+      id: "overview",
+      label: "Overview",
+      content: <OverviewTab projects={projects} />,
+      isLoading: loading && activeTab === "overview"
+    },
+    {
+      id: "clients",
+      label: "Clients",
+      content: <ClientsTab />,
+      isLoading: loading && activeTab === "clients"
+    },
+    {
+      id: "stats",
+      label: "Stats",
+      content: <StatsTab />,
+      isLoading: loading && activeTab === "stats"
+    },
+    {
+      id: "tips",
+      label: "Tips",
+      content: <TipsTab />,
+      isLoading: loading && activeTab === "tips"
+    }
+  ];
 
   return (
     <DashboardLayout>
@@ -28,34 +56,12 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      <Tabs 
-        defaultValue={activeTab} 
-        onValueChange={handleTabChange} 
+      <TabManager 
+        tabs={dashboardTabs}
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
         className="space-y-4"
-      >
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-          <TabsTrigger value="tips">Tips</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" isLoading={loading && activeTab === "overview"}>
-          <OverviewTab projects={projects} />
-        </TabsContent>
-
-        <TabsContent value="clients" isLoading={loading && activeTab === "clients"}>
-          <ClientsTab />
-        </TabsContent>
-
-        <TabsContent value="stats" isLoading={loading && activeTab === "stats"}>
-          <StatsTab />
-        </TabsContent>
-
-        <TabsContent value="tips" isLoading={loading && activeTab === "tips"}>
-          <TipsTab />
-        </TabsContent>
-      </Tabs>
+      />
     </DashboardLayout>
   );
 };
