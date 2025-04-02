@@ -80,10 +80,10 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
   const trackInteraction = async (
     eventType: 'click' | 'hover' | 'scroll' | 'view',
     elementSelector: string,
-    position: { x: number, y: number },
-    projectId?: string
+    position: { x: number, y: number }
   ): Promise<void> => {
-    await storeInteractionMemory(eventType, elementSelector, position, projectId);
+    // Make sure we're only passing 3 args as expected by storeInteractionMemory
+    await storeInteractionMemory(eventType, elementSelector, position);
   };
 
   // Determine overall processing state
