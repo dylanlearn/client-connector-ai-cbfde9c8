@@ -25,7 +25,7 @@ export default function ClientsTab() {
       email: item.email,
       completed: item.completed,
       total: item.total,
-      percentage: (item.completed / (item.total || 1)) * 100,
+      percentage: item.percentage || (item.completed / (item.total || 1)) * 100,
       lastActive: item.lastActive,
       // Add these properties to match ClientTaskProgress interface
       intakeForm: false,
