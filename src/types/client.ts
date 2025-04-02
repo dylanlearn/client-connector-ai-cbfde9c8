@@ -1,11 +1,8 @@
-
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface ClientAccessLink {
   id: string;
   designerId: string;
-  projectId: string | null;
-  projectTitle: string | null;
   clientName: string;
   clientEmail: string;
   clientPhone: string | null;
@@ -13,7 +10,10 @@ export interface ClientAccessLink {
   createdAt: Date;
   expiresAt: Date;
   lastAccessedAt: Date | null;
-  status: string;
+  status: 'active' | 'expired';
+  projectId: string | null;
+  projectTitle: string | null;
+  personalMessage: string | null;
 }
 
 export interface ClientLinkResult {
@@ -48,7 +48,6 @@ export interface TaskCardProps {
   status: TaskStatus;
   onClick?: () => void;
   icon?: React.ReactNode;
-  // Add the missing properties
   isCompleted: boolean;
   btnText: string;
   designerNotes?: string;

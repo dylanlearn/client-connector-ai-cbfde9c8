@@ -19,6 +19,7 @@ export type Database = {
           expires_at: string
           id: string
           last_accessed_at: string | null
+          personal_message: string | null
           project_id: string | null
           status: string
           token: string
@@ -32,6 +33,7 @@ export type Database = {
           expires_at: string
           id?: string
           last_accessed_at?: string | null
+          personal_message?: string | null
           project_id?: string | null
           status?: string
           token: string
@@ -45,6 +47,7 @@ export type Database = {
           expires_at?: string
           id?: string
           last_accessed_at?: string | null
+          personal_message?: string | null
           project_id?: string | null
           status?: string
           token?: string
