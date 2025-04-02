@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+
+import { useCallback } from 'react';
 import { MemoryCategory } from '@/services/ai/memory';
 import { useMemoryContext } from "./useMemoryContext";
 import { useMemoryStorage } from "./useMemoryStorage";
@@ -17,7 +17,11 @@ export const useAIMemory = () => {
     resetMemoryContext
   } = useMemoryContext();
   
-  const { storeMemory, storeInteractionMemory } = useMemoryStorage();
+  // Rename the imported function to avoid naming conflicts
+  const { 
+    storeMemory, 
+    storeInteractionMemory: storeInteractionMemoryFromStorage 
+  } = useMemoryStorage();
   
   const { 
     isRealtime,
@@ -26,21 +30,35 @@ export const useAIMemory = () => {
 
   /**
    * Store user interaction events in memory
+   * Enhanced version that supports all event types including 'movement'
    */
   const storeInteractionMemory = useCallback(async (
     eventType: 'click' | 'hover' | 'scroll' | 'view' | 'movement',
     element: string,
     position: { x: number, y: number }
   ) => {
-    await storeMemory({
-      category: MemoryCategory.Interaction,
-      data: {
+    // For movement events, use direct storeMemory with InteractionPattern category
+    if (eventType === 'movement') {
+      await storeMemory(
+        `User ${eventType} near ${element} at position (${position.x}, ${position.y})`,
+        MemoryCategory.InteractionPattern,
+        undefined,
+        {
+          eventType,
+          element,
+          position,
+          timestamp: new Date().toISOString()
+        }
+      );
+    } else {
+      // For other event types, use the storage utility function
+      await storeInteractionMemoryFromStorage(
         eventType,
         element,
         position
-      }
-    });
-  }, [storeMemory]);
+      );
+    }
+  }, [storeMemory, storeInteractionMemoryFromStorage]);
 
   /**
    * Reset all memory state and subscriptions
