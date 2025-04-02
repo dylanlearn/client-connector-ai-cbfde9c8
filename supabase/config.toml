@@ -31,9 +31,17 @@ enabled = true
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:5173"
+# Add these required configuration values for email auth
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = true
 
+# Update this section to follow the expected format
 [auth.email]
-enabled = true
+# Instead of just 'enabled = true', we need to include the proper settings
+enable_signup = true
+enable_confirmations = false
+double_confirm_changes = true
 
 [analytics]
 enabled = false
