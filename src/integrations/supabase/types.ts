@@ -9,6 +9,111 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_cleanup_metrics: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          entries_removed: number
+          error_message: string | null
+          id: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          duration_ms: number
+          entries_removed: number
+          error_message?: string | null
+          id?: string
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          entries_removed?: number
+          error_message?: string | null
+          id?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
+      ai_content_cache: {
+        Row: {
+          cache_key: string
+          content: string
+          content_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          cache_key: string
+          content: string
+          content_type: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          cache_key?: string
+          content?: string
+          content_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_generation_metrics: {
+        Row: {
+          completion_tokens: number | null
+          created_at: string
+          error_message: string | null
+          error_type: string | null
+          feature_type: string
+          id: string
+          latency_ms: number
+          model_used: string
+          prompt_tokens: number | null
+          success: boolean
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          feature_type: string
+          id?: string
+          latency_ms: number
+          model_used: string
+          prompt_tokens?: number | null
+          success?: boolean
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number | null
+          created_at?: string
+          error_message?: string | null
+          error_type?: string | null
+          feature_type?: string
+          id?: string
+          latency_ms?: number
+          model_used?: string
+          prompt_tokens?: number | null
+          success?: boolean
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_access_links: {
         Row: {
           client_email: string
