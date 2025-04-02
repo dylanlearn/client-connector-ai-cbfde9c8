@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,9 @@ import { DownloadTab } from "./tabs/DownloadTab";
 import { EmailTab } from "./tabs/EmailTab";
 import { SMSTab } from "./tabs/SMSTab";
 import { LoadingOverlay } from "./LoadingOverlay";
+import { useAuth } from "@/hooks/use-auth";
+import { PDFTemplatesDialog } from "./PDFTemplatesDialog";
+import { PDFStylingTemplate, applyPDFTemplate } from "@/utils/pdf-export/templates";
 
 interface PDFExportDialogProps {
   contentId: string;
@@ -17,6 +20,7 @@ interface PDFExportDialogProps {
 }
 
 export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialogProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("download");
@@ -30,6 +34,13 @@ export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialo
     showProgress: true,
     margin: 5
   });
+
+  useEffect(() => {
+    // If user is available and email is not set, initialize with user's email
+    if (user?.email && !email) {
+      setEmail(user.email);
+    }
+  }, [user, email]);
 
   const handleOpen = async (open: boolean) => {
     setIsOpen(open);
@@ -94,6 +105,12 @@ export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialo
     setPdfBlob(null); // Clear the cached PDF to force regeneration with new options
   };
 
+  const handleApplyTemplate = (template: PDFStylingTemplate) => {
+    const updatedOptions = applyPDFTemplate(pdfOptions, template);
+    setPdfOptions(updatedOptions);
+    setPdfBlob(null); // Clear cached PDF to force regeneration with new styling
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
@@ -123,6 +140,12 @@ export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialo
             </TabsList>
 
             <TabsContent value="download" className="py-4">
+              <div className="flex justify-end mb-2">
+                <PDFTemplatesDialog 
+                  pdfOptions={pdfOptions} 
+                  onApplyTemplate={handleApplyTemplate} 
+                />
+              </div>
               <DownloadTab 
                 pdfOptions={pdfOptions}
                 updatePdfOption={updatePdfOption}

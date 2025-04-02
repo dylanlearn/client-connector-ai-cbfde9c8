@@ -695,6 +695,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pdf_styling_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_company_default: boolean | null
+          name: string
+          styling: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_company_default?: boolean | null
+          name: string
+          styling: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_company_default?: boolean | null
+          name?: string
+          styling?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
