@@ -20,12 +20,8 @@ import ClientHub from "@/pages/ClientHub";
 import ClientAccess from "@/pages/ClientAccess";
 import Templates from "@/pages/Templates";
 import Settings from "@/pages/Settings";
-import Analytics from "@/pages/Analytics";
-import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
-import Onboarding from "@/pages/Onboarding";
-import RequireSubscription from "@/components/auth/RequireSubscription";
 import Pricing from "@/pages/Pricing";
-import AdminPanel from "@/pages/AdminPanel";
+import RequireSubscription from "@/components/auth/RequireSubscription";
 import { lazy, Suspense } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
@@ -33,6 +29,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 const LazyAdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const LazyAnalytics = lazy(() => import("@/pages/Analytics"));
 const LazyAIDesignSuggestions = lazy(() => import("@/pages/AIDesignSuggestions"));
+const LazyOnboarding = lazy(() => import("@/pages/Onboarding"));
 
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
@@ -171,7 +168,9 @@ function App() {
           <Route path="/onboarding" element={
             <ProtectedRoute>
               <RequireSubscription>
-                <Onboarding />
+                <Suspense fallback={<PageLoader />}>
+                  <LazyOnboarding />
+                </Suspense>
               </RequireSubscription>
             </ProtectedRoute>
           } />

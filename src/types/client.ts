@@ -1,4 +1,3 @@
-
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
 
 export interface ClientAccessLink {
@@ -28,9 +27,9 @@ export interface ClientLinkResult {
 export interface ClientTask {
   id: string;
   linkId: string;
-  taskType: string;
+  taskType: 'intakeForm' | 'designPicker' | 'templates' | string;
   status: TaskStatus;
-  clientResponse?: any;
+  clientResponse?: Record<string, unknown>;
   designerNotes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -40,6 +39,7 @@ export interface ClientTask {
 export interface ClientTaskProgress {
   clientName?: string;
   email?: string;
+  linkId?: string;
   completed: number;
   total: number;
   percentage: number;

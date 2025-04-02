@@ -6,20 +6,30 @@ import FormResumeHandler from "../shared/FormResumeHandler";
 
 interface LayoutProps {
   children: ReactNode;
+  className?: string;
+  /**
+   * Whether to show the FormResumeHandler component
+   * @default true
+   */
+  showFormResumeHandler?: boolean;
 }
 
 /**
  * Base application layout component
  * Memoized to prevent unnecessary re-renders when children update
  */
-const Layout = memo(({ children }: LayoutProps) => {
+const Layout = memo(({ 
+  children, 
+  className = "",
+  showFormResumeHandler = true
+}: LayoutProps) => {
   const location = useLocation();
   const isIndexPage = location.pathname === "/";
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full">
-        {!isIndexPage && <FormResumeHandler />}
+      <div className={`min-h-screen w-full ${className}`}>
+        {showFormResumeHandler && !isIndexPage && <FormResumeHandler />}
         {children}
       </div>
     </SidebarProvider>

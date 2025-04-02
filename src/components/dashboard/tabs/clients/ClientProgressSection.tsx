@@ -1,80 +1,85 @@
 
 import { ClientTaskProgress } from "@/types/client";
-import ClientProgressItem from "./ClientProgressItem";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ContentCard } from "@/components/ui/content-card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Users } from "lucide-react";
+import ClientProgressEmpty from "./ClientProgressEmpty";
+import ClientProgressLoading from "./ClientProgressLoading";
+import ClientProgressList from "./ClientProgressList";
+import { useNavigate } from "react-router-dom";
 
 interface ClientProgressSectionProps {
   clientProgress: ClientTaskProgress[] | null;
   isLoading: boolean;
   limit?: number;
+  hideViewAll?: boolean;
+  title?: string;
 }
 
+/**
+ * Component for displaying client progress section with proper loading and empty states
+ */
 export default function ClientProgressSection({
   clientProgress,
   isLoading,
-  limit = 3
+  limit = 3,
+  hideViewAll = false,
+  title = "Client Progress"
 }: ClientProgressSectionProps) {
-  const displayProgress = clientProgress?.slice(0, limit) || [];
+  const navigate = useNavigate();
   
-  if (isLoading) {
-    return (
-      <ContentCard title="Client Progress">
-        <div className="space-y-4">
-          {[...Array(3)].map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full" />
-          ))}
-        </div>
-      </ContentCard>
-    );
-  }
+  const handleClientClick = (linkId: string) => {
+    navigate(`/clients/link/${linkId}`);
+  };
   
-  if (!clientProgress || clientProgress.length === 0) {
-    return (
-      <ContentCard title="Client Progress">
-        <EmptyState
-          icon={<Users className="h-6 w-6 text-muted-foreground" />}
-          title="No client progress"
-          description="You don't have any active clients with progress to track yet."
+  const renderContent = () => {
+    if (isLoading) {
+      return <ClientProgressLoading count={limit} />;
+    }
+    
+    if (!clientProgress || clientProgress.length === 0) {
+      return (
+        <ClientProgressEmpty 
           action={{
             label: "Add Client",
-            onClick: () => window.location.href = "/clients"
+            onClick: () => navigate("/clients")
           }}
         />
-      </ContentCard>
+      );
+    }
+    
+    return (
+      <ClientProgressList 
+        clientProgress={clientProgress} 
+        limit={limit}
+        onClientClick={handleClientClick}
+      />
     );
-  }
+  };
+  
+  const renderFooter = () => {
+    if (hideViewAll || !clientProgress || clientProgress.length === 0) {
+      return null;
+    }
+    
+    return (
+      <div className="w-full flex justify-end">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/clients">
+            View All <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+    );
+  };
   
   return (
     <ContentCard 
-      title="Client Progress" 
-      footer={
-        <div className="w-full flex justify-end">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/clients">
-              View All <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      }
+      title={title} 
+      footer={renderFooter()}
     >
-      <div className="space-y-4">
-        {displayProgress.map((progress, index) => (
-          <ClientProgressItem 
-            key={index} 
-            clientName={progress.clientName || "Unnamed Client"}
-            email={progress.email}
-            completed={progress.completed}
-            total={progress.total}
-            lastActive={progress.lastActive}
-          />
-        ))}
-      </div>
+      {renderContent()}
     </ContentCard>
   );
 }
