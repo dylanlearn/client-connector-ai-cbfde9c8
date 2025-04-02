@@ -1,9 +1,21 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate as useReactRouterNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+
+// A safe wrapper for useNavigate that won't throw errors outside of Router context
+const useNavigate = () => {
+  try {
+    return useReactRouterNavigate();
+  } catch (error) {
+    // Return a no-op function when outside of Router context
+    return () => {
+      console.warn("Navigation attempted outside Router context");
+    };
+  }
+};
 
 export type SubscriptionStatus = "free" | "basic" | "pro";
 export type BillingCycle = "monthly" | "annual";

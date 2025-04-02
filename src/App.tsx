@@ -26,6 +26,7 @@ import Analytics from "@/pages/Analytics";
 import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
 import Onboarding from "@/pages/Onboarding";
 import RequireSubscription from "@/components/auth/RequireSubscription";
+import Pricing from "@/pages/Pricing";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/signup-confirmation" element={<SignupConfirmation />} />
           <Route path="/templates" element={<Templates />} />
+          <Route path="/pricing" element={<Pricing />} />
           
           {/* Client portal routes - protected by client token */}
           <Route path="/client-access" element={<ClientAccess />} />
