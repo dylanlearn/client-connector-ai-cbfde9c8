@@ -57,7 +57,8 @@ export const useFormSync = (
       formId,
       formData.lastUpdated,
       (newData) => {
-        setFormData((prevData) => ({...prevData, ...newData}));
+        // Fixed error here - we need to call setFormData with a direct object, not with a function
+        setFormData({...formData, ...newData});
       },
       { toast: toastAdapter }
     );
@@ -65,7 +66,7 @@ export const useFormSync = (
     return () => {
       subscription.unsubscribe();
     };
-  }, [formId, formData.lastUpdated, userId, setFormData, toastAdapter]);
+  }, [formId, formData, userId, setFormData, toastAdapter]);
 
   // Watch for beforeunload event to warn user about unsaved changes
   useEffect(() => {
