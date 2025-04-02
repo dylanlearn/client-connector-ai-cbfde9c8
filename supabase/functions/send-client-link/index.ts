@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@1.0.0";
@@ -148,7 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
           formattedPhone = `+${formattedPhone}`;
         }
         
-        console.log(`Sending SMS to ${formattedPhone} with link: ${clientHubLink}`);
+        console.log(`Sending actual SMS to ${formattedPhone}`);
         
         // Construct SMS message with optional personal message
         let smsBody = `Hello ${linkData.client_name}, your designer has shared a project with you on DezignSync.`;
