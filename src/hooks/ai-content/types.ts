@@ -1,6 +1,4 @@
 
-import { Error } from 'react';
-
 export interface UseAIContentOptions {
   /**
    * Enable/disable automatic retries on failure

@@ -86,26 +86,20 @@ export abstract class BaseContentGenerator<T extends BaseContentOptions> {
       
       if (!userId) return;
 
-      const metricsData: Record<string, any> = {
+      // Create properly typed metrics data with required fields
+      const metricsData = {
         feature_type: featureType,
         model_used: model,
         latency_ms: latencyMs,
         success: success,
-        user_id: userId
+        user_id: userId,
+        // Optional fields
+        prompt_tokens: data?.usage?.prompt_tokens,
+        completion_tokens: data?.usage?.completion_tokens,
+        total_tokens: data?.usage?.total_tokens,
+        error_type: error?.name,
+        error_message: error?.message
       };
-
-      // Add usage data if available
-      if (data?.usage) {
-        metricsData.prompt_tokens = data.usage.prompt_tokens;
-        metricsData.completion_tokens = data.usage.completion_tokens;
-        metricsData.total_tokens = data.usage.total_tokens;
-      }
-
-      // Add error info if available
-      if (error) {
-        metricsData.error_type = error.name || 'unknown';
-        metricsData.error_message = error.message;
-      }
 
       await supabase.from('ai_generation_metrics').insert(metricsData);
     } catch (metricsError) {
