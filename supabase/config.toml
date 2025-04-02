@@ -49,3 +49,8 @@ vector_port = 54328
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.design-suggestions]
+verify_jwt = false
+
+[functions.generate-with-openai]
+verify_jwt = false
