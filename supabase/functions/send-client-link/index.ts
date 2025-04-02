@@ -28,10 +28,10 @@ const handler = async (req: Request): Promise<Response> => {
     const { linkId, deliveryType, recipient, personalMessage } = requestData;
     
     if (!linkId || !deliveryType || !recipient) {
-      throw new Error("Missing required parameters");
+      throw new Error("Missing required parameters: linkId, deliveryType, and recipient are required");
     }
     
-    // Validate personal message length
+    // Validate personal message length using centralized validation
     validatePersonalMessage(personalMessage);
     
     // Get the link details
@@ -42,11 +42,11 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
     
     if (linkError) {
-      throw new Error(`Database error: ${linkError.message}`);
+      throw new Error(`Database error retrieving link: ${linkError.message}`);
     }
     
     if (!linkData) {
-      throw new Error("Link not found");
+      throw new Error("Link not found in the database");
     }
     
     // Record the delivery attempt
@@ -61,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
     
     if (recordError) {
-      throw new Error(`Failed to record delivery: ${recordError.message}`);
+      throw new Error(`Failed to record delivery attempt: ${recordError.message}`);
     }
     
     // Generate the client hub link
@@ -91,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
         );
         status = 'sent';
       } else {
-        throw new Error(`Unsupported delivery type: ${deliveryType}`);
+        throw new Error(`Unsupported delivery type: ${deliveryType}. Only 'email' and 'sms' are supported.`);
       }
     } catch (error: any) {
       console.error(`Error sending ${deliveryType}:`, error);
@@ -129,7 +129,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || "Unknown error occurred" 
+        error: error.message || "Unknown error occurred",
+        errorCode: error.code || "UNKNOWN_ERROR"
       }),
       {
         status: 500,

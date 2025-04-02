@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormItem } from "@/components/ui/form";
+import { VALIDATION_CONSTANTS } from "@/utils/validation-utils";
 
 interface ClientInfoFieldsProps {
   clientName: string;
@@ -25,8 +26,8 @@ const ClientInfoFields = ({
   personalMessage,
   setPersonalMessage
 }: ClientInfoFieldsProps) => {
-  // Calculate remaining characters
-  const maxMessageLength = 150;
+  // Calculate remaining characters using the constant from validation-utils
+  const maxMessageLength = VALIDATION_CONSTANTS.MAX_PERSONAL_MESSAGE_LENGTH;
   const remainingChars = maxMessageLength - personalMessage.length;
 
   return (

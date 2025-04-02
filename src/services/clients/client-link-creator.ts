@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { validatePersonalMessage } from "@/utils/validation-utils";
 
 interface DeliveryMethods {
   email: boolean;
@@ -19,9 +20,10 @@ export const createClientAccessLink = async (
   personalMessage: string | null = null
 ): Promise<{ link: string; linkId: string }> => {
   try {
-    // Validate personal message length
-    if (personalMessage && personalMessage.length > 150) {
-      throw new Error("Personal message must be 150 characters or less");
+    // Use centralized validation for personal message
+    const validation = validatePersonalMessage(personalMessage);
+    if (!validation.valid) {
+      throw new Error(validation.errorMessage || "Invalid personal message");
     }
     
     // Generate a unique token for the client
@@ -43,7 +45,7 @@ export const createClientAccessLink = async (
         status: 'active',
         expires_at: expiresAt.toISOString(),
         project_id: projectId,
-        personal_message: personalMessage
+        personal_message: personalMessage?.trim() || null
       })
       .select('id')
       .single();

@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { createClientAccessLink } from "@/utils/client-service";
+import { createClientAccessLink } from "@/services/clients";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientAccessLink } from "@/types/client";
 import { Project } from "@/types/project";
+import { validatePersonalMessage } from "@/utils/validation-utils";
 
 interface UseClientLinkProps {
   userId: string;
@@ -96,9 +97,10 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       return;
     }
 
-    // Validate personal message length
-    if (personalMessage.length > 150) {
-      toast.error("Personal message must be 150 characters or less");
+    // Validate personal message using centralized validation
+    const messageValidation = validatePersonalMessage(personalMessage);
+    if (!messageValidation.valid) {
+      toast.error(messageValidation.errorMessage || "Invalid personal message");
       return;
     }
 
@@ -148,9 +150,10 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
         resetForm();
         toast.success("Client hub link created and sent to the client!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating client link:", error);
-      toast.error("Failed to create client link");
+      // More detailed error message
+      toast.error(error.message || "Failed to create client link");
     } finally {
       setIsCreating(false);
     }

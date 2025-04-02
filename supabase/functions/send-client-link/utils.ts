@@ -2,6 +2,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "./types.ts";
 
+// Constants
+const MAX_PERSONAL_MESSAGE_LENGTH = 150;
+
 /**
  * Initialize and return Supabase client with environment credentials
  * @returns Configured Supabase client
@@ -24,8 +27,8 @@ export function initSupabaseClient() {
  * @throws Error if the message exceeds the maximum length
  */
 export function validatePersonalMessage(personalMessage?: string | null): void {
-  if (personalMessage && personalMessage.length > 150) {
-    throw new Error("Personal message must be 150 characters or less");
+  if (personalMessage && personalMessage.length > MAX_PERSONAL_MESSAGE_LENGTH) {
+    throw new Error(`Personal message must be ${MAX_PERSONAL_MESSAGE_LENGTH} characters or less`);
   }
 }
 
