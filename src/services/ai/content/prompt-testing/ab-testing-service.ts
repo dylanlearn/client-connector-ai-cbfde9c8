@@ -13,6 +13,7 @@ export type { PromptTestStatus, PromptVariant, PromptTest, PromptTestResult } fr
 export const PromptABTestingService = {
   // Selector functions
   getActiveTest: PromptTestSelector.getActiveTest,
+  getAllTests: PromptTestSelector.getAllTests,
   selectVariant: PromptTestSelector.selectVariant,
   
   // Creator functions

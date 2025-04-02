@@ -1,82 +1,81 @@
-
-import { 
-  PromptDBService,
-  PromptTestsService, 
-  PromptAnalyticsService 
-} from "../db-service";
-import { PromptTest, PromptVariant } from "./types";
+import { PromptDBService } from "../db-service";
+import type { PromptVariant } from "./types";
 
 /**
- * Functions for retrieving and selecting prompt test variants
+ * Functions for selecting tests and variants for A/B testing
  */
 export const PromptTestSelector = {
   /**
-   * Get an active test for a specific content type
+   * Get active test for a content type
    */
-  getActiveTest: async (contentType: string): Promise<PromptTest | null> => {
+  getActiveTest: async (contentType: string) => {
     try {
-      const data = await PromptTestsService.getActiveTest(contentType);
-      
-      if (!data) return null;
-      
-      // Transform database model to our interface
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        contentType: data.content_type,
-        status: data.status as any,
-        variants: data.variants.map((v: any) => ({
-          id: v.id,
-          name: v.name,
-          promptText: v.prompt_text,
-          systemPrompt: v.system_prompt,
-          isControl: v.is_control,
-          weight: v.weight
-        })),
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        minSampleSize: data.min_sample_size,
-        confidenceThreshold: data.confidence_threshold
-      };
+      return await PromptDBService.getActiveTest(contentType);
     } catch (error) {
-      console.error("Error in getActiveTest:", error);
+      console.error("Error getting active test:", error);
       return null;
+    }
+  },
+  
+  /**
+   * Get all tests
+   */
+  getAllTests: async () => {
+    try {
+      return await PromptDBService.getAllTests();
+    } catch (error) {
+      console.error("Error getting all tests:", error);
+      return [];
     }
   },
 
   /**
-   * Select a variant from an active test based on weighted distribution
+   * Select a variant for a user based on weighted randomization
    */
   selectVariant: async (contentType: string, userId?: string): Promise<PromptVariant | null> => {
     try {
-      const test = await PromptTestSelector.getActiveTest(contentType);
-      if (!test || !test.variants.length) return null;
+      // Get the active test for this content type
+      const test = await PromptDBService.getActiveTest(contentType);
+      if (!test) return null;
       
-      // Select a variant based on weights
+      // If no user ID is provided, just return the control variant
+      if (!userId) {
+        const controlVariant = test.variants.find(v => v.isControl);
+        return controlVariant || null;
+      }
+      
+      // Record an impression for each user to keep stats accurate
+      // (We'll actually decide on the variant first though)
+      
+      // Use weighted random selection
       const variants = test.variants;
       const totalWeight = variants.reduce((sum, variant) => sum + variant.weight, 0);
+      let randomValue = Math.random() * totalWeight;
       
-      // Generate a random number between 0 and the total weight
-      const random = Math.random() * totalWeight;
-      
-      // Find the variant that corresponds to the random value
-      let cumulativeWeight = 0;
+      // Select a variant based on the weights
       for (const variant of variants) {
-        cumulativeWeight += variant.weight;
-        if (random <= cumulativeWeight) {
-          // Record an impression for this variant
+        randomValue -= variant.weight;
+        if (randomValue <= 0) {
+          // Record the impression
           if (userId) {
-            await PromptAnalyticsService.recordImpression(test.id, variant.id, userId);
+            await PromptDBService.recordImpression(test.id, variant.id, userId);
           }
+          
           return variant;
         }
       }
       
-      // Fallback to the first variant if something went wrong
-      return variants[0];
+      // Fallback to the first variant (shouldn't happen unless weights are 0)
+      const fallbackVariant = variants[0];
+      
+      // Record the impression
+      if (userId && fallbackVariant) {
+        await PromptDBService.recordImpression(test.id, fallbackVariant.id, userId);
+      }
+      
+      return fallbackVariant || null;
     } catch (error) {
-      console.error("Error in selectVariant:", error);
+      console.error("Error selecting variant:", error);
       return null;
     }
   }

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InvitationManager } from "@/components/admin/InvitationManager";
 import { UserManagement } from "@/components/admin/UserManagement";
+import { PromptTestingAnalytics } from "@/components/admin/PromptTestingAnalytics";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -90,6 +91,7 @@ const AdminPanel = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="invitations">Invitation Codes</TabsTrigger>
+            <TabsTrigger value="promptTesting">Prompt Testing</TabsTrigger>
             <TabsTrigger value="settings">Application Settings</TabsTrigger>
           </TabsList>
           
@@ -99,6 +101,10 @@ const AdminPanel = () => {
           
           <TabsContent value="invitations">
             <InvitationManager />
+          </TabsContent>
+          
+          <TabsContent value="promptTesting">
+            <PromptTestingAnalytics />
           </TabsContent>
           
           <TabsContent value="settings">
