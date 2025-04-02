@@ -31,7 +31,8 @@ export const fetchPDFTemplates = async (): Promise<PDFStylingTemplate[]> => {
     if (error) throw error;
     
     // Use double type assertion to bypass TypeScript's strict type checking
-    return (data as unknown as PDFStylingTemplate[]) || [];
+    // Handle empty data case explicitly
+    return data ? (data as unknown as PDFStylingTemplate[]) : [];
   } catch (error) {
     console.error('Error fetching PDF templates:', error);
     toast.error("Failed to load templates", {
@@ -80,7 +81,7 @@ export const savePDFTemplate = async (
     });
     
     // Use double type assertion to bypass TypeScript's strict type checking
-    return (data as unknown as PDFStylingTemplate);
+    return data as unknown as PDFStylingTemplate;
   } catch (error) {
     console.error('Error saving PDF template:', error);
     toast.error("Failed to save template", {
@@ -116,7 +117,7 @@ export const updatePDFTemplate = async (
     });
     
     // Use double type assertion to bypass TypeScript's strict type checking
-    return (data as unknown as PDFStylingTemplate);
+    return data as unknown as PDFStylingTemplate;
   } catch (error) {
     console.error('Error updating PDF template:', error);
     toast.error("Failed to update template", {
