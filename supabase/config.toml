@@ -30,9 +30,9 @@ enabled = true
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:5173"
+site_url = "https://dezignsync.com"
 # Add these required configuration values for email auth
-additional_redirect_urls = []
+additional_redirect_urls = ["https://dezignsync.com/login", "https://dezignsync.com/dashboard", "https://dezignsync.com/signup-confirmation"]
 jwt_expiry = 3600
 enable_signup = true
 
@@ -66,4 +66,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.redeem-invitation]
+verify_jwt = true
+
+[functions.send-client-link]
 verify_jwt = true

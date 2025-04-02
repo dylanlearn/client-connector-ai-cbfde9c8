@@ -39,8 +39,8 @@ export function validatePersonalMessage(personalMessage?: string | null): void {
  * @returns The complete client hub link
  */
 export function generateClientHubLink(token: string, designerId: string): string {
-  const baseUrl = Deno.env.get("PUBLIC_APP_URL") || "https://dezignsync.app";
-  return `${baseUrl}/client-hub?clientToken=${token}&designerId=${designerId}`;
+  // Use the live domain instead of a fallback
+  return `https://dezignsync.com/client-hub?clientToken=${token}&designerId=${designerId}`;
 }
 
 /**
