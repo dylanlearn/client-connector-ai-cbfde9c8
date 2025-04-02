@@ -52,6 +52,8 @@ serve(async (req) => {
     });
 
     console.log(`Sending to OpenAI with model: ${model}, temp: ${temperature}`);
+    console.log(`System prompt: ${systemPrompt?.substring(0, 50)}...`);
+    console.log(`User message: ${messages[0]?.content?.substring(0, 50)}...`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
