@@ -3,11 +3,6 @@ import { User } from "@supabase/supabase-js";
 import { SubscriptionStatus } from "@/types/subscription";
 
 /**
- * Type definition for user profile subscription status
- */
-export type SubscriptionStatus = 'free' | 'basic' | 'pro' | 'template-buyer' | 'trial';
-
-/**
  * Type definition for user profile role
  */
 export type UserRole = 'free' | 'sync-pro' | 'admin' | 'template-buyer' | 'sync';
