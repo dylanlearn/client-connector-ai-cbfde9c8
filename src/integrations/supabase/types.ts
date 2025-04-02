@@ -216,6 +216,60 @@ export type Database = {
         }
         Relationships: []
       }
+      global_memories: {
+        Row: {
+          category: string
+          content: string
+          frequency: number
+          id: string
+          metadata: Json | null
+          relevance_score: number
+          timestamp: string
+        }
+        Insert: {
+          category: string
+          content: string
+          frequency?: number
+          id?: string
+          metadata?: Json | null
+          relevance_score?: number
+          timestamp?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          frequency?: number
+          id?: string
+          metadata?: Json | null
+          relevance_score?: number
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      memory_analysis_results: {
+        Row: {
+          analyzed_at: string
+          category: string
+          id: string
+          insights: Json
+          source_count: number
+        }
+        Insert: {
+          analyzed_at?: string
+          category: string
+          id?: string
+          insights: Json
+          source_count: number
+        }
+        Update: {
+          analyzed_at?: string
+          category?: string
+          id?: string
+          insights?: Json
+          source_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -249,6 +303,36 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      project_memories: {
+        Row: {
+          category: string
+          content: string
+          id: string
+          metadata: Json | null
+          project_id: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          content: string
+          id?: string
+          metadata?: Json | null
+          project_id: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          id?: string
+          metadata?: Json | null
+          project_id?: string
+          timestamp?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -403,6 +487,33 @@ export type Database = {
           status?: Database["public"]["Enums"]["template_status"]
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_memories: {
+        Row: {
+          category: string
+          content: string
+          id: string
+          metadata: Json | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          content: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          user_id?: string
         }
         Relationships: []
       }

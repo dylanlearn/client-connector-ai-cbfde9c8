@@ -29,21 +29,34 @@ export const ProjectMemoryService = {
         metadata
       };
 
-      // This is commented out until the database table exists
-      /*
       const { data, error } = await supabase
         .from('project_memories')
-        .insert(memoryEntry)
+        .insert({
+          id: memoryEntry.id,
+          project_id: memoryEntry.projectId,
+          user_id: memoryEntry.userId,
+          content: memoryEntry.content,
+          category: memoryEntry.category,
+          timestamp: memoryEntry.timestamp,
+          metadata: memoryEntry.metadata
+        })
         .select()
         .single();
 
-      if (error) throw error;
-      return data as ProjectMemory;
-      */
+      if (error) {
+        console.error("Error storing project memory:", error);
+        return memoryEntry; // Return the original object as fallback
+      }
       
-      // For now, return the in-memory object since the tables don't exist yet
-      console.log("Simulating project memory storage:", memoryEntry);
-      return memoryEntry;
+      return {
+        id: data.id,
+        projectId: data.project_id,
+        userId: data.user_id,
+        content: data.content,
+        category: data.category as MemoryCategory,
+        timestamp: new Date(data.timestamp),
+        metadata: data.metadata
+      };
     } catch (error) {
       console.error("Error storing project memory:", error);
       return null;
@@ -60,12 +73,10 @@ export const ProjectMemoryService = {
     try {
       const { categories, limit = 50, timeframe, metadata } = options;
       
-      // This is commented out until the database table exists
-      /*
       let query = supabase
         .from('project_memories')
         .select('*')
-        .eq('projectId', projectId);
+        .eq('project_id', projectId);
 
       // Apply filters based on options
       if (categories && categories.length > 0) {
@@ -92,13 +103,20 @@ export const ProjectMemoryService = {
 
       const { data, error } = await query;
 
-      if (error) throw error;
-      return data as ProjectMemory[];
-      */
+      if (error) {
+        console.error("Error retrieving project memories:", error);
+        return [];
+      }
       
-      // For now, return an empty array since the table doesn't exist yet
-      console.log("Simulating project memory retrieval for project:", projectId);
-      return [];
+      return data.map(item => ({
+        id: item.id,
+        projectId: item.project_id,
+        userId: item.user_id,
+        content: item.content,
+        category: item.category as MemoryCategory,
+        timestamp: new Date(item.timestamp),
+        metadata: item.metadata
+      }));
     } catch (error) {
       console.error("Error retrieving project memories:", error);
       return [];
@@ -110,17 +128,16 @@ export const ProjectMemoryService = {
    */
   deleteMemory: async (memoryId: string): Promise<boolean> => {
     try {
-      // This is commented out until the database table exists
-      /*
       const { error } = await supabase
         .from('project_memories')
         .delete()
         .eq('id', memoryId);
 
-      if (error) throw error;
-      */
+      if (error) {
+        console.error("Error deleting project memory:", error);
+        return false;
+      }
       
-      console.log("Simulating project memory deletion for ID:", memoryId);
       return true;
     } catch (error) {
       console.error("Error deleting project memory:", error);

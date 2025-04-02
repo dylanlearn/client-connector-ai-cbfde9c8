@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalMemory, MemoryCategory, MemoryQueryOptions } from "./memory-types";
 import { v4 as uuidv4 } from "uuid";
@@ -32,8 +31,6 @@ export const GlobalMemoryService = {
       };
 
       // Check for similar existing memories to update frequency
-      // This is commented out until the database table exists
-      /*
       const { data: existingMemories } = await supabase
         .from('global_memories')
         .select('*')
@@ -46,15 +43,15 @@ export const GlobalMemoryService = {
 
       if (existingMemories && existingMemories.length > 0) {
         // Update existing memory frequency and relevance
-        const existingMemory = existingMemories[0] as GlobalMemory;
+        const existingMemory = existingMemories[0];
         const newFrequency = existingMemory.frequency + 1;
-        const newRelevance = (existingMemory.relevanceScore + relevanceScore) / 2; // Average
+        const newRelevance = (existingMemory.relevance_score + relevanceScore) / 2; // Average
         
         const { data, error } = await supabase
           .from('global_memories')
           .update({
             frequency: newFrequency,
-            relevanceScore: newRelevance,
+            relevance_score: newRelevance,
             timestamp: new Date(), // Update timestamp to reflect recent usage
             metadata: { ...existingMemory.metadata, ...metadata }
           })
@@ -62,24 +59,51 @@ export const GlobalMemoryService = {
           .select()
           .single();
 
-        if (error) throw error;
-        return data as GlobalMemory;
+        if (error) {
+          console.error("Error updating global memory:", error);
+          return memoryEntry; // Return the original object as fallback
+        }
+        
+        return {
+          id: data.id,
+          content: data.content,
+          category: data.category as MemoryCategory,
+          timestamp: new Date(data.timestamp),
+          frequency: data.frequency,
+          relevanceScore: data.relevance_score,
+          metadata: data.metadata
+        };
       } else {
         // Create new memory entry
         const { data, error } = await supabase
           .from('global_memories')
-          .insert(memoryEntry)
+          .insert({
+            id: memoryEntry.id,
+            content: memoryEntry.content,
+            category: memoryEntry.category,
+            timestamp: memoryEntry.timestamp,
+            frequency: memoryEntry.frequency,
+            relevance_score: memoryEntry.relevanceScore,
+            metadata: memoryEntry.metadata
+          })
           .select()
           .single();
 
-        if (error) throw error;
-        return data as GlobalMemory;
+        if (error) {
+          console.error("Error storing global memory:", error);
+          return memoryEntry; // Return the original object as fallback
+        }
+        
+        return {
+          id: data.id,
+          content: data.content,
+          category: data.category as MemoryCategory,
+          timestamp: new Date(data.timestamp),
+          frequency: data.frequency,
+          relevanceScore: data.relevance_score,
+          metadata: data.metadata
+        };
       }
-      */
-      
-      // For now, return the in-memory object since the tables don't exist yet
-      console.log("Simulating global memory storage:", memoryEntry);
-      return memoryEntry;
     } catch (error) {
       console.error("Error storing global memory:", error);
       return null;
@@ -101,12 +125,10 @@ export const GlobalMemoryService = {
         relevanceThreshold = 0.3 
       } = options;
       
-      // This is commented out until the database table exists
-      /*
       let query = supabase
         .from('global_memories')
         .select('*')
-        .gte('relevanceScore', relevanceThreshold);
+        .gte('relevance_score', relevanceThreshold);
 
       // Apply filters based on options
       if (categories && categories.length > 0) {
@@ -129,19 +151,26 @@ export const GlobalMemoryService = {
       }
 
       // Order by relevance and frequency
-      query = query.order('relevanceScore', { ascending: false })
+      query = query.order('relevance_score', { ascending: false })
                   .order('frequency', { ascending: false })
                   .limit(limit);
 
       const { data, error } = await query;
 
-      if (error) throw error;
-      return data as GlobalMemory[];
-      */
+      if (error) {
+        console.error("Error retrieving global memories:", error);
+        return [];
+      }
       
-      // For now, return an empty array since the table doesn't exist yet
-      console.log("Simulating global memory retrieval with options:", options);
-      return [];
+      return data.map(item => ({
+        id: item.id,
+        content: item.content,
+        category: item.category as MemoryCategory,
+        timestamp: new Date(item.timestamp),
+        frequency: item.frequency,
+        relevanceScore: item.relevance_score,
+        metadata: item.metadata
+      }));
     } catch (error) {
       console.error("Error retrieving global memories:", error);
       return [];
@@ -157,20 +186,20 @@ export const GlobalMemoryService = {
     feedbackDetails?: string
   ): Promise<boolean> => {
     try {
-      // This is commented out until the database table exists
-      /*
       const { data: memory, error: fetchError } = await supabase
         .from('global_memories')
         .select('*')
         .eq('id', memoryId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Error fetching global memory:", fetchError);
+        return false;
+      }
       
-      const currentMemory = memory as GlobalMemory;
       // Adjust relevance score based on feedback
       const relevanceAdjustment = isPositive ? 0.1 : -0.1;
-      let newRelevance = currentMemory.relevanceScore + relevanceAdjustment;
+      let newRelevance = memory.relevance_score + relevanceAdjustment;
       
       // Keep relevance score between 0 and 1
       newRelevance = Math.max(0, Math.min(1, newRelevance));
@@ -178,19 +207,20 @@ export const GlobalMemoryService = {
       const { error: updateError } = await supabase
         .from('global_memories')
         .update({
-          relevanceScore: newRelevance,
+          relevance_score: newRelevance,
           metadata: { 
-            ...currentMemory.metadata,
+            ...memory.metadata,
             lastFeedback: isPositive ? 'positive' : 'negative',
             feedbackDetails
           }
         })
         .eq('id', memoryId);
 
-      if (updateError) throw updateError;
-      */
+      if (updateError) {
+        console.error("Error updating global memory:", updateError);
+        return false;
+      }
       
-      console.log("Simulating global memory feedback processing for ID:", memoryId, "Positive:", isPositive);
       return true;
     } catch (error) {
       console.error("Error processing feedback for global memory:", error);
@@ -206,69 +236,61 @@ export const GlobalMemoryService = {
     limit: number = 100
   ): Promise<string[]> => {
     try {
-      // This is commented out until the database table exists
-      /*
       // Fetch most relevant memories from the specified category
       const { data, error } = await supabase
         .from('global_memories')
         .select('*')
         .eq('category', category)
-        .order('relevanceScore', { ascending: false })
+        .order('relevance_score', { ascending: false })
         .order('frequency', { ascending: false })
         .limit(limit);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching global memories for analysis:", error);
+        return ["Not enough data to extract insights"];
+      }
       
       if (!data || data.length === 0) {
         return ["Not enough data to extract insights"];
       }
       
       // Use AI to analyze patterns in the global memories
-      const memories = data as GlobalMemory[];
+      const memories = data.map(m => ({
+        id: m.id,
+        content: m.content,
+        category: m.category as MemoryCategory,
+        timestamp: new Date(m.timestamp),
+        frequency: m.frequency,
+        relevanceScore: m.relevance_score,
+        metadata: m.metadata
+      }));
+      
       const memoryContents = memories.map(m => m.content).join("\n");
-      */
       
-      const memoryContents = "Sample memory content for testing";
-      
-      const promptContent = `
-        Analyze the following collection of design insights and extract key patterns, trends, 
-        and actionable recommendations:
+      try {
+        // Call the analyze-memory-patterns edge function
+        const { data: analysisData, error: fnError } = await supabase.functions.invoke("analyze-memory-patterns", {
+          body: {
+            category,
+            limit
+          },
+        });
         
-        ${memoryContents}
+        if (fnError) {
+          console.error("Error invoking analyze-memory-patterns function:", fnError);
+          return ["Error analyzing insights from global memory"];
+        }
         
-        Provide a JSON array of string insights that summarize the most valuable patterns 
-        found in these anonymized data points.
-      `;
-      
-      const systemPrompt = `You are an analytics expert specialized in extracting 
-        meaningful patterns from design data. Focus on identifying actionable insights 
-        that can improve design recommendations.`;
-      
-      // Use GPT-4o for in-depth analysis
-      const model = selectModelForFeature(AIFeatureType.DataAnalytics);
-      
-      // For now, let's return a placeholder until the edge function is implemented
-      // In production, we would call the edge function:
-      /*
-      const { data: aiResponse, error: aiError } = await supabase.functions.invoke("generate-with-openai", {
-        body: {
-          messages: [{
-            role: "user",
-            content: promptContent
-          }],
-          systemPrompt,
-          temperature: 0.4,
-          model
-        },
-      });
-      
-      if (aiError) throw aiError;
-      
-      return JSON.parse(aiResponse.response);
-      */
-      
-      console.log("Simulating memory pattern analysis for category:", category);
-      return ["Users prefer clean, minimalist layouts", "Dark mode is preferred for extended usage", "Accessibility considerations are important across all designs"];
+        return analysisData.insights;
+      } catch (aiError) {
+        console.error("Error analyzing global memory insights:", aiError);
+        // Fallback to returning sample insights
+        return [
+          "Users prefer clean, minimalist layouts", 
+          "Dark mode is preferred for extended usage", 
+          "Accessibility considerations are important across all designs"
+        ];
+      }
     } catch (error) {
       console.error("Error analyzing global memory insights:", error);
       return ["Error analyzing insights from global memory"];

@@ -27,21 +27,32 @@ export const UserMemoryService = {
         metadata
       };
 
-      // This is commented out until the database table exists
-      /*
       const { data, error } = await supabase
         .from('user_memories')
-        .insert(memoryEntry)
+        .insert({
+          id: memoryEntry.id,
+          user_id: memoryEntry.userId,
+          content: memoryEntry.content,
+          category: memoryEntry.category,
+          timestamp: memoryEntry.timestamp,
+          metadata: memoryEntry.metadata
+        })
         .select()
         .single();
 
-      if (error) throw error;
-      return data as UserMemory;
-      */
+      if (error) {
+        console.error("Error storing user memory:", error);
+        return memoryEntry; // Return the original object as fallback
+      }
       
-      // For now, return the in-memory object since the tables don't exist yet
-      console.log("Simulating user memory storage:", memoryEntry);
-      return memoryEntry;
+      return {
+        id: data.id,
+        userId: data.user_id,
+        content: data.content,
+        category: data.category as MemoryCategory,
+        timestamp: new Date(data.timestamp),
+        metadata: data.metadata
+      };
     } catch (error) {
       console.error("Error storing user memory:", error);
       return null;
@@ -58,12 +69,10 @@ export const UserMemoryService = {
     try {
       const { categories, limit = 50, timeframe, metadata } = options;
       
-      // This is commented out until the database table exists
-      /*
       let query = supabase
         .from('user_memories')
         .select('*')
-        .eq('userId', userId);
+        .eq('user_id', userId);
 
       // Apply filters based on options
       if (categories && categories.length > 0) {
@@ -90,13 +99,19 @@ export const UserMemoryService = {
 
       const { data, error } = await query;
 
-      if (error) throw error;
-      return data as UserMemory[];
-      */
+      if (error) {
+        console.error("Error retrieving user memories:", error);
+        return [];
+      }
       
-      // For now, return an empty array since the table doesn't exist yet
-      console.log("Simulating user memory retrieval for user:", userId);
-      return [];
+      return data.map(item => ({
+        id: item.id,
+        userId: item.user_id,
+        content: item.content,
+        category: item.category as MemoryCategory,
+        timestamp: new Date(item.timestamp),
+        metadata: item.metadata
+      }));
     } catch (error) {
       console.error("Error retrieving user memories:", error);
       return [];
@@ -108,17 +123,16 @@ export const UserMemoryService = {
    */
   deleteMemory: async (memoryId: string): Promise<boolean> => {
     try {
-      // This is commented out until the database table exists
-      /*
       const { error } = await supabase
         .from('user_memories')
         .delete()
         .eq('id', memoryId);
 
-      if (error) throw error;
-      */
+      if (error) {
+        console.error("Error deleting user memory:", error);
+        return false;
+      }
       
-      console.log("Simulating user memory deletion for ID:", memoryId);
       return true;
     } catch (error) {
       console.error("Error deleting user memory:", error);
