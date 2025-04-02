@@ -16,15 +16,16 @@ interface SiteTypeFieldsProps {
  * A component that renders the appropriate fields based on the site type
  */
 const SiteTypeFields = ({ siteType, form, showTooltips = false }: SiteTypeFieldsProps) => {
+  // Each component will only use the showTooltips prop if it supports it
   switch (siteType) {
     case "saas":
-      return <SaasFields form={form} showTooltips={showTooltips} />;
+      return <SaasFields form={form} />;
     case "ecommerce":
-      return <EcommerceFields form={form} showTooltips={showTooltips} />;
+      return <EcommerceFields form={form} />;
     case "business":
-      return <BusinessFields form={form} showTooltips={showTooltips} />;
+      return <BusinessFields form={form} />;
     case "portfolio":
-      return <PortfolioFields form={form} showTooltips={showTooltips} />;
+      return <PortfolioFields form={form} />;
     default:
       return <BaseFields form={form} showTooltips={showTooltips} />;
   }
