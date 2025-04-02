@@ -1,55 +1,16 @@
 
 import { IntakeFormData } from "@/types/intake-form";
-import { z } from "zod";
+import { 
+  baseObjectSchema, 
+  saasSchema, 
+  ecommerceSchema, 
+  businessSchema, 
+  portfolioSchema 
+} from "../schema/formSchemas";
 
-// Map site type to a user-friendly name
-export const getSiteTypeName = (siteType: string): string => {
-  const siteTypeMap: Record<string, string> = {
-    saas: "SaaS",
-    ecommerce: "E-commerce",
-    business: "Business",
-    portfolio: "Portfolio",
-  };
-  
-  return siteTypeMap[siteType] || "Website";
-};
-
-// Base schema for all site types
-const baseSchema = z.object({
-  mainFeatures: z.string().min(1, "Please describe your main features"),
-  competitors: z.string().optional(),
-});
-
-// SaaS specific schema
-const saasSchema = baseSchema.extend({
-  userAccountsRequired: z.boolean().default(true),
-  pricingTiers: z.string().min(1, "Please describe your pricing tiers"),
-  freeTrialOffered: z.boolean().default(false),
-});
-
-// E-commerce specific schema
-const ecommerceSchema = baseSchema.extend({
-  estimatedProducts: z.string().min(1, "Please specify how many products"),
-  paymentProcessors: z.string().min(1, "Please specify payment processors"),
-  shippingIntegration: z.boolean().default(false),
-  customQuestions: z.array(z.string()).optional(),
-});
-
-// Business specific schema
-const businessSchema = baseSchema.extend({
-  serviceOfferings: z.string().min(1, "Please list your services"),
-  contactFormRequired: z.boolean().default(true),
-  hasPhysicalLocation: z.boolean().default(false),
-});
-
-// Portfolio specific schema
-const portfolioSchema = baseSchema.extend({
-  projectCategories: z.string().min(1, "Please list your project categories"),
-  contactInformation: z.string().min(1, "Please provide contact information"),
-  resumeUploadRequired: z.boolean().default(false),
-});
-
-// Get schema based on site type
+/**
+ * Returns the appropriate Zod schema based on site type
+ */
 export const getFormSchema = (siteType: string) => {
   switch (siteType) {
     case "saas":
@@ -61,11 +22,13 @@ export const getFormSchema = (siteType: string) => {
     case "portfolio":
       return portfolioSchema;
     default:
-      return baseSchema;
+      return baseObjectSchema;
   }
 };
 
-// Get default values based on site type and existing form data
+/**
+ * Returns default values for the form based on site type and existing data
+ */
 export const getDefaultValues = (siteType: string, formData: IntakeFormData) => {
   const baseValues = {
     mainFeatures: formData.mainFeatures || "",
@@ -104,5 +67,23 @@ export const getDefaultValues = (siteType: string, formData: IntakeFormData) => 
       };
     default:
       return baseValues;
+  }
+};
+
+/**
+ * Returns a human-readable site type name
+ */
+export const getSiteTypeName = (siteType: string): string => {
+  switch (siteType) {
+    case "saas":
+      return "SaaS";
+    case "ecommerce":
+      return "E-commerce";
+    case "business":
+      return "Business";
+    case "portfolio":
+      return "Portfolio";
+    default:
+      return "Website";
   }
 };
