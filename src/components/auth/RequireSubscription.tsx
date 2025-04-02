@@ -22,6 +22,10 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
   
+  console.log("RequireSubscription - Profile:", profile);
+  console.log("RequireSubscription - isAdmin:", isAdmin, "profile role:", profile?.role);
+  console.log("RequireSubscription - isActive:", isActive);
+  
   // Use effect to ensure component is fully mounted before checking auth
   useEffect(() => {
     if (!subscriptionLoading && !authLoading) {
@@ -40,16 +44,19 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   
   // If user is not authenticated, redirect to login
   if (!user || !validateAuthState(user, profile)) {
+    console.log("User not authenticated, redirecting to login");
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
   // Check for admin status first - admins always have access
   if (isAdmin || profile?.role === 'admin') {
+    console.log("Admin user detected, granting access");
     return <>{children}</>;
   }
   
   // If user is authenticated but doesn't have an active status, redirect to pricing
   if (!isActive) {
+    console.log("User does not have active subscription, redirecting to pricing");
     // Show a toast notification
     useEffect(() => {
       toast({

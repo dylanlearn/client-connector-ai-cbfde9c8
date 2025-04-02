@@ -56,7 +56,9 @@ const Login = () => {
 
   // If user is already logged in, redirect to the appropriate destination
   if (user) {
+    console.log("User logged in, profile:", profile);
     const redirectPath = getPostLoginRedirect(profile, from);
+    console.log("Redirecting to:", redirectPath);
     return <Navigate to={redirectPath} replace />;
   }
 

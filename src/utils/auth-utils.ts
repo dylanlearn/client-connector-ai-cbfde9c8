@@ -106,10 +106,19 @@ export const isUserActive = (profile: UserProfile | null): boolean => {
  * Gets the appropriate post-login redirect based on user status
  */
 export const getPostLoginRedirect = (profile: UserProfile | null, defaultPath: string = '/dashboard'): string => {
+  // If user is admin, always redirect to the requested path or dashboard
+  if (profile?.role === 'admin') {
+    console.log("Admin user detected, redirecting to:", defaultPath);
+    return defaultPath;
+  }
+  
+  // Check if user has active subscription
   if (isUserActive(profile)) {
     return defaultPath;
   }
   
+  // Non-admin users without subscription go to pricing
+  console.log("Non-subscribed user, redirecting to pricing page");
   return '/pricing?needSubscription=true';
 };
 

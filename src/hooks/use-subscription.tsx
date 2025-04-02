@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate as useReactRouterNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -55,9 +54,11 @@ export const useSubscription = () => {
       
       // First check if user is an admin from the profile
       const isAdmin = profile?.role === 'admin';
+      console.log("useSubscription - Checking admin status:", isAdmin, "for profile:", profile);
       
       // If user is admin, we can set subscription status accordingly without checking further
       if (isAdmin) {
+        console.log("useSubscription - User is admin, setting pro access");
         setSubscriptionInfo({
           status: "pro", // Admin users are treated as having pro status
           isActive: true,
@@ -71,12 +72,15 @@ export const useSubscription = () => {
       }
       
       // For non-admin users, check subscription normally
+      console.log("useSubscription - User is not admin, checking subscription");
       const { data, error } = await supabase.functions.invoke("check-subscription");
       
       if (error) {
+        console.error("Error checking subscription:", error);
         throw error;
       }
       
+      console.log("useSubscription - Subscription data:", data);
       setSubscriptionInfo({
         status: data.subscription,
         isActive: data.isActive,
@@ -141,6 +145,7 @@ export const useSubscription = () => {
   };
 
   useEffect(() => {
+    console.log("useSubscription - Effect triggered, user:", user?.id, "profile:", profile);
     checkSubscription();
     
     // Check subscription when URL has checkout=success or checkout=canceled
@@ -167,7 +172,7 @@ export const useSubscription = () => {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
-  }, [user?.id]);
+  }, [user?.id, profile]);
 
   return {
     ...subscriptionInfo,
