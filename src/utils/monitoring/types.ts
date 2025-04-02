@@ -17,6 +17,7 @@ export interface SystemMonitoringRecord {
 }
 
 export interface MonitoringConfiguration {
+  id: string; // Adding the id property
   component: string;
   warning_threshold: number;
   critical_threshold: number;
