@@ -16,6 +16,72 @@ export const useRealtimeMemory = () => {
   const cleanupFunctions = useRef<(() => void)[]>([]);
 
   /**
+   * Subscribe to a specific memory category for real-time updates
+   */
+  const subscribeToCategory = useCallback((
+    category: MemoryCategory,
+    setContextFn: (insights: string[]) => void
+  ) => {
+    return AIMemoryService.global.realtime.subscribeToInsights(
+      category,
+      (insights) => {
+        console.log(`Real-time insights update for ${category}:`, insights);
+        setContextFn(insights);
+      }
+    );
+  }, []);
+
+  /**
+   * Update memory context with new insights
+   */
+  const updateMemoryContext = useCallback((
+    category: MemoryCategory,
+    insights: string[]
+  ) => {
+    setMemoryContext(prev => {
+      if (!prev) return prev;
+      
+      // Find any existing global insights for this category
+      const hasCategory = prev.globalInsights.some(insight => 
+        insight.category === category
+      );
+      
+      if (hasCategory) {
+        // Update existing insights
+        return {
+          ...prev,
+          globalInsights: prev.globalInsights.map(insight => 
+            insight.category === category
+              ? {
+                  ...insight,
+                  content: insights.join('\n'),
+                  relevanceScore: 1.0, // Boost relevance for fresh insights
+                  frequency: insight.frequency + 1
+                }
+              : insight
+          )
+        };
+      } else if (insights.length > 0) {
+        // Add new insights
+        return {
+          ...prev,
+          globalInsights: [
+            ...prev.globalInsights,
+            {
+              content: insights.join('\n'),
+              category: category,
+              relevanceScore: 1.0, // High relevance for new insights
+              frequency: 1,
+            }
+          ]
+        };
+      }
+      
+      return prev;
+    });
+  }, [setMemoryContext]);
+
+  /**
    * Setup real-time subscriptions for memory insights
    */
   const setupRealtimeSubscriptions = useCallback(() => {
@@ -25,7 +91,7 @@ export const useRealtimeMemory = () => {
     cleanupFunctions.current.forEach(cleanup => cleanup());
     cleanupFunctions.current = [];
     
-    // Subscribe to different memory categories
+    // Categories to subscribe to
     const categories = [
       MemoryCategory.TonePreference,
       MemoryCategory.ColorPreference,
@@ -33,54 +99,11 @@ export const useRealtimeMemory = () => {
       MemoryCategory.ClientFeedback
     ];
     
+    // Create subscriptions for each category
     categories.forEach(category => {
-      const cleanup = AIMemoryService.global.realtime.subscribeToInsights(
-        category,
-        (insights) => {
-          console.log(`Real-time insights update for ${category}:`, insights);
-          // Update memory context with new insights
-          setMemoryContext(prev => {
-            if (!prev) return prev;
-            
-            // Find any existing global insights for this category
-            const hasCategory = prev.globalInsights.some(insight => 
-              insight.category === category
-            );
-            
-            if (hasCategory) {
-              // Update existing insights
-              return {
-                ...prev,
-                globalInsights: prev.globalInsights.map(insight => 
-                  insight.category === category
-                    ? {
-                        ...insight,
-                        content: insights.join('\n'),
-                        relevanceScore: 1.0, // Boost relevance for fresh insights
-                        frequency: insight.frequency + 1
-                      }
-                    : insight
-                )
-              };
-            } else if (insights.length > 0) {
-              // Add new insights
-              return {
-                ...prev,
-                globalInsights: [
-                  ...prev.globalInsights,
-                  {
-                    content: insights.join('\n'),
-                    category: category,
-                    relevanceScore: 1.0, // High relevance for new insights
-                    frequency: 1,
-                  }
-                ]
-              };
-            }
-            
-            return prev;
-          });
-        }
+      const cleanup = subscribeToCategory(
+        category, 
+        (insights) => updateMemoryContext(category, insights)
       );
       
       cleanupFunctions.current.push(cleanup);
@@ -93,7 +116,7 @@ export const useRealtimeMemory = () => {
       cleanupFunctions.current = [];
       setIsRealtime(false);
     };
-  }, [user, setMemoryContext]);
+  }, [user, subscribeToCategory, updateMemoryContext]);
 
   /**
    * Reset the real-time subscriptions

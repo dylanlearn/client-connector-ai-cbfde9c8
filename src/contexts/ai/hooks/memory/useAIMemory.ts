@@ -31,12 +31,23 @@ export const useAIMemory = () => {
     resetRealtimeSubscriptions();
   }, [resetMemoryContext, resetRealtimeSubscriptions]);
 
+  // Fix the TS error by modifying the return value of storeMemory to be void
+  const storeMemoryWrapper = useCallback(async (
+    content: string,
+    category: string, 
+    projectId?: string,
+    metadata: Record<string, any> = {}
+  ): Promise<void> => {
+    await storeMemory(content, category, projectId, metadata);
+    // Return void instead of boolean
+  }, [storeMemory]);
+
   return {
     // Expose the combined API
     memoryContext,
     isProcessing,
     isRealtime,
-    storeMemory,
+    storeMemory: storeMemoryWrapper,
     refreshMemoryContext,
     resetMemoryContext: resetMemory
   };

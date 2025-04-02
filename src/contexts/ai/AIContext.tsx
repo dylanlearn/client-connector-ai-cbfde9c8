@@ -50,6 +50,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     isProcessing: isMemoryProcessing,
     isRealtime,
     storeMemory,
+    refreshMemoryContext,
     resetMemoryContext
   } = useAIMemory();
 
@@ -90,6 +91,9 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     resetDesignRecommendations();
     resetMemoryContext();
   }, [resetMessages, resetAnalysis, resetDesignRecommendations, resetMemoryContext]);
+
+  // The storeMemory function from useAIMemory now returns void instead of boolean,
+  // so it's directly compatible with the AIContextType
 
   return (
     <AIContext.Provider
