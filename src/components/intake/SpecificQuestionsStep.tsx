@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -11,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
-import { useAIContent } from "@/hooks/use-ai-content";
+import { useAIContent } from "@/hooks/ai-content";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -44,7 +43,6 @@ const SpecificQuestionsStep = ({
     defaultValues: getDefaultValues(siteType, formData),
   });
 
-  // Set up form field watching
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (Object.values(value).some(v => v !== undefined)) {
@@ -61,11 +59,9 @@ const SpecificQuestionsStep = ({
     onNext();
   };
 
-  // Initialize AI system with a delay to improve perceived performance
   const initializeAI = useCallback(async () => {
     setIsAiInitializing(true);
     
-    // Short artificial delay to show the initialization process
     await new Promise(resolve => setTimeout(resolve, 700));
     
     setAiPowered(true);
