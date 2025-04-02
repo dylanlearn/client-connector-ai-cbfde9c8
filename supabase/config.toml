@@ -46,10 +46,10 @@ refresh_token_reuse_interval = 10
 [realtime]
 enabled = true
 
-# Correct functions section format
+# Functions configuration
 [functions]
+# General functions configuration
 enabled = true
-port = 54328
 
 # Function-specific configurations
 [functions.analyze-interaction-patterns]
