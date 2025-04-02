@@ -54,7 +54,9 @@ export function SlackExportDialog({ pdfBlob, title, trigger }: SlackExportDialog
         </DialogHeader>
 
         {isLoading ? (
-          <LoadingOverlay message="Sending to Slack..." />
+          <div className="relative py-4">
+            <LoadingOverlay message="Sending to Slack..." />
+          </div>
         ) : (
           <div className="py-4 space-y-4">
             <div className="space-y-2">

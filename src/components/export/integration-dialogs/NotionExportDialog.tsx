@@ -64,7 +64,9 @@ export function NotionExportDialog({ pdfBlob, title, trigger }: NotionExportDial
         </DialogHeader>
 
         {isLoading ? (
-          <LoadingOverlay message="Exporting to Notion..." />
+          <div className="relative py-4">
+            <LoadingOverlay message="Exporting to Notion..." />
+          </div>
         ) : pageUrl ? (
           <div className="py-4 space-y-4">
             <div className="text-center">

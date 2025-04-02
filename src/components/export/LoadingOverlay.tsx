@@ -1,11 +1,16 @@
 
-import { Loader2 } from "lucide-react";
+import React from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-export function LoadingOverlay() {
+interface LoadingOverlayProps {
+  message?: string;  // Make message optional
+}
+
+export function LoadingOverlay({ message = "Loading..." }: LoadingOverlayProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-8">
-      <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-      <p className="text-sm text-muted-foreground">Preparing your document...</p>
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 rounded-md z-10">
+      <LoadingSpinner className="h-10 w-10 text-primary" />
+      <p className="mt-2 text-sm text-muted-foreground">{message}</p>
     </div>
   );
 }
