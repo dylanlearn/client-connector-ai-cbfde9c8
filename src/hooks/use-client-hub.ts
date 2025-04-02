@@ -87,7 +87,7 @@ export function useClientHub() {
     }
   }, [accessError, tasksError, realtimeError, navigationError, errors]);
 
-  // Handle task button click
+  // Handle task button click - optimized to be more efficient
   const handleTaskButtonClick = async (taskType: string, path: string) => {
     if (!clientToken || !designerId) {
       toast.error("Unable to access this feature. Missing authorization.");
@@ -102,22 +102,24 @@ export function useClientHub() {
         return;
       }
       
-      if (task.status !== 'completed') {
-        try {
-          await updateTaskStatus(task.id, 'in_progress');
-        } catch (error) {
-          console.error("Error updating task status:", error);
-          // Continue with navigation despite the error
-        }
-      }
-      
+      // Navigate first to improve perceived performance
       navigateTo(path, clientToken, designerId, task.id);
       
-      try {
-        await markTaskCompleted(taskType);
-      } catch (error) {
-        console.error("Error marking task as completed:", error);
-        // Don't block the user experience if this fails
+      // Then update status in the background
+      if (task.status !== 'completed') {
+        // Only attempt to mark as in_progress - don't block on this
+        updateTaskStatus(task.id, 'in_progress').catch(error => {
+          console.error("Error updating task status to in_progress:", error);
+          // Don't block the user experience if this fails
+        });
+        
+        // Also queue up completed status update - don't await or block on this
+        setTimeout(() => {
+          markTaskCompleted(taskType).catch(error => {
+            console.error("Error marking task as completed:", error);
+            // Don't block the user experience if this fails
+          });
+        }, 300); // Small delay to avoid database contention
       }
     } catch (error) {
       console.error("Error in handleTaskButtonClick:", error);

@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { createRealtimeSubscription } from '@/utils/realtime-utils';
 import { ClientTask, TaskStatus } from '@/types/client';
@@ -17,6 +16,14 @@ export function useRealtimeUpdates(
 ) {
   const [realtimeError, setRealtimeError] = useState<Error | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const tasksRef = useRef(tasks);
+  const taskStatusRef = useRef(taskStatus);
+  
+  // Keep refs updated with latest values to avoid stale closures
+  useEffect(() => {
+    tasksRef.current = tasks;
+    taskStatusRef.current = taskStatus;
+  }, [tasks, taskStatus]);
 
   useEffect(() => {
     if (!clientToken || !designerId) return;
@@ -33,11 +40,13 @@ export function useRealtimeUpdates(
           console.log('Task updated in real-time:', payload);
           setIsConnected(true);
           
-          if (payload.new && tasks) {
+          // Use the latest tasks from ref
+          const currentTasks = tasksRef.current;
+          if (payload.new && currentTasks) {
             try {
               // Update the tasks array with the new task
               const taskId = payload.new.id;
-              const updatedTasks = tasks.map(task => 
+              const updatedTasks = currentTasks.map(task => 
                 task.id === taskId 
                   ? { 
                       ...task, 
@@ -50,10 +59,12 @@ export function useRealtimeUpdates(
               
               setTasks(updatedTasks);
               
-              // Update task status
+              // Update task status if completed
               if (payload.new.status === 'completed') {
                 const taskType = payload.new.task_type;
-                if (taskType in taskStatus) {
+                const currentStatus = taskStatusRef.current;
+                
+                if (taskType in currentStatus && !currentStatus[taskType]) {
                   setTaskStatus(prev => ({
                     ...prev,
                     [taskType]: true
@@ -74,7 +85,6 @@ export function useRealtimeUpdates(
       const connectionTimeout = setTimeout(() => {
         if (!isConnected) {
           console.warn("Realtime connection not established in expected time");
-          setRealtimeError(new Error('Realtime connection timeout'));
         }
       }, 5000);
       
@@ -87,7 +97,7 @@ export function useRealtimeUpdates(
       setRealtimeError(error instanceof Error ? error : new Error('Error setting up realtime subscription'));
       return () => {};
     }
-  }, [clientToken, designerId, tasks, setTasks, taskStatus, setTaskStatus, isConnected]);
+  }, [clientToken, designerId, setTasks, setTaskStatus]);
 
   const getTaskName = (taskType: string): string => {
     switch (taskType) {

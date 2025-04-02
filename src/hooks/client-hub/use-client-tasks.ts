@@ -16,10 +16,18 @@ export function useClientTasks(clientToken: string | null, designerId: string | 
   });
   const [error, setError] = useState<Error | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [lastLoadTime, setLastLoadTime] = useState<number>(0);
 
   const loadClientTasks = useCallback(async (token: string, dId: string) => {
+    // Prevent multiple rapid loads within 2 seconds (debounce)
+    const now = Date.now();
+    if (now - lastLoadTime < 2000 && tasks !== null) {
+      return;
+    }
+    
     setIsLoadingTasks(true);
     setError(null);
+    setLastLoadTime(now);
     
     try {
       const clientTasks = await getClientTasks(token, dId);
@@ -44,12 +52,15 @@ export function useClientTasks(clientToken: string | null, designerId: string | 
       }
     } catch (error) {
       console.error("Error loading client tasks:", error);
-      toast.error("Failed to load your tasks. Please try again later.");
+      // Only show toast if this is the first load attempt
+      if (tasks === null) {
+        toast.error("Failed to load your tasks. Please try again later.");
+      }
       setError(error instanceof Error ? error : new Error('Unknown error loading tasks'));
     } finally {
       setIsLoadingTasks(false);
     }
-  }, []);
+  }, [tasks, lastLoadTime]);
 
   useEffect(() => {
     if (clientToken && designerId) {
@@ -59,8 +70,7 @@ export function useClientTasks(clientToken: string | null, designerId: string | 
 
   const markTaskCompleted = async (task: string) => {
     if (isUpdating) {
-      toast.info("Another update is in progress. Please wait.");
-      return;
+      return; // Silently return to avoid multiple updates
     }
     
     setIsUpdating(true);
@@ -68,8 +78,13 @@ export function useClientTasks(clientToken: string | null, designerId: string | 
     
     const taskObj = tasks?.find(t => t.taskType === task);
     if (!taskObj) {
-      toast.error(`Task not found for ${task}`);
       setError(new Error(`Task not found: ${task}`));
+      setIsUpdating(false);
+      return;
+    }
+    
+    // Don't update if already completed
+    if (taskObj.status === 'completed') {
       setIsUpdating(false);
       return;
     }

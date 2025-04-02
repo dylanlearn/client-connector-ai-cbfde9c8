@@ -86,7 +86,7 @@ export const getClientTasks = async (
   }
 };
 
-// Update task status
+// Update task status - optimized for speed
 export const updateTaskStatus = async (
   taskId: string,
   status: TaskStatus,
