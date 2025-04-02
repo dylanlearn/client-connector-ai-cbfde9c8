@@ -50,8 +50,9 @@ function PDFExportDialogContent() {
     handleSMSSend
   } = usePDFDelivery("document");
   
-  const handleCloseDialog = (setIsOpen: (open: boolean) => void) => {
-    setIsOpen(false);
+  const handleCloseDialog = () => {
+    // Access Dialog's close functionality through DialogContent's context
+    // This will be handled by the Dialog's onOpenChange
   };
 
   const handleDownload = () => {
@@ -138,7 +139,7 @@ function PDFExportDialogContent() {
       )}
 
       <DialogFooter>
-        <Button variant="outline" onClick={() => handleCloseDialog(setIsOpen => setIsOpen(false))}>
+        <Button variant="outline" onClick={handleCloseDialog}>
           Cancel
         </Button>
       </DialogFooter>
