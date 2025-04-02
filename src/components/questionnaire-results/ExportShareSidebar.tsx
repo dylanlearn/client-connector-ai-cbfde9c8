@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, Download, Share2, FileText, ExternalLink } from "lucide-react";
 import { generatePDF, downloadPDF } from "@/utils/pdf-export";
 import { toast } from "sonner";
+import { PDFExportDialog } from "@/components/export/PDFExportDialog";
 
 interface ExportShareSidebarProps {
   onExport: (format: string) => void;
@@ -40,15 +41,19 @@ const ExportShareSidebar = ({ onExport }: ExportShareSidebarProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button 
-          variant="outline" 
-          className="w-full justify-start" 
-          onClick={() => onExport("pdf")}
-          disabled={isGenerating}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export as PDF
-        </Button>
+        <PDFExportDialog 
+          contentId="exportContent" 
+          filename="design-brief"
+          trigger={
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export as PDF
+            </Button>
+          }
+        />
         
         <Button 
           variant="outline" 
