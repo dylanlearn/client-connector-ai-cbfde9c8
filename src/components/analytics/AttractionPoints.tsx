@@ -1,5 +1,5 @@
 
-import { CursorClick, MousePointer, Eye } from "lucide-react";
+import { MousePointerClick, MousePointer, Eye } from "lucide-react";
 
 const AttractionPoints = () => {
   const attractionPoints = [
@@ -28,7 +28,7 @@ const AttractionPoints = () => {
   const getIcon = (type: string) => {
     switch (type) {
       case "click":
-        return <CursorClick className="h-4 w-4 text-blue-500" />;
+        return <MousePointerClick className="h-4 w-4 text-blue-500" />;
       case "hover":
         return <MousePointer className="h-4 w-4 text-purple-500" />;
       case "attention":

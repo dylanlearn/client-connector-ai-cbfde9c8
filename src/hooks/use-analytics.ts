@@ -16,9 +16,12 @@ export type { DesignAnalytics, UserPreference };
 
 export const useAnalytics = () => {
   const { user } = useAuth();
-  const { isPro } = useSubscription();
+  const { status, isAdmin } = useSubscription();
   const [isRealtime, setIsRealtime] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  // Check if user has Pro subscription
+  const hasPro = status === "pro" || isAdmin || (user?.role === 'admin');
 
   // Fetch analytics data with caching and proper keys
   const {
@@ -88,7 +91,7 @@ export const useAnalytics = () => {
     isLoading: isLoadingAnalytics || isLoadingPreferences,
     error: analyticsError || preferencesError,
     isRealtime,
-    isPro: isPro || (user?.role === 'admin'),
+    isPro: hasPro,
     getTopRankedDesigns,
     getCategoryDistribution,
     getPreferenceOverview,

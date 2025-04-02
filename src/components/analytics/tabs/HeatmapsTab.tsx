@@ -1,5 +1,5 @@
 
-import { Eye, MousePointer, CursorClick, Award } from "lucide-react";
+import { Eye, MousePointer, MousePointerClick, Award } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ const HeatmapsTab = ({ hasProData }: HeatmapsTabProps) => {
         <Tabs defaultValue="clicks" className="w-auto">
           <TabsList>
             <TabsTrigger value="clicks">
-              <CursorClick className="h-4 w-4 mr-2" />
+              <MousePointerClick className="h-4 w-4 mr-2" />
               Clicks
             </TabsTrigger>
             <TabsTrigger value="movement">
