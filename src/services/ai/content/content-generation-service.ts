@@ -39,7 +39,7 @@ export const AIContentGenerationService = {
         .select('content')
         .eq('cache_key', effectiveCacheKey)
         .gt('expires_at', new Date().toISOString())
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors
+        .maybeSingle();
       
       if (!cacheError && cachedContent) {
         console.log('Cache hit for content generation:', effectiveCacheKey);
