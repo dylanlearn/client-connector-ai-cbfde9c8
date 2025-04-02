@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate as useReactRouterNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -54,7 +53,7 @@ export const useSubscription = () => {
       setSubscriptionInfo(prev => ({ ...prev, isLoading: true }));
       
       // First check if user is an admin from the profile
-      // This is the critical fix - ensure we properly check the role
+      // This is the critical part - ensure we properly check the role
       const isAdmin = profile?.role === 'admin';
       console.log("useSubscription - Checking admin status:", isAdmin, "for profile:", profile);
       
@@ -73,8 +72,9 @@ export const useSubscription = () => {
         return;
       }
       
-      // For non-admin users, check subscription normally
-      console.log("useSubscription - User is not admin, checking subscription");
+      // For non-admin users, double-check with a direct database query as a fallback
+      // This ensures we catch any recent role changes that might not be in the cached profile
+      console.log("useSubscription - User is not admin in profile, double-checking with DB");
       
       // Make direct database check for admin role as a backup
       const { data: profileData, error: profileError } = await supabase
@@ -181,6 +181,15 @@ export const useSubscription = () => {
       setSubscriptionInfo(prev => ({ ...prev, isLoading: false }));
     }
     
+    // Set up a subscription refresh timer to periodically check admin status
+    // This helps catch any role changes made during the session
+    const refreshTimer = setInterval(() => {
+      if (user) {
+        console.log("useSubscription - Periodic refresh check");
+        checkSubscription();
+      }
+    }, 60000); // Check every minute
+    
     // Check subscription when URL has checkout=success or checkout=canceled
     const params = new URLSearchParams(window.location.search);
     const checkoutStatus = params.get("checkout");
@@ -205,6 +214,8 @@ export const useSubscription = () => {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
+    
+    return () => clearInterval(refreshTimer);
   }, [user?.id, profile]);
 
   return {

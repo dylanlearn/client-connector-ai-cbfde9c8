@@ -32,8 +32,30 @@ serve(async (req) => {
     if (userError || !user) {
       throw new Error('Invalid token or user not found');
     }
+    
+    // Check if the user is an admin first - this is critical
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+      
+    if (!profileError && profileData?.role === 'admin') {
+      console.log("User is admin, granting full access");
+      return new Response(JSON.stringify({
+        subscription: 'pro',
+        isActive: true,
+        inTrial: false,
+        expiresAt: null,
+        willCancel: false,
+        isAdmin: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
 
-    // Get the subscription status
+    // If not admin, check the subscription status
     const { data: subscription, error: subscriptionError } = await supabase
       .from('subscriptions')
       .select('subscription_status, current_period_end, cancel_at_period_end')
@@ -60,6 +82,7 @@ serve(async (req) => {
       inTrial,
       expiresAt: subscription?.current_period_end || null,
       willCancel: subscription?.cancel_at_period_end || false,
+      isAdmin: false
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
