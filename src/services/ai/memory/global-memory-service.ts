@@ -4,6 +4,7 @@ import { GlobalMemoryStorage } from "./global/global-memory-storage";
 import { GlobalMemoryRetrieval } from "./global/global-memory-retrieval";
 import { GlobalMemoryFeedback } from "./global/global-memory-feedback";
 import { GlobalMemoryInsights } from "./global/global-memory-insights";
+import { GlobalMemoryRealtime } from "./global/global-memory-realtime";
 
 /**
  * Service for managing anonymized global AI memory
@@ -28,5 +29,20 @@ export const GlobalMemoryService = {
   /**
    * Analyze global memories to extract insights using AI
    */
-  analyzeInsights: GlobalMemoryInsights.analyzeInsights
+  analyzeInsights: GlobalMemoryInsights.analyzeInsights,
+  
+  /**
+   * Real-time functionality for global memory
+   */
+  realtime: {
+    /**
+     * Subscribe to real-time memory insights
+     */
+    subscribeToInsights: GlobalMemoryRealtime.subscribeToInsights,
+    
+    /**
+     * Trigger a real-time analysis update
+     */
+    triggerAnalysisUpdate: GlobalMemoryRealtime.triggerAnalysisUpdate
+  }
 };

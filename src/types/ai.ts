@@ -1,70 +1,51 @@
-export type AIMessage = {
+export interface AIMessage {
   id: string;
+  createdAt: Date;
   content: string;
-  role: "system" | "user" | "assistant";
-  timestamp: Date;
-};
-
-export interface AIAnalysis {
-  toneAnalysis?: {
-    formal: number;
-    casual: number;
-    professional: number;
-    friendly: number;
-  };
-  clarity?: number;
-  suggestionCount?: number;
-  keyInsights?: string[];
-  contradictions?: string[];
+  role: "user" | "assistant" | "error";
 }
 
-export interface DesignRecommendation {
-  colorPalette?: Array<{name: string, hex: string, usage: string}>;
-  typography?: {
-    headings: string;
-    body: string;
-    accents: string;
-  };
-  layouts?: string[];
-  components?: Array<{
-    name: string;
-    description: string;
-    inspiration?: string;
-  }>;
+export interface AIAnalysis {
+  summary: string;
+  keyInsights: string[];
+  suggestedActions: string[];
+}
+
+export interface AIMemory {
+  content: string;
+  category: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+}
+
+export interface GlobalMemory {
+  content: string;
+  category: string;
+  relevanceScore: number;
+  frequency: number;
 }
 
 export interface AIMemoryContext {
-  userMemories?: Array<{
-    content: string;
-    category: string;
-    timestamp: Date;
-    metadata?: Record<string, any>;
-  }>;
-  projectMemories?: Array<{
-    content: string;
-    category: string;
-    timestamp: Date;
-    metadata?: Record<string, any>;
-  }>;
-  globalInsights?: Array<{
-    content: string;
-    category: string;
-    relevanceScore: number;
-    frequency: number;
-  }>;
+  userMemories: AIMemory[];
+  projectMemories: AIMemory[];
+  globalInsights: GlobalMemory[];
 }
 
+/**
+ * Context type for the AI provider
+ */
 export interface AIContextType {
   messages: AIMessage[];
   isProcessing: boolean;
   analysis: AIAnalysis | null;
-  designRecommendations: DesignRecommendation | null;
-  memoryContext?: AIMemoryContext;
-  simulateResponse: (userPrompt: string) => Promise<void>;
-  analyzeResponses: (questionnaireData: Record<string, any>) => Promise<AIAnalysis>;
-  generateDesignRecommendations: (questionnaire: Record<string, any>) => Promise<DesignRecommendation>;
-  generateContent: (options: any) => Promise<string>;
-  summarizeFeedback: (feedback: string) => Promise<string[]>;
+  designRecommendations: string[] | null;
+  memoryContext: AIMemoryContext | undefined;
+  isRealtime?: boolean;
+  simulateResponse: (prompt: string) => Promise<void>;
+  analyzeResponses: (responses: Record<string, string>) => Promise<void>;
+  generateDesignRecommendations: (prompt: string) => Promise<void>;
+  generateContent: (prompt: string, contentType: string) => Promise<string>;
+  summarizeFeedback: (feedback: string[]) => Promise<string>;
   storeMemory: (content: string, category: string, projectId?: string, metadata?: Record<string, any>) => Promise<void>;
   reset: () => void;
 }

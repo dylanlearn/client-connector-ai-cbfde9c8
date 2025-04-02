@@ -47,6 +47,8 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
 
   const {
     memoryContext,
+    isProcessing: isMemoryProcessing,
+    isRealtime,
     storeMemory,
     resetMemoryContext
   } = useAIMemory();
@@ -57,7 +59,8 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     isAnalysisProcessing || 
     isDesignProcessing || 
     isContentProcessing || 
-    isFeedbackProcessing;
+    isFeedbackProcessing ||
+    isMemoryProcessing;
 
   // Reset all AI state
   const reset = useCallback(() => {
@@ -75,6 +78,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         analysis,
         designRecommendations,
         memoryContext,
+        isRealtime,
         simulateResponse,
         analyzeResponses,
         generateDesignRecommendations,

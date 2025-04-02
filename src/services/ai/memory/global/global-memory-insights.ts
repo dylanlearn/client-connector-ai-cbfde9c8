@@ -12,12 +12,38 @@ export const GlobalMemoryInsights = {
    */
   analyzeInsights: async (
     category: MemoryCategory,
-    limit: number = 100
+    limit: number = 100,
+    forceRefresh: boolean = false
   ): Promise<string[]> => {
     try {
+      // First check if we have recent analysis results (less than 15 minutes old)
+      // unless forceRefresh is true
+      if (!forceRefresh) {
+        const { data: existingAnalysis, error: fetchError } = await supabase
+          .from('memory_analysis_results')
+          .select('insights, analyzed_at')
+          .eq('category', category)
+          .order('analyzed_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (!fetchError && existingAnalysis) {
+          const analysisTime = new Date(existingAnalysis.analyzed_at);
+          const now = new Date();
+          const timeDiff = now.getTime() - analysisTime.getTime();
+          const fifteenMinutes = 15 * 60 * 1000;
+          
+          // If analysis is recent, return the cached results
+          if (timeDiff < fifteenMinutes) {
+            console.log(`Using cached analysis for ${category} from ${analysisTime.toISOString()}`);
+            return existingAnalysis.insights.results || [];
+          }
+        }
+      }
+      
       // Fetch most relevant memories from the specified category
-      const { data, error } = await (supabase
-        .from('global_memories') as any)
+      const { data, error } = await supabase
+        .from('global_memories')
         .select('*')
         .eq('category', category)
         .order('relevance_score', { ascending: false })
