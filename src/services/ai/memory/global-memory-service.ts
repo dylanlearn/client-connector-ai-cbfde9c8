@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalMemory, MemoryCategory, MemoryQueryOptions } from "./memory-types";
 import { v4 as uuidv4 } from "uuid";
-import { AIFeatureType, selectModelForFeature } from "../ai-model-selector";
 
 /**
  * Service for managing anonymized global AI memory
@@ -31,8 +30,8 @@ export const GlobalMemoryService = {
       };
 
       // Check for similar existing memories to update frequency
-      const { data: existingMemories } = await supabase
-        .from('global_memories')
+      const { data: existingMemories } = await (supabase
+        .from('global_memories') as any)
         .select('*')
         .eq('category', category)
         .textSearch('content', content, {
@@ -47,8 +46,8 @@ export const GlobalMemoryService = {
         const newFrequency = existingMemory.frequency + 1;
         const newRelevance = (existingMemory.relevance_score + relevanceScore) / 2; // Average
         
-        const { data, error } = await supabase
-          .from('global_memories')
+        const { data, error } = await (supabase
+          .from('global_memories') as any)
           .update({
             frequency: newFrequency,
             relevance_score: newRelevance,
@@ -75,8 +74,8 @@ export const GlobalMemoryService = {
         };
       } else {
         // Create new memory entry
-        const { data, error } = await supabase
-          .from('global_memories')
+        const { data, error } = await (supabase
+          .from('global_memories') as any)
           .insert({
             id: memoryEntry.id,
             content: memoryEntry.content,
@@ -125,8 +124,9 @@ export const GlobalMemoryService = {
         relevanceThreshold = 0.3 
       } = options;
       
-      let query = supabase
-        .from('global_memories')
+      // Using type assertion to work around type checking limitations
+      let query = (supabase
+        .from('global_memories') as any)
         .select('*')
         .gte('relevance_score', relevanceThreshold);
 
@@ -186,8 +186,8 @@ export const GlobalMemoryService = {
     feedbackDetails?: string
   ): Promise<boolean> => {
     try {
-      const { data: memory, error: fetchError } = await supabase
-        .from('global_memories')
+      const { data: memory, error: fetchError } = await (supabase
+        .from('global_memories') as any)
         .select('*')
         .eq('id', memoryId)
         .single();
@@ -204,8 +204,8 @@ export const GlobalMemoryService = {
       // Keep relevance score between 0 and 1
       newRelevance = Math.max(0, Math.min(1, newRelevance));
       
-      const { error: updateError } = await supabase
-        .from('global_memories')
+      const { error: updateError } = await (supabase
+        .from('global_memories') as any)
         .update({
           relevance_score: newRelevance,
           metadata: { 
@@ -237,8 +237,8 @@ export const GlobalMemoryService = {
   ): Promise<string[]> => {
     try {
       // Fetch most relevant memories from the specified category
-      const { data, error } = await supabase
-        .from('global_memories')
+      const { data, error } = await (supabase
+        .from('global_memories') as any)
         .select('*')
         .eq('category', category)
         .order('relevance_score', { ascending: false })
@@ -254,7 +254,7 @@ export const GlobalMemoryService = {
         return ["Not enough data to extract insights"];
       }
       
-      // Use AI to analyze patterns in the global memories
+      // Transform the data to our memory format
       const memories = data.map(m => ({
         id: m.id,
         content: m.content,
@@ -264,8 +264,6 @@ export const GlobalMemoryService = {
         relevanceScore: m.relevance_score,
         metadata: m.metadata
       }));
-      
-      const memoryContents = memories.map(m => m.content).join("\n");
       
       try {
         // Call the analyze-memory-patterns edge function

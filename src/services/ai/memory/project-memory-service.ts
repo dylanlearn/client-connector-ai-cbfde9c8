@@ -29,8 +29,9 @@ export const ProjectMemoryService = {
         metadata
       };
 
-      const { data, error } = await supabase
-        .from('project_memories')
+      // Using type assertion to work around type checking limitations
+      const { data, error } = await (supabase
+        .from('project_memories') as any)
         .insert({
           id: memoryEntry.id,
           project_id: memoryEntry.projectId,
@@ -73,8 +74,9 @@ export const ProjectMemoryService = {
     try {
       const { categories, limit = 50, timeframe, metadata } = options;
       
-      let query = supabase
-        .from('project_memories')
+      // Using type assertion to work around type checking limitations
+      let query = (supabase
+        .from('project_memories') as any)
         .select('*')
         .eq('project_id', projectId);
 
@@ -128,8 +130,8 @@ export const ProjectMemoryService = {
    */
   deleteMemory: async (memoryId: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('project_memories')
+      const { error } = await (supabase
+        .from('project_memories') as any)
         .delete()
         .eq('id', memoryId);
 
