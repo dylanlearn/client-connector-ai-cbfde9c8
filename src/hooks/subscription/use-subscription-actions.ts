@@ -8,7 +8,7 @@ export const useSubscriptionActions = () => {
   const [isStarting, setIsStarting] = useState(false);
   const { toast } = useToast();
 
-  const startSubscription = async (plan: "basic" | "pro", billingCycle: BillingCycle = "monthly") => {
+  const startSubscription = async (plan: "sync" | "sync-pro", billingCycle: BillingCycle = "monthly") => {
     try {
       setIsStarting(true);
       const data = await createSubscriptionCheckout(plan, billingCycle);

@@ -23,9 +23,9 @@ const Analytics = () => {
   
   // Enhanced determination if user has access to Pro features
   const hasProData = 
-    status === "pro" || // Paid subscription is Pro
+    status === "sync-pro" || // Paid subscription is Pro
     isAdmin || // User is an admin
-    (adminAssignedStatus === "pro") || // Admin explicitly assigned Pro
+    (adminAssignedStatus === "sync-pro") || // Admin explicitly assigned Pro
     (user?.role === 'admin'); // User role in auth is admin
 
   // Define the tabs

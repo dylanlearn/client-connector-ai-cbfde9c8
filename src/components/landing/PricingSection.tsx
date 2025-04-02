@@ -43,7 +43,7 @@ const PricingSection = () => {
         "Up to 3 projects"
       ],
       cta: "Start 3-Day Free Trial",
-      plan: "basic",
+      plan: "sync",
       highlight: false
     },
     {
@@ -63,7 +63,7 @@ const PricingSection = () => {
         "Priority support"
       ],
       cta: "Start 3-Day Free Trial",
-      plan: "pro",
+      plan: "sync-pro",
       highlight: true
     },
     {
@@ -84,7 +84,7 @@ const PricingSection = () => {
     }
   ];
 
-  const handlePlanClick = (planName: string, planType?: "basic" | "pro") => {
+  const handlePlanClick = (planName: string, planType?: "sync" | "sync-pro") => {
     if (planName === "Templates") {
       navigate("/templates");
       return;
@@ -110,7 +110,7 @@ const PricingSection = () => {
     }
 
     // For authenticated users, continue with the normal flow
-    if (planType && (status === "free" || (status === "basic" && planType === "pro"))) {
+    if (planType && (status === "free" || (status === "sync" && planType === "sync-pro"))) {
       startSubscription(planType, billingCycle);
     } else {
       navigate("/dashboard");

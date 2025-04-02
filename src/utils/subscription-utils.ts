@@ -26,7 +26,7 @@ export const fetchSubscriptionStatus = async () => {
  * Starts a new subscription process by calling the create-checkout Edge Function
  */
 export const createSubscriptionCheckout = async (
-  plan: "basic" | "pro", 
+  plan: "sync" | "sync-pro", 
   billingCycle: BillingCycle = "monthly", 
   returnUrl?: string
 ) => {

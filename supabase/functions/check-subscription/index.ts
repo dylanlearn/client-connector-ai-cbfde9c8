@@ -52,7 +52,7 @@ serve(async (req) => {
     if (!profileError && profileData?.role === 'admin') {
       console.log("User is admin, granting full access");
       return new Response(JSON.stringify({
-        subscription: 'pro',
+        subscription: 'sync-pro',
         isActive: true,
         inTrial: false,
         expiresAt: null,
@@ -67,11 +67,11 @@ serve(async (req) => {
     
     // Check for admin-assigned subscription status
     if (!profileError) {
-      // If user has pro role or pro subscription status assigned by admin
-      if (profileData?.role === 'pro' || profileData?.subscription_status === 'pro') {
+      // If user has sync-pro role or sync-pro subscription status assigned by admin
+      if (profileData?.role === 'sync-pro' || profileData?.subscription_status === 'sync-pro') {
         console.log("User has admin-assigned pro access");
         return new Response(JSON.stringify({
-          subscription: 'pro',
+          subscription: 'sync-pro',
           isActive: true,
           inTrial: false,
           expiresAt: null,
@@ -79,18 +79,18 @@ serve(async (req) => {
           isAdmin: false,
           role: profileData.role,
           adminAssigned: true,
-          adminAssignedStatus: 'pro'
+          adminAssignedStatus: 'sync-pro'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
         });
       }
       
-      // If user has basic role or basic subscription status assigned by admin
-      if (profileData?.role === 'basic' || profileData?.subscription_status === 'basic') {
+      // If user has sync role or sync subscription status assigned by admin
+      if (profileData?.role === 'sync' || profileData?.subscription_status === 'sync') {
         console.log("User has admin-assigned basic access");
         return new Response(JSON.stringify({
-          subscription: 'basic',
+          subscription: 'sync',
           isActive: true,
           inTrial: false,
           expiresAt: null,
@@ -98,7 +98,7 @@ serve(async (req) => {
           isAdmin: false,
           role: profileData.role,
           adminAssigned: true,
-          adminAssignedStatus: 'basic'
+          adminAssignedStatus: 'sync'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -126,7 +126,7 @@ serve(async (req) => {
       }
       
       return new Response(JSON.stringify({
-        subscription: 'pro',
+        subscription: 'sync-pro',
         isActive: true,
         inTrial: false,
         expiresAt: null,
@@ -150,7 +150,7 @@ serve(async (req) => {
       console.log("Error fetching subscription:", subscriptionError.message);
       
       // Fallback check for profile subscription status
-      if (!profileError && (profileData?.subscription_status === 'pro' || profileData?.subscription_status === 'basic')) {
+      if (!profileError && (profileData?.subscription_status === 'sync-pro' || profileData?.subscription_status === 'sync')) {
         console.log("Using profile subscription status as fallback");
         return new Response(JSON.stringify({
           subscription: profileData.subscription_status,
@@ -170,7 +170,7 @@ serve(async (req) => {
     }
 
     // Check if the subscription is active
-    const isActive = subscription && ['basic', 'pro'].includes(subscription.subscription_status);
+    const isActive = subscription && ['sync', 'sync-pro'].includes(subscription.subscription_status);
     
     // Check if the subscription is in trial
     const inTrial = subscription && 

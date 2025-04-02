@@ -69,12 +69,12 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     
   // Check for admin-assigned subscription access - enhanced reliability
   const hasAdminAssignedAccess = 
-    profile?.role === 'pro' || 
-    profile?.role === 'basic' || 
-    profile?.subscription_status === 'pro' || 
-    profile?.subscription_status === 'basic' ||
-    status === 'pro' ||
-    status === 'basic';
+    profile?.role === 'sync-pro' || 
+    profile?.role === 'sync' || 
+    profile?.subscription_status === 'sync-pro' || 
+    profile?.subscription_status === 'sync' ||
+    status === 'sync-pro' ||
+    status === 'sync';
   
   // Log detailed information for debugging
   console.log("Access check:", {

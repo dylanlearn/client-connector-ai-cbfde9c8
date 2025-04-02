@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { SubscriptionInfo } from "@/types/subscription";
+import { SubscriptionInfo, SubscriptionStatus } from "@/types/subscription";
 import { fetchSubscriptionStatus } from "@/utils/subscription-utils";
 
 export const useSubscriptionStatus = (
@@ -33,7 +33,7 @@ export const useSubscriptionStatus = (
       if (isAdmin) {
         console.log("useSubscriptionStatus - User is admin, setting pro access");
         setSubscriptionInfo({
-          status: "pro",
+          status: "sync-pro" as SubscriptionStatus,
           isActive: true,
           inTrial: false,
           expiresAt: null,
