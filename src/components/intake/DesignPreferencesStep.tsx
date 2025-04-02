@@ -1,29 +1,22 @@
-
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { IntakeFormData } from "@/types/intake-form";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
-import { IntakeFormData } from "@/types/intake-form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface DesignPreferencesStepProps {
   formData: IntakeFormData;
   updateFormData: (data: Partial<IntakeFormData>) => void;
   onNext: () => void;
   onPrevious: () => void;
+  isSaving?: boolean;
 }
 
 const formSchema = z.object({
@@ -37,7 +30,7 @@ const formSchema = z.object({
   additionalNotes: z.string().optional(),
 });
 
-const DesignPreferencesStep = ({ formData, updateFormData, onNext, onPrevious }: DesignPreferencesStepProps) => {
+const DesignPreferencesStep = ({ formData, updateFormData, onNext, onPrevious, isSaving }: DesignPreferencesStepProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,7 +43,6 @@ const DesignPreferencesStep = ({ formData, updateFormData, onNext, onPrevious }:
     },
   });
 
-  // Save form data in real-time as fields change
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (Object.values(value).some(v => v !== undefined)) {

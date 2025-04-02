@@ -246,6 +246,36 @@ export type Database = {
         }
         Relationships: []
       }
+      intake_forms: {
+        Row: {
+          created_at: string
+          form_data: Json
+          form_id: string
+          id: string
+          last_updated: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          form_data?: Json
+          form_id: string
+          id?: string
+          last_updated?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          form_data?: Json
+          form_id?: string
+          id?: string
+          last_updated?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       interaction_events: {
         Row: {
           device_type: string | null

@@ -1,27 +1,25 @@
-
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { IntakeFormData } from "@/types/intake-form";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 
 interface GeneralQuestionsStepProps {
   formData: IntakeFormData;
   updateFormData: (data: Partial<IntakeFormData>) => void;
   onNext: () => void;
   onPrevious: () => void;
+  isSaving?: boolean;
 }
 
 const formSchema = z.object({
@@ -37,7 +35,7 @@ const formSchema = z.object({
   launchDate: z.string().optional(),
 });
 
-const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }: GeneralQuestionsStepProps) => {
+const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, isSaving }: GeneralQuestionsStepProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,7 +46,6 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }: 
     },
   });
 
-  // Save form data in real-time as fields change
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (Object.values(value).some(v => v)) {

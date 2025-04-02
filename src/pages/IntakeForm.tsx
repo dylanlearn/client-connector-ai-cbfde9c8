@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -15,7 +15,7 @@ import GeneralQuestionsStep from "@/components/intake/GeneralQuestionsStep";
 import SpecificQuestionsStep from "@/components/intake/SpecificQuestionsStep";
 import DesignPreferencesStep from "@/components/intake/DesignPreferencesStep";
 import CompletionStep from "@/components/intake/CompletionStep";
-import { useIntakeForm } from "@/hooks/use-intake-form";
+import { useIntakeForm } from "@/hooks/intake-form";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -76,7 +76,7 @@ const IntakeForm = () => {
       });
       navigate("/login?redirect=/intake-form");
     }
-  }, [user, navigate]);
+  }, [user, navigate, toast]);
 
   const handleStartNewForm = () => {
     clearFormData();
@@ -124,11 +124,11 @@ const IntakeForm = () => {
       case 1:
         return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} isSaving={isSaving} />;
       case 2:
-        return <GeneralQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} isSaving={isSaving} />;
+        return <GeneralQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
       case 3:
-        return <SpecificQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} isSaving={isSaving} />;
+        return <SpecificQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
       case 4:
-        return <DesignPreferencesStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} isSaving={isSaving} />;
+        return <DesignPreferencesStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
       case 5:
         return <CompletionStep formData={formData} onComplete={handleComplete} onPrevious={handlePrevious} />;
       default:

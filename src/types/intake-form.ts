@@ -45,4 +45,7 @@ export interface IntakeFormData {
   // Timestamps for real-time syncing
   lastUpdated?: string;
   formId?: string;
+  
+  // Status
+  status?: string;
 }

@@ -1,12 +1,13 @@
-
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { IntakeFormData } from "@/types/intake-form";
-import { getFormSchema, getDefaultValues } from "./schema/formSchemas";
-import { getSiteTypeName } from "./site-types/SiteTypeUtils";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import SaasFields from "./site-types/SaasFields";
 import EcommerceFields from "./site-types/EcommerceFields";
 import BusinessFields from "./site-types/BusinessFields";
@@ -18,19 +19,18 @@ interface SpecificQuestionsStepProps {
   updateFormData: (data: Partial<IntakeFormData>) => void;
   onNext: () => void;
   onPrevious: () => void;
+  isSaving?: boolean;
 }
 
-const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }: SpecificQuestionsStepProps) => {
+const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, isSaving }: SpecificQuestionsStepProps) => {
   const siteType = formData.siteType || "business";
   const schema = getFormSchema(siteType);
   
-  // Set up form with the schema type
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: getDefaultValues(siteType, formData),
   });
 
-  // Save form data in real-time as fields change
   useEffect(() => {
     const subscription = form.watch((value) => {
       if (Object.values(value).some(v => v !== undefined)) {
@@ -45,7 +45,6 @@ const SpecificQuestionsStep = ({ formData, updateFormData, onNext, onPrevious }:
     onNext();
   }
 
-  // Render the appropriate fields based on site type
   const renderSiteTypeFields = () => {
     switch (siteType) {
       case "saas":
