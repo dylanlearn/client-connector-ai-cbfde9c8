@@ -9,6 +9,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 
+// Define the type for role to include 'admin' explicitly
+type UserRole = "free" | "pro" | "template-buyer" | "admin";
+
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -32,8 +35,8 @@ const AdminPanel = () => {
           
         if (error) throw error;
         
-        // Check if the role is 'admin' - this is the correct value in the enum
-        if (data.role === "admin") {
+        // Use type assertion to treat data.role as UserRole
+        if ((data.role as UserRole) === "admin") {
           setIsAdmin(true);
         } else {
           // Not an admin, redirect to dashboard
