@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
+import { AlertMessage } from "@/components/ui/alert-message";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const Pricing = () => {
   const { startSubscription, isLoading } = useSubscription();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [showDemoNotice, setShowDemoNotice] = useState(false);
 
   const handleSelectPlan = (plan: "basic" | "pro", cycle: "monthly" | "annual") => {
     // If user is already authenticated, start subscription process
@@ -26,6 +29,15 @@ const Pricing = () => {
   const toggleBillingCycle = () => {
     setBillingCycle(prev => prev === "monthly" ? "annual" : "monthly");
   };
+
+  useEffect(() => {
+    // After 1 second, show the demo notice
+    const timer = setTimeout(() => {
+      setShowDemoNotice(true);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-indigo-50 to-purple-50">
@@ -53,6 +65,17 @@ const Pricing = () => {
       </header>
       
       <main className="flex-1 container mx-auto px-4 py-12">
+        {showDemoNotice && (
+          <div className="mb-8">
+            <AlertMessage type="info" title="Demo Mode">
+              <p>
+                Stripe integration requires API keys to be configured in the Supabase Edge Function.
+                The subscription buttons will show an error message in this demo environment.
+              </p>
+            </AlertMessage>
+          </div>
+        )}
+
         <div className="text-center mb-16">
           <h1 className="text-4xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent">
             Choose Your Plan
@@ -126,7 +149,7 @@ const Pricing = () => {
                 onClick={() => handleSelectPlan("basic", billingCycle)}
                 disabled={isLoading}
               >
-                {isLoading ? "Processing..." : "Get Started"}
+                {isLoading ? <><LoadingSpinner size="sm" className="mr-2" /> Processing...</> : "Get Started"}
               </Button>
               <div className="mt-2 text-center w-full">
                 <p className="text-xs text-gray-500">3-day free trial. Cancel anytime.</p>
@@ -191,7 +214,7 @@ const Pricing = () => {
                 onClick={() => handleSelectPlan("pro", billingCycle)}
                 disabled={isLoading}
               >
-                {isLoading ? "Processing..." : "Get Started"}
+                {isLoading ? <><LoadingSpinner size="sm" className="mr-2" /> Processing...</> : "Get Started"}
               </Button>
               <div className="mt-2 text-center w-full">
                 <p className="text-xs text-gray-500">3-day free trial. Cancel anytime.</p>

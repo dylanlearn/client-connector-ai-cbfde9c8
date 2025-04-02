@@ -4,6 +4,7 @@ import { useNavigate as useReactRouterNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { AlertMessage } from "@/components/ui/alert-message";
 
 // A safe wrapper for useNavigate that won't throw errors outside of Router context
 const useNavigate = () => {
@@ -88,7 +89,28 @@ export const useSubscription = () => {
       });
 
       if (error) {
-        throw error;
+        console.error("Error starting subscription:", error);
+        
+        // Check if this is likely a configuration issue
+        if (error.message?.includes("Edge Function returned a non-2xx status code")) {
+          toast({
+            title: "Configuration Error",
+            description: (
+              <AlertMessage type="error" title="Stripe API Key Not Configured">
+                The Stripe API key has not been properly configured in the Supabase Edge Function.
+                Please contact the site administrator to resolve this issue.
+              </AlertMessage>
+            ),
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Subscription error",
+            description: "There was a problem starting your subscription. Please try again.",
+            variant: "destructive",
+          });
+        }
+        return;
       }
 
       // Redirect to Stripe Checkout
