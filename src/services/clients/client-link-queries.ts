@@ -54,7 +54,7 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
       createdAt: new Date(link.created_at),
       expiresAt: new Date(link.expires_at),
       lastAccessedAt: link.last_accessed_at ? new Date(link.last_accessed_at) : null,
-      status: link.status,
+      status: link.status as "active" | "expired", // Properly type the status value
       personalMessage: link.personal_message
     }));
   } catch (error) {
