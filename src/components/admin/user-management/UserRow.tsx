@@ -6,7 +6,7 @@ import { UserRoleSelect } from "./UserRoleSelect";
 
 interface UserRowProps {
   user: User;
-  isUpdating: boolean;
+  isUpdating: string | null;
   onUpdateRole: (userId: string, role: UserRole) => Promise<void>;
   formatDate: (dateString: string) => string;
   getRoleBadgeVariant: (role: UserRole) => "destructive" | "default" | "secondary" | "outline";
