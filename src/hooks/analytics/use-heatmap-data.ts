@@ -24,11 +24,13 @@ export const useHeatmapData = (userId: string | undefined) => {
     setIsLoading(true);
     
     try {
-      // Use stored function to query interaction events safely
+      // Use the new RPC functions to query interaction events safely
       const fetchClickEvents = async () => {
-        const { data, error } = await supabase.rpc('stored_procedure', {
-          sql: `SELECT * FROM get_interaction_events($1, $2, $3, $4)`,
-          params: [userId, 'click', `/${selectedPage}`, 500]
+        const { data, error } = await supabase.rpc('get_interaction_events', {
+          p_user_id: userId,
+          p_event_type: 'click',
+          p_page_url: `/${selectedPage}`,
+          p_limit: 500
         });
         
         if (error) throw error;
@@ -36,9 +38,11 @@ export const useHeatmapData = (userId: string | undefined) => {
       };
       
       const fetchHoverEvents = async () => {
-        const { data, error } = await supabase.rpc('stored_procedure', {
-          sql: `SELECT * FROM get_interaction_events($1, $2, $3, $4)`,
-          params: [userId, 'hover', `/${selectedPage}`, 500]
+        const { data, error } = await supabase.rpc('get_interaction_events', {
+          p_user_id: userId,
+          p_event_type: 'hover',
+          p_page_url: `/${selectedPage}`,
+          p_limit: 500
         });
         
         if (error) throw error;
@@ -52,8 +56,8 @@ export const useHeatmapData = (userId: string | undefined) => {
       ]);
       
       // Create data points from the raw data
-      const clickPoints = processInteractionData(clickData);
-      const hoverPoints = processInteractionData(hoverData);
+      const clickPoints = processInteractionData(clickData as any[]);
+      const hoverPoints = processInteractionData(hoverData as any[]);
       
       // Generate synthetic attention data based on clicks and hovers
       const attentionPoints = generateAttentionData(clickPoints, hoverPoints);

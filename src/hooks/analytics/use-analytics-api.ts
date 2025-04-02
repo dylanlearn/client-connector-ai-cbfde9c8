@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { DesignAnalytics, UserPreference, InteractionEvent } from "@/types/analytics";
 
@@ -40,7 +39,7 @@ export const getUserDesignOptionIds = async (userId: string) => {
   return data ? data.map(pref => pref.design_option_id) : [];
 };
 
-// Use a more direct approach for querying interaction events
+// Use the newly created RPC functions for interaction events
 export const fetchInteractionEvents = async (
   userId: string,
   eventType?: string,
@@ -63,20 +62,19 @@ export const fetchInteractionEvents = async (
     
     query += ` ORDER BY timestamp DESC LIMIT ${limit}`;
     
-    const { data, error } = await supabase.rpc('stored_procedure', { 
-      sql: `SELECT * FROM query_interaction_events($1)`,
-      params: [query]
+    const { data, error } = await supabase.rpc('query_interaction_events', { 
+      query_text: query
     });
     
     if (error) throw error;
-    return (data as unknown) as InteractionEvent[];
+    return (data as InteractionEvent[]) || [];
   } catch (error) {
     console.error('Error fetching interaction events:', error);
     return [];
   }
 };
 
-// Direct approach for storing interactions
+// Use the new RPC function for storing interactions
 export const storeInteractionEvent = async (
   userId: string,
   eventType: 'click' | 'hover' | 'scroll' | 'view',
@@ -87,19 +85,16 @@ export const storeInteractionEvent = async (
   metadata?: Record<string, any>
 ): Promise<void> => {
   try {
-    // Use SQL to insert directly
-    const { error } = await supabase.rpc('stored_procedure', {
-      sql: `SELECT insert_interaction_event($1, $2, $3, $4, $5, $6, $7, $8)`,
-      params: [
-        userId,
-        eventType,
-        pageUrl,
-        position.x,
-        position.y,
-        elementSelector,
-        sessionId,
-        metadata || {}
-      ]
+    // Use the RPC function to insert interaction event
+    const { error } = await supabase.rpc('insert_interaction_event', {
+      p_user_id: userId,
+      p_event_type: eventType,
+      p_page_url: pageUrl,
+      p_x_position: position.x,
+      p_y_position: position.y,
+      p_element_selector: elementSelector,
+      p_session_id: sessionId,
+      p_metadata: metadata || {}
     });
     
     if (error) throw error;

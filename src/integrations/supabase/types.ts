@@ -561,11 +561,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_interaction_events: {
+        Args: {
+          p_user_id: string
+          p_event_type?: string
+          p_page_url?: string
+          p_limit?: number
+        }
+        Returns: {
+          element_selector: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          page_url: string
+          session_id: string
+          timestamp: string
+          user_id: string
+          x_position: number
+          y_position: number
+        }[]
+      }
       get_user_role: {
         Args: {
           user_id: string
         }
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      insert_interaction_event: {
+        Args: {
+          p_user_id: string
+          p_event_type: string
+          p_page_url: string
+          p_x_position: number
+          p_y_position: number
+          p_element_selector: string
+          p_session_id: string
+          p_metadata?: Json
+        }
+        Returns: undefined
       }
       is_admin: {
         Args: {
@@ -578,6 +611,23 @@ export type Database = {
           user_id: string
         }
         Returns: boolean
+      }
+      query_interaction_events: {
+        Args: {
+          query_text: string
+        }
+        Returns: {
+          element_selector: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          page_url: string
+          session_id: string
+          timestamp: string
+          user_id: string
+          x_position: number
+          y_position: number
+        }[]
       }
       record_client_link_delivery: {
         Args: {
@@ -594,6 +644,19 @@ export type Database = {
           p_template_id: string
           p_price_paid: number
           p_transaction_id: string
+        }
+        Returns: undefined
+      }
+      track_interaction: {
+        Args: {
+          p_user_id: string
+          p_event_type: string
+          p_page_url: string
+          p_x_position: number
+          p_y_position: number
+          p_element_selector?: string
+          p_session_id?: string
+          p_metadata?: Json
         }
         Returns: undefined
       }

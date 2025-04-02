@@ -43,21 +43,15 @@ jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 
-[auth.email]
-enable_confirmations = false
-
-[auth.sms]
-enable = false
+[realtime]
+enabled = true
 
 [functions]
 enabled = true
 port = 54328
 
-[functions.analyze-interaction-patterns]
+[[functions.analyze-interaction-patterns]]
 verify_jwt = true
 
-[functions.interaction-db-functions]
+[[functions.interaction-db-functions]]
 verify_jwt = false
-
-[realtime]
-enabled = true
