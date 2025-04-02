@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { PromptTestStatus } from "./ab-testing-service";
 
 /**
  * Service for database operations related to A/B prompt testing
@@ -79,7 +80,7 @@ export const PromptDBService = {
         content_type: testData.content_type,
         min_sample_size: testData.min_sample_size || 100,
         confidence_threshold: testData.confidence_threshold || 95,
-        status: 'active'
+        status: 'active' as PromptTestStatus
       })
       .select()
       .single();

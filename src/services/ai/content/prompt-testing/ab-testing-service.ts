@@ -2,6 +2,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { PromptDBService } from "./db-service";
 
+export type PromptTestStatus = 'active' | 'paused' | 'completed';
+
 export interface PromptVariant {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ export interface PromptTest {
   name: string;
   description?: string;
   contentType: string;
-  status: 'active' | 'paused' | 'completed';
+  status: PromptTestStatus;
   variants: PromptVariant[];
   createdAt: string;
   updatedAt: string;
@@ -54,7 +56,7 @@ export const PromptABTestingService = {
         name: data.name,
         description: data.description,
         contentType: data.content_type,
-        status: data.status,
+        status: data.status as PromptTestStatus,
         variants: data.variants.map((v: any) => ({
           id: v.id,
           name: v.name,

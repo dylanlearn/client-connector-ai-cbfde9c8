@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import { AlertMessage } from "@/components/ui/alert-message";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Plus, Trash, Pencil, BarChart3, Trophy } from "lucide-react";
 import { AIGeneratorService } from "@/services/ai";
-import { PromptTest, PromptVariant } from "@/services/ai/content/prompt-testing/ab-testing-service";
+import { PromptTest, PromptVariant, PromptTestStatus } from "@/services/ai/content/prompt-testing/ab-testing-service";
 import { PromptDBService } from "@/services/ai/content/prompt-testing/db-service";
 
 const PromptTestManager = () => {
@@ -60,7 +61,7 @@ const PromptTestManager = () => {
           name: test.name,
           description: test.description,
           contentType: test.content_type,
-          status: test.status,
+          status: test.status as PromptTestStatus,
           variants: test.variants.map((v: any) => ({
             id: v.id,
             name: v.name,
