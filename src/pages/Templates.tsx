@@ -8,6 +8,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import PublicTemplateMarketplace from "@/components/templates/PublicTemplateMarketplace";
 import TemplateGrid from "@/components/templates/TemplateGrid";
 import { useTemplatePurchase } from "@/hooks/use-template-purchase";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock template data - would be fetched from Supabase in production
 const mockTemplates = [
@@ -36,6 +39,11 @@ const mockTemplates = [
 
 const Templates = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const checkoutStatus = searchParams.get('checkout');
+  const templateId = searchParams.get('template_id');
+  
   const {
     selectedTemplate,
     isPurchaseDialogOpen,
@@ -44,6 +52,22 @@ const Templates = () => {
     handlePurchaseComplete,
     setIsPurchaseDialogOpen
   } = useTemplatePurchase();
+
+  // Handle checkout redirect results
+  useEffect(() => {
+    if (checkoutStatus === 'success') {
+      toast({
+        title: "Purchase Successful!",
+        description: `You now have access to the template.`,
+      });
+    } else if (checkoutStatus === 'canceled') {
+      toast({
+        title: "Purchase Canceled",
+        description: "Your template purchase was canceled. No charge was made.",
+        variant: "destructive"
+      });
+    }
+  }, [checkoutStatus, templateId, toast]);
 
   // Render different layouts based on authentication status
   if (!user) {

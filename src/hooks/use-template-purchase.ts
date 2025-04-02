@@ -29,51 +29,42 @@ export function useTemplatePurchase() {
     setIsPurchaseDialogOpen(true);
   };
 
-  const handlePurchaseComplete = async (purchaseData: PurchaseFormValues & { guestUserId?: string }) => {
+  const handlePurchaseComplete = async (purchaseData: PurchaseFormValues) => {
     if (!selectedTemplate) return;
     
     setIsProcessing(true);
     
     try {
-      // Using a direct fetch call to work around TypeScript limitations
-      // This bypasses the type checking that's causing the error
-      const response = await fetch(
-        `${process.env.SUPABASE_URL || "https://bmkhbqxukiakhafqllux.supabase.co"}/rest/v1/rpc/record_template_purchase`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJta2hicXh1a2lha2hhZnFsbHV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0ODY2OTksImV4cCI6MjA1OTA2MjY5OX0.uqt5fokVkLgGQOlqF2BLiMgW4ZSy9gxkZXy35o97iXI",
-            'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token || "")}`,
-          },
-          body: JSON.stringify({
-            p_user_id: user?.id || purchaseData.guestUserId,
-            p_template_id: selectedTemplate.id,
-            p_price_paid: selectedTemplate.price,
-            p_transaction_id: `tr_${Date.now()}`
-          })
+      // Create a Stripe checkout session using our edge function
+      const { data, error } = await supabase.functions.invoke('create-template-checkout', {
+        body: {
+          templateId: selectedTemplate.id,
+          price: selectedTemplate.price,
+          title: selectedTemplate.title,
+          guestEmail: !user ? purchaseData.email : undefined,
+          guestName: !user ? purchaseData.name : undefined,
+          returnUrl: window.location.origin + '/templates'
         }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to record purchase');
-      }
-
-      toast({
-        title: "Purchase Successful!",
-        description: `You now have access to the ${selectedTemplate.title} template.`,
       });
       
-      setIsPurchaseDialogOpen(false);
+      if (error) {
+        throw new Error(error.message || 'Failed to create checkout session');
+      }
+      
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+      
     } catch (error) {
       console.error("Purchase error:", error);
       toast({
-        title: "Purchase Failed",
-        description: "There was a problem processing your purchase. Please try again.",
+        title: "Checkout Failed",
+        description: "There was a problem setting up the payment. Please try again.",
         variant: "destructive"
       });
-    } finally {
       setIsProcessing(false);
     }
   };

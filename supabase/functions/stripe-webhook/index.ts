@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./cors.ts";
 import { handleSubscriptionChange, handleSubscriptionCancelled } from "./subscription-handlers.ts";
+import { handleTemplatePurchase } from "./template-handlers.ts";
 import { verifyStripeSignature } from "./auth.ts";
 
 serve(async (req) => {
@@ -30,6 +31,13 @@ serve(async (req) => {
         break;
       case 'customer.subscription.deleted':
         await handleSubscriptionCancelled(event.data.object);
+        break;
+      case 'checkout.session.completed':
+        // For one-time payments (templates)
+        const session = event.data.object;
+        if (session.mode === 'payment' && session.metadata?.template_id) {
+          await handleTemplatePurchase(session);
+        }
         break;
       default:
         console.log(`Unhandled event type: ${event.type}`);
