@@ -3,7 +3,8 @@ import {
   AIColorService, 
   AITypographyService, 
   AILayoutService, 
-  AIComponentService 
+  AIComponentService,
+  AIAccessibilityService
 } from './design';
 
 export type { ColorPaletteOptions } from './design/color-service';
@@ -23,5 +24,8 @@ export const AIDesignService = {
   recommendLayouts: AILayoutService.recommendLayouts,
   
   // Component suggestions
-  suggestComponents: AIComponentService.suggestComponents
+  suggestComponents: AIComponentService.suggestComponents,
+  
+  // Accessibility guidelines
+  generateAccessibilityGuidelines: AIAccessibilityService.generateAccessibilityGuidelines
 };
