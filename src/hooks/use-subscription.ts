@@ -24,6 +24,7 @@ const useNavigate = () => {
 };
 
 export { SubscriptionStatus, BillingCycle };
+// Fix: Use 'export type' for re-exporting types
 export type { SubscriptionInfo };
 
 export const useSubscription = () => {
