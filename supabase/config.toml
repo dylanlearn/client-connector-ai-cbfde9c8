@@ -2,7 +2,6 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the working
 # directory name when running `supabase init`.
 project_id = "bmkhbqxukiakhafqllux"
-organization_id = "org_dchp9JQV7vxeBZ86"
 
 [api]
 # Port to use for the API URL.
@@ -50,8 +49,6 @@ additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
-# If disabled, the following endpoints will return a 401: /auth/admin/users/list, /auth/admin/users/detail, /auth/admin/users/update and /auth/admin/users/delete.
-enable_admin = true
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -78,10 +75,13 @@ url = ""
 [functions]
 # Port to serve Edge Functions on.
 port = 9000
+
 [functions.create-checkout]
 verify_jwt = true
+
 [functions.create-template-checkout]
 verify_jwt = false
+
 [functions.stripe-webhook]
 verify_jwt = false
 
