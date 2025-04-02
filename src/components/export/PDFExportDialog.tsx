@@ -51,8 +51,8 @@ function PDFExportDialogContent() {
   } = usePDFDelivery("document");
   
   const handleCloseDialog = () => {
-    // Access Dialog's close functionality through DialogContent's context
-    // This will be handled by the Dialog's onOpenChange
+    // This function is intentionally empty as dialog closing is handled
+    // by the Dialog's onOpenChange prop in the parent component
   };
 
   const handleDownload = () => {
