@@ -1,38 +1,5 @@
 
 project_id = "bmkhbqxukiakhafqllux"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
-
-[db]
-port = 54322
-
-[studio]
-enabled = true
-port = 54323
-api_url = "http://localhost"
-
-[inbucket]
-enabled = true
-port = 54324
-
-[auth]
-enabled = true
-site_url = "http://localhost:3000"
-
-[storage]
-enabled = true
-
-[functions]
-serve_function_console = true
-
 [functions.analyze-memory-patterns]
-verify_jwt = true
-
-[functions.design-suggestions]
-verify_jwt = true
-
-[functions.generate-with-openai]
 verify_jwt = true
