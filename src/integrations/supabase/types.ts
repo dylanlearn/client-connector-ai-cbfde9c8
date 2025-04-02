@@ -688,9 +688,22 @@ export type Database = {
       }
     }
     Enums: {
-      subscription_status: "free" | "basic" | "pro"
+      subscription_status:
+        | "free"
+        | "basic"
+        | "pro"
+        | "sync"
+        | "sync-pro"
+        | "trial"
       template_status: "active" | "archived" | "draft"
-      user_role: "free" | "pro" | "template-buyer" | "admin"
+      user_role:
+        | "free"
+        | "pro"
+        | "sync"
+        | "sync-pro"
+        | "trial"
+        | "template-buyer"
+        | "admin"
     }
     CompositeTypes: {
       [_ in never]: never

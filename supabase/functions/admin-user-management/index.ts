@@ -9,6 +9,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Define valid roles for validation
+const validRoles = ['free', 'sync', 'sync-pro', 'template-buyer', 'trial', 'admin'];
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -80,8 +83,7 @@ async function handleUpdateUserRole({ userId, role }) {
     });
   }
 
-  // Define valid roles - ensure these match your database enum types
-  const validRoles = ['free', 'sync', 'sync-pro', 'template-buyer', 'trial', 'admin'];
+  // Validate role
   if (!validRoles.includes(role)) {
     console.error(`Invalid role provided: ${role}`);
     return new Response(JSON.stringify({ 
@@ -92,7 +94,7 @@ async function handleUpdateUserRole({ userId, role }) {
     });
   }
 
-  // Simplified mapping for subscription_status
+  // Simplified mapping for subscription_status - default to the role
   let subscription_status = role;
   
   // Special cases
@@ -101,7 +103,9 @@ async function handleUpdateUserRole({ userId, role }) {
   } else if (role === 'template-buyer') {
     subscription_status = 'free'; // template buyers get free status
   }
-  // 'trial' will map directly to 'trial' subscription_status with the default mapping
+  // 'trial' will map directly to 'trial' subscription_status
+  // 'sync' will map directly to 'sync'
+  // 'sync-pro' will map directly to 'sync-pro'
 
   console.log(`Mapped subscription_status: ${subscription_status}`);
 

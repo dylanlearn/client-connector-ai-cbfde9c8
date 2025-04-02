@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -54,7 +55,7 @@ export function useUserManagement() {
         throw error;
       }
 
-      // Update the user in the local state
+      // Update the user in the local state with the exact same mapping logic as the backend
       setUsers(
         users.map((user) => {
           if (user.id === userId) {
@@ -66,6 +67,8 @@ export function useUserManagement() {
               subscription_status = 'free';
             }
             // 'trial' maps directly to 'trial'
+            // 'sync' maps directly to 'sync'
+            // 'sync-pro' maps directly to 'sync-pro'
             
             return { 
               ...user, 
