@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Send, Lightbulb, Bot } from "lucide-react";
-import { useAI, AIMessage } from "@/contexts/AIContext";
+import { useAI } from "@/contexts/ai";
+import { AIMessage } from "@/types/ai";
 
 interface AIChatProps {
   title?: string;

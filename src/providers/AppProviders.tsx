@@ -1,6 +1,6 @@
-
 import { ReactNode } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AIProvider } from "@/contexts/ai";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,9 +58,11 @@ export const AppProviders = ({
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
-        <Toaster />
-        <SonnerToaster position="top-right" />
+        <AIProvider>
+          {children}
+          <Toaster />
+          <SonnerToaster position="top-right" />
+        </AIProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

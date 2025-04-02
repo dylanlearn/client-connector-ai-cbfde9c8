@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AIAnalysis } from "@/contexts/AIContext";
+import { AIAnalysis } from "@/types/ai";
 import { MessageSquare, Zap, Smile, Frown } from "lucide-react";
 
 interface AIAnalysisSummaryProps {
