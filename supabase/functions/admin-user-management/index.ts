@@ -72,15 +72,19 @@ async function handleUpdateUserRole({ userId, role }) {
     throw new Error('User ID and role are required');
   }
 
-  // Valid roles check
-  const validRoles = ['free', 'pro', 'template-buyer', 'admin'];
+  // Valid roles check - Updated to include all valid subscription types
+  const validRoles = ['free', 'basic', 'pro', 'template-buyer', 'trial', 'admin'];
   if (!validRoles.includes(role)) {
     throw new Error(`Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`);
   }
 
+  // Update both role and subscription_status to ensure consistency
   const { data, error } = await supabase
     .from('profiles')
-    .update({ role })
+    .update({ 
+      role,
+      subscription_status: role !== 'admin' ? role : 'pro' // admins always get pro subscription status
+    })
     .eq('id', userId)
     .select()
     .single();

@@ -21,8 +21,8 @@ import {
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-// Define the type for role to include 'admin' explicitly
-type UserRole = "free" | "pro" | "template-buyer" | "admin";
+// Define the type for role to include all available subscription types
+type UserRole = "free" | "basic" | "pro" | "template-buyer" | "admin" | "trial";
 
 type User = {
   id: string;
@@ -105,6 +105,21 @@ export function UserManagement() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const getRoleBadgeVariant = (role: UserRole) => {
+    switch (role) {
+      case "admin":
+        return "destructive";
+      case "pro":
+        return "default";
+      case "basic":
+        return "secondary";
+      case "trial":
+        return "outline";
+      default:
+        return "secondary";
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -151,7 +166,7 @@ export function UserManagement() {
                   </TableCell>
                   <TableCell>{formatDate(user.created_at)}</TableCell>
                   <TableCell>
-                    <Badge variant={user.role === 'admin' ? "destructive" : "secondary"}>
+                    <Badge variant={getRoleBadgeVariant(user.role)}>
                       {user.role}
                     </Badge>
                   </TableCell>
@@ -174,7 +189,9 @@ export function UserManagement() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="free">Free</SelectItem>
+                          <SelectItem value="basic">Basic</SelectItem>
                           <SelectItem value="pro">Pro</SelectItem>
+                          <SelectItem value="trial">Trial</SelectItem>
                           <SelectItem value="template-buyer">Template Buyer</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
