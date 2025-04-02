@@ -54,6 +54,9 @@ enabled = true
 [functions.analyze-interaction-patterns]
 verify_jwt = true
 
+[functions.get-heatmap-data]
+verify_jwt = true
+
 [functions.interaction-db-functions]
 verify_jwt = false
 

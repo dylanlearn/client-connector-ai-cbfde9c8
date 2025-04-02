@@ -3,131 +3,155 @@ import { useState, useEffect, useCallback } from "react";
 import { HeatmapDataPoint } from "@/types/analytics";
 import { supabase } from "@/integrations/supabase/client";
 
+export type HeatmapFilterOptions = {
+  eventType?: 'click' | 'hover' | 'scroll' | 'view' | 'movement';
+  pageUrl?: string;
+  startDate?: string;
+  endDate?: string;
+  deviceType?: string;
+  sessionId?: string;
+  aggregationType?: 'density' | 'time' | 'element';
+}
+
 export const useHeatmapData = (userId: string | undefined) => {
   const [heatmapData, setHeatmapData] = useState<{
     clicks: HeatmapDataPoint[],
     hover: HeatmapDataPoint[],
+    scrolls: HeatmapDataPoint[],
+    movements: HeatmapDataPoint[],
     attention: HeatmapDataPoint[]
   }>({
     clicks: [],
     hover: [],
+    scrolls: [],
+    movements: [],
     attention: []
   });
   
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedPage, setSelectedPage] = useState<string>('homepage');
+  const [error, setError] = useState<string | null>(null);
+  const [selectedPage, setSelectedPage] = useState<string>('pricing');
 
-  // Fetch heatmap data from the database
-  const fetchHeatmapData = useCallback(async () => {
+  // Fetch heatmap data from the Edge Function
+  const fetchHeatmapData = useCallback(async (options: HeatmapFilterOptions = {}) => {
     if (!userId) return;
     
     setIsLoading(true);
+    setError(null);
     
     try {
-      // Use direct queries to fetch interaction events
-      const fetchClickEvents = async () => {
-        const { data, error } = await supabase
-          .from('interaction_events')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('event_type', 'click')
-          .eq('page_url', `/${selectedPage}`)
-          .limit(500);
-        
-        if (error) throw error;
-        return data || [];
-      };
+      // Fetch click data
+      const { data: clickData, error: clickError } = await supabase.functions.invoke(
+        'get-heatmap-data',
+        {
+          body: {
+            userId,
+            eventType: 'click',
+            pageUrl: `/${options.pageUrl || selectedPage}`,
+            startDate: options.startDate,
+            endDate: options.endDate,
+            deviceType: options.deviceType,
+            sessionId: options.sessionId,
+            aggregationType: options.aggregationType || 'density'
+          }
+        }
+      );
       
-      const fetchHoverEvents = async () => {
-        const { data, error } = await supabase
-          .from('interaction_events')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('event_type', 'hover')
-          .eq('page_url', `/${selectedPage}`)
-          .limit(500);
-        
-        if (error) throw error;
-        return data || [];
-      };
+      if (clickError) throw new Error(clickError.message);
       
-      // Execute the queries in parallel
-      const [clickData, hoverData] = await Promise.all([
-        fetchClickEvents(),
-        fetchHoverEvents()
-      ]);
+      // Fetch hover data
+      const { data: hoverData, error: hoverError } = await supabase.functions.invoke(
+        'get-heatmap-data',
+        {
+          body: {
+            userId,
+            eventType: 'hover',
+            pageUrl: `/${options.pageUrl || selectedPage}`,
+            startDate: options.startDate,
+            endDate: options.endDate,
+            deviceType: options.deviceType,
+            sessionId: options.sessionId,
+            aggregationType: options.aggregationType || 'density'
+          }
+        }
+      );
       
-      // Create data points from the raw data
-      const clickPoints = processInteractionData(clickData);
-      const hoverPoints = processInteractionData(hoverData);
+      if (hoverError) throw new Error(hoverError.message);
       
-      // Generate synthetic attention data based on clicks and hovers
-      const attentionPoints = generateAttentionData(clickPoints, hoverPoints);
+      // Fetch scroll data
+      const { data: scrollData, error: scrollError } = await supabase.functions.invoke(
+        'get-heatmap-data',
+        {
+          body: {
+            userId,
+            eventType: 'scroll',
+            pageUrl: `/${options.pageUrl || selectedPage}`,
+            startDate: options.startDate,
+            endDate: options.endDate,
+            deviceType: options.deviceType,
+            sessionId: options.sessionId,
+            aggregationType: options.aggregationType || 'density'
+          }
+        }
+      );
+      
+      if (scrollError) throw new Error(scrollError.message);
+      
+      // Fetch movement data
+      const { data: movementData, error: movementError } = await supabase.functions.invoke(
+        'get-heatmap-data',
+        {
+          body: {
+            userId,
+            eventType: 'movement',
+            pageUrl: `/${options.pageUrl || selectedPage}`,
+            startDate: options.startDate,
+            endDate: options.endDate,
+            deviceType: options.deviceType,
+            sessionId: options.sessionId,
+            aggregationType: options.aggregationType || 'density'
+          }
+        }
+      );
+      
+      if (movementError) throw new Error(movementError.message);
+      
+      // Generate attention data
+      const attentionData = generateAttentionData(
+        clickData?.data || [],
+        hoverData?.data || [],
+        scrollData?.data || []
+      );
       
       setHeatmapData({
-        clicks: clickPoints,
-        hover: hoverPoints,
-        attention: attentionPoints
+        clicks: clickData?.data || [],
+        hover: hoverData?.data || [],
+        scrolls: scrollData?.data || [],
+        movements: movementData?.data || [],
+        attention: attentionData
       });
-    } catch (error) {
-      console.error('Error fetching heatmap data:', error);
+    } catch (err: any) {
+      console.error('Error fetching heatmap data:', err);
+      setError(err.message || 'Failed to fetch heatmap data');
     } finally {
       setIsLoading(false);
     }
   }, [userId, selectedPage]);
   
-  // Process the interaction data into heatmap data points
-  const processInteractionData = (data: any[]): HeatmapDataPoint[] => {
-    // Count occurrences of similar positions
-    const positionCounts: Record<string, { count: number, point: HeatmapDataPoint }> = {};
-    
-    data.forEach(item => {
-      // Round to nearest 5 pixels to aggregate nearby points
-      const x = Math.round(item.x_position / 5) * 5;
-      const y = Math.round(item.y_position / 5) * 5;
-      const key = `${x}-${y}`;
-      
-      if (!positionCounts[key]) {
-        positionCounts[key] = {
-          count: 0,
-          point: {
-            x,
-            y,
-            value: 0,
-            element: item.element_selector,
-            // These would be populated with real data in the future
-            latitude: item.metadata?.latitude,
-            longitude: item.metadata?.longitude
-          }
-        };
-      }
-      
-      positionCounts[key].count += 1;
-    });
-    
-    // Convert to array and normalize values
-    const points = Object.values(positionCounts).map(({ count, point }) => ({
-      ...point,
-      value: count
-    }));
-    
-    // Sort by value descending
-    return points.sort((a, b) => b.value - a.value);
-  };
-  
   // Generate synthetic attention data
   const generateAttentionData = (
     clicks: HeatmapDataPoint[], 
-    hovers: HeatmapDataPoint[]
+    hovers: HeatmapDataPoint[],
+    scrolls: HeatmapDataPoint[]
   ): HeatmapDataPoint[] => {
-    // Combine click and hover data with click having more weight
+    // Combine click, hover and scroll data with different weights
     const combinedPoints: Record<string, HeatmapDataPoint> = {};
     
     clicks.forEach(point => {
       const key = `${point.x}-${point.y}`;
       combinedPoints[key] = {
         ...point,
-        value: point.value * 1.5 // Clicks have 1.5x the weight of hovers
+        value: point.value * 1.5 // Clicks have 1.5x the weight
       };
     });
     
@@ -143,6 +167,18 @@ export const useHeatmapData = (userId: string | undefined) => {
       }
     });
     
+    scrolls.forEach(point => {
+      const key = `${point.x}-${point.y}`;
+      if (combinedPoints[key]) {
+        combinedPoints[key].value += point.value * 0.3;
+      } else {
+        combinedPoints[key] = {
+          ...point,
+          value: point.value * 0.3
+        };
+      }
+    });
+    
     return Object.values(combinedPoints).sort((a, b) => b.value - a.value);
   };
   
@@ -154,8 +190,9 @@ export const useHeatmapData = (userId: string | undefined) => {
   return {
     heatmapData,
     isLoading,
+    error,
     selectedPage,
     setSelectedPage,
-    refetch: fetchHeatmapData
+    fetchHeatmapData
   };
 };

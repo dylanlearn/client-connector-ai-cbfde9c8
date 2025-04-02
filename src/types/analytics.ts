@@ -24,7 +24,7 @@ export type UserPreference = {
 export type InteractionEvent = {
   id: string;
   user_id: string;
-  event_type: 'click' | 'hover' | 'scroll' | 'view';
+  event_type: 'click' | 'hover' | 'scroll' | 'view' | 'movement';
   page_url: string;
   element_selector: string;
   x_position: number;
@@ -32,6 +32,11 @@ export type InteractionEvent = {
   timestamp: string;
   session_id: string;
   metadata?: Record<string, any>;
+  // Device information
+  device_type?: string;
+  viewport_width?: number;
+  viewport_height?: number;
+  scroll_depth?: number;
   // Future fields that would be populated when geographic tracking is implemented
   latitude?: number;
   longitude?: number;
@@ -43,6 +48,8 @@ export type HeatmapDataPoint = {
   y: number;
   value: number;
   element?: string;
+  elements?: string[];
+  timestamp?: string;
   // Future properties for geographic visualization
   latitude?: number;
   longitude?: number;
@@ -91,4 +98,30 @@ export type GeographicData = {
   userCount: number;
   interactionCount: number;
   conversionRate?: number;
+}
+
+// Session analytics data
+export type SessionData = {
+  id: string;
+  user_id: string;
+  session_id: string;
+  start_time: string;
+  end_time?: string;
+  duration_seconds?: number;
+  page_views: number;
+  interactions: number;
+  device_type: string;
+  browser: string;
+  os: string;
+  entry_page: string;
+  exit_page?: string;
+}
+
+// Interaction timeline events
+export type TimelineEvent = {
+  timestamp: string;
+  event_type: string;
+  element: string;
+  count: number;
+  sessions: string[];
 }

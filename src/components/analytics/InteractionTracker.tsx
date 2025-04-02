@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useInteractionTracking } from "@/hooks/use-interaction-tracking";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -10,14 +10,59 @@ import { useAuth } from "@/hooks/use-auth";
  */
 const InteractionTracker = () => {
   const { user } = useAuth();
-  const { trackClick, trackInteraction } = useInteractionTracking();
+  const { 
+    trackClick, 
+    trackInteraction,
+    batchInteractions,
+    trackMouseMovement, 
+    trackScroll
+  } = useInteractionTracking();
+  
+  // State to store device information
+  const [deviceInfo, setDeviceInfo] = useState({
+    width: 0,
+    height: 0,
+    deviceType: 'unknown'
+  });
+  
+  // Detect device info on mount
+  useEffect(() => {
+    const getDeviceType = () => {
+      const width = window.innerWidth;
+      let deviceType = 'desktop';
+      
+      if (width < 768) {
+        deviceType = 'mobile';
+      } else if (width < 1024) {
+        deviceType = 'tablet';
+      }
+      
+      return {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        deviceType
+      };
+    };
+    
+    setDeviceInfo(getDeviceType());
+    
+    // Update on resize
+    const handleResize = () => {
+      setDeviceInfo(getDeviceType());
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
   
   // Track click events
   useEffect(() => {
     if (!user) return;
     
     const handleClick = (e: MouseEvent) => {
-      trackClick(e);
+      trackClick(e, deviceInfo);
     };
     
     // Add global click handler
@@ -26,7 +71,38 @@ const InteractionTracker = () => {
     return () => {
       document.removeEventListener('click', handleClick);
     };
-  }, [user, trackClick]);
+  }, [user, trackClick, deviceInfo]);
+  
+  // Track mouse movement (throttled)
+  useEffect(() => {
+    if (!user) return;
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      trackMouseMovement(e, deviceInfo);
+    };
+    
+    // Use a throttled event listener to reduce performance impact
+    document.addEventListener('mousemove', handleMouseMove, { passive: true });
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [user, trackMouseMovement, deviceInfo]);
+  
+  // Track scroll events (throttled)
+  useEffect(() => {
+    if (!user) return;
+    
+    const handleScroll = () => {
+      trackScroll(deviceInfo);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [user, trackScroll, deviceInfo]);
   
   // Track page view on component mount
   useEffect(() => {
@@ -38,43 +114,36 @@ const InteractionTracker = () => {
       y: Math.round(window.innerHeight / 2)
     };
     
-    // Track page view event
-    trackInteraction('view', viewportCenter, 'document');
+    // Track page view event with device info
+    trackInteraction('view', viewportCenter, 'document', {
+      deviceInfo: deviceInfo
+    });
     
-    // Track periodic scroll events (throttled)
-    let lastScrollY = window.scrollY;
-    let scrollTimeout: number | null = null;
+  }, [user, trackInteraction, deviceInfo]);
+  
+  // Batch send interactions periodically
+  useEffect(() => {
+    if (!user) return;
     
-    const handleScroll = () => {
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-      
-      scrollTimeout = setTimeout(() => {
-        // Only track if scroll position changed significantly
-        if (Math.abs(window.scrollY - lastScrollY) > 100) {
-          trackInteraction('scroll', {
-            x: Math.round(window.innerWidth / 2),
-            y: Math.round(window.scrollY + (window.innerHeight / 2))
-          }, 'window');
-          
-          lastScrollY = window.scrollY;
-        }
-      }, 500) as unknown as number;
+    // Send collected data to server every 10 seconds
+    const intervalId = setInterval(() => {
+      batchInteractions();
+    }, 10000);
+    
+    // Also send on page unload
+    const handleUnload = () => {
+      batchInteractions();
     };
     
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('beforeunload', handleUnload);
     
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
+      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleUnload);
+      // Final batch send when component unmounts
+      batchInteractions();
     };
-  }, [user, trackInteraction]);
-  
-  // Note: This is where geographic tracking would be initialized in the future
-  // For now, we're not collecting location data
+  }, [user, batchInteractions]);
   
   return null; // This component doesn't render anything
 };

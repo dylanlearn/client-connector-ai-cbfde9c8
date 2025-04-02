@@ -248,38 +248,50 @@ export type Database = {
       }
       interaction_events: {
         Row: {
+          device_type: string | null
           element_selector: string | null
           event_type: string
           id: string
           metadata: Json | null
           page_url: string
+          scroll_depth: number | null
           session_id: string
           timestamp: string
           user_id: string
+          viewport_height: number | null
+          viewport_width: number | null
           x_position: number
           y_position: number
         }
         Insert: {
+          device_type?: string | null
           element_selector?: string | null
           event_type: string
           id?: string
           metadata?: Json | null
           page_url: string
+          scroll_depth?: number | null
           session_id: string
           timestamp?: string
           user_id: string
+          viewport_height?: number | null
+          viewport_width?: number | null
           x_position: number
           y_position: number
         }
         Update: {
+          device_type?: string | null
           element_selector?: string | null
           event_type?: string
           id?: string
           metadata?: Json | null
           page_url?: string
+          scroll_depth?: number | null
           session_id?: string
           timestamp?: string
           user_id?: string
+          viewport_height?: number | null
+          viewport_width?: number | null
           x_position?: number
           y_position?: number
         }
@@ -561,6 +573,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      batch_insert_interaction_events: {
+        Args: {
+          p_events: Json
+        }
+        Returns: undefined
+      }
       get_interaction_events: {
         Args: {
           p_user_id: string
@@ -569,14 +587,18 @@ export type Database = {
           p_limit?: number
         }
         Returns: {
+          device_type: string | null
           element_selector: string | null
           event_type: string
           id: string
           metadata: Json | null
           page_url: string
+          scroll_depth: number | null
           session_id: string
           timestamp: string
           user_id: string
+          viewport_height: number | null
+          viewport_width: number | null
           x_position: number
           y_position: number
         }[]
@@ -617,14 +639,18 @@ export type Database = {
           query_text: string
         }
         Returns: {
+          device_type: string | null
           element_selector: string | null
           event_type: string
           id: string
           metadata: Json | null
           page_url: string
+          scroll_depth: number | null
           session_id: string
           timestamp: string
           user_id: string
+          viewport_height: number | null
+          viewport_width: number | null
           x_position: number
           y_position: number
         }[]
