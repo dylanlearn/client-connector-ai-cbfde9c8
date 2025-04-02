@@ -92,14 +92,14 @@ export const enableRealtimeForTable = async (tableName: string): Promise<boolean
 export const isUserActive = (profile: UserProfile | null): boolean => {
   if (!profile) return false;
   
+  // Admin users are always considered active
+  if (profile.role === 'admin') return true;
+  
   // Check if the user has a paid subscription status
   const hasActivePlan = profile.subscription_status === 'basic' || 
                         profile.subscription_status === 'pro';
   
-  // Check if the user has a privileged role
-  const hasPrivilegedRole = profile.role === 'admin';
-  
-  return hasActivePlan || hasPrivilegedRole;
+  return hasActivePlan;
 };
 
 /**

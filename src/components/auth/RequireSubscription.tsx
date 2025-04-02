@@ -2,7 +2,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
-import { isUserActive, validateAuthState } from "@/utils/auth-utils";
+import { validateAuthState } from "@/utils/auth-utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect, useState, memo } from "react";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
@@ -16,7 +16,7 @@ interface RequireSubscriptionProps {
  * Memoized to prevent unnecessary re-renders during routing checks
  */
 const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
-  const { isLoading: subscriptionLoading } = useSubscription();
+  const { isLoading: subscriptionLoading, isActive, isAdmin } = useSubscription();
   const { user, isLoading: authLoading, profile } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
@@ -43,11 +43,13 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
-  // Use our utility function to check if the user has an active subscription or privileged role
-  const active = isUserActive(profile);
+  // Check for admin status first - admins always have access
+  if (isAdmin || profile?.role === 'admin') {
+    return <>{children}</>;
+  }
   
   // If user is authenticated but doesn't have an active status, redirect to pricing
-  if (!active) {
+  if (!isActive) {
     // Show a toast notification
     useEffect(() => {
       toast({

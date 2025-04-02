@@ -27,12 +27,13 @@ export interface SubscriptionInfo {
   expiresAt: string | null;
   willCancel: boolean;
   isLoading: boolean;
+  isAdmin: boolean; // Added isAdmin property
 }
 
 export const useSubscription = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, session } = useAuth();
+  const { user, session, profile } = useAuth();
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo>({
     status: "free",
     isActive: false,
@@ -40,6 +41,7 @@ export const useSubscription = () => {
     expiresAt: null,
     willCancel: false,
     isLoading: true,
+    isAdmin: false, // Initialize isAdmin as false
   });
 
   const checkSubscription = async () => {
@@ -51,6 +53,24 @@ export const useSubscription = () => {
     try {
       setSubscriptionInfo(prev => ({ ...prev, isLoading: true }));
       
+      // First check if user is an admin from the profile
+      const isAdmin = profile?.role === 'admin';
+      
+      // If user is admin, we can set subscription status accordingly without checking further
+      if (isAdmin) {
+        setSubscriptionInfo({
+          status: "pro", // Admin users are treated as having pro status
+          isActive: true,
+          inTrial: false,
+          expiresAt: null,
+          willCancel: false,
+          isLoading: false,
+          isAdmin: true
+        });
+        return;
+      }
+      
+      // For non-admin users, check subscription normally
       const { data, error } = await supabase.functions.invoke("check-subscription");
       
       if (error) {
@@ -64,6 +84,7 @@ export const useSubscription = () => {
         expiresAt: data.expiresAt,
         willCancel: data.willCancel,
         isLoading: false,
+        isAdmin: false
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
