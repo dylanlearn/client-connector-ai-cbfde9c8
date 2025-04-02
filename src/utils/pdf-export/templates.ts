@@ -30,7 +30,7 @@ export const fetchPDFTemplates = async (): Promise<PDFStylingTemplate[]> => {
     
     if (error) throw error;
     
-    // Use double type assertion to avoid TypeScript's strict type checking
+    // Use double type assertion to bypass TypeScript's strict type checking
     return (data as unknown as PDFStylingTemplate[]) || [];
   } catch (error) {
     console.error('Error fetching PDF templates:', error);
@@ -79,7 +79,7 @@ export const savePDFTemplate = async (
       description: `"${name}" is now available in your templates`
     });
     
-    // Use double type assertion to avoid TypeScript's strict type checking
+    // Use double type assertion to bypass TypeScript's strict type checking
     return (data as unknown as PDFStylingTemplate);
   } catch (error) {
     console.error('Error saving PDF template:', error);
@@ -115,7 +115,7 @@ export const updatePDFTemplate = async (
       description: `Changes to "${updates.name || 'template'}" have been saved`
     });
     
-    // Use double type assertion to avoid TypeScript's strict type checking
+    // Use double type assertion to bypass TypeScript's strict type checking
     return (data as unknown as PDFStylingTemplate);
   } catch (error) {
     console.error('Error updating PDF template:', error);
