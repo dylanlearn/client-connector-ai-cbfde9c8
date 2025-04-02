@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { generatePDF, downloadPDF, sendPDFByEmail, sendPDFBySMS } from "@/utils/pdf-export";
-import { Loader2, Mail, Phone, Download, FileText } from "lucide-react";
+import { generatePDF, downloadPDF, sendPDFByEmail, sendPDFBySMS, PDFGenerationOptions } from "@/utils/pdf-export";
+import { Loader2, Mail, Phone, Download, FileText, Settings } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PDFExportDialogProps {
   contentId: string;
@@ -24,13 +25,19 @@ export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialo
   const [subject, setSubject] = useState("Your Design Brief");
   const [message, setMessage] = useState("");
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [pdfOptions, setPdfOptions] = useState<PDFGenerationOptions>({
+    quality: 2,
+    showProgress: true,
+    margin: 5
+  });
 
   const handleOpen = async (open: boolean) => {
     setIsOpen(open);
     if (open && !pdfBlob) {
       setIsLoading(true);
       try {
-        const blob = await generatePDF(contentId, filename);
+        const blob = await generatePDF(contentId, filename, pdfOptions);
         setPdfBlob(blob);
       } finally {
         setIsLoading(false);
@@ -73,6 +80,21 @@ export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialo
     }
   };
 
+  const handleRegenerate = async () => {
+    setIsLoading(true);
+    try {
+      const blob = await generatePDF(contentId, filename, pdfOptions);
+      setPdfBlob(blob);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updatePdfOption = (key: keyof PDFGenerationOptions, value: any) => {
+    setPdfOptions(prev => ({ ...prev, [key]: value }));
+    setPdfBlob(null); // Clear the cached PDF to force regeneration with new options
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
@@ -109,6 +131,69 @@ export function PDFExportDialog({ contentId, filename, trigger }: PDFExportDialo
                 <p className="text-sm text-muted-foreground">
                   Download the design brief as a PDF file to your device.
                 </p>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-between mb-4" 
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                >
+                  <span className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Advanced Options
+                  </span>
+                  <span>{showAdvanced ? "▲" : "▼"}</span>
+                </Button>
+                
+                {showAdvanced && (
+                  <div className="space-y-3 border rounded-md p-3 mb-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="pdf-quality">PDF Quality</Label>
+                      <Select 
+                        value={pdfOptions.quality?.toString()} 
+                        onValueChange={(value) => updatePdfOption('quality', parseInt(value))}
+                      >
+                        <SelectTrigger id="pdf-quality">
+                          <SelectValue placeholder="Select quality" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Draft - Faster (Lower Quality)</SelectItem>
+                          <SelectItem value="2">Standard (Default)</SelectItem>
+                          <SelectItem value="3">High Quality</SelectItem>
+                          <SelectItem value="4">Maximum Quality (Slower)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Higher quality takes longer to generate but produces better results.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="pdf-margin">Margin (mm)</Label>
+                      <Input
+                        id="pdf-margin"
+                        type="number"
+                        min="0"
+                        max="25"
+                        value={pdfOptions.margin}
+                        onChange={(e) => updatePdfOption('margin', Number(e.target.value))}
+                      />
+                    </div>
+                    
+                    {pdfBlob && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={handleRegenerate} 
+                        className="w-full"
+                      >
+                        <Loader2 className="mr-2 h-4 w-4" />
+                        Regenerate with New Settings
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
                 <div className="flex justify-center">
                   <Button onClick={handleDownload} className="w-full">
                     <Download className="mr-2 h-4 w-4" />
