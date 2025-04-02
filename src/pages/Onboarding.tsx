@@ -93,9 +93,9 @@ const Onboarding = () => {
     // Handle plan selection
     if (currentStep === 2) {
       if (selectedPlan === "syncPro") {
-        startSubscription("pro");
+        startSubscription("sync-pro");
       } else if (selectedPlan === "sync") {
-        startSubscription("basic");
+        startSubscription("sync");
       }
     }
 

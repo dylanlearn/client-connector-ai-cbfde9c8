@@ -21,7 +21,7 @@ export const useAnalytics = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Check if user has Pro subscription
-  const hasPro = status === "pro" || isAdmin || (user?.role === 'admin');
+  const hasPro = status === "sync-pro" || isAdmin || (user?.role === 'admin');
 
   // Fetch analytics data with caching and proper keys
   const {

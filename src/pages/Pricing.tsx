@@ -16,7 +16,7 @@ const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleSelectPlan = async (plan: "templates" | "basic" | "pro") => {
+  const handleSelectPlan = async (plan: "templates" | "sync" | "sync-pro") => {
     if (plan === "templates") {
       navigate("/templates");
       return;
@@ -102,8 +102,8 @@ const Pricing = () => {
             ]}
             cta={`Choose Basic ${billingCycle}`}
             highlight={false}
-            isLoading={loadingPlan === "basic"}
-            onSelect={() => handleSelectPlan("basic")}
+            isLoading={loadingPlan === "sync"}
+            onSelect={() => handleSelectPlan("sync")}
             savings={billingCycle === "annual" ? "Save $58/year" : undefined}
           />
           
@@ -122,8 +122,8 @@ const Pricing = () => {
             ]}
             cta={`Choose Pro ${billingCycle}`}
             highlight={true}
-            isLoading={loadingPlan === "pro"}
-            onSelect={() => handleSelectPlan("pro")}
+            isLoading={loadingPlan === "sync-pro"}
+            onSelect={() => handleSelectPlan("sync-pro")}
             savings={billingCycle === "annual" ? "Save $138/year" : undefined}
           />
         </div>
