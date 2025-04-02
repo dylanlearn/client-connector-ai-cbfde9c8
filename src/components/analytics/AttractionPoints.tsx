@@ -1,29 +1,138 @@
 
 import { MousePointerClick, MousePointer, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { fetchInteractionEvents } from "@/hooks/analytics/use-analytics-api";
+import { Button } from "@/components/ui/button";
 
 const AttractionPoints = () => {
-  const attractionPoints = [
-    { 
-      element: "Hero CTA Button", 
-      score: 9.4,
-      type: "click" 
-    },
-    { 
-      element: "Feature Image #2", 
-      score: 8.7,
-      type: "attention" 
-    },
-    { 
-      element: "Pricing Table", 
-      score: 7.8,
-      type: "hover" 
-    },
-    { 
-      element: "Testimonial Section", 
-      score: 6.5,
-      type: "attention" 
-    },
-  ];
+  const { user } = useAuth();
+  const [attractionPoints, setAttractionPoints] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchAttractionData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Fetch click events
+        const clickEvents = await fetchInteractionEvents(user.id, 'click');
+        
+        // Count events by element selector
+        const elementCounts: Record<string, { count: number, type: string }> = {};
+        
+        clickEvents.forEach(event => {
+          if (!event.element_selector) return;
+          
+          if (!elementCounts[event.element_selector]) {
+            elementCounts[event.element_selector] = { 
+              count: 0, 
+              type: 'click' 
+            };
+          }
+          
+          elementCounts[event.element_selector].count += 1;
+        });
+        
+        // Fetch hover events
+        const hoverEvents = await fetchInteractionEvents(user.id, 'hover');
+        
+        hoverEvents.forEach(event => {
+          if (!event.element_selector) return;
+          
+          if (!elementCounts[event.element_selector]) {
+            elementCounts[event.element_selector] = { 
+              count: 0, 
+              type: 'hover' 
+            };
+          }
+          
+          // Hover events count less than clicks
+          elementCounts[event.element_selector].count += 0.5;
+        });
+        
+        // Convert to array and calculate scores
+        const points = Object.entries(elementCounts).map(([element, data]) => {
+          // Normalize score to 0-10 range
+          const maxCount = Math.max(...Object.values(elementCounts).map(d => d.count));
+          const score = maxCount > 0 ? (data.count / maxCount) * 10 : 0;
+          
+          // Clean up element name for display
+          let displayName = element;
+          
+          // Convert selectors to friendlier names
+          if (element.includes('#')) {
+            displayName = element.split('#')[1].replace(/-/g, ' ');
+          } else if (element.includes('.')) {
+            displayName = element.split('.')[1].replace(/-/g, ' ');
+          }
+          
+          // Capitalize words
+          displayName = displayName
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          return {
+            element: displayName,
+            score: Math.min(10, Math.round(score * 10) / 10),
+            type: data.type
+          };
+        });
+        
+        // Sort by score and take top 4
+        const topPoints = points
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 4);
+        
+        setAttractionPoints(topPoints);
+        
+        // Generate AI suggestion based on top element
+        if (topPoints.length > 0) {
+          const topElement = topPoints[0].element;
+          setAiSuggestion(`The ${topElement} shows strong engagement - consider A/B testing variations to further optimize conversion.`);
+        }
+      } catch (error) {
+        console.error('Error fetching attraction points:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchAttractionData();
+  }, [user]);
+  
+  // If we don't have real data yet, show sample data
+  if (attractionPoints.length === 0 && !isLoading) {
+    const samplePoints = [
+      { 
+        element: "Hero CTA Button", 
+        score: 9.4,
+        type: "click" 
+      },
+      { 
+        element: "Feature Image #2", 
+        score: 8.7,
+        type: "attention" 
+      },
+      { 
+        element: "Pricing Table", 
+        score: 7.8,
+        type: "hover" 
+      },
+      { 
+        element: "Testimonial Section", 
+        score: 6.5,
+        type: "attention" 
+      },
+    ];
+    
+    setAttractionPoints(samplePoints);
+    setAiSuggestion("The hero CTA shows strong engagement - consider A/B testing variations to further optimize conversion.");
+  }
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -37,6 +146,14 @@ const AttractionPoints = () => {
         return null;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -56,8 +173,12 @@ const AttractionPoints = () => {
       ))}
       
       <div className="pt-2 mt-2 border-t text-xs text-muted-foreground">
-        <p>AI Suggestion: The hero CTA shows strong engagement - consider A/B testing variations to further optimize conversion.</p>
+        <p>AI Suggestion: {aiSuggestion}</p>
       </div>
+      
+      <Button variant="ghost" size="sm" className="w-full text-xs mt-2">
+        Get More AI Insights
+      </Button>
     </div>
   );
 };

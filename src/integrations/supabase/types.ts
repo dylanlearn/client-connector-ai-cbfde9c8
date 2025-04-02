@@ -246,6 +246,45 @@ export type Database = {
         }
         Relationships: []
       }
+      interaction_events: {
+        Row: {
+          element_selector: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          page_url: string
+          session_id: string
+          timestamp: string
+          user_id: string
+          x_position: number
+          y_position: number
+        }
+        Insert: {
+          element_selector?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          page_url: string
+          session_id: string
+          timestamp?: string
+          user_id: string
+          x_position: number
+          y_position: number
+        }
+        Update: {
+          element_selector?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          page_url?: string
+          session_id?: string
+          timestamp?: string
+          user_id?: string
+          x_position?: number
+          y_position?: number
+        }
+        Relationships: []
+      }
       memory_analysis_results: {
         Row: {
           analyzed_at: string

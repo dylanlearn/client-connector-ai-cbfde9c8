@@ -12,6 +12,7 @@ import TrendsTab from "@/components/analytics/tabs/TrendsTab";
 import HeatmapsTab from "@/components/analytics/tabs/HeatmapsTab";
 import ConversionTab from "@/components/analytics/tabs/ConversionTab";
 import { useSubscription } from "@/hooks/use-subscription";
+import InteractionTracker from "@/components/analytics/InteractionTracker";
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -59,6 +60,9 @@ const Analytics = () => {
 
   return (
     <DashboardLayout>
+      {/* Hidden component that tracks interactions for analysis */}
+      <InteractionTracker />
+      
       <AnalyticsHeader 
         isRealtime={isRealtime} 
         clientAccessMode={clientAccessMode} 
