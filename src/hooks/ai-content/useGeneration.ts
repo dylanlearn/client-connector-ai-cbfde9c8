@@ -2,6 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { AIGeneratorService } from '@/services/ai';
 import { ContentRequest } from './types';
+import { usePromptTesting } from './usePromptTesting';
+import { useAuth } from '@/hooks/use-auth';
 
 interface UseGenerationOptions {
   autoRetry?: boolean;
@@ -9,6 +11,7 @@ interface UseGenerationOptions {
   timeout?: number;
   showToasts?: boolean;
   useFallbacks?: boolean;
+  enableABTesting?: boolean;
 }
 
 export function useGeneration({
@@ -16,13 +19,15 @@ export function useGeneration({
   maxRetries = 2,
   timeout = 10000,
   showToasts = false,
-  useFallbacks = true
+  useFallbacks = true,
+  enableABTesting = true
 }: UseGenerationOptions = {}) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryCountRef = useRef(0);
   const requestTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
 
   // Cleanup function
   useEffect(() => {
@@ -69,16 +74,48 @@ export function useGeneration({
       }
     }, timeout);
     
+    // Get A/B test prompt variant if enabled
+    let testVariantId: string | undefined;
+    if (enableABTesting && user) {
+      try {
+        const test = await AIGeneratorService.getActivePromptTest(request.type);
+        if (test) {
+          const variant = await AIGeneratorService.selectPromptVariant(request.type, user.id);
+          if (variant) {
+            testVariantId = variant.id;
+          }
+        }
+      } catch (error) {
+        console.error("Error getting A/B test variant:", error);
+        // Continue with default prompt if there's an error
+      }
+    }
+    
     // Function to attempt generation with retry logic
     const attemptGeneration = async (retryCount: number): Promise<string> => {
       try {
         // Generate cache key based on request
-        const cacheKey = `ai-content-${request.type}-${request.context}-${request.tone}-${retryCount}`;
+        const cacheKey = `ai-content-${request.type}-${request.context}-${request.tone}-${testVariantId || 'default'}-${retryCount}`;
+        
+        const startTime = Date.now();
         
         const content = await AIGeneratorService.generateContent({
           ...request,
-          cacheKey
+          cacheKey,
+          testVariantId
         });
+        
+        // Calculate latency for A/B test metrics
+        const latencyMs = Date.now() - startTime;
+        
+        // Record success for A/B testing if we're using a test variant
+        if (testVariantId && user) {
+          await AIGeneratorService.recordPromptTestSuccess(
+            testVariantId, 
+            user.id, 
+            latencyMs
+          );
+        }
         
         // Clear timeout on success
         if (requestTimeoutRef.current) {
@@ -88,6 +125,15 @@ export function useGeneration({
         
         return content;
       } catch (error) {
+        // Record failure for A/B testing if we're using a test variant
+        if (testVariantId && user) {
+          await AIGeneratorService.recordPromptTestFailure(
+            testVariantId, 
+            user.id, 
+            error instanceof Error ? error.name : 'UnknownError'
+          );
+        }
+        
         // Handle retries
         if (autoRetry && retryCount < maxRetries) {
           console.log(`Retrying AI generation (${retryCount + 1}/${maxRetries})...`);
@@ -127,7 +173,7 @@ export function useGeneration({
           cta: "Sign up for free",
           description: `Sample description for ${request.context || 'this field'}`
         };
-        return fallbacks[request.type] || `Example ${request.type}`;
+        return fallbacks[request.type as keyof typeof fallbacks] || `Example ${request.type}`;
       }
       
       // Otherwise, re-throw the error
@@ -135,7 +181,7 @@ export function useGeneration({
     } finally {
       setIsGenerating(false);
     }
-  }, [autoRetry, maxRetries, timeout, showToasts, useFallbacks]);
+  }, [autoRetry, maxRetries, timeout, showToasts, useFallbacks, enableABTesting, user]);
 
   const cancelGeneration = useCallback(() => {
     if (abortControllerRef.current) {
