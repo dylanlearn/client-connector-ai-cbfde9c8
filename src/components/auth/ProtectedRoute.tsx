@@ -26,6 +26,18 @@ const ProtectedRoute = memo(({ children }: ProtectedRouteProps) => {
       setIsInitialized(true);
     }
   }, [isLoading]);
+
+  // Show toast for subscription required
+  useEffect(() => {
+    // Only show the toast if user is authenticated but not active
+    if (isInitialized && !isLoading && user && !isUserActive(profile)) {
+      toast({
+        title: "Subscription Required",
+        description: "You need an active subscription to access this content.",
+        variant: "destructive",
+      });
+    }
+  }, [isInitialized, isLoading, user, profile, toast]);
   
   // Loading display during initialization
   if (!isInitialized || isLoading) {
@@ -46,15 +58,6 @@ const ProtectedRoute = memo(({ children }: ProtectedRouteProps) => {
   
   // If not active, redirect to pricing with a message
   if (!active) {
-    // Use effect to show toast only once
-    useEffect(() => {
-      toast({
-        title: "Subscription Required",
-        description: "You need an active subscription to access this content.",
-        variant: "destructive",
-      });
-    }, []);
-    
     return <Navigate to="/pricing?needSubscription=true" state={{ from: location.pathname }} replace />;
   }
   
