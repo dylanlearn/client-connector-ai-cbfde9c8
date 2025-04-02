@@ -23,8 +23,10 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   const [isInitialized, setIsInitialized] = useState(false);
   
   console.log("RequireSubscription - Profile:", profile);
-  console.log("RequireSubscription - isAdmin:", isAdmin, "profile role:", profile?.role);
+  console.log("RequireSubscription - isAdmin from useSubscription:", isAdmin);
+  console.log("RequireSubscription - profile role:", profile?.role);
   console.log("RequireSubscription - isActive:", isActive);
+  console.log("RequireSubscription - current path:", location.pathname);
   
   // Use effect to ensure component is fully mounted before checking auth
   useEffect(() => {
@@ -49,6 +51,7 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   }
   
   // Check for admin status first - admins always have access
+  // We check both the isAdmin from useSubscription and the profile role
   if (isAdmin || profile?.role === 'admin') {
     console.log("Admin user detected, granting access");
     return <>{children}</>;

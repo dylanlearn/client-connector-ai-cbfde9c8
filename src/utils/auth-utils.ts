@@ -93,7 +93,10 @@ export const isUserActive = (profile: UserProfile | null): boolean => {
   if (!profile) return false;
   
   // Admin users are always considered active
-  if (profile.role === 'admin') return true;
+  if (profile.role === 'admin') {
+    console.log("User is admin, considering as active");
+    return true;
+  }
   
   // Check if the user has a paid subscription status
   const hasActivePlan = profile.subscription_status === 'basic' || 
@@ -106,14 +109,17 @@ export const isUserActive = (profile: UserProfile | null): boolean => {
  * Gets the appropriate post-login redirect based on user status
  */
 export const getPostLoginRedirect = (profile: UserProfile | null, defaultPath: string = '/dashboard'): string => {
+  console.log("getPostLoginRedirect called with profile:", profile, "and defaultPath:", defaultPath);
+  
   // If user is admin, always redirect to the requested path or dashboard
   if (profile?.role === 'admin') {
-    console.log("Admin user detected, redirecting to:", defaultPath);
+    console.log("Admin user detected in getPostLoginRedirect, redirecting to:", defaultPath);
     return defaultPath;
   }
   
   // Check if user has active subscription
   if (isUserActive(profile)) {
+    console.log("User has active subscription, redirecting to:", defaultPath);
     return defaultPath;
   }
   
@@ -126,10 +132,19 @@ export const getPostLoginRedirect = (profile: UserProfile | null, defaultPath: s
  * Validates the user's authentication state before proceeding with routing
  */
 export const validateAuthState = (user: User | null, profile: UserProfile | null): boolean => {
-  if (!user) return false;
+  console.log("validateAuthState called with user:", user?.id, "and profile:", profile);
+  
+  if (!user) {
+    console.log("No user found, auth state invalid");
+    return false;
+  }
   
   // Make sure we have a user profile
-  if (!profile) return false;
+  if (!profile) {
+    console.log("No profile found for user, auth state invalid");
+    return false;
+  }
   
+  console.log("Auth state valid, user is authenticated");
   return true;
 };

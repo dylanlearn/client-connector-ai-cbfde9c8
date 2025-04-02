@@ -146,7 +146,14 @@ export const useSubscription = () => {
 
   useEffect(() => {
     console.log("useSubscription - Effect triggered, user:", user?.id, "profile:", profile);
-    checkSubscription();
+    
+    // Only check subscription if we have both user and profile data
+    if (user && profile) {
+      console.log("useSubscription - Have both user and profile, checking subscription");
+      checkSubscription();
+    } else {
+      console.log("useSubscription - Missing user or profile data, waiting...");
+    }
     
     // Check subscription when URL has checkout=success or checkout=canceled
     const params = new URLSearchParams(window.location.search);
