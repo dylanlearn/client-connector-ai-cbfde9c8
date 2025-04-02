@@ -1,6 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
+import { PromptDBService } from "./db-service";
 
 export interface PromptVariant {
   id: string;
@@ -44,18 +44,7 @@ export const PromptABTestingService = {
    */
   getActiveTest: async (contentType: string): Promise<PromptTest | null> => {
     try {
-      const { data, error } = await supabase
-        .from('ai_prompt_tests')
-        .select('*, variants:ai_prompt_variants(*)')
-        .eq('content_type', contentType)
-        .eq('status', 'active')
-        .limit(1)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching active prompt test:", error);
-        return null;
-      }
+      const data = await PromptDBService.getActiveTest(contentType);
       
       if (!data) return null;
       
@@ -107,7 +96,7 @@ export const PromptABTestingService = {
         if (random <= cumulativeWeight) {
           // Record an impression for this variant
           if (userId) {
-            await PromptABTestingService.recordImpression(test.id, variant.id, userId);
+            await PromptDBService.recordImpression(test.id, variant.id, userId);
           }
           return variant;
         }
@@ -126,16 +115,7 @@ export const PromptABTestingService = {
    */
   recordImpression: async (testId: string, variantId: string, userId: string): Promise<void> => {
     try {
-      // Create a unique impression ID
-      const impressionId = uuidv4();
-      
-      await supabase.from('ai_prompt_impressions').insert({
-        id: impressionId,
-        test_id: testId,
-        variant_id: variantId,
-        user_id: userId,
-        timestamp: new Date().toISOString()
-      });
+      await PromptDBService.recordImpression(testId, variantId, userId);
     } catch (error) {
       console.error("Error recording impression:", error);
     }
@@ -152,15 +132,7 @@ export const PromptABTestingService = {
     tokenUsage?: number
   ): Promise<void> => {
     try {
-      await supabase.from('ai_prompt_results').insert({
-        test_id: testId,
-        variant_id: variantId,
-        user_id: userId,
-        successful: true,
-        latency_ms: latencyMs,
-        token_usage: tokenUsage,
-        timestamp: new Date().toISOString()
-      });
+      await PromptDBService.recordSuccess(testId, variantId, userId, latencyMs, tokenUsage);
     } catch (error) {
       console.error("Error recording success:", error);
     }
@@ -176,14 +148,7 @@ export const PromptABTestingService = {
     errorType?: string
   ): Promise<void> => {
     try {
-      await supabase.from('ai_prompt_results').insert({
-        test_id: testId,
-        variant_id: variantId,
-        user_id: userId,
-        successful: false,
-        error_type: errorType,
-        timestamp: new Date().toISOString()
-      });
+      await PromptDBService.recordFailure(testId, variantId, userId, errorType);
     } catch (error) {
       console.error("Error recording failure:", error);
     }
@@ -201,26 +166,20 @@ export const PromptABTestingService = {
     confidenceThreshold?: number
   ): Promise<string | null> => {
     try {
-      // Generate a test ID
-      const testId = uuidv4();
-      
-      // Insert the test
-      const { error: testError } = await supabase.from('ai_prompt_tests').insert({
-        id: testId,
+      // Create the test
+      const newTest = await PromptDBService.createTest({
         name,
         description,
         content_type: contentType,
-        status: 'active',
-        min_sample_size: minSampleSize || 100,
-        confidence_threshold: confidenceThreshold || 95
+        min_sample_size: minSampleSize,
+        confidence_threshold: confidenceThreshold
       });
       
-      if (testError) throw testError;
+      if (!newTest) return null;
       
-      // Insert the variants
-      const variantsWithIds = variants.map(variant => ({
-        id: uuidv4(),
-        test_id: testId,
+      // Create variants
+      const variantsWithTestId = variants.map(variant => ({
+        test_id: newTest.id,
         name: variant.name,
         prompt_text: variant.promptText,
         system_prompt: variant.systemPrompt,
@@ -228,13 +187,14 @@ export const PromptABTestingService = {
         weight: variant.weight
       }));
       
-      const { error: variantsError } = await supabase
-        .from('ai_prompt_variants')
-        .insert(variantsWithIds);
+      const createdVariants = await PromptDBService.createVariants(variantsWithTestId);
       
-      if (variantsError) throw variantsError;
+      if (!createdVariants) {
+        console.error("Failed to create variants");
+        return null;
+      }
       
-      return testId;
+      return newTest.id;
     } catch (error) {
       console.error("Error creating A/B test:", error);
       return null;
@@ -246,28 +206,22 @@ export const PromptABTestingService = {
    */
   getTestResults: async (testId: string): Promise<PromptTestResult[] | null> => {
     try {
-      // Get impressions count by variant
-      const { data: impressionsData, error: impressionsError } = await supabase
-        .from('ai_prompt_impressions')
-        .select('variant_id')
-        .eq('test_id', testId);
+      // Get the test data
+      const testData = await PromptDBService.getTest(testId);
+      if (!testData) return null;
       
-      if (impressionsError) throw impressionsError;
+      // Get impressions count by variant
+      const impressions = await PromptDBService.getImpressions(testId);
       
       // Process impressions to count them by variant
       const impressionCounts: Record<string, number> = {};
-      impressionsData.forEach((imp: any) => {
+      impressions.forEach((imp: any) => {
         const variantId = imp.variant_id;
         impressionCounts[variantId] = (impressionCounts[variantId] || 0) + 1;
       });
       
       // Get all results
-      const { data: resultsData, error: resultsError } = await supabase
-        .from('ai_prompt_results')
-        .select('variant_id, successful, latency_ms, token_usage')
-        .eq('test_id', testId);
-      
-      if (resultsError) throw resultsError;
+      const results = await PromptDBService.getResults(testId);
       
       // Process the results
       const variantMap = new Map<string, PromptTestResult>();
@@ -291,7 +245,7 @@ export const PromptABTestingService = {
       let tokenSums = new Map<string, number>();
       let successCounts = new Map<string, number>();
       
-      resultsData.forEach((result: any) => {
+      results.forEach((result: any) => {
         const variantId = result.variant_id;
         const successful = result.successful;
         
@@ -320,7 +274,7 @@ export const PromptABTestingService = {
           
           // Track token usage
           const currentTokenSum = tokenSums.get(variantId) || 0;
-          tokenSums.set(variantId, currentTokenSum + (result.token_usage || 0));
+          latencySums.set(variantId, currentTokenSum + (result.token_usage || 0));
           
           // Track success count for averaging
           const currentSuccessCount = successCounts.get(variantId) || 0;

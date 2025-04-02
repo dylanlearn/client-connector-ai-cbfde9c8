@@ -43,7 +43,7 @@ export function useGeneration({
   const generate = useCallback(async (request: ContentRequest): Promise<string> => {
     setIsGenerating(true);
     setLastError(null);
-    retryCountRef.current = 0;
+    retryCountRef.current = 0; // Fix: Add the value 0 here
     
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -71,10 +71,13 @@ export function useGeneration({
     }, timeout);
     
     let testVariantId: string | undefined;
+    let activeTestId: string | undefined;
+    
     if (enableABTesting && user) {
       try {
         const test = await AIGeneratorService.getActivePromptTest(request.type);
         if (test) {
+          activeTestId = test.id; // Store test ID for recording results
           const variant = await AIGeneratorService.selectPromptVariant(request.type, user.id);
           if (variant) {
             testVariantId = variant.id;
@@ -99,9 +102,9 @@ export function useGeneration({
         
         const latencyMs = Date.now() - startTime;
         
-        if (testVariantId && user) {
+        if (testVariantId && activeTestId && user) {
           await AIGeneratorService.recordPromptTestSuccess(
-            test.id, 
+            activeTestId, 
             testVariantId, 
             user.id, 
             latencyMs
@@ -115,8 +118,9 @@ export function useGeneration({
         
         return content;
       } catch (error) {
-        if (testVariantId && user) {
+        if (testVariantId && activeTestId && user) {
           await AIGeneratorService.recordPromptTestFailure(
+            activeTestId,
             testVariantId, 
             user.id, 
             error instanceof Error ? error.name : 'UnknownError'

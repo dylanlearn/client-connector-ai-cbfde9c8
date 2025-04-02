@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { BaseContentGenerator, BaseContentOptions } from "./base-generator";
 import { AIFeatureType, selectModelForFeature } from "../../ai-model-selector";
+import { PromptDBService } from "../prompt-testing/db-service";
 
 export interface ContentGenerationOptions extends BaseContentOptions {
   type: 'header' | 'tagline' | 'cta' | 'description';
@@ -46,13 +46,9 @@ export class ContentGenerator extends BaseContentGenerator<ContentGenerationOpti
       
       if (testVariantId && testVariantId !== 'default') {
         // Fetch the specific variant by ID
-        const { data: variantData, error: variantError } = await supabase
-          .from('ai_prompt_variants')
-          .select('*')
-          .eq('id', testVariantId)
-          .single();
+        const variantData = await PromptDBService.getVariant(testVariantId);
         
-        if (!variantError && variantData) {
+        if (variantData) {
           promptContent = variantData.prompt_text
             .replace('{{type}}', type)
             .replace('{{tone}}', tone)
