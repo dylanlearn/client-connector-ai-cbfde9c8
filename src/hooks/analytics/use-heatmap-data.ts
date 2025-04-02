@@ -94,7 +94,10 @@ export const useHeatmapData = (userId: string | undefined) => {
             x,
             y,
             value: 0,
-            element: item.element_selector
+            element: item.element_selector,
+            // These would be populated with real data in the future
+            latitude: item.metadata?.latitude,
+            longitude: item.metadata?.longitude
           }
         };
       }

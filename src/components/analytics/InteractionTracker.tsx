@@ -73,6 +73,9 @@ const InteractionTracker = () => {
     };
   }, [user, trackInteraction]);
   
+  // Note: This is where geographic tracking would be initialized in the future
+  // For now, we're not collecting location data
+  
   return null; // This component doesn't render anything
 };
 

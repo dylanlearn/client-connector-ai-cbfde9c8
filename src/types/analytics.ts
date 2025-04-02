@@ -32,6 +32,10 @@ export type InteractionEvent = {
   timestamp: string;
   session_id: string;
   metadata?: Record<string, any>;
+  // Future fields that would be populated when geographic tracking is implemented
+  latitude?: number;
+  longitude?: number;
+  location_name?: string;
 }
 
 export type HeatmapDataPoint = {
@@ -39,6 +43,10 @@ export type HeatmapDataPoint = {
   y: number;
   value: number;
   element?: string;
+  // Future properties for geographic visualization
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
 }
 
 export type ConversionEvent = {
@@ -73,4 +81,14 @@ export type ABTest = {
   end_date?: string;
   confidence_level?: number;
   variants: ABTestVariant[];
+}
+
+// Future type for geographic analytics
+export type GeographicData = {
+  location: string;
+  latitude: number;
+  longitude: number;
+  userCount: number;
+  interactionCount: number;
+  conversionRate?: number;
 }

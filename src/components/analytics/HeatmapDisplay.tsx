@@ -3,12 +3,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHeatmapData } from '@/hooks/analytics/use-heatmap-data';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 const HeatmapDisplay = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { user } = useAuth();
   const [displayMode, setDisplayMode] = useState<'clicks' | 'hover' | 'attention'>('clicks');
+  const [viewType, setViewType] = useState<'heatmap' | 'map'>('heatmap');
   
   const {
     heatmapData,
@@ -19,7 +23,7 @@ const HeatmapDisplay = () => {
   
   // Draw heatmap on canvas
   useEffect(() => {
-    if (!canvasRef.current || isLoading) return;
+    if (!canvasRef.current || isLoading || viewType !== 'heatmap') return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -74,7 +78,7 @@ const HeatmapDisplay = () => {
       ctx.fill();
     });
     
-  }, [heatmapData, displayMode, isLoading]);
+  }, [heatmapData, displayMode, isLoading, viewType]);
   
   // Helpers for color gradients
   const getRedGradient = (value: number) => {
@@ -97,6 +101,27 @@ const HeatmapDisplay = () => {
     ctx.fillText('No interaction data available for this view', canvas.width / 2, canvas.height / 2);
     ctx.font = '14px Arial';
     ctx.fillText('Interact with your application to collect data', canvas.width / 2, canvas.height / 2 + 30);
+  };
+  
+  // Placeholder for future map implementation
+  const renderMapPlaceholder = () => {
+    return (
+      <div className="flex items-center justify-center h-[500px] bg-gray-50 border rounded-md">
+        <div className="text-center max-w-md p-6">
+          <div className="inline-flex items-center justify-center bg-blue-100 p-3 rounded-full mb-4">
+            <InfoIcon className="h-6 w-6 text-blue-500" />
+          </div>
+          <h3 className="text-lg font-medium mb-2">Geographic Map Coming Soon</h3>
+          <p className="text-gray-600 mb-3">
+            This feature will display user interactions on a geographic map when fully implemented.
+          </p>
+          <p className="text-sm text-gray-500">
+            Location data collection is not yet active. When implemented, you'll be able to view interaction 
+            patterns based on user location.
+          </p>
+        </div>
+      </div>
+    );
   };
   
   return (
@@ -137,20 +162,37 @@ const HeatmapDisplay = () => {
         </div>
       </div>
       
-      <div className="relative border rounded-md overflow-hidden bg-white">
-        <canvas 
-          ref={canvasRef} 
-          width={800} 
-          height={500} 
-          className="w-full aspect-video"
-        />
+      <Tabs defaultValue="heatmap" onValueChange={(value) => setViewType(value as 'heatmap' | 'map')}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="heatmap">Element Heatmap</TabsTrigger>
+          <TabsTrigger value="map">Geographic Map</TabsTrigger>
+        </TabsList>
         
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80">
-            <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        )}
-      </div>
+        <TabsContent value="heatmap" className="relative border rounded-md overflow-hidden bg-white">
+          <canvas 
+            ref={canvasRef} 
+            width={800} 
+            height={500} 
+            className="w-full aspect-video"
+          />
+          
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="map">
+          <Alert className="mb-4">
+            <AlertDescription>
+              <span className="font-medium">Note:</span> Geographic location tracking is not yet active. 
+              This is a placeholder for the upcoming map feature.
+            </AlertDescription>
+          </Alert>
+          {renderMapPlaceholder()}
+        </TabsContent>
+      </Tabs>
       
       <div className="text-sm mt-2">
         <p className="text-muted-foreground">

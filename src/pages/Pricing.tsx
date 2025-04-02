@@ -1,156 +1,140 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useSubscription, BillingCycle } from "@/hooks/use-subscription";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
-import { PricingPlan } from "@/components/pricing/PricingPlan";
 import { BillingToggle } from "@/components/pricing/BillingToggle";
+import { PricingPlan } from "@/components/pricing/PricingPlan";
 import { PricingHeader } from "@/components/pricing/PricingHeader";
 import { DemoNotice } from "@/components/pricing/DemoNotice";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import InteractionTracker from "@/components/analytics/InteractionTracker";
 
 const Pricing = () => {
-  const { startSubscription, isLoading } = useSubscription();
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
-  const [showDemoNotice, setShowDemoNotice] = useState(false);
-  const [showSubscriptionNeeded, setShowSubscriptionNeeded] = useState(false);
+  const { user } = useAuth();
+  const { startSubscription } = useSubscription();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleSelectPlan = (planType: "basic" | "pro" | "templates") => {
-    if (planType === "templates") {
+  const handleSelectPlan = async (plan: "templates" | "basic" | "pro") => {
+    if (plan === "templates") {
       navigate("/templates");
       return;
     }
-
-    // If user is already authenticated, start subscription process
-    if (user) {
-      const returnUrl = window.location.origin + "/dashboard";
-      startSubscription(planType, billingCycle, returnUrl);
-    } else {
-      // If not authenticated, redirect to login page first
-      navigate("/login", { state: { from: "/pricing" } });
+    
+    setLoadingPlan(plan);
+    try {
+      await startSubscription(plan, billingCycle);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error starting subscription:", error);
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
-  useEffect(() => {
-    // After 1 second, show the demo notice
-    const timer = setTimeout(() => {
-      setShowDemoNotice(true);
-    }, 1000);
-    
-    // Check if the user needs a subscription
-    const needSubscription = searchParams.get('needSubscription');
-    if (needSubscription === 'true') {
-      setShowSubscriptionNeeded(true);
-    }
-    
-    return () => clearTimeout(timer);
-  }, [searchParams]);
-
-  // Define the pricing plans
-  const pricingPlans = [
-    {
-      name: "Sync Basic",
-      price: billingCycle === "monthly" ? "$35" : "$360",
-      period: billingCycle === "monthly" ? "month" : "year",
-      description: "Perfect for individual designers",
-      features: [
-        "Up to 10 client projects",
-        "Standard question templates",
-        "Basic analytics",
-        "Email support"
-      ],
-      cta: "Get Started",
-      planType: "basic" as const,
-      highlight: false,
-      savings: billingCycle === "annual" ? "Save 15%" : undefined
-    },
-    {
-      name: "Sync Pro",
-      price: billingCycle === "monthly" ? "$69" : "$650",
-      period: billingCycle === "monthly" ? "month" : "year",
-      description: "For design teams and agencies",
-      features: [
-        "Unlimited client projects",
-        "Advanced question templates",
-        "Advanced analytics & reporting",
-        "AI design suggestions",
-        "Priority support"
-      ],
-      cta: "Get Started",
-      planType: "pro" as const,
-      highlight: true,
-      savings: billingCycle === "annual" ? "Save 22%" : undefined
-    }
-  ];
+  const handleDashboardClick = () => {
+    navigate("/dashboard");
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-indigo-50 to-purple-50">
+    <div className="min-h-screen flex flex-col">
+      {/* Hidden tracker to collect interaction data */}
+      <InteractionTracker />
+      
+      {/* Header */}
       <PricingHeader 
-        onDashboardClick={() => navigate("/dashboard")}
+        onDashboardClick={handleDashboardClick} 
         isAuthenticated={!!user}
       />
       
-      <main className="flex-1 container mx-auto px-4 py-12">
-        {showDemoNotice && <DemoNotice />}
+      {/* Main content */}
+      <main className="flex-1 py-8 md:py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Demo notice */}
+        <DemoNotice />
 
-        {showSubscriptionNeeded && (
-          <Alert variant="destructive" className="mb-8 max-w-3xl mx-auto">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Subscription Required</AlertTitle>
-            <AlertDescription>
-              You need an active subscription to access the dashboard and app features. Please select a plan below.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent">
-            Choose Your Plan
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Get started with DezignSync and elevate your design workflow
+        {/* Pricing section */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Choose the plan that works best for your design workflow needs
           </p>
           
-          <div className="mt-8">
-            <BillingToggle billingCycle={billingCycle} onChange={setBillingCycle} />
+          <div className="mt-6">
+            <BillingToggle 
+              billingCycle={billingCycle} 
+              onChange={(cycle) => setBillingCycle(cycle)} 
+            />
           </div>
         </div>
-        
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {pricingPlans.map((plan, index) => (
-            <PricingPlan
-              key={index}
-              name={plan.name}
-              price={plan.price}
-              period={plan.period}
-              description={plan.description}
-              features={plan.features}
-              cta={plan.cta}
-              highlight={plan.highlight}
-              isLoading={isLoading}
-              onSelect={() => handleSelectPlan(plan.planType)}
-              savings={plan.savings}
-            />
-          ))}
+
+        {/* Pricing plans */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* Templates */}
+          <PricingPlan
+            name="Templates"
+            price="From $29"
+            period={null}
+            description="Individual templates for one-time projects"
+            features={[
+              "Pre-designed template packages",
+              "One-time payment",
+              "Technical integration support",
+              "30-day support"
+            ]}
+            cta="Browse Templates"
+            highlight={false}
+            isLoading={loadingPlan === "templates"}
+            onSelect={() => handleSelectPlan("templates")}
+          />
+          
+          {/* Basic */}
+          <PricingPlan
+            name="Basic"
+            price={billingCycle === "monthly" ? "$29" : "$290"}
+            period={billingCycle}
+            description="Essential designs for small businesses"
+            features={[
+              "10 projects",
+              "Basic design tools",
+              "Basic analytics",
+              "Standard support"
+            ]}
+            cta={`Choose Basic ${billingCycle}`}
+            highlight={false}
+            isLoading={loadingPlan === "basic"}
+            onSelect={() => handleSelectPlan("basic")}
+            savings={billingCycle === "annual" ? "Save $58/year" : undefined}
+          />
+          
+          {/* Pro */}
+          <PricingPlan
+            name="Pro"
+            price={billingCycle === "monthly" ? "$69" : "$690"}
+            period={billingCycle}
+            description="Advanced design tools for agencies"
+            features={[
+              "Unlimited projects",
+              "Advanced AI analysis",
+              "Client readiness score",
+              "Project analytics",
+              "Premium support"
+            ]}
+            cta={`Choose Pro ${billingCycle}`}
+            highlight={true}
+            isLoading={loadingPlan === "pro"}
+            onSelect={() => handleSelectPlan("pro")}
+            savings={billingCycle === "annual" ? "Save $138/year" : undefined}
+          />
         </div>
         
-        <div className="mt-16 text-center max-w-2xl mx-auto">
-          <h3 className="font-semibold text-xl mb-2">100% Satisfaction Guarantee</h3>
-          <p className="text-gray-600">
-            Try DezignSync for 3 days risk-free. If you're not completely satisfied,
-            cancel your subscription for a full refund.
-          </p>
-        </div>
+        {/* FAQ section could be added here */}
       </main>
-      
-      <footer className="py-6 px-6 bg-white border-t">
-        <div className="container mx-auto text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} DezignSync. All rights reserved.
+
+      {/* Footer */}
+      <footer className="py-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+          <p>© 2023 DezignSync. All rights reserved.</p>
         </div>
       </footer>
     </div>
