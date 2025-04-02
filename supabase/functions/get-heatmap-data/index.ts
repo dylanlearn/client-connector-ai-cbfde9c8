@@ -14,119 +14,88 @@ serve(async (req) => {
   }
 
   try {
+    // Get request parameters
+    const { userId, eventType, pageUrl, startDate, endDate, deviceType, sessionId, aggregationType } = await req.json();
+    
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Parse the request to get filter parameters
-    const url = new URL(req.url);
-    const userId = url.searchParams.get("user_id");
-    const eventType = url.searchParams.get("event_type");
-    const pageUrl = url.searchParams.get("page_url");
-    const startDate = url.searchParams.get("start_date");
-    const endDate = url.searchParams.get("end_date");
-    const deviceType = url.searchParams.get("device_type");
-    const sessionId = url.searchParams.get("session_id");
-    const aggregationType = url.searchParams.get("aggregation") || "density";
+    // Build query with filters
+    let query = supabase
+      .from('interaction_events')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false });
     
-    if (!userId) {
+    if (eventType) {
+      query = query.eq('event_type', eventType);
+    }
+    
+    if (pageUrl) {
+      query = query.eq('page_url', pageUrl);
+    }
+    
+    if (startDate) {
+      query = query.gte('timestamp', startDate);
+    }
+    
+    if (endDate) {
+      query = query.lte('timestamp', endDate);
+    }
+    
+    if (deviceType && deviceType !== 'all') {
+      query = query.eq('device_type', deviceType);
+    }
+    
+    if (sessionId) {
+      query = query.eq('session_id', sessionId);
+    }
+    
+    // Execute the query
+    const { data: events, error } = await query;
+    
+    if (error) throw error;
+    
+    if (!events || events.length === 0) {
       return new Response(
-        JSON.stringify({ error: "user_id is required" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        JSON.stringify({
+          success: true,
+          data: []
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
         }
       );
     }
     
-    // Verify the calling user is either the owner of the data or an admin
-    const authHeader = req.headers.get("Authorization")?.split(" ")[1] || "";
-    if (authHeader) {
-      const { data: { user } } = await supabase.auth.getUser(authHeader);
-      
-      if (!user) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { 
-            status: 401, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
-      }
-      
-      // Check if the user is either the owner or an admin
-      if (user.id !== userId) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-          
-        if (!profile || profile.role !== "admin") {
-          return new Response(
-            JSON.stringify({ error: "Unauthorized to access this user's data" }),
-            { 
-              status: 403, 
-              headers: { ...corsHeaders, "Content-Type": "application/json" } 
-            }
-          );
-        }
-      }
-    }
-    
-    // Build the query
-    let query = supabase
-      .from("interaction_events")
-      .select("*")
-      .eq("user_id", userId);
-    
-    // Apply filters
-    if (eventType) query = query.eq("event_type", eventType);
-    if (pageUrl) query = query.eq("page_url", pageUrl);
-    if (deviceType) query = query.eq("device_type", deviceType);
-    if (sessionId) query = query.eq("session_id", sessionId);
-    if (startDate) query = query.gte("timestamp", startDate);
-    if (endDate) query = query.lte("timestamp", endDate);
-    
-    // Execute the query
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
     // Process data based on aggregation type
     let processedData;
     
-    if (aggregationType === "density") {
-      // Create a density heatmap
-      processedData = processDataForDensityHeatmap(data);
-    } else if (aggregationType === "time") {
-      // Create a time-based visualization
-      processedData = processDataForTimeVisualization(data);
-    } else if (aggregationType === "element") {
-      // Create an element-based aggregation
-      processedData = processDataForElementAggregation(data);
-    } else {
-      // Default to density
-      processedData = processDataForDensityHeatmap(data);
+    switch (aggregationType) {
+      case 'time':
+        processedData = aggregateByTime(events);
+        break;
+      case 'element':
+        processedData = aggregateByElement(events);
+        break;
+      case 'density':
+      default:
+        processedData = aggregateByDensity(events);
+        break;
     }
     
     return new Response(
       JSON.stringify({
         success: true,
         data: processedData,
-        metadata: {
-          count: data.length,
-          filters: {
-            userId,
-            eventType,
-            pageUrl,
-            startDate,
-            endDate,
-            deviceType,
-            sessionId,
-            aggregationType
-          }
-        }
+        eventCount: events.length
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -134,10 +103,13 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Error fetching heatmap data:", error);
+    console.error("Error in get-heatmap-data function:", error);
     
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({
+        success: false,
+        error: error.message,
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
@@ -146,100 +118,116 @@ serve(async (req) => {
   }
 });
 
-// Process data for density heatmap
-function processDataForDensityHeatmap(data: any[]) {
-  // Group data points by position (rounded to nearest 10px to create clusters)
-  const gridSize = 10;
-  const heatPoints: Record<string, { x: number, y: number, value: number, elements: Set<string> }> = {};
+/**
+ * Aggregate events by point density
+ */
+function aggregateByDensity(events: any[]): any[] {
+  // Group events by position (rounded to nearest 10px)
+  const positionGrid: Record<string, { x: number, y: number, value: number, elements: string[] }> = {};
   
-  data.forEach(point => {
-    // Round position to nearest grid point
-    const x = Math.round(point.x_position / gridSize) * gridSize;
-    const y = Math.round(point.y_position / gridSize) * gridSize;
-    const key = `${x}-${y}`;
+  events.forEach(event => {
+    // Round positions to create a grid
+    const gridX = Math.round(event.x_position / 10) * 10;
+    const gridY = Math.round(event.y_position / 10) * 10;
+    const key = `${gridX},${gridY}`;
     
-    if (!heatPoints[key]) {
-      heatPoints[key] = {
-        x,
-        y,
+    if (!positionGrid[key]) {
+      positionGrid[key] = {
+        x: gridX,
+        y: gridY,
         value: 0,
-        elements: new Set()
+        elements: []
       };
     }
     
-    heatPoints[key].value += 1;
-    if (point.element_selector) {
-      heatPoints[key].elements.add(point.element_selector);
+    positionGrid[key].value += 1;
+    
+    if (event.element_selector && !positionGrid[key].elements.includes(event.element_selector)) {
+      positionGrid[key].elements.push(event.element_selector);
     }
   });
   
-  // Convert to array and format for heatmap
-  return Object.values(heatPoints).map(point => ({
-    x: point.x,
-    y: point.y,
-    value: point.value,
-    elements: Array.from(point.elements)
-  }));
+  return Object.values(positionGrid);
 }
 
-// Process data for time-based visualization
-function processDataForTimeVisualization(data: any[]) {
-  // Group data by time interval (hour)
-  const timePoints: Record<string, { timestamp: string, count: number, elements: Set<string> }> = {};
+/**
+ * Aggregate events by element
+ */
+function aggregateByElement(events: any[]): any[] {
+  // Group events by element
+  const elementMap: Record<string, { element: string, value: number, x: number, y: number }> = {};
   
-  data.forEach(point => {
-    const date = new Date(point.timestamp);
-    const hour = date.getHours();
-    const key = `${date.toDateString()}-${hour}`;
+  events.forEach(event => {
+    const element = event.element_selector || 'unknown';
     
-    if (!timePoints[key]) {
-      timePoints[key] = {
-        timestamp: `${date.toDateString()} ${hour}:00`,
-        count: 0,
-        elements: new Set()
-      };
-    }
-    
-    timePoints[key].count += 1;
-    if (point.element_selector) {
-      timePoints[key].elements.add(point.element_selector);
-    }
-  });
-  
-  // Convert to array and format for visualization
-  return Object.values(timePoints).map(point => ({
-    timestamp: point.timestamp,
-    count: point.count,
-    elements: Array.from(point.elements)
-  }));
-}
-
-// Process data for element-based aggregation
-function processDataForElementAggregation(data: any[]) {
-  // Group data by element
-  const elementPoints: Record<string, { element: string, count: number, sessions: Set<string> }> = {};
-  
-  data.forEach(point => {
-    const element = point.element_selector || 'unknown';
-    
-    if (!elementPoints[element]) {
-      elementPoints[element] = {
+    if (!elementMap[element]) {
+      elementMap[element] = {
         element,
-        count: 0,
-        sessions: new Set()
+        value: 0,
+        x: 0,
+        y: 0
       };
     }
     
-    elementPoints[element].count += 1;
-    if (point.session_id) {
-      elementPoints[element].sessions.add(point.session_id);
+    elementMap[element].value += 1;
+    elementMap[element].x += event.x_position;
+    elementMap[element].y += event.y_position;
+  });
+  
+  // Calculate average positions
+  Object.values(elementMap).forEach(item => {
+    if (item.value > 0) {
+      item.x = Math.round(item.x / item.value);
+      item.y = Math.round(item.y / item.value);
     }
   });
   
-  // Convert to array and format for visualization
-  return Object.values(elementPoints).map(point => ({
-    element: point.element,
-    count: point.count,
-    uniqueSessions: Array.from(point.sessions).length
-  }));
+  return Object.values(elementMap);
+}
+
+/**
+ * Aggregate events by time
+ */
+function aggregateByTime(events: any[]): any[] {
+  // Sort events by timestamp
+  const sortedEvents = [...events].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+  
+  // Group by time intervals (hourly)
+  const timeIntervals: Record<string, { timestamp: string, value: number, x: number, y: number, elements: string[] }> = {};
+  
+  sortedEvents.forEach(event => {
+    const date = new Date(event.timestamp);
+    date.setMinutes(0, 0, 0); // Round to hour
+    const interval = date.toISOString();
+    
+    if (!timeIntervals[interval]) {
+      timeIntervals[interval] = {
+        timestamp: interval,
+        value: 0,
+        x: 0,
+        y: 0,
+        elements: []
+      };
+    }
+    
+    timeIntervals[interval].value += 1;
+    timeIntervals[interval].x += event.x_position;
+    timeIntervals[interval].y += event.y_position;
+    
+    if (event.element_selector && !timeIntervals[interval].elements.includes(event.element_selector)) {
+      timeIntervals[interval].elements.push(event.element_selector);
+    }
+  });
+  
+  // Calculate average positions
+  Object.values(timeIntervals).forEach(item => {
+    if (item.value > 0) {
+      item.x = Math.round(item.x / item.value);
+      item.y = Math.round(item.y / item.value);
+    }
+  });
+  
+  return Object.values(timeIntervals);
 }

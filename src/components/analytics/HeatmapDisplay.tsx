@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +43,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { DateRange } from "react-day-picker";
 
 const HeatmapDisplay = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,10 +52,7 @@ const HeatmapDisplay = () => {
   const [displayMode, setDisplayMode] = useState<'clicks' | 'hover' | 'scrolls' | 'movements' | 'attention'>('clicks');
   const [viewType, setViewType] = useState<'heatmap' | 'map' | 'timeline'>('heatmap');
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined;
-    to: Date | undefined;
-  }>({
+  const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined
   });
@@ -74,7 +71,6 @@ const HeatmapDisplay = () => {
     fetchHeatmapData
   } = useHeatmapData(user?.id);
   
-  // Apply filters
   const applyFilters = () => {
     fetchHeatmapData({
       ...filters,
@@ -84,7 +80,6 @@ const HeatmapDisplay = () => {
     });
   };
   
-  // Reset filters
   const resetFilters = () => {
     setFilters({
       deviceType: 'all',
@@ -95,7 +90,6 @@ const HeatmapDisplay = () => {
     fetchHeatmapData({ pageUrl: selectedPage });
   };
   
-  // Draw heatmap on canvas
   useEffect(() => {
     if (!canvasRef.current || isLoading || viewType !== 'heatmap') return;
     
@@ -103,43 +97,30 @@ const HeatmapDisplay = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Get the container dimensions
     if (canvasContainerRef.current) {
       const containerWidth = canvasContainerRef.current.clientWidth;
       canvas.width = containerWidth;
-      canvas.height = Math.round(containerWidth * 0.6); // 16:10 aspect ratio
+      canvas.height = Math.round(containerWidth * 0.6);
     }
     
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Get data points for current display mode
     const dataPoints = heatmapData[displayMode];
     if (!dataPoints || dataPoints.length === 0) {
       drawEmptyState(ctx, canvas);
       return;
     }
     
-    // Find maximum value for normalization
     const maxValue = Math.max(...dataPoints.map(p => p.value));
     
-    // Draw each data point
     dataPoints.forEach(point => {
-      // Scale points to fit the canvas
       const scaledX = (point.x / 1200) * canvas.width;
       const scaledY = (point.y / 800) * canvas.height;
       
-      // Normalize value between 0 and 1
       const value = Math.min(1, point.value / maxValue);
       
-      // Radius based on value (min 10, max 50)
       const radius = 10 + (value * 40);
       
-      // Gradient color based on display mode
       let color;
       if (displayMode === 'clicks') {
         color = getRedGradient(value);
@@ -153,7 +134,6 @@ const HeatmapDisplay = () => {
         color = getPurpleGradient(value);
       }
       
-      // Draw circle with gradient
       const gradient = ctx.createRadialGradient(
         scaledX, scaledY, 0,
         scaledX, scaledY, radius
@@ -166,10 +146,8 @@ const HeatmapDisplay = () => {
       ctx.arc(scaledX, scaledY, radius, 0, Math.PI * 2);
       ctx.fill();
     });
-    
   }, [heatmapData, displayMode, isLoading, viewType]);
   
-  // Helpers for color gradients
   const getRedGradient = (value: number) => {
     return `rgba(255, 0, 0, ${0.3 + (value * 0.5)})`;
   };
@@ -190,7 +168,6 @@ const HeatmapDisplay = () => {
     return `rgba(128, 0, 128, ${0.2 + (value * 0.5)})`;
   };
   
-  // Draw empty state message
   const drawEmptyState = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     ctx.font = '16px Arial';
     ctx.fillStyle = '#888888';
@@ -200,12 +177,10 @@ const HeatmapDisplay = () => {
     ctx.fillText('Interact with your application to collect data', canvas.width / 2, canvas.height / 2 + 30);
   };
   
-  // Render timeline visualization
   const renderTimeline = () => {
-    // Get data for the timeline (movement points by time)
     const timePoints = heatmapData.movements
       .sort((a, b) => (a.timestamp && b.timestamp) ? new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() : 0)
-      .slice(0, 50); // Take only the first 50 points
+      .slice(0, 50);
     
     if (timePoints.length === 0) {
       return (
@@ -246,7 +221,6 @@ const HeatmapDisplay = () => {
     );
   };
   
-  // Placeholder for future map implementation
   const renderMapPlaceholder = () => {
     return (
       <div className="flex items-center justify-center h-[500px] bg-gray-50 border rounded-md">

@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { supabase } from "@/integrations/supabase/client";
 import { MemoryCategory } from "@/services/ai/memory";
 import { toast } from "sonner";
+import { InteractionEvent } from "@/types/analytics";
 
 /**
  * Hook for tracking user interactions for heatmaps and analytics
@@ -83,7 +84,7 @@ export const useInteractionTracking = () => {
       batchedEvents.current = [];
       
       const { error } = await supabase.rpc(
-        'batch_insert_interaction_events',
+        'batch_insert_interaction_events', 
         { p_events: eventsToSend }
       );
       
