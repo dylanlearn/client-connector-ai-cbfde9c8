@@ -6,7 +6,7 @@ import Stripe from "https://esm.sh/stripe@12.0.0";
 export const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 export const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 export const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-export const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? '';
+export const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? 'whsec_ObivcgGMpHgfBrjAhvQnhb7m4jDc8KoH';
 
 // Create clients
 export const supabase = createClient(supabaseUrl, supabaseServiceKey);
