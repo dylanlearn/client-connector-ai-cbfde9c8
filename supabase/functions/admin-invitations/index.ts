@@ -10,7 +10,7 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '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';
+const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const stripe = new Stripe(stripeSecretKey, {
@@ -63,6 +63,8 @@ serve(async (req) => {
         return await handleListInvitations();
       case 'revoke_invitation':
         return await handleRevokeInvitation(data);
+      case 'grant_pro_access':
+        return await handleGrantProAccess(data);
       default:
         throw new Error(`Unknown action: ${action}`);
     }
@@ -134,6 +136,72 @@ async function handleRevokeInvitation({ code }) {
   }
 
   return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
+  });
+}
+
+async function handleGrantProAccess({ userId, plan = 'pro' }) {
+  // Update the user's profile and subscription status
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ subscription_status: plan })
+    .eq('id', userId);
+
+  if (profileError) {
+    throw new Error(`Error updating profile: ${profileError.message}`);
+  }
+
+  // Calculate expiration date (1 year from now for manual grants)
+  const expiresAt = new Date();
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  // Check if the user already has a subscription record
+  const { data: existingSubscription, error: subscriptionCheckError } = await supabase
+    .from('subscriptions')
+    .select('subscription_status')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (subscriptionCheckError) {
+    throw new Error(`Error checking subscription: ${subscriptionCheckError.message}`);
+  }
+
+  if (!existingSubscription) {
+    // Create a new subscription record
+    const { error: insertError } = await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: userId,
+        subscription_status: plan,
+        current_period_start: new Date().toISOString(),
+        current_period_end: expiresAt.toISOString(),
+      });
+
+    if (insertError) {
+      throw new Error(`Error creating subscription: ${insertError.message}`);
+    }
+  } else {
+    // Update the existing subscription
+    const { error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        subscription_status: plan,
+        current_period_start: new Date().toISOString(),
+        current_period_end: expiresAt.toISOString(),
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      throw new Error(`Error updating subscription: ${updateError.message}`);
+    }
+  }
+
+  return new Response(JSON.stringify({ 
+    success: true, 
+    message: `Successfully granted ${plan} access to user`,
+    expiresAt: expiresAt.toISOString()
+  }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     status: 200,
   });

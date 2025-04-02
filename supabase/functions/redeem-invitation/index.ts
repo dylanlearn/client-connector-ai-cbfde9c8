@@ -66,6 +66,22 @@ serve(async (req) => {
       throw new Error('This invitation code has reached its maximum uses');
     }
 
+    // Check if the user has already redeemed this invitation code
+    const { data: existingRedemption, error: redemptionCheckError } = await supabase
+      .from('invitation_redemptions')
+      .select('id')
+      .eq('invitation_code_id', invitation.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+      
+    if (redemptionCheckError) {
+      throw new Error(`Error checking redemption: ${redemptionCheckError.message}`);
+    }
+    
+    if (existingRedemption) {
+      throw new Error('You have already redeemed this invitation code');
+    }
+
     // Start a transaction
     const { data: existingSubscription, error: subscriptionError } = await supabase
       .from('subscriptions')
