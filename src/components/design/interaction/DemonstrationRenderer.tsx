@@ -1,4 +1,3 @@
-
 import { DesignOption } from "../DesignPreview";
 import { 
   getInteractionConfig, 
@@ -10,7 +9,11 @@ import {
   DragInteractionConfig,
   MagneticElementConfig,
   ColorShiftConfig,
-  ParallaxTiltConfig
+  ParallaxTiltConfig,
+  MorphingShapeConfig,
+  ProgressiveDisclosureConfig,
+  IntentBasedMotionConfig,
+  GlassmorphismConfig
 } from "./interactionConfigs";
 import {
   HoverEffectDemo,
@@ -22,7 +25,11 @@ import {
   AIDesignSuggestionDemo,
   MagneticElementDemo,
   ColorShiftDemo,
-  ParallaxTiltDemo
+  ParallaxTiltDemo,
+  MorphingShapeDemo,
+  ProgressiveDisclosureDemo,
+  IntentBasedMotionDemo,
+  GlassmorphismDemo
 } from "./demonstrations";
 
 export interface DemonstrationRendererProps {
@@ -77,6 +84,18 @@ const DemonstrationRenderer = ({
       
     case "interaction-9": // Parallax Tilt
       return <ParallaxTiltDemo interactionConfig={interactionConfig as ParallaxTiltConfig} isActive={isActive} />;
+    
+    case "interaction-10": // Morphing Shape Transitions
+      return <MorphingShapeDemo interactionConfig={interactionConfig as MorphingShapeConfig} isActive={isActive} />;
+      
+    case "interaction-11": // Progressive Disclosure
+      return <ProgressiveDisclosureDemo interactionConfig={interactionConfig as ProgressiveDisclosureConfig} isActive={isActive} />;
+      
+    case "interaction-12": // Intent-Based Motion
+      return <IntentBasedMotionDemo interactionConfig={interactionConfig as IntentBasedMotionConfig} isActive={isActive} />;
+      
+    case "interaction-13": // Glassmorphism or Soft Motion Layering
+      return <GlassmorphismDemo interactionConfig={interactionConfig as GlassmorphismConfig} isActive={isActive} />;
     
     default:
       return <DefaultDemo />;
