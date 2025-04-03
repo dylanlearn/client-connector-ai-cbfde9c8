@@ -121,13 +121,13 @@ export function MonitoringControls({ onConfigUpdate }: MonitoringControlsProps) 
             <ConfigurationItem 
               key={config.id}
               config={config}
-              onChange={(field, value) => handleConfigChange(index, field, value)}
+              onConfigChange={(field, value) => handleConfigChange(index, field, value)}
             />
           ))}
           
           <SaveButton 
             isSaving={isSaving}
-            onClick={saveConfigurations}
+            onSave={saveConfigurations}
           />
         </div>
       </CardContent>
