@@ -1,91 +1,69 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
-/**
- * Service for handling batched interaction events
- */
-export class BatchInteractionService {
-  private batchedEvents: any[] = [];
-  private isProcessingBatch: boolean = false;
-
-  /**
-   * Add event to the batch queue
-   */
-  addEvent(event: any): void {
-    this.batchedEvents.push(event);
+class InteractionBatchService {
+  private events: any[] = [];
+  private isProcessing = false;
+  private maxBatchSize = 25;
+  private flushInterval = 10000; // 10 seconds
+  private intervalId: number | null = null;
+  
+  constructor() {
+    // Set up interval to flush events periodically
+    this.intervalId = window.setInterval(() => {
+      this.flushEvents();
+    }, this.flushInterval);
   }
-
-  /**
-   * Get all events in the batch
-   */
-  getEvents(): any[] {
-    return [...this.batchedEvents];
-  }
-
-  /**
-   * Clear all events from the batch
-   */
-  clearEvents(): void {
-    this.batchedEvents = [];
-  }
-
-  /**
-   * Check if batch is currently being processed
-   */
-  isProcessing(): boolean {
-    return this.isProcessingBatch;
-  }
-
-  /**
-   * Set processing state
-   */
-  setProcessing(state: boolean): void {
-    this.isProcessingBatch = state;
-  }
-
-  /**
-   * Send all batched events to the server
-   */
-  async sendBatch(userId: string | undefined): Promise<boolean> {
-    if (this.isProcessingBatch || !userId || this.batchedEvents.length === 0) {
-      return false;
+  
+  public addEvent(event: any): void {
+    this.events.push(event);
+    
+    // Flush if we've reached the max batch size
+    if (this.events.length >= this.maxBatchSize) {
+      this.flushEvents();
     }
+  }
+  
+  public async flushEvents(): Promise<void> {
+    if (this.isProcessing || this.events.length === 0) return;
     
     try {
-      this.isProcessingBatch = true;
+      this.isProcessing = true;
+      const eventsToProcess = [...this.events];
+      this.events = []; // Clear the queue
       
-      const eventsToSend = [...this.batchedEvents];
-      this.batchedEvents = [];
-      
-      // Use functions.invoke call for batch insertion
-      const { error } = await supabase.functions.invoke(
-        'interaction-db-functions', 
-        { 
-          body: { 
-            action: 'batch_insert',
-            events: eventsToSend 
-          } 
+      // Batch insert through edge function
+      const { error } = await supabase.functions.invoke('interaction-db-functions', {
+        body: { 
+          action: 'batch_insert',
+          events: eventsToProcess
         }
-      );
+      });
       
       if (error) {
-        console.error('Error batch inserting events:', error);
-        // Put events back in the queue
-        this.batchedEvents = [...eventsToSend, ...this.batchedEvents];
-        return false;
+        console.error('Error sending batch interactions:', error);
+        // Add the events back to the queue
+        this.events = [...eventsToProcess, ...this.events];
       } else {
-        console.log(`Successfully sent ${eventsToSend.length} interaction events`);
-        return true;
+        console.log(`Successfully flushed ${eventsToProcess.length} events`);
       }
-    } catch (err) {
-      console.error('Failed to batch send interactions:', err);
-      return false;
+    } catch (error) {
+      console.error('Error in flushEvents:', error);
+      // Add the events back to the queue
+      this.events = [...this.events];
     } finally {
-      this.isProcessingBatch = false;
+      this.isProcessing = false;
     }
+  }
+  
+  public cleanup(): void {
+    if (this.intervalId !== null) {
+      window.clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    this.flushEvents();
   }
 }
 
 // Create a singleton instance
-export const batchService = new BatchInteractionService();
+export const batchService = new InteractionBatchService();

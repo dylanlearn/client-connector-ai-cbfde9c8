@@ -1,72 +1,79 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 export interface DeviceInfo {
-  deviceType: 'mobile' | 'tablet' | 'desktop' | string;
-  screenWidth: number;
-  screenHeight: number;
-  isMobile: boolean;
-  isTablet: boolean;
-  isDesktop: boolean;
-  userAgent: string;
+  deviceType: 'mobile' | 'tablet' | 'desktop' | 'unknown';
+  browserName: string;
+  osName: string;
+  prefersReducedMotion: boolean;
 }
 
-/**
- * Hook for detecting device type and screen dimensions
- */
-export const useDeviceDetection = (): DeviceInfo => {
+export function useDeviceDetection(): DeviceInfo {
   const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
-    deviceType: 'desktop',
-    screenWidth: window.innerWidth,
-    screenHeight: window.innerHeight,
-    isMobile: false,
-    isTablet: false,
-    isDesktop: true,
-    userAgent: navigator.userAgent
+    deviceType: 'unknown',
+    browserName: 'unknown',
+    osName: 'unknown',
+    prefersReducedMotion: false
   });
 
   useEffect(() => {
-    // Function to detect device type
     const detectDevice = () => {
-      const width = window.innerWidth;
+      // Detect device type
       const userAgent = navigator.userAgent;
+      let deviceType: 'mobile' | 'tablet' | 'desktop' | 'unknown' = 'unknown';
       
-      // Check for mobile devices
-      const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) || width < 768;
-      
-      // Check for tablets
-      const isTablet = /iPad/i.test(userAgent) || (width >= 768 && width < 1024);
-      
-      // Default to desktop for other cases
-      const isDesktop = !isMobile && !isTablet;
-      
-      // Determine device type
-      let deviceType = 'desktop';
-      if (isMobile) deviceType = 'mobile';
-      if (isTablet) deviceType = 'tablet';
-      
+      // Simple detection logic
+      if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(userAgent)) {
+        deviceType = 'tablet';
+      } else if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(userAgent)) {
+        deviceType = 'mobile';
+      } else {
+        deviceType = 'desktop';
+      }
+
+      // Detect browser
+      let browserName = 'unknown';
+      if (userAgent.indexOf('Firefox') > -1) {
+        browserName = 'Firefox';
+      } else if (userAgent.indexOf('SamsungBrowser') > -1) {
+        browserName = 'Samsung Browser';
+      } else if (userAgent.indexOf('Opera') > -1 || userAgent.indexOf('OPR') > -1) {
+        browserName = 'Opera';
+      } else if (userAgent.indexOf('Edge') > -1) {
+        browserName = 'Edge';
+      } else if (userAgent.indexOf('Chrome') > -1) {
+        browserName = 'Chrome';
+      } else if (userAgent.indexOf('Safari') > -1) {
+        browserName = 'Safari';
+      }
+
+      // Detect OS
+      let osName = 'unknown';
+      if (/Windows/.test(userAgent)) {
+        osName = 'Windows';
+      } else if (/Mac/.test(userAgent)) {
+        osName = 'MacOS';
+      } else if (/Linux/.test(userAgent)) {
+        osName = 'Linux';
+      } else if (/Android/.test(userAgent)) {
+        osName = 'Android';
+      } else if (/iOS|iPhone|iPad|iPod/.test(userAgent)) {
+        osName = 'iOS';
+      }
+
+      // Check for reduced motion preference
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
       setDeviceInfo({
         deviceType,
-        screenWidth: width,
-        screenHeight: window.innerHeight,
-        isMobile,
-        isTablet,
-        isDesktop,
-        userAgent
+        browserName,
+        osName,
+        prefersReducedMotion
       });
     };
-    
-    // Initial detection
+
     detectDevice();
-    
-    // Update on resize
-    const handleResize = () => detectDevice();
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
   }, []);
 
   return deviceInfo;
-};
+}

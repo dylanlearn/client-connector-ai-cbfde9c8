@@ -278,6 +278,96 @@ export type Database = {
           },
         ]
       }
+      animation_analytics: {
+        Row: {
+          animation_type: Database["public"]["Enums"]["animation_category"]
+          average_duration: number | null
+          browser_metrics: Json | null
+          created_at: string
+          device_type_metrics: Json | null
+          engagement_score: number | null
+          id: string
+          interaction_count: number | null
+          negative_feedback_count: number | null
+          performance_metrics: Json | null
+          positive_feedback_count: number | null
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          animation_type: Database["public"]["Enums"]["animation_category"]
+          average_duration?: number | null
+          browser_metrics?: Json | null
+          created_at?: string
+          device_type_metrics?: Json | null
+          engagement_score?: number | null
+          id?: string
+          interaction_count?: number | null
+          negative_feedback_count?: number | null
+          performance_metrics?: Json | null
+          positive_feedback_count?: number | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          animation_type?: Database["public"]["Enums"]["animation_category"]
+          average_duration?: number | null
+          browser_metrics?: Json | null
+          created_at?: string
+          device_type_metrics?: Json | null
+          engagement_score?: number | null
+          id?: string
+          interaction_count?: number | null
+          negative_feedback_count?: number | null
+          performance_metrics?: Json | null
+          positive_feedback_count?: number | null
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      animation_preferences: {
+        Row: {
+          accessibility_mode: boolean | null
+          animation_type: Database["public"]["Enums"]["animation_category"]
+          created_at: string
+          device_specific_settings: Json | null
+          enabled: boolean
+          id: string
+          intensity_preference: number | null
+          reduced_motion_preference: boolean | null
+          speed_preference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accessibility_mode?: boolean | null
+          animation_type: Database["public"]["Enums"]["animation_category"]
+          created_at?: string
+          device_specific_settings?: Json | null
+          enabled?: boolean
+          id?: string
+          intensity_preference?: number | null
+          reduced_motion_preference?: boolean | null
+          speed_preference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accessibility_mode?: boolean | null
+          animation_type?: Database["public"]["Enums"]["animation_category"]
+          created_at?: string
+          device_specific_settings?: Json | null
+          enabled?: boolean
+          id?: string
+          intensity_preference?: number | null
+          reduced_motion_preference?: boolean | null
+          speed_preference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_usage_metrics: {
         Row: {
           endpoint: string
@@ -1290,6 +1380,16 @@ export type Database = {
           y_position: number
         }[]
       }
+      record_animation_interaction: {
+        Args: {
+          p_animation_type: Database["public"]["Enums"]["animation_category"]
+          p_duration?: number
+          p_device_info?: Json
+          p_performance_metrics?: Json
+          p_feedback?: string
+        }
+        Returns: undefined
+      }
       record_client_error: {
         Args: {
           p_error_message: string
@@ -1334,6 +1434,19 @@ export type Database = {
       }
     }
     Enums: {
+      animation_category:
+        | "morphing_shape"
+        | "progressive_disclosure"
+        | "intent_based_motion"
+        | "glassmorphism"
+        | "hover_effect"
+        | "modal_dialog"
+        | "custom_cursor"
+        | "scroll_animation"
+        | "drag_interaction"
+        | "magnetic_element"
+        | "color_shift"
+        | "parallax_tilt"
       subscription_status:
         | "free"
         | "basic"
