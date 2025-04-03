@@ -1,294 +1,256 @@
 
-import { DesignOption } from "@/components/design/VisualPicker";
+import { DesignOption } from "@/components/design/AnimatedVisualPicker";
 
 export const designOptions: DesignOption[] = [
-  // Hero section options
+  // Hero sections
   {
     id: "hero-1",
-    title: "Modern Hero",
-    description: "A modern hero section with a large image and centered text",
-    imageUrl: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?auto=format&fit=crop&q=80&w=1000",
+    title: "Gradient Hero",
+    description: "A modern hero with colorful gradient background and centered content.",
+    imageUrl: "https://placehold.co/600x400/3498db/ffffff?text=Gradient+Hero",
     category: "hero"
   },
   {
     id: "hero-2",
-    title: "Split Hero",
-    description: "A split layout hero with text on one side and image on the other",
-    imageUrl: "https://images.unsplash.com/photo-1618761714954-0b8cd0026356?auto=format&fit=crop&q=80&w=1000",
+    title: "Split Content Hero",
+    description: "Hero section with text on the left and image on the right.",
+    imageUrl: "https://placehold.co/600x400/2ecc71/ffffff?text=Split+Hero",
     category: "hero"
   },
   {
     id: "hero-3",
     title: "Minimal Hero",
-    description: "A minimal hero with a small headline and subtle background",
-    imageUrl: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&q=80&w=1000",
+    description: "Clean, minimalist hero with focus on typography and white space.",
+    imageUrl: "https://placehold.co/600x400/34495e/ffffff?text=Minimal+Hero",
     category: "hero"
   },
   {
     id: "hero-4",
     title: "Video Background Hero",
-    description: "Dynamic hero with video background and overlay text",
-    imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=1000",
+    description: "Engaging hero with a video background and overlay text.",
+    imageUrl: "https://placehold.co/600x400/9b59b6/ffffff?text=Video+Hero",
     category: "hero"
   },
   {
     id: "hero-5",
-    title: "Animated Text Hero",
-    description: "Hero section with animated typing text and gradient background",
-    imageUrl: "https://images.unsplash.com/photo-1579547944212-52d51cd2eed2?auto=format&fit=crop&q=80&w=1000",
-    category: "hero"
-  },
-  {
-    id: "hero-6",
-    title: "3D Elements Hero",
-    description: "Modern hero with interactive 3D elements and bold typography",
-    imageUrl: "https://images.unsplash.com/photo-1554795808-3231c32487e4?auto=format&fit=crop&q=80&w=1000",
-    category: "hero"
-  },
-  {
-    id: "hero-7",
-    title: "Parallax Hero",
-    description: "Engaging hero section with parallax scrolling effects",
-    imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1000",
-    category: "hero"
-  },
-  {
-    id: "hero-8",
-    title: "Product Showcase Hero",
-    description: "Hero focused on showcasing product features with call-to-action",
-    imageUrl: "https://images.unsplash.com/photo-1624705002806-5d72df19c3ad?auto=format&fit=crop&q=80&w=1000",
+    title: "Animated Particles Hero",
+    description: "Dynamic hero with animated particle background.",
+    imageUrl: "https://placehold.co/600x400/f1c40f/ffffff?text=Particles+Hero",
     category: "hero"
   },
   
-  // Navbar options
+  // Navbar sections
   {
     id: "navbar-1",
-    title: "Standard Navbar",
-    description: "A standard horizontal navbar with logo and links",
-    imageUrl: "https://images.unsplash.com/photo-1481487196290-c152efe083f5?auto=format&fit=crop&q=80&w=1000",
+    title: "Transparent Navbar",
+    description: "A transparent navbar that overlays the hero section.",
+    imageUrl: "https://placehold.co/600x400/1abc9c/ffffff?text=Transparent+Navbar",
     category: "navbar"
   },
   {
     id: "navbar-2",
-    title: "Centered Navbar",
-    description: "A centered navbar with logo in the middle and links on sides",
-    imageUrl: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=1000",
+    title: "Sticky Navbar",
+    description: "A navbar that sticks to the top when scrolling.",
+    imageUrl: "https://placehold.co/600x400/e74c3c/ffffff?text=Sticky+Navbar",
     category: "navbar"
   },
   {
     id: "navbar-3",
-    title: "Transparent Navbar",
-    description: "A transparent navbar that changes on scroll",
-    imageUrl: "https://images.unsplash.com/photo-1581472723648-909f4851d4ae?auto=format&fit=crop&q=80&w=1000",
+    title: "Sidebar Navigation",
+    description: "A vertical sidebar navigation for desktop and mobile.",
+    imageUrl: "https://placehold.co/600x400/f39c12/ffffff?text=Sidebar+Nav",
     category: "navbar"
   },
   {
     id: "navbar-4",
-    title: "Sidebar Navigation",
-    description: "A vertical sidebar navigation that stays fixed while scrolling",
-    imageUrl: "https://images.unsplash.com/photo-1600267204091-5c1ab8b10c02?auto=format&fit=crop&q=80&w=1000",
+    title: "Centered Logo Navbar",
+    description: "A navbar with the logo centered and menu items on both sides.",
+    imageUrl: "https://placehold.co/600x400/3498db/ffffff?text=Centered+Logo+Nav",
     category: "navbar"
   },
   {
     id: "navbar-5",
-    title: "Floating Navbar",
-    description: "A floating navbar with glass morphism effect and rounded corners",
-    imageUrl: "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?auto=format&fit=crop&q=80&w=1000",
-    category: "navbar"
-  },
-  {
-    id: "navbar-6",
-    title: "Hamburger Menu Navbar",
-    description: "Clean navbar with hamburger menu for mobile and desktop",
-    imageUrl: "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?auto=format&fit=crop&q=80&w=1000",
-    category: "navbar"
-  },
-  {
-    id: "navbar-7",
-    title: "Double-Decker Navbar",
-    description: "Two-level navbar with contact info top and navigation below",
-    imageUrl: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=1000",
-    category: "navbar"
-  },
-  {
-    id: "navbar-8",
-    title: "Mega Menu Navbar",
-    description: "Navbar with expandable mega menu dropdowns for complex sites",
-    imageUrl: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=1000",
+    title: "Minimal Navbar",
+    description: "Clean, simple navbar with minimal styling.",
+    imageUrl: "https://placehold.co/600x400/95a5a6/ffffff?text=Minimal+Navbar",
     category: "navbar"
   },
   
-  // About section options
+  // About sections
   {
     id: "about-1",
-    title: "Team About Section",
-    description: "An about section highlighting your team with photos",
-    imageUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1000",
+    title: "Grid Layout About",
+    description: "About section with a grid layout of images and text.",
+    imageUrl: "https://placehold.co/600x400/d35400/ffffff?text=Grid+About",
     category: "about"
   },
   {
     id: "about-2",
-    title: "Story About Section",
-    description: "An about section focused on telling your brand story",
-    imageUrl: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=1000",
+    title: "Timeline About",
+    description: "About section with a vertical timeline of milestones.",
+    imageUrl: "https://placehold.co/600x400/8e44ad/ffffff?text=Timeline+About",
     category: "about"
   },
   {
     id: "about-3",
-    title: "Timeline About Section",
-    description: "An about section showing company history in a timeline",
-    imageUrl: "https://images.unsplash.com/photo-1569098644584-210bcd375b59?auto=format&fit=crop&q=80&w=1000",
+    title: "Team Showcase",
+    description: "About section showcasing team members with photos and bios.",
+    imageUrl: "https://placehold.co/600x400/27ae60/ffffff?text=Team+About",
     category: "about"
   },
   {
     id: "about-4",
-    title: "Video About Section",
-    description: "An about section with a featured video and key points",
-    imageUrl: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=1000",
+    title: "Stats & Numbers",
+    description: "About section highlighting key stats and achievements.",
+    imageUrl: "https://placehold.co/600x400/e67e22/ffffff?text=Stats+About",
     category: "about"
   },
   {
     id: "about-5",
-    title: "Stats About Section",
-    description: "About section highlighting key company statistics and achievements",
-    imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000",
-    category: "about"
-  },
-  {
-    id: "about-6",
-    title: "Mission About Section",
-    description: "Section focusing on company mission, vision and values",
-    imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000",
-    category: "about"
-  },
-  {
-    id: "about-7",
-    title: "Image Grid About",
-    description: "About section with image grid showcasing company culture",
-    imageUrl: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=1000",
-    category: "about"
-  },
-  {
-    id: "about-8",
-    title: "Testimonial About",
-    description: "About section combining company info with customer testimonials",
-    imageUrl: "https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&q=80&w=1000",
+    title: "Image Carousel About",
+    description: "About section with sliding carousel of images and content.",
+    imageUrl: "https://placehold.co/600x400/16a085/ffffff?text=Carousel+About",
     category: "about"
   },
   
-  // Footer options
+  // Footer sections
   {
     id: "footer-1",
-    title: "Simple Footer",
-    description: "A simple footer with essential links and social media",
-    imageUrl: "https://images.unsplash.com/photo-1471107340929-a87cd0f5b5f3?auto=format&fit=crop&q=80&w=1000",
+    title: "Multi-column Footer",
+    description: "Footer with multiple columns of links and information.",
+    imageUrl: "https://placehold.co/600x400/2c3e50/ffffff?text=Multi-column+Footer",
     category: "footer"
   },
   {
     id: "footer-2",
-    title: "Detailed Footer",
-    description: "A comprehensive footer with multiple sections and newsletter",
-    imageUrl: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=1000",
+    title: "Minimal Footer",
+    description: "Simple footer with copyright and essential links.",
+    imageUrl: "https://placehold.co/600x400/c0392b/ffffff?text=Minimal+Footer",
     category: "footer"
   },
   {
     id: "footer-3",
-    title: "Minimal Footer",
-    description: "A minimalist footer with copyright and essential links",
-    imageUrl: "https://images.unsplash.com/photo-1560807707-8cc77767d783?auto=format&fit=crop&q=80&w=1000",
+    title: "Contact Form Footer",
+    description: "Footer with integrated contact form and social links.",
+    imageUrl: "https://placehold.co/600x400/7f8c8d/ffffff?text=Contact+Footer",
     category: "footer"
   },
   {
     id: "footer-4",
-    title: "CTA Footer",
-    description: "A footer with a prominent call-to-action section",
-    imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=1000",
+    title: "Newsletter Footer",
+    description: "Footer with newsletter signup and social media icons.",
+    imageUrl: "https://placehold.co/600x400/f1c40f/ffffff?text=Newsletter+Footer",
     category: "footer"
   },
   {
     id: "footer-5",
-    title: "Dark Mode Footer",
-    description: "Modern dark-themed footer with light text and bold accents",
-    imageUrl: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&q=80&w=1000",
-    category: "footer"
-  },
-  {
-    id: "footer-6",
-    title: "Contact-Focused Footer",
-    description: "Footer prioritizing contact information and support channels",
-    imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=1000",
-    category: "footer"
-  },
-  {
-    id: "footer-7",
     title: "Map Footer",
-    description: "Footer featuring an interactive location map alongside links",
-    imageUrl: "https://images.unsplash.com/photo-1526778548025-fa2f459cd5ce?auto=format&fit=crop&q=80&w=1000",
-    category: "footer"
-  },
-  {
-    id: "footer-8",
-    title: "Animated Footer",
-    description: "Footer with subtle animations and interactive elements",
-    imageUrl: "https://images.unsplash.com/photo-1585314062604-1a357de8b000?auto=format&fit=crop&q=80&w=1000",
+    description: "Footer with location map and contact information.",
+    imageUrl: "https://placehold.co/600x400/3498db/ffffff?text=Map+Footer",
     category: "footer"
   },
   
   // Font options
   {
     id: "font-1",
-    title: "Modern Sans",
-    description: "A modern sans-serif font pairing for contemporary designs",
-    imageUrl: "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&q=80&w=1000",
+    title: "Modern Sans-Serif",
+    description: "Clean, modern sans-serif font pairing for contemporary websites.",
+    imageUrl: "https://placehold.co/600x400/9b59b6/ffffff?text=Sans-Serif",
     category: "font"
   },
   {
     id: "font-2",
-    title: "Classic Serif",
-    description: "A classic serif font pairing for traditional and elegant designs",
-    imageUrl: "https://images.unsplash.com/photo-1467733037475-7c4435e7c543?auto=format&fit=crop&q=80&w=1000",
+    title: "Elegant Serif",
+    description: "Elegant serif font pairing for upscale, professional websites.",
+    imageUrl: "https://placehold.co/600x400/16a085/ffffff?text=Serif",
     category: "font"
   },
   {
     id: "font-3",
-    title: "Minimalist Mono",
-    description: "A minimalist monospace font pairing for technical and modern designs",
-    imageUrl: "https://images.unsplash.com/photo-1555421689-3f034debb7a6?auto=format&fit=crop&q=80&w=1000",
+    title: "Sans-Serif & Serif Mix",
+    description: "Modern mix of sans-serif headings with serif body text.",
+    imageUrl: "https://placehold.co/600x400/2ecc71/ffffff?text=Sans+%26+Serif",
     category: "font"
   },
   {
     id: "font-4",
-    title: "Creative Display",
-    description: "A creative display font pairing for unique and standout designs",
-    imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&q=80&w=1000",
+    title: "Playful Display",
+    description: "Unique display fonts for creative websites with personality.",
+    imageUrl: "https://placehold.co/600x400/e74c3c/ffffff?text=Display+Fonts",
     category: "font"
   },
+  
+  // Animation options
   {
-    id: "font-5",
-    title: "Elegant Script",
-    description: "Sophisticated script font pairing with supporting sans-serif",
-    imageUrl: "https://images.unsplash.com/photo-1574650351183-4e4e36821077?auto=format&fit=crop&q=80&w=1000",
-    category: "font"
+    id: "animation-1",
+    title: "Fade & Slide In",
+    description: "Subtle fade and slide animations for content sections.",
+    imageUrl: "https://placehold.co/600x400/3498db/ffffff?text=Fade+%26+Slide",
+    category: "animation"
   },
   {
-    id: "font-6",
-    title: "Bold Geometric",
-    description: "Strong geometric sans-serif fonts for impactful modern designs",
-    imageUrl: "https://images.unsplash.com/photo-1561826748-2d2b8f3696a7?auto=format&fit=crop&q=80&w=1000",
-    category: "font"
+    id: "animation-2",
+    title: "Scroll Reveal",
+    description: "Elements reveal as you scroll down the page.",
+    imageUrl: "https://placehold.co/600x400/e67e22/ffffff?text=Scroll+Reveal",
+    category: "animation"
   },
   {
-    id: "font-7",
-    title: "Friendly Rounded",
-    description: "Approachable rounded sans-serif fonts for friendly interfaces",
-    imageUrl: "https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&q=80&w=1000",
-    category: "font"
+    id: "animation-3",
+    title: "Parallax Effects",
+    description: "Parallax scrolling effects for depth and engagement.",
+    imageUrl: "https://placehold.co/600x400/f1c40f/ffffff?text=Parallax",
+    category: "animation"
   },
   {
-    id: "font-8",
-    title: "Tech Sans",
-    description: "Clean, functional sans-serif fonts optimized for digital interfaces",
-    imageUrl: "https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?auto=format&fit=crop&q=80&w=1000",
-    category: "font"
+    id: "animation-4",
+    title: "3D Transforms",
+    description: "3D transformation effects for interactive elements.",
+    imageUrl: "https://placehold.co/600x400/9b59b6/ffffff?text=3D+Transforms",
+    category: "animation"
+  },
+  {
+    id: "animation-5",
+    title: "Microinteractions",
+    description: "Subtle animations for buttons, links, and interactive elements.",
+    imageUrl: "https://placehold.co/600x400/27ae60/ffffff?text=Microinteractions",
+    category: "animation"
+  },
+  
+  // Interaction options
+  {
+    id: "interaction-1",
+    title: "Hover Effects",
+    description: "Creative hover effects for images, cards, and buttons.",
+    imageUrl: "https://placehold.co/600x400/2c3e50/ffffff?text=Hover+Effects",
+    category: "interaction"
+  },
+  {
+    id: "interaction-2",
+    title: "Modal Dialogs",
+    description: "Interactive modal popups for content and actions.",
+    imageUrl: "https://placehold.co/600x400/c0392b/ffffff?text=Modal+Dialogs",
+    category: "interaction"
+  },
+  {
+    id: "interaction-3",
+    title: "Custom Cursors",
+    description: "Creative custom cursor effects that follow mouse movement.",
+    imageUrl: "https://placehold.co/600x400/8e44ad/ffffff?text=Custom+Cursors",
+    category: "interaction"
+  },
+  {
+    id: "interaction-4",
+    title: "Scroll Animations",
+    description: "Interactive elements triggered by scroll position.",
+    imageUrl: "https://placehold.co/600x400/d35400/ffffff?text=Scroll+Animations",
+    category: "interaction"
+  },
+  {
+    id: "interaction-5",
+    title: "Drag Interactions",
+    description: "Draggable elements for interactive galleries and sliders.",
+    imageUrl: "https://placehold.co/600x400/16a085/ffffff?text=Drag+Interactions",
+    category: "interaction"
   }
 ];
