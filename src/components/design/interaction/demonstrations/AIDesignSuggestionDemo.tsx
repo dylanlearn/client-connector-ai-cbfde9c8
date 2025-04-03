@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronRight, ChevronLeft, Check, Lightbulb } from "lucide-react";
+import { Sparkles, ChevronRight, ChevronLeft, Check, Lightbulb, Wand2 } from "lucide-react";
 
 interface AIDesignSuggestionDemoProps {
   isActive: boolean;
@@ -10,6 +10,7 @@ interface AIDesignSuggestionDemoProps {
 const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
+  const [showPromptTips, setShowPromptTips] = useState(false);
 
   // Sample design suggestions
   const suggestions = [
@@ -17,20 +18,32 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
       title: "Bold, Minimal Layout",
       description: "Clean hero section with strong typography and accent colors to draw attention to your call-to-action.",
       colorPalette: ["#2563EB", "#F97316", "#F3F4F6", "#1F2937"],
-      imageUrl: "public/lovable-uploads/480f7861-cc1e-41e1-9ee1-be7ba9aa52b9.png"
+      imageUrl: "public/lovable-uploads/480f7861-cc1e-41e1-9ee1-be7ba9aa52b9.png",
+      promptTags: ["#minimal", "#bold", "#highContrast"]
     },
     {
       title: "Premium Editorial Style",
       description: "Sophisticated typography with generous whitespace creates a premium feel for content-focused sites.",
       colorPalette: ["#0F172A", "#E2E8F0", "#7C3AED", "#FBBF24"],
-      imageUrl: "public/lovable-uploads/23ecc16f-a53c-43af-8d71-1034d90498b3.png"
+      imageUrl: "public/lovable-uploads/23ecc16f-a53c-43af-8d71-1034d90498b3.png",
+      promptTags: ["#editorial", "#sophisticated", "#premium"]
     },
     {
       title: "Modern 3D Elements",
       description: "Incorporate subtle 3D elements with gradient backgrounds for a contemporary tech aesthetic.",
       colorPalette: ["#0EA5E9", "#6366F1", "#F8FAFC", "#334155"],
-      imageUrl: "public/lovable-uploads/9d1c9181-4f19-48e3-b424-cbe28ccb9ad1.png"
+      imageUrl: "public/lovable-uploads/9d1c9181-4f19-48e3-b424-cbe28ccb9ad1.png",
+      promptTags: ["#3D", "#tech", "#modern"]
     },
+  ];
+
+  // Prompt design tips
+  const promptTips = [
+    "Use visual style tags like #minimal or #bold to guide AI design suggestions",
+    "Specify color needs with descriptors like 'high contrast' or 'muted tones'",
+    "Mention specific layout needs: 'card-based gallery' or 'sticky sidebar'",
+    "Include industry context: 'SaaS dashboard' or 'luxury e-commerce'",
+    "Request specific components: 'animated testimonial carousel' or 'floating contact form'"
   ];
 
   // Auto-cycle through suggestions when active
@@ -73,6 +86,10 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
     setCurrentSuggestion((prev) => (prev - 1 + suggestions.length) % suggestions.length);
   };
 
+  const togglePromptTips = () => {
+    setShowPromptTips(!showPromptTips);
+  };
+
   const currentItem = suggestions[currentSuggestion];
 
   return (
@@ -89,14 +106,67 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
           >
             {/* Header with lightbulb icon */}
             <motion.div 
-              className="absolute top-0 left-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-2 flex items-center justify-center text-white"
+              className="absolute top-0 left-0 right-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-2 flex items-center justify-between text-white"
               initial={{ y: -40 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.2, type: "spring" }}
             >
-              <Lightbulb className="h-4 w-4 mr-2" />
-              <span className="text-xs font-medium">AI Design Suggestion</span>
+              <div className="flex items-center">
+                <Lightbulb className="h-4 w-4 mr-2" />
+                <span className="text-xs font-medium">AI Design Suggestion</span>
+              </div>
+              <motion.button
+                onClick={togglePromptTips}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-xs flex items-center bg-white/20 px-2 py-1 rounded-sm hover:bg-white/30"
+              >
+                <Wand2 className="h-3 w-3 mr-1" />
+                <span>Prompt Tips</span>
+              </motion.button>
             </motion.div>
+
+            {/* Prompt tips panel */}
+            <AnimatePresence>
+              {showPromptTips && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute top-10 left-0 right-0 bg-indigo-50 border-b border-indigo-100 p-3 z-10"
+                >
+                  <h4 className="text-xs font-semibold text-indigo-900 mb-1.5">Better Prompt Design Tips:</h4>
+                  <ul className="text-xs text-indigo-700 space-y-1">
+                    {promptTips.map((tip, index) => (
+                      <motion.li 
+                        key={index}
+                        initial={{ opacity: 0, x: -5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 + 0.2 }}
+                        className="flex items-start"
+                      >
+                        <span className="inline-block h-2 w-2 rounded-full bg-indigo-400 mt-1.5 mr-1.5"></span>
+                        {tip}
+                      </motion.li>
+                    ))}
+                  </ul>
+                  <motion.div 
+                    className="w-full text-center mt-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.7 }}
+                  >
+                    <button 
+                      onClick={togglePromptTips} 
+                      className="text-indigo-600 text-xs hover:text-indigo-800 font-medium"
+                    >
+                      Close Tips
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Suggestion content */}
             <motion.div 
@@ -147,7 +217,7 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
                       {currentItem.title}
                     </motion.h3>
                     <motion.p
-                      className="text-xs text-gray-600 mb-3"
+                      className="text-xs text-gray-600 mb-2"
                       initial={{ y: 10, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.5 }}
@@ -155,9 +225,29 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
                       {currentItem.description}
                     </motion.p>
                     
+                    {/* Prompt tags */}
+                    <motion.div
+                      className="flex flex-wrap gap-1 mb-2"
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.6 }}
+                    >
+                      {currentItem.promptTags.map((tag, index) => (
+                        <motion.span
+                          key={tag}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.6 + index * 0.1 }}
+                          className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-sm"
+                        >
+                          {tag}
+                        </motion.span>
+                      ))}
+                    </motion.div>
+                    
                     {/* Color palette */}
                     <motion.div
-                      className="flex gap-1 mt-2"
+                      className="flex gap-1 mt-1"
                       initial={{ y: 10, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.7 }}
@@ -165,7 +255,7 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
                       {currentItem.colorPalette.map((color, index) => (
                         <motion.div
                           key={color}
-                          className="w-6 h-6 rounded-full"
+                          className="w-5 h-5 rounded-full"
                           style={{ backgroundColor: color }}
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
