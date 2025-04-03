@@ -1,6 +1,4 @@
 
-import { supabase } from "@/integrations/supabase/client";
-
 // Define types for tables not included in the generated types
 export type SystemStatus = "normal" | "warning" | "critical";
 
