@@ -95,8 +95,9 @@ export const IntakeSummaryService = {
       
       // Extract tone more naturally (looking for descriptive words)
       const toneWords = toneSection.match(/\b(professional|friendly|casual|formal|playful|serious|modern|traditional|luxury|minimal|bold|subtle|elegant|sophisticated|approachable|authoritative|conversational|direct|warm|cool)\b/gi);
+      // Fix: Add type assertion to ensure string array
       const tone = toneWords 
-        ? Array.from(new Set(toneWords.map(w => w.toLowerCase())))
+        ? Array.from(new Set(toneWords.map(w => w.toLowerCase()))) as string[]
         : ['professional', 'approachable'];
       
       // Extract direction more naturally
@@ -124,7 +125,8 @@ export const IntakeSummaryService = {
           // Extract key phrases by looking for emphasized words
           const keyPhrases = prioritiesSection.match(/\b(conversion|usability|aesthetics|performance|speed|accessibility|responsiveness|branding|clarity|simplicity|engagement|security|scalability|content|messaging|navigation|consistency|functionality|integration|SEO)[a-z]*/gi);
           if (keyPhrases && keyPhrases.length > 0) {
-            priorities = Array.from(new Set(keyPhrases.map(p => p.toLowerCase()))).slice(0, 5);
+            // Fix: Add type assertion to ensure string array
+            priorities = Array.from(new Set(keyPhrases.map(p => p.toLowerCase()))).slice(0, 5) as string[];
           }
         }
       }
