@@ -68,8 +68,8 @@ class AnimationAnalyticsBatchService {
       console.log(`Successfully flushed ${eventsToProcess.length} animation events`);
     } catch (error) {
       console.error('Error flushing animation events:', error);
-      // Put events back in the queue
-      this.events = [...this.events];
+      // Fix: Put events back in the queue correctly
+      this.events = [...eventsToProcess, ...this.events];
     } finally {
       this.isProcessing = false;
     }
@@ -81,7 +81,10 @@ class AnimationAnalyticsBatchService {
       window.clearInterval(this.intervalId);
       this.intervalId = null;
     }
-    this.flushEvents();
+    // Ensure we flush any remaining events before cleanup
+    this.flushEvents().catch(err => {
+      console.error('Error during final flush:', err);
+    });
   }
 }
 
@@ -95,11 +98,23 @@ export const trackAnimationView = (
   deviceInfo?: Record<string, any>,
   feedback?: 'positive' | 'negative'
 ): void => {
+  // Ensure we have at least empty objects for optional parameters
+  const safeDeviceInfo = deviceInfo || {};
+  const safeMetrics = metrics || {};
+  
   animationAnalyticsService.addEvent({
     animation_type: animationType,
-    duration: metrics?.duration,
-    device_info: deviceInfo || {},
-    performance_metrics: metrics,
+    duration: safeMetrics.duration,
+    device_info: {
+      deviceType: safeDeviceInfo.deviceType || 'unknown',
+      browser: safeDeviceInfo.browser || 'unknown',
+      os: safeDeviceInfo.os || 'unknown',
+      viewport: safeDeviceInfo.viewport || {
+        width: window.innerWidth || 0,
+        height: window.innerHeight || 0
+      }
+    },
+    performance_metrics: safeMetrics,
     feedback: feedback || null,
     timestamp: new Date().toISOString()
   });

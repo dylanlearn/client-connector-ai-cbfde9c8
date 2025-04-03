@@ -1,5 +1,5 @@
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceDetection } from "@/hooks/tracking/use-device-detection";
 import { 
@@ -7,9 +7,17 @@ import {
   AnimationFeedback, 
   AnimationPerformanceMetrics 
 } from "@/types/animations";
+import { animationAnalyticsService, trackAnimationView } from "@/services/analytics/animation-analytics-service";
 
 export function useAnimationAnalytics() {
   const deviceInfo = useDeviceDetection();
+  
+  // Clean up analytics service on unmount
+  useEffect(() => {
+    return () => {
+      animationAnalyticsService.cleanup();
+    };
+  }, []);
   
   // Track an animation view/interaction
   const trackAnimation = useCallback(async (
@@ -18,24 +26,21 @@ export function useAnimationAnalytics() {
     feedback?: AnimationFeedback
   ) => {
     try {
-      // Use POST request directly instead of RPC until types are updated
-      await supabase.functions.invoke('animation-tracking', {
-        body: {
-          animation_type: animationType,
-          duration: metrics?.duration,
-          device_info: {
-            deviceType: deviceInfo.deviceType,
-            browser: deviceInfo.browserName,
-            os: deviceInfo.osName,
-            viewport: {
-              width: window.innerWidth,
-              height: window.innerHeight
-            }
-          },
-          performance_metrics: metrics || {},
-          feedback: feedback
-        }
-      });
+      // Use the service function instead of direct API call
+      trackAnimationView(
+        animationType,
+        metrics,
+        {
+          deviceType: deviceInfo.deviceType,
+          browser: deviceInfo.browserName,
+          os: deviceInfo.osName,
+          viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight
+          }
+        },
+        feedback as 'positive' | 'negative'
+      );
     } catch (err) {
       console.error('Error tracking animation:', err);
     }
@@ -91,8 +96,8 @@ export function useAnimationAnalytics() {
       lastCalledTime = performance.now();
       const currentFps = 1 / delta;
       
-      // Only record reasonable FPS values 
-      if (currentFps < 120) {
+      // Only record reasonable FPS values (between 1 and 120)
+      if (currentFps > 0 && currentFps < 120) {
         fps.push(currentFps);
       }
       
