@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DesignOption } from "./VisualPicker";
-import { Maximize2, Minimize2, Eye, EyeOff } from "lucide-react";
+import { Maximize2, Minimize2, Eye, EyeOff, Layout, Sparkles } from "lucide-react";
+import AnimationPreview from "./AnimationPreview";
+import InteractionPreview from "./InteractionPreview";
 
 interface DesignPreviewProps {
   selectedDesigns: Record<string, DesignOption>;
@@ -13,15 +14,20 @@ interface DesignPreviewProps {
 
 const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) => {
   const [activeView, setActiveView] = useState<"mobile" | "desktop">("desktop");
+  const [activeTab, setActiveTab] = useState<"layout" | "animations">("layout");
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   const hasHero = Object.values(selectedDesigns).some(design => design.category === "hero");
   const hasNavbar = Object.values(selectedDesigns).some(design => design.category === "navbar");
   const hasAbout = Object.values(selectedDesigns).some(design => design.category === "about");
   const hasFooter = Object.values(selectedDesigns).some(design => design.category === "footer");
+  const hasAnimation = Object.values(selectedDesigns).some(design => design.category === "animation");
+  const hasInteraction = Object.values(selectedDesigns).some(design => design.category === "interaction");
 
-  // Generate preview based on selected designs
-  const generatePreview = () => {
+  const selectedAnimations = Object.values(selectedDesigns).filter(design => design.category === "animation");
+  const selectedInteractions = Object.values(selectedDesigns).filter(design => design.category === "interaction");
+
+  const generateLayoutPreview = () => {
     if (Object.keys(selectedDesigns).length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -38,7 +44,6 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
       <div className={`overflow-auto ${activeView === "mobile" ? "max-w-[375px] mx-auto" : ""}`} 
            style={{ height: isFullscreen ? "calc(100vh - 150px)" : "500px" }}>
         <div className="bg-white min-h-full flex flex-col">
-          {/* Navbar Preview */}
           {hasNavbar && (
             <div className="sticky top-0 z-10 bg-white border-b">
               {Object.values(selectedDesigns)
@@ -55,7 +60,6 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
             </div>
           )}
           
-          {/* Hero Preview */}
           {hasHero && (
             <div className="bg-gray-50">
               {Object.values(selectedDesigns)
@@ -72,7 +76,6 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
             </div>
           )}
           
-          {/* About Preview */}
           {hasAbout && (
             <div className="py-8 px-4">
               {Object.values(selectedDesigns)
@@ -89,7 +92,6 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
             </div>
           )}
           
-          {/* Footer Preview */}
           {hasFooter && (
             <div className="mt-auto bg-gray-100">
               {Object.values(selectedDesigns)
@@ -110,6 +112,46 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
     );
   };
 
+  const generateAnimationsPreview = () => {
+    if (!hasAnimation && !hasInteraction) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <Sparkles className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+          <h3 className="text-lg font-medium text-muted-foreground">No animations or interactions selected</h3>
+          <p className="text-sm text-muted-foreground max-w-md mt-2">
+            Select animations and interactions to see them previewed here. These will add life and engagement to your website.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-auto p-4" style={{ height: isFullscreen ? "calc(100vh - 150px)" : "500px" }}>
+        {hasAnimation && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">Animations</h2>
+            <div className="grid grid-cols-1 gap-6">
+              {selectedAnimations.map(animation => (
+                <AnimationPreview key={animation.id} animation={animation} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {hasInteraction && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Interactions</h2>
+            <div className="grid grid-cols-1 gap-6">
+              {selectedInteractions.map(interaction => (
+                <InteractionPreview key={interaction.id} interaction={interaction} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card className={`shadow-md h-full ${className}`}>
       <CardHeader className="pb-3 flex flex-row justify-between items-center">
@@ -119,12 +161,27 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
         </CardTitle>
         
         <div className="flex items-center gap-2">
-          <Tabs value={activeView} onValueChange={(value) => setActiveView(value as "mobile" | "desktop")}>
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "layout" | "animations")}>
             <TabsList className="grid w-[180px] grid-cols-2">
-              <TabsTrigger value="desktop">Desktop</TabsTrigger>
-              <TabsTrigger value="mobile">Mobile</TabsTrigger>
+              <TabsTrigger value="layout" className="flex items-center gap-1">
+                <Layout className="h-4 w-4" />
+                <span>Layout</span>
+              </TabsTrigger>
+              <TabsTrigger value="animations" className="flex items-center gap-1">
+                <Sparkles className="h-4 w-4" />
+                <span>Effects</span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
+          
+          {activeTab === "layout" && (
+            <Tabs value={activeView} onValueChange={(value) => setActiveView(value as "mobile" | "desktop")}>
+              <TabsList className="grid w-[180px] grid-cols-2">
+                <TabsTrigger value="desktop">Desktop</TabsTrigger>
+                <TabsTrigger value="mobile">Mobile</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
           
           <Button 
             variant="outline" 
@@ -141,7 +198,7 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
       </CardHeader>
       
       <CardContent>
-        {generatePreview()}
+        {activeTab === "layout" ? generateLayoutPreview() : generateAnimationsPreview()}
       </CardContent>
     </Card>
   );
