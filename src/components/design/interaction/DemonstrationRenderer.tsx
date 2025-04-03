@@ -15,7 +15,8 @@ import {
   CustomCursorDemo,
   ScrollAnimationDemo,
   DragInteractionDemo,
-  DefaultDemo
+  DefaultDemo,
+  AIDesignSuggestionDemo
 } from "./demonstrations";
 
 interface DemonstrationRendererProps {
@@ -58,6 +59,9 @@ const DemonstrationRenderer = ({
     
     case "interaction-5": // Drag Interactions
       return <DragInteractionDemo interactionConfig={interactionConfig as DragInteractionConfig} isActive={isActive} />;
+    
+    case "interaction-6": // AI Design Suggestion presentation
+      return <AIDesignSuggestionDemo isActive={isActive} />;
     
     default:
       return <DefaultDemo />;
