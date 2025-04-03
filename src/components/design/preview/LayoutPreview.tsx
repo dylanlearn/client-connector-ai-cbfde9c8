@@ -1,5 +1,6 @@
+
 import { EyeOff } from "lucide-react";
-import { DesignOption } from "../AnimatedVisualPicker";
+import { DesignOption } from "../DesignPreview";
 
 interface LayoutPreviewProps {
   selectedDesigns: Record<string, DesignOption>;
