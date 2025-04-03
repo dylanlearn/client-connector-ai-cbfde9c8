@@ -4,7 +4,7 @@
  */
 export interface ContentGenerationOptions {
   type: 'header' | 'tagline' | 'cta' | 'description';
-  context: string;
+  context?: string; // Changed from required to optional
   maxLength?: number;
   tone?: string;
   keywords?: string[];
@@ -18,7 +18,7 @@ export interface ContentGenerationOptions {
 export class ContentGenerator {
   async generate(options: ContentGenerationOptions): Promise<string> {
     // Implementation details would go here
-    const { type, context } = options;
+    const { type, context = '' } = options; // Add a default empty string for context
     
     try {
       // In a real implementation, this might call an API or use a more sophisticated method
