@@ -46,7 +46,6 @@ export const recordClientError = async (
     const url = window.location.href;
     
     // Direct insert to the client_errors table
-    // We're not using RPC since it's not in the TypeScript definitions yet
     const { data, error } = await supabase
       .from('client_errors')
       .insert({
@@ -65,7 +64,7 @@ export const recordClientError = async (
       return null;
     }
     
-    return data.id;
+    return data.id as string;
   } catch (error) {
     console.error('Failed to record client error:', error);
     return null;
