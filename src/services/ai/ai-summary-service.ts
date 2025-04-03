@@ -3,7 +3,8 @@ import {
   AIQuestionnaireSummaryService,
   AIActionItemsService,
   AIRevisedBriefService,
-  IntakeSummaryService
+  IntakeSummaryService,
+  IntakeSummaryResult
 } from './summary';
 
 /**
@@ -22,3 +23,6 @@ export const AISummaryService = {
   // Intake form summarization
   summarizeIntakeForm: IntakeSummaryService.summarizeIntakeForm
 };
+
+// Re-export the type
+export type { IntakeSummaryResult };

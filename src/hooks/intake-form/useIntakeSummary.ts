@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { IntakeSummaryResult, IntakeSummaryService } from "@/services/ai/summary/intake-summary-service";
+import { IntakeSummaryService, IntakeSummaryResult } from "@/services/ai/summary";
 import { IntakeFormData } from "@/types/intake-form";
 import { useToast } from "@/components/ui/use-toast";
 

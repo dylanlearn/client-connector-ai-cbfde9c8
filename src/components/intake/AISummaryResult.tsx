@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IntakeSummaryResult } from "@/services/ai/summary/intake-summary-service";
+import { IntakeSummaryResult } from "@/services/ai/summary";
 import { useToast } from "@/hooks/use-toast";
 
 // Import the tab content components
