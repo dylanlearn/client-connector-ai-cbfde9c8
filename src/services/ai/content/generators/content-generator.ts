@@ -8,6 +8,8 @@ export interface ContentGenerationOptions {
   maxLength?: number;
   tone?: string;
   keywords?: string[];
+  cacheKey?: string;
+  testVariantId?: string;
 }
 
 /**
