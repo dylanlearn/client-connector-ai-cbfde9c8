@@ -11,6 +11,7 @@ import { AIDesignAnalysisService } from './design/ai-design-analysis-service';
 export type { ColorPaletteOptions } from './design/color-service';
 export type { LayoutRecommendationOptions } from './design/layout-service';
 export type { DesignAnalysisRequest, DesignAnalysisResponse } from './design/ai-design-analysis-service';
+export type { DesignMemoryEntry, DesignMemoryQueryOptions } from './design/design-memory-service';
 
 /**
  * Unified service for AI-powered design recommendations

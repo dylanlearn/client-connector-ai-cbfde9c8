@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { DesignMemoryEntry } from "./types/design-memory-types";
 
 export interface DesignAnalysisRequest {
   promptOrDescription: string;
@@ -75,22 +76,25 @@ export const AIDesignAnalysisService = {
     imageUrl?: string
   ): Promise<string | null> => {
     try {
+      // Convert the analysis to a DesignMemoryEntry format
+      const memoryEntry: DesignMemoryEntry = {
+        category: analysis.category,
+        subcategory: analysis.subcategory,
+        title: analysis.title,
+        description: analysis.description,
+        visual_elements: analysis.visualElements,
+        color_scheme: analysis.colorScheme,
+        typography: analysis.typography,
+        layout_pattern: analysis.layoutPattern,
+        tags: analysis.tags,
+        source_url: sourceUrl,
+        image_url: imageUrl,
+        relevance_score: analysis.relevanceScore
+      };
+
       const { data, error } = await supabase
         .from('design_memory')
-        .insert({
-          category: analysis.category,
-          subcategory: analysis.subcategory,
-          title: analysis.title,
-          description: analysis.description,
-          visual_elements: analysis.visualElements,
-          color_scheme: analysis.colorScheme,
-          typography: analysis.typography,
-          layout_pattern: analysis.layoutPattern,
-          tags: analysis.tags,
-          source_url: sourceUrl,
-          image_url: imageUrl,
-          relevance_score: analysis.relevanceScore
-        })
+        .insert(memoryEntry)
         .select('id')
         .single();
 
