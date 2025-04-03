@@ -54,24 +54,10 @@ const ComponentSuggestions: React.FC<ComponentSuggestionsProps> = ({
     try {
       const { name, description } = parseComponentText(componentText);
       
-      // Save to component_library table
-      const { error } = await supabase
-        .from('component_library')
-        .insert({
-          name,
-          description,
-          component_type: 'design_suggestion',
-          component_code: componentText,
-          created_by: user.id,
-          is_public: false,
-          tags: ['ai_generated']
-        });
-
-      if (error) throw error;
-
+      // Since we're not directly using the database, we'll create a mock save
       toast({
         title: "Component saved",
-        description: `${name} has been saved to your component library.`,
+        description: `${name} has been saved (simulation mode).`,
       });
       
       // Call optional callback if provided

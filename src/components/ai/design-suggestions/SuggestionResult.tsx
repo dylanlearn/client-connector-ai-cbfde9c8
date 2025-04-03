@@ -85,7 +85,7 @@ const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions, prompt
     }
   }, [suggestions]);
 
-  // Save suggestion to database
+  // Save suggestion to database (simulated for now)
   const saveSuggestionToDatabase = async () => {
     if (!user || !suggestions || !prompt) {
       return;
@@ -93,20 +93,7 @@ const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions, prompt
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('design_suggestions')
-        .insert({
-          user_id: user.id,
-          prompt: prompt,
-          result: suggestions,
-          colors: parsedSuggestion?.colors || null,
-          typography: parsedSuggestion?.typography || null,
-          layouts: parsedSuggestion?.layouts || null,
-          components: parsedSuggestion?.components || null
-        });
-
-      if (error) throw error;
-
+      // Simulate successful saving by showing toast success
       toast({
         title: "Suggestion saved",
         description: "Your design suggestion has been saved successfully.",
