@@ -39,7 +39,11 @@ export function initializeErrorHandling(): void {
       
       // Log failed requests
       if (!response.ok) {
-        const requestUrl = typeof args[0] === 'string' ? args[0] : args[0].url;
+        const requestUrl = typeof args[0] === 'string' 
+          ? args[0] 
+          : args[0] instanceof URL 
+            ? args[0].href 
+            : args[0].url;
         console.warn(`Failed fetch request to ${requestUrl}, status: ${response.status}`);
       }
       
