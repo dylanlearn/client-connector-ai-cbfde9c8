@@ -64,7 +64,7 @@ export const recordClientError = async (
       return null;
     }
     
-    return data.id as string;
+    return data?.id as string;
   } catch (error) {
     console.error('Failed to record client error:', error);
     return null;
