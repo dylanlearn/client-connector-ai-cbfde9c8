@@ -37,6 +37,10 @@ export class FeedbackAnalysisService {
         throw new Error(`Failed to analyze feedback: ${error.message}`);
       }
 
+      if (!data) {
+        throw new Error("No data returned from feedback analysis");
+      }
+
       return data as FeedbackAnalysisResult;
     } catch (error) {
       console.error("Error in feedback analysis service:", error);

@@ -24,6 +24,7 @@ import Pricing from "@/pages/Pricing";
 import RequireSubscription from "@/components/auth/RequireSubscription";
 import { lazy, Suspense } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import FeedbackAnalysisPage from "@/pages/FeedbackAnalysisPage";
 
 // Use React.lazy for code splitting of routes that aren't part of the critical path
 const LazyAdminPanel = lazy(() => import("@/pages/AdminPanel"));
@@ -153,6 +154,14 @@ function App() {
                 <Suspense fallback={<PageLoader />}>
                   <LazyAIDesignSuggestions />
                 </Suspense>
+              </RequireSubscription>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/feedback-analysis" element={
+            <ProtectedRoute>
+              <RequireSubscription>
+                <FeedbackAnalysisPage />
               </RequireSubscription>
             </ProtectedRoute>
           } />

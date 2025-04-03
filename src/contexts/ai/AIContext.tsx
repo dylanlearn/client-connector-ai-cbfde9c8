@@ -7,7 +7,8 @@ import {
   useDesignRecommendations,
   useContentGeneration,
   useFeedbackSummary,
-  useAIMemory
+  useAIMemory,
+  useFeedbackAnalysis
 } from "./hooks";
 
 export const AIContext = createContext<AIContextType | undefined>(undefined);
@@ -44,6 +45,11 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     isProcessing: isFeedbackProcessing, 
     summarizeFeedback: summarizeFeedbackInternal 
   } = useFeedbackSummary();
+
+  const {
+    isProcessing: isFeedbackAnalysisProcessing,
+    analyzeFeedback
+  } = useFeedbackAnalysis();
 
   const {
     memoryContext,
@@ -93,6 +99,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     isDesignProcessing || 
     isContentProcessing || 
     isFeedbackProcessing ||
+    isFeedbackAnalysisProcessing ||
     isMemoryProcessing;
 
   // Reset all AI state
@@ -119,6 +126,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         summarizeFeedback,
         storeMemory,
         trackInteraction,
+        analyzeFeedback,
         reset
       }}
     >

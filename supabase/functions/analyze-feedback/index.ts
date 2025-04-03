@@ -90,7 +90,7 @@ serve(async (req) => {
 
     // Call OpenAI API
     const response = await openai.createCompletion({
-      model: "text-davinci-003",
+      model: "gpt-4o-mini", // Updated to a more current model
       prompt,
       max_tokens: 1000,
       temperature: 0.3,

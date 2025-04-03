@@ -1,182 +1,88 @@
 
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  FileText, 
-  Users, 
-  BarChart3, 
-  LayoutDashboard,
-  ChevronDown,
-  ChevronRight,
-  Crown,
-  PaintBucket,
-  ShieldCheck
-} from "lucide-react";
+import { NavLink } from "react-router-dom";
 import {
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton
-} from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/use-auth";
+  BarChart3,
+  FileText,
+  Home,
+  LayoutDashboard,
+  ListTodo,
+  Palette,
+  Settings,
+  Users,
+  MessageSquareText,
+  BrainCircuit
+} from "lucide-react";
 
-interface SidebarNavigationProps {
-  currentPath: string;
-}
+const navItems = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="h-5 w-5" />,
+  },
+  {
+    title: "Projects",
+    href: "/projects",
+    icon: <ListTodo className="h-5 w-5" />,
+  },
+  {
+    title: "Clients",
+    href: "/clients",
+    icon: <Users className="h-5 w-5" />,
+  },
+  {
+    title: "Intake Form",
+    href: "/intake-form",
+    icon: <FileText className="h-5 w-5" />,
+  },
+  {
+    title: "Design Picker",
+    href: "/design-picker",
+    icon: <Palette className="h-5 w-5" />,
+  },
+  {
+    title: "Analytics",
+    href: "/analytics",
+    icon: <BarChart3 className="h-5 w-5" />,
+  },
+  {
+    title: "AI Suggestions",
+    href: "/ai-suggestions",
+    icon: <BrainCircuit className="h-5 w-5" />,
+  },
+  {
+    title: "Feedback Analysis",
+    href: "/feedback-analysis",
+    icon: <MessageSquareText className="h-5 w-5" />,
+  },
+  {
+    title: "Settings",
+    href: "/settings",
+    icon: <Settings className="h-5 w-5" />,
+  },
+];
 
-const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
-  const navigate = useNavigate();
-  const { profile } = useAuth();
-  const [syncProOpen, setSyncProOpen] = useState(
-    currentPath === "/projects" || 
-    currentPath === "/clients" || 
-    currentPath === "/analytics"
-  );
-
-  const isActive = (path: string) => {
-    return currentPath === path || currentPath.startsWith(path + '/');
-  };
-  
-  const isProSection = (path: string) => {
-    return path === "/projects" || path === "/clients" || path === "/analytics";
-  };
-
-  const handleSyncProClick = () => {
-    setSyncProOpen(!syncProOpen);
-    if (!syncProOpen && !isProSection(currentPath)) {
-      navigate("/projects");
-    }
-  };
-
-  // Check if user has admin role
-  const isAdmin = profile?.role === "admin";
-
+export const SidebarNavigation = () => {
   return (
-    <>
-      {/* Sync Section */}
-      <SidebarGroup>
-        <SidebarGroupLabel>
-          <LayoutDashboard className="mr-2" size={16} />
-          Sync
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                onClick={() => navigate("/dashboard")}
-                isActive={isActive("/dashboard")}
-              >
-                <LayoutDashboard size={20} />
-                <span>Dashboard</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            {/* Admin Panel Link - Only visible to admins */}
-            {isAdmin && (
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={() => navigate("/admin")}
-                  isActive={isActive("/admin")}
-                  className="text-indigo-600"
-                >
-                  <ShieldCheck size={20} />
-                  <span>Admin Panel</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-      
-      {/* Sync Pro Section */}
-      <SidebarGroup>
-        <SidebarGroupLabel>
-          <Crown className="mr-2" size={16} />
-          Sync Pro
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                onClick={handleSyncProClick}
-                className="justify-between"
-              >
-                <div className="flex items-center">
-                  <Crown size={20} className="mr-2" />
-                  <span>Pro Features</span>
-                </div>
-                {syncProOpen ? (
-                  <ChevronDown size={16} />
-                ) : (
-                  <ChevronRight size={16} />
-                )}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-            {syncProOpen && (
-              <SidebarMenuSub>
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    onClick={() => navigate("/projects")}
-                    isActive={isActive("/projects")}
-                  >
-                    <FileText size={16} />
-                    <span>Projects</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    onClick={() => navigate("/clients")}
-                    isActive={isActive("/clients")}
-                  >
-                    <Users size={16} />
-                    <span>Clients</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-                
-                <SidebarMenuSubItem>
-                  <SidebarMenuSubButton 
-                    onClick={() => navigate("/analytics")}
-                    isActive={isActive("/analytics")}
-                  >
-                    <BarChart3 size={16} />
-                    <span>Analytics</span>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              </SidebarMenuSub>
-            )}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-      
-      {/* Templates Section */}
-      <SidebarGroup>
-        <SidebarGroupLabel>
-          <PaintBucket className="mr-2" size={16} />
-          Templates
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton 
-                onClick={() => navigate("/templates")}
-                isActive={isActive("/templates")}
-              >
-                <PaintBucket size={20} />
-                <span>Marketplace</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    </>
+    <nav className="mt-4 px-2">
+      <ul className="space-y-1">
+        {navItems.map((item) => (
+          <li key={item.href}>
+            <NavLink
+              to={item.href}
+              className={({ isActive }) =>
+                `flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`
+              }
+            >
+              {item.icon}
+              <span className="ml-3">{item.title}</span>
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 };
-
-export default SidebarNavigation;
