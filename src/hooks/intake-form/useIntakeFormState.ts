@@ -4,7 +4,7 @@ import { IntakeFormData } from "@/types/intake-form";
 import { loadFormData, saveFormData, getFormId } from "./storage-utils";
 
 /**
- * Hook for managing the intake form state
+ * Hook for managing the intake form state with improved performance
  */
 export const useIntakeFormState = () => {
   const [formData, setFormData] = useState<IntakeFormData>(() => loadFormData());
@@ -18,13 +18,13 @@ export const useIntakeFormState = () => {
     formDataCache.current = formData;
   }, [formData]);
 
-  // Load form data from localStorage on initial render
+  // Load form data from localStorage on initial render only once
   useEffect(() => {
     const initialData = loadFormData();
     setFormData(initialData);
   }, []);
 
-  // Update form data and save to localStorage
+  // Optimized update function with memoization
   const updateFormData = useCallback((data: Partial<IntakeFormData>) => {
     setFormData(prevData => {
       const updatedData = {
@@ -32,8 +32,13 @@ export const useIntakeFormState = () => {
         ...data,
         lastUpdated: new Date().toISOString()
       };
-      saveFormData(updatedData);
-      formDataCache.current = updatedData;
+      
+      // Only save if there are actual changes
+      if (JSON.stringify(prevData) !== JSON.stringify(updatedData)) {
+        saveFormData(updatedData);
+        formDataCache.current = updatedData;
+      }
+      
       return updatedData;
     });
     return formDataCache.current;

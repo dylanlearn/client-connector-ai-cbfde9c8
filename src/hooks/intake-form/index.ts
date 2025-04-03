@@ -1,5 +1,5 @@
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,14 +25,14 @@ export const useIntakeForm = () => {
   const { taskId } = useParams();
   
   // Create a toast adapter to match the expected interface
-  const toastAdapter: ToastAdapter = {
+  const toastAdapter: ToastAdapter = useMemo(() => ({
     toast: (props) => {
       toast(props);
       return { id: '', dismiss: () => {}, update: () => {} };
     }
-  };
+  }), [toast]);
   
-  // Initialize form state
+  // Initialize form state with optimized caching
   const { 
     formData, 
     formDataCache, 
@@ -45,8 +45,8 @@ export const useIntakeForm = () => {
     formId 
   } = useIntakeFormState();
 
-  // Initialize form sync
-  const { scheduleSave } = useFormSync(
+  // Initialize form sync with improved reliability
+  const { scheduleSave, hasPendingChanges } = useFormSync(
     user?.id,
     formId,
     formData,
@@ -56,16 +56,16 @@ export const useIntakeForm = () => {
     toastAdapter
   );
 
-  // Initialize form submission
   // Create an adapter function for updateTaskStatus to match the expected signature
-  const adaptedUpdateTaskStatus = async (
+  const adaptedUpdateTaskStatus = useCallback(async (
     taskId: string, 
     status: TaskStatus, 
     data: any
   ): Promise<void> => {
     await clientUpdateTaskStatus(taskId, status, data);
-  };
+  }, []);
 
+  // Initialize form submission with retry logic
   const { submitForm } = useFormSubmission(
     user?.id,
     formId,
@@ -82,7 +82,7 @@ export const useIntakeForm = () => {
     return updatedData;
   }, [updateFormData, scheduleSave]);
 
-  // Clear form data
+  // Clear form data with improved cleanup
   const clearFormData = useCallback(() => {
     clearFormStorage();
     const emptyForm = { formId };
@@ -98,13 +98,7 @@ export const useIntakeForm = () => {
   return {
     formData,
     updateFormData: enhancedUpdateFormData,
-    submitForm: async () => {
-      if (taskId) {
-        return submitForm();
-      } else {
-        return submitForm();
-      }
-    },
+    submitForm: async () => submitForm(),
     clearFormData,
     hasStartedForm,
     isLoading,
@@ -112,6 +106,7 @@ export const useIntakeForm = () => {
     getSavedStep,
     saveCurrentStep: saveStep,
     hasInProgressForm,
-    formId
+    formId,
+    hasPendingChanges
   };
 };

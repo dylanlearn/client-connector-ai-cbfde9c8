@@ -5,7 +5,7 @@ import { ToastAdapter } from "./types";
 import { saveFormToSupabase, createRealtimeSubscription } from "./supabase-integration";
 
 /**
- * Hook for handling form synchronization with Supabase
+ * Hook for handling form synchronization with Supabase with improved reliability
  */
 export const useFormSync = (
   userId: string | undefined,
@@ -18,8 +18,10 @@ export const useFormSync = (
 ) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingChangesRef = useRef<boolean>(false);
+  const retryCountRef = useRef<number>(0);
+  const maxRetries = 3;
 
-  // Scheduler for saving to Supabase
+  // Improved scheduler for saving to Supabase with retry logic
   const scheduleSave = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -33,21 +35,42 @@ export const useFormSync = (
         return;
       }
       
-      setIsSaving(true);
-      try {
-        await saveFormToSupabase(formDataCache.current, userId, formId, { toast: toastAdapter });
-        pendingChangesRef.current = false;
-      } catch (error) {
-        console.error("Error saving to Supabase:", error);
-        // Reschedule save if it fails
-        if (pendingChangesRef.current) {
-          saveTimeoutRef.current = setTimeout(() => scheduleSave(), 10000);
+      const attemptSave = async (): Promise<void> => {
+        setIsSaving(true);
+        try {
+          await saveFormToSupabase(formDataCache.current, userId, formId, { toast: toastAdapter });
+          pendingChangesRef.current = false;
+          retryCountRef.current = 0; // Reset retry counter on success
+        } catch (error) {
+          console.error("Error saving to Supabase:", error);
+          // Implement exponential backoff for retries
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current++;
+            const backoffTime = 1000 * Math.pow(2, retryCountRef.current);
+            console.log(`Retry ${retryCountRef.current}/${maxRetries} in ${backoffTime}ms`);
+            
+            saveTimeoutRef.current = setTimeout(() => {
+              if (pendingChangesRef.current) {
+                attemptSave();
+              }
+            }, backoffTime);
+          } else {
+            // Max retries reached, notify user
+            toastAdapter.toast({
+              title: "Sync failed",
+              description: "We couldn't save your changes. Please try again later.",
+              variant: "destructive"
+            });
+            retryCountRef.current = 0; // Reset for next sync
+          }
+        } finally {
+          setIsSaving(false);
         }
-      } finally {
-        setIsSaving(false);
-      }
-    }, 1000);
-  }, [userId, formId, formDataCache, setIsSaving, toastAdapter]);
+      };
+      
+      attemptSave();
+    }, 800); // Slightly reduced debounce time for better responsiveness
+  }, [userId, formId, formDataCache, setIsSaving, toastAdapter, maxRetries]);
 
   // Setup realtime updates if user is authenticated
   useEffect(() => {
@@ -57,8 +80,15 @@ export const useFormSync = (
       formId,
       formData.lastUpdated,
       (newData) => {
-        // Fixed error here - we need to call setFormData with a direct object, not with a function
-        setFormData({...formData, ...newData});
+        // Make sure we don't trigger unnecessary rerenders
+        setFormData(currentData => {
+          const mergedData = {...currentData, ...newData};
+          // Only update if there are actual changes
+          if (JSON.stringify(mergedData) !== JSON.stringify(currentData)) {
+            return mergedData;
+          }
+          return currentData;
+        });
       },
       { toast: toastAdapter }
     );
@@ -66,7 +96,7 @@ export const useFormSync = (
     return () => {
       subscription.unsubscribe();
     };
-  }, [formId, formData, userId, setFormData, toastAdapter]);
+  }, [formId, formData.lastUpdated, userId, setFormData, toastAdapter]);
 
   // Watch for beforeunload event to warn user about unsaved changes
   useEffect(() => {
