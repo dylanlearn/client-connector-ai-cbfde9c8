@@ -92,10 +92,10 @@ export const AIDesignAnalysisService = {
         relevance_score: analysis.relevanceScore
       };
 
-      // Cast the table name to any to bypass TypeScript's table name checking
+      // Use type assertion to bypass TypeScript table name checking
       const { data, error } = await (supabase
         .from('design_memory' as any)
-        .insert(memoryEntry)
+        .insert(memoryEntry as any)
         .select('id')
         .single() as any);
 

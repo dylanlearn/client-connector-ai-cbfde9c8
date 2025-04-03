@@ -26,7 +26,7 @@ export const DesignSuggestionService = {
           result,
           used_references: usedReferences,
           context
-        })
+        } as any)
         .select('id')
         .single() as any);
 
@@ -50,7 +50,7 @@ export const DesignSuggestionService = {
       // Cast the table name to any to bypass TypeScript's table name checking
       const { error } = await (supabase
         .from('design_suggestion_history' as any)
-        .update({ rating })
+        .update({ rating } as any)
         .eq('id', id) as any);
 
       if (error) {

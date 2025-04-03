@@ -26,7 +26,7 @@ export const DesignFeedbackService = {
         feedback_content: feedbackContent,
         rating,
         context
-      }) as any);
+      } as any) as any);
 
       if (error) {
         console.error("Error recording design feedback:", error);
