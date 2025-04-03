@@ -40,5 +40,5 @@ export const IntakeSummaryService = {
   }
 };
 
-// Re-export the type to ensure it's available to importers of this module
-export type { IntakeSummaryResult } from "./types/intake-summary-types";
+// Make sure to export the type explicitly from this file
+export type { IntakeSummaryResult };
