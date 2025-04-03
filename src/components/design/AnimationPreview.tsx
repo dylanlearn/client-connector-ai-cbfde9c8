@@ -298,38 +298,29 @@ const WebsiteFadeSlideDemo = ({ isPlaying, animationConfig }: { isPlaying: boole
           <div className="w-1/2 flex flex-col justify-center gap-2">
             <motion.div
               className="w-3/4 h-4 bg-gray-800 rounded"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
+              animate={isPlaying ? { opacity: [0, 1], y: [20, 0] } : {}}
+              transition={{ duration: 1.5, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             />
             <motion.div
               className="w-full h-3 bg-gray-300 rounded"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
-              transition={{...animationConfig.transition, delay: 0.1}}
+              animate={isPlaying ? { opacity: [0, 1], y: [20, 0] } : {}}
+              transition={{ duration: 1.5, delay: 0.1, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             />
             <motion.div
               className="w-full h-3 bg-gray-300 rounded"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
-              transition={{...animationConfig.transition, delay: 0.2}}
+              animate={isPlaying ? { opacity: [0, 1], y: [20, 0] } : {}}
+              transition={{ duration: 1.5, delay: 0.2, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             />
             <motion.div
               className="w-20 h-6 bg-blue-500 rounded mt-2"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
-              transition={{...animationConfig.transition, delay: 0.3}}
+              animate={isPlaying ? { opacity: [0, 1], y: [20, 0] } : {}}
+              transition={{ duration: 1.5, delay: 0.3, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             />
           </div>
           <motion.div
             className="w-1/2 h-32 bg-gray-200 rounded"
-            {...animationConfig}
-            animate={isPlaying ? animationConfig.animate : {}}
-            initial={animationConfig.initial}
-            transition={{...animationConfig.transition, delay: 0.4}}
+            animate={isPlaying ? { opacity: [0, 1], y: [20, 0] } : {}}
+            transition={{ duration: 1.5, delay: 0.4, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
           />
         </div>
       </div>
@@ -358,9 +349,8 @@ const WebsiteScrollRevealDemo = ({ isPlaying, animationConfig }: { isPlaying: bo
           <div className="grid grid-cols-3 gap-3">
             <motion.div
               className="bg-gray-100 p-2 rounded flex flex-col items-center"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
+              animate={isPlaying ? { opacity: [0, 1], scale: [0.9, 1] } : {}}
+              transition={{ duration: 1.2, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             >
               <div className="w-8 h-8 rounded-full bg-blue-400 mb-2"></div>
               <div className="w-full h-2 bg-gray-300 rounded mb-1"></div>
@@ -369,10 +359,8 @@ const WebsiteScrollRevealDemo = ({ isPlaying, animationConfig }: { isPlaying: bo
             
             <motion.div
               className="bg-gray-100 p-2 rounded flex flex-col items-center"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
-              transition={{...animationConfig.transition, delay: 0.2}}
+              animate={isPlaying ? { opacity: [0, 1], scale: [0.9, 1] } : {}}
+              transition={{ duration: 1.2, delay: 0.2, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             >
               <div className="w-8 h-8 rounded-full bg-green-400 mb-2"></div>
               <div className="w-full h-2 bg-gray-300 rounded mb-1"></div>
@@ -381,10 +369,8 @@ const WebsiteScrollRevealDemo = ({ isPlaying, animationConfig }: { isPlaying: bo
             
             <motion.div
               className="bg-gray-100 p-2 rounded flex flex-col items-center"
-              {...animationConfig}
-              animate={isPlaying ? animationConfig.animate : {}}
-              initial={animationConfig.initial}
-              transition={{...animationConfig.transition, delay: 0.4}}
+              animate={isPlaying ? { opacity: [0, 1], scale: [0.9, 1] } : {}}
+              transition={{ duration: 1.2, delay: 0.4, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
             >
               <div className="w-8 h-8 rounded-full bg-purple-400 mb-2"></div>
               <div className="w-full h-2 bg-gray-300 rounded mb-1"></div>
@@ -394,10 +380,8 @@ const WebsiteScrollRevealDemo = ({ isPlaying, animationConfig }: { isPlaying: bo
           
           <motion.div
             className="h-20 bg-gray-100 rounded p-3 flex gap-4"
-            {...animationConfig}
-            animate={isPlaying ? animationConfig.animate : {}}
-            initial={animationConfig.initial}
-            transition={{...animationConfig.transition, delay: 0.6}}
+            animate={isPlaying ? { opacity: [0, 1], scale: [0.9, 1] } : {}}
+            transition={{ duration: 1.2, delay: 0.6, repeat: isPlaying ? Infinity : 0, repeatDelay: 2, repeatType: "reverse" }}
           >
             <div className="w-1/3 bg-gray-200 rounded"></div>
             <div className="w-2/3 flex flex-col justify-center gap-2">
@@ -650,6 +634,21 @@ const WebsiteMicrointeractionsDemo = ({ isPlaying, animationConfig }: { isPlayin
 
 // New Animation Demos - Fixed implementations
 const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+  const textVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: i * 0.15,
+        duration: 0.8,
+        repeat: isPlaying ? Infinity : 0,
+        repeatDelay: 3,
+        repeatType: "reverse" as const
+      }
+    })
+  };
+  
   return (
     <div className="w-full h-full overflow-hidden">
       <div className="w-full h-8 bg-gray-800 flex items-center px-2">
@@ -663,54 +662,47 @@ const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoP
       <div className="bg-white h-56 p-3">
         {/* Hero Section with text animation */}
         <div className="w-full h-full flex flex-col items-center justify-center">
-          <motion.div 
-            className="flex flex-col items-center"
-            variants={animationConfig}
-            initial="initial"
-            animate={isPlaying ? "animate" : "initial"}
-          >
+          <div className="flex flex-col items-center gap-2">
             <motion.div
-              className="w-48 h-8 mb-4 flex items-center justify-center"
-              variants={{
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 }
-              }}
-            >
-              <div className="w-full h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg"></div>
-            </motion.div>
+              className="w-48 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg"
+              custom={0}
+              variants={textVariants}
+              initial="hidden"
+              animate={isPlaying ? "visible" : "hidden"}
+            />
             
             <motion.div 
-              className="w-64 h-4 bg-gray-200 rounded mb-2"
-              variants={{
-                initial: { opacity: 0, x: -20 },
-                animate: { opacity: 1, x: 0 }
-              }}
-            ></motion.div>
+              className="w-64 h-4 bg-gray-200 rounded"
+              custom={1}
+              variants={textVariants}
+              initial="hidden"
+              animate={isPlaying ? "visible" : "hidden"}
+            />
             
             <motion.div 
-              className="w-48 h-4 bg-gray-200 rounded mb-2"
-              variants={{
-                initial: { opacity: 0, x: 20 },
-                animate: { opacity: 1, x: 0 }
-              }}
-            ></motion.div>
+              className="w-48 h-4 bg-gray-200 rounded"
+              custom={2}
+              variants={textVariants}
+              initial="hidden"
+              animate={isPlaying ? "visible" : "hidden"}
+            />
             
             <motion.div 
-              className="w-56 h-4 bg-gray-200 rounded mb-4"
-              variants={{
-                initial: { opacity: 0, x: -20 },
-                animate: { opacity: 1, x: 0 }
-              }}
-            ></motion.div>
+              className="w-56 h-4 bg-gray-200 rounded"
+              custom={3}
+              variants={textVariants}
+              initial="hidden"
+              animate={isPlaying ? "visible" : "hidden"}
+            />
             
             <motion.button
-              className="w-32 h-10 bg-indigo-600 rounded-lg"
-              variants={{
-                initial: { opacity: 0, y: 20, scale: 0.9 },
-                animate: { opacity: 1, y: 0, scale: 1 }
-              }}
-            ></motion.button>
-          </motion.div>
+              className="w-32 h-10 bg-indigo-600 rounded-lg mt-3"
+              custom={4}
+              variants={textVariants}
+              initial="hidden"
+              animate={isPlaying ? "visible" : "hidden"}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -740,8 +732,8 @@ const WebsiteStaggeredRevealDemo = ({ isPlaying, animationConfig }: AnimationDem
               <motion.div
                 key={i}
                 className="bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={isPlaying ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={isPlaying ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
                 transition={{
                   duration: 0.4,
                   delay: i * 0.15,
@@ -902,7 +894,7 @@ const WebsiteElasticMotionDemo = ({ isPlaying, animationConfig }: AnimationDemoP
                   scale: [1, 1.1, 0.95, 1.02, 1],
                   rotate: [0, 1, -1, 0.5, 0]
                 } : {}}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
               ></motion.div>
             </div>
             
