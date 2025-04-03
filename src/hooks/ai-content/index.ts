@@ -1,3 +1,3 @@
 
 export { useAIContent } from './useAIContent';
-export type { UseAIContentOptions, ContentRequest, UseAIContentReturn } from './types';
+export type { ContentRequest, UseAIContentOptions, UseAIContentReturn } from './types';
