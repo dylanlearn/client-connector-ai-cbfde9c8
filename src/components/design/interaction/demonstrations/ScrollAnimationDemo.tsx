@@ -1,8 +1,9 @@
 
 import { motion } from "framer-motion";
+import { ScrollAnimationConfig } from "../interactionConfigs";
 
 interface ScrollAnimationDemoProps {
-  interactionConfig: any;
+  interactionConfig: ScrollAnimationConfig;
   isActive: boolean;
 }
 

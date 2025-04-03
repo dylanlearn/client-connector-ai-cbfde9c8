@@ -1,8 +1,9 @@
 
 import { motion } from "framer-motion";
+import { HoverEffectConfig } from "../interactionConfigs";
 
 interface HoverEffectDemoProps {
-  interactionConfig: any;
+  interactionConfig: HoverEffectConfig;
 }
 
 const HoverEffectDemo = ({ interactionConfig }: HoverEffectDemoProps) => {

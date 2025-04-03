@@ -1,10 +1,49 @@
 
+// Define types for interaction configurations
+export interface BaseInteractionConfig {
+  initial?: Record<string, any>;
+  animate?: Record<string, any>;
+  transition?: Record<string, any>;
+}
+
+export interface HoverEffectConfig extends BaseInteractionConfig {
+  whileHover?: Record<string, any>;
+}
+
+export interface ModalDialogConfig extends BaseInteractionConfig {
+  initial: { scale: number };
+  animate: { scale: number; transition?: Record<string, any> };
+}
+
+export interface CustomCursorConfig extends BaseInteractionConfig {
+  animate: { x: number; y: number; transition?: Record<string, any> };
+}
+
+export interface ScrollAnimationConfig extends BaseInteractionConfig {
+  initial: { opacity: number; y: number };
+  animate: { opacity: number; y: number; transition?: Record<string, any> };
+}
+
+export interface DragInteractionConfig extends BaseInteractionConfig {
+  drag: boolean;
+  dragConstraints: { left: number; right: number; top: number; bottom: number };
+  whileDrag?: Record<string, any>;
+}
+
+export type InteractionConfig = 
+  | HoverEffectConfig 
+  | ModalDialogConfig 
+  | CustomCursorConfig 
+  | ScrollAnimationConfig 
+  | DragInteractionConfig 
+  | BaseInteractionConfig;
+
 // Get interaction configuration based on interaction type
 export const getInteractionConfig = (
   interactionType: string,
   isActive: boolean,
   cursorPosition: { x: number, y: number }
-) => {
+): InteractionConfig => {
   switch (interactionType) {
     case "interaction-1": // Hover Effects
       return {

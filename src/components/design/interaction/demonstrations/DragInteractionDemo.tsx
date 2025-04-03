@@ -1,8 +1,9 @@
 
 import { motion } from "framer-motion";
+import { DragInteractionConfig } from "../interactionConfigs";
 
 interface DragInteractionDemoProps {
-  interactionConfig: any;
+  interactionConfig: DragInteractionConfig;
   isActive: boolean;
 }
 

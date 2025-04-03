@@ -1,9 +1,10 @@
 
 import { motion } from "framer-motion";
 import { Hand } from "lucide-react";
+import { CustomCursorConfig } from "../interactionConfigs";
 
 interface CustomCursorDemoProps {
-  interactionConfig: any;
+  interactionConfig: CustomCursorConfig;
   isDemonstrating: boolean;
   handleMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
 }

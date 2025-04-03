@@ -1,8 +1,9 @@
 
 import { motion } from "framer-motion";
+import { ModalDialogConfig } from "../interactionConfigs";
 
 interface ModalDialogDemoProps {
-  interactionConfig: any;
+  interactionConfig: ModalDialogConfig;
   isActive: boolean;
 }
 

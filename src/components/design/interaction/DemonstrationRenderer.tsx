@@ -1,6 +1,6 @@
 
 import { DesignOption } from "../DesignPreview";
-import { getInteractionConfig } from "./interactionConfigs";
+import { getInteractionConfig, InteractionConfig } from "./interactionConfigs";
 import {
   HoverEffectDemo,
   ModalDialogDemo,
