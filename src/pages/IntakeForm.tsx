@@ -48,7 +48,7 @@ const IntakeForm = () => {
     if (location.pathname !== "/" && hasInProgressForm()) {
       setShowResumeDialog(true);
     }
-  }, [hasInProgressForm, location.pathname]);
+  }, [location.pathname, hasInProgressForm]);
 
   // Set the initial step based on saved progress
   useEffect(() => {

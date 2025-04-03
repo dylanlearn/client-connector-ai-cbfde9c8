@@ -72,8 +72,21 @@ export const getFormId = (): string => {
 };
 
 /**
- * Checks if there's a form in progress with a saved step
+ * Checks if there's a form in progress
  */
-export const hasInProgressForm = (formData: IntakeFormData): boolean => {
-  return Object.keys(formData).length > 1 && localStorage.getItem(STORAGE_KEY_FORM_STEP) !== null;
+export const hasInProgressForm = (): boolean => {
+  const formData = localStorage.getItem(STORAGE_KEY_FORM_DATA);
+  const stepData = localStorage.getItem(STORAGE_KEY_FORM_STEP);
+  
+  if (!formData || !stepData) {
+    return false;
+  }
+  
+  try {
+    const parsedData = JSON.parse(formData);
+    return Object.keys(parsedData).length > 1 && parseInt(stepData) > 1;
+  } catch (e) {
+    console.error("Error checking for in-progress form:", e);
+    return false;
+  }
 };

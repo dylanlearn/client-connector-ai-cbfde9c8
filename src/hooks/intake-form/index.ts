@@ -9,7 +9,7 @@ import {
   saveStep, 
   getSavedStep, 
   clearFormStorage,
-  hasInProgressForm as checkInProgressForm
+  hasInProgressForm
 } from "./storage-utils";
 import { ToastAdapter } from "./types";
 import { useIntakeFormState } from "./useIntakeFormState";
@@ -95,16 +95,6 @@ export const useIntakeForm = () => {
     return Object.keys(formData).length > 1;
   }, [formData]);
 
-  // Check if there's a form in progress
-  const hasInProgressForm = useCallback(() => {
-    return checkInProgressForm(formData);
-  }, [formData]);
-
-  // Save current step
-  const saveCurrentStep = useCallback((step: number) => {
-    saveStep(step);
-  }, []);
-
   return {
     formData,
     updateFormData: enhancedUpdateFormData,
@@ -120,7 +110,7 @@ export const useIntakeForm = () => {
     isLoading,
     isSaving,
     getSavedStep,
-    saveCurrentStep,
+    saveCurrentStep: saveStep,
     hasInProgressForm,
     formId
   };

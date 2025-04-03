@@ -24,7 +24,7 @@ export default function FormResumeHandler() {
   useEffect(() => {
     // Don't show resume dialog on the index page or already on intake form
     const isIndexPage = location.pathname === "/";
-    const isAlreadyOnIntakeForm = location.pathname === "/intake";
+    const isAlreadyOnIntakeForm = location.pathname === "/intake-form";
     
     if (!isIndexPage && !isAlreadyOnIntakeForm && hasInProgressForm()) {
       setShowResumeDialog(true);
