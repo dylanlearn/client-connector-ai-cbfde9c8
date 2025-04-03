@@ -40,5 +40,5 @@ export const IntakeSummaryService = {
   }
 };
 
-// Make sure to export the type explicitly from this file
+// Re-export the type explicitly
 export type { IntakeSummaryResult };
