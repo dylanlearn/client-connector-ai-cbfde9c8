@@ -84,3 +84,6 @@ gcp_jwt_path = "supabase/gcloud.json"
 
 [functions.analyze-feedback]
 verify_jwt = true
+
+[functions.create-error-table]
+verify_jwt = false

@@ -16,7 +16,7 @@ export const recordApiUsage = async (
 ): Promise<boolean> => {
   try {
     const { error } = await (supabase
-      .from('api_usage_metrics' as any)
+      .from('api_usage_metrics')
       .insert({
         endpoint,
         method,
@@ -27,7 +27,7 @@ export const recordApiUsage = async (
         error_message: errorMessage,
         request_payload: requestPayload,
         request_timestamp: new Date().toISOString()
-      })) as any;
+      }));
       
     if (error) {
       console.error('Error recording API usage:', error);
@@ -52,7 +52,7 @@ export const recordClientError = async (
 ): Promise<boolean> => {
   try {
     const { error } = await (supabase
-      .from('client_errors' as any)
+      .from('client_errors')
       .insert({
         error_message: errorMessage,
         error_stack: errorStack,
@@ -61,7 +61,7 @@ export const recordClientError = async (
         browser_info: navigator.userAgent,
         url: window.location.href,
         timestamp: new Date().toISOString()
-      })) as any;
+      }));
       
     if (error) {
       console.error('Error recording client error:', error);
