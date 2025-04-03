@@ -3,11 +3,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IntakeSummaryResult } from "@/services/ai/summary/intake-summary-service";
 import { RefreshCw, Check, Copy } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface AISummaryResultProps {
   summaryResult: IntakeSummaryResult;
@@ -29,33 +28,34 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
   
   return (
     <Card className="shadow-md border-purple-100">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 pb-4 border-b">
+      <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 pb-4 border-b">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl">Project Analysis</CardTitle>
+          <CardTitle className="text-xl font-medium text-gray-800">Project Brief</CardTitle>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onRegenerate}
             disabled={isLoading}
+            className="text-sm"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
-        <CardDescription>
-          Insights from your intake form responses
+        <CardDescription className="text-gray-600">
+          Based on your intake form responses
         </CardDescription>
       </CardHeader>
       
       <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full p-0 bg-transparent border-b">
-          <TabsTrigger value="summary" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-purple-500">
+        <TabsList className="w-full p-0 bg-transparent border-b rounded-none">
+          <TabsTrigger value="summary" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500">
             Summary
           </TabsTrigger>
-          <TabsTrigger value="highlights" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-purple-500">
+          <TabsTrigger value="highlights" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500">
             Key Insights
           </TabsTrigger>
-          <TabsTrigger value="copy" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-purple-500">
+          <TabsTrigger value="copy" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500">
             Content Ideas
           </TabsTrigger>
         </TabsList>
@@ -65,7 +65,6 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
             <div className="space-y-4">
               <div className="text-gray-800 leading-relaxed">
                 {summaryResult.summary
-                  .replace(/#{1,3}\s?([^#\n]+)/g, "$1") // Remove markdown headers
                   .split('\n\n')
                   .filter(paragraph => paragraph.trim() !== '')
                   .map((paragraph, i) => (
@@ -103,7 +102,7 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
               
               <div>
                 <h3 className="text-base font-medium text-gray-700 mb-3">Creative Direction</h3>
-                <p className="text-gray-800 leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-100">
+                <p className="text-gray-800 leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
                   {summaryResult.direction}
                 </p>
               </div>
@@ -112,8 +111,8 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
                 <h3 className="text-base font-medium text-gray-700 mb-3">Project Priorities</h3>
                 <div className="space-y-2">
                   {summaryResult.priorities.map((priority, index) => (
-                    <div key={index} className="flex items-center gap-3 p-2 rounded-md hover:bg-slate-50">
-                      <div className="flex-shrink-0 bg-purple-100 text-purple-700 rounded-full w-6 h-6 flex items-center justify-center">
+                    <div key={index} className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-50">
+                      <div className="flex-shrink-0 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center">
                         {index + 1}
                       </div>
                       <p className="text-gray-800">{priority}</p>
@@ -178,7 +177,7 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
                   </Button>
                 </div>
                 <div className="flex justify-center mt-4">
-                  <Button className="px-8 py-2.5 shadow-sm">
+                  <Button className="px-8 py-2.5 shadow-sm bg-indigo-600 hover:bg-indigo-700">
                     {summaryResult.draftCopy.cta}
                   </Button>
                 </div>
@@ -188,8 +187,8 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
         </TabsContent>
       </Tabs>
       
-      <CardFooter className="bg-gray-50 p-4 text-sm text-gray-500 italic">
-        This content is provided as a starting point for your project. Feel free to adapt it to your needs.
+      <CardFooter className="bg-gray-50 p-4 text-sm text-gray-500 italic border-t">
+        This content is generated based on your inputs and can be customized to match your specific needs.
       </CardFooter>
     </Card>
   );

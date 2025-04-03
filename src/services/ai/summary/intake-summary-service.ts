@@ -52,10 +52,23 @@ export const IntakeSummaryService = {
       const systemPrompt = `
         You are a skilled creative director who specializes in translating client requirements
         into clear, actionable insights for design teams. Your summaries should be written in a 
-        natural, conversational tone - as if you're speaking directly to a colleague. Avoid technical 
-        jargon, markdown formatting, bullets, or numbered lists in your response. Instead, use 
-        natural language and paragraphs. When suggesting copy, make it sound authentic and human, 
-        not corporate or AI-generated.
+        natural, conversational tone - as if you're speaking directly to a colleague. 
+        
+        IMPORTANT: Do not use any markdown formatting like headings (###) or bullet points (*). 
+        Write in natural paragraphs with a warm, human voice.
+        
+        When suggesting copy, make it sound authentic and human, not corporate or AI-generated.
+        Avoid using technical jargon or complex terminology.
+        
+        For example, instead of:
+        "### Summary
+        * Client requires a responsive website
+        * Modern aesthetic is preferred
+        * Focus on conversion"
+        
+        Write it as:
+        "From what I can see, this client is looking for a responsive website with a modern aesthetic. 
+        They're particularly focused on conversion rates."
       `;
       
       // Call OpenAI via Supabase Edge Function
@@ -78,23 +91,24 @@ export const IntakeSummaryService = {
       
       // Parse the structured response - improved parsing approach
       // Split by sections while preserving natural language flow
-      const summaryRegex = /summary|overview|client needs/i;
-      const toneRegex = /tone|voice|style|personality/i;
-      const directionRegex = /direction|design direction|aesthetic|look and feel/i;
-      const prioritiesRegex = /priorities|key focus|important aspects|main concerns/i;
-      const copyRegex = /copy|content|text|messaging|header|subtext|cta/i;
+      const summaryRegex = /summary|overview|client needs|from what i can see|looking at|based on|after reviewing/i;
+      const toneRegex = /tone|voice|style|feel|personality|sound|appear|impression|vibe/i;
+      const directionRegex = /direction|design direction|aesthetic|look and feel|visual|appearance/i;
+      const prioritiesRegex = /priorities|key focus|important aspects|main concerns|focus on|emphasis/i;
+      const copyRegex = /copy|content|text|messaging|header|subtext|cta|headline|call to action/i;
       
-      const sections = response.split(/\n\n+/);
+      // Split by paragraphs to preserve natural flow
+      const paragraphs = response.split(/\n\n+/);
       
       // Find the most relevant sections using the regexes
-      const summarySection = sections.find(s => summaryRegex.test(s)) || sections[0] || "";
-      const toneSection = sections.find(s => toneRegex.test(s)) || "";
-      const directionSection = sections.find(s => directionRegex.test(s)) || "";
-      const prioritiesSection = sections.find(s => prioritiesRegex.test(s)) || "";
-      const copySection = sections.find(s => copyRegex.test(s)) || sections[sections.length - 1] || "";
+      const summaryParagraph = paragraphs.find(p => summaryRegex.test(p)) || paragraphs[0] || "";
+      const toneParagraph = paragraphs.find(p => toneRegex.test(p)) || "";
+      const directionParagraph = paragraphs.find(p => directionRegex.test(p)) || "";
+      const prioritiesParagraph = paragraphs.find(p => prioritiesRegex.test(p)) || "";
+      const copyParagraph = paragraphs.find(p => copyRegex.test(p)) || paragraphs[paragraphs.length - 1] || "";
       
       // Extract tone more naturally (looking for descriptive words)
-      const toneWords = toneSection.match(/\b(professional|friendly|casual|formal|playful|serious|modern|traditional|luxury|minimal|bold|subtle|elegant|sophisticated|approachable|authoritative|conversational|direct|warm|cool)\b/gi);
+      const toneWords = toneParagraph.match(/\b(professional|friendly|casual|formal|playful|serious|modern|traditional|luxury|minimal|bold|subtle|elegant|sophisticated|approachable|authoritative|conversational|direct|warm|cool)\b/gi);
       // Fix: Add type assertion to ensure string array
       const tone = toneWords 
         ? Array.from(new Set(toneWords.map(w => w.toLowerCase()))) as string[]
@@ -102,28 +116,28 @@ export const IntakeSummaryService = {
       
       // Extract direction more naturally
       let direction = "clean and modern design"; // default
-      if (directionSection) {
-        // Look for phrases after "direction:" or similar patterns
-        const dirMatch = directionSection.match(/(?:direction|aesthetic|look and feel)[:\s]+([^.]+)/i);
+      if (directionParagraph) {
+        // Look for phrases after key terms
+        const dirMatch = directionParagraph.match(/(?:direction|aesthetic|look and feel|visual|design)[:\s]+([^.]+)/i);
         if (dirMatch) {
           direction = dirMatch[1].trim();
         } else {
           // Take the most relevant sentence
-          const sentences = directionSection.split(/\.\s+/);
+          const sentences = directionParagraph.split(/\.\s+/);
           direction = sentences[0].replace(/^[^a-z]+/i, '');
         }
       }
       
       // Extract priorities more naturally
       let priorities: string[] = ['usability', 'clear messaging'];
-      if (prioritiesSection) {
-        // Look for list-like patterns or comma-separated values
-        const prioMatch = prioritiesSection.match(/(?:priorities|focus on|important)[:\s]+([^.]+)/i);
+      if (prioritiesParagraph) {
+        // Look for natural language lists or key phrases
+        const prioMatch = prioritiesParagraph.match(/(?:priorities|focus on|important)[:\s]+([^.]+)/i);
         if (prioMatch) {
           priorities = prioMatch[1].split(/,|;/).map(p => p.trim()).filter(Boolean);
         } else {
           // Extract key phrases by looking for emphasized words
-          const keyPhrases = prioritiesSection.match(/\b(conversion|usability|aesthetics|performance|speed|accessibility|responsiveness|branding|clarity|simplicity|engagement|security|scalability|content|messaging|navigation|consistency|functionality|integration|SEO)[a-z]*/gi);
+          const keyPhrases = prioritiesParagraph.match(/\b(conversion|usability|aesthetics|performance|speed|accessibility|responsiveness|branding|clarity|simplicity|engagement|security|scalability|content|messaging|navigation|consistency|functionality|integration|SEO)[a-z]*/gi);
           if (keyPhrases && keyPhrases.length > 0) {
             // Fix: Add type assertion to ensure string array
             priorities = Array.from(new Set(keyPhrases.map(p => p.toLowerCase()))).slice(0, 5) as string[];
@@ -136,26 +150,32 @@ export const IntakeSummaryService = {
       let subtext = "We create solutions that work for you";
       let cta = "Get Started";
       
-      // Look for header patterns
-      const headerMatch = copySection.match(/(?:header|headline|title)[:\s]+"?([^"\.]+)"?/i);
-      if (headerMatch) {
-        header = headerMatch[1].trim();
-      }
-      
-      // Look for subtext patterns
-      const subtextMatch = copySection.match(/(?:subtext|description|tagline|subtitle)[:\s]+"?([^"\.]+)"?/i);
-      if (subtextMatch) {
-        subtext = subtextMatch[1].trim();
-      }
-      
-      // Look for CTA patterns
-      const ctaMatch = copySection.match(/(?:cta|call to action|button)[:\s]+"?([^"\.]+)"?/i);
-      if (ctaMatch) {
-        cta = ctaMatch[1].trim();
+      // Look for natural language patterns for copy elements
+      if (copyParagraph) {
+        // Header
+        const headerMatch = copyParagraph.match(/(?:header|headline|title|heading)[:\s]+"?([^"\.]+)"?/i) || 
+                           copyParagraph.match(/suggest (?:using|going with) "([^"]+)"/i);
+        if (headerMatch) {
+          header = headerMatch[1].trim();
+        }
+        
+        // Subtext
+        const subtextMatch = copyParagraph.match(/(?:subtext|description|tagline|subtitle)[:\s]+"?([^"\.]+)"?/i) || 
+                            copyParagraph.match(/followed by "([^"]+)"/i);
+        if (subtextMatch) {
+          subtext = subtextMatch[1].trim();
+        }
+        
+        // CTA
+        const ctaMatch = copyParagraph.match(/(?:cta|call to action|button)[:\s]+"?([^"\.]+)"?/i) || 
+                         copyParagraph.match(/button (?:saying|reading) "([^"]+)"/i);
+        if (ctaMatch) {
+          cta = ctaMatch[1].trim();
+        }
       }
       
       // Clean up any markdown formatting or special characters from the summary
-      const cleanedSummary = summarySection
+      const cleanedSummary = summaryParagraph
         .replace(/#{1,6}\s/g, '')  // Remove markdown headers
         .replace(/\*\*/g, '')      // Remove bold markers
         .replace(/\*/g, '')        // Remove italic markers

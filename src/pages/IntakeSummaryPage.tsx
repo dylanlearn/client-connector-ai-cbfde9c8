@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Sparkles } from "lucide-react";
 import { useIntakeForm } from "@/hooks/intake-form";
 import { useIntakeSummary } from "@/hooks/intake-form/useIntakeSummary";
 import AISummaryResult from "@/components/intake/AISummaryResult";
@@ -47,13 +47,15 @@ const IntakeSummaryPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {isGenerating && !summaryResult ? (
-              <Card className="p-12">
-                <CardContent className="flex flex-col items-center justify-center">
-                  <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+              <Card className="p-12 border border-indigo-100">
+                <CardContent className="flex flex-col items-center justify-center pt-6">
+                  <div className="bg-indigo-50 p-3 rounded-full mb-4">
+                    <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                  </div>
                   <h3 className="text-xl font-medium mb-2">Creating Your Project Brief</h3>
-                  <p className="text-gray-500 text-center max-w-md">
-                    We're analyzing your responses to craft a tailored brief for your project.
-                    This will only take a moment.
+                  <p className="text-gray-600 text-center max-w-md">
+                    We're analyzing your responses to craft a personalized brief for your project.
+                    This typically takes about 15-20 seconds.
                   </p>
                 </CardContent>
               </Card>
@@ -64,60 +66,65 @@ const IntakeSummaryPage = () => {
                 onRegenerate={regenerateSummary}
               />
             ) : (
-              <Card className="p-8">
-                <CardContent className="flex flex-col items-center justify-center">
-                  <h3 className="text-xl font-medium mb-2">No Brief Available</h3>
-                  <p className="text-gray-500 text-center max-w-md mb-4">
-                    We couldn't create your project brief. Let's try again.
+              <Card className="p-8 border border-red-100">
+                <CardContent className="flex flex-col items-center justify-center pt-6">
+                  <h3 className="text-xl font-medium mb-2">Unable to Generate Brief</h3>
+                  <p className="text-gray-600 text-center max-w-md mb-4">
+                    We had trouble creating your project brief. Let's try again.
                   </p>
-                  <Button onClick={generateSummary}>Create Brief</Button>
+                  <Button onClick={generateSummary} className="bg-indigo-600 hover:bg-indigo-700">
+                    Create Brief
+                  </Button>
                 </CardContent>
               </Card>
             )}
           </div>
           
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="border border-indigo-100">
               <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold mb-4">What's Next</h3>
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Sparkles className="w-4 h-4 mr-2 text-indigo-500" />
+                  What's Next
+                </h3>
                 <ul className="space-y-4">
                   <li className="flex items-start">
-                    <div className="bg-green-100 text-green-800 p-1 rounded-full mr-3 mt-0.5">
+                    <div className="bg-green-100 text-green-700 p-1 rounded-full mr-3 mt-0.5">
                       <Check className="w-4 h-4" />
                     </div>
                     <div>
                       <p className="font-medium">Review Your Brief</p>
                       <p className="text-sm text-gray-600">
-                        Take a look at the generated brief and make sure it captures your vision
+                        Look over the generated brief to ensure it captures your vision accurately
                       </p>
                     </div>
                   </li>
                   <li className="flex items-start">
-                    <div className="bg-gray-100 text-gray-800 p-1 rounded-full mr-3 mt-0.5">
+                    <div className="bg-indigo-100 text-indigo-700 p-1 rounded-full mr-3 mt-0.5">
                       <span className="block w-4 h-4 text-center text-xs font-bold">2</span>
                     </div>
                     <div>
                       <p className="font-medium">Use the Content</p>
                       <p className="text-sm text-gray-600">
-                        Copy and customize the suggested text for your website
+                        Copy and customize the suggested text for your website or marketing materials
                       </p>
                     </div>
                   </li>
                   <li className="flex items-start">
-                    <div className="bg-gray-100 text-gray-800 p-1 rounded-full mr-3 mt-0.5">
+                    <div className="bg-indigo-100 text-indigo-700 p-1 rounded-full mr-3 mt-0.5">
                       <span className="block w-4 h-4 text-center text-xs font-bold">3</span>
                     </div>
                     <div>
                       <p className="font-medium">Create Your Project</p>
                       <p className="text-sm text-gray-600">
-                        Set up a new project based on your brief
+                        Set up a new project based on your brief and start bringing your vision to life
                       </p>
                     </div>
                   </li>
                 </ul>
                 
                 <div className="mt-8 space-y-3">
-                  <Button className="w-full" onClick={() => navigate("/project/create")}>
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate("/project/create")}>
                     Create Project
                   </Button>
                   <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>
