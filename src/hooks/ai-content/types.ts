@@ -85,3 +85,6 @@ export interface ToastAdapter {
 // Re-export from generation-types for backwards compatibility
 // Fix: Use 'export type' for type re-exports when isolatedModules is enabled
 export type { UseGenerationOptions, UseGenerationReturn, FallbackContentMap } from './types/generation-types';
+
+// Re-export from cache-types for backwards compatibility
+export type { CacheCleanupResult, UseCacheReturn } from './types/cache-types';
