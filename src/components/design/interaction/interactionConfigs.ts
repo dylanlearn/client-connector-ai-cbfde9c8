@@ -1,8 +1,10 @@
 
-import { DesignOption } from "../DesignPreview";
-
 // Get interaction configuration based on interaction type
-export const getInteractionConfig = (interactionType: string, isActive: boolean, cursorPosition: { x: number, y: number }) => {
+export const getInteractionConfig = (
+  interactionType: string,
+  isActive: boolean,
+  cursorPosition: { x: number, y: number }
+) => {
   switch (interactionType) {
     case "interaction-1": // Hover Effects
       return {
