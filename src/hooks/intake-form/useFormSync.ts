@@ -12,7 +12,7 @@ export const useFormSync = (
   formId: string,
   formData: IntakeFormData,
   formDataCache: React.MutableRefObject<IntakeFormData>,
-  setFormData: (data: IntakeFormData) => void,
+  setFormData: (data: IntakeFormData | ((prevData: IntakeFormData) => IntakeFormData)) => void,
   setIsSaving: (saving: boolean) => void,
   toastAdapter: ToastAdapter
 ) => {
@@ -81,7 +81,7 @@ export const useFormSync = (
       formData.lastUpdated,
       (newData) => {
         // Make sure we don't trigger unnecessary rerenders
-        setFormData(currentData => {
+        setFormData((currentData) => {
           const mergedData = {...currentData, ...newData};
           // Only update if there are actual changes
           if (JSON.stringify(mergedData) !== JSON.stringify(currentData)) {
