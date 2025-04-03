@@ -15,7 +15,7 @@ export const recordApiUsage = async (
   requestPayload?: any
 ): Promise<boolean> => {
   try {
-    const { error } = await (supabase
+    const { error } = await supabase
       .from('api_usage_metrics')
       .insert({
         endpoint,
@@ -27,7 +27,7 @@ export const recordApiUsage = async (
         error_message: errorMessage,
         request_payload: requestPayload,
         request_timestamp: new Date().toISOString()
-      }));
+      });
       
     if (error) {
       console.error('Error recording API usage:', error);
@@ -51,8 +51,10 @@ export const recordClientError = async (
   userId?: string
 ): Promise<boolean> => {
   try {
-    const { error } = await (supabase
-      .from('client_errors')
+    // Use type assertion to tell TypeScript that this table exists
+    // This is necessary because the client_errors table is created dynamically by the edge function
+    const { error } = await supabase
+      .from('client_errors' as any)
       .insert({
         error_message: errorMessage,
         error_stack: errorStack,
@@ -61,7 +63,7 @@ export const recordClientError = async (
         browser_info: navigator.userAgent,
         url: window.location.href,
         timestamp: new Date().toISOString()
-      }));
+      });
       
     if (error) {
       console.error('Error recording client error:', error);
