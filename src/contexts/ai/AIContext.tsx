@@ -106,6 +106,10 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     return Array.isArray(result) ? result.join('\n') : result;
   };
 
+  const generateContentAdapter = async (prompt: string, contentType: string): Promise<string> => {
+    return await generateContent(prompt, contentType);
+  };
+
   return (
     <AIContext.Provider
       value={{
@@ -118,7 +122,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         simulateResponse,
         analyzeResponses: analyzeResponsesAdapter,
         generateDesignRecommendations: generateDesignRecommendationsAdapter,
-        generateContent,
+        generateContent: generateContentAdapter,
         summarizeFeedback: summarizeFeedbackAdapter,
         storeMemory,
         trackInteraction,

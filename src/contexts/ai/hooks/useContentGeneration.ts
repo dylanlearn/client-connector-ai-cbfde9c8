@@ -1,26 +1,34 @@
 
 import { useState } from "react";
-import { AIGeneratorService } from "@/services/ai";
+import { AIContentGenerationService } from "@/services/ai/content";
 
 export const useContentGeneration = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Generate content using the AI
-  const generateContent = async (options: any) => {
+  /**
+   * Generates content based on prompt and content type
+   */
+  const generateContent = async (prompt: string, contentType: string): Promise<string> => {
     setIsProcessing(true);
+    
     try {
-      const content = await AIGeneratorService.generateContent(options);
+      // Call the AI service to generate content
+      const content = await AIContentGenerationService.generateContent(
+        prompt,
+        contentType
+      );
+      
       return content;
     } catch (error) {
       console.error("Error generating content:", error);
-      return `Error generating ${options.type || 'content'}`;
+      return `Error generating ${contentType} content`;
     } finally {
       setIsProcessing(false);
     }
   };
 
   return {
-    isProcessing,
-    generateContent
+    generateContent,
+    isProcessing
   };
 };
