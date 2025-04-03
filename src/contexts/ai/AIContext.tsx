@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, ReactNode, useCallback } from "react";
-import { AIContextType, AIMemoryContext, AIAnalysis, DesignRecommendation } from "@/types/ai";
+import { AIContextType, AIMemoryContext as AIMemoryContextType, AIAnalysis, DesignRecommendation } from "@/types/ai";
 import { 
   useAIMessages,
   useAIAnalysis,
@@ -75,7 +75,8 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
   const trackInteraction = async (
     eventType: 'click' | 'hover' | 'scroll' | 'view',
     elementSelector: string,
-    position: { x: number, y: number }
+    position: { x: number, y: number },
+    projectId?: string
   ): Promise<void> => {
     await storeInteractionMemory(eventType, elementSelector, position);
   };
@@ -95,7 +96,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         isProcessing,
         analysis,
         designRecommendations,
-        memoryContext,
+        memoryContext: memoryContext as AIMemoryContextType | undefined,
         isRealtime,
         simulateResponse,
         analyzeResponses,

@@ -3,16 +3,16 @@
  * Shared types for AI memory functionality
  */
 export interface AIMemoryInterface {
-  memoryContext: Record<string, any> | null;
+  memoryContext: AIMemoryContext | undefined;
   isProcessing: boolean;
   isRealtime: boolean;
-  storeMemory: (content: string, category: string, relevanceScore?: number, metadata?: any) => Promise<void>;
+  storeMemory: (content: string, category: string, projectId?: string, metadata?: Record<string, any>) => Promise<void>;
   storeInteractionMemory: (
     eventType: 'click' | 'hover' | 'scroll' | 'view' | 'movement',
     element: string,
     position: { x: number, y: number }
   ) => Promise<void>;
-  refreshMemoryContext: () => Promise<void>;
+  refreshMemoryContext: (projectId?: string) => Promise<void>;
   resetMemoryContext: () => void;
 }
 

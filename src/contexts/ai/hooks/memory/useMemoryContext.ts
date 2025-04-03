@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { AIMemoryContext } from "@/types/ai";
+import { AIMemoryContext } from "./types";
 import { AIMemoryService } from "@/services/ai";
 import { useAuth } from "@/hooks/use-auth";
 

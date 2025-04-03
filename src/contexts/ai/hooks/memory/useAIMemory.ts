@@ -4,7 +4,7 @@ import { MemoryCategory } from '@/services/ai/memory';
 import { useMemoryContext } from "./useMemoryContext";
 import { useMemoryStorage } from "./useMemoryStorage";
 import { useRealtimeMemory } from "./useRealtimeMemory";
-import { AIMemoryInterface } from './types';
+import { AIMemoryInterface, AIMemoryContext } from './types';
 
 /**
  * Combined hook for AI memory functionality
