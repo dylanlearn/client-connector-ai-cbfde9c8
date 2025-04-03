@@ -1,9 +1,7 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AIGeneratorService } from '@/services/ai';
 import { ContentRequest } from './types';
-import { useAuth } from '@/hooks/use-auth';
 import { 
   UseGenerationOptions, 
   UseGenerationReturn 
@@ -20,6 +18,7 @@ import {
   recordTestSuccess,
   recordTestFailure 
 } from './utils/test-variant-utils';
+import { useAuth } from '@/hooks/use-auth';
 
 /**
  * Hook for managing AI content generation with retries and timeout handling

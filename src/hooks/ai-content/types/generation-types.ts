@@ -2,6 +2,7 @@
 /**
  * Types for AI content generation hooks and utilities
  */
+import { ContentRequest } from '../types';
 
 /**
  * Options for the useGeneration hook
