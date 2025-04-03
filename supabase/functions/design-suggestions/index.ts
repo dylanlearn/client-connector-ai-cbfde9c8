@@ -37,14 +37,18 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generating design suggestions for prompt: ${prompt}`);
+    console.log(`Generating design suggestions for prompt: ${prompt}, industry: ${industry || 'not specified'}, style: ${style || 'not specified'}`);
 
     // Construct system message with industry and style if provided
     let systemMessage = "You are an expert design consultant who provides specific, actionable design suggestions.";
-    if (industry) {
+    
+    // Handle industry, including custom industry values
+    if (industry && industry !== 'any') {
       systemMessage += ` You specialize in designs for the ${industry} industry.`;
     }
-    if (style) {
+    
+    // Handle style, including custom style values
+    if (style && style !== 'any') {
       systemMessage += ` You favor a ${style} design style.`;
     }
 

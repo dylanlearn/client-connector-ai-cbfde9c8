@@ -1,6 +1,18 @@
 
+import { AIFeatureType } from "../../ai-model-selector";
+
 /**
- * Interface representing the result of an intake form summary
+ * Interface for prompt options when generating an intake form summary
+ */
+export interface AIPromptOptions {
+  model: string;
+  temperature: number;
+  systemPrompt: string;
+  promptContent: string;
+}
+
+/**
+ * Structure of the result returned by the intake form summary
  */
 export interface IntakeSummaryResult {
   summary: string;
@@ -12,14 +24,4 @@ export interface IntakeSummaryResult {
     subtext: string;
     cta: string;
   };
-}
-
-/**
- * Interface for AI prompt configuration options
- */
-export interface AIPromptOptions {
-  model: string;
-  temperature: number;
-  systemPrompt: string;
-  promptContent: string;
 }
