@@ -13,3 +13,13 @@ export interface IntakeSummaryResult {
     cta: string;
   };
 }
+
+/**
+ * Interface for AI prompt configuration options
+ */
+export interface AIPromptOptions {
+  model: string;
+  temperature: number;
+  systemPrompt: string;
+  promptContent: string;
+}
