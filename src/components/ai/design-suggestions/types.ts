@@ -1,4 +1,3 @@
-
 export interface FormValues {
   prompt: string;
   industry: string;
@@ -37,7 +36,33 @@ export interface ParsedSuggestion {
   originalText: string;
 }
 
-// Added missing interfaces
+export interface DesignSuggestion {
+  id: string;
+  user_id: string;
+  prompt: string;
+  result: string;
+  colors?: ParsedColor[];
+  typography?: ParsedTypography[];
+  layouts?: string[];
+  components?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComponentLibraryItem {
+  id: string;
+  name: string;
+  description?: string;
+  component_type: string;
+  component_code: string;
+  attributes?: Record<string, any>;
+  tags?: string[];
+  created_by?: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface IndustryOption {
   value: string;
   label: string;

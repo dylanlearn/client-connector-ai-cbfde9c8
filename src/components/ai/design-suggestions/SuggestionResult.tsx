@@ -10,7 +10,9 @@ import LayoutSuggestions from "./LayoutSuggestions";
 import ComponentSuggestions from "./ComponentSuggestions";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TabManager } from "@/components/ui/tab-manager";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
  * Format AI suggestion content for better readability
@@ -52,13 +54,17 @@ const formatSuggestionContent = (text: string): string => {
 
 interface SuggestionResultProps {
   suggestions: string | null;
+  prompt?: string;
 }
 
-const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions }) => {
+const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions, prompt }) => {
   const [parsedSuggestion, setParsedSuggestion] = useState<ParsedSuggestion | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [isParsingComplete, setIsParsingComplete] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (suggestions) {
@@ -78,6 +84,50 @@ const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions }) => {
       setIsParsingComplete(false);
     }
   }, [suggestions]);
+
+  // Save suggestion to database
+  const saveSuggestionToDatabase = async () => {
+    if (!user || !suggestions || !prompt) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('design_suggestions')
+        .insert({
+          user_id: user.id,
+          prompt: prompt,
+          result: suggestions,
+          colors: parsedSuggestion?.colors || null,
+          typography: parsedSuggestion?.typography || null,
+          layouts: parsedSuggestion?.layouts || null,
+          components: parsedSuggestion?.components || null
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Suggestion saved",
+        description: "Your design suggestion has been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving suggestion:", error);
+      toast({
+        title: "Failed to save",
+        description: "There was an error saving your design suggestion.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Save a component to the component library
+  const saveComponentToLibrary = async (componentText: string) => {
+    // This functionality is now handled in the ComponentSuggestions component
+    return Promise.resolve();
+  };
 
   if (!suggestions) {
     return null;
@@ -136,7 +186,10 @@ const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions }) => {
               )}
               
               {hasComponents && (
-                <ComponentSuggestions components={parsedSuggestion.components} />
+                <ComponentSuggestions 
+                  components={parsedSuggestion.components}
+                  onSaveToLibrary={saveComponentToLibrary}
+                />
               )}
             </>
           )}
@@ -174,7 +227,10 @@ const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions }) => {
         
         <TabsContent value="components">
           {hasComponents ? (
-            <ComponentSuggestions components={parsedSuggestion!.components} />
+            <ComponentSuggestions 
+              components={parsedSuggestion!.components}
+              onSaveToLibrary={saveComponentToLibrary}
+            />
           ) : (
             <Card className="p-4 text-center text-muted-foreground">
               No specific component suggestions found.

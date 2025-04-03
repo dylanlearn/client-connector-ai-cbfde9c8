@@ -10,6 +10,7 @@ import { FormValues, SuggestionsResponse } from "./types";
 
 const DesignSuggestions = () => {
   const [suggestions, setSuggestions] = useState<string | null>(null);
+  const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -26,6 +27,7 @@ const DesignSuggestions = () => {
 
     setIsLoading(true);
     setSuggestions(null);
+    setCurrentPrompt(values.prompt);
 
     try {
       // Determine the actual industry and style to send to the API
@@ -71,7 +73,7 @@ const DesignSuggestions = () => {
       </CardHeader>
       <CardContent>
         <SuggestionForm onSubmit={handleSubmit} isLoading={isLoading} />
-        <SuggestionResult suggestions={suggestions} />
+        <SuggestionResult suggestions={suggestions} prompt={currentPrompt || undefined} />
       </CardContent>
     </Card>
   );
