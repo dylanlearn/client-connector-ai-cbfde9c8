@@ -29,7 +29,7 @@ export const IntakeSummaryService = {
       
       // Create a formatted prompt with all relevant intake form information
       const promptContent = `
-        Analyze this client intake form data and create a professional summary:
+        Review this client intake form data and create a professional yet conversational summary:
         
         ${Object.entries(formData)
           .filter(([key, value]) => 
@@ -43,16 +43,19 @@ export const IntakeSummaryService = {
           .join('\n\n')}
         
         Please provide:
-        1. A concise summary of what the client wants
-        2. Highlight their tone preferences, design direction, and top priorities
-        3. Generate draft homepage copy including a header, subtext, and call-to-action
+        1. A concise, friendly summary of what the client is looking for (avoid bullet points or markdown formatting)
+        2. Their tone preferences and design direction in a conversational style
+        3. Their top priorities written in a natural way
+        4. Draft homepage copy including a compelling header, engaging subtext, and persuasive call-to-action
       `;
       
       const systemPrompt = `
-        You are an expert web design strategist who specializes in analyzing client requirements
-        and translating them into clear, actionable insights for design teams. Your summaries
-        should be professional, concise, and highlight the most important aspects of the client's
-        needs while suggesting appropriate copy that matches their tone and objectives.
+        You are a skilled creative director who specializes in translating client requirements
+        into clear, actionable insights for design teams. Your summaries should be written in a 
+        natural, conversational tone - as if you're speaking directly to a colleague. Avoid technical 
+        jargon, markdown formatting, bullets, or numbered lists in your response. Instead, use 
+        natural language and paragraphs. When suggesting copy, make it sound authentic and human, 
+        not corporate or AI-generated.
       `;
       
       // Call OpenAI via Supabase Edge Function
@@ -63,7 +66,7 @@ export const IntakeSummaryService = {
             content: promptContent
           }],
           systemPrompt,
-          temperature: 0.7,
+          temperature: 0.8,
           model,
         },
       });
@@ -73,43 +76,93 @@ export const IntakeSummaryService = {
       // Process the response to structure it properly
       const response = data.response;
       
-      // Parse the structured response
-      // Note: In a production environment, we'd use a more robust parsing approach
-      // This is a simplified example
-      const sections = response.split(/\n\d+\.\s/).filter(Boolean);
+      // Parse the structured response - improved parsing approach
+      // Split by sections while preserving natural language flow
+      const summaryRegex = /summary|overview|client needs/i;
+      const toneRegex = /tone|voice|style|personality/i;
+      const directionRegex = /direction|design direction|aesthetic|look and feel/i;
+      const prioritiesRegex = /priorities|key focus|important aspects|main concerns/i;
+      const copyRegex = /copy|content|text|messaging|header|subtext|cta/i;
       
-      const summarySection = sections[0] || "";
-      const highlightsSection = sections[1] || "";
-      const copySection = sections[2] || "";
+      const sections = response.split(/\n\n+/);
       
-      // Extract tone from highlights section
-      const toneMatch = highlightsSection.match(/tone:?\s*([^,.]+)/i);
-      const tone = toneMatch ? 
-        toneMatch[1].split(',').map((t: string) => t.trim()).filter(Boolean) : 
-        ['professional'];
-        
-      // Extract direction
-      const directionMatch = highlightsSection.match(/direction:?\s*([^,.]+)/i);
-      const direction = directionMatch ? directionMatch[1].trim() : 'clean and modern';
+      // Find the most relevant sections using the regexes
+      const summarySection = sections.find(s => summaryRegex.test(s)) || sections[0] || "";
+      const toneSection = sections.find(s => toneRegex.test(s)) || "";
+      const directionSection = sections.find(s => directionRegex.test(s)) || "";
+      const prioritiesSection = sections.find(s => prioritiesRegex.test(s)) || "";
+      const copySection = sections.find(s => copyRegex.test(s)) || sections[sections.length - 1] || "";
       
-      // Extract priorities
-      const prioritiesMatch = highlightsSection.match(/priorities:?\s*([^.]+)/i);
-      const priorities = prioritiesMatch ? 
-        prioritiesMatch[1].split(',').map((p: string) => p.trim()).filter(Boolean) : 
-        ['usability', 'clear messaging'];
+      // Extract tone more naturally (looking for descriptive words)
+      const toneWords = toneSection.match(/\b(professional|friendly|casual|formal|playful|serious|modern|traditional|luxury|minimal|bold|subtle|elegant|sophisticated|approachable|authoritative|conversational|direct|warm|cool)\b/gi);
+      const tone = toneWords 
+        ? Array.from(new Set(toneWords.map(w => w.toLowerCase())))
+        : ['professional', 'approachable'];
       
-      // Extract copy elements
-      const headerMatch = copySection.match(/header:?\s*"([^"]+)"/i);
-      const header = headerMatch ? headerMatch[1].trim() : "Welcome to Our Website";
+      // Extract direction more naturally
+      let direction = "clean and modern design"; // default
+      if (directionSection) {
+        // Look for phrases after "direction:" or similar patterns
+        const dirMatch = directionSection.match(/(?:direction|aesthetic|look and feel)[:\s]+([^.]+)/i);
+        if (dirMatch) {
+          direction = dirMatch[1].trim();
+        } else {
+          // Take the most relevant sentence
+          const sentences = directionSection.split(/\.\s+/);
+          direction = sentences[0].replace(/^[^a-z]+/i, '');
+        }
+      }
       
-      const subtextMatch = copySection.match(/subtext:?\s*"([^"]+)"/i);
-      const subtext = subtextMatch ? subtextMatch[1].trim() : "We create solutions that work for you";
+      // Extract priorities more naturally
+      let priorities: string[] = ['usability', 'clear messaging'];
+      if (prioritiesSection) {
+        // Look for list-like patterns or comma-separated values
+        const prioMatch = prioritiesSection.match(/(?:priorities|focus on|important)[:\s]+([^.]+)/i);
+        if (prioMatch) {
+          priorities = prioMatch[1].split(/,|;/).map(p => p.trim()).filter(Boolean);
+        } else {
+          // Extract key phrases by looking for emphasized words
+          const keyPhrases = prioritiesSection.match(/\b(conversion|usability|aesthetics|performance|speed|accessibility|responsiveness|branding|clarity|simplicity|engagement|security|scalability|content|messaging|navigation|consistency|functionality|integration|SEO)[a-z]*/gi);
+          if (keyPhrases && keyPhrases.length > 0) {
+            priorities = Array.from(new Set(keyPhrases.map(p => p.toLowerCase()))).slice(0, 5);
+          }
+        }
+      }
       
-      const ctaMatch = copySection.match(/call-to-action:?\s*"([^"]+)"/i);
-      const cta = ctaMatch ? ctaMatch[1].trim() : "Get Started Today";
+      // Extract copy elements more naturally
+      let header = "Welcome to Our Website";
+      let subtext = "We create solutions that work for you";
+      let cta = "Get Started";
+      
+      // Look for header patterns
+      const headerMatch = copySection.match(/(?:header|headline|title)[:\s]+"?([^"\.]+)"?/i);
+      if (headerMatch) {
+        header = headerMatch[1].trim();
+      }
+      
+      // Look for subtext patterns
+      const subtextMatch = copySection.match(/(?:subtext|description|tagline|subtitle)[:\s]+"?([^"\.]+)"?/i);
+      if (subtextMatch) {
+        subtext = subtextMatch[1].trim();
+      }
+      
+      // Look for CTA patterns
+      const ctaMatch = copySection.match(/(?:cta|call to action|button)[:\s]+"?([^"\.]+)"?/i);
+      if (ctaMatch) {
+        cta = ctaMatch[1].trim();
+      }
+      
+      // Clean up any markdown formatting or special characters from the summary
+      const cleanedSummary = summarySection
+        .replace(/#{1,6}\s/g, '')  // Remove markdown headers
+        .replace(/\*\*/g, '')      // Remove bold markers
+        .replace(/\*/g, '')        // Remove italic markers
+        .replace(/^\s*[-*•]\s*/gm, '') // Remove bullet points
+        .replace(/^\s*\d+\.\s*/gm, '') // Remove numbered lists
+        .trim();
       
       return {
-        summary: summarySection.trim(),
+        summary: cleanedSummary,
         tone,
         direction,
         priorities,
@@ -121,16 +174,16 @@ export const IntakeSummaryService = {
       };
     } catch (error) {
       console.error("Error generating intake summary:", error);
-      // Provide a fallback response in case of error
+      // Provide a more human-friendly fallback response
       return {
-        summary: "We were unable to generate a summary. Please try again later.",
-        tone: ["professional"],
-        direction: "modern",
-        priorities: ["user experience"],
+        summary: "We couldn't generate a summary at the moment. This might be due to a temporary issue with our AI service.",
+        tone: ["professional", "friendly"],
+        direction: "clean and modern design with intuitive user experience",
+        priorities: ["clear communication", "user-friendly navigation", "visual appeal"],
         draftCopy: {
-          header: "Welcome",
-          subtext: "Thanks for your submission",
-          cta: "Get Started"
+          header: "Building Your Vision Together",
+          subtext: "We're excited to bring your ideas to life with a thoughtfully designed digital experience.",
+          cta: "Let's Begin"
         }
       };
     }
