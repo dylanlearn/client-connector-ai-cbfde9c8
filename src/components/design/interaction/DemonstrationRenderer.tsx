@@ -1,6 +1,14 @@
 
 import { DesignOption } from "../DesignPreview";
-import { getInteractionConfig, InteractionConfig } from "./interactionConfigs";
+import { 
+  getInteractionConfig, 
+  InteractionConfig, 
+  HoverEffectConfig, 
+  ModalDialogConfig, 
+  CustomCursorConfig,
+  ScrollAnimationConfig,
+  DragInteractionConfig
+} from "./interactionConfigs";
 import {
   HoverEffectDemo,
   ModalDialogDemo,
@@ -25,30 +33,31 @@ const DemonstrationRenderer = ({
   cursorPosition,
   handleMouseMove
 }: DemonstrationRendererProps) => {
+  // Get the base interaction config
   const interactionConfig = getInteractionConfig(interaction.id, isActive, cursorPosition);
 
   // Different demonstration UI based on interaction type
   switch (interaction.id) {
     case "interaction-1": // Hover Effects
-      return <HoverEffectDemo interactionConfig={interactionConfig} />;
+      return <HoverEffectDemo interactionConfig={interactionConfig as HoverEffectConfig} />;
     
     case "interaction-2": // Modal Dialogs
-      return <ModalDialogDemo interactionConfig={interactionConfig} isActive={isActive} />;
+      return <ModalDialogDemo interactionConfig={interactionConfig as ModalDialogConfig} isActive={isActive} />;
     
     case "interaction-3": // Custom Cursors
       return (
         <CustomCursorDemo
-          interactionConfig={interactionConfig}
+          interactionConfig={interactionConfig as CustomCursorConfig}
           isDemonstrating={isDemonstrating}
           handleMouseMove={handleMouseMove}
         />
       );
     
     case "interaction-4": // Scroll Animations
-      return <ScrollAnimationDemo interactionConfig={interactionConfig} isActive={isActive} />;
+      return <ScrollAnimationDemo interactionConfig={interactionConfig as ScrollAnimationConfig} isActive={isActive} />;
     
     case "interaction-5": // Drag Interactions
-      return <DragInteractionDemo interactionConfig={interactionConfig} isActive={isActive} />;
+      return <DragInteractionDemo interactionConfig={interactionConfig as DragInteractionConfig} isActive={isActive} />;
     
     default:
       return <DefaultDemo />;

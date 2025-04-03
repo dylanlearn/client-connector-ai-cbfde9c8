@@ -56,7 +56,7 @@ export const getInteractionConfig = (
           scale: 1.05,
           boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" 
         } : {}
-      };
+      } as HoverEffectConfig;
     case "interaction-2": // Modal Dialogs
       return {
         initial: { scale: 0 },
@@ -64,7 +64,7 @@ export const getInteractionConfig = (
           scale: 1,
           transition: { type: "spring", stiffness: 500, damping: 30 }
         } : { scale: 0 }
-      };
+      } as ModalDialogConfig;
     case "interaction-3": // Custom Cursors
       return {
         initial: {},
@@ -73,7 +73,7 @@ export const getInteractionConfig = (
           y: cursorPosition.y,
           transition: { type: "spring", damping: 25, stiffness: 300 }
         }
-      };
+      } as CustomCursorConfig;
     case "interaction-4": // Scroll Animations
       return {
         initial: { opacity: 0, y: 50 },
@@ -82,7 +82,7 @@ export const getInteractionConfig = (
           y: 0,
           transition: { duration: 0.5 }
         } : { opacity: 0, y: 50 }
-      };
+      } as ScrollAnimationConfig;
     case "interaction-5": // Drag Interactions
       return {
         initial: {},
@@ -90,8 +90,8 @@ export const getInteractionConfig = (
         drag: true,
         dragConstraints: { left: 0, right: 100, top: 0, bottom: 0 },
         whileDrag: { scale: 1.1 }
-      };
+      } as DragInteractionConfig;
     default:
-      return {};
+      return {} as BaseInteractionConfig;
   }
 };
