@@ -1,3 +1,4 @@
+
 import { createRoot } from 'react-dom/client'
 import { StrictMode } from 'react'
 import App from './App.tsx'
@@ -7,12 +8,13 @@ import { initializeErrorHandling } from "@/utils/monitoring/error-handling";
 // Create root once and store it
 const root = createRoot(document.getElementById("root")!);
 
-// Initialize error handling before rendering the app
-initializeErrorHandling();
-
-// Render the app with StrictMode for better development experience
+// Render the app first
 root.render(
   <StrictMode>
     <App />
   </StrictMode>
 );
+
+// Initialize error handling after rendering the app
+// This ensures that error monitoring doesn't interfere with the initial render
+initializeErrorHandling();

@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AppProviders } from "@/providers/AppProviders";
 import Index from "@/pages/Index";
@@ -24,6 +25,7 @@ import RequireSubscription from "@/components/auth/RequireSubscription";
 import { lazy, Suspense } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import FeedbackAnalysisPage from "@/pages/FeedbackAnalysisPage";
+import { AppErrorBoundary } from "@/components/error-handling/AppErrorBoundary";
 
 // Use React.lazy for code splitting of routes that aren't part of the critical path
 const LazyAdminPanel = lazy(() => import("@/pages/AdminPanel"));
@@ -38,14 +40,11 @@ const PageLoader = () => (
   </div>
 );
 
-// Wrap the entire app with our error boundary
-import { AppErrorBoundary } from "@/components/error-handling/AppErrorBoundary";
-
 function App() {
   return (
-    <AppErrorBoundary>
-      <Router>
-        <AppProviders>
+    <Router>
+      <AppProviders>
+        <AppErrorBoundary>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
@@ -190,9 +189,9 @@ function App() {
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AppProviders>
-      </Router>
-    </AppErrorBoundary>
+        </AppErrorBoundary>
+      </AppProviders>
+    </Router>
   );
 }
 
