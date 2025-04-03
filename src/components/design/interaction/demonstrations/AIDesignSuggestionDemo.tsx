@@ -1,7 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronRight, ChevronLeft, Check, Lightbulb, Wand2 } from "lucide-react";
+import { Sparkles, ChevronRight, ChevronLeft, Check, Lightbulb, Wand2, ThumbsUp, ThumbsDown } from "lucide-react";
+import { useDesignMemory } from "@/hooks/ai-design/useDesignMemory";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 interface AIDesignSuggestionDemoProps {
   isActive: boolean;
@@ -11,6 +14,15 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
   const [currentSuggestion, setCurrentSuggestion] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [showPromptTips, setShowPromptTips] = useState(false);
+  const [suggestionId, setSuggestionId] = useState<string | null>(null);
+  
+  const { user } = useAuth();
+  const { 
+    results: memorySuggestions, 
+    queryDesignPatterns, 
+    submitFeedback, 
+    storeSuggestion 
+  } = useDesignMemory();
 
   // Sample design suggestions
   const suggestions = [
@@ -46,6 +58,36 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
     "Request specific components: 'animated testimonial carousel' or 'floating contact form'"
   ];
 
+  // Query design memory when component becomes active
+  useEffect(() => {
+    if (isActive) {
+      queryDesignPatterns({
+        limit: 10,
+        relevanceThreshold: 0.6
+      });
+    }
+  }, [isActive, queryDesignPatterns]);
+
+  // Store suggestion in history when viewed
+  useEffect(() => {
+    if (isActive && user?.id && !suggestionId) {
+      const currentItem = suggestions[currentSuggestion];
+      storeSuggestion(
+        currentItem.promptTags.join(" "), 
+        {
+          title: currentItem.title,
+          description: currentItem.description,
+          colorPalette: currentItem.colorPalette,
+          imageUrl: currentItem.imageUrl
+        },
+        [],
+        { source: "demo" }
+      ).then(id => {
+        if (id) setSuggestionId(id);
+      });
+    }
+  }, [isActive, currentSuggestion, user, storeSuggestion, suggestionId]);
+
   // Auto-cycle through suggestions when active
   useEffect(() => {
     let interval: number;
@@ -53,6 +95,7 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
     if (isActive && isAutoplay) {
       interval = window.setInterval(() => {
         setCurrentSuggestion((prev) => (prev + 1) % suggestions.length);
+        setSuggestionId(null); // Reset suggestion ID when changing suggestions
       }, 4000);
     }
     
@@ -80,14 +123,34 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
 
   const nextSuggestion = () => {
     setCurrentSuggestion((prev) => (prev + 1) % suggestions.length);
+    setSuggestionId(null); // Reset suggestion ID when changing suggestions
   };
 
   const prevSuggestion = () => {
     setCurrentSuggestion((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+    setSuggestionId(null); // Reset suggestion ID when changing suggestions
   };
 
   const togglePromptTips = () => {
     setShowPromptTips(!showPromptTips);
+  };
+
+  const handleFeedback = (type: 'like' | 'dislike') => {
+    if (!user?.id || !suggestionId) {
+      toast.error("Please sign in to provide feedback");
+      return;
+    }
+
+    submitFeedback(
+      suggestionId,
+      type,
+      undefined,
+      type === 'like' ? 5 : 1
+    ).then(success => {
+      if (success) {
+        toast.success(type === 'like' ? "Thanks for the positive feedback!" : "Thanks for your feedback!");
+      }
+    });
   };
 
   const currentItem = suggestions[currentSuggestion];
@@ -268,13 +331,33 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
               </AnimatePresence>
             </motion.div>
 
-            {/* Navigation controls */}
+            {/* Feedback and navigation controls */}
             <motion.div 
               className="absolute bottom-0 left-0 right-0 p-2 flex justify-between items-center"
               initial={{ y: 40 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.2, type: "spring" }}
             >
+              {/* Feedback buttons */}
+              <div className="flex gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleFeedback('like')}
+                  className="w-6 h-6 rounded-full border flex items-center justify-center bg-white/70 text-green-600 hover:bg-white"
+                >
+                  <ThumbsUp className="h-3 w-3" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleFeedback('dislike')}
+                  className="w-6 h-6 rounded-full border flex items-center justify-center bg-white/70 text-red-600 hover:bg-white"
+                >
+                  <ThumbsDown className="h-3 w-3" />
+                </motion.button>
+              </div>
+
               {/* Dots indicator */}
               <div className="flex gap-1 justify-center flex-1">
                 {suggestions.map((_, index) => (
