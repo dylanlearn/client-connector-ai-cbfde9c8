@@ -370,6 +370,45 @@ export type Database = {
           },
         ]
       }
+      client_errors: {
+        Row: {
+          browser_info: string | null
+          component_name: string | null
+          error_message: string
+          error_stack: string | null
+          id: string
+          resolution_notes: string | null
+          resolved: boolean | null
+          timestamp: string
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          browser_info?: string | null
+          component_name?: string | null
+          error_message: string
+          error_stack?: string | null
+          id?: string
+          resolution_notes?: string | null
+          resolved?: boolean | null
+          timestamp?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          browser_info?: string | null
+          component_name?: string | null
+          error_message?: string
+          error_stack?: string | null
+          id?: string
+          resolution_notes?: string | null
+          resolved?: boolean | null
+          timestamp?: string
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_link_deliveries: {
         Row: {
           created_at: string
