@@ -669,4 +669,268 @@ const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoP
             initial="initial"
             animate={isPlaying ? "animate" : "initial"}
           >
-            <motion
+            <motion.div
+              className="w-48 h-8 mb-4 flex items-center justify-center"
+              variants={{
+                initial: { opacity: 0, y: 20 },
+                animate: { opacity: 1, y: 0 }
+              }}
+            >
+              <div className="w-full h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg"></div>
+            </motion.div>
+            
+            <motion.div 
+              className="w-64 h-4 bg-gray-200 rounded mb-2"
+              variants={{
+                initial: { opacity: 0, x: -20 },
+                animate: { opacity: 1, x: 0 }
+              }}
+            ></motion.div>
+            
+            <motion.div 
+              className="w-48 h-4 bg-gray-200 rounded mb-2"
+              variants={{
+                initial: { opacity: 0, x: 20 },
+                animate: { opacity: 1, x: 0 }
+              }}
+            ></motion.div>
+            
+            <motion.div 
+              className="w-56 h-4 bg-gray-200 rounded mb-4"
+              variants={{
+                initial: { opacity: 0, x: -20 },
+                animate: { opacity: 1, x: 0 }
+              }}
+            ></motion.div>
+            
+            <motion.button
+              className="w-32 h-10 bg-indigo-600 rounded-lg"
+              variants={{
+                initial: { opacity: 0, y: 20, scale: 0.9 },
+                animate: { opacity: 1, y: 0, scale: 1 }
+              }}
+            ></motion.button>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WebsiteStaggeredRevealDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      <div className="bg-white h-56 p-3">
+        {/* Gallery with staggered reveal */}
+        <div className="w-full h-full flex flex-col">
+          <div className="h-10 w-full flex items-center">
+            <div className="w-1/3 h-5 bg-gray-800 rounded mx-auto"></div>
+          </div>
+          
+          <div className="flex-1 grid grid-cols-3 gap-2 p-2">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={isPlaying ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+                transition={{
+                  duration: 0.4,
+                  delay: i * 0.15,
+                  repeat: isPlaying ? Infinity : 0,
+                  repeatDelay: 3,
+                  repeatType: "reverse"
+                }}
+              >
+                <div className={`w-full h-full bg-gradient-to-br ${
+                  i % 3 === 0 ? 'from-blue-200 to-blue-300' : 
+                  i % 3 === 1 ? 'from-purple-200 to-purple-300' : 
+                  'from-pink-200 to-pink-300'
+                }`}></div>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="h-10 flex justify-center items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gray-200"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+            <div className="w-8 h-8 rounded-full bg-gray-400"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WebsiteFloatingElementsDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      <div className="bg-white h-56 p-3">
+        {/* Hero with floating elements */}
+        <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden">
+          {/* Background shapes */}
+          <motion.div
+            className="absolute w-20 h-20 rounded-full bg-blue-200 opacity-40 top-5 left-10"
+            animate={isPlaying ? { y: [-8, 0, -8], rotate: [0, 5, 0] } : {}}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          ></motion.div>
+          
+          <motion.div
+            className="absolute w-16 h-16 rounded-full bg-purple-200 opacity-40 bottom-8 right-10"
+            animate={isPlaying ? { y: [-6, 2, -6], rotate: [0, -5, 0] } : {}}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          ></motion.div>
+          
+          <motion.div
+            className="absolute w-12 h-12 rounded-full bg-indigo-200 opacity-40 top-20 right-16"
+            animate={isPlaying ? { y: [-4, 4, -4], rotate: [0, 10, 0] } : {}}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          ></motion.div>
+          
+          {/* Content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.div
+              className="w-40 h-40 bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-4 gap-3"
+              animate={isPlaying ? { y: [-5, 5, -5] } : {}}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500"></div>
+              <div className="w-3/4 h-3 bg-gray-200 rounded-full"></div>
+              <div className="w-1/2 h-3 bg-gray-200 rounded-full"></div>
+            </motion.div>
+          </div>
+          
+          {/* Small particles */}
+          {[...Array(5)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-white opacity-70"
+              style={{
+                top: `${20 + i * 10}%`,
+                left: `${10 + i * 20}%`,
+              }}
+              animate={isPlaying ? { 
+                y: [-15, 0, -15], 
+                opacity: [0.3, 0.7, 0.3],
+                scale: [0.8, 1, 0.8]
+              } : {}}
+              transition={{ 
+                duration: 2 + i, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                delay: i * 0.2
+              }}
+            ></motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WebsiteElasticMotionDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      <div className="bg-white h-56 p-3">
+        {/* Elastic motion header */}
+        <div className="flex flex-col items-center h-full">
+          <div className="h-12 w-full flex items-center justify-center">
+            <motion.div
+              className="w-1/2 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg"
+              animate={isPlaying ? {
+                scale: [1, 1.1, 0.9, 1.05, 1],
+                borderRadius: ["10px", "25px", "10px", "25px", "10px"]
+              } : {}}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 0.5 }}
+            ></motion.div>
+          </div>
+          
+          <div className="flex-1 grid grid-cols-2 gap-4 w-full mt-4">
+            <div className="flex flex-col gap-3">
+              <motion.div
+                className="w-full h-4 bg-gray-200 rounded"
+                animate={isPlaying ? {
+                  scaleX: [1, 1.05, 0.95, 1],
+                  x: [0, 5, -5, 0]
+                } : {}}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+              ></motion.div>
+              <motion.div
+                className="w-3/4 h-4 bg-gray-200 rounded"
+                animate={isPlaying ? {
+                  scaleX: [1, 1.05, 0.95, 1],
+                  x: [0, 3, -3, 0]
+                } : {}}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.1 }}
+              ></motion.div>
+              <motion.div
+                className="w-full h-4 bg-gray-200 rounded"
+                animate={isPlaying ? {
+                  scaleX: [1, 1.05, 0.95, 1],
+                  x: [0, 5, -5, 0]
+                } : {}}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.2 }}
+              ></motion.div>
+              
+              <motion.div
+                className="w-32 h-10 bg-indigo-500 rounded-lg mt-2"
+                animate={isPlaying ? {
+                  scale: [1, 1.1, 0.95, 1.02, 1],
+                  rotate: [0, 1, -1, 0.5, 0]
+                } : {}}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+              ></motion.div>
+            </div>
+            
+            <motion.div
+              className="bg-gray-100 rounded-lg w-full h-full"
+              animate={isPlaying ? {
+                scale: [1, 1.02, 0.98, 1.01, 1],
+                rotate: [0, 0.5, -0.5, 0.2, 0],
+                borderRadius: ["10px", "15px", "10px", "12px", "10px"]
+              } : {}}
+              transition={{ duration: 4, repeat: Infinity }}
+            >
+              <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-3">
+                <div className="w-full h-2/3 bg-white rounded-md"></div>
+                <div className="flex gap-2 mt-2">
+                  <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+                  <div className="flex flex-col gap-1">
+                    <div className="w-20 h-3 bg-gray-300 rounded"></div>
+                    <div className="w-16 h-3 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AnimationPreview;
