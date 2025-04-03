@@ -1,7 +1,18 @@
 
-import { animation_category } from '@/integrations/supabase/types';
-
-export type AnimationCategory = animation_category;
+// Define the animation category type directly since it's not exported by Supabase types
+export type AnimationCategory = 
+  | 'morphing_shape'
+  | 'progressive_disclosure'
+  | 'intent_based_motion'
+  | 'glassmorphism'
+  | 'hover_effect'
+  | 'modal_dialog'
+  | 'custom_cursor'
+  | 'scroll_animation'
+  | 'drag_interaction'
+  | 'magnetic_element'
+  | 'color_shift'
+  | 'parallax_tilt';
 
 export type AnimationPreference = {
   id: string;

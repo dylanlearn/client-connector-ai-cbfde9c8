@@ -18,12 +18,12 @@ export function useAnimationAnalytics() {
     feedback?: AnimationFeedback
   ) => {
     try {
-      const { error } = await supabase.rpc(
-        'record_animation_interaction',
-        {
-          p_animation_type: animationType,
-          p_duration: metrics?.duration,
-          p_device_info: {
+      // Use POST request directly instead of RPC until types are updated
+      await supabase.functions.invoke('animation-tracking', {
+        body: {
+          animation_type: animationType,
+          duration: metrics?.duration,
+          device_info: {
             deviceType: deviceInfo.deviceType,
             browser: deviceInfo.browserName,
             os: deviceInfo.osName,
@@ -32,16 +32,12 @@ export function useAnimationAnalytics() {
               height: window.innerHeight
             }
           },
-          p_performance_metrics: metrics || {},
-          p_feedback: feedback
+          performance_metrics: metrics || {},
+          feedback: feedback
         }
-      );
-      
-      if (error) {
-        console.error('Error tracking animation:', error);
-      }
+      });
     } catch (err) {
-      console.error('Error in trackAnimation:', err);
+      console.error('Error tracking animation:', err);
     }
   }, [deviceInfo]);
   

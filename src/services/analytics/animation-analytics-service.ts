@@ -57,22 +57,19 @@ class AnimationAnalyticsBatchService {
       const eventsToProcess = [...this.events];
       this.events = [];
       
-      // Process each event by calling the record_animation_interaction function
-      await Promise.all(eventsToProcess.map(event => 
-        supabase.rpc('record_animation_interaction', {
-          p_animation_type: event.animation_type,
-          p_duration: event.duration,
-          p_device_info: event.device_info || {},
-          p_performance_metrics: event.performance_metrics || {},
-          p_feedback: event.feedback
-        })
-      ));
+      // Process events in a batch via the edge function
+      await supabase.functions.invoke('animation-tracking', {
+        body: { 
+          action: 'batch_process',
+          events: eventsToProcess
+        }
+      });
       
       console.log(`Successfully flushed ${eventsToProcess.length} animation events`);
     } catch (error) {
       console.error('Error flushing animation events:', error);
       // Put events back in the queue
-      this.events = [...this.events, ...this.events];
+      this.events = [...this.events];
     } finally {
       this.isProcessing = false;
     }
@@ -111,15 +108,20 @@ export const trackAnimationView = (
 // Function to get animation analytics
 export const getAnimationAnalytics = async (animationType?: AnimationCategory) => {
   try {
-    let query = supabase
+    const { data, error } = await supabase
       .from('animation_analytics')
-      .select('*');
-      
-    if (animationType) {
-      query = query.eq('animation_type', animationType);
-    }
-    
-    const { data, error } = await query;
+      .select('*')
+      .eq(animationType ? 'animation_type' : '', animationType || '')
+      .then(response => {
+        if (animationType) {
+          // Filter on client side if we provided an animation type
+          return {
+            ...response,
+            data: response.data?.filter(item => item.animation_type === animationType)
+          };
+        }
+        return response;
+      });
     
     if (error) throw error;
     return data;
