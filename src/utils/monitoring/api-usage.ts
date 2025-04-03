@@ -40,3 +40,37 @@ export const recordApiUsage = async (
     return false;
   }
 };
+
+/**
+ * Record client-side errors for monitoring
+ */
+export const recordClientError = async (
+  errorMessage: string,
+  errorStack?: string,
+  componentName?: string,
+  userId?: string
+): Promise<boolean> => {
+  try {
+    const { error } = await (supabase
+      .from('client_errors' as any)
+      .insert({
+        error_message: errorMessage,
+        error_stack: errorStack,
+        component_name: componentName,
+        user_id: userId,
+        browser_info: navigator.userAgent,
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      })) as any;
+      
+    if (error) {
+      console.error('Error recording client error:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in recordClientError:', error);
+    return false;
+  }
+};

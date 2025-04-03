@@ -4,3 +4,5 @@ export * from './types';
 export * from './system-status';
 export * from './rate-limiting';
 export * from './api-usage';
+export * from './error-handling';
+

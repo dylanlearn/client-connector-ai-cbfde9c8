@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AppProviders } from "@/providers/AppProviders";
 import Index from "@/pages/Index";
@@ -39,156 +38,161 @@ const PageLoader = () => (
   </div>
 );
 
+// Wrap the entire app with our error boundary
+import { AppErrorBoundary } from "@/components/error-handling/AppErrorBoundary";
+
 function App() {
   return (
-    <Router>
-      <AppProviders>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/signup-confirmation" element={<SignupConfirmation />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="/pricing" element={<Pricing />} />
-          
-          {/* Client portal routes - protected by client token */}
-          <Route path="/client-access" element={<ClientAccess />} />
-          <Route path="/client-hub" element={<ClientHub />} />
-          
-          {/* Admin routes - lazy loaded */}
-          <Route path="/admin" element={
-            <ProtectedRoute>
-              <Suspense fallback={<PageLoader />}>
-                <LazyAdminPanel />
-              </Suspense>
-            </ProtectedRoute>
-          } />
-          
-          {/* Protected routes requiring authentication AND subscription */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <Dashboard />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/projects" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <Projects />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/new-project" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <NewProject />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/project/:projectId/questionnaire" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <ProjectQuestionnaire />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/project/:projectId/questionnaire/preview" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <QuestionnairePreview />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/project/:projectId/questionnaire/results" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <QuestionnaireResults />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/clients" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <Clients />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/intake-form" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <IntakeForm />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/design-picker" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <DesignPicker />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/analytics" element={
-            <ProtectedRoute>
-              <RequireSubscription>
+    <AppErrorBoundary>
+      <Router>
+        <AppProviders>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/signup-confirmation" element={<SignupConfirmation />} />
+            <Route path="/templates" element={<Templates />} />
+            <Route path="/pricing" element={<Pricing />} />
+            
+            {/* Client portal routes - protected by client token */}
+            <Route path="/client-access" element={<ClientAccess />} />
+            <Route path="/client-hub" element={<ClientHub />} />
+            
+            {/* Admin routes - lazy loaded */}
+            <Route path="/admin" element={
+              <ProtectedRoute>
                 <Suspense fallback={<PageLoader />}>
-                  <LazyAnalytics />
+                  <LazyAdminPanel />
                 </Suspense>
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/ai-suggestions" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <Suspense fallback={<PageLoader />}>
-                  <LazyAIDesignSuggestions />
-                </Suspense>
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/feedback-analysis" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <FeedbackAnalysisPage />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <Settings />
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/onboarding" element={
-            <ProtectedRoute>
-              <RequireSubscription>
-                <Suspense fallback={<PageLoader />}>
-                  <LazyOnboarding />
-                </Suspense>
-              </RequireSubscription>
-            </ProtectedRoute>
-          } />
-          
-          {/* Catch all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AppProviders>
-    </Router>
+              </ProtectedRoute>
+            } />
+            
+            {/* Protected routes requiring authentication AND subscription */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Dashboard />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Projects />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/new-project" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <NewProject />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/project/:projectId/questionnaire" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <ProjectQuestionnaire />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/project/:projectId/questionnaire/preview" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <QuestionnairePreview />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/project/:projectId/questionnaire/results" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <QuestionnaireResults />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/clients" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Clients />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/intake-form" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <IntakeForm />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/design-picker" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <DesignPicker />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAnalytics />
+                  </Suspense>
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/ai-suggestions" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAIDesignSuggestions />
+                  </Suspense>
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/feedback-analysis" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <FeedbackAnalysisPage />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Settings />
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <RequireSubscription>
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyOnboarding />
+                  </Suspense>
+                </RequireSubscription>
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppProviders>
+      </Router>
+    </AppErrorBoundary>
   );
 }
 
