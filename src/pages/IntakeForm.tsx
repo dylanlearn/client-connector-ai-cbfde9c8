@@ -18,6 +18,7 @@ import CompletionStep from "@/components/intake/CompletionStep";
 import { useIntakeForm } from "@/hooks/intake-form";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const IntakeForm = () => {
   const navigate = useNavigate();
@@ -137,54 +138,56 @@ const IntakeForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resume Previous Form?</AlertDialogTitle>
-            <AlertDialogDescription>
-              We found a previously started form. Would you like to resume where you left off or start a new form?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleStartNewForm}>Start New</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResumeForm}>Resume</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <DashboardLayout>
+      <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Resume Previous Form?</AlertDialogTitle>
+              <AlertDialogDescription>
+                We found a previously started form. Would you like to resume where you left off or start a new form?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleStartNewForm}>Start New</AlertDialogCancel>
+              <AlertDialogAction onClick={handleResumeForm}>Resume</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Project Intake Form</h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Help us understand your project better so we can deliver exactly what you need.
-          </p>
-        </div>
-
-        <div className="mb-8">
-          <div className="flex justify-between mb-2 text-sm font-medium text-gray-500">
-            <span>Step {currentStep} of {totalSteps}</span>
-            <span>{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Project Intake Form</h1>
+            <p className="mt-2 text-lg text-gray-600">
+              Help us understand your project better so we can deliver exactly what you need.
+            </p>
           </div>
-          <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {currentStep === 1 && "What are you building?"}
-              {currentStep === 2 && "General Information"}
-              {currentStep === 3 && "Specific Requirements"}
-              {currentStep === 4 && "Design Preferences"}
-              {currentStep === 5 && "Review & Submit"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderStepContent()}
-          </CardContent>
-        </Card>
+          <div className="mb-8">
+            <div className="flex justify-between mb-2 text-sm font-medium text-gray-500">
+              <span>Step {currentStep} of {totalSteps}</span>
+              <span>{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+            </div>
+            <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {currentStep === 1 && "What are you building?"}
+                {currentStep === 2 && "General Information"}
+                {currentStep === 3 && "Specific Requirements"}
+                {currentStep === 4 && "Design Preferences"}
+                {currentStep === 5 && "Review & Submit"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

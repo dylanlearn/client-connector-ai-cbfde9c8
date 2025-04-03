@@ -40,7 +40,7 @@ const Pricing = () => {
   };
 
   return (
-    <SidebarProvider>
+    <Layout>
       <div className="min-h-screen flex flex-col w-full">
         {/* Hidden tracker to collect interaction data */}
         <InteractionTracker />
@@ -141,7 +141,7 @@ const Pricing = () => {
           </div>
         </footer>
       </div>
-    </SidebarProvider>
+    </Layout>
   );
 };
 
