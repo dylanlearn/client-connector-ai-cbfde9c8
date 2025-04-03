@@ -4,7 +4,7 @@ import { MousePointer, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DesignOption } from "../DesignPreview";
 
-interface InteractionControlsProps {
+export interface InteractionControlsProps {
   interaction: DesignOption;
   isDemonstrating: boolean;
   isActive: boolean;

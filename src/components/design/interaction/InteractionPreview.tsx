@@ -17,6 +17,7 @@ const InteractionPreview = ({ interaction }: InteractionPreviewProps) => {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [key, setKey] = useState(0); // For resetting interactions
   const [showWebsitePreview, setShowWebsitePreview] = useState(false);
+  const [isDemonstrating, setIsDemonstrating] = useState(false);
   
   // Get interaction config
   const interactionConfig = getInteractionConfig(interaction.id, isActive, cursorPosition);
@@ -35,10 +36,19 @@ const InteractionPreview = ({ interaction }: InteractionPreviewProps) => {
   // Reset interaction
   const resetInteraction = () => {
     setIsActive(false);
+    setIsDemonstrating(false);
     setTimeout(() => {
       setKey(prev => prev + 1);
       setIsActive(true);
     }, 100);
+  };
+
+  // Trigger the interaction
+  const triggerInteraction = () => {
+    if (interaction.id === "interaction-3") {
+      setIsDemonstrating(!isDemonstrating);
+    }
+    setIsActive(!isActive);
   };
 
   return (
@@ -48,10 +58,11 @@ const InteractionPreview = ({ interaction }: InteractionPreviewProps) => {
       {showWebsitePreview ? (
         <div className="relative h-64 bg-gradient-to-r from-gray-50 to-blue-50 rounded-md flex items-center justify-center mb-4 overflow-hidden">
           <DemonstrationRenderer 
-            interactionType={interaction.id}
-            interactionConfig={interactionConfig}
+            interaction={interaction}
             isActive={isActive}
+            isDemonstrating={isDemonstrating}
             cursorPosition={cursorPosition}
+            handleMouseMove={handleCursorMove}
           />
           <button 
             onClick={() => setShowWebsitePreview(false)}
@@ -67,10 +78,11 @@ const InteractionPreview = ({ interaction }: InteractionPreviewProps) => {
           onMouseMove={handleCursorMove}
         >
           <InteractionControls
-            interactionType={interaction.id}
-            interactionConfig={interactionConfig}
+            interaction={interaction}
             isActive={isActive}
-            cursorPosition={cursorPosition}
+            isDemonstrating={isDemonstrating}
+            triggerInteraction={triggerInteraction}
+            resetInteraction={resetInteraction}
             key={key}
           />
         </div>
@@ -83,7 +95,7 @@ const InteractionPreview = ({ interaction }: InteractionPreviewProps) => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setIsActive(!isActive)}
+            onClick={triggerInteraction}
           >
             {isActive ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
             {isActive ? "Pause" : "Demonstrate"}

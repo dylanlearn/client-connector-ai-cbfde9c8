@@ -19,7 +19,7 @@ import {
   AIDesignSuggestionDemo
 } from "./demonstrations";
 
-interface DemonstrationRendererProps {
+export interface DemonstrationRendererProps {
   interaction: DesignOption;
   isActive: boolean;
   isDemonstrating: boolean;
