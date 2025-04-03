@@ -3,17 +3,23 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AIGeneratorService } from '@/services/ai';
 import { ContentRequest } from './types';
-import { usePromptTesting } from './usePromptTesting';
 import { useAuth } from '@/hooks/use-auth';
-
-interface UseGenerationOptions {
-  autoRetry?: boolean;
-  maxRetries?: number;
-  timeout?: number;
-  showToasts?: boolean;
-  useFallbacks?: boolean;
-  enableABTesting?: boolean;
-}
+import { 
+  UseGenerationOptions, 
+  UseGenerationReturn 
+} from './types/generation-types';
+import { 
+  createTimeoutController,
+  calculateBackoffDelay 
+} from './utils/retry-utils';
+import { 
+  getFallbackContent 
+} from './utils/fallback-utils';
+import { 
+  getTestVariant,
+  recordTestSuccess,
+  recordTestFailure 
+} from './utils/test-variant-utils';
 
 /**
  * Hook for managing AI content generation with retries and timeout handling
@@ -25,7 +31,7 @@ export function useGeneration({
   showToasts = false,
   useFallbacks = true,
   enableABTesting = true
-}: UseGenerationOptions = {}) {
+}: UseGenerationOptions = {}): UseGenerationReturn {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -45,6 +51,68 @@ export function useGeneration({
     };
   }, []);
 
+  // Function to attempt generation with retry logic
+  const attemptGeneration = useCallback(async (
+    request: ContentRequest,
+    retryCount: number,
+    testInfo?: { activeTestId?: string; testVariantId?: string }
+  ): Promise<string> => {
+    try {
+      const cacheKey = `ai-content-${request.type}-${request.context || ''}-${request.tone || ''}-${testInfo?.testVariantId || 'default'}-${retryCount}`;
+      
+      const startTime = Date.now();
+      
+      const content = await AIGeneratorService.generateContent({
+        ...request,
+        cacheKey,
+        testVariantId: testInfo?.testVariantId
+      });
+      
+      const latencyMs = Date.now() - startTime;
+      
+      // Record test success if A/B testing is enabled
+      if (testInfo?.activeTestId && testInfo?.testVariantId && user) {
+        await recordTestSuccess(
+          testInfo.activeTestId,
+          testInfo.testVariantId,
+          user.id,
+          latencyMs
+        );
+      }
+      
+      // Clear timeout on success
+      if (requestTimeoutRef.current) {
+        clearTimeout(requestTimeoutRef.current);
+        requestTimeoutRef.current = null;
+      }
+      
+      return content;
+    } catch (error) {
+      // Record test failure if A/B testing is enabled
+      if (testInfo?.activeTestId && testInfo?.testVariantId && user) {
+        await recordTestFailure(
+          testInfo.activeTestId,
+          testInfo.testVariantId,
+          user.id,
+          error instanceof Error ? error.name : 'UnknownError'
+        );
+      }
+      
+      // Retry logic
+      if (autoRetry && retryCount < maxRetries) {
+        console.log(`Retrying AI generation (${retryCount + 1}/${maxRetries})...`);
+        
+        // Exponential backoff
+        const backoffDelay = calculateBackoffDelay(retryCount);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        
+        return attemptGeneration(request, retryCount + 1, testInfo);
+      }
+      
+      throw error;
+    }
+  }, [autoRetry, maxRetries, user]);
+
   const generate = useCallback(async (request: ContentRequest): Promise<string> => {
     setIsGenerating(true);
     setLastError(null);
@@ -54,107 +122,33 @@ export function useGeneration({
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    abortControllerRef.current = new AbortController();
+    
+    const { controller, clearTimeoutFn } = createTimeoutController(timeout, () => {
+      setLastError(new Error('Request timed out'));
+      setIsGenerating(false);
+      
+      if (showToasts) {
+        toast.error("Generation Failed", {
+          description: "AI content generation timed out"
+        });
+      }
+    });
+    
+    abortControllerRef.current = controller;
     
     // Clear previous timeout if exists
     if (requestTimeoutRef.current) {
       clearTimeout(requestTimeoutRef.current);
     }
     
-    // Set up timeout for the request
-    requestTimeoutRef.current = setTimeout(() => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        setLastError(new Error('Request timed out'));
-        setIsGenerating(false);
-        
-        if (showToasts) {
-          toast.error("Generation Failed", {
-            description: "AI content generation timed out"
-          });
-        }
-      }
-    }, timeout);
-    
-    let testVariantId: string | undefined;
-    let activeTestId: string | undefined;
-    
-    // Handle A/B testing if enabled
-    if (enableABTesting && user) {
-      try {
-        const test = await AIGeneratorService.getActivePromptTest(request.type);
-        if (test) {
-          activeTestId = test.id; // Store test ID for recording results
-          const variant = await AIGeneratorService.selectPromptVariant(request.type, user.id);
-          if (variant) {
-            testVariantId = variant.id;
-          }
-        }
-      } catch (error) {
-        console.error("Error getting A/B test variant:", error);
-      }
-    }
-    
-    // Function to attempt generation with retry logic
-    const attemptGeneration = async (retryCount: number): Promise<string> => {
-      try {
-        const cacheKey = `ai-content-${request.type}-${request.context || ''}-${request.tone || ''}-${testVariantId || 'default'}-${retryCount}`;
-        
-        const startTime = Date.now();
-        
-        const content = await AIGeneratorService.generateContent({
-          ...request,
-          cacheKey,
-          testVariantId
-        });
-        
-        const latencyMs = Date.now() - startTime;
-        
-        // Record test success if A/B testing is enabled
-        if (testVariantId && activeTestId && user) {
-          await AIGeneratorService.recordPromptTestSuccess(
-            activeTestId, 
-            testVariantId, 
-            user.id, 
-            latencyMs
-          );
-        }
-        
-        // Clear timeout on success
-        if (requestTimeoutRef.current) {
-          clearTimeout(requestTimeoutRef.current);
-          requestTimeoutRef.current = null;
-        }
-        
-        return content;
-      } catch (error) {
-        // Record test failure if A/B testing is enabled
-        if (testVariantId && activeTestId && user) {
-          await AIGeneratorService.recordPromptTestFailure(
-            activeTestId,
-            testVariantId, 
-            user.id, 
-            error instanceof Error ? error.name : 'UnknownError'
-          );
-        }
-        
-        // Retry logic
-        if (autoRetry && retryCount < maxRetries) {
-          console.log(`Retrying AI generation (${retryCount + 1}/${maxRetries})...`);
-          
-          // Exponential backoff
-          const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000);
-          await new Promise(resolve => setTimeout(resolve, backoffDelay));
-          
-          return attemptGeneration(retryCount + 1);
-        }
-        
-        throw error;
-      }
-    };
+    // Get test variant information if A/B testing is enabled
+    const testInfo = user?.id && enableABTesting 
+      ? await getTestVariant(request.type, user.id, enableABTesting)
+      : undefined;
     
     try {
-      const result = await attemptGeneration(0);
+      const result = await attemptGeneration(request, 0, testInfo);
+      clearTimeoutFn(); // Clear the timeout on success
       return result;
     } catch (error) {
       console.error('AI content generation failed:', error);
@@ -168,20 +162,14 @@ export function useGeneration({
       
       // Return fallback content if enabled
       if (useFallbacks) {
-        const fallbacks = {
-          header: `Example ${request.type || 'header'}`,
-          tagline: "Brief, compelling tagline example",
-          cta: "Sign up for free",
-          description: `Sample description for ${request.context || 'this field'}`
-        };
-        return fallbacks[request.type as keyof typeof fallbacks] || `Example ${request.type}`;
+        return getFallbackContent(request.type, request.context);
       }
       
       throw error;
     } finally {
       setIsGenerating(false);
     }
-  }, [autoRetry, maxRetries, timeout, showToasts, useFallbacks, enableABTesting, user]);
+  }, [attemptGeneration, enableABTesting, showToasts, timeout, useFallbacks, user]);
 
   const cancelGeneration = useCallback(() => {
     if (abortControllerRef.current) {

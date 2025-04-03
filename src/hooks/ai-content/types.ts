@@ -81,3 +81,6 @@ export interface TestResultData {
 export interface ToastAdapter {
   toast: (props: any) => { id: string; dismiss: () => void; update: (props: any) => void };
 }
+
+// Re-export from generation-types for backwards compatibility
+export { UseGenerationOptions, UseGenerationReturn, FallbackContentMap } from './types/generation-types';
