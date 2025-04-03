@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IntakeSummaryResult } from "@/services/ai/summary/intake-summary-service";
-import { RefreshCw, Check, Copy, Palette, Zap, Type, LayoutPanelTop } from "lucide-react";
+import { RefreshCw, Check, Copy, Palette, Zap, Type, LayoutPanelTop, Circle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AISummaryResultProps {
@@ -23,6 +23,47 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
     toast({
       title: "Copied to clipboard",
       description: `${label} has been copied to your clipboard.`,
+    });
+  };
+  
+  // Function to format text with proper styling
+  const formatText = (text: string) => {
+    // Replace markdown headers with styled headers
+    const processedText = text
+      .replace(/^###\s+(.+)$/gm, '<span class="text-lg font-bold mb-2 mt-4 block">$1</span>')
+      .replace(/^##\s+(.+)$/gm, '<span class="text-xl font-bold mb-3 mt-5 block">$1</span>')
+      .replace(/^#\s+(.+)$/gm, '<span class="text-2xl font-bold mb-4 mt-6 block">$1</span>');
+      
+    // Split by paragraphs and process
+    const paragraphs = processedText.split('\n\n');
+    
+    return paragraphs.map((paragraph, idx) => {
+      // Skip empty paragraphs
+      if (paragraph.trim() === '') return null;
+      
+      // If paragraph starts with a bullet marker (or we should convert it to one)
+      if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
+        return (
+          <div key={idx} className="flex items-start mb-3 gap-2">
+            <Circle className="h-2 w-2 mt-2 text-yellow-400 flex-shrink-0" />
+            <div 
+              dangerouslySetInnerHTML={{ 
+                __html: paragraph.replace(/^[*-]\s+/, '')
+              }} 
+              className="text-zinc-300 leading-relaxed"
+            />
+          </div>
+        );
+      }
+      
+      // Regular paragraph with potential formatted headers
+      return (
+        <div 
+          key={idx} 
+          dangerouslySetInnerHTML={{ __html: paragraph }} 
+          className="mb-4 text-zinc-300 leading-relaxed"
+        />
+      );
     });
   };
   
@@ -76,12 +117,7 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
           <CardContent>
             <div className="space-y-4">
               <div className="text-zinc-300 leading-relaxed">
-                {summaryResult.summary
-                  .split('\n\n')
-                  .filter(paragraph => paragraph.trim() !== '')
-                  .map((paragraph, i) => (
-                    <p key={i} className="mb-4">{paragraph}</p>
-                  ))}
+                {formatText(summaryResult.summary)}
               </div>
               
               <div className="flex justify-end">

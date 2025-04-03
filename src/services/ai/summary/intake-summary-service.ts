@@ -43,9 +43,9 @@ export const IntakeSummaryService = {
           .join('\n\n')}
         
         Please provide:
-        1. A concise, friendly project summary written in natural paragraphs
+        1. A concise, friendly project summary written in natural paragraphs with important points highlighted using bold text (but don't use markdown formatting)
         2. Brand tone words and design direction in conversational style
-        3. Project priorities written in a natural way
+        3. Project priorities written in a natural way as a bulleted list (use "- " prefix for each bullet point)
         4. Draft website copy including a compelling header, engaging subtext, and persuasive call-to-action
       `;
       
@@ -54,7 +54,13 @@ export const IntakeSummaryService = {
         into clear, actionable project briefs for design teams. Your summaries should be written in a 
         natural, conversational tone as if you're speaking directly to a colleague.
         
-        Write in a warm, human voice without using any markdown formatting.
+        For content structure, use the following format:
+        - Use "# Title" for main sections (very sparingly)
+        - Use "## Subtitle" for important subsections
+        - Use "### Point" for key points that need emphasis
+        - Use "- " for bullet points
+        
+        Write in a warm, human voice. For important concepts, use bold text by making the section header larger and bold.
         
         When suggesting copy, make it sound authentic and human-centered, not corporate or AI-generated.
         Focus on creating content that feels like it was written by a professional copywriter.
@@ -165,17 +171,14 @@ export const IntakeSummaryService = {
         }
       }
       
-      // Clean up any markdown formatting or special characters from the summary
-      const cleanedSummary = summaryParagraph
-        .replace(/#{1,6}\s/g, '')  // Remove markdown headers
-        .replace(/\*\*/g, '')      // Remove bold markers
-        .replace(/\*/g, '')        // Remove italic markers
-        .replace(/^\s*[-*•]\s*/gm, '') // Remove bullet points
-        .replace(/^\s*\d+\.\s*/gm, '') // Remove numbered lists
-        .trim();
+      // Format the summary with appropriate heading styles and bullet points
+      const formattedSummary = response
+        .replace(/^#+\s+(.+)$/gm, '### $1') // Standardize all headings to level 3
+        .replace(/^\s*[-*•]\s*/gm, '- ') // Standardize bullet points
+        .replace(/\*\*([^*]+)\*\*/g, '### $1'); // Convert bold text to headers
       
       return {
-        summary: cleanedSummary,
+        summary: formattedSummary,
         tone,
         direction,
         priorities,
@@ -189,7 +192,7 @@ export const IntakeSummaryService = {
       console.error("Error generating intake summary:", error);
       // Provide a more human-friendly fallback response
       return {
-        summary: "I couldn't generate a complete summary right now. This might be due to a temporary issue with our AI service. The good news is that we've saved all your responses, so we can try again in a moment.",
+        summary: "### I couldn't generate a complete summary right now\n\nThis might be due to a temporary issue with our AI service. The good news is that we've saved all your responses, so we can try again in a moment.",
         tone: ["professional", "friendly"],
         direction: "clean and modern design with intuitive user experience",
         priorities: ["clear communication", "user-friendly navigation", "visual appeal"],
