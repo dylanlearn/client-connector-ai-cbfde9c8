@@ -1,4 +1,3 @@
-
 export interface AIMessage {
   id: string;
   createdAt: Date;
@@ -79,5 +78,6 @@ export interface AIContextType {
   summarizeFeedback: (feedback: string[]) => Promise<string>;
   storeMemory: (content: string, category: string, projectId?: string, metadata?: Record<string, any>) => Promise<void>;
   trackInteraction?: (eventType: 'click' | 'hover' | 'scroll' | 'view', elementSelector: string, position: { x: number, y: number }, projectId?: string) => Promise<void>;
+  analyzeFeedback?: (feedbackText: string) => Promise<any>;
   reset: () => void;
 }

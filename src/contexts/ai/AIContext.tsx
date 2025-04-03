@@ -89,6 +89,23 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     resetMemoryContext();
   }, [resetMessages, resetAnalysis, resetDesignRecommendations, resetMemoryContext]);
 
+  // Adapter functions to match expected interface types
+  const analyzeResponsesAdapter = async (responses: Record<string, string>): Promise<void> => {
+    await analyzeResponses(responses as Record<string, any>);
+  };
+
+  const generateDesignRecommendationsAdapter = async (prompt: string): Promise<void> => {
+    const parseData = { prompt, type: 'design', timestamp: new Date().toISOString() };
+    await generateDesignRecommendations(parseData as unknown as Record<string, any>);
+  };
+
+  const summarizeFeedbackAdapter = async (feedbackArray: string[]): Promise<string> => {
+    // Join array items if array provided, or use single string
+    const feedback = Array.isArray(feedbackArray) ? feedbackArray.join('\n') : feedbackArray as unknown as string;
+    const result = await summarizeFeedback(feedback);
+    return Array.isArray(result) ? result.join('\n') : result;
+  };
+
   return (
     <AIContext.Provider
       value={{
@@ -99,10 +116,10 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
         memoryContext: memoryContext as AIMemoryContextType | undefined,
         isRealtime,
         simulateResponse,
-        analyzeResponses,
-        generateDesignRecommendations,
+        analyzeResponses: analyzeResponsesAdapter,
+        generateDesignRecommendations: generateDesignRecommendationsAdapter,
         generateContent,
-        summarizeFeedback,
+        summarizeFeedback: summarizeFeedbackAdapter,
         storeMemory,
         trackInteraction,
         analyzeFeedback,
