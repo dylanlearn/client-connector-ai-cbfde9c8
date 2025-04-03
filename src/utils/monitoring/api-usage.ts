@@ -64,7 +64,8 @@ export const recordClientError = async (
       return null;
     }
     
-    return data?.id as string;
+    // Make sure we're returning a string or null, not undefined
+    return data && data.id ? String(data.id) : null;
   } catch (error) {
     console.error('Failed to record client error:', error);
     return null;
