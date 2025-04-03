@@ -7,14 +7,22 @@ import { ParsedSuggestion } from "./types";
 import ColorPalette from "./ColorPalette";
 import TypographyDisplay from "./TypographyDisplay";
 import LayoutSuggestions from "./LayoutSuggestions";
+import ComponentSuggestions from "./ComponentSuggestions";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TabManager } from "@/components/ui/tab-manager";
 
+/**
+ * Format AI suggestion content for better readability
+ */
 const formatSuggestionContent = (text: string) => {
   if (!text) return "";
   
-  // Replace ### with bullet points
-  let formattedText = text.replace(/###\s?/g, "• ");
+  // Replace markdown-style headers with styled HTML
+  let formattedText = text;
+  
+  // Replace ### headers with bullet points
+  formattedText = formattedText.replace(/###\s?/g, "• ");
   
   // Convert headers to bold with larger text
   formattedText = formattedText.replace(
@@ -27,8 +35,17 @@ const formatSuggestionContent = (text: string) => {
     }
   );
   
-  // Convert newlines to <br> tags
+  // Preserve bullet points
+  formattedText = formattedText.replace(
+    /^[-*]\s+(.+)$/gm,
+    (_, content) => `<div class="flex"><span class="mr-2">•</span><span>${content}</span></div>`
+  );
+  
+  // Convert double newlines to <br> tags for better spacing
   formattedText = formattedText.replace(/\n\n/g, '<br><br>');
+  
+  // Convert remaining single newlines to <br> tags
+  formattedText = formattedText.replace(/\n/g, '<br>');
   
   return formattedText;
 };
@@ -41,6 +58,7 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
   const [parsedSuggestion, setParsedSuggestion] = useState<ParsedSuggestion | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [isParsingComplete, setIsParsingComplete] = useState(false);
 
   useEffect(() => {
     if (suggestions) {
@@ -51,16 +69,24 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
       } catch (error) {
         console.error("Error parsing suggestion:", error);
         setParseError("Unable to parse the AI suggestions. You can still view the raw text.");
+      } finally {
+        setIsParsingComplete(true);
       }
     } else {
       setParsedSuggestion(null);
       setParseError(null);
+      setIsParsingComplete(false);
     }
   }, [suggestions]);
 
   if (!suggestions) {
     return null;
   }
+
+  const hasColors = parsedSuggestion?.colors && parsedSuggestion.colors.length > 0;
+  const hasTypography = parsedSuggestion?.typography && parsedSuggestion.typography.length > 0;
+  const hasLayouts = parsedSuggestion?.layouts && parsedSuggestion.layouts.length > 0;
+  const hasComponents = parsedSuggestion?.components && parsedSuggestion.components.length > 0;
 
   return (
     <div className="mt-8">
@@ -77,40 +103,41 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start mb-4">
           <TabsTrigger value="all">All Suggestions</TabsTrigger>
-          <TabsTrigger value="colors">Colors</TabsTrigger>
-          <TabsTrigger value="typography">Typography</TabsTrigger>
-          <TabsTrigger value="layout">Layout</TabsTrigger>
+          {hasColors && <TabsTrigger value="colors">Colors</TabsTrigger>}
+          {hasTypography && <TabsTrigger value="typography">Typography</TabsTrigger>}
+          {hasLayouts && <TabsTrigger value="layout">Layout</TabsTrigger>}
+          {hasComponents && <TabsTrigger value="components">Components</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="all" className="space-y-6">
           <Card className="p-4 whitespace-pre-wrap">
-            {parsedSuggestion ? (
-              <div dangerouslySetInnerHTML={{ __html: formatSuggestionContent(suggestions) }} />
-            ) : (
-              <div dangerouslySetInnerHTML={{ __html: formatSuggestionContent(suggestions) }} />
-            )}
+            <div dangerouslySetInnerHTML={{ __html: formatSuggestionContent(suggestions) }} />
           </Card>
           
           {parsedSuggestion && (
             <>
-              {parsedSuggestion.colors.length > 0 && (
+              {hasColors && (
                 <ColorPalette colors={parsedSuggestion.colors} />
               )}
               
-              {parsedSuggestion.typography.length > 0 && (
+              {hasTypography && (
                 <TypographyDisplay typography={parsedSuggestion.typography} />
               )}
               
-              {parsedSuggestion.layouts.length > 0 && (
+              {hasLayouts && (
                 <LayoutSuggestions layouts={parsedSuggestion.layouts} />
+              )}
+              
+              {hasComponents && (
+                <ComponentSuggestions components={parsedSuggestion.components} />
               )}
             </>
           )}
         </TabsContent>
         
         <TabsContent value="colors">
-          {parsedSuggestion && parsedSuggestion.colors.length > 0 ? (
-            <ColorPalette colors={parsedSuggestion.colors} />
+          {hasColors ? (
+            <ColorPalette colors={parsedSuggestion!.colors} />
           ) : (
             <Card className="p-4 text-center text-muted-foreground">
               No specific color suggestions found.
@@ -119,8 +146,8 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
         </TabsContent>
         
         <TabsContent value="typography">
-          {parsedSuggestion && parsedSuggestion.typography.length > 0 ? (
-            <TypographyDisplay typography={parsedSuggestion.typography} />
+          {hasTypography ? (
+            <TypographyDisplay typography={parsedSuggestion!.typography} />
           ) : (
             <Card className="p-4 text-center text-muted-foreground">
               No specific typography suggestions found.
@@ -129,11 +156,21 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
         </TabsContent>
         
         <TabsContent value="layout">
-          {parsedSuggestion && parsedSuggestion.layouts.length > 0 ? (
-            <LayoutSuggestions layouts={parsedSuggestion.layouts} />
+          {hasLayouts ? (
+            <LayoutSuggestions layouts={parsedSuggestion!.layouts} />
           ) : (
             <Card className="p-4 text-center text-muted-foreground">
               No specific layout suggestions found.
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="components">
+          {hasComponents ? (
+            <ComponentSuggestions components={parsedSuggestion!.components} />
+          ) : (
+            <Card className="p-4 text-center text-muted-foreground">
+              No specific component suggestions found.
             </Card>
           )}
         </TabsContent>
