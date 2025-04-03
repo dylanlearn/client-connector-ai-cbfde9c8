@@ -108,22 +108,25 @@ export const trackAnimationView = (
 // Function to get animation analytics
 export const getAnimationAnalytics = async (animationType?: AnimationCategory) => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('animation_analytics')
-      .select('*')
-      .eq(animationType ? 'animation_type' : 'animation_type', animationType || '')
-      .then(response => {
-        if (animationType) {
-          // Filter on client side if we provided an animation type
-          return {
-            ...response,
-            data: response.data?.filter(item => item.animation_type === animationType)
-          };
-        }
-        return response;
-      });
+      .select('*');
+    
+    // Only apply the filter if animation type is provided
+    if (animationType) {
+      query = query.eq('animation_type', animationType);
+    }
+    
+    const { data, error } = await query;
     
     if (error) throw error;
+    
+    // If animation type was provided but not used in the query,
+    // filter the results client-side
+    if (animationType && data) {
+      return data.filter(item => item.animation_type === animationType);
+    }
+    
     return data;
   } catch (error) {
     console.error('Error fetching animation analytics:', error);
