@@ -86,7 +86,7 @@ const FeedbackAnalyzer = ({
       {analysisResult && (
         <FeedbackAnalysisCard 
           result={analysisResult} 
-          onExport={onAnalysisComplete}
+          onExport={onAnalysisComplete ? () => onAnalysisComplete(analysisResult.actionItems) : undefined}
         />
       )}
     </div>

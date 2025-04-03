@@ -15,3 +15,9 @@ export interface AIMemoryInterface {
   refreshMemoryContext: () => Promise<void>;
   resetMemoryContext: () => void;
 }
+
+export interface AIMemoryContext {
+  userMemories: Record<string, any>[];
+  projectMemories: Record<string, any>[];
+  globalInsights: Record<string, any>[];
+}

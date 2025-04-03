@@ -8,7 +8,7 @@ import {
   SidebarFooter as SidebarFooterWrapper
 } from "@/components/ui/sidebar";
 import SidebarHeader from "./SidebarHeader";
-import SidebarNavigation from "./SidebarNavigation";
+import { SidebarNavigation } from "./SidebarNavigation";
 import SidebarFooter from "./SidebarFooter";
 
 /**

@@ -24,9 +24,8 @@ export const useFeedbackAnalysis = () => {
     
     try {
       // Show toast for long-running process
-      toast.message("Analyzing feedback...", {
-        id: toastId,
-        loading: true
+      toast(toastId, {
+        description: "Analyzing feedback...",
       });
       
       const result = await FeedbackAnalysisService.analyzeFeedback(feedbackText);

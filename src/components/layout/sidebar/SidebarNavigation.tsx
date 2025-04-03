@@ -13,55 +13,59 @@ import {
   BrainCircuit
 } from "lucide-react";
 
-const navItems = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />,
-  },
-  {
-    title: "Projects",
-    href: "/projects",
-    icon: <ListTodo className="h-5 w-5" />,
-  },
-  {
-    title: "Clients",
-    href: "/clients",
-    icon: <Users className="h-5 w-5" />,
-  },
-  {
-    title: "Intake Form",
-    href: "/intake-form",
-    icon: <FileText className="h-5 w-5" />,
-  },
-  {
-    title: "Design Picker",
-    href: "/design-picker",
-    icon: <Palette className="h-5 w-5" />,
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    icon: <BarChart3 className="h-5 w-5" />,
-  },
-  {
-    title: "AI Suggestions",
-    href: "/ai-suggestions",
-    icon: <BrainCircuit className="h-5 w-5" />,
-  },
-  {
-    title: "Feedback Analysis",
-    href: "/feedback-analysis",
-    icon: <MessageSquareText className="h-5 w-5" />,
-  },
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: <Settings className="h-5 w-5" />,
-  },
-];
+interface SidebarNavigationProps {
+  currentPath: string;
+}
 
-export const SidebarNavigation = () => {
+export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
+  const navItems = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      title: "Projects",
+      href: "/projects",
+      icon: <ListTodo className="h-5 w-5" />,
+    },
+    {
+      title: "Clients",
+      href: "/clients",
+      icon: <Users className="h-5 w-5" />,
+    },
+    {
+      title: "Intake Form",
+      href: "/intake-form",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      title: "Design Picker",
+      href: "/design-picker",
+      icon: <Palette className="h-5 w-5" />,
+    },
+    {
+      title: "Analytics",
+      href: "/analytics",
+      icon: <BarChart3 className="h-5 w-5" />,
+    },
+    {
+      title: "AI Suggestions",
+      href: "/ai-suggestions",
+      icon: <BrainCircuit className="h-5 w-5" />,
+    },
+    {
+      title: "Feedback Analysis",
+      href: "/feedback-analysis",
+      icon: <MessageSquareText className="h-5 w-5" />,
+    },
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: <Settings className="h-5 w-5" />,
+    },
+  ];
+
   return (
     <nav className="mt-4 px-2">
       <ul className="space-y-1">

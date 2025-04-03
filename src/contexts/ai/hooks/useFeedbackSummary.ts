@@ -14,21 +14,20 @@ export const useFeedbackSummary = () => {
     setIsProcessing(true);
     
     try {
-      toast.message("Processing feedback...", {
-        id: "processing-feedback",
-        loading: true
+      const toastId = "processing-feedback";
+      toast(toastId, {
+        description: "Processing feedback..."
       });
       
       const analysisResult = await FeedbackAnalysisService.analyzeFeedback(feedback);
       
-      toast.dismiss("processing-feedback");
+      toast.dismiss(toastId);
       toast.success("Feedback processed successfully");
       
       return analysisResult.actionItems.map(item => item.task);
     } catch (error) {
       console.error("Error summarizing feedback:", error);
       
-      toast.dismiss("processing-feedback");
       toast.error("Error processing feedback", {
         description: error instanceof Error ? error.message : "Unknown error"
       });
