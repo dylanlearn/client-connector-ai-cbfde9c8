@@ -3,6 +3,9 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Hook for managing AI content cache
+ */
 export function useCache(showToasts: boolean = false) {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   

@@ -1,4 +1,5 @@
 
+import { useCallback } from 'react';
 import { UseAIContentOptions, UseAIContentReturn, ContentRequest } from './types';
 import { useGeneration } from './useGeneration';
 import { useCache } from './useCache';
@@ -13,9 +14,11 @@ export function useAIContent(options: UseAIContentOptions = {}): UseAIContentRet
     maxRetries = 2,
     timeout = 10000,
     showToasts = false,
-    useFallbacks = true
+    useFallbacks = true,
+    enableABTesting = true
   } = options;
   
+  // Use the generation hook for content generation logic
   const { 
     generate,
     cancelGeneration,
@@ -26,9 +29,11 @@ export function useAIContent(options: UseAIContentOptions = {}): UseAIContentRet
     maxRetries,
     timeout,
     showToasts,
-    useFallbacks
+    useFallbacks,
+    enableABTesting
   });
   
+  // Use the cache hook for cache management
   const {
     isCleaningUp,
     cleanupCache,
