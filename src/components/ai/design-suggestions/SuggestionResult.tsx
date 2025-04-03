@@ -1,108 +1,141 @@
 
-import { FC, useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Palette, Type, Layout, BookOpen, FileImage } from "lucide-react";
-import { parseSuggestions } from "./utils/suggestionParser";
+import { parseSuggestionText } from "./utils/suggestionParser";
 import { ParsedSuggestion } from "./types";
 import ColorPalette from "./ColorPalette";
 import TypographyDisplay from "./TypographyDisplay";
 import LayoutSuggestions from "./LayoutSuggestions";
-import InspirationImages from "./InspirationImages";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+const formatSuggestionContent = (text: string) => {
+  if (!text) return "";
+  
+  // Replace ### with bullet points
+  let formattedText = text.replace(/###\s?/g, "• ");
+  
+  // Convert headers to bold with larger text
+  formattedText = formattedText.replace(
+    /^(#+)\s+(.+)$/gm, 
+    (_, hashes, content) => {
+      // Determine heading level (h1, h2, etc.)
+      const level = hashes.length;
+      const fontSize = level === 1 ? "text-xl font-bold" : "text-lg font-semibold";
+      return `<div class="${fontSize} my-3">${content}</div>`;
+    }
+  );
+  
+  // Convert newlines to <br> tags
+  formattedText = formattedText.replace(/\n\n/g, '<br><br>');
+  
+  return formattedText;
+};
 
 interface SuggestionResultProps {
   suggestions: string | null;
 }
 
-const SuggestionResult: FC<SuggestionResultProps> = ({ suggestions }) => {
-  const [parsedSuggestions, setParsedSuggestions] = useState<ParsedSuggestion | null>(null);
+const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
+  const [parsedSuggestion, setParsedSuggestion] = useState<ParsedSuggestion | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     if (suggestions) {
-      setParsedSuggestions(parseSuggestions(suggestions));
+      try {
+        const parsed = parseSuggestionText(suggestions);
+        setParsedSuggestion(parsed);
+        setParseError(null);
+      } catch (error) {
+        console.error("Error parsing suggestion:", error);
+        setParseError("Unable to parse the AI suggestions. You can still view the raw text.");
+      }
     } else {
-      setParsedSuggestions(null);
+      setParsedSuggestion(null);
+      setParseError(null);
     }
   }, [suggestions]);
 
-  if (!suggestions || !parsedSuggestions) return null;
+  if (!suggestions) {
+    return null;
+  }
 
   return (
-    <div className="mt-6 space-y-6">
-      <h3 className="text-xl font-medium">Design Suggestions</h3>
+    <div className="mt-8">
+      <h3 className="text-lg font-semibold mb-4">Design Suggestions</h3>
       
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid grid-cols-5 mb-4">
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">All</span>
-          </TabsTrigger>
-          <TabsTrigger value="colors" className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Colors</span>
-          </TabsTrigger>
-          <TabsTrigger value="typography" className="flex items-center gap-2">
-            <Type className="h-4 w-4" />
-            <span className="hidden sm:inline">Typography</span>
-          </TabsTrigger>
-          <TabsTrigger value="layout" className="flex items-center gap-2">
-            <Layout className="h-4 w-4" />
-            <span className="hidden sm:inline">Layout</span>
-          </TabsTrigger>
-          <TabsTrigger value="inspiration" className="flex items-center gap-2">
-            <FileImage className="h-4 w-4" />
-            <span className="hidden sm:inline">Inspiration</span>
-          </TabsTrigger>
+      {parseError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{parseError}</AlertDescription>
+        </Alert>
+      )}
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full justify-start mb-4">
+          <TabsTrigger value="all">All Suggestions</TabsTrigger>
+          <TabsTrigger value="colors">Colors</TabsTrigger>
+          <TabsTrigger value="typography">Typography</TabsTrigger>
+          <TabsTrigger value="layout">Layout</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <ColorPalette colors={parsedSuggestions.colors} />
-              <TypographyDisplay typography={parsedSuggestions.typography} />
-              <LayoutSuggestions layouts={parsedSuggestions.layouts} />
-              <InspirationImages components={parsedSuggestions.components} />
-              
-              <div className="mt-6">
-                <h3 className="text-lg font-medium mb-2">Original AI Suggestions</h3>
-                <div className="bg-muted p-4 rounded-md whitespace-pre-line">
-                  {parsedSuggestions.originalText}
-                </div>
-              </div>
-            </CardContent>
+          <Card className="p-4 whitespace-pre-wrap">
+            {parsedSuggestion ? (
+              <div dangerouslySetInnerHTML={{ __html: formatSuggestionContent(suggestions) }} />
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: formatSuggestionContent(suggestions) }} />
+            )}
           </Card>
+          
+          {parsedSuggestion && (
+            <>
+              {parsedSuggestion.colors.length > 0 && (
+                <ColorPalette colors={parsedSuggestion.colors} />
+              )}
+              
+              {parsedSuggestion.typography.length > 0 && (
+                <TypographyDisplay typography={parsedSuggestion.typography} />
+              )}
+              
+              {parsedSuggestion.layouts.length > 0 && (
+                <LayoutSuggestions layouts={parsedSuggestion.layouts} />
+              )}
+            </>
+          )}
         </TabsContent>
         
         <TabsContent value="colors">
-          <Card>
-            <CardContent className="pt-6">
-              <ColorPalette colors={parsedSuggestions.colors} />
-            </CardContent>
-          </Card>
+          {parsedSuggestion && parsedSuggestion.colors.length > 0 ? (
+            <ColorPalette colors={parsedSuggestion.colors} />
+          ) : (
+            <Card className="p-4 text-center text-muted-foreground">
+              No specific color suggestions found.
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="typography">
-          <Card>
-            <CardContent className="pt-6">
-              <TypographyDisplay typography={parsedSuggestions.typography} />
-            </CardContent>
-          </Card>
+          {parsedSuggestion && parsedSuggestion.typography.length > 0 ? (
+            <TypographyDisplay typography={parsedSuggestion.typography} />
+          ) : (
+            <Card className="p-4 text-center text-muted-foreground">
+              No specific typography suggestions found.
+            </Card>
+          )}
         </TabsContent>
         
         <TabsContent value="layout">
-          <Card>
-            <CardContent className="pt-6">
-              <LayoutSuggestions layouts={parsedSuggestions.layouts} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="inspiration">
-          <Card>
-            <CardContent className="pt-6">
-              <InspirationImages components={parsedSuggestions.components} />
-            </CardContent>
-          </Card>
+          {parsedSuggestion && parsedSuggestion.layouts.length > 0 ? (
+            <LayoutSuggestions layouts={parsedSuggestion.layouts} />
+          ) : (
+            <Card className="p-4 text-center text-muted-foreground">
+              No specific layout suggestions found.
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
