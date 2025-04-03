@@ -1173,6 +1173,17 @@ export type Database = {
           y_position: number
         }[]
       }
+      record_client_error: {
+        Args: {
+          p_error_message: string
+          p_error_stack: string
+          p_component_name: string
+          p_user_id: string
+          p_browser_info: string
+          p_url: string
+        }
+        Returns: string
+      }
       record_client_link_delivery: {
         Args: {
           p_link_id: string
