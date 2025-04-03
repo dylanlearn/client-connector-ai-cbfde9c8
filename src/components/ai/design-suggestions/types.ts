@@ -1,6 +1,4 @@
 
-import { ReactNode } from "react";
-
 export interface FormValues {
   prompt: string;
   industry: string;
@@ -9,22 +7,32 @@ export interface FormValues {
   styleCustom?: string;
 }
 
-export interface IndustryOption {
-  value: string;
-  label: string;
-}
-
-export interface StyleOption {
-  value: string;
-  label: string;
-}
-
 export interface SuggestionsResponse {
   suggestions: string;
-  model: string;
-  usage: {
+  model?: string;
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+}
+
+export interface ParsedColor {
+  name: string;
+  hex: string;
+  description?: string;
+}
+
+export interface ParsedTypography {
+  name: string;
+  type: 'heading' | 'body' | 'accent';
+  description?: string;
+}
+
+export interface ParsedSuggestion {
+  colors: ParsedColor[];
+  typography: ParsedTypography[];
+  layouts: string[];
+  components: string[];
+  originalText: string;
 }

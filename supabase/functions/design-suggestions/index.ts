@@ -39,17 +39,36 @@ serve(async (req) => {
 
     console.log(`Generating design suggestions for prompt: ${prompt}, industry: ${industry || 'not specified'}, style: ${style || 'not specified'}`);
 
-    // Construct system message with industry and style if provided
-    let systemMessage = "You are an expert design consultant who provides specific, actionable design suggestions.";
+    // Construct system message with specific instructions for visual information
+    let systemMessage = `You are an expert design consultant who provides specific, actionable design suggestions with visual elements. 
+    
+For all suggestions:
+1. Always include specific color hex codes (e.g., #FF5500) for all color recommendations
+2. Specify exact font names for typography (e.g., "Montserrat", "Open Sans")
+3. Provide clear layout descriptions with specific measurements when relevant
+4. Suggest specific components that would work well in the design
+5. Keep your recommendations concrete and actionable
+
+For color palettes, provide at least 4-5 colors with:
+- Color name (e.g., "Primary Blue")
+- Hex code (e.g., #4F46E5)
+- Usage recommendation (e.g., "Use for primary buttons and headers")
+
+For typography, always specify:
+- Heading font with an example use case
+- Body text font with example use case
+- Any accent fonts if appropriate
+
+For layouts, describe them in detail with explicit components and measurements.`;
     
     // Handle industry, including custom industry values
     if (industry && industry !== 'any') {
-      systemMessage += ` You specialize in designs for the ${industry} industry.`;
+      systemMessage += ` You specialize in designs for the ${industry} industry, with expertise in what color schemes, typography, and layouts work best for this sector.`;
     }
     
     // Handle style, including custom style values
     if (style && style !== 'any') {
-      systemMessage += ` You favor a ${style} design style.`;
+      systemMessage += ` You favor a ${style} design style and will ensure all recommendations align with ${style} design principles and aesthetics.`;
     }
 
     // Call OpenAI API
