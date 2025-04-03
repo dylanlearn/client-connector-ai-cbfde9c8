@@ -36,3 +36,14 @@ export interface ParsedSuggestion {
   components: string[];
   originalText: string;
 }
+
+// Added missing interfaces
+export interface IndustryOption {
+  value: string;
+  label: string;
+}
+
+export interface StyleOption {
+  value: string;
+  label: string;
+}
