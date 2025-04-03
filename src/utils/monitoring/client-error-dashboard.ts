@@ -16,7 +16,7 @@ export const fetchClientErrors = async (
       .from('client_errors')
       .select('*')
       .order('timestamp', { ascending: false })
-      .limit(limit);
+      .limit(limit) as any;
     
     if (resolved !== undefined) {
       query = query.eq('resolved', resolved);
@@ -49,13 +49,13 @@ export const resolveClientError = async (
   resolutionNotes?: string
 ): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { error } = await (supabase
       .from('client_errors')
       .update({
         resolved: true,
         resolution_notes: resolutionNotes || 'Marked as resolved'
       })
-      .eq('id', errorId);
+      .eq('id', errorId) as any);
       
     if (error) {
       console.error('Error resolving client error:', error);
@@ -82,20 +82,20 @@ export const getErrorStatistics = async (): Promise<{
 }> => {
   try {
     // Get total count
-    const { count: total, error: totalError } = await supabase
+    const { count: total, error: totalError } = await (supabase
       .from('client_errors')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true }) as any);
       
     // Get resolved count
-    const { count: resolved, error: resolvedError } = await supabase
+    const { count: resolved, error: resolvedError } = await (supabase
       .from('client_errors')
       .select('*', { count: 'exact', head: true })
-      .eq('resolved', true);
+      .eq('resolved', true) as any);
       
     // Get component breakdown
-    const { data: componentData, error: componentError } = await supabase
+    const { data: componentData, error: componentError } = await (supabase
       .from('client_errors')
-      .select('component_name, id');
+      .select('component_name, id') as any);
       
     if (totalError || resolvedError || componentError) {
       console.error('Error fetching error statistics', totalError || resolvedError || componentError);
@@ -104,7 +104,7 @@ export const getErrorStatistics = async (): Promise<{
     
     // Calculate component breakdown
     const byComponent: Record<string, number> = {};
-    componentData?.forEach(error => {
+    componentData?.forEach((error: any) => {
       const component = error.component_name || 'Unknown';
       byComponent[component] = (byComponent[component] || 0) + 1;
     });
