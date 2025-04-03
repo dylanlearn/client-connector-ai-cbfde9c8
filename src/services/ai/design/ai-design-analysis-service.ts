@@ -92,11 +92,12 @@ export const AIDesignAnalysisService = {
         relevance_score: analysis.relevanceScore
       };
 
-      const { data, error } = await supabase
-        .from('design_memory')
+      // Cast the table name to any to bypass TypeScript's table name checking
+      const { data, error } = await (supabase
+        .from('design_memory' as any)
         .insert(memoryEntry)
         .select('id')
-        .single();
+        .single() as any);
 
       if (error) {
         console.error("Error storing design analysis:", error);

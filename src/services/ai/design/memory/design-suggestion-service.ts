@@ -17,8 +17,9 @@ export const DesignSuggestionService = {
     context: Record<string, any> = {}
   ): Promise<string | null> => {
     try {
-      const { data, error } = await supabase
-        .from('design_suggestion_history')
+      // Cast the table name to any to bypass TypeScript's table name checking
+      const { data, error } = await (supabase
+        .from('design_suggestion_history' as any)
         .insert({
           user_id: userId,
           prompt,
@@ -27,7 +28,7 @@ export const DesignSuggestionService = {
           context
         })
         .select('id')
-        .single();
+        .single() as any);
 
       if (error) {
         console.error("Error storing design suggestion:", error);
@@ -46,10 +47,11 @@ export const DesignSuggestionService = {
    */
   rateDesignSuggestion: async (id: string, rating: number): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('design_suggestion_history')
+      // Cast the table name to any to bypass TypeScript's table name checking
+      const { error } = await (supabase
+        .from('design_suggestion_history' as any)
         .update({ rating })
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (error) {
         console.error("Error rating design suggestion:", error);

@@ -527,6 +527,90 @@ export type Database = {
         }
         Relationships: []
       }
+      design_feedback: {
+        Row: {
+          context: Json | null
+          created_at: string
+          design_suggestion_id: string
+          feedback_content: string | null
+          feedback_type: string
+          id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          design_suggestion_id: string
+          feedback_content?: string | null
+          feedback_type: string
+          id?: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          design_suggestion_id?: string
+          feedback_content?: string | null
+          feedback_type?: string
+          id?: string
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      design_memory: {
+        Row: {
+          category: string
+          color_scheme: Json | null
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          layout_pattern: Json | null
+          relevance_score: number | null
+          source_url: string | null
+          subcategory: string | null
+          tags: string[]
+          title: string
+          typography: Json | null
+          visual_elements: Json
+        }
+        Insert: {
+          category: string
+          color_scheme?: Json | null
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          layout_pattern?: Json | null
+          relevance_score?: number | null
+          source_url?: string | null
+          subcategory?: string | null
+          tags: string[]
+          title: string
+          typography?: Json | null
+          visual_elements: Json
+        }
+        Update: {
+          category?: string
+          color_scheme?: Json | null
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          layout_pattern?: Json | null
+          relevance_score?: number | null
+          source_url?: string | null
+          subcategory?: string | null
+          tags?: string[]
+          title?: string
+          typography?: Json | null
+          visual_elements?: Json
+        }
+        Relationships: []
+      }
       design_preferences: {
         Row: {
           category: string
@@ -559,6 +643,39 @@ export type Database = {
           rank?: number | null
           title?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      design_suggestion_history: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          prompt: string
+          rating: number | null
+          result: Json
+          used_references: string[] | null
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          prompt: string
+          rating?: number | null
+          result: Json
+          used_references?: string[] | null
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          prompt?: string
+          rating?: number | null
+          result?: Json
+          used_references?: string[] | null
           user_id?: string
         }
         Relationships: []

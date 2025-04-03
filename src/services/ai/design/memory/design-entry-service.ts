@@ -12,8 +12,10 @@ export const DesignEntryService = {
    */
   storeDesignMemory: async (entry: DesignMemoryEntry): Promise<DesignMemoryEntry | null> => {
     try {
-      const { data, error } = await supabase
-        .from('design_memory')
+      // Cast the table name to any to bypass TypeScript's table name checking
+      // This is necessary because the table exists in the database but not in the TypeScript definitions
+      const { data, error } = await (supabase
+        .from('design_memory' as any)
         .insert({
           category: entry.category,
           subcategory: entry.subcategory,
@@ -28,7 +30,7 @@ export const DesignEntryService = {
           image_url: entry.image_url,
           relevance_score: entry.relevance_score || 0.7
         })
-        .select()
+        .select() as any)
         .single();
 
       if (error) {
@@ -58,10 +60,11 @@ export const DesignEntryService = {
         relevanceThreshold = 0.5
       } = options;
       
+      // Cast the table name to any to bypass TypeScript's table name checking
       let query = supabase
-        .from('design_memory')
+        .from('design_memory' as any)
         .select('*')
-        .gte('relevance_score', relevanceThreshold);
+        .gte('relevance_score', relevanceThreshold) as any;
 
       // Apply filters based on options
       if (category) {
