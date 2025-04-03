@@ -7,7 +7,7 @@ interface ComponentSuggestionsProps {
   components: string[];
 }
 
-const ComponentSuggestions = ({ components }: ComponentSuggestionsProps) => {
+const ComponentSuggestions: React.FC<ComponentSuggestionsProps> = ({ components }) => {
   if (!components || components.length === 0) {
     return (
       <Card className="p-4 text-center text-muted-foreground">
@@ -15,6 +15,18 @@ const ComponentSuggestions = ({ components }: ComponentSuggestionsProps) => {
       </Card>
     );
   }
+
+  // Helper function to extract component name and description
+  const parseComponentText = (text: string): { name: string; description: string } => {
+    if (text.includes(':')) {
+      const [name, description] = text.split(':', 2).map(part => part.trim());
+      return { name, description };
+    }
+    return { 
+      name: `Component ${Math.floor(Math.random() * 1000)}`,
+      description: text 
+    };
+  };
 
   return (
     <Card>
@@ -26,27 +38,22 @@ const ComponentSuggestions = ({ components }: ComponentSuggestionsProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {components.map((component, index) => (
-            <div key={index} className="border rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 p-2 rounded-md">
-                  <Layout className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {component.includes(':') 
-                      ? component.split(':', 2)[0].trim() 
-                      : `Component ${index + 1}`}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {component.includes(':') 
-                      ? component.split(':', 2)[1].trim() 
-                      : component}
-                  </p>
+          {components.map((component, index) => {
+            const { name, description } = parseComponentText(component);
+            return (
+              <div key={index} className="border rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-md">
+                    <Layout className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{name}</p>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

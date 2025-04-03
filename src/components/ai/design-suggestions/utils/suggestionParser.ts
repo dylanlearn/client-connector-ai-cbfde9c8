@@ -80,16 +80,16 @@ const parseTypography = (text: string): ParsedTypography[] => {
       
       if (pattern.toString().includes('for\\s+')) {
         // Pattern 2
-        usage = match[1]?.toLowerCase();
-        name = match[2]?.trim();
+        usage = match[1]?.toLowerCase() || '';
+        name = match[2]?.trim() || '';
       } else if (pattern.toString().includes('\\s+for\\s+')) {
         // Pattern 3
-        usage = match[2]?.toLowerCase();
-        name = match[1]?.trim();
+        usage = match[2]?.toLowerCase() || '';
+        name = match[1]?.trim() || '';
       } else {
         // Pattern 1
-        usage = match[1]?.toLowerCase();
-        name = match[2]?.trim();
+        usage = match[1]?.toLowerCase() || '';
+        name = match[2]?.trim() || '';
       }
       
       if (name && usage) {

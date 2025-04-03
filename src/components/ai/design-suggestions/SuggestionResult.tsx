@@ -15,7 +15,7 @@ import { TabManager } from "@/components/ui/tab-manager";
 /**
  * Format AI suggestion content for better readability
  */
-const formatSuggestionContent = (text: string) => {
+const formatSuggestionContent = (text: string): string => {
   if (!text) return "";
   
   // Replace markdown-style headers with styled HTML
@@ -54,7 +54,7 @@ interface SuggestionResultProps {
   suggestions: string | null;
 }
 
-const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
+const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions }) => {
   const [parsedSuggestion, setParsedSuggestion] = useState<ParsedSuggestion | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
@@ -87,6 +87,15 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
   const hasTypography = parsedSuggestion?.typography && parsedSuggestion.typography.length > 0;
   const hasLayouts = parsedSuggestion?.layouts && parsedSuggestion.layouts.length > 0;
   const hasComponents = parsedSuggestion?.components && parsedSuggestion.components.length > 0;
+  
+  // Create dynamic tabs based on available content
+  const availableTabs = [
+    { id: "all", label: "All Suggestions", available: true },
+    { id: "colors", label: "Colors", available: hasColors },
+    { id: "typography", label: "Typography", available: hasTypography },
+    { id: "layout", label: "Layout", available: hasLayouts },
+    { id: "components", label: "Components", available: hasComponents }
+  ].filter(tab => tab.available);
 
   return (
     <div className="mt-8">
@@ -102,11 +111,9 @@ const SuggestionResult = ({ suggestions }: SuggestionResultProps) => {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start mb-4">
-          <TabsTrigger value="all">All Suggestions</TabsTrigger>
-          {hasColors && <TabsTrigger value="colors">Colors</TabsTrigger>}
-          {hasTypography && <TabsTrigger value="typography">Typography</TabsTrigger>}
-          {hasLayouts && <TabsTrigger value="layout">Layout</TabsTrigger>}
-          {hasComponents && <TabsTrigger value="components">Components</TabsTrigger>}
+          {availableTabs.map(tab => (
+            <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
+          ))}
         </TabsList>
         
         <TabsContent value="all" className="space-y-6">
