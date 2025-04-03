@@ -36,7 +36,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
             duration: 1.5, 
             ease: [0.25, 1, 0.5, 1],
             repeat: isPlaying ? Infinity : 0,
-            repeatType: "reverse" 
+            repeatType: "reverse" as const
           }
         };
       case "animation-4": // 3D Transforms
@@ -47,7 +47,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
             duration: 2,
             ease: "easeInOut",
             repeat: isPlaying ? Infinity : 0,
-            repeatType: "reverse"
+            repeatType: "reverse" as const
           }
         };
       case "animation-5": // Microinteractions
@@ -59,7 +59,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
             transition: { 
               duration: 1,
               repeat: Infinity,
-              repeatType: "reverse"
+              repeatType: "reverse" as const
             }
           } : {}
         };
