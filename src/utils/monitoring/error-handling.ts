@@ -43,7 +43,7 @@ export function initializeErrorHandling(): void {
           ? args[0] 
           : args[0] instanceof URL 
             ? args[0].href 
-            : args[0].url;
+            : (args[0] as Request).url;
         console.warn(`Failed fetch request to ${requestUrl}, status: ${response.status}`);
       }
       
@@ -52,8 +52,8 @@ export function initializeErrorHandling(): void {
       // Log network errors
       console.error('Fetch error:', error);
       recordClientError(
-        `Network request failed: ${error.message}`,
-        error.stack,
+        `Network request failed: ${(error as Error).message}`,
+        (error as Error).stack,
         'FetchError'
       ).catch(console.error);
       

@@ -51,10 +51,9 @@ export const recordClientError = async (
   userId?: string
 ): Promise<boolean> => {
   try {
-    // Use type assertion to tell TypeScript that this table exists
-    // This is necessary because the client_errors table is created dynamically by the edge function
+    // Use a proper type assertion to fix TypeScript error
     const { error } = await supabase
-      .from('client_errors' as any)
+      .from('client_errors' as unknown as string)
       .insert({
         error_message: errorMessage,
         error_stack: errorStack,

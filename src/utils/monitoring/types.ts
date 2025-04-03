@@ -17,7 +17,7 @@ export interface SystemMonitoringRecord {
 }
 
 export interface MonitoringConfiguration {
-  id: string; // Adding the id property
+  id: string;
   component: string;
   warning_threshold: number;
   critical_threshold: number;
@@ -49,4 +49,18 @@ export interface ApiUsageMetric {
   ip_address?: string;
   error_message?: string;
   request_payload?: any;
+}
+
+// Define the type for client errors table
+export interface ClientError {
+  id?: string;
+  error_message: string;
+  error_stack?: string;
+  component_name?: string;
+  user_id?: string;
+  browser_info?: string;
+  url?: string;
+  timestamp?: string;
+  resolved?: boolean;
+  resolution_notes?: string;
 }
