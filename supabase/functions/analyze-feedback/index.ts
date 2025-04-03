@@ -1,8 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
 import { corsHeaders } from "../send-client-link/types.ts";
-import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.2.1";
 
 // Types for feedback analysis
 interface FeedbackAnalysisRequest {
@@ -44,9 +42,6 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    const configuration = new Configuration({ apiKey });
-    const openai = new OpenAIApi(configuration);
-
     const { feedbackText } = await req.json() as FeedbackAnalysisRequest;
 
     if (!feedbackText) {
@@ -59,8 +54,8 @@ serve(async (req) => {
       );
     }
 
-    // Create the prompt for analyzing feedback
-    const prompt = `
+    // Create the system prompt for analyzing feedback
+    const systemPrompt = `
     You are an expert at analyzing design feedback for actionable insights.
     Analyze this feedback text and extract:
     1. A list of specific action items with priority (high/medium/low) and urgency level (0-100)
@@ -83,26 +78,39 @@ serve(async (req) => {
       },
       "summary": "brief summary"
     }
-    
-    Feedback:
-    ${feedbackText}
     `;
 
-    // Call OpenAI API
-    const response = await openai.createCompletion({
-      model: "gpt-4o-mini", // Updated to a more current model
-      prompt,
-      max_tokens: 1000,
-      temperature: 0.3,
+    // Call OpenAI API with updated format
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: feedbackText }
+        ],
+        temperature: 0.3,
+      }),
     });
 
-    const content = response.data.choices[0]?.text?.trim() || "";
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || JSON.stringify(errorData)}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message.content?.trim() || "";
     
     // Parse the response as JSON
     let result: FeedbackAnalysisResult;
     try {
       result = JSON.parse(content);
     } catch (error) {
+      console.error("Failed to parse AI response:", content);
       throw new Error("Failed to parse AI response to valid JSON");
     }
 
@@ -117,6 +125,7 @@ serve(async (req) => {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error in analyze-feedback:", errorMessage);
     
     return new Response(
       JSON.stringify({ error: errorMessage }),
