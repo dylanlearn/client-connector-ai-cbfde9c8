@@ -24,10 +24,10 @@ export function MonitoringControls({ onConfigUpdate }: MonitoringControlsProps) 
       setIsLoading(true);
       
       try {
-        const { data, error } = await (supabase
-          .from('monitoring_configuration' as any)
+        const { data, error } = await supabase
+          .from('monitoring_configuration')
           .select('*')
-          .order('component')) as any;
+          .order('component');
           
         if (error) {
           throw error;
@@ -66,8 +66,8 @@ export function MonitoringControls({ onConfigUpdate }: MonitoringControlsProps) 
     try {
       // Update each configuration in sequence
       for (const config of configurations) {
-        const { error } = await (supabase
-          .from('monitoring_configuration' as any)
+        const { error } = await supabase
+          .from('monitoring_configuration')
           .update({
             warning_threshold: config.warning_threshold,
             critical_threshold: config.critical_threshold,
@@ -75,7 +75,7 @@ export function MonitoringControls({ onConfigUpdate }: MonitoringControlsProps) 
             enabled: config.enabled,
             notification_enabled: config.notification_enabled
           })
-          .eq('id', config.id)) as any;
+          .eq('id', config.id);
           
         if (error) throw error;
       }
@@ -104,38 +104,32 @@ export function MonitoringControls({ onConfigUpdate }: MonitoringControlsProps) 
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Monitoring Configuration</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center p-6">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle>Monitoring Configuration</CardTitle>
       </CardHeader>
       <CardContent>
-        {configurations.length === 0 ? (
-          <p className="text-center text-muted-foreground">No monitoring components configured</p>
-        ) : (
-          <div className="space-y-6">
-            {configurations.map((config, index) => (
-              <ConfigurationItem
-                key={config.id}
-                config={config}
-                onConfigChange={(field, value) => handleConfigChange(index, field, value)}
-              />
-            ))}
-            
-            <SaveButton onSave={saveConfigurations} isSaving={isSaving} />
-          </div>
-        )}
+        <div className="space-y-6">
+          {configurations.map((config, index) => (
+            <ConfigurationItem 
+              key={config.id}
+              config={config}
+              onChange={(field, value) => handleConfigChange(index, field, value)}
+            />
+          ))}
+          
+          <SaveButton 
+            isSaving={isSaving}
+            onClick={saveConfigurations}
+          />
+        </div>
       </CardContent>
     </Card>
   );

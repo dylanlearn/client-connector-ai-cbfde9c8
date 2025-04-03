@@ -39,12 +39,12 @@ export function ApiUsageMetrics({
     setError(null);
     
     try {
-      // Fetch the most recent API usage metrics with type assertion
-      const { data: metricsData, error: metricsError } = await (supabase
-        .from('api_usage_metrics' as any)
+      // Fetch the most recent API usage metrics
+      const { data: metricsData, error: metricsError } = await supabase
+        .from('api_usage_metrics')
         .select('*')
         .order('request_timestamp', { ascending: false })
-        .limit(limit)) as any;
+        .limit(limit);
         
       if (metricsError) {
         throw metricsError;

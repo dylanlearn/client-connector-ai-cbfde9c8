@@ -32,10 +32,10 @@ export function MonitoringDashboard() {
     setIsLoading(true);
     
     try {
-      const { data, error } = await (supabase
-        .from('monitoring_configuration' as any)
+      const { data, error } = await supabase
+        .from('monitoring_configuration')
         .select('*')
-        .order('component')) as any;
+        .order('component');
         
       if (error) {
         throw error;
@@ -53,7 +53,7 @@ export function MonitoringDashboard() {
         setMonitoringComponents(defaultComponents);
         
         await Promise.all(defaultComponents.map(component => 
-          (supabase.from('monitoring_configuration' as any).upsert(component)) as any
+          supabase.from('monitoring_configuration').upsert(component)
         ));
         
         await Promise.all(defaultComponents.map(component => {
