@@ -27,15 +27,11 @@ const FeedbackAnalyzer = ({
   } = useFeedbackAnalysis();
 
   const handleAnalyze = async () => {
+    if (!feedbackText.trim()) return;
+    
     const result = await analyzeFeedback(feedbackText);
     if (result && onAnalysisComplete) {
       onAnalysisComplete(result.actionItems);
-    }
-  };
-
-  const handleExport = () => {
-    if (analysisResult && onAnalysisComplete) {
-      onAnalysisComplete(analysisResult.actionItems);
     }
   };
 
@@ -43,6 +39,9 @@ const FeedbackAnalyzer = ({
     setFeedbackText("");
     clearAnalysis();
   };
+
+  const isFormDisabled = isAnalyzing || !feedbackText.trim();
+  const hasFeedbackOrResult = !!feedbackText || !!analysisResult;
 
   return (
     <div className={className}>
@@ -66,13 +65,13 @@ const FeedbackAnalyzer = ({
           <Button 
             variant="outline" 
             onClick={handleClear}
-            disabled={isAnalyzing || (!feedbackText && !analysisResult)}
+            disabled={isAnalyzing || !hasFeedbackOrResult}
           >
             Clear
           </Button>
           <Button 
             onClick={handleAnalyze}
-            disabled={isAnalyzing || !feedbackText.trim()}
+            disabled={isFormDisabled}
           >
             {isAnalyzing ? (
               <>
@@ -87,7 +86,7 @@ const FeedbackAnalyzer = ({
       {analysisResult && (
         <FeedbackAnalysisCard 
           result={analysisResult} 
-          onExport={onAnalysisComplete ? handleExport : undefined}
+          onExport={onAnalysisComplete}
         />
       )}
     </div>

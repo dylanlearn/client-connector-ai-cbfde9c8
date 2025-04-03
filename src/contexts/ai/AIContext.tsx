@@ -25,30 +25,30 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
   const { 
     analysis, 
     isProcessing: isAnalysisProcessing, 
-    analyzeResponses: analyzeResponsesInternal, 
+    analyzeResponses, 
     resetAnalysis 
   } = useAIAnalysis();
   
   const { 
     designRecommendations, 
     isProcessing: isDesignProcessing, 
-    generateDesignRecommendations: generateDesignRecommendationsInternal, 
+    generateDesignRecommendations, 
     resetDesignRecommendations 
   } = useDesignRecommendations();
   
   const { 
-    isProcessing: isContentProcessing, 
-    generateContent 
+    generateContent,
+    isProcessing: isContentProcessing 
   } = useContentGeneration();
   
   const { 
-    isProcessing: isFeedbackProcessing, 
-    summarizeFeedback: summarizeFeedbackInternal 
+    summarizeFeedback,
+    isProcessing: isFeedbackProcessing 
   } = useFeedbackSummary();
 
   const {
-    isProcessing: isFeedbackAnalysisProcessing,
-    analyzeFeedback
+    analyzeFeedback,
+    isAnalyzing: isFeedbackAnalysisProcessing
   } = useFeedbackAnalysis();
 
   const {
@@ -61,37 +61,6 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     resetMemoryContext
   } = useAIMemory();
 
-  // Wrapper for analyzeResponses to match expected interface
-  const analyzeResponses = async (responses: Record<string, string>): Promise<void> => {
-    await analyzeResponsesInternal(responses);
-  };
-
-  // Wrapper for generateDesignRecommendations to match expected interface
-  const generateDesignRecommendations = async (prompt: string): Promise<void> => {
-    // Convert prompt to a simple questionnaire object
-    const questionnaire = { prompt };
-    await generateDesignRecommendationsInternal(questionnaire);
-  };
-
-  // Wrapper for summarizeFeedback to match expected interface
-  const summarizeFeedback = async (feedback: string[]): Promise<string> => {
-    // Join array into string for processing if internal expects a string
-    const feedbackText = feedback.join("\n");
-    const result = await summarizeFeedbackInternal(feedbackText);
-    // Convert the string[] result to a single string for compatibility
-    return Array.isArray(result) ? result.join("\n") : result;
-  };
-
-  // Track user interaction for analytics (simplified version)
-  const trackInteraction = async (
-    eventType: 'click' | 'hover' | 'scroll' | 'view',
-    elementSelector: string,
-    position: { x: number, y: number }
-  ): Promise<void> => {
-    // Make sure we're only passing 3 args as expected by storeInteractionMemory
-    await storeInteractionMemory(eventType, elementSelector, position);
-  };
-
   // Determine overall processing state
   const isProcessing = 
     isMessageProcessing || 
@@ -101,6 +70,15 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     isFeedbackProcessing ||
     isFeedbackAnalysisProcessing ||
     isMemoryProcessing;
+
+  // Track user interaction for analytics
+  const trackInteraction = async (
+    eventType: 'click' | 'hover' | 'scroll' | 'view',
+    elementSelector: string,
+    position: { x: number, y: number }
+  ): Promise<void> => {
+    await storeInteractionMemory(eventType, elementSelector, position);
+  };
 
   // Reset all AI state
   const reset = useCallback(() => {

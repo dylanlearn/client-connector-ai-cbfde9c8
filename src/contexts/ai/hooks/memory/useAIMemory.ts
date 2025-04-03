@@ -4,12 +4,13 @@ import { MemoryCategory } from '@/services/ai/memory';
 import { useMemoryContext } from "./useMemoryContext";
 import { useMemoryStorage } from "./useMemoryStorage";
 import { useRealtimeMemory } from "./useRealtimeMemory";
+import { AIMemoryInterface } from './types';
 
 /**
  * Combined hook for AI memory functionality
  * This is a facade that combines the more specialized hooks
  */
-export const useAIMemory = () => {
+export const useAIMemory = (): AIMemoryInterface => {
   const { 
     memoryContext,
     isProcessing,

@@ -1,8 +1,11 @@
 
 import { useState } from "react";
-import { AISummaryService } from "@/services/ai";
 import { toast } from "sonner";
+import { FeedbackAnalysisService } from "@/services/ai/content/feedback-analysis-service";
 
+/**
+ * @deprecated Use useFeedbackAnalysis instead which provides more comprehensive feedback analysis
+ */
 export const useFeedbackSummary = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -16,12 +19,12 @@ export const useFeedbackSummary = () => {
         loading: true
       });
       
-      const actionItems = await AISummaryService.convertToActionItems(feedback);
+      const analysisResult = await FeedbackAnalysisService.analyzeFeedback(feedback);
       
       toast.dismiss("processing-feedback");
       toast.success("Feedback processed successfully");
       
-      return actionItems.map(item => item.task);
+      return analysisResult.actionItems.map(item => item.task);
     } catch (error) {
       console.error("Error summarizing feedback:", error);
       
