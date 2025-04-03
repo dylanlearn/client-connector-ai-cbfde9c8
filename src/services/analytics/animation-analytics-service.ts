@@ -111,7 +111,7 @@ export const getAnimationAnalytics = async (animationType?: AnimationCategory) =
     const { data, error } = await supabase
       .from('animation_analytics')
       .select('*')
-      .eq(animationType ? 'animation_type' : '', animationType || '')
+      .eq(animationType ? 'animation_type' : 'animation_type', animationType || '')
       .then(response => {
         if (animationType) {
           // Filter on client side if we provided an animation type
