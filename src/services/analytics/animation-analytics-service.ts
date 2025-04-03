@@ -52,11 +52,11 @@ class AnimationAnalyticsBatchService {
   public async flushEvents(): Promise<void> {
     if (this.isProcessing || this.events.length === 0) return;
     
+    this.isProcessing = true;
+    const eventsToProcess = [...this.events];
+    this.events = [];
+    
     try {
-      this.isProcessing = true;
-      const eventsToProcess = [...this.events];
-      this.events = [];
-      
       // Process events in a batch via the edge function
       await supabase.functions.invoke('animation-tracking', {
         body: { 
