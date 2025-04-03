@@ -29,7 +29,7 @@ export const IntakeSummaryService = {
       
       // Create a formatted prompt with all relevant intake form information
       const promptContent = `
-        Review this client intake form data and create a professional yet conversational summary:
+        Review this client intake form data and create a professional project brief:
         
         ${Object.entries(formData)
           .filter(([key, value]) => 
@@ -43,32 +43,26 @@ export const IntakeSummaryService = {
           .join('\n\n')}
         
         Please provide:
-        1. A concise, friendly summary of what the client is looking for (avoid bullet points or markdown formatting)
-        2. Their tone preferences and design direction in a conversational style
-        3. Their top priorities written in a natural way
-        4. Draft homepage copy including a compelling header, engaging subtext, and persuasive call-to-action
+        1. A concise, friendly project summary written in natural paragraphs
+        2. Brand tone words and design direction in conversational style
+        3. Project priorities written in a natural way
+        4. Draft website copy including a compelling header, engaging subtext, and persuasive call-to-action
       `;
       
       const systemPrompt = `
         You are a skilled creative director who specializes in translating client requirements
-        into clear, actionable insights for design teams. Your summaries should be written in a 
-        natural, conversational tone - as if you're speaking directly to a colleague. 
+        into clear, actionable project briefs for design teams. Your summaries should be written in a 
+        natural, conversational tone as if you're speaking directly to a colleague.
         
-        IMPORTANT: Do not use any markdown formatting like headings (###) or bullet points (*). 
-        Write in natural paragraphs with a warm, human voice.
+        Write in a warm, human voice without using any markdown formatting.
         
-        When suggesting copy, make it sound authentic and human, not corporate or AI-generated.
-        Avoid using technical jargon or complex terminology.
+        When suggesting copy, make it sound authentic and human-centered, not corporate or AI-generated.
+        Focus on creating content that feels like it was written by a professional copywriter.
         
-        For example, instead of:
-        "### Summary
-        * Client requires a responsive website
-        * Modern aesthetic is preferred
-        * Focus on conversion"
-        
-        Write it as:
-        "From what I can see, this client is looking for a responsive website with a modern aesthetic. 
-        They're particularly focused on conversion rates."
+        For example, instead of "Client requires a responsive website with modern aesthetic"
+        write something like "I can see that having a responsive website with a modern look is important to you.
+        The clean aesthetic you're describing would work well for showcasing your products while maintaining that
+        professional edge you mentioned."
       `;
       
       // Call OpenAI via Supabase Edge Function
@@ -89,16 +83,15 @@ export const IntakeSummaryService = {
       // Process the response to structure it properly
       const response = data.response;
       
-      // Parse the structured response - improved parsing approach
-      // Split by sections while preserving natural language flow
+      // Split by paragraphs to preserve natural flow
+      const paragraphs = response.split(/\n\n+/);
+      
+      // Define regex patterns for finding relevant sections
       const summaryRegex = /summary|overview|client needs|from what i can see|looking at|based on|after reviewing/i;
       const toneRegex = /tone|voice|style|feel|personality|sound|appear|impression|vibe/i;
       const directionRegex = /direction|design direction|aesthetic|look and feel|visual|appearance/i;
       const prioritiesRegex = /priorities|key focus|important aspects|main concerns|focus on|emphasis/i;
       const copyRegex = /copy|content|text|messaging|header|subtext|cta|headline|call to action/i;
-      
-      // Split by paragraphs to preserve natural flow
-      const paragraphs = response.split(/\n\n+/);
       
       // Find the most relevant sections using the regexes
       const summaryParagraph = paragraphs.find(p => summaryRegex.test(p)) || paragraphs[0] || "";
@@ -107,9 +100,8 @@ export const IntakeSummaryService = {
       const prioritiesParagraph = paragraphs.find(p => prioritiesRegex.test(p)) || "";
       const copyParagraph = paragraphs.find(p => copyRegex.test(p)) || paragraphs[paragraphs.length - 1] || "";
       
-      // Extract tone more naturally (looking for descriptive words)
+      // Extract tone words naturally (looking for descriptive words)
       const toneWords = toneParagraph.match(/\b(professional|friendly|casual|formal|playful|serious|modern|traditional|luxury|minimal|bold|subtle|elegant|sophisticated|approachable|authoritative|conversational|direct|warm|cool)\b/gi);
-      // Fix: Add type assertion to ensure string array
       const tone = toneWords 
         ? Array.from(new Set(toneWords.map(w => w.toLowerCase()))) as string[]
         : ['professional', 'approachable'];
@@ -139,14 +131,13 @@ export const IntakeSummaryService = {
           // Extract key phrases by looking for emphasized words
           const keyPhrases = prioritiesParagraph.match(/\b(conversion|usability|aesthetics|performance|speed|accessibility|responsiveness|branding|clarity|simplicity|engagement|security|scalability|content|messaging|navigation|consistency|functionality|integration|SEO)[a-z]*/gi);
           if (keyPhrases && keyPhrases.length > 0) {
-            // Fix: Add type assertion to ensure string array
             priorities = Array.from(new Set(keyPhrases.map(p => p.toLowerCase()))).slice(0, 5) as string[];
           }
         }
       }
       
       // Extract copy elements more naturally
-      let header = "Welcome to Our Website";
+      let header = "Building Your Vision Together";
       let subtext = "We create solutions that work for you";
       let cta = "Get Started";
       
@@ -198,13 +189,13 @@ export const IntakeSummaryService = {
       console.error("Error generating intake summary:", error);
       // Provide a more human-friendly fallback response
       return {
-        summary: "We couldn't generate a summary at the moment. This might be due to a temporary issue with our AI service.",
+        summary: "I couldn't generate a complete summary right now. This might be due to a temporary issue with our AI service. The good news is that we've saved all your responses, so we can try again in a moment.",
         tone: ["professional", "friendly"],
         direction: "clean and modern design with intuitive user experience",
         priorities: ["clear communication", "user-friendly navigation", "visual appeal"],
         draftCopy: {
           header: "Building Your Vision Together",
-          subtext: "We're excited to bring your ideas to life with a thoughtfully designed digital experience.",
+          subtext: "We're excited to bring your ideas to life with a thoughtfully designed digital experience that reflects your unique brand.",
           cta: "Let's Begin"
         }
       };

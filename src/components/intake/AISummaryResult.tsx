@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IntakeSummaryResult } from "@/services/ai/summary/intake-summary-service";
-import { RefreshCw, Check, Copy } from "lucide-react";
+import { RefreshCw, Check, Copy, Palette, Zap, Type, LayoutPanelTop } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AISummaryResultProps {
@@ -27,43 +27,55 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
   };
   
   return (
-    <Card className="shadow-md border-purple-100">
-      <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 pb-4 border-b">
+    <Card className="shadow-md border-none bg-[#121212] text-white">
+      <CardHeader className="border-b border-zinc-800 pb-4">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl font-medium text-gray-800">Project Brief</CardTitle>
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-400" />
+            <CardTitle className="text-xl font-medium">{summaryResult.draftCopy.header}</CardTitle>
+          </div>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={onRegenerate}
             disabled={isLoading}
-            className="text-sm"
+            className="text-sm bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
-        <CardDescription className="text-gray-600">
+        <CardDescription className="text-zinc-400">
           Based on your intake form responses
         </CardDescription>
       </CardHeader>
       
       <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full p-0 bg-transparent border-b rounded-none">
-          <TabsTrigger value="summary" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500">
+        <TabsList className="w-full p-0 bg-[#121212] border-b border-zinc-800 rounded-none">
+          <TabsTrigger 
+            value="summary" 
+            className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 text-zinc-400 data-[state=active]:text-white"
+          >
             Summary
           </TabsTrigger>
-          <TabsTrigger value="highlights" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500">
-            Key Insights
+          <TabsTrigger 
+            value="design" 
+            className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 text-zinc-400 data-[state=active]:text-white"
+          >
+            Design Brief
           </TabsTrigger>
-          <TabsTrigger value="copy" className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500">
-            Content Ideas
+          <TabsTrigger 
+            value="content" 
+            className="flex-1 rounded-none data-[state=active]:border-b-2 data-[state=active]:border-yellow-400 text-zinc-400 data-[state=active]:text-white"
+          >
+            Content
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="summary" className="pt-4">
+        <TabsContent value="summary" className="pt-6">
           <CardContent>
             <div className="space-y-4">
-              <div className="text-gray-800 leading-relaxed">
+              <div className="text-zinc-300 leading-relaxed">
                 {summaryResult.summary
                   .split('\n\n')
                   .filter(paragraph => paragraph.trim() !== '')
@@ -77,6 +89,7 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
                   variant="ghost" 
                   size="sm" 
                   onClick={() => handleCopy(summaryResult.summary, "Summary")}
+                  className="text-zinc-400 hover:text-white hover:bg-zinc-800"
                 >
                   <Copy className="w-4 h-4 mr-2" />
                   Copy Text
@@ -86,100 +99,147 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
           </CardContent>
         </TabsContent>
         
-        <TabsContent value="highlights" className="pt-4">
+        <TabsContent value="design" className="pt-6">
           <CardContent>
             <div className="space-y-8">
               <div>
-                <h3 className="text-base font-medium text-gray-700 mb-3">Tone & Voice</h3>
-                <div className="flex flex-wrap gap-2">
-                  {summaryResult.tone.map((toneItem, index) => (
-                    <Badge key={index} variant="secondary" className="px-3 py-1 capitalize">
-                      {toneItem}
-                    </Badge>
-                  ))}
+                <div className="flex items-center gap-2 mb-4">
+                  <Palette className="h-5 w-5 text-yellow-400" />
+                  <h3 className="text-lg font-semibold">Color Scheme</h3>
                 </div>
-              </div>
-              
-              <div>
-                <h3 className="text-base font-medium text-gray-700 mb-3">Creative Direction</h3>
-                <p className="text-gray-800 leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
-                  {summaryResult.direction}
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="text-base font-medium text-gray-700 mb-3">Project Priorities</h3>
-                <div className="space-y-2">
-                  {summaryResult.priorities.map((priority, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-50">
-                      <div className="flex-shrink-0 bg-indigo-100 text-indigo-700 rounded-full w-6 h-6 flex items-center justify-center">
-                        {index + 1}
+                
+                <ul className="space-y-6 pl-5">
+                  <li className="list-disc list-outside">
+                    <div>
+                      <p className="font-medium">Primary Color:</p>
+                      <div className="flex items-center gap-2 mt-1 mb-1">
+                        <div className="w-4 h-4 rounded-full bg-indigo-600"></div>
+                        <span className="text-zinc-300">{summaryResult.tone[0] === 'professional' ? 'Deep Navy Blue' : 'Charcoal Gray'}</span>
                       </div>
-                      <p className="text-gray-800">{priority}</p>
+                      <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                        <p className="text-zinc-400 italic">
+                          Represents professionalism, reliability, and strength. Forms a strong backdrop for accents.
+                        </p>
+                      </div>
                     </div>
-                  ))}
+                  </li>
+                  
+                  <li className="list-disc list-outside">
+                    <div>
+                      <p className="font-medium">Accent Color:</p>
+                      <div className="flex items-center gap-2 mt-1 mb-1">
+                        <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
+                        <span className="text-zinc-300">Bright {summaryResult.tone.includes('bold') ? 'Electric Orange' : 'Yellow'}</span>
+                      </div>
+                      <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                        <p className="text-zinc-400 italic">
+                          Used for buttons, highlights, and CTAs. Adds energy and visibility against the dark base.
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                  
+                  <li className="list-disc list-outside">
+                    <div>
+                      <p className="font-medium">Text Color:</p>
+                      <div className="flex items-center gap-2 mt-1 mb-1">
+                        <div className="w-4 h-4 rounded-full bg-gray-200"></div>
+                        <span className="text-zinc-300">Light Gray or White</span>
+                      </div>
+                      <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                        <p className="text-zinc-400 italic">
+                          Ensures excellent readability while maintaining a sleek, modern look.
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="border-t border-zinc-800 pt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Type className="h-5 w-5 text-yellow-400" />
+                  <h3 className="text-lg font-semibold">Font Choices</h3>
                 </div>
+                
+                <ul className="space-y-6 pl-5">
+                  <li className="list-disc list-outside">
+                    <div>
+                      <p className="font-medium">Headings:</p>
+                      <p className="text-zinc-300 mt-1 mb-1">Use Montserrat or Poppins</p>
+                      <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                        <p className="text-zinc-400 italic">
+                          Bold, sans-serif fonts for strong visual hierarchy and a clean modern edge.
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                  
+                  <li className="list-disc list-outside">
+                    <div>
+                      <p className="font-medium">Body Text:</p>
+                      <p className="text-zinc-300 mt-1 mb-1">Use Open Sans or Roboto</p>
+                      <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                        <p className="text-zinc-400 italic">
+                          Clean and easy to read, enhancing accessibility and professionalism.
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
               </div>
             </div>
           </CardContent>
         </TabsContent>
         
-        <TabsContent value="copy" className="pt-4">
+        <TabsContent value="content" className="pt-6">
           <CardContent>
             <div className="space-y-8">
-              <div className="bg-slate-50 rounded-lg p-6 border border-slate-100">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-base font-medium text-gray-700">Headline</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleCopy(summaryResult.draftCopy.header, "Headline")}
-                    className="text-slate-500 hover:text-slate-700"
-                  >
-                    <Copy className="w-3.5 h-3.5 mr-1.5" />
-                    Copy
-                  </Button>
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <LayoutPanelTop className="h-5 w-5 text-yellow-400" />
+                  <h3 className="text-lg font-semibold">Layout & Design Elements</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-800 leading-tight">
-                  {summaryResult.draftCopy.header}
-                </p>
-              </div>
-              
-              <div className="bg-slate-50 rounded-lg p-6 border border-slate-100">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-base font-medium text-gray-700">Supporting Text</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleCopy(summaryResult.draftCopy.subtext, "Supporting Text")}
-                    className="text-slate-500 hover:text-slate-700"
-                  >
-                    <Copy className="w-3.5 h-3.5 mr-1.5" />
-                    Copy
-                  </Button>
-                </div>
-                <p className="text-gray-700 leading-relaxed">
-                  {summaryResult.draftCopy.subtext}
-                </p>
-              </div>
-              
-              <div className="bg-slate-50 rounded-lg p-6 border border-slate-100">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-base font-medium text-gray-700">Call to Action</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleCopy(summaryResult.draftCopy.cta, "CTA")}
-                    className="text-slate-500 hover:text-slate-700"
-                  >
-                    <Copy className="w-3.5 h-3.5 mr-1.5" />
-                    Copy
-                  </Button>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <Button className="px-8 py-2.5 shadow-sm bg-indigo-600 hover:bg-indigo-700">
-                    {summaryResult.draftCopy.cta}
-                  </Button>
+                
+                <div className="mt-4 space-y-6">
+                  <div>
+                    <p className="text-lg font-medium mb-2">1. Hero Section</p>
+                    <ul className="space-y-3 pl-5">
+                      <li className="list-disc list-outside">
+                        <p className="text-zinc-300">Full-width background image showcasing your work.</p>
+                      </li>
+                      <li className="list-disc list-outside">
+                        <p className="text-zinc-300">Dark-to-transparent gradient overlay to improve text visibility.</p>
+                      </li>
+                      <li className="list-disc list-outside">
+                        <div>
+                          <p className="text-zinc-300">Bold headline:</p>
+                          <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                            <p className="text-zinc-400 italic">Example: "{summaryResult.draftCopy.header}"</p>
+                          </div>
+                        </div>
+                      </li>
+                      <li className="list-disc list-outside">
+                        <div>
+                          <p className="text-zinc-300">CTA Button in the accent color:</p>
+                          <div className="border-l-2 border-zinc-700 pl-4 ml-1 mt-2">
+                            <p className="text-zinc-400 italic">Example: "{summaryResult.draftCopy.cta}"</p>
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <p className="text-lg font-medium mb-2">2. Supporting Content</p>
+                    <div className="pl-5">
+                      <div className="border-l-2 border-zinc-700 pl-4 mt-2">
+                        <p className="text-zinc-400">
+                          {summaryResult.draftCopy.subtext}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -187,8 +247,8 @@ const AISummaryResult = ({ summaryResult, isLoading = false, onRegenerate }: AIS
         </TabsContent>
       </Tabs>
       
-      <CardFooter className="bg-gray-50 p-4 text-sm text-gray-500 italic border-t">
-        This content is generated based on your inputs and can be customized to match your specific needs.
+      <CardFooter className="bg-zinc-900 p-4 text-sm text-zinc-500 italic border-t border-zinc-800">
+        This design brief is based on your inputs and can be customized to match your specific needs.
       </CardFooter>
     </Card>
   );
