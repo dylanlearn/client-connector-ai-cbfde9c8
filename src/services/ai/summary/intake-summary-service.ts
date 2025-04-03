@@ -39,3 +39,6 @@ export const IntakeSummaryService = {
     }
   }
 };
+
+// Export the type directly from this file too, for backward compatibility
+export type { IntakeSummaryResult } from "./types/intake-summary-types";
