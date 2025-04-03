@@ -1,6 +1,7 @@
 
-import { IntakeFormData } from "@/types/intake-form";
-
+/**
+ * Interface representing the result of an intake form summary
+ */
 export interface IntakeSummaryResult {
   summary: string;
   tone: string[];
@@ -11,11 +12,4 @@ export interface IntakeSummaryResult {
     subtext: string;
     cta: string;
   };
-}
-
-export interface AIPromptOptions {
-  model: string;
-  temperature: number;
-  systemPrompt: string;
-  promptContent: string;
 }
