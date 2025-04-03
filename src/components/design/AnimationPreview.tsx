@@ -648,7 +648,7 @@ const WebsiteMicrointeractionsDemo = ({ isPlaying, animationConfig }: { isPlayin
   );
 };
 
-// New Animation Demos
+// New Animation Demos - Fixed implementations
 const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
   return (
     <div className="w-full h-full overflow-hidden">
