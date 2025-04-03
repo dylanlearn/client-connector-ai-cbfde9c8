@@ -216,6 +216,34 @@ export const designOptions: DesignOption[] = [
     imageUrl: "https://placehold.co/600x400/27ae60/ffffff?text=Microinteractions",
     category: "animation"
   },
+  {
+    id: "animation-6",
+    title: "Text Animation",
+    description: "Engaging text animations for headings and important content.",
+    imageUrl: "https://placehold.co/600x400/e74c3c/ffffff?text=Text+Animation",
+    category: "animation"
+  },
+  {
+    id: "animation-7",
+    title: "Staggered Reveal",
+    description: "Elements appear one after another in sequence.",
+    imageUrl: "https://placehold.co/600x400/1abc9c/ffffff?text=Staggered+Reveal",
+    category: "animation"
+  },
+  {
+    id: "animation-8",
+    title: "Floating Elements",
+    description: "Subtle floating animations for a dreamy, dynamic feel.",
+    imageUrl: "https://placehold.co/600x400/e84393/ffffff?text=Floating+Elements",
+    category: "animation"
+  },
+  {
+    id: "animation-9",
+    title: "Elastic Motion",
+    description: "Springy, elastic animations for playful interfaces.",
+    imageUrl: "https://placehold.co/600x400/00cec9/ffffff?text=Elastic+Motion",
+    category: "animation"
+  },
   
   // Interaction options
   {
@@ -251,6 +279,34 @@ export const designOptions: DesignOption[] = [
     title: "Drag Interactions",
     description: "Draggable elements for interactive galleries and sliders.",
     imageUrl: "https://placehold.co/600x400/16a085/ffffff?text=Drag+Interactions",
+    category: "interaction"
+  },
+  {
+    id: "interaction-6",
+    title: "AI Design Suggestion",
+    description: "AI-powered design suggestions during user interaction.",
+    imageUrl: "https://placehold.co/600x400/20bf6b/ffffff?text=AI+Design",
+    category: "interaction"
+  },
+  {
+    id: "interaction-7",
+    title: "Magnetic Elements",
+    description: "Elements that attract the cursor for playful interactions.",
+    imageUrl: "https://placehold.co/600x400/eb3b5a/ffffff?text=Magnetic+Elements",
+    category: "interaction"
+  },
+  {
+    id: "interaction-8",
+    title: "Color Shift",
+    description: "Elements that change color on interaction for visual feedback.",
+    imageUrl: "https://placehold.co/600x400/fa8231/ffffff?text=Color+Shift",
+    category: "interaction"
+  },
+  {
+    id: "interaction-9",
+    title: "Parallax Tilt",
+    description: "3D tilt effect that follows cursor movement for depth.",
+    imageUrl: "https://placehold.co/600x400/3867d6/ffffff?text=Parallax+Tilt",
     category: "interaction"
   }
 ];

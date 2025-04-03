@@ -1,9 +1,14 @@
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DesignOption } from "./DesignPreview";
 import { Play, Pause, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// Define a type for the animation demos
+interface AnimationDemoProps {
+  isPlaying: boolean;
+  animationConfig: any;
+}
 
 interface AnimationPreviewProps {
   animation: DesignOption;
@@ -22,10 +27,10 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
           initial: { opacity: 0, y: 20 },
           animate: { opacity: 1, y: 0 },
           transition: { 
-            duration: 1.2, // Slower fade
+            duration: 1.8, // Slower fade
             ease: "easeOut",
             repeat: isPlaying ? Infinity : 0,
-            repeatDelay: 2,
+            repeatDelay: 3,
             repeatType: "reverse" as const
           }
         };
@@ -34,10 +39,10 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
           initial: { opacity: 0, scale: 0.9 },
           animate: { opacity: 1, scale: 1 },
           transition: { 
-            duration: 1.0, // Slower reveal
+            duration: 1.5, // Slower reveal
             delay: 0.2,
             repeat: isPlaying ? Infinity : 0,
-            repeatDelay: 2,
+            repeatDelay: 3,
             repeatType: "reverse" as const
           }
         };
@@ -73,6 +78,58 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
               duration: 1,
               repeat: Infinity,
               repeatType: "reverse" as const
+            }
+          } : {}
+        };
+      case "animation-6": // Text Animation
+        return {
+          initial: { opacity: 0, y: 50 },
+          animate: { 
+            opacity: 1, 
+            y: 0,
+            transition: {
+              duration: 1,
+              staggerChildren: 0.1,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 3,
+              repeatType: "reverse" as const
+            }
+          }
+        };
+      case "animation-7": // Staggered Reveal
+        return {
+          initial: { opacity: 0, scale: 0.8 },
+          animate: { 
+            opacity: 1, 
+            scale: 1,
+            transition: {
+              duration: 0.5,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 4,
+              repeatType: "reverse" as const
+            }
+          }
+        };
+      case "animation-8": // Floating Elements
+        return {
+          animate: isPlaying ? { 
+            y: [0, -10, 0],
+            transition: {
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          } : {}
+        };
+      case "animation-9": // Elastic Motion
+        return {
+          animate: isPlaying ? {
+            scale: [1, 1.1, 0.9, 1.05, 1],
+            transition: {
+              duration: 1.5,
+              repeat: Infinity,
+              repeatDelay: 1,
+              ease: "easeInOut"
             }
           } : {}
         };
@@ -118,6 +175,22 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
       case "animation-5": // Microinteractions
         return (
           <WebsiteMicrointeractionsDemo isPlaying={isPlaying} animationConfig={animationConfig} />
+        );
+      case "animation-6": // Text Animation
+        return (
+          <WebsiteTextAnimationDemo isPlaying={isPlaying} animationConfig={animationConfig} />
+        );
+      case "animation-7": // Staggered Reveal
+        return (
+          <WebsiteStaggeredRevealDemo isPlaying={isPlaying} animationConfig={animationConfig} />
+        );
+      case "animation-8": // Floating Elements
+        return (
+          <WebsiteFloatingElementsDemo isPlaying={isPlaying} animationConfig={animationConfig} />
+        );
+      case "animation-9": // Elastic Motion
+        return (
+          <WebsiteElasticMotionDemo isPlaying={isPlaying} animationConfig={animationConfig} />
         );
       default:
         return (
@@ -575,4 +648,25 @@ const WebsiteMicrointeractionsDemo = ({ isPlaying, animationConfig }: { isPlayin
   );
 };
 
-export default AnimationPreview;
+// New Animation Demos
+const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      <div className="bg-white h-56 p-3">
+        {/* Hero Section with text animation */}
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <motion.div 
+            className="flex flex-col items-center"
+            variants={animationConfig}
+            initial="initial"
+            animate={isPlaying ? "animate" : "initial"}
+          >
+            <motion

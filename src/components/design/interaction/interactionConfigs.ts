@@ -30,12 +30,28 @@ export interface DragInteractionConfig extends BaseInteractionConfig {
   whileDrag?: Record<string, any>;
 }
 
+export interface MagneticElementConfig extends BaseInteractionConfig {
+  animate: { x: number; y: number; transition?: Record<string, any> };
+}
+
+export interface ColorShiftConfig extends BaseInteractionConfig {
+  animate: Record<string, any>;
+  whileHover: { backgroundColor?: string; scale?: number };
+}
+
+export interface ParallaxTiltConfig extends BaseInteractionConfig {
+  animate: { rotateX: number; rotateY: number; transition?: Record<string, any> };
+}
+
 export type InteractionConfig = 
   | HoverEffectConfig 
   | ModalDialogConfig 
   | CustomCursorConfig 
   | ScrollAnimationConfig 
-  | DragInteractionConfig 
+  | DragInteractionConfig
+  | MagneticElementConfig
+  | ColorShiftConfig
+  | ParallaxTiltConfig
   | BaseInteractionConfig;
 
 // Get interaction configuration based on interaction type
@@ -91,6 +107,36 @@ export const getInteractionConfig = (
         dragConstraints: { left: 0, right: 100, top: 0, bottom: 0 },
         whileDrag: { scale: 1.1 }
       } as DragInteractionConfig;
+    case "interaction-7": // Magnetic Elements
+      return {
+        initial: {},
+        animate: isActive ? {
+          x: cursorPosition.x > 0 ? (cursorPosition.x / 20) - 10 : 0,
+          y: cursorPosition.y > 0 ? (cursorPosition.y / 20) - 10 : 0,
+          transition: { type: "spring", damping: 15, stiffness: 150 }
+        } : {}
+      } as MagneticElementConfig;
+    case "interaction-8": // Color Shift
+      return {
+        initial: { backgroundColor: "#4f46e5" },
+        animate: isActive ? { 
+          backgroundColor: "#8b5cf6",
+          transition: { duration: 0.8, repeat: Infinity, repeatType: "reverse" }
+        } : { backgroundColor: "#4f46e5" },
+        whileHover: { 
+          backgroundColor: "#7c3aed", 
+          scale: 1.05 
+        }
+      } as ColorShiftConfig;
+    case "interaction-9": // Parallax Tilt
+      return {
+        initial: { rotateX: 0, rotateY: 0 },
+        animate: isActive ? {
+          rotateX: (cursorPosition.y / 10) - 10,
+          rotateY: (cursorPosition.x / 10) - 10,
+          transition: { type: "spring", damping: 20, stiffness: 200 }
+        } : { rotateX: 0, rotateY: 0 }
+      } as ParallaxTiltConfig;
     default:
       return {} as BaseInteractionConfig;
   }

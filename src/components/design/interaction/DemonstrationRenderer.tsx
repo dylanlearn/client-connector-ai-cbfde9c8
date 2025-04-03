@@ -7,7 +7,10 @@ import {
   ModalDialogConfig, 
   CustomCursorConfig,
   ScrollAnimationConfig,
-  DragInteractionConfig
+  DragInteractionConfig,
+  MagneticElementConfig,
+  ColorShiftConfig,
+  ParallaxTiltConfig
 } from "./interactionConfigs";
 import {
   HoverEffectDemo,
@@ -16,7 +19,10 @@ import {
   ScrollAnimationDemo,
   DragInteractionDemo,
   DefaultDemo,
-  AIDesignSuggestionDemo
+  AIDesignSuggestionDemo,
+  MagneticElementDemo,
+  ColorShiftDemo,
+  ParallaxTiltDemo
 } from "./demonstrations";
 
 export interface DemonstrationRendererProps {
@@ -62,6 +68,15 @@ const DemonstrationRenderer = ({
     
     case "interaction-6": // AI Design Suggestion presentation
       return <AIDesignSuggestionDemo isActive={isActive} />;
+      
+    case "interaction-7": // Magnetic Elements
+      return <MagneticElementDemo interactionConfig={interactionConfig as MagneticElementConfig} isActive={isActive} />;
+      
+    case "interaction-8": // Color Shift
+      return <ColorShiftDemo interactionConfig={interactionConfig as ColorShiftConfig} isActive={isActive} />;
+      
+    case "interaction-9": // Parallax Tilt
+      return <ParallaxTiltDemo interactionConfig={interactionConfig as ParallaxTiltConfig} isActive={isActive} />;
     
     default:
       return <DefaultDemo />;
