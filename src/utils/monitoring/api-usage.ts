@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { ClientError } from "./types";
 
 /**
  * Record API usage metrics
@@ -51,9 +52,10 @@ export const recordClientError = async (
   userId?: string
 ): Promise<boolean> => {
   try {
-    // Use a proper type assertion to fix TypeScript error
-    const { error } = await supabase
-      .from('client_errors' as unknown as string)
+    // Use a type assertion with 'any' to bypass TypeScript's type checking
+    // This is necessary because the client_errors table is created dynamically
+    const { error } = await (supabase
+      .from('client_errors' as any)
       .insert({
         error_message: errorMessage,
         error_stack: errorStack,
@@ -62,7 +64,7 @@ export const recordClientError = async (
         browser_info: navigator.userAgent,
         url: window.location.href,
         timestamp: new Date().toISOString()
-      });
+      }));
       
     if (error) {
       console.error('Error recording client error:', error);
