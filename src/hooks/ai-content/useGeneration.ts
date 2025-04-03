@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { AIGeneratorService } from '@/services/ai';
@@ -43,7 +44,7 @@ export function useGeneration({
   const generate = useCallback(async (request: ContentRequest): Promise<string> => {
     setIsGenerating(true);
     setLastError(null);
-    retryCountRef.current = 0; // Fix: Add the value 0 here
+    retryCountRef.current = 0;
     
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -90,7 +91,7 @@ export function useGeneration({
     
     const attemptGeneration = async (retryCount: number): Promise<string> => {
       try {
-        const cacheKey = `ai-content-${request.type}-${request.context}-${request.tone}-${testVariantId || 'default'}-${retryCount}`;
+        const cacheKey = `ai-content-${request.type}-${request.context || ''}-${request.tone || ''}-${testVariantId || 'default'}-${retryCount}`;
         
         const startTime = Date.now();
         

@@ -4,12 +4,12 @@
  */
 export interface ContentGenerationOptions {
   type: 'header' | 'tagline' | 'cta' | 'description';
-  context?: string; // Changed from required to optional
+  context?: string; // Optional context
   maxLength?: number;
   tone?: string;
   keywords?: string[];
-  cacheKey?: string;
-  testVariantId?: string;
+  cacheKey?: string; // Added cacheKey property
+  testVariantId?: string; // Added testVariantId property
 }
 
 /**
@@ -18,7 +18,7 @@ export interface ContentGenerationOptions {
 export class ContentGenerator {
   async generate(options: ContentGenerationOptions): Promise<string> {
     // Implementation details would go here
-    const { type, context = '' } = options; // Add a default empty string for context
+    const { type, context = '' } = options; // Provide default value for context
     
     try {
       // In a real implementation, this might call an API or use a more sophisticated method
