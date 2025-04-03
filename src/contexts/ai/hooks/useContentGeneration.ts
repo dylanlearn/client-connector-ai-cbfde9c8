@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { AIContentGenerationService } from "@/services/ai/content";
+import { AIContentGenerationService, ContentGenerationOptions } from "@/services/ai/content";
 
 export const useContentGeneration = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -12,11 +12,14 @@ export const useContentGeneration = () => {
     setIsProcessing(true);
     
     try {
-      // Call the AI service to generate content
-      const content = await AIContentGenerationService.generateContent(
-        prompt,
-        contentType
-      );
+      // Call the AI service to generate content with properly formatted options
+      const options: ContentGenerationOptions = {
+        type: contentType as 'header' | 'tagline' | 'cta' | 'description',
+        context: prompt,
+        maxLength: 500 // Default max length
+      };
+      
+      const content = await AIContentGenerationService.generateContent(options);
       
       return content;
     } catch (error) {
