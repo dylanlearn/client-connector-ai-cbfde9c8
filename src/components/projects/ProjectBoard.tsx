@@ -4,6 +4,7 @@ import { Clock, ArrowRight, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import ProjectColumn from "./ProjectColumn";
 import { Project } from "@/types/project";
+import { UseMutationResult } from "@tanstack/react-query";
 
 // Column definitions
 const columns = [
@@ -52,7 +53,16 @@ const projectToBoardStatus: Record<Project['status'], string> = {
 
 interface ProjectBoardProps {
   projects: Project[];
-  updateProject: any;
+  updateProject: UseMutationResult<Project, Error, {
+    id: string;
+    status?: Project['status'];
+    title?: string;
+    client_name?: string;
+    client_email?: string;
+    project_type?: string;
+    description?: string | null;
+    intake_form_id?: string;
+  }, unknown>;
 }
 
 const ProjectBoard = ({ projects, updateProject }: ProjectBoardProps) => {

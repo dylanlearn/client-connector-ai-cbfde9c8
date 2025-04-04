@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { FileText, PlusCircle, Loader2, Info, Database } from "lucide-react";
+import { FileText, PlusCircle, Loader2, Info, Database, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/dashboard/EmptyState";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -17,7 +17,7 @@ const Projects = () => {
   const { projects, isLoading, error, updateProject } = useProjects();
   const { generateSampleData, isGenerating } = useSampleData();
   
-  // Filter out archived projects
+  // Filter out archived projects for display
   const activeProjects = projects.filter(project => project.status !== 'archived');
 
   return (
@@ -44,10 +44,13 @@ const Projects = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : error ? (
-        <div className="bg-red-50 p-4 rounded-lg text-red-800">
-          <p className="font-semibold">Error loading projects</p>
-          <p className="text-sm">{error instanceof Error ? error.message : "Please try refreshing the page."}</p>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <p className="font-semibold">Error loading projects</p>
+            <p className="text-sm">{error instanceof Error ? error.message : "Please try refreshing the page."}</p>
+          </AlertDescription>
+        </Alert>
       ) : activeProjects.length === 0 ? (
         <EmptyState 
           title="No projects yet"

@@ -2,20 +2,17 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
 export const useSampleData = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   
   const generateSampleData = async () => {
     if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to generate sample data",
-        variant: "destructive"
+      toast.error("Authentication required", {
+        description: "Please log in to generate sample data"
       });
       return;
     }
@@ -61,6 +58,10 @@ export const useSampleData = () => {
         
       if (projectError) {
         throw new Error(`Error creating project: ${projectError.message}`);
+      }
+      
+      if (!project) {
+        throw new Error('Project creation failed without an error message');
       }
       
       // Add sample design tokens
@@ -112,9 +113,9 @@ export const useSampleData = () => {
         throw new Error(`Error creating wireframe: ${wireframeError.message}`);
       }
       
-      // Add sample animation preferences - Fixed type here to use "scroll_animation" instead of "scroll_reveal"
+      // Add sample animation preferences - Use correct type here
       const { error: animationError } = await supabase.from('animation_preferences').insert({
-        animation_type: 'scroll_animation',
+        animation_type: 'scroll_animation', // Fixed: using the correct type
         user_id: user.id,
         enabled: true,
         intensity_preference: 7
@@ -124,9 +125,8 @@ export const useSampleData = () => {
         throw new Error(`Error creating animation preferences: ${animationError.message}`);
       }
       
-      toast({
-        title: "Sample data created",
-        description: "Demo project and assets have been generated successfully.",
+      toast.success("Sample data created", {
+        description: "Demo project and assets have been generated successfully."
       });
       
       // Refresh the page to show new data
@@ -134,10 +134,8 @@ export const useSampleData = () => {
       
     } catch (error) {
       console.error('Error creating sample data:', error);
-      toast({
-        title: "Error creating sample data",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive"
+      toast.error("Error creating sample data", {
+        description: error instanceof Error ? error.message : "An unknown error occurred"
       });
     } finally {
       setIsGenerating(false);

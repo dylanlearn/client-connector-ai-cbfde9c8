@@ -2,10 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, CreateProjectData, UpdateProjectData } from '@/types/project';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 export const useProjects = () => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch all projects for the current user
@@ -45,21 +44,22 @@ export const useProjects = () => {
         throw error;
       }
 
+      if (!data) {
+        throw new Error('Project creation failed without an error message');
+      }
+
       return data as Project;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast({
-        title: 'Project created',
+      toast.success('Project created', {
         description: 'Your project has been created successfully.',
       });
     },
     onError: (error) => {
       console.error('Create project error:', error);
-      toast({
-        title: 'Failed to create project',
+      toast.error('Failed to create project', {
         description: 'An error occurred while creating your project. Please try again.',
-        variant: 'destructive',
       });
     }
   });
@@ -79,21 +79,22 @@ export const useProjects = () => {
         throw error;
       }
 
+      if (!data) {
+        throw new Error('Project update failed without an error message');
+      }
+
       return data as Project;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast({
-        title: 'Project updated',
-        description: 'Your project has been updated successfully.',
+      toast.success('Project updated', {
+        description: `Project "${data.title}" has been updated successfully.`,
       });
     },
     onError: (error) => {
       console.error('Update project error:', error);
-      toast({
-        title: 'Failed to update project',
+      toast.error('Failed to update project', {
         description: 'An error occurred while updating your project. Please try again.',
-        variant: 'destructive',
       });
     }
   });
@@ -113,19 +114,16 @@ export const useProjects = () => {
 
       return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast({
-        title: 'Project deleted',
+      toast.success('Project deleted', {
         description: 'Your project has been deleted successfully.',
       });
     },
     onError: (error) => {
       console.error('Delete project error:', error);
-      toast({
-        title: 'Failed to delete project',
+      toast.error('Failed to delete project', {
         description: 'An error occurred while deleting your project. Please try again.',
-        variant: 'destructive',
       });
     }
   });
