@@ -89,9 +89,9 @@ export const useSampleData = () => {
         }
       });
       
-      // Add sample animation preferences
+      // Add sample animation preferences - Fixed type here to use "scroll_animation" instead of "scroll_reveal"
       await supabase.from('animation_preferences').insert({
-        animation_type: 'scroll_reveal',
+        animation_type: 'scroll_animation',
         user_id: user.id,
         enabled: true,
         intensity_preference: 7
