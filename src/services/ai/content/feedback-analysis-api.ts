@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FeedbackAnalysisRecord, 
@@ -30,7 +29,7 @@ export const FeedbackAnalysisAPI = {
     while (retries < MAX_RETRIES) {
       try {
         // Call the edge function to analyze the feedback
-        const { data, error } = await supabase.functions.invoke<FeedbackAnalysisResult>(
+        const { data, error } = await supabase.functions.invoke<any>(
           'analyze-feedback',
           {
             body: { feedbackText }
@@ -46,7 +45,33 @@ export const FeedbackAnalysisAPI = {
           throw new Error('No analysis data returned');
         }
 
-        return data;
+        // Make sure action items have valid priorities
+        const validatedActionItems: ActionItem[] = (data.actionItems || []).map((item: any) => {
+          // Validate priority is one of the allowed values
+          let priority: 'high' | 'medium' | 'low' = 'medium';
+          if (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low') {
+            priority = item.priority;
+          }
+          
+          return {
+            task: item.task,
+            priority,
+            urgency: Number(item.urgency) || 5
+          };
+        });
+
+        return {
+          summary: data.summary || '',
+          actionItems: validatedActionItems,
+          toneAnalysis: data.toneAnalysis || {
+            positive: 0,
+            neutral: 1,
+            negative: 0,
+            urgent: false,
+            critical: false,
+            vague: false
+          }
+        };
       } catch (error: any) {
         lastError = error;
         retries++;

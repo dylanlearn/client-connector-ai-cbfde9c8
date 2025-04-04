@@ -1,5 +1,5 @@
 
-import { ActionItem, ToneAnalysis, FeedbackStatus } from "./feedback-types";
+import { ActionItem, ToneAnalysis, FeedbackStatus, FeedbackAnalysisResult } from "./feedback-types";
 
 /**
  * Utility functions for the feedback analysis service
@@ -27,12 +27,12 @@ export const FeedbackUtils = {
   /**
    * Generate a fallback analysis result in case of failure
    */
-  generateFallbackAnalysisResult: () => {
+  generateFallbackAnalysisResult: (): FeedbackAnalysisResult => {
     return {
       summary: 'Failed to analyze feedback.',
       actionItems: [{ 
         task: 'Review feedback manually', 
-        priority: 'high', 
+        priority: 'high' as const, 
         urgency: 10 
       }],
       toneAnalysis: {

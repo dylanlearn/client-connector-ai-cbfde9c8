@@ -39,6 +39,28 @@ export const FeedbackAnalysisService = {
       // Call the analyze-feedback edge function
       const data = await FeedbackAnalysisAPI.callAnalyzeFeedbackFunction(feedbackText);
 
+      // Ensure the action items have valid priority values
+      const validatedActionItems: ActionItem[] = data.actionItems.map(item => {
+        // Ensure priority is one of the allowed values
+        let priority: 'high' | 'medium' | 'low' = 'medium';
+        if (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low') {
+          priority = item.priority;
+        }
+        
+        return {
+          task: item.task,
+          priority,
+          urgency: item.urgency
+        };
+      });
+
+      // Create a properly typed result
+      const validatedResult: FeedbackAnalysisResult = {
+        summary: data.summary,
+        actionItems: validatedActionItems,
+        toneAnalysis: data.toneAnalysis
+      };
+
       // Get the current user ID if available
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
@@ -47,7 +69,7 @@ export const FeedbackAnalysisService = {
       try {
         // Determine priority if not provided 
         const calculatedPriority = options?.priority || 
-          FeedbackUtils.calculatePriorityFromToneAnalysis(data.toneAnalysis);
+          FeedbackUtils.calculatePriorityFromToneAnalysis(validatedResult.toneAnalysis);
 
         // Create a record for database storage
         const record: FeedbackAnalysisRecord = {
@@ -57,9 +79,9 @@ export const FeedbackAnalysisService = {
           priority: calculatedPriority,
           status: 'open' as FeedbackStatus,
           original_feedback: feedbackText,
-          action_items: data.actionItems,
-          tone_analysis: data.toneAnalysis,
-          summary: data.summary
+          action_items: validatedResult.actionItems,
+          tone_analysis: validatedResult.toneAnalysis,
+          summary: validatedResult.summary
         };
         
         await FeedbackAnalysisAPI.storeFeedbackAnalysis(record);
@@ -68,7 +90,7 @@ export const FeedbackAnalysisService = {
         console.error('Error saving feedback analysis to database:', saveError);
       }
 
-      return data;
+      return validatedResult;
     } catch (error) {
       console.error('Error in analyzeFeedback:', error);
       
