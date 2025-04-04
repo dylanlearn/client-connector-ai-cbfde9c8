@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
 import { Sparkles, Layout, Star, MoreHorizontal, Trash2, Lightbulb, Eye } from 'lucide-react';
 import { 
   Dialog, 
@@ -87,38 +88,11 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
     }
   };
 
+  /**
+   * Safely get wireframe data from an AIWireframe object
+   */
   const getWireframeData = (wireframe: AIWireframe): WireframeData | null => {
-    if (wireframe.data) {
-      return wireframe.data;
-    }
-    
-    if (wireframe.generation_params && typeof wireframe.generation_params === 'object') {
-      if (wireframe.generation_params.result_data) {
-        return wireframe.generation_params.result_data as WireframeData;
-      }
-    }
-    
-    return null;
-  };
-
-  const renderSections = (wireframe: AIWireframe) => {
-    const wireframeData = getWireframeData(wireframe);
-    if (!wireframeData || !wireframeData.sections) return null;
-    
-    return (
-      <div className="space-y-4">
-        {wireframeData.sections.slice(0, 3).map((section: any, index: number) => (
-          <div key={index} className="border rounded-md p-3">
-            <h4 className="text-sm font-medium capitalize">{section.name || `Section ${index + 1}`}</h4>
-            <p className="text-xs text-gray-500 mt-1">{section.description || "No description"}</p>
-          </div>
-        ))}
-        
-        {wireframeData.sections.length > 3 && (
-          <p className="text-xs text-gray-500">And {wireframeData.sections.length - 3} more sections...</p>
-        )}
-      </div>
-    );
+    return WireframeService.extractWireframeData(wireframe);
   };
 
   if (loading) {

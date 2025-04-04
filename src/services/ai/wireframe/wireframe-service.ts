@@ -41,6 +41,30 @@ export const WireframeService = {
   },
   
   /**
+   * Helper function to extract WireframeData from various data structures
+   */
+  extractWireframeData: (wireframe: AIWireframe): WireframeData | null => {
+    // Check if data property already exists
+    if (wireframe.data) {
+      return wireframe.data;
+    }
+    
+    // Extract from generation_params if available
+    if (wireframe.generation_params && typeof wireframe.generation_params === 'object') {
+      if (wireframe.generation_params.result_data) {
+        return wireframe.generation_params.result_data as WireframeData;
+      }
+    }
+    
+    // Construct a basic wireframe data object from available properties
+    return {
+      title: wireframe.description || "Untitled Wireframe",
+      description: "",
+      sections: wireframe.sections || []
+    };
+  },
+  
+  /**
    * Get all wireframes for a project
    */
   getProjectWireframes: async (projectId: string): Promise<AIWireframe[]> => {
@@ -49,22 +73,13 @@ export const WireframeService = {
       
       // Process each wireframe to extract and structure the data correctly
       return wireframes.map(wireframe => {
-        const generationParams = wireframe.generation_params;
-        let wireframeData: WireframeData | null = null;
-        
-        // Extract data from generation_params if available
-        if (generationParams && typeof generationParams === 'object' && generationParams.result_data) {
-          wireframeData = generationParams.result_data as WireframeData;
-        }
+        // Extract wireframe data using the helper function
+        const wireframeData = WireframeService.extractWireframeData(wireframe);
         
         // Add structured data to the wireframe object
         return {
           ...wireframe,
-          data: wireframeData || {
-            title: wireframe.description || "Untitled Wireframe",
-            description: "",
-            sections: []
-          }
+          data: wireframeData
         };
       });
     } catch (error) {
@@ -80,22 +95,13 @@ export const WireframeService = {
     try {
       const wireframe = await WireframeApiService.getWireframe(wireframeId);
       
-      // Extract and structure the data
-      const generationParams = wireframe.generation_params;
-      let wireframeData: WireframeData | null = null;
-      
-      if (generationParams && typeof generationParams === 'object' && generationParams.result_data) {
-        wireframeData = generationParams.result_data as WireframeData;
-      }
+      // Extract wireframe data using the helper function
+      const wireframeData = WireframeService.extractWireframeData(wireframe);
       
       // Add the extracted data to the wireframe object
       return {
         ...wireframe,
-        data: wireframeData || {
-          title: wireframe.description || "Untitled Wireframe",
-          description: "",
-          sections: wireframe.sections || []
-        }
+        data: wireframeData
       };
     } catch (error) {
       console.error("Error in wireframe service getWireframe:", error);

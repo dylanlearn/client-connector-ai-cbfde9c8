@@ -122,4 +122,5 @@ export interface AIWireframe {
   image_url?: string;
   quality_flags?: any;
   data?: WireframeData; // Add data property to store the wireframe data
+  sections?: any[]; // Add sections property for backward compatibility
 }
