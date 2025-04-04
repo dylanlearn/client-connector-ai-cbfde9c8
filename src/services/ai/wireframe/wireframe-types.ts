@@ -121,4 +121,5 @@ export interface AIWireframe {
   generation_params?: any; // Using any to allow Json compatibility
   image_url?: string;
   quality_flags?: any;
+  data?: WireframeData; // Add data property to store the wireframe data
 }

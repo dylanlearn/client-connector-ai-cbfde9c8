@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
-import { AIWireframe } from '@/services/ai/wireframe/wireframe-types';
+import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Sparkles, Layout, Star, MoreHorizontal, Trash2, Lightbulb, Eye } from 'lucide-react';
 import { 
   Dialog, 
@@ -88,20 +87,35 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
     }
   };
 
-  const renderSections = (data: any) => {
-    if (!data || !data.sections) return null;
+  const getWireframeData = (wireframe: AIWireframe): WireframeData | null => {
+    if (wireframe.data) {
+      return wireframe.data;
+    }
+    
+    if (wireframe.generation_params && typeof wireframe.generation_params === 'object') {
+      if (wireframe.generation_params.result_data) {
+        return wireframe.generation_params.result_data as WireframeData;
+      }
+    }
+    
+    return null;
+  };
+
+  const renderSections = (wireframe: AIWireframe) => {
+    const wireframeData = getWireframeData(wireframe);
+    if (!wireframeData || !wireframeData.sections) return null;
     
     return (
       <div className="space-y-4">
-        {data.sections.slice(0, 3).map((section: any, index: number) => (
+        {wireframeData.sections.slice(0, 3).map((section: any, index: number) => (
           <div key={index} className="border rounded-md p-3">
             <h4 className="text-sm font-medium capitalize">{section.name || `Section ${index + 1}`}</h4>
             <p className="text-xs text-gray-500 mt-1">{section.description || "No description"}</p>
           </div>
         ))}
         
-        {data.sections.length > 3 && (
-          <p className="text-xs text-gray-500">And {data.sections.length - 3} more sections...</p>
+        {wireframeData.sections.length > 3 && (
+          <p className="text-xs text-gray-500">And {wireframeData.sections.length - 3} more sections...</p>
         )}
       </div>
     );
@@ -168,7 +182,7 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {wireframes.map((wireframe) => {
-            const wireframeData = wireframe.data as any;
+            const wireframeData = getWireframeData(wireframe);
             return (
               <Card key={wireframe.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 <CardHeader className="p-4">
@@ -267,38 +281,34 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
         </div>
       )}
       
-      {/* Wireframe Detail Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         {selectedWireframe && (
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{(selectedWireframe.data as any)?.title || "Wireframe Details"}</DialogTitle>
+              <DialogTitle>{getWireframeData(selectedWireframe)?.title || "Wireframe Details"}</DialogTitle>
               <DialogDescription>
                 Created {selectedWireframe.created_at && format(new Date(selectedWireframe.created_at), 'MMMM d, yyyy')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
-              {/* Description */}
               <div>
                 <h4 className="text-sm font-medium mb-2">Description</h4>
                 <p className="text-sm text-gray-600">
-                  {(selectedWireframe.data as any)?.description || "No description available"}
+                  {getWireframeData(selectedWireframe)?.description || "No description available"}
                 </p>
               </div>
 
-              {/* Design Tokens */}
-              {(selectedWireframe.data as any)?.designTokens && (
+              {getWireframeData(selectedWireframe)?.designTokens && (
                 <div>
                   <h4 className="text-sm font-medium mb-2">Design System</h4>
                   
                   <div className="space-y-4">
-                    {/* Colors */}
-                    {(selectedWireframe.data as any).designTokens.colors && (
+                    {getWireframeData(selectedWireframe)?.designTokens?.colors && (
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 mb-2">Colors</h5>
                         <div className="flex flex-wrap gap-3">
-                          {Object.entries((selectedWireframe.data as any).designTokens.colors).map(
+                          {Object.entries(getWireframeData(selectedWireframe)?.designTokens?.colors || {}).map(
                             ([name, color]: [string, any], index) => (
                               <div key={index} className="flex flex-col items-center">
                                 <div 
@@ -317,21 +327,20 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
                       </div>
                     )}
                     
-                    {/* Typography */}
-                    {(selectedWireframe.data as any).designTokens.typography && (
+                    {getWireframeData(selectedWireframe)?.designTokens?.typography && (
                       <div>
                         <h5 className="text-xs font-medium text-gray-500 mb-2">Typography</h5>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="border rounded-md p-3">
                             <p className="text-xs text-gray-500">Headings</p>
                             <p className="font-medium">
-                              {(selectedWireframe.data as any).designTokens.typography.headings || "Not specified"}
+                              {getWireframeData(selectedWireframe)?.designTokens?.typography?.headings || "Not specified"}
                             </p>
                           </div>
                           <div className="border rounded-md p-3">
                             <p className="text-xs text-gray-500">Body</p>
                             <p>
-                              {(selectedWireframe.data as any).designTokens.typography.body || "Not specified"}
+                              {getWireframeData(selectedWireframe)?.designTokens?.typography?.body || "Not specified"}
                             </p>
                           </div>
                         </div>
@@ -341,11 +350,10 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
                 </div>
               )}
 
-              {/* Sections */}
               <div>
                 <h4 className="text-sm font-medium mb-2">Wireframe Sections</h4>
                 <div className="space-y-4">
-                  {(selectedWireframe.data as any)?.sections?.map((section: any, index: number) => (
+                  {getWireframeData(selectedWireframe)?.sections?.map((section: any, index: number) => (
                     <div key={index} className="border rounded-md p-4">
                       <div className="flex justify-between items-start mb-2">
                         <h5 className="font-medium capitalize">{section.name}</h5>
@@ -377,22 +385,20 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
                 </div>
               </div>
 
-              {/* Mobile Considerations */}
-              {(selectedWireframe.data as any)?.mobileConsiderations && (
+              {getWireframeData(selectedWireframe)?.mobileConsiderations && (
                 <div>
                   <h4 className="text-sm font-medium mb-2">Mobile Considerations</h4>
                   <p className="text-sm text-gray-600">
-                    {(selectedWireframe.data as any).mobileConsiderations}
+                    {getWireframeData(selectedWireframe)?.mobileConsiderations}
                   </p>
                 </div>
               )}
 
-              {/* Accessibility Notes */}
-              {(selectedWireframe.data as any)?.accessibilityNotes && (
+              {getWireframeData(selectedWireframe)?.accessibilityNotes && (
                 <div>
                   <h4 className="text-sm font-medium mb-2">Accessibility Notes</h4>
                   <p className="text-sm text-gray-600">
-                    {(selectedWireframe.data as any).accessibilityNotes}
+                    {getWireframeData(selectedWireframe)?.accessibilityNotes}
                   </p>
                 </div>
               )}
@@ -413,7 +419,6 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
         )}
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
