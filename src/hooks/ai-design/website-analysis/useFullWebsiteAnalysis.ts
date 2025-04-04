@@ -62,7 +62,9 @@ export function useFullWebsiteAnalysis(
         }
       }
       
-      setAnalysisResults((prev: WebsiteAnalysisResult[]) => [...prev, ...results]);
+      setAnalysisResults((prev: WebsiteAnalysisResult[]) => {
+        return [...prev, ...results];
+      });
       
       if (results.length > 0) {
         showToast({

@@ -52,7 +52,9 @@ export function useWebsiteSectionAnalysis(
       const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);
       
       if (stored) {
-        setAnalysisResults((prevResults: WebsiteAnalysisResult[]) => [...prevResults, result]);
+        setAnalysisResults((prevResults: WebsiteAnalysisResult[]) => {
+          return [...prevResults, result];
+        });
         showToast({
           title: "Analysis stored",
           description: `The ${section} section analysis has been stored successfully.`

@@ -40,7 +40,6 @@ const DemonstrationRenderer: React.FC<DemonstrationRendererProps> = ({
         {selectedInteraction === 'hover-effect' && (
           <HoverEffectDemo 
             interactionConfig={{}} 
-            isActive={isActive} 
           />
         )}
         {selectedInteraction === 'scroll-animation' && (
@@ -71,13 +70,18 @@ const DemonstrationRenderer: React.FC<DemonstrationRendererProps> = ({
         )}
         {selectedInteraction === 'modal-dialog' && (
           <ModalDialogDemo 
-            interactionConfig={{}} 
+            interactionConfig={{
+              initial: { scale: 0 },
+              animate: { scale: isActive ? 1 : 0 }
+            }} 
             isActive={isActive} 
           />
         )}
         {selectedInteraction === 'morphing-shape' && (
           <MorphingShapeDemo 
-            interactionConfig={{}} 
+            interactionConfig={{
+              animate: { borderRadius: "30%" }
+            }} 
             isActive={isActive} 
           />
         )}
@@ -109,19 +113,29 @@ const DemonstrationRenderer: React.FC<DemonstrationRendererProps> = ({
         )}
         {selectedInteraction === 'intent-based-motion' && (
           <IntentBasedMotionDemo 
-            interactionConfig={{}} 
+            interactionConfig={{
+              animate: {},
+              whileHover: {},
+              whileTap: {}
+            }} 
             isActive={isActive} 
           />
         )}
         {selectedInteraction === 'progressive-disclosure' && (
           <ProgressiveDisclosureDemo 
-            interactionConfig={{}} 
+            interactionConfig={{
+              animate: {},
+              variants: {}
+            }} 
             isActive={isActive} 
           />
         )}
         {selectedInteraction === 'glassmorphism' && (
           <GlassmorphismDemo 
-            interactionConfig={{}} 
+            interactionConfig={{
+              animate: {},
+              variants: {}
+            }} 
             isActive={isActive} 
           />
         )}
