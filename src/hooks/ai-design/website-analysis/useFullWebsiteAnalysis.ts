@@ -62,9 +62,9 @@ export function useFullWebsiteAnalysis(
         }
       }
       
-      setAnalysisResults((prev: WebsiteAnalysisResult[]) => {
-        return [...prev, ...results];
-      });
+      // First get current results, then update with the new results
+      const currentResults = state.analysisResults;
+      setAnalysisResults([...currentResults, ...results]);
       
       if (results.length > 0) {
         showToast({
@@ -91,7 +91,7 @@ export function useFullWebsiteAnalysis(
     } finally {
       setIsAnalyzing(false);
     }
-  }, [user, showToast, setIsAnalyzing, setError, setAnalysisResults]);
+  }, [user, showToast, setIsAnalyzing, setError, setAnalysisResults, state.analysisResults]);
 
   return { analyzeWebsite };
 }

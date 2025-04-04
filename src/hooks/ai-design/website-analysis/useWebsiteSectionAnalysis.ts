@@ -52,9 +52,10 @@ export function useWebsiteSectionAnalysis(
       const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);
       
       if (stored) {
-        setAnalysisResults((prevResults: WebsiteAnalysisResult[]) => {
-          return [...prevResults, result];
-        });
+        // First get current results, then update with the new result
+        const currentResults = state.analysisResults;
+        setAnalysisResults([...currentResults, result]);
+        
         showToast({
           title: "Analysis stored",
           description: `The ${section} section analysis has been stored successfully.`
@@ -75,7 +76,7 @@ export function useWebsiteSectionAnalysis(
     } finally {
       setIsAnalyzing(false);
     }
-  }, [user, showToast, setIsAnalyzing, setError, setAnalysisResults]);
+  }, [user, showToast, setIsAnalyzing, setError, setAnalysisResults, state.analysisResults]);
 
   return { analyzeWebsiteSection };
 }
