@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Project } from '@/types/project';
 import { useProjectFiles } from '@/hooks/use-project-files';
@@ -49,7 +48,9 @@ const ProjectFilesTab: React.FC<ProjectFilesTabProps> = ({ project }) => {
           message: `A new file "${selectedFile.name}" has been uploaded to your project.`,
           metadata: {
             fileName: selectedFile.name,
-          }
+          },
+          status: 'pending',
+          sent_at: null
         });
       }
       

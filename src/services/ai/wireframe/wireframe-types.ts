@@ -6,6 +6,10 @@ export interface WireframeData {
   sections: WireframeSection[];
   layout?: any;
   styleGuide?: any;
+  designTokens?: any;
+  qualityFlags?: any;
+  accessibilityNotes?: string;
+  mobileConsiderations?: string;
 }
 
 export interface WireframeSection {
@@ -14,6 +18,14 @@ export interface WireframeSection {
   description?: string;
   components?: any[];
   layout?: any;
+  sectionType?: string;
+  layoutType?: string;
+  copySuggestions?: any;
+  animationSuggestions?: any;
+  designReasoning?: string;
+  mobileLayout?: any;
+  dynamicElements?: any;
+  styleVariants?: any;
 }
 
 export interface WireframeGenerationParams {
@@ -24,6 +36,11 @@ export interface WireframeGenerationParams {
   includeAnimations?: boolean;
   includeMobileLayouts?: boolean;
   result_data?: WireframeData;
+  industry?: string;
+  additionalInstructions?: string;
+  moodboardSelections?: any;
+  intakeResponses?: any;
+  pages?: string[];
 }
 
 export interface WireframeGenerationResult {
@@ -31,6 +48,12 @@ export interface WireframeGenerationResult {
   generationTime?: number;
   success: boolean;
   error?: string;
+  model?: string;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
 export interface AIWireframe {

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeCacheService } from "./wireframe-cache-service";
 import { WireframeRateLimiterService } from "./rate-limiter-service";
@@ -11,6 +12,15 @@ import {
   WireframeGenerationResult,
   AIWireframe
 } from "./wireframe-types";
+
+// Re-export the types
+export type {
+  WireframeData,
+  WireframeSection,
+  WireframeGenerationParams,
+  WireframeGenerationResult,
+  AIWireframe
+};
 
 /**
  * Service for AI-powered wireframe generation and management
@@ -48,12 +58,7 @@ export const WireframeService = {
         return {
           wireframe: cachedWireframe,
           generationTime,
-          model: 'cache',
-          usage: {
-            prompt_tokens: 0,
-            completion_tokens: 0,
-            total_tokens: 0
-          }
+          success: true
         };
       }
       
@@ -68,7 +73,7 @@ export const WireframeService = {
           params.prompt, 
           wireframeData,
           params,
-          wireframeResult.model
+          wireframeResult.model || 'default'
         );
         
         // Save design tokens if available
@@ -118,8 +123,8 @@ export const WireframeService = {
       WireframeMonitoringService.recordEvent('wireframe_generation_success', {
         projectId: params.projectId,
         generationTime: totalTime,
-        modelUsed: wireframeResult.model,
-        tokenUsage: wireframeResult.usage.total_tokens
+        modelUsed: wireframeResult.model || 'default',
+        tokenUsage: wireframeResult.usage?.total_tokens || 0
       });
 
       return wireframeResult;

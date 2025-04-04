@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -58,19 +57,19 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 {section.copySuggestions.heading && (
                   <div className="mb-2">
                     <div className="text-xs text-gray-500">Heading:</div>
-                    <div className="text-sm font-medium">{section.copySuggestions.heading}</div>
+                    <div className="text-sm font-medium">{String(section.copySuggestions.heading)}</div>
                   </div>
                 )}
                 {section.copySuggestions.subheading && (
                   <div className="mb-2">
                     <div className="text-xs text-gray-500">Subheading:</div>
-                    <div className="text-sm">{section.copySuggestions.subheading}</div>
+                    <div className="text-sm">{String(section.copySuggestions.subheading)}</div>
                   </div>
                 )}
                 {section.copySuggestions.cta && (
                   <div>
                     <div className="text-xs text-gray-500">CTA:</div>
-                    <div className="text-sm text-primary">{section.copySuggestions.cta}</div>
+                    <div className="text-sm text-primary">{String(section.copySuggestions.cta)}</div>
                   </div>
                 )}
               </div>
@@ -87,17 +86,17 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <div className="text-xs text-gray-500">Type:</div>
-                    <div className="text-sm">{section.animationSuggestions.type}</div>
+                    <div className="text-sm">{String(section.animationSuggestions.type)}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">Element:</div>
-                    <div className="text-sm">{section.animationSuggestions.element}</div>
+                    <div className="text-sm">{String(section.animationSuggestions.element)}</div>
                   </div>
                 </div>
                 {section.animationSuggestions.timing && (
                   <div className="mt-2">
                     <div className="text-xs text-gray-500">Timing:</div>
-                    <div className="text-sm">{section.animationSuggestions.timing}</div>
+                    <div className="text-sm">{String(section.animationSuggestions.timing)}</div>
                   </div>
                 )}
               </div>
@@ -112,7 +111,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
                 <div className="text-xs text-gray-500">Structure:</div>
-                <div className="text-sm mb-2">{section.mobileLayout.structure}</div>
+                <div className="text-sm mb-2">{String(section.mobileLayout.structure)}</div>
                 
                 {section.mobileLayout.stackOrder && section.mobileLayout.stackOrder.length > 0 && (
                   <div>
@@ -378,7 +377,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <h4 className="text-sm font-medium mb-1">Structure</h4>
-                              <p className="text-sm text-gray-700">{section.mobileLayout.structure}</p>
+                              <p className="text-sm text-gray-700">{String(section.mobileLayout.structure)}</p>
                             </div>
                             
                             {section.mobileLayout.stackOrder && section.mobileLayout.stackOrder.length > 0 && (

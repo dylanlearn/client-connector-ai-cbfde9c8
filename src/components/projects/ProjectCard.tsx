@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Project } from '@/types/project';
@@ -29,7 +30,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange }) =>
           metadata: {
             previousStatus: project.status,
             newStatus: newStatus
-          }
+          },
+          status: 'pending',
+          sent_at: null
         });
       }
     }

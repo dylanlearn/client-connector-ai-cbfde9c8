@@ -1,13 +1,12 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { WireframeService } from "@/services/ai/wireframe/wireframe-service";
 import { 
-  WireframeService, 
   WireframeGenerationParams, 
   WireframeGenerationResult, 
   AIWireframe, 
   WireframeData 
-} from "@/services/ai/wireframe/wireframe-service";
+} from "@/services/ai/wireframe/wireframe-types";
 
 export function useWireframeGeneration() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);

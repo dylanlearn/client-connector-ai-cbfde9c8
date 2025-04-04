@@ -101,7 +101,7 @@ export const WireframeApiService = {
       throw error;
     }
 
-    return data[0] as AIWireframe;
+    return data[0] as unknown as AIWireframe;
   },
 
   /**
@@ -118,7 +118,7 @@ export const WireframeApiService = {
       throw error;
     }
 
-    return data as AIWireframe[];
+    return data as unknown as AIWireframe[];
   },
 
   /**
@@ -135,12 +135,13 @@ export const WireframeApiService = {
       throw wireframeError;
     }
 
-    const generationParams = (wireframe as AIWireframe).generation_params || {};
+    const typedWireframe = wireframe as unknown as AIWireframe;
+    const generationParams = typedWireframe.generation_params || {};
     const resultData = generationParams.result_data as WireframeData | undefined;
     const sections = resultData?.sections || [];
 
     return {
-      ...wireframe as AIWireframe,
+      ...typedWireframe,
       sections: sections.map((section, index) => ({
         id: `section-${index}`,
         wireframe_id: wireframeId,
@@ -164,7 +165,7 @@ export const WireframeApiService = {
    * Update wireframe feedback and rating
    */
   updateWireframeFeedback: async (wireframeId: string, feedback: string, rating?: number): Promise<void> => {
-    const updateData: Partial<AIWireframe> = { feedback };
+    const updateData: Record<string, any> = { feedback };
     if (rating !== undefined) {
       updateData.rating = rating;
     }

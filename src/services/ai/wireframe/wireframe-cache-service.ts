@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeData, WireframeGenerationParams } from "./wireframe-service";
+import { WireframeData, WireframeGenerationParams } from "./wireframe-types";
 
 interface CachedWireframe {
   id: string;
