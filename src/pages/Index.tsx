@@ -43,6 +43,7 @@ const Index = () => {
             <a href="#how-it-works" className="text-sm font-medium hover:text-primary transition-colors">How It Works</a>
             <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">Pricing</a>
             <Link to="/design-picker" className="text-sm font-medium hover:text-primary transition-colors">Design Picker</Link>
+            <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">Dashboard</Link>
             <Button 
               variant="outline" 
               className="text-sm font-medium"
@@ -97,6 +98,13 @@ const Index = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Design Picker
+              </Link>
+              <Link 
+                to="/dashboard" 
+                className="text-sm font-medium hover:text-primary transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Dashboard
               </Link>
               <Button 
                 variant="outline" 

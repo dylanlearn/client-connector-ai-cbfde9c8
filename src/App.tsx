@@ -13,6 +13,7 @@ import QuestionnaireResults from '@/pages/QuestionnaireResults';
 import ClientHub from '@/pages/ClientHub';
 import ClientAccess from '@/pages/ClientAccess';
 import AdminPanel from '@/pages/AdminPanel';
+import DesignPicker from '@/pages/DesignPicker';
 import Index from '@/pages/Index';
 import './App.css';
 import { AppProviders } from '@/providers/AppProviders';
@@ -28,12 +29,12 @@ function App() {
           <Route path="projects" element={<Projects />} />
           <Route path="projects/:id" element={<ProjectDetail />} />
           <Route path="settings" element={<Settings />} />
-          <Route path="intake" element={<IntakeForm />} />
+          <Route path="intake-form" element={<IntakeForm />} />
           <Route path="results" element={<QuestionnaireResults />} />
           <Route path="client-hub" element={<ClientHub />} />
           <Route path="client-access" element={<ClientAccess />} />
           <Route path="admin" element={<AdminPanel />} />
-          <Route path="design-picker" element={<Projects />} />
+          <Route path="design-picker" element={<DesignPicker />} />
         </Routes>
       </Layout>
       <Toaster />

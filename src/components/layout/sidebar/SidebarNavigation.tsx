@@ -31,7 +31,7 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
     },
     {
       title: "Clients",
-      href: "/clients",
+      href: "/client-hub",
       icon: <Users className="h-5 w-5" />,
     },
     {

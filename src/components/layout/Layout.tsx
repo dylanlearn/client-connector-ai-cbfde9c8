@@ -2,6 +2,7 @@
 import { ReactNode, memo } from "react";
 import { useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import AppSidebar from "./sidebar/AppSidebar";
 import FormResumeHandler from "../shared/FormResumeHandler";
 
 interface LayoutProps {
@@ -29,8 +30,11 @@ const Layout = memo(({
   return (
     <SidebarProvider>
       <div className={`min-h-screen w-full ${className}`}>
-        {showFormResumeHandler && !isIndexPage && <FormResumeHandler />}
-        {children}
+        {!isIndexPage && <AppSidebar />}
+        <main className={`${!isIndexPage ? "ml-0 md:ml-64" : ""}`}>
+          {showFormResumeHandler && !isIndexPage && <FormResumeHandler />}
+          {children}
+        </main>
       </div>
     </SidebarProvider>
   );

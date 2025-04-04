@@ -60,17 +60,17 @@ export const AppProviders = ({
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AIProvider>
-          <MemoryProvider>
-            <Router>
+      <Router>
+        <AuthProvider>
+          <AIProvider>
+            <MemoryProvider>
               {children}
               <Toaster />
               <SonnerToaster position="top-right" />
-            </Router>
-          </MemoryProvider>
-        </AIProvider>
-      </AuthProvider>
+            </MemoryProvider>
+          </AIProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 };
