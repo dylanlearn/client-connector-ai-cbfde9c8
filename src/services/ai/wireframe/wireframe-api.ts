@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -240,7 +241,7 @@ export const WireframeApiService = {
       // Convert wireframeData to JSON-compatible format
       const wireframeDataJson = JSON.parse(JSON.stringify(data));
       
-      // Update the wireframe in the database using raw SQL via RPC
+      // Update the wireframe in the database using the RPC function
       const { data: updatedWireframe, error } = await supabase
         .rpc('update_wireframe_data', {
           p_wireframe_id: wireframeId,

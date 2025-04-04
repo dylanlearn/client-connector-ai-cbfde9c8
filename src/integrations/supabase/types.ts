@@ -2258,6 +2258,31 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_wireframe_data: {
+        Args: {
+          p_wireframe_id: string
+          p_data: Json
+        }
+        Returns: {
+          animations: Json | null
+          created_at: string | null
+          description: string | null
+          design_reasoning: string | null
+          design_tokens: Json | null
+          feedback: string | null
+          generation_params: Json | null
+          id: string
+          image_url: string | null
+          mobile_layouts: Json | null
+          project_id: string | null
+          prompt: string
+          quality_flags: Json | null
+          rating: number | null
+          status: string | null
+          style_variants: Json | null
+          updated_at: string | null
+        }
+      }
       update_wireframe_with_version: {
         Args: {
           p_wireframe_id: string
