@@ -14,7 +14,22 @@ export interface MemoryContextType {
 }
 
 export interface AIMemoryContext {
-  userMemories: Record<string, any>[];
-  projectMemories: Record<string, any>[];
-  globalInsights: Record<string, any>[];
+  userMemories: {
+    content: string;
+    category: string;
+    timestamp: Date;
+    metadata?: Record<string, any>;
+  }[];
+  projectMemories: {
+    content: string;
+    category: string;
+    timestamp: Date;
+    metadata?: Record<string, any>;
+  }[];
+  globalInsights: {
+    content: string;
+    category: string;
+    relevanceScore: number;
+    frequency: number;
+  }[];
 }
