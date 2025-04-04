@@ -8,19 +8,19 @@ import {
 } from './design';
 import { AIDesignAnalysisService } from './design/ai-design-analysis-service';
 import { ModernLayoutService } from './design/modern-layout-service';
-import { LandBookService } from './design/land-book-service';
+import { LandBookService } from './design/land-book/land-book-service';
 import { PatternRecognitionService } from './design/pattern-recognition-service';
 
 export type { ColorPaletteOptions } from './design/color-service';
 export type { LayoutRecommendationOptions } from './design/layout-service';
 export type { DesignAnalysisRequest, DesignAnalysisResponse } from './design/ai-design-analysis-service';
-export type { DesignMemoryEntry, DesignMemoryQueryOptions } from './design/design-memory-service';
+export type { DesignMemoryEntry, DesignMemoryQueryOptions } from './design/types/design-memory-types';
 export type { ModernLayoutRecommendation } from './design/modern-layout-service';
 export type { 
   LandBookQueryOptions, 
   LandBookAnalysis, 
   LandBookPaginatedResult 
-} from './design/land-book-service';
+} from './design/land-book/land-book-service';
 export type { 
   PatternRecognitionResult, 
   PatternFeatureVector, 
