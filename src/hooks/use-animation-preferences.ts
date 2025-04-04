@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { AnimationCategory, AnimationPreference } from "@/types/animations";
+import { AnimationCategory } from "@/types/animations";
 
 // Internal types for the hook
 interface PreferenceState {

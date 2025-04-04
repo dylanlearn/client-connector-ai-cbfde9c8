@@ -47,7 +47,7 @@ const AnimationPreferencesManager = () => {
   const handleSpeedChange = async (type: AnimationCategory, speed: string) => {
     setSaving(true);
     try {
-      await updatePreference(type, { speed_preference: speed as 'slow' | 'normal' | 'fast' });
+      await updatePreference(type, { speedPreference: speed as 'slow' | 'normal' | 'fast' });
       toast.success(`${formatAnimationType(type)} animation speed updated`);
     } catch (error) {
       toast.error("Failed to update speed preference");
@@ -60,7 +60,7 @@ const AnimationPreferencesManager = () => {
   const handleIntensityChange = async (type: AnimationCategory, intensity: number) => {
     setSaving(true);
     try {
-      await updatePreference(type, { intensity_preference: intensity });
+      await updatePreference(type, { intensityPreference: intensity });
       toast.success(`${formatAnimationType(type)} animation intensity updated`);
     } catch (error) {
       toast.error("Failed to update intensity preference");
@@ -73,7 +73,7 @@ const AnimationPreferencesManager = () => {
   const handleReducedMotionToggle = async (type: AnimationCategory, reduced: boolean) => {
     setSaving(true);
     try {
-      await updatePreference(type, { reduced_motion_preference: reduced });
+      await updatePreference(type, { reducedMotion: reduced });
       toast.success(`Reduced motion ${reduced ? 'enabled' : 'disabled'} for ${formatAnimationType(type)}`);
     } catch (error) {
       toast.error("Failed to update reduced motion preference");
@@ -93,16 +93,12 @@ const AnimationPreferencesManager = () => {
   
   // Get preference or default for an animation type
   const getPreferenceOrDefault = (type: AnimationCategory) => {
-    const pref = preferences.find(p => p.animation_type === type);
-    if (!pref) {
-      return {
-        enabled: true,
-        speed_preference: 'normal' as const,
-        intensity_preference: 5,
-        reduced_motion_preference: false
-      };
-    }
-    return pref;
+    return preferences[type] || {
+      enabled: true,
+      speedPreference: 'normal' as const,
+      intensityPreference: 5,
+      reducedMotion: false
+    };
   };
   
   // All animation categories
@@ -154,7 +150,7 @@ const AnimationPreferencesManager = () => {
                   <FormItem>
                     <FormLabel>Animation Speed</FormLabel>
                     <Select 
-                      value={pref.speed_preference}
+                      value={pref.speedPreference}
                       onValueChange={(value) => handleSpeedChange(type, value)}
                       disabled={!pref.enabled || saving}
                     >
@@ -170,12 +166,12 @@ const AnimationPreferencesManager = () => {
                   </FormItem>
                 
                   <FormItem>
-                    <FormLabel>Animation Intensity ({pref.intensity_preference})</FormLabel>
+                    <FormLabel>Animation Intensity ({pref.intensityPreference})</FormLabel>
                     <Slider
                       min={1}
                       max={10}
                       step={1}
-                      value={[pref.intensity_preference]}
+                      value={[pref.intensityPreference]}
                       onValueChange={([value]) => handleIntensityChange(type, value)}
                       disabled={!pref.enabled || saving}
                     />
@@ -186,7 +182,7 @@ const AnimationPreferencesManager = () => {
                     <FormLabel>Reduced Motion</FormLabel>
                     <FormControl>
                       <Switch 
-                        checked={pref.reduced_motion_preference}
+                        checked={pref.reducedMotion}
                         onCheckedChange={(checked) => handleReducedMotionToggle(type, checked)}
                         disabled={saving}
                       />

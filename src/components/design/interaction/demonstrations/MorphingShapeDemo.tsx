@@ -13,14 +13,15 @@ interface MorphingShapeDemoProps {
 
 const MorphingShapeDemo = ({ interactionConfig, isActive }: MorphingShapeDemoProps) => {
   const { trackAnimation, startAnimationTracking, completeAnimationTracking } = useAnimationAnalytics();
-  const { isAnimationEnabled, getPreference } = useAnimationPreferences();
+  const { getPreference } = useAnimationPreferences();
   const trackingRef = useRef<{ startTime: number; fps: number[] } | null>(null);
   
   // Get animation preferences
   const pref = getPreference('morphing_shape');
-  const enabled = isAnimationEnabled('morphing_shape');
-  const intensity = pref?.intensity_preference || 5;
-  const speed = pref?.speed_preference || 'normal';
+  // Check if enabled directly from the preference object
+  const enabled = pref?.enabled !== false;
+  const intensity = pref?.intensityPreference || 5;
+  const speed = pref?.speedPreference || 'normal';
   
   // Calculate duration based on speed preference
   const getDuration = () => {

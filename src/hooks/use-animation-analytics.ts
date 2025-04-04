@@ -105,31 +105,3 @@ export const useAnimationAnalytics = () => {
     completeAnimationTracking
   };
 };
-
-/**
- * Mock hook for animation preferences (would connect to user settings in real app)
- */
-export const useAnimationPreferences = () => {
-  // Check for system-level reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
-    : false;
-  
-  return {
-    isAnimationEnabled: (type: string) => {
-      // Check if user has explicitly disabled this animation type
-      // For now, we just respect system preference
-      return !prefersReducedMotion;
-    },
-    
-    getPreference: (type: string) => {
-      // Return user preferences for this animation type
-      // This would typically come from a database or local storage
-      return {
-        intensity_preference: 5,  // 1-10 scale
-        speed_preference: 'normal', // slow, normal, fast
-        accessibility_mode: false
-      };
-    }
-  };
-};
