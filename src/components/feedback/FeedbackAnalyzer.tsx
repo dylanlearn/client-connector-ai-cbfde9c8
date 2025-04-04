@@ -12,12 +12,14 @@ interface FeedbackAnalyzerProps {
   onAnalysisComplete?: (result: any) => void;
   initialFeedback?: string;
   placeholder?: string;
+  className?: string; // Add className prop to the interface
 }
 
 export function FeedbackAnalyzer({ 
   onAnalysisComplete, 
   initialFeedback = '', 
-  placeholder = 'Enter feedback to analyze...' 
+  placeholder = 'Enter feedback to analyze...',
+  className = '' // Initialize with empty string
 }: FeedbackAnalyzerProps) {
   const [feedbackText, setFeedbackText] = useState(initialFeedback);
   const { analyzeFeedback, resetAnalysis, isAnalyzing, result, error } = useFeedbackAnalysis();
@@ -47,7 +49,7 @@ export function FeedbackAnalyzer({
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${className}`}>
       <Textarea
         value={feedbackText}
         onChange={(e) => setFeedbackText(e.target.value)}
