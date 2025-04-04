@@ -1,8 +1,7 @@
 
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RefreshCw, ThumbsDown, ThumbsUp, ExternalLink } from "lucide-react";
-import { AnimationFeedback } from "@/types/animations";
+import { Play, Pause, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface AnimationControlsProps {
   isPlaying: boolean;
@@ -15,11 +14,11 @@ interface AnimationControlsProps {
   onPreviewToggle: () => void;
 }
 
-export const AnimationControls = memo(({ 
-  isPlaying, 
+export const AnimationControls = memo(({
+  isPlaying,
   feedbackGiven,
   showWebsitePreview,
-  onPlayToggle, 
+  onPlayToggle,
   onReset,
   onFeedback,
   onPreviewToggle
@@ -48,19 +47,21 @@ export const AnimationControls = memo(({
       
       <div className="flex gap-2">
         <Button
-          variant={feedbackGiven === 'positive' ? "default" : "ghost"}
+          variant="ghost"
           size="sm"
           onClick={() => onFeedback('positive')}
-          className={feedbackGiven === 'positive' ? "bg-green-500 hover:bg-green-600" : ""}
+          disabled={feedbackGiven !== null}
+          className={feedbackGiven === 'positive' ? 'bg-green-100' : ''}
         >
           <ThumbsUp className="h-4 w-4" />
         </Button>
         
         <Button
-          variant={feedbackGiven === 'negative' ? "default" : "ghost"}
+          variant="ghost"
           size="sm"
           onClick={() => onFeedback('negative')}
-          className={feedbackGiven === 'negative' ? "bg-red-500 hover:bg-red-600" : ""}
+          disabled={feedbackGiven !== null}
+          className={feedbackGiven === 'negative' ? 'bg-red-100' : ''}
         >
           <ThumbsDown className="h-4 w-4" />
         </Button>

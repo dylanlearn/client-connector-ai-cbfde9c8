@@ -41,9 +41,6 @@ export const getAnimationConfig = (
     return configCache[cacheKey];
   }
   
-  // Get configuration based on animation type
-  let config: AnimationConfigType;
-  
   // Apply preference adjustments (speed factor)
   const speedFactor = preferences?.speed === 'slow' ? 1.5 :
                       preferences?.speed === 'fast' ? 0.7 : 1;
@@ -53,22 +50,24 @@ export const getAnimationConfig = (
   
   // Apply reduced motion preferences
   const reducedMotion = preferences?.reduced_motion || false;
+
+  // Options object for configs
+  const options = {
+    speedFactor,
+    intensityFactor,
+    reducedMotion
+  };
+  
+  // Get configuration based on animation type
+  let config: AnimationConfigType;
   
   // Handle basic animation types
   if (basicConfigs[animationType]) {
-    config = basicConfigs[animationType](isPlaying, { 
-      speedFactor, 
-      intensityFactor,
-      reducedMotion
-    });
+    config = basicConfigs[animationType](isPlaying, options);
   } 
   // Handle complex animation types
   else if (complexConfigs[animationType]) {
-    config = complexConfigs[animationType](isPlaying, { 
-      speedFactor, 
-      intensityFactor,
-      reducedMotion
-    });
+    config = complexConfigs[animationType](isPlaying, options);
   } 
   // Default fallback configuration
   else {

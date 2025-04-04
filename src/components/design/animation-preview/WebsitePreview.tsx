@@ -1,16 +1,15 @@
 
-import { memo } from "react";
-import {
-  WebsiteFadeSlideDemo,
-  WebsiteScrollRevealDemo,
-  WebsiteParallaxDemo,
-  Website3DDemo,
-  WebsiteMicrointeractionsDemo,
-  WebsiteTextAnimationDemo,
-  WebsiteStaggeredRevealDemo,
-  WebsiteFloatingElementsDemo,
-  WebsiteElasticMotionDemo
-} from "../animations/demos";
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import WebsiteFadeSlideDemo from "../animations/demos/WebsiteFadeSlideDemo";
+import WebsiteScrollRevealDemo from "../animations/demos/WebsiteScrollRevealDemo";
+import WebsiteParallaxDemo from "../animations/demos/WebsiteParallaxDemo";
+import Website3DDemo from "../animations/demos/Website3DDemo";
+import WebsiteMicrointeractionsDemo from "../animations/demos/WebsiteMicrointeractionsDemo";
+import WebsiteTextAnimationDemo from "../animations/demos/WebsiteTextAnimationDemo";
+import WebsiteStaggeredRevealDemo from "../animations/demos/WebsiteStaggeredRevealDemo";
+import WebsiteFloatingElementsDemo from "../animations/demos/WebsiteFloatingElementsDemo";
+import WebsiteElasticMotionDemo from "../animations/demos/WebsiteElasticMotionDemo";
 
 interface WebsitePreviewProps {
   animationType: string;
@@ -18,45 +17,53 @@ interface WebsitePreviewProps {
   onClose: () => void;
 }
 
-export const WebsitePreview = memo(({ 
+export const WebsitePreview = ({ 
   animationType, 
   isPlaying, 
   onClose 
 }: WebsitePreviewProps) => {
-  const demoProps = { isPlaying };
-  
-  const renderPreview = () => {
-    switch (animationType) {
-      case "animation-1": return <WebsiteFadeSlideDemo {...demoProps} />;
-      case "animation-2": return <WebsiteScrollRevealDemo {...demoProps} />;
-      case "animation-3": return <WebsiteParallaxDemo {...demoProps} />;
-      case "animation-4": return <Website3DDemo {...demoProps} />;
-      case "animation-5": return <WebsiteMicrointeractionsDemo {...demoProps} />;
-      case "animation-6": return <WebsiteTextAnimationDemo {...demoProps} />;
-      case "animation-7": return <WebsiteStaggeredRevealDemo {...demoProps} />;
-      case "animation-8": return <WebsiteFloatingElementsDemo {...demoProps} />;
-      case "animation-9": return <WebsiteElasticMotionDemo {...demoProps} />;
+  const [key, setKey] = useState(0);
+
+  // Reset animation when play state changes
+  useEffect(() => {
+    setKey(prev => prev + 1);
+  }, [isPlaying]);
+
+  // Render the appropriate demo based on animation type
+  const renderDemo = () => {
+    switch(animationType) {
+      case "animation-1":
+        return <WebsiteFadeSlideDemo isPlaying={isPlaying} />;
+      case "animation-2":
+        return <WebsiteScrollRevealDemo isPlaying={isPlaying} />;
+      case "animation-3":
+        return <WebsiteParallaxDemo isPlaying={isPlaying} />;
+      case "animation-4":
+        return <Website3DDemo isPlaying={isPlaying} />;
+      case "animation-5":
+        return <WebsiteMicrointeractionsDemo isPlaying={isPlaying} />;
+      case "animation-6":
+        return <WebsiteTextAnimationDemo isPlaying={isPlaying} />;
+      case "animation-7":
+        return <WebsiteStaggeredRevealDemo isPlaying={isPlaying} />;
+      case "animation-8":
+        return <WebsiteFloatingElementsDemo isPlaying={isPlaying} />;
+      case "animation-9":
+        return <WebsiteElasticMotionDemo isPlaying={isPlaying} />;
       default:
-        return (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">No preview available</p>
-          </div>
-        );
+        return <div className="flex items-center justify-center h-full">No preview available</div>;
     }
   };
 
   return (
-    <div className="relative h-64 bg-gradient-to-r from-gray-50 to-blue-50 rounded-md flex items-center justify-center mb-4 overflow-hidden">
-      {renderPreview()}
+    <div className="relative h-64 bg-white rounded-md shadow-md overflow-hidden" key={key}>
+      {renderDemo()}
       <button 
         onClick={onClose}
-        className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-sm"
+        className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-sm text-gray-600 hover:text-gray-900"
       >
-        <span className="sr-only">Close</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <X className="h-4 w-4" />
       </button>
     </div>
   );
-});
-
-WebsitePreview.displayName = "WebsitePreview";
+};

@@ -163,5 +163,3 @@ export const useAnimationPreferences = () => {
     prefersReducedMotion
   };
 };
-
-// Removed the duplicate export to fix the conflict

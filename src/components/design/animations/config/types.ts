@@ -25,3 +25,12 @@ export interface AnimationConfigType {
  * Animation category definition
  */
 export type AnimationCategory = string;
+
+/**
+ * Animation preference options used for configuration
+ */
+export interface AnimationPreferenceOptions {
+  speedFactor?: number;
+  intensityFactor?: number;
+  reducedMotion?: boolean;
+}
