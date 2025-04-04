@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { AIWireframe, WireframeData } from './wireframe-types';
+import { WireframeData } from './wireframe-types';
 
 export interface WireframeVersion {
   id: string;
@@ -60,7 +60,7 @@ export const WireframeVersionControlService = {
       
       // Calculate next version number
       const nextVersion = versions && versions.length > 0 
-        ? versions[0].version_number + 1 
+        ? (versions[0] as any).version_number + 1 
         : 1;
       
       // If this is a new version on the main branch, set all previous versions as not current
@@ -82,7 +82,7 @@ export const WireframeVersionControlService = {
         .insert({
           wireframe_id: wireframeId,
           version_number: nextVersion,
-          data: data as any, // Type assertion for supabase json
+          data: data,
           change_description: changeDescription,
           created_by: userId,
           is_current: true,
@@ -103,7 +103,7 @@ export const WireframeVersionControlService = {
           .from('ai_wireframes')
           .update({
             generation_params: {
-              ...data,
+              result_data: data,
               latest_version_id: newVersion.id
             }
           })
@@ -138,10 +138,11 @@ export const WireframeVersionControlService = {
       }
       
       // Find current version
-      const current = versions.find(version => version.is_current && version.branch_name === "main") || null;
+      const current = versions.find(version => 
+        (version as any).is_current && (version as any).branch_name === "main") || null;
       
       // Find all unique branches
-      const branches = Array.from(new Set(versions.map(v => v.branch_name)));
+      const branches = Array.from(new Set(versions.map(v => (v as any).branch_name)));
       
       return {
         versions: versions as unknown as WireframeVersion[],
@@ -176,8 +177,8 @@ export const WireframeVersionControlService = {
       
       // Create a new version with the content of the old version
       return WireframeVersionControlService.createVersion(
-        version.wireframe_id,
-        version.data,
+        (version as any).wireframe_id,
+        (version as any).data,
         description,
         userId,
         version.id
@@ -211,8 +212,8 @@ export const WireframeVersionControlService = {
       
       // Create a new version on the new branch
       return WireframeVersionControlService.createVersion(
-        version.wireframe_id,
-        version.data,
+        (version as any).wireframe_id,
+        (version as any).data,
         description,
         userId,
         version.id,
@@ -246,8 +247,8 @@ export const WireframeVersionControlService = {
       
       // Create a new version on the main branch using the branch version data
       return WireframeVersionControlService.createVersion(
-        branchVersion.wireframe_id,
-        branchVersion.data,
+        (branchVersion as any).wireframe_id,
+        (branchVersion as any).data,
         description,
         userId,
         branchVersion.id
@@ -276,12 +277,12 @@ export const WireframeVersionControlService = {
       
       // Group by branch name
       versions.forEach(version => {
-        const branchName = version.branch_name || 'main';
+        const branchName = (version as any).branch_name || 'main';
         
         if (!branchMap.has(branchName)) {
           branchMap.set(branchName, {
             name: branchName,
-            created_at: version.created_at,
+            created_at: version.created_at as string,
             version_count: 1,
             latest_version_id: version.id
           });
@@ -290,7 +291,7 @@ export const WireframeVersionControlService = {
           branch.version_count += 1;
           
           // Check if this version is newer
-          if (new Date(version.created_at) > new Date(branch.created_at)) {
+          if (new Date(version.created_at as string) > new Date(branch.created_at)) {
             branch.latest_version_id = version.id;
           }
         }
@@ -320,13 +321,13 @@ export const WireframeVersionControlService = {
         .select('*')
         .in('id', [versionId1, versionId2]);
       
-      if (error || versions.length !== 2) {
+      if (error || !versions || versions.length !== 2) {
         throw error || new Error("Could not find both versions");
       }
       
       // Get data from both versions for comparison
-      const v1 = versions[0].data;
-      const v2 = versions[1].data;
+      const v1 = (versions[0] as any).data;
+      const v2 = (versions[1] as any).data;
       
       // Perform a deep comparison (simplified version)
       const changes = compareObjects(v1, v2);

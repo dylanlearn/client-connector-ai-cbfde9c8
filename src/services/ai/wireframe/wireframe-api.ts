@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -95,9 +94,7 @@ export const WireframeApiService = {
           generation_params: {
             ...params,
             model,
-            result_data: { 
-              sections: sections 
-            }
+            result_data: wireframeData // Store the complete wireframe data as JSON
           } as any,
           image_url: imageUrl
         })

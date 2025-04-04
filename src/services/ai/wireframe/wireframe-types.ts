@@ -88,6 +88,10 @@ export interface WireframeGenerationParams {
     targetAudience?: string;
     siteFeatures?: string[];
   };
+  // Add missing properties that were referenced in the code
+  templateId?: string;
+  userId?: string;
+  baseWireframe?: WireframeData;
 }
 
 export interface WireframeGenerationResult {
