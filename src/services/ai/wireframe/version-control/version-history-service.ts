@@ -20,7 +20,13 @@ export const versionHistoryService = {
         throw error || new Error("Failed to get wireframe versions");
       }
       
-      const versions = versionsData;
+      // Process the versions to ensure correct types
+      const versions = versionsData.map(version => ({
+        ...version,
+        data: typeof version.data === 'string' 
+          ? JSON.parse(version.data) 
+          : version.data
+      }));
       
       // Find current version and branches
       const current = versions.find(version => 

@@ -111,5 +111,45 @@ export const wireframeSections = {
       console.error("Error updating wireframe sections:", error);
       throw error;
     }
+  },
+
+  /**
+   * Get all sections for a wireframe - alias for getWireframeSections
+   */
+  getSections: async (wireframeId: string): Promise<WireframeSection[]> => {
+    return wireframeSections.getWireframeSections(wireframeId);
+  },
+
+  /**
+   * Save sections for a wireframe
+   */
+  saveSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
+    return wireframeSections.updateWireframeSections(wireframeId, sections);
+  },
+
+  /**
+   * Update sections for a wireframe - alias for updateWireframeSections
+   */
+  updateSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
+    return wireframeSections.updateWireframeSections(wireframeId, sections);
+  },
+
+  /**
+   * Delete sections for a wireframe
+   */
+  deleteSections: async (wireframeId: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('wireframe_sections')
+        .delete()
+        .eq('wireframe_id', wireframeId);
+      
+      if (error) {
+        throw new Error(`Error deleting wireframe sections: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Error deleting wireframe sections:", error);
+      throw error;
+    }
   }
 };

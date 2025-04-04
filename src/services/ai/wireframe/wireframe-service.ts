@@ -6,7 +6,7 @@ import {
   AIWireframe, 
   WireframeData 
 } from './wireframe-types';
-import { WireframeVersionControlService } from './wireframe-version-control';
+import { WireframeVersionControlService } from './version-control';
 import { IndustryTemplateService } from './industry-templates';
 
 /**
