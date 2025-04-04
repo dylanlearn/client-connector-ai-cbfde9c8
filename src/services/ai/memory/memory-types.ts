@@ -1,44 +1,55 @@
 
-export interface MemoryEntry {
-  id: string;
-  content: string;
-  category: MemoryCategory;
-  timestamp: Date;
-  metadata?: Record<string, any>;
-}
+import { AIMemory, GlobalMemory } from '@/types/ai';
 
+/**
+ * Memory categories for user, project, and global memories
+ */
 export enum MemoryCategory {
-  TonePreference = 'tone_preference',
-  LayoutPreference = 'layout_preference',
-  ColorPreference = 'color_preference',
-  ProjectContext = 'project_context',
-  ClientFeedback = 'client_feedback',
-  SuccessfulOutput = 'successful_output',
-  InteractionPattern = 'interaction_pattern'
+  DesignPreference = 'DesignPreference',
+  TonePreference = 'TonePreference',
+  InteractionPattern = 'InteractionPattern',
+  LayoutPreference = 'LayoutPreference',
+  ColorPreference = 'ColorPreference',
+  ProjectContext = 'ProjectContext',
+  ClientFeedback = 'ClientFeedback',
+  SuccessfulOutput = 'SuccessfulOutput'
 }
 
-export interface UserMemory extends MemoryEntry {
-  userId: string;
-}
-
-export interface ProjectMemory extends MemoryEntry {
-  projectId: string;
-  userId: string;
-}
-
-export interface GlobalMemory extends MemoryEntry {
-  // Anonymized data without user identifiers
-  frequency: number; // How often this pattern appears
-  relevanceScore: number; // How relevant/useful this memory has been
-}
-
+/**
+ * Options for querying memories
+ */
 export interface MemoryQueryOptions {
   categories?: MemoryCategory[];
   limit?: number;
-  relevanceThreshold?: number;
   timeframe?: {
     from?: Date;
     to?: Date;
   };
   metadata?: Record<string, any>;
+  relevanceThreshold?: number;
+}
+
+/**
+ * User-specific memory model
+ */
+export interface UserMemory extends AIMemory {
+  id: string;
+  userId: string;
+}
+
+/**
+ * Project-specific memory model
+ */
+export interface ProjectMemory extends AIMemory {
+  id: string;
+  projectId: string;
+  userId: string;
+}
+
+/**
+ * Global anonymous memory model 
+ */
+export interface GlobalMemoryType extends GlobalMemory {
+  id: string;
+  timestamp: Date;
 }

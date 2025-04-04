@@ -4,10 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { useMemoryInitialization } from './use-memory-initialization';
 
 export const useSampleData = () => {
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
+  const { initializeMemory } = useMemoryInitialization();
   
   const generateSampleData = async () => {
     if (!user) {
@@ -112,9 +114,9 @@ export const useSampleData = () => {
         throw new Error(`Error creating wireframe: ${wireframeError.message}`);
       }
       
-      // Add sample animation preferences - Use correct type here
+      // Add sample animation preferences
       const { error: animationError } = await supabase.from('animation_preferences').insert({
-        animation_type: 'scroll_animation', // Fixed: using the correct type
+        animation_type: 'scroll_animation',
         user_id: user.id,
         enabled: true,
         intensity_preference: 7
@@ -123,6 +125,9 @@ export const useSampleData = () => {
       if (animationError) {
         throw new Error(`Error creating animation preferences: ${animationError.message}`);
       }
+      
+      // Initialize memory system with the new project
+      await initializeMemory(project.id);
       
       toast.success("Sample data created", {
         description: "Demo project and assets have been generated successfully."

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, PlusCircle, Loader2, Info, Database, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/dashboard/EmptyState";
@@ -10,15 +10,32 @@ import { Button } from "@/components/ui/button";
 import ProjectBoard from "@/components/projects/ProjectBoard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSampleData } from "@/hooks/use-sample-data";
+import { useMemory } from "@/contexts/ai/MemoryContext";
+import { useMemoryInitialization } from "@/hooks/use-memory-initialization";
 
 const Projects = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { projects, isLoading, error, updateProject } = useProjects();
   const { generateSampleData, isGenerating } = useSampleData();
+  const { refreshMemoryContext } = useMemory();
+  const { initializeMemory, isInitialized } = useMemoryInitialization();
   
   // Filter out archived projects for display
   const activeProjects = projects.filter(project => project.status !== 'archived');
+
+  // Check memory initialization when projects load
+  useEffect(() => {
+    if (activeProjects.length > 0 && !isInitialized) {
+      // Initialize memory with the first project if available
+      initializeMemory(activeProjects[0].id);
+    }
+    
+    // Refresh memory context when projects change
+    if (activeProjects.length > 0) {
+      refreshMemoryContext(activeProjects[0].id);
+    }
+  }, [activeProjects, isInitialized, initializeMemory, refreshMemoryContext]);
 
   return (
     <DashboardLayout>
