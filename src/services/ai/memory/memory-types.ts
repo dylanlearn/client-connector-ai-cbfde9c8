@@ -52,6 +52,7 @@ export interface ProjectMemory extends AIMemory {
 export interface GlobalMemoryType extends GlobalMemoryFromTypes {
   id: string;
   timestamp: Date;
+  metadata?: Record<string, any>;  // Added metadata property
 }
 
 // Re-export GlobalMemoryType as GlobalMemory for backward compatibility
