@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { DesignOption } from "./DesignPreview";
-import { Play, Pause, RefreshCw, ExternalLink } from "lucide-react";
+import { Play, Pause, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAnimationAnalytics } from "@/hooks/use-animation-analytics";
+import { AnimationCategory } from "@/types/animations";
 
 // Define a type for the animation demos
 interface AnimationDemoProps {
@@ -18,6 +20,51 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [key, setKey] = useState(0); // For resetting animations
   const [showWebsitePreview, setShowWebsitePreview] = useState(false);
+  const [feedbackGiven, setFeedbackGiven] = useState<'positive' | 'negative' | null>(null);
+  
+  // Animation analytics tracking
+  const { trackAnimation } = useAnimationAnalytics();
+  const trackingRef = useRef<{ startTime: number }>({ startTime: Date.now() });
+  
+  // Map animation ID to AnimationCategory for analytics
+  const getAnimationCategory = (id: string): AnimationCategory => {
+    const categoryMapping: Record<string, AnimationCategory> = {
+      "animation-1": "fade_in", 
+      "animation-2": "scroll_animation",
+      "animation-3": "parallax_effect",
+      "animation-4": "3d_transform",
+      "animation-5": "hover_effect",
+      "animation-6": "text_animation",
+      "animation-7": "progressive_disclosure",
+      "animation-8": "floating_element",
+      "animation-9": "elastic_motion",
+      // Map to actual AnimationCategory enum values
+    };
+    return (categoryMapping[id] || "hover_effect") as AnimationCategory;
+  };
+  
+  // Track view on mount
+  useEffect(() => {
+    trackingRef.current.startTime = Date.now();
+    const animCategory = getAnimationCategory(animation.id);
+    trackAnimation(animCategory);
+    
+    return () => {
+      // Track duration on unmount
+      const duration = Date.now() - trackingRef.current.startTime;
+      trackAnimation(animCategory, { duration });
+    };
+  }, [animation.id, trackAnimation]);
+  
+  // Submit feedback
+  const handleFeedback = (feedback: 'positive' | 'negative') => {
+    setFeedbackGiven(feedback);
+    trackAnimation(
+      getAnimationCategory(animation.id),
+      undefined,
+      feedback
+    );
+  };
 
   // Map animation types to actual animations
   const getAnimationConfig = (animationType: string) => {
@@ -81,55 +128,63 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
             }
           } : {}
         };
-      case "animation-6": // Text Animation
-        return {
-          initial: { opacity: 0, y: 50 },
-          animate: { 
-            opacity: 1, 
-            y: 0,
-            transition: {
-              duration: 1,
-              staggerChildren: 0.1,
-              repeat: isPlaying ? Infinity : 0,
-              repeatDelay: 3,
-              repeatType: "reverse" as const
-            }
-          }
-        };
-      case "animation-7": // Staggered Reveal
+      case "animation-6": // Text Animation - Enhanced
         return {
           initial: { opacity: 0, scale: 0.8 },
           animate: { 
             opacity: 1, 
             scale: 1,
             transition: {
-              duration: 0.5,
+              duration: 0.8,
+              staggerChildren: 0.12,
               repeat: isPlaying ? Infinity : 0,
-              repeatDelay: 4,
+              repeatDelay: 2.5,
               repeatType: "reverse" as const
             }
-          }
+          },
+          exit: { opacity: 0, scale: 0.8 }
         };
-      case "animation-8": // Floating Elements
+      case "animation-7": // Staggered Reveal - Enhanced
+        return {
+          initial: { opacity: 0, y: 20 },
+          animate: { 
+            opacity: 1, 
+            y: 0,
+            transition: {
+              staggerChildren: 0.15,
+              delayChildren: 0.1,
+              staggerDirection: 1,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 3,
+              repeatType: "reverse" as const
+            }
+          },
+          exit: { opacity: 0, y: 20 }
+        };
+      case "animation-8": // Floating Elements - Enhanced
         return {
           animate: isPlaying ? { 
-            y: [0, -10, 0],
+            y: [0, -12, 0, -8, 0],
+            rotate: [0, 2, 0, -2, 0],
             transition: {
-              duration: 3,
+              duration: 5,
               repeat: Infinity,
               ease: "easeInOut"
             }
           } : {}
         };
-      case "animation-9": // Elastic Motion
+      case "animation-9": // Elastic Motion - Enhanced
         return {
           animate: isPlaying ? {
-            scale: [1, 1.1, 0.9, 1.05, 1],
+            scale: [1, 1.1, 0.9, 1.05, 0.95, 1],
+            rotate: [0, 1, -1, 2, -2, 0],
             transition: {
-              duration: 1.5,
+              type: "spring",
+              stiffness: 100,
+              damping: 5,
               repeat: Infinity,
-              repeatDelay: 1,
-              ease: "easeInOut"
+              repeatDelay: 0.8,
+              duration: 2.5
             }
           } : {}
         };
@@ -257,14 +312,36 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
           </Button>
         </div>
         
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowWebsitePreview(!showWebsitePreview)}
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          {showWebsitePreview ? "Simple View" : "Website Preview"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Feedback buttons */}
+          <div className="flex gap-1 mr-2">
+            <Button
+              variant={feedbackGiven === 'positive' ? 'default' : 'ghost'}
+              size="sm" 
+              className={feedbackGiven === 'positive' ? 'bg-green-500 hover:bg-green-600' : ''}
+              onClick={() => handleFeedback('positive')}
+            >
+              <ThumbsUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={feedbackGiven === 'negative' ? 'default' : 'ghost'}
+              size="sm"
+              className={feedbackGiven === 'negative' ? 'bg-red-500 hover:bg-red-600' : ''}
+              onClick={() => handleFeedback('negative')}
+            >
+              <ThumbsDown className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowWebsitePreview(!showWebsitePreview)}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            {showWebsitePreview ? "Simple View" : "Website Preview"}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -633,20 +710,214 @@ const WebsiteMicrointeractionsDemo = ({ isPlaying, animationConfig }: { isPlayin
 };
 
 // New Animation Demos - Fixed implementations
-const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
-  const textVariants = {
+const WebsiteTextAnimationDemo = ({ isPlaying }: { isPlaying: boolean }) => {
+  const controls = useAnimationControls();
+  
+  // Reference for colors to cycle through
+  const colors = ['#3b82f6', '#ec4899', '#f59e0b', '#10b981'];
+  const [colorIndex, setColorIndex] = useState(0);
+  
+  useEffect(() => {
+    let intervalId: number;
+    if (isPlaying) {
+      // Animate text by cycling through colors
+      intervalId = window.setInterval(() => {
+        controls.start({
+          color: colors[colorIndex],
+          scale: [1, 1.1, 1],
+          transition: { duration: 0.8 }
+        });
+        setColorIndex((prev) => (prev + 1) % colors.length);
+      }, 2000);
+    }
+    
+    return () => {
+      if (intervalId) window.clearInterval(intervalId);
+    };
+  }, [isPlaying, colorIndex, controls]);
+  
+  const letterVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
       transition: {
-        delay: i * 0.15,
-        duration: 0.8,
-        repeat: isPlaying ? Infinity : 0,
-        repeatDelay: 3,
-        repeatType: "reverse" as const
+        delay: i * 0.05,
+        duration: 0.4
       }
     })
+  };
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        delayChildren: 0.3
+      }
+    }
+  };
+  
+  const titleText = "ANIMATED TEXT";
+  
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      <div className="bg-white h-56 p-3">
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          {/* Animated Title with letters that animate individually */}
+          <motion.div
+            className="mb-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate={isPlaying ? "visible" : "hidden"}
+          >
+            <div className="flex space-x-1">
+              {titleText.split("").map((letter, i) => (
+                <motion.span
+                  key={`letter-${i}`}
+                  variants={letterVariants}
+                  custom={i}
+                  className="text-3xl font-black tracking-wider"
+                  animate={controls}
+                >
+                  {letter}
+                </motion.span>
+              ))}
+            </div>
+          </motion.div>
+          
+          {/* Animated subtitle with rainbow effect */}
+          <motion.p
+            className="text-sm mt-2 font-medium bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-red-500"
+            animate={isPlaying ? {
+              backgroundPosition: ['0% center', '100% center', '0% center'],
+              backgroundSize: ['100%', '200%', '100%']
+            } : {}}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          >
+            Colors, sizing, and effects that grab attention
+          </motion.p>
+          
+          {/* Typing effect simulation */}
+          <motion.div 
+            className="mt-6 w-64 h-12 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={isPlaying ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ delay: 1 }}
+          >
+            <motion.div 
+              className="flex items-center"
+              initial={{ width: 0 }}
+              animate={isPlaying ? { width: "auto" } : { width: 0 }}
+              transition={{ 
+                duration: 3.5, 
+                repeat: Infinity, 
+                repeatDelay: 1.5,
+                repeatType: "reverse"
+              }}
+              style={{ overflow: "hidden", whiteSpace: "nowrap" }}
+            >
+              <p className="text-sm text-gray-600">Engage users with dynamic text...</p>
+              <motion.span
+                animate={isPlaying ? { opacity: [0, 1, 0] } : {}}
+                transition={{ 
+                  duration: 0.8, 
+                  repeat: Infinity, 
+                  repeatDelay: 0.2 
+                }}
+                className="ml-1 h-4 w-0.5 bg-gray-400"
+              />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const WebsiteStaggeredRevealDemo = ({ isPlaying }: { isPlaying: boolean }) => {
+  const gridItems = [
+    { color: "from-blue-400 to-blue-500", delay: 0 },
+    { color: "from-purple-400 to-purple-500", delay: 0.1 },
+    { color: "from-pink-400 to-pink-500", delay: 0.2 },
+    { color: "from-amber-400 to-amber-500", delay: 0.3 },
+    { color: "from-green-400 to-green-500", delay: 0.4 },
+    { color: "from-cyan-400 to-cyan-500", delay: 0.5 },
+  ];
+  
+  const fadeInUpVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (delay: number) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        delay: delay,
+        ease: "easeOut"
+      }
+    }),
+    exit: { 
+      opacity: 0, 
+      y: 20,
+      transition: {
+        duration: 0.3,
+        ease: "easeIn"
+      }
+    }
+  };
+  
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        when: "afterChildren",
+        staggerChildren: 0.05,
+        staggerDirection: -1
+      }
+    }
+  };
+  
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring", 
+        stiffness: 200, 
+        damping: 20
+      }
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      scale: 0.8,
+      transition: {
+        duration: 0.2
+      }
+    }
   };
   
   return (
@@ -660,109 +931,71 @@ const WebsiteTextAnimationDemo = ({ isPlaying, animationConfig }: AnimationDemoP
         <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
       </div>
       <div className="bg-white h-56 p-3">
-        {/* Hero Section with text animation */}
-        <div className="w-full h-full flex flex-col items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <motion.div
-              className="w-48 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg"
-              custom={0}
-              variants={textVariants}
-              initial="hidden"
-              animate={isPlaying ? "visible" : "hidden"}
-            />
-            
-            <motion.div 
-              className="w-64 h-4 bg-gray-200 rounded"
-              custom={1}
-              variants={textVariants}
-              initial="hidden"
-              animate={isPlaying ? "visible" : "hidden"}
-            />
-            
-            <motion.div 
-              className="w-48 h-4 bg-gray-200 rounded"
-              custom={2}
-              variants={textVariants}
-              initial="hidden"
-              animate={isPlaying ? "visible" : "hidden"}
-            />
-            
-            <motion.div 
-              className="w-56 h-4 bg-gray-200 rounded"
-              custom={3}
-              variants={textVariants}
-              initial="hidden"
-              animate={isPlaying ? "visible" : "hidden"}
-            />
-            
-            <motion.button
-              className="w-32 h-10 bg-indigo-600 rounded-lg mt-3"
-              custom={4}
-              variants={textVariants}
-              initial="hidden"
-              animate={isPlaying ? "visible" : "hidden"}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const WebsiteStaggeredRevealDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
-  return (
-    <div className="w-full h-full overflow-hidden">
-      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
-        <div className="flex gap-1">
-          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-        </div>
-        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
-      </div>
-      <div className="bg-white h-56 p-3">
-        {/* Gallery with staggered reveal */}
         <div className="w-full h-full flex flex-col">
-          <div className="h-10 w-full flex items-center">
-            <div className="w-1/3 h-5 bg-gray-800 rounded mx-auto"></div>
-          </div>
+          <motion.div 
+            className="h-8 mb-2 flex items-center justify-center"
+            variants={fadeInUpVariants}
+            custom={0}
+            initial="hidden"
+            animate={isPlaying ? "visible" : "hidden"}
+            exit="exit"
+          >
+            <div className="w-40 h-6 bg-gradient-to-r from-gray-800 to-gray-700 rounded-md"></div>
+          </motion.div>
           
-          <div className="flex-1 grid grid-cols-3 gap-2 p-2">
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden"
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={isPlaying ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
-                transition={{
-                  duration: 0.4,
-                  delay: i * 0.15,
-                  repeat: isPlaying ? Infinity : 0,
-                  repeatDelay: 3,
-                  repeatType: "reverse"
-                }}
+          <AnimatePresence>
+            {isPlaying && (
+              <motion.div 
+                className="grid grid-cols-3 gap-2 flex-1"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                key="grid-container"
               >
-                <div className={`w-full h-full bg-gradient-to-br ${
-                  i % 3 === 0 ? 'from-blue-200 to-blue-300' : 
-                  i % 3 === 1 ? 'from-purple-200 to-purple-300' : 
-                  'from-pink-200 to-pink-300'
-                }`}></div>
+                {gridItems.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    className={`rounded-lg flex items-center justify-center bg-gradient-to-br ${item.color} shadow-sm p-2`}
+                    variants={cardVariants}
+                    custom={item.delay}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 bg-white/30 rounded-full mb-1"></div>
+                      <div className="w-12 h-2 bg-white/30 rounded-full"></div>
+                    </div>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </div>
-          
-          <div className="h-10 flex justify-center items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gray-200"></div>
-            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-            <div className="w-8 h-8 rounded-full bg-gray-400"></div>
-          </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
   );
 };
 
-const WebsiteFloatingElementsDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+const WebsiteFloatingElementsDemo = ({ isPlaying }: { isPlaying: boolean }) => {
+  const floatingElements = [
+    { size: 'w-16 h-16', color: 'bg-gradient-to-br from-blue-300 to-indigo-400', x: 'left-10', y: 'top-6', delay: 0, duration: 4 },
+    { size: 'w-12 h-12', color: 'bg-gradient-to-br from-pink-300 to-purple-400', x: 'right-12', y: 'top-4', delay: 0.5, duration: 3.5 },
+    { size: 'w-10 h-10', color: 'bg-gradient-to-br from-yellow-300 to-amber-400', x: 'left-16', y: 'bottom-8', delay: 1, duration: 5 },
+    { size: 'w-14 h-14', color: 'bg-gradient-to-br from-teal-300 to-emerald-400', x: 'right-8', y: 'bottom-10', delay: 0.8, duration: 4.5 },
+    { size: 'w-8 h-8', color: 'bg-gradient-to-br from-sky-300 to-cyan-400', x: 'left-32', y: 'top-14', delay: 0.3, duration: 6 }
+  ];
+  
+  const particlesCount = 12;
+  const particles = Array.from({ length: particlesCount }).map((_, i) => ({
+    id: i,
+    size: Math.random() * 6 + 2, // 2-8px
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    delay: Math.random() * 2,
+    duration: Math.random() * 3 + 4 // 4-7s
+  }));
+  
   return (
     <div className="w-full h-full overflow-hidden">
       <div className="w-full h-8 bg-gray-800 flex items-center px-2">
@@ -773,70 +1006,107 @@ const WebsiteFloatingElementsDemo = ({ isPlaying, animationConfig }: AnimationDe
         </div>
         <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
       </div>
-      <div className="bg-white h-56 p-3">
-        {/* Hero with floating elements */}
-        <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden">
-          {/* Background shapes */}
-          <motion.div
-            className="absolute w-20 h-20 rounded-full bg-blue-200 opacity-40 top-5 left-10"
-            animate={isPlaying ? { y: [-8, 0, -8], rotate: [0, 5, 0] } : {}}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          ></motion.div>
+      <div className="bg-white h-56 p-0">
+        {/* Background with gradient */}
+        <div className="relative w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-violet-50 overflow-hidden">
           
-          <motion.div
-            className="absolute w-16 h-16 rounded-full bg-purple-200 opacity-40 bottom-8 right-10"
-            animate={isPlaying ? { y: [-6, 2, -6], rotate: [0, -5, 0] } : {}}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          ></motion.div>
-          
-          <motion.div
-            className="absolute w-12 h-12 rounded-full bg-indigo-200 opacity-40 top-20 right-16"
-            animate={isPlaying ? { y: [-4, 4, -4], rotate: [0, 10, 0] } : {}}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          ></motion.div>
-          
-          {/* Content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          {/* Floating elements */}
+          {isPlaying && floatingElements.map((item, i) => (
             <motion.div
-              className="w-40 h-40 bg-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-4 gap-3"
-              animate={isPlaying ? { y: [-5, 5, -5] } : {}}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              key={`float-${i}`}
+              className={`absolute ${item.size} ${item.color} rounded-full opacity-60 ${item.x} ${item.y}`}
+              animate={{
+                y: [0, -15, 0, -10, 0],
+                x: [0, 8, 0, -8, 0],
+                rotate: [0, 5, 0, -5, 0],
+                scale: [1, 1.05, 1, 0.95, 1]
+              }}
+              transition={{
+                duration: item.duration,
+                delay: item.delay,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+          
+          {/* Small glowing particles */}
+          {isPlaying && particles.map(particle => (
+            <motion.div
+              key={`particle-${particle.id}`}
+              className="absolute rounded-full bg-white"
+              style={{
+                width: particle.size,
+                height: particle.size,
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                boxShadow: '0 0 8px 2px rgba(255, 255, 255, 0.3)'
+              }}
+              animate={{
+                y: [0, -40, 0],
+                opacity: [0.2, 0.8, 0.2],
+                scale: [1, 1.2, 1]
+              }}
+              transition={{
+                duration: particle.duration,
+                delay: particle.delay,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+          
+          {/* Central content */}
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <motion.div
+              className="bg-white/70 backdrop-blur-sm rounded-xl p-5 shadow-xl w-56 flex flex-col items-center"
+              animate={isPlaying ? {
+                y: [0, -8, 0],
+                rotateZ: [0, 1, 0, -1, 0]
+              } : {}}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
             >
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500"></div>
-              <div className="w-3/4 h-3 bg-gray-200 rounded-full"></div>
-              <div className="w-1/2 h-3 bg-gray-200 rounded-full"></div>
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 mb-3 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white/30"></div>
+              </div>
+              <div className="w-32 h-3 bg-gray-300 rounded-full mb-2"></div>
+              <div className="w-24 h-3 bg-gray-300 rounded-full"></div>
             </motion.div>
           </div>
-          
-          {/* Small particles */}
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 rounded-full bg-white opacity-70"
-              style={{
-                top: `${20 + i * 10}%`,
-                left: `${10 + i * 20}%`,
-              }}
-              animate={isPlaying ? { 
-                y: [-15, 0, -15], 
-                opacity: [0.3, 0.7, 0.3],
-                scale: [0.8, 1, 0.8]
-              } : {}}
-              transition={{ 
-                duration: 2 + i, 
-                repeat: Infinity, 
-                ease: "easeInOut",
-                delay: i * 0.2
-              }}
-            ></motion.div>
-          ))}
         </div>
       </div>
     </div>
   );
 };
 
-const WebsiteElasticMotionDemo = ({ isPlaying, animationConfig }: AnimationDemoProps) => {
+const WebsiteElasticMotionDemo = ({ isPlaying }: { isPlaying: boolean }) => {
+  const springConfig = {
+    type: "spring",
+    stiffness: 300,
+    damping: 15
+  };
+  
+  const buttonControls = useAnimationControls();
+  
+  useEffect(() => {
+    if (isPlaying) {
+      // Animate button with pulse effect
+      const interval = setInterval(() => {
+        buttonControls.start({
+          scale: [1, 1.15, 0.95, 1.05, 1],
+          rotate: [0, 2, -2, 1, 0],
+          transition: springConfig
+        });
+      }, 3000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isPlaying, buttonControls]);
+  
   return (
     <div className="w-full h-full overflow-hidden">
       <div className="w-full h-8 bg-gray-800 flex items-center px-2">
@@ -848,74 +1118,150 @@ const WebsiteElasticMotionDemo = ({ isPlaying, animationConfig }: AnimationDemoP
         <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
       </div>
       <div className="bg-white h-56 p-3">
-        {/* Elastic motion header */}
-        <div className="flex flex-col items-center h-full">
-          <div className="h-12 w-full flex items-center justify-center">
-            <motion.div
-              className="w-1/2 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg"
-              animate={isPlaying ? {
-                scale: [1, 1.1, 0.9, 1.05, 1],
-                borderRadius: ["10px", "25px", "10px", "25px", "10px"]
-              } : {}}
-              transition={{ duration: 3, repeat: Infinity, repeatDelay: 0.5 }}
-            ></motion.div>
+        <div className="w-full h-full flex flex-col">
+          <div className="flex justify-between items-center h-12 border-b border-gray-100 mb-4">
+            <div className="w-20 h-6 bg-gray-800 rounded"></div>
+            
+            <div className="flex gap-4">
+              {["Menu 1", "Menu 2", "Menu 3"].map((_, i) => (
+                <motion.div
+                  key={`menu-${i}`}
+                  className="w-14 h-4 bg-gray-300 rounded"
+                  whileHover={isPlaying ? {
+                    scale: 1.1,
+                    y: -2,
+                    transition: springConfig
+                  } : {}}
+                  animate={isPlaying && i === 1 ? {
+                    y: [-2, 0, -2],
+                    scale: [1, 1.05, 1]
+                  } : {}}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 3
+                  }}
+                />
+              ))}
+            </div>
           </div>
           
-          <div className="flex-1 grid grid-cols-2 gap-4 w-full mt-4">
-            <div className="flex flex-col gap-3">
+          <div className="flex-1 flex">
+            {/* Left column */}
+            <div className="w-1/2 pr-4 flex flex-col justify-center">
               <motion.div
-                className="w-full h-4 bg-gray-200 rounded"
+                className="w-3/4 h-5 bg-gray-800 rounded mb-3"
                 animate={isPlaying ? {
-                  scaleX: [1, 1.05, 0.95, 1],
-                  x: [0, 5, -5, 0]
+                  x: [-5, 0, -5],
+                  scale: [0.98, 1, 0.98]
                 } : {}}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-              ></motion.div>
-              <motion.div
-                className="w-3/4 h-4 bg-gray-200 rounded"
-                animate={isPlaying ? {
-                  scaleX: [1, 1.05, 0.95, 1],
-                  x: [0, 3, -3, 0]
-                } : {}}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.1 }}
-              ></motion.div>
-              <motion.div
-                className="w-full h-4 bg-gray-200 rounded"
-                animate={isPlaying ? {
-                  scaleX: [1, 1.05, 0.95, 1],
-                  x: [0, 5, -5, 0]
-                } : {}}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.2 }}
-              ></motion.div>
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
               
               <motion.div
-                className="w-32 h-10 bg-indigo-500 rounded-lg mt-2"
+                className="w-full h-3 bg-gray-200 rounded mb-2"
                 animate={isPlaying ? {
-                  scale: [1, 1.1, 0.95, 1.02, 1],
-                  rotate: [0, 1, -1, 0.5, 0]
+                  x: [-3, 0, -3],
+                  scaleX: [0.95, 1, 0.95]
                 } : {}}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-              ></motion.div>
+                transition={{
+                  duration: 3.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.1
+                }}
+              />
+              
+              <motion.div
+                className="w-full h-3 bg-gray-200 rounded mb-2"
+                animate={isPlaying ? {
+                  x: [-4, 0, -4],
+                  scaleX: [0.97, 1, 0.97]
+                } : {}}
+                transition={{
+                  duration: 3.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.2
+                }}
+              />
+              
+              <motion.div
+                className="w-3/4 h-3 bg-gray-200 rounded mb-4"
+                animate={isPlaying ? {
+                  x: [-2, 0, -2],
+                  scaleX: [0.96, 1, 0.96]
+                } : {}}
+                transition={{
+                  duration: 3.3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.3
+                }}
+              />
+              
+              <motion.div
+                className="w-32 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg"
+                animate={buttonControls}
+                whileHover={isPlaying ? {
+                  scale: 1.05,
+                  transition: springConfig
+                } : {}}
+                whileTap={isPlaying ? {
+                  scale: 0.95,
+                  transition: springConfig
+                } : {}}
+              />
             </div>
             
+            {/* Right column */}
             <motion.div
-              className="bg-gray-100 rounded-lg w-full h-full"
+              className="w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden flex items-center justify-center"
               animate={isPlaying ? {
+                rotate: [0, 1, -1, 0.5, 0],
                 scale: [1, 1.02, 0.98, 1.01, 1],
-                rotate: [0, 0.5, -0.5, 0.2, 0],
-                borderRadius: ["10px", "15px", "10px", "12px", "10px"]
+                y: [0, -5, 5, -2, 0]
               } : {}}
-              transition={{ duration: 4, repeat: Infinity }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
             >
-              <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-3">
-                <div className="w-full h-2/3 bg-white rounded-md"></div>
-                <div className="flex gap-2 mt-2">
-                  <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-                  <div className="flex flex-col gap-1">
-                    <div className="w-20 h-3 bg-gray-300 rounded"></div>
-                    <div className="w-16 h-3 bg-gray-300 rounded"></div>
-                  </div>
-                </div>
+              <div className="relative w-32 h-32">
+                {/* Animated shapes */}
+                <motion.div
+                  className="absolute top-0 left-0 w-20 h-20 bg-gradient-to-br from-blue-300 to-indigo-400 rounded-2xl"
+                  animate={isPlaying ? {
+                    rotate: [0, 15, -15, 0],
+                    scale: [1, 1.1, 0.9, 1],
+                    borderRadius: ["1rem", "50%", "30%", "1rem"]
+                  } : {}}
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                
+                <motion.div
+                  className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-300 to-pink-400 rounded-full"
+                  animate={isPlaying ? {
+                    rotate: [0, -20, 20, 0],
+                    scale: [1, 0.9, 1.1, 1],
+                    borderRadius: ["50%", "30%", "50%", "40%"]
+                  } : {}}
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                />
               </div>
             </motion.div>
           </div>

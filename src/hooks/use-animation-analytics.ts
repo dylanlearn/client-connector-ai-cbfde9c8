@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceDetection } from "@/hooks/tracking/use-device-detection";
 import { 
@@ -11,10 +11,13 @@ import { animationAnalyticsService, trackAnimationView } from "@/services/analyt
 
 export function useAnimationAnalytics() {
   const deviceInfo = useDeviceDetection();
+  // Add a ref to track if component is mounted
+  const isMounted = useRef(true);
   
   // Clean up analytics service on unmount
   useEffect(() => {
     return () => {
+      isMounted.current = false;
       animationAnalyticsService.cleanup();
     };
   }, []);
@@ -26,21 +29,24 @@ export function useAnimationAnalytics() {
     feedback?: AnimationFeedback
   ) => {
     try {
-      // Use the service function instead of direct API call
-      trackAnimationView(
-        animationType,
-        metrics,
-        {
-          deviceType: deviceInfo.deviceType,
-          browser: deviceInfo.browserName,
-          os: deviceInfo.osName,
-          viewport: {
-            width: window.innerWidth,
-            height: window.innerHeight
-          }
-        },
-        feedback as 'positive' | 'negative'
-      );
+      // Only track if component is still mounted
+      if (isMounted.current) {
+        // Use the service function instead of direct API call
+        trackAnimationView(
+          animationType,
+          metrics,
+          {
+            deviceType: deviceInfo.deviceType || 'unknown',
+            browser: deviceInfo.browserName || 'unknown',
+            os: deviceInfo.osName || 'unknown',
+            viewport: {
+              width: window.innerWidth,
+              height: window.innerHeight
+            }
+          },
+          feedback as 'positive' | 'negative'
+        );
+      }
     } catch (err) {
       console.error('Error tracking animation:', err);
     }
@@ -60,6 +66,8 @@ export function useAnimationAnalytics() {
     trackingData: { startTime: number; fps: number[] },
     feedback?: AnimationFeedback
   ) => {
+    if (!isMounted.current) return;
+    
     const endTime = performance.now();
     const duration = endTime - trackingData.startTime;
     
