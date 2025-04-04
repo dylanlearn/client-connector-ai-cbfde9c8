@@ -37,11 +37,15 @@ const Projects = () => {
     }
   }, [activeProjects, isInitialized, initializeMemory, refreshMemoryContext]);
 
+  const handleNewProject = () => {
+    navigate("/new-project");
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Projects</h1>
-        <Button onClick={() => navigate("/new-project")}>
+        <Button onClick={handleNewProject}>
           <PlusCircle className="mr-2 h-4 w-4" />
           <span className={isMobile ? "sr-only" : ""}>New Project</span>
         </Button>
@@ -73,7 +77,7 @@ const Projects = () => {
           title="No projects yet"
           description="Create your first project to get started with DezignSync."
           buttonText="Create Project"
-          buttonAction={() => navigate("/new-project")}
+          buttonAction={handleNewProject}
           secondaryButton={
             <Button 
               variant="outline" 

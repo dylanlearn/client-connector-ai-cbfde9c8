@@ -13,6 +13,8 @@ import WebsiteAnalyzer from "@/pages/design-analysis/WebsiteAnalyzer";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import { AppProviders } from "@/providers/AppProviders";
+import Index from "@/pages/Index";
+import NewProject from "@/pages/NewProject";
 
 // Create placeholder auth components since the imports can't be resolved
 const Login = () => (<div>Login Page</div>);
@@ -24,10 +26,12 @@ const App = () => {
   return (
     <AppProviders>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Index />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/project/:id" element={<ProjectDetail />} />
+        <Route path="/new-project" element={<NewProject />} />
         <Route path="/client-hub" element={<ClientHub />} />
         <Route path="/intake-form" element={<IntakeForm />} />
         <Route path="/design-picker" element={<DesignPicker />} />
