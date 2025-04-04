@@ -216,17 +216,19 @@ export const WireframeService = {
         // Save design tokens if available
         if (wireframeData.designTokens) {
           try {
-            // Use a manual SQL query for this operation since the Supabase client types don't recognize our table
-            const { error: tokenError } = await supabase.rpc('insert_design_token', {
-              p_project_id: params.projectId,
-              p_name: `${wireframeData.title} Design Tokens`,
-              p_category: 'wireframe',
-              p_value: wireframeData.designTokens as any,
-              p_description: `Design tokens for wireframe: ${wireframeData.title}`
-            });
+            // Instead of RPC, directly insert into the design_tokens table
+            const { error: tokenError } = await supabase
+              .from('design_tokens')
+              .insert({
+                project_id: params.projectId,
+                name: `${wireframeData.title} Design Tokens`,
+                category: 'wireframe',
+                value: wireframeData.designTokens as any,
+                description: `Design tokens for wireframe: ${wireframeData.title}`
+              });
             
             if (tokenError) {
-              console.error("Error saving design tokens using RPC:", tokenError);
+              console.error("Error saving design tokens:", tokenError);
             }
           } catch (tokenError) {
             console.error("Exception saving design tokens:", tokenError);

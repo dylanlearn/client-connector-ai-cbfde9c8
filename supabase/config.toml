@@ -24,3 +24,9 @@ verify_jwt = true
 
 [functions.admin-user-management]
 verify_jwt = true
+
+[functions.analyze-feedback]
+verify_jwt = true
+
+[functions.send-client-link]
+verify_jwt = true
