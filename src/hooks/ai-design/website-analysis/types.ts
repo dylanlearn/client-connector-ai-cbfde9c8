@@ -5,9 +5,12 @@ export interface WebsiteAnalysisState {
   isAnalyzing: boolean;
   analysisResults: WebsiteAnalysisResult[];
   error: Error | null;
+  setIsAnalyzing: (isAnalyzing: boolean) => void;
+  setAnalysisResults: (results: WebsiteAnalysisResult[]) => void;
+  setError: (error: Error | null) => void;
 }
 
-export interface WebsiteAnalysisHook extends WebsiteAnalysisState {
+export interface WebsiteAnalysisHook extends Omit<WebsiteAnalysisState, 'setIsAnalyzing' | 'setAnalysisResults' | 'setError'> {
   analyzeWebsiteSection: (
     sectionType: string,
     description: string,

@@ -1,71 +1,93 @@
 
 import React from 'react';
-import { DesignOption } from '../DesignPreview';
-import {
-  DefaultDemo,
-  HoverEffectDemo,
-  ScrollAnimationDemo,
-  ParallaxTiltDemo,
-  CustomCursorDemo,
-  ModalDialogDemo,
-  MorphingShapeDemo,
-  MagneticElementDemo,
-  DragInteractionDemo,
-  ColorShiftDemo,
-  IntentBasedMotionDemo,
-  ProgressiveDisclosureDemo,
-  GlassmorphismDemo,
-  AIDesignSuggestionDemo
-} from './demonstrations';
+import { AnimatePresence } from 'framer-motion';
+import DefaultDemo from './demonstrations/DefaultDemo';
+import HoverEffectDemo from './demonstrations/HoverEffectDemo';
+import ScrollAnimationDemo from './demonstrations/ScrollAnimationDemo';
+import ParallaxTiltDemo from './demonstrations/ParallaxTiltDemo';
+import CustomCursorDemo from './demonstrations/CustomCursorDemo';
+import ModalDialogDemo from './demonstrations/ModalDialogDemo';
+import MorphingShapeDemo from './demonstrations/MorphingShapeDemo';
+import MagneticElementDemo from './demonstrations/MagneticElementDemo';
+import DragInteractionDemo from './demonstrations/DragInteractionDemo';
+import ColorShiftDemo from './demonstrations/ColorShiftDemo';
+import IntentBasedMotionDemo from './demonstrations/IntentBasedMotionDemo';
+import ProgressiveDisclosureDemo from './demonstrations/ProgressiveDisclosureDemo';
+import GlassmorphismDemo from './demonstrations/GlassmorphismDemo';
+import AIDesignSuggestionDemo from './demonstrations/AIDesignSuggestionDemo';
 
-export interface DemonstrationRendererProps {
-  interaction: DesignOption;
+interface DemonstrationRendererProps {
+  selectedInteraction: string;
   isActive: boolean;
-  isDemonstrating: boolean;
-  cursorPosition: { x: number; y: number };
-  handleMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-const DemonstrationRenderer = ({
-  interaction,
-  isActive,
-  isDemonstrating,
-  cursorPosition,
-  handleMouseMove
-}: DemonstrationRendererProps) => {
-  const interactionConfig = { isActive };
+/**
+ * Component that renders the appropriate demonstration based on the selected interaction type
+ */
+const DemonstrationRenderer: React.FC<DemonstrationRendererProps> = ({ 
+  selectedInteraction, 
+  isActive 
+}) => {
+  // Use the isActive prop to control animations in the demonstrations
+  const getInteractionConfig = () => ({
+    isActive,
+    animate: isActive ? { opacity: 1, scale: 1 } : { opacity: 0.7, scale: 0.95 },
+    initial: { opacity: 0, scale: 0.9 },
+    whileHover: { scale: 1.05 },
+    drag: isActive,
+    dragConstraints: { left: 0, right: 0, top: 0, bottom: 0 }
+  });
 
-  // Render the appropriate demonstration based on the interaction ID
-  switch (interaction.id) {
-    case 'interaction-1':
-      return <HoverEffectDemo interactionConfig={interactionConfig} />;
-    case 'interaction-2':
-      return <ScrollAnimationDemo interactionConfig={interactionConfig} />;
-    case 'interaction-3':
-      return <ParallaxTiltDemo interactionConfig={interactionConfig} />;
-    case 'interaction-4':
-      return <CustomCursorDemo interactionConfig={interactionConfig} cursorPosition={cursorPosition} />;
-    case 'interaction-5':
-      return <ModalDialogDemo interactionConfig={interactionConfig} />;
-    case 'interaction-6':
-      return <MorphingShapeDemo interactionConfig={interactionConfig} />;
-    case 'interaction-7':
-      return <MagneticElementDemo interactionConfig={interactionConfig} />;
-    case 'interaction-8':
-      return <DragInteractionDemo interactionConfig={interactionConfig} />;
-    case 'interaction-9':
-      return <ColorShiftDemo interactionConfig={interactionConfig} />;
-    case 'interaction-10':
-      return <IntentBasedMotionDemo interactionConfig={interactionConfig} />;
-    case 'interaction-11':
-      return <ProgressiveDisclosureDemo interactionConfig={interactionConfig} />;
-    case 'interaction-12':
-      return <GlassmorphismDemo interactionConfig={interactionConfig} />;
-    case 'interaction-13':
-      return <AIDesignSuggestionDemo interactionConfig={interactionConfig} />;
-    default:
-      return <DefaultDemo interactionConfig={interactionConfig} />;
-  }
+  const config = getInteractionConfig();
+
+  return (
+    <AnimatePresence mode="wait">
+      <div className="w-full h-full flex items-center justify-center">
+        {selectedInteraction === 'hover-effect' && (
+          <HoverEffectDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'scroll-animation' && (
+          <ScrollAnimationDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'parallax-tilt' && (
+          <ParallaxTiltDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'custom-cursor' && (
+          <CustomCursorDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'modal-dialog' && (
+          <ModalDialogDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'morphing-shape' && (
+          <MorphingShapeDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'magnetic-element' && (
+          <MagneticElementDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'drag-interaction' && (
+          <DragInteractionDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'color-shift' && (
+          <ColorShiftDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'intent-based-motion' && (
+          <IntentBasedMotionDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'progressive-disclosure' && (
+          <ProgressiveDisclosureDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'glassmorphism' && (
+          <GlassmorphismDemo interactionConfig={config} />
+        )}
+        {selectedInteraction === 'ai-design-suggestion' && (
+          <AIDesignSuggestionDemo />
+        )}
+        {!selectedInteraction && (
+          <DefaultDemo />
+        )}
+      </div>
+    </AnimatePresence>
+  );
 };
 
 export default DemonstrationRenderer;

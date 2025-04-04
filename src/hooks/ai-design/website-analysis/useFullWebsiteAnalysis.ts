@@ -2,13 +2,13 @@
 import { useCallback } from 'react';
 import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
 import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
-import { WebsiteAnalysisStateHook } from './useWebsiteAnalysisState';
+import { WebsiteAnalysisState } from './types';
 
 /**
  * Hook for analyzing full websites with multiple sections
  */
 export function useFullWebsiteAnalysis(
-  state: WebsiteAnalysisStateHook,
+  state: WebsiteAnalysisState,
   user: any | undefined,
   showToast: (args: any) => void
 ) {
