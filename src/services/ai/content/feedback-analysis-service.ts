@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -169,16 +168,25 @@ export const FeedbackAnalysisService = {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
       
+      // Define the return type for the query to avoid deep type instantiation
+      type FeedbackAnalysisRow = {
+        original_feedback: string;
+        action_items: string | ActionItem[];
+        tone_analysis: string | ToneAnalysis;
+        summary: string;
+        created_at: string;
+      };
+      
       // Build query based on whether we have a user ID
-      let query = supabase
+      const query = supabase
         .from('feedback_analysis')
-        .select('original_feedback, action_items, tone_analysis, summary, created_at')
+        .select<string, FeedbackAnalysisRow>('original_feedback, action_items, tone_analysis, summary, created_at')
         .order('created_at', { ascending: false })
         .limit(limit);
         
       // If we have a user ID, filter by it
       if (userId) {
-        query = query.eq('user_id', userId);
+        query.eq('user_id', userId);
       }
       
       const { data, error } = await query;
