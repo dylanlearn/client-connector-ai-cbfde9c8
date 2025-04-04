@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { useClientNotifications } from '@/hooks/use-client-notifications';
 import { UseMutationResult } from '@tanstack/react-query';
-import { NotificationStatus } from '@/types/client-notification';
+import { NotificationStatus, NotificationType } from '@/types/client-notification';
 
 interface ProjectCardProps {
   project: Project;
@@ -19,7 +19,7 @@ interface ProjectCardProps {
 interface ProjectNotification {
   project_id: string;
   client_email: string;
-  notification_type: string;
+  notification_type: NotificationType;
   message: string;
   metadata: {
     previousStatus: string;
@@ -45,7 +45,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
         await createNotification.mutateAsync({
           project_id: project.id,
           client_email: project.client_email,
-          notification_type: 'status_change',
+          notification_type: 'status_change' as NotificationType,
           message: `Project status has been changed to "${newStatus}".`,
           metadata: {
             previousStatus: project.status,

@@ -80,19 +80,4 @@ export type InteractionConfig =
   | GlassmorphismConfig
   | BaseInteractionConfig;
 
-// Export all config types
-export {
-  HoverEffectConfig,
-  ModalDialogConfig,
-  CustomCursorConfig,
-  ScrollAnimationConfig,
-  DragInteractionConfig,
-  MagneticElementConfig,
-  ColorShiftConfig,
-  ParallaxTiltConfig,
-  MorphingShapeConfig,
-  ProgressiveDisclosureConfig,
-  IntentBasedMotionConfig,
-  GlassmorphismConfig,
-  BaseInteractionConfig
-};
+// No need to re-export these types since they are already exported above

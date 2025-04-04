@@ -1,6 +1,6 @@
 
-import { 
-  InteractionConfig,
+import {
+  BaseInteractionConfig,
   HoverEffectConfig,
   ModalDialogConfig,
   CustomCursorConfig,
@@ -12,7 +12,8 @@ import {
   MorphingShapeConfig,
   ProgressiveDisclosureConfig,
   IntentBasedMotionConfig,
-  GlassmorphismConfig
+  GlassmorphismConfig,
+  InteractionConfig
 } from './interactionTypes';
 
 // Get interaction configuration based on interaction type
@@ -226,6 +227,23 @@ export const getInteractionConfig = (
       } as GlassmorphismConfig;
     
     default:
-      return {} as InteractionConfig;
+      return {} as BaseInteractionConfig;
   }
+};
+
+// Export the types so they can be imported in demonstration components
+export type {
+  BaseInteractionConfig,
+  HoverEffectConfig,
+  ModalDialogConfig,
+  CustomCursorConfig,
+  ScrollAnimationConfig,
+  DragInteractionConfig,
+  MagneticElementConfig,
+  ColorShiftConfig,
+  ParallaxTiltConfig,
+  MorphingShapeConfig,
+  ProgressiveDisclosureConfig,
+  IntentBasedMotionConfig,
+  GlassmorphismConfig
 };
