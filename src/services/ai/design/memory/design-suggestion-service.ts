@@ -1,9 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DesignSuggestion } from "../types/design-memory-types";
 
 /**
- * Service for managing design suggestions history
+ * Service for managing design suggestions in the memory system
  */
 export const DesignSuggestionService = {
   /**
@@ -13,31 +12,26 @@ export const DesignSuggestionService = {
     userId: string,
     prompt: string,
     result: Record<string, any>,
-    usedReferences: string[] = [],
-    context: Record<string, any> = {}
+    context?: Record<string, any>,
+    usedReferences?: string[]
   ): Promise<string | null> => {
     try {
-      // Cast the table name to any to bypass TypeScript's table name checking
-      const { data, error } = await (supabase
-        .from('design_suggestion_history' as any)
+      const { data, error } = await supabase
+        .from('design_suggestion_history')
         .insert({
           user_id: userId,
-          prompt,
-          result,
-          used_references: usedReferences,
-          context
-        } as any)
+          prompt: prompt,
+          result: result,
+          context: context || {},
+          used_references: usedReferences || []
+        })
         .select('id')
-        .single() as any);
+        .single();
 
-      if (error) {
-        console.error("Error storing design suggestion:", error);
-        return null;
-      }
-
-      return data.id;
+      if (error) throw error;
+      return data?.id || null;
     } catch (error) {
-      console.error("Error storing design suggestion:", error);
+      console.error('Error storing design suggestion:', error);
       return null;
     }
   },
@@ -45,22 +39,20 @@ export const DesignSuggestionService = {
   /**
    * Rate a stored design suggestion
    */
-  rateDesignSuggestion: async (id: string, rating: number): Promise<boolean> => {
+  rateDesignSuggestion: async (
+    suggestionId: string,
+    rating: number
+  ): Promise<boolean> => {
     try {
-      // Cast the table name to any to bypass TypeScript's table name checking
-      const { error } = await (supabase
-        .from('design_suggestion_history' as any)
-        .update({ rating } as any)
-        .eq('id', id) as any);
+      const { error } = await supabase
+        .from('design_suggestion_history')
+        .update({ rating })
+        .eq('id', suggestionId);
 
-      if (error) {
-        console.error("Error rating design suggestion:", error);
-        return false;
-      }
-
+      if (error) throw error;
       return true;
     } catch (error) {
-      console.error("Error rating design suggestion:", error);
+      console.error('Error rating design suggestion:', error);
       return false;
     }
   }

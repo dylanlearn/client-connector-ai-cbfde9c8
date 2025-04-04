@@ -1,47 +1,38 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { DesignMemoryEntry, DesignMemoryQueryOptions, mapToDesignMemoryEntry } from "../types/design-memory-types";
+import { DesignMemoryEntry, DesignMemoryQueryOptions } from '../types/design-memory-types';
 
 /**
- * Service for storing and retrieving design memory entries
+ * Service for managing design memory entries in the database
  */
 export const DesignEntryService = {
   /**
-   * Store a new design pattern or example in the memory database
+   * Store a design pattern or reference in the memory database
    */
-  storeDesignMemory: async (entry: DesignMemoryEntry): Promise<DesignMemoryEntry | null> => {
+  storeDesignMemory: async (entry: DesignMemoryEntry): Promise<boolean> => {
     try {
-      // Cast the table name to any to bypass TypeScript's table name checking
-      const { data, error } = await (supabase
-        .from('design_memory' as any)
+      const { error } = await supabase
+        .from('design_memory')
         .insert({
           category: entry.category,
           subcategory: entry.subcategory,
           title: entry.title,
           description: entry.description,
+          tags: entry.tags,
+          source_url: entry.source_url,
+          image_url: entry.image_url,
           visual_elements: entry.visual_elements,
           color_scheme: entry.color_scheme,
           typography: entry.typography,
           layout_pattern: entry.layout_pattern,
-          tags: entry.tags,
-          source_url: entry.source_url,
-          image_url: entry.image_url,
           relevance_score: entry.relevance_score || 0.7
-        } as any)
-        .select() as any)
-        .single();
+        });
 
-      if (error) {
-        console.error("Error storing design memory:", error);
-        toast.error("Failed to store design pattern");
-        return null;
-      }
-      
-      return mapToDesignMemoryEntry(data);
+      if (error) throw error;
+      return true;
     } catch (error) {
-      console.error("Error storing design memory:", error);
-      return null;
+      console.error('Error storing design memory:', error);
+      return false;
     }
   },
 
@@ -50,56 +41,48 @@ export const DesignEntryService = {
    */
   queryDesignMemory: async (options: DesignMemoryQueryOptions = {}): Promise<DesignMemoryEntry[]> => {
     try {
-      const {
-        category,
-        subcategory,
-        tags,
-        searchTerm,
-        limit = 20,
-        relevanceThreshold = 0.5
-      } = options;
-      
-      // Cast the table name to any to bypass TypeScript's table name checking
-      let query = (supabase
-        .from('design_memory' as any)
-        .select('*') as any)
-        .gte('relevance_score', relevanceThreshold);
+      let query = supabase
+        .from('design_memory')
+        .select('*');
 
-      // Apply filters based on options
-      if (category) {
-        query = query.eq('category', category);
+      // Apply filters if provided
+      if (options.category) {
+        query = query.eq('category', options.category);
       }
 
-      if (subcategory) {
-        query = query.eq('subcategory', subcategory);
+      if (options.subcategory) {
+        query = query.eq('subcategory', options.subcategory);
       }
 
-      if (tags && tags.length > 0) {
+      if (options.tags && options.tags.length > 0) {
         // For each tag, check if it's contained in the tags array
-        tags.forEach(tag => {
+        options.tags.forEach(tag => {
           query = query.contains('tags', [tag]);
         });
       }
 
-      if (searchTerm) {
-        // Search in title and description
-        query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      if (options.search_term) {
+        query = query.or(`title.ilike.%${options.search_term}%,description.ilike.%${options.search_term}%`);
       }
 
-      // Order by relevance score and limit results
-      query = query.order('relevance_score', { ascending: false }).limit(limit);
+      // Apply relevance threshold if provided
+      if (options.relevance_threshold) {
+        query = query.gte('relevance_score', options.relevance_threshold);
+      }
+
+      // Apply sorting and limits
+      query = query.order('relevance_score', { ascending: false });
+
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
 
       const { data, error } = await query;
 
-      if (error) {
-        console.error("Error querying design memory:", error);
-        toast.error("Failed to retrieve design patterns");
-        return [];
-      }
-      
-      return data.map(entry => mapToDesignMemoryEntry(entry));
+      if (error) throw error;
+      return data || [];
     } catch (error) {
-      console.error("Error querying design memory:", error);
+      console.error('Error querying design memory:', error);
       return [];
     }
   }
