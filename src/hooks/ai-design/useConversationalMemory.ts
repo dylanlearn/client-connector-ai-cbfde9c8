@@ -1,7 +1,7 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { AIMemoryService, MemoryCategory } from '@/services/ai';
+import { useMemory } from '@/contexts/ai/MemoryContext';
 
 interface ConversationEntry {
   content: string;
@@ -21,6 +21,7 @@ interface UserPersona {
 
 export function useConversationalMemory() {
   const { user } = useAuth();
+  const { storeMemory } = useMemory();
   const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([]);
   const [userPersona, setUserPersona] = useState<UserPersona>({
     interactionCount: 0
@@ -139,11 +140,10 @@ export function useConversationalMemory() {
         lastInteraction: new Date()
       }));
       
-      // Store in memory service
-      await AIMemoryService.storeMemoryAcrossLayers(
-        user.id,
+      // Store in memory service using the unified storeMemory
+      await storeMemory(
         content,
-        MemoryCategory.ProjectContext, // Using ProjectContext instead of Conversation
+        MemoryCategory.ProjectContext,
         undefined,
         {
           type,
@@ -155,10 +155,10 @@ export function useConversationalMemory() {
       
       // Update user preferences if necessary
       if (metadata.preferredTone || metadata.designPreferences) {
-        await AIMemoryService.user.store(
-          user.id,
+        await storeMemory(
           "User preference update",
-          MemoryCategory.TonePreference, // Using TonePreference instead of UserPreference
+          MemoryCategory.TonePreference,
+          undefined,
           {
             preferredTone: metadata.preferredTone,
             designPreferences: metadata.designPreferences,
@@ -179,7 +179,7 @@ export function useConversationalMemory() {
     } catch (error) {
       console.error("Error storing conversation entry:", error);
     }
-  }, [user]);
+  }, [user, storeMemory]);
   
   // Get a personalized greeting based on user history
   const getPersonalizedGreeting = useCallback((): string => {

@@ -1,30 +1,44 @@
 
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from 'sonner';
-import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
-import { AppProviders } from '@/providers/AppProviders';
+import { AIProvider } from '@/contexts/ai/AIProvider';
+import { MemoryProvider } from '@/contexts/ai/MemoryContext';
+import Layout from '@/components/layout/Layout';
+import Dashboard from '@/pages/Dashboard';
+import Analytics from '@/pages/Analytics';
+import Projects from '@/pages/Projects';
+import ProjectDetail from '@/pages/ProjectDetail';
+import Settings from '@/pages/Settings';
+import IntakeForm from '@/pages/IntakeForm';
+import QuestionnaireResults from '@/pages/QuestionnaireResults';
+import './App.css';
 
-// Import any other components you need for your app
+// Create a client
+const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   return (
-    <AppProviders>
-      <Router>
-        <Routes>
-          {/* Add a route for the website analyzer */}
-          <Route path="/design-analysis" element={<WebsiteAnalyzer />} />
-          
-          {/* Add your other routes here */}
-          <Route path="/" element={<WebsiteAnalyzer />} />
-        </Routes>
-        
-        {/* Global UI components */}
-        <Toaster />
-        <SonnerToaster position="top-right" />
-      </Router>
-    </AppProviders>
+    <QueryClientProvider client={queryClient}>
+      <AIProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="projects/:id" element={<ProjectDetail />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="intake" element={<IntakeForm />} />
+              <Route path="results" element={<QuestionnaireResults />} />
+            </Route>
+          </Routes>
+          <Toaster />
+        </Router>
+      </AIProvider>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;

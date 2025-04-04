@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useAIMemory } from "@/contexts/ai/hooks";
+import { useMemory } from "@/contexts/ai/MemoryContext";
 import { InteractionEventType } from "@/types/analytics";
 import { getSessionId, createTrackingEvent, getElementSelector } from "@/utils/interaction-utils";
 import { batchService } from "@/services/analytics/batch-interaction-service";
@@ -11,7 +11,7 @@ import { batchService } from "@/services/analytics/batch-interaction-service";
  */
 export const useTrackInteraction = () => {
   const { user } = useAuth();
-  const { storeInteractionMemory } = useAIMemory();
+  const { storeInteractionMemory } = useMemory();
   
   /**
    * Track a user interaction event (click, hover, scroll, view, movement)
