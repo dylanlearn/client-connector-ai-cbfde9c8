@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
 
@@ -7,6 +7,10 @@ import { FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis
  * Hook for summarizing client feedback with AI assistance
  */
 export function useFeedbackSummary() {
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
   /**
    * Summarizes multiple pieces of feedback text
    * 
@@ -15,27 +19,43 @@ export function useFeedbackSummary() {
    */
   const summarizeFeedback = useCallback(async (feedbackItems: string[]): Promise<string> => {
     if (feedbackItems.length === 0) {
-      toast.error('No feedback items to summarize');
+      const errorMessage = 'No feedback items to summarize';
+      setError(errorMessage);
+      toast.error(errorMessage);
       return '';
     }
 
+    setIsSummarizing(true);
+    setError(null);
+    setSummary(null);
+    
     try {
-      // For now, this just combines the items - in the future we can call a more 
-      // sophisticated summarization service
+      // For now, this combines the items and calls the analyze function
+      // This could be enhanced in the future with a dedicated summarization endpoint
       const combinedFeedback = feedbackItems.join('\n\n');
       const result = await FeedbackAnalysisService.analyzeFeedback(combinedFeedback);
+      
+      setSummary(result.summary);
       return result.summary;
     } catch (err: any) {
       const errorMessage = err?.message || 'An error occurred during feedback summarization';
       console.error('Feedback summarization error:', err);
+      
+      setError(errorMessage);
       toast.error('Feedback summarization failed', {
         description: errorMessage,
       });
       return 'Failed to summarize feedback.';
+    } finally {
+      setIsSummarizing(false);
     }
   }, []);
 
   return {
     summarizeFeedback,
+    isSummarizing,
+    summary,
+    error,
+    resetSummary: () => setSummary(null)
   };
 }

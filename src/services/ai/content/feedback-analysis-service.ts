@@ -31,6 +31,20 @@ export interface FeedbackAnalysisResult {
   toneAnalysis: ToneAnalysis;
 }
 
+/**
+ * Database record for feedback analysis
+ */
+export interface FeedbackAnalysisRecord {
+  id?: string;
+  user_id?: string;
+  original_feedback: string;
+  action_items: ActionItem[];
+  tone_analysis: ToneAnalysis;
+  summary: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Maximum number of retries for API calls
 const MAX_RETRIES = 3;
 // Delay between retries in milliseconds (starting value, will be exponentially increased)
@@ -75,17 +89,24 @@ export const FeedbackAnalysisService = {
           throw new Error('No analysis data returned');
         }
 
+        // Get the current user ID if available
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id;
+
         // Store the feedback analysis in the database for future reference
         try {
-          // Use a type assertion to make TypeScript recognize the proper table type
+          // Create a properly typed record to insert
+          const record: FeedbackAnalysisRecord = {
+            user_id: userId,
+            original_feedback: feedbackText,
+            action_items: data.actionItems,
+            tone_analysis: data.toneAnalysis,
+            summary: data.summary
+          };
+          
           const { error: insertError } = await supabase
             .from('feedback_analysis')
-            .insert({
-              original_feedback: feedbackText,
-              action_items: data.actionItems,
-              tone_analysis: data.toneAnalysis,
-              summary: data.summary
-            } as any);  // Using 'any' as a temporary fix for the type issue
+            .insert(record);
           
           if (insertError) {
             console.error('Error saving feedback analysis:', insertError);
@@ -144,11 +165,23 @@ export const FeedbackAnalysisService = {
     createdAt: string;
   }[]> => {
     try {
-      const { data, error } = await supabase
+      // Get the current user ID if available
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
+      // Build query based on whether we have a user ID
+      let query = supabase
         .from('feedback_analysis')
-        .select('original_feedback, action_items, tone_analysis, summary, created_at')
+        .select('original_feedback, action_items, tone_analysis, summary, created_at, user_id')
         .order('created_at', { ascending: false })
         .limit(limit);
+        
+      // If we have a user ID, filter by it
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching past analyses:', error);
@@ -159,9 +192,8 @@ export const FeedbackAnalysisService = {
         originalFeedback: item.original_feedback,
         result: {
           summary: item.summary,
-          // Use type assertion to inform TypeScript of the correct types
-          actionItems: (item.action_items as unknown) as ActionItem[],
-          toneAnalysis: (item.tone_analysis as unknown) as ToneAnalysis
+          actionItems: item.action_items as ActionItem[],
+          toneAnalysis: item.tone_analysis as ToneAnalysis
         },
         createdAt: item.created_at
       }));

@@ -4,14 +4,17 @@
  * the auto-generated types.
  */
 
+import { ActionItem, ToneAnalysis } from "@/services/ai/content/feedback-analysis-service";
+
 /**
  * Feedback analysis types
  */
 export interface FeedbackAnalysisTable {
   id: string;
+  user_id?: string;
   original_feedback: string;
-  action_items: any; // This will be the ActionItem[] type in our application
-  tone_analysis: any; // This will be the ToneAnalysis type in our application
+  action_items: ActionItem[]; 
+  tone_analysis: ToneAnalysis;
   summary: string;
   created_at: string;
   updated_at: string;

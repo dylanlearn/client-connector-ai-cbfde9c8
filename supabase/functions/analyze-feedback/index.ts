@@ -33,6 +33,33 @@ interface RequestBody {
   feedbackText: string;
 }
 
+interface ErrorResponse {
+  error: string;
+  details?: string;
+}
+
+// Helper function to create an error response
+function createErrorResponse(message: string, details?: string, status = 400): Response {
+  const errorBody: ErrorResponse = { error: message };
+  if (details) errorBody.details = details;
+  
+  return new Response(
+    JSON.stringify(errorBody),
+    { 
+      status, 
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json' 
+      } 
+    }
+  );
+}
+
+// Helper function to log and track execution
+function logOperation(operation: string, metadata: Record<string, any> = {}): void {
+  console.log(`[analyze-feedback] ${operation}`, metadata);
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -40,16 +67,23 @@ serve(async (req) => {
   }
 
   try {
+    logOperation('Request received');
+    
     // Get the request body and parse it
-    const body: RequestBody = await req.json();
+    let body: RequestBody;
+    try {
+      body = await req.json();
+    } catch (error) {
+      logOperation('JSON parse error', { error: error.message });
+      return createErrorResponse('Invalid JSON in request body');
+    }
+    
     const { feedbackText } = body;
 
     // Validate input
     if (!feedbackText?.trim()) {
-      return new Response(
-        JSON.stringify({ error: 'Feedback text is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logOperation('Validation error', { reason: 'Empty feedback text' });
+      return createErrorResponse('Feedback text is required');
     }
 
     // Create an instance of Supabase client for the edge function
@@ -58,9 +92,23 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
+    
+    // Get current user if authenticated
+    let userId = null;
+    try {
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (!userError && user) {
+        userId = user.id;
+        logOperation('User identified', { userId });
+      }
+    } catch (error) {
+      // Non-critical error, continue without user ID
+      logOperation('Failed to identify user', { error: error.message });
+    }
 
     // Here you would typically call an AI service to analyze the feedback
-    // For now, we'll use a simple algorithm to generate dummy analysis
+    // For now, we'll use a simple algorithm to generate results
+    logOperation('Analyzing feedback', { textLength: feedbackText.length });
 
     // Extract sentiment based on keyword matching (simplified)
     const positiveWords = ['great', 'good', 'excellent', 'like', 'love', 'happy', 'pleased'];
@@ -147,16 +195,25 @@ serve(async (req) => {
       }
     };
 
+    logOperation('Analysis completed', { 
+      actionItemsCount: actionItems.length,
+      sentimentScores: { positive, neutral, negative }
+    });
+
     return new Response(
       JSON.stringify(result),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error processing feedback:', error);
+    logOperation('Error processing feedback', { 
+      error: error.message,
+      stack: error.stack
+    });
     
-    return new Response(
-      JSON.stringify({ error: 'Failed to analyze feedback' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    return createErrorResponse(
+      'Failed to analyze feedback', 
+      error.message,
+      500
     );
   }
 })

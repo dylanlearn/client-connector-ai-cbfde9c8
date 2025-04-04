@@ -7,8 +7,11 @@ import { toast } from "sonner";
 import { FeedbackAnalysisResult, FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, FileText, BarChart, Check, ArrowLeft, Clock } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { PlusCircle, FileText, BarChart, Check, ArrowLeft, Clock, ShieldAlert } from "lucide-react";
 import { format } from 'date-fns';
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const FeedbackAnalysisPage = () => {
   const navigate = useNavigate();
@@ -18,16 +21,44 @@ const FeedbackAnalysisPage = () => {
     createdAt: string;
   }>>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Load past analyses
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setIsAuthenticated(!!data.session);
+      } catch (err) {
+        console.error('Error checking auth status:', err);
+        setIsAuthenticated(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
+  // Load past analyses when auth state is determined
   useEffect(() => {
     const loadPastAnalyses = async () => {
+      if (isAuthenticated === false) {
+        return; // Don't try to load if not authenticated
+      }
+      
+      if (isAuthenticated === null) {
+        return; // Wait until auth state is determined
+      }
+
       setIsLoading(true);
+      setLoadError(null);
+      
       try {
         const analyses = await FeedbackAnalysisService.getPastAnalyses(5);
         setSavedAnalyses(analyses);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading past analyses:", error);
+        setLoadError(error?.message || "Failed to load past analyses");
         toast.error("Failed to load past analyses");
       } finally {
         setIsLoading(false);
@@ -35,7 +66,7 @@ const FeedbackAnalysisPage = () => {
     };
     
     loadPastAnalyses();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleAnalysisComplete = (result: FeedbackAnalysisResult) => {
     // Store analysis results in session storage for potential use in other parts of the app
@@ -92,6 +123,19 @@ const FeedbackAnalysisPage = () => {
           Paste client feedback to analyze sentiment and extract actionable tasks with AI assistance.
         </p>
         
+        {isAuthenticated === false && (
+          <Alert variant="warning" className="mb-8">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Authentication Required</AlertTitle>
+            <AlertDescription className="flex items-center gap-4">
+              <span>You need to be logged in to save feedback analysis results.</span>
+              <Button size="sm" onClick={() => navigate("/login")}>
+                Log In
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <FeedbackAnalyzer
@@ -142,6 +186,12 @@ const FeedbackAnalysisPage = () => {
                     <Clock className="h-8 w-8 mb-2 mx-auto animate-pulse" />
                     <p>Loading past analyses...</p>
                   </div>
+                ) : loadError ? (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{loadError}</AlertDescription>
+                  </Alert>
                 ) : savedAnalyses.length > 0 ? (
                   <ul className="space-y-4">
                     {savedAnalyses.map((analysis, index) => (
