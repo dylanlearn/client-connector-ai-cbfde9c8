@@ -41,6 +41,10 @@ const Projects = () => {
     navigate("/new-project");
   };
 
+  const handleProjectClick = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
@@ -104,6 +108,7 @@ const Projects = () => {
         <ProjectBoard 
           projects={activeProjects} 
           updateProject={updateProject} 
+          onProjectClick={handleProjectClick}
         />
       )}
     </DashboardLayout>

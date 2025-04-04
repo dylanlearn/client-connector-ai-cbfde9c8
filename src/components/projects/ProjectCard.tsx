@@ -1,50 +1,90 @@
 
-import { Draggable } from "react-beautiful-dnd";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Project } from "@/types/project";
-import { useNavigate } from "react-router-dom";
+import React from 'react';
+import { Project, UpdateProjectData } from '@/types/project';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { UseMutationResult } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
+import { User, Calendar, MoreVertical } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 interface ProjectCardProps {
-  project: Project & { boardStatus?: string };
-  index: number;
-  statusColor: string;
+  project: Project;
+  updateProject: UseMutationResult<any, Error, UpdateProjectData & { id: string }, unknown>;
+  onClick: () => void;
 }
 
-const ProjectCard = ({ project, index, statusColor }: ProjectCardProps) => {
-  const navigate = useNavigate();
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, updateProject, onClick }) => {
+  const handleArchive = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    updateProject.mutate({ 
+      id: project.id, 
+      status: 'archived'
+    });
+  };
   
-  const handleClick = () => {
-    navigate(`/project/${project.id}`);
+  const handleStatusChange = (status: 'draft' | 'active' | 'completed') => (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    updateProject.mutate({
+      id: project.id,
+      status
+    });
   };
 
   return (
-    <Draggable draggableId={project.id} index={index}>
-      {(provided) => (
-        <Card 
-          className="mb-3 cursor-pointer hover:shadow-md transition-shadow"
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          onClick={handleClick}
-        >
-          <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-base flex justify-between items-start">
-              <span className="truncate mr-2">{project.title}</span>
-              <Badge className={`${statusColor} text-xs font-normal`}>
-                {project.status}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-2">
-            <div className="text-xs text-gray-600">
-              <p className="truncate">{project.client_name}</p>
-              <p className="truncate">{project.client_email}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </Draggable>
+    <Card 
+      className="mb-4 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
+      <CardHeader className="pb-2 flex flex-row items-start justify-between">
+        <div>
+          <h3 className="font-semibold text-lg">{project.title}</h3>
+          <div className="flex items-center text-gray-500 text-sm mt-1">
+            <User className="w-3.5 h-3.5 mr-1" /> 
+            {project.client_name}
+          </div>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <button className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">More options</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleStatusChange('draft')}>
+              Mark as Draft
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleStatusChange('active')}>
+              Mark as Active
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleStatusChange('completed')}>
+              Mark as Completed
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleArchive} className="text-red-600">
+              Archive Project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardHeader>
+      <CardContent className="pb-2">
+        <p className="text-gray-600 line-clamp-2 text-sm">
+          {project.description || "No description provided"}
+        </p>
+      </CardContent>
+      <CardFooter className="text-xs text-gray-500 pt-0">
+        <div className="flex items-center">
+          <Calendar className="w-3.5 h-3.5 mr-1" />
+          Updated {formatDistanceToNow(new Date(project.updated_at), { addSuffix: true })}
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

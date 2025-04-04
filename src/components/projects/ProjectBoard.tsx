@@ -1,136 +1,52 @@
 
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
-import { Clock, ArrowRight, CheckCheck } from "lucide-react";
-import { toast } from "sonner";
-import ProjectColumn from "./ProjectColumn";
-import { Project } from "@/types/project";
-import { UseMutationResult } from "@tanstack/react-query";
+import React from 'react';
+import { Project, UpdateProjectData } from '@/types/project';
+import ProjectColumn from './ProjectColumn';
+import ProjectCard from './ProjectCard';
+import { UseMutationResult } from '@tanstack/react-query';
 
-// Column definitions
-const columns = [
-  {
-    id: 'not_started',
-    title: 'Not Started',
-    icon: <Clock className="h-4 w-4 mr-2" />,
-    color: 'bg-gray-200 text-gray-800'
-  },
-  {
-    id: 'in_progress',
-    title: 'In Progress',
-    icon: <ArrowRight className="h-4 w-4 mr-2" />,
-    color: 'bg-blue-200 text-blue-800'
-  },
-  {
-    id: 'ready',
-    title: 'Ready',
-    icon: <CheckCheck className="h-4 w-4 mr-2" />,
-    color: 'bg-green-200 text-green-800'
-  },
-  {
-    id: 'delivered',
-    title: 'Delivered',
-    icon: <CheckCheck className="h-4 w-4 mr-2" />,
-    color: 'bg-purple-200 text-purple-800'
-  }
-];
-
-// Map from board status to Project status type
-const boardToProjectStatus: Record<string, Project['status']> = {
-  'not_started': 'draft',
-  'in_progress': 'active',
-  'ready': 'completed',
-  'archived': 'archived',
-  'delivered': 'archived' // Map delivered to archived as well
-};
-
-// Map from Project status to board status
-const projectToBoardStatus: Record<Project['status'], string> = {
-  'draft': 'not_started',
-  'active': 'in_progress',
-  'completed': 'ready',
-  'archived': 'delivered'
+type ProjectsByStatus = {
+  [key: string]: Project[];
 };
 
 interface ProjectBoardProps {
   projects: Project[];
-  updateProject: UseMutationResult<Project, Error, {
-    id: string;
-    status?: Project['status'];
-    title?: string;
-    client_name?: string;
-    client_email?: string;
-    project_type?: string;
-    description?: string | null;
-    intake_form_id?: string;
-  }, unknown>;
+  updateProject: UseMutationResult<any, Error, UpdateProjectData & { id: string }, unknown>;
+  onProjectClick: (projectId: string) => void;
 }
 
-const ProjectBoard = ({ projects, updateProject }: ProjectBoardProps) => {
-  // Normalize project statuses to match our columns
-  const normalizedProjects = projects.map(project => {
-    // Get board status from project status
-    const boardStatus = projectToBoardStatus[project.status];
-    
-    return {
-      ...project,
-      // This is just for internal use in the board component, not changing the actual project status
-      boardStatus
-    };
-  });
-
-  // Create column data
-  const columnData = columns.map(column => {
-    return {
-      ...column,
-      // Filter projects that match this column's id
-      projects: normalizedProjects.filter(p => p.boardStatus === column.id)
-    };
-  });
-
-  const handleDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    // Drop outside of any droppable
-    if (!destination) return;
-
-    // Drop in the same place
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) return;
-
-    // Get the new board status from the destination column
-    const newBoardStatus = destination.droppableId;
-    
-    // Map board status to project status
-    const newProjectStatus = boardToProjectStatus[newBoardStatus];
-    
-    // Find the project
-    const project = projects.find(p => p.id === draggableId);
-    
-    if (project) {
-      // Update the project status with proper typed value
-      updateProject.mutate({
-        id: project.id,
-        status: newProjectStatus
-      });
-      
-      toast.success(`Project moved to ${columns.find(col => col.id === newBoardStatus)?.title}`);
+const ProjectBoard: React.FC<ProjectBoardProps> = ({ projects, updateProject, onProjectClick }) => {
+  // Group projects by their status
+  const projectsByStatus = projects.reduce((acc: ProjectsByStatus, project) => {
+    const status = project.status;
+    if (!acc[status]) {
+      acc[status] = [];
     }
-  };
+    acc[status].push(project);
+    return acc;
+  }, {} as ProjectsByStatus);
 
+  // Define the order of columns
+  const columnOrder = ['draft', 'active', 'completed'];
+  
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {columns.map((column, columnIndex) => (
-          <ProjectColumn 
-            key={column.id} 
-            column={column} 
-            projects={columnData[columnIndex].projects} 
-          />
-        ))}
-      </div>
-    </DragDropContext>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {columnOrder.map(status => {
+        const columnProjects = projectsByStatus[status] || [];
+        return (
+          <ProjectColumn key={status} title={status} count={columnProjects.length}>
+            {columnProjects.map(project => (
+              <ProjectCard 
+                key={project.id} 
+                project={project} 
+                updateProject={updateProject} 
+                onClick={() => onProjectClick(project.id)}
+              />
+            ))}
+          </ProjectColumn>
+        );
+      })}
+    </div>
   );
 };
 
