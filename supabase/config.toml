@@ -1,7 +1,9 @@
 
-# Reference: https://supabase.com/docs/guides/functions/config
-
 project_id = "bmkhbqxukiakhafqllux"
+
+[functions.analyze-feedback]
+verify_jwt = true
 
 [functions.initialize-memory]
 verify_jwt = true
+

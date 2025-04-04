@@ -1,40 +1,67 @@
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { FeedbackAnalysisService } from "@/services/ai/content/feedback-analysis-service";
-import { ActionItem, ToneAnalysis } from "@/services/ai/content/feedback-analysis-service";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface FeedbackAnalysisResult {
-  actionItems: ActionItem[];
-  toneAnalysis: ToneAnalysis;
+export interface FeedbackAnalysisResult {
+  actionItems: Array<{
+    task: string;
+    priority: 'high' | 'medium' | 'low';
+    urgency: number;
+  }>;
+  toneAnalysis: {
+    positive: number;
+    neutral: number;
+    negative: number;
+    urgent: boolean;
+    vague: boolean;
+    critical: boolean;
+  };
   summary: string;
 }
 
-export const useFeedbackAnalysis = () => {
+export function useFeedbackAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<FeedbackAnalysisResult | null>(null);
+  const [result, setResult] = useState<FeedbackAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Analyze feedback text and return structured results
   const analyzeFeedback = async (feedbackText: string): Promise<FeedbackAnalysisResult | null> => {
     if (!feedbackText.trim()) {
-      toast.error("Please provide feedback text to analyze");
+      setError('Feedback text cannot be empty');
+      toast.error('Feedback text cannot be empty');
       return null;
     }
-    
+
     setIsAnalyzing(true);
     setError(null);
-    
+    setResult(null);
+
     try {
-      const result = await FeedbackAnalysisService.analyzeFeedback(feedbackText);
-      setAnalysisResult(result);
-      toast.success("Feedback analysis complete");
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      console.log('Sending feedback for analysis:', feedbackText.substring(0, 50) + '...');
+      
+      const { data, error } = await supabase.functions.invoke<FeedbackAnalysisResult>(
+        'analyze-feedback',
+        {
+          body: { feedbackText }
+        }
+      );
+
+      if (error) {
+        throw new Error(error.message || 'Failed to analyze feedback');
+      }
+
+      if (!data) {
+        throw new Error('No analysis data returned');
+      }
+
+      setResult(data);
+      return data;
+    } catch (err: any) {
+      const errorMessage = err?.message || 'An error occurred during feedback analysis';
+      console.error('Feedback analysis error:', err);
       setError(errorMessage);
-      toast.error("Error analyzing feedback", {
-        description: errorMessage
+      toast.error('Feedback analysis failed', {
+        description: errorMessage,
       });
       return null;
     } finally {
@@ -42,36 +69,16 @@ export const useFeedbackAnalysis = () => {
     }
   };
 
-  // Extract high priority action items
-  const getHighPriorityItems = (): ActionItem[] => {
-    if (!analysisResult) return [];
-    return analysisResult.actionItems.filter(item => item.priority === 'high');
-  };
-
-  // Get overall sentiment (positive, negative, neutral)
-  const getOverallSentiment = (): 'positive' | 'negative' | 'neutral' | null => {
-    if (!analysisResult) return null;
-    
-    const { positive, negative, neutral } = analysisResult.toneAnalysis;
-    
-    if (positive > Math.max(negative, neutral)) return 'positive';
-    if (negative > Math.max(positive, neutral)) return 'negative';
-    return 'neutral';
-  };
-
-  // Reset the analysis state
   const resetAnalysis = () => {
-    setAnalysisResult(null);
+    setResult(null);
     setError(null);
   };
 
   return {
     analyzeFeedback,
+    resetAnalysis,
     isAnalyzing,
-    analysisResult,
+    result,
     error,
-    getHighPriorityItems,
-    getOverallSentiment,
-    resetAnalysis
   };
-};
+}
