@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Send, Loader2, BarChart, FileText, AlertCircle } from "lucide-react";
-import { useFeedbackSummary } from '@/contexts/ai/hooks/useFeedbackSummary';
+import { Send, Loader2, BarChart, AlertCircle } from "lucide-react";
+import { useFeedbackAnalysis } from '@/hooks/use-feedback-analysis';
 import { FeedbackAnalysisResult } from '@/services/ai/content/feedback-analysis-service';
 
 interface FeedbackSentimentProps {
@@ -50,15 +50,15 @@ const FeedbackSentiment = ({ positive, neutral, negative }: FeedbackSentimentPro
 
 export const FeedbackAnalyzer = ({ onAnalysisComplete, className = "" }: FeedbackAnalyzerProps) => {
   const [feedbackText, setFeedbackText] = useState('');
-  const { analyzeFeedback, isLoading, analysis, error, resetAnalysis } = useFeedbackSummary();
+  const { analyzeFeedback, isAnalyzing, result, error, resetAnalysis } = useFeedbackAnalysis();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!feedbackText.trim()) return;
     
-    const result = await analyzeFeedback(feedbackText);
-    if (result && onAnalysisComplete) {
-      onAnalysisComplete(result);
+    const analysisResult = await analyzeFeedback(feedbackText);
+    if (analysisResult && onAnalysisComplete) {
+      onAnalysisComplete(analysisResult);
     }
   };
 
@@ -82,7 +82,7 @@ export const FeedbackAnalyzer = ({ onAnalysisComplete, className = "" }: Feedbac
                 className="min-h-[200px] p-4"
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                disabled={isLoading}
+                disabled={isAnalyzing}
                 required
               />
             </div>
@@ -94,33 +94,33 @@ export const FeedbackAnalyzer = ({ onAnalysisComplete, className = "" }: Feedbac
               </div>
             )}
             
-            {analysis && (
+            {result && (
               <div className="space-y-4 p-4 border rounded-md">
                 <div>
                   <h3 className="font-medium text-lg mb-2">Summary</h3>
-                  <p className="text-gray-700">{analysis.summary}</p>
+                  <p className="text-gray-700">{result.summary}</p>
                   
                   <FeedbackSentiment 
-                    positive={analysis.toneAnalysis.positive} 
-                    neutral={analysis.toneAnalysis.neutral} 
-                    negative={analysis.toneAnalysis.negative} 
+                    positive={result.toneAnalysis.positive} 
+                    neutral={result.toneAnalysis.neutral} 
+                    negative={result.toneAnalysis.negative} 
                   />
                   
-                  {(analysis.toneAnalysis.urgent || 
-                   analysis.toneAnalysis.critical || 
-                   analysis.toneAnalysis.vague) && (
+                  {(result.toneAnalysis.urgent || 
+                   result.toneAnalysis.critical || 
+                   result.toneAnalysis.vague) && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {analysis.toneAnalysis.urgent && (
+                      {result.toneAnalysis.urgent && (
                         <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full">
                           Urgent Feedback
                         </span>
                       )}
-                      {analysis.toneAnalysis.critical && (
+                      {result.toneAnalysis.critical && (
                         <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
                           Critical Feedback
                         </span>
                       )}
-                      {analysis.toneAnalysis.vague && (
+                      {result.toneAnalysis.vague && (
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                           Vague Feedback
                         </span>
@@ -132,7 +132,7 @@ export const FeedbackAnalyzer = ({ onAnalysisComplete, className = "" }: Feedbac
                 <div>
                   <h3 className="font-medium text-lg mb-2">Action Items</h3>
                   <ul className="space-y-2">
-                    {analysis.actionItems.map((item, index) => (
+                    {result.actionItems.map((item, index) => (
                       <li key={index} className="flex items-start p-2 border-b last:border-0">
                         <div className={`
                           h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mr-3
@@ -165,21 +165,21 @@ export const FeedbackAnalyzer = ({ onAnalysisComplete, className = "" }: Feedbac
             type="button" 
             variant="outline" 
             onClick={handleReset}
-            disabled={isLoading || (!feedbackText && !analysis)}
+            disabled={isAnalyzing || (!feedbackText && !result)}
           >
             Clear
           </Button>
           
           <Button 
             type="submit" 
-            disabled={isLoading || !feedbackText.trim()}
+            disabled={isAnalyzing || !feedbackText.trim()}
           >
-            {isLoading ? (
+            {isAnalyzing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Analyzing...
               </>
-            ) : analysis ? (
+            ) : result ? (
               <>
                 <BarChart className="mr-2 h-4 w-4" />
                 Reanalyze

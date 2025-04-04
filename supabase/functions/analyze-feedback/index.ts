@@ -1,11 +1,37 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { ActionItem, FeedbackAnalysisRequest, FeedbackAnalysisResult, ToneAnalysis } from "./types.ts";
 
-// OpenAI API configuration
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
-const MODEL = "gpt-4o-mini"; // Using a modern, efficient model
+// Define CORS headers for cross-origin requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Type definitions for the request and response
+interface FeedbackAnalysisRequest {
+  feedbackText: string;
+}
+
+interface ActionItem {
+  task: string;
+  priority: 'high' | 'medium' | 'low';
+  urgency: number;
+}
+
+interface ToneAnalysis {
+  positive: number;
+  neutral: number;
+  negative: number;
+  urgent: boolean;
+  critical: boolean;
+  vague: boolean;
+}
+
+interface FeedbackAnalysisResult {
+  summary: string;
+  actionItems: ActionItem[];
+  toneAnalysis: ToneAnalysis;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -24,12 +50,14 @@ serve(async (req) => {
       );
     }
 
+    // Get OpenAI API key from environment variable
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) {
       throw new Error("OpenAI API key not configured");
     }
 
     // Analyze the feedback using OpenAI
-    const result = await analyzeFeedback(feedbackText);
+    const result = await analyzeFeedback(feedbackText, OPENAI_API_KEY);
     
     return new Response(
       JSON.stringify(result),
@@ -52,7 +80,7 @@ serve(async (req) => {
 /**
  * Analyzes feedback text using OpenAI
  */
-async function analyzeFeedback(feedbackText: string): Promise<FeedbackAnalysisResult> {
+async function analyzeFeedback(feedbackText: string, apiKey: string): Promise<FeedbackAnalysisResult> {
   // Prompt for generating actionable tasks from feedback
   const prompt = `
     Analyze the following client feedback:
@@ -89,10 +117,10 @@ async function analyzeFeedback(feedbackText: string): Promise<FeedbackAnalysisRe
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: MODEL,
+          model: "gpt-4o-mini", // Using a modern, efficient model
           messages: [
             {
               role: "system",

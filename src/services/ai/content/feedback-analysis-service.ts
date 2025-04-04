@@ -1,12 +1,18 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Represents an action item extracted from client feedback
+ */
 export interface ActionItem {
   task: string;
   priority: 'high' | 'medium' | 'low';
   urgency: number;
 }
 
+/**
+ * Analysis of feedback tone and sentiment
+ */
 export interface ToneAnalysis {
   positive: number;
   neutral: number;
@@ -16,6 +22,9 @@ export interface ToneAnalysis {
   vague: boolean;
 }
 
+/**
+ * Complete feedback analysis result
+ */
 export interface FeedbackAnalysisResult {
   summary: string;
   actionItems: ActionItem[];
@@ -28,6 +37,9 @@ export interface FeedbackAnalysisResult {
 export const FeedbackAnalysisService = {
   /**
    * Analyzes feedback text and returns structured analysis results
+   * 
+   * @param feedbackText - The feedback text to analyze
+   * @returns Structured analysis of the feedback
    */
   analyzeFeedback: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
     try {
@@ -39,6 +51,7 @@ export const FeedbackAnalysisService = {
       );
 
       if (error) {
+        console.error('Error from analyze-feedback function:', error);
         throw new Error(error.message || 'Failed to analyze feedback');
       }
 
@@ -48,19 +61,23 @@ export const FeedbackAnalysisService = {
 
       // Store the feedback analysis in the database for future reference
       try {
-        await supabase.from('feedback_analysis').insert({
+        const { error: insertError } = await supabase.from('feedback_analysis').insert({
           original_feedback: feedbackText,
           action_items: data.actionItems,
           tone_analysis: data.toneAnalysis,
           summary: data.summary
         });
+        
+        if (insertError) {
+          console.error('Error saving feedback analysis:', insertError);
+        }
       } catch (saveError) {
         // Log the error but don't fail the operation
         console.error('Error saving feedback analysis to database:', saveError);
       }
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error analyzing feedback:', error);
       
       // Return fallback data if analysis fails
@@ -85,6 +102,9 @@ export const FeedbackAnalysisService = {
 
   /**
    * Retrieves past feedback analyses
+   * 
+   * @param limit - Maximum number of analyses to return
+   * @returns List of past feedback analyses
    */
   getPastAnalyses: async (limit: number = 10): Promise<{
     originalFeedback: string;
@@ -98,14 +118,17 @@ export const FeedbackAnalysisService = {
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching past analyses:', error);
+        throw error;
+      }
 
       return (data || []).map(item => ({
         originalFeedback: item.original_feedback,
         result: {
           summary: item.summary,
-          actionItems: item.action_items,
-          toneAnalysis: item.tone_analysis
+          actionItems: item.action_items as ActionItem[],
+          toneAnalysis: item.tone_analysis as ToneAnalysis
         },
         createdAt: item.created_at
       }));

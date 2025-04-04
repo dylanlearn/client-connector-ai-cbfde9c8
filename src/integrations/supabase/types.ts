@@ -871,6 +871,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_analysis: {
+        Row: {
+          action_items: Json
+          created_at: string
+          id: string
+          original_feedback: string
+          summary: string
+          tone_analysis: Json
+          updated_at: string
+        }
+        Insert: {
+          action_items: Json
+          created_at?: string
+          id?: string
+          original_feedback: string
+          summary: string
+          tone_analysis: Json
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json
+          created_at?: string
+          id?: string
+          original_feedback?: string
+          summary?: string
+          tone_analysis?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       global_memories: {
         Row: {
           category: string

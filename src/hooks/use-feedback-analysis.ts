@@ -3,11 +3,22 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { FeedbackAnalysisResult, FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
 
+/**
+ * Hook for analyzing client feedback with AI assistance
+ * 
+ * @returns Functions and state for analyzing customer feedback
+ */
 export function useFeedbackAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<FeedbackAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Analyzes feedback text and extracts insights
+   * 
+   * @param feedbackText - The feedback text to analyze
+   * @returns The analysis result or null if there was an error
+   */
   const analyzeFeedback = useCallback(async (feedbackText: string): Promise<FeedbackAnalysisResult | null> => {
     if (!feedbackText.trim()) {
       setError('Feedback text cannot be empty');
@@ -40,6 +51,9 @@ export function useFeedbackAnalysis() {
     }
   }, []);
 
+  /**
+   * Resets the analysis state
+   */
   const resetAnalysis = useCallback(() => {
     setResult(null);
     setError(null);
