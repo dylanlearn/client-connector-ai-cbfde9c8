@@ -2370,23 +2370,41 @@ export type Database = {
             }
             Returns: undefined
           }
-      search_memory_embeddings: {
-        Args: {
-          query_embedding: string
-          match_threshold?: number
-          match_count?: number
-          filter_memory_type?: string
-        }
-        Returns: {
-          id: string
-          memory_id: string
-          memory_type: string
-          content: string
-          similarity: number
-          created_at: string
-          metadata: Json
-        }[]
-      }
+      search_memory_embeddings:
+        | {
+            Args: {
+              query_embedding: string
+              match_threshold?: number
+              match_count?: number
+              filter_memory_type?: string
+            }
+            Returns: {
+              id: string
+              memory_id: string
+              memory_type: string
+              content: string
+              similarity: number
+              created_at: string
+              metadata: Json
+            }[]
+          }
+        | {
+            Args: {
+              query_text: string
+              match_threshold?: number
+              match_count?: number
+              filter_memory_type?: string
+            }
+            Returns: {
+              id: string
+              memory_id: string
+              memory_type: string
+              content: string
+              similarity: number
+              created_at: string
+              metadata: Json
+            }[]
+          }
       set_versions_inactive: {
         Args: {
           p_wireframe_id: string
@@ -2417,7 +2435,7 @@ export type Database = {
           p_memory_id: string
           p_memory_type: string
           p_content: string
-          p_embedding: string
+          p_embedding?: string
           p_metadata?: Json
         }
         Returns: string

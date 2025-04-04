@@ -28,8 +28,7 @@ export const VectorMemoryService = {
           p_memory_id: memoryId,
           p_memory_type: memoryType,
           p_content: content,
-          // Convert embedding array to null if empty (triggers auto-generation on server)
-          // or ensure it's properly passed as an array
+          // Pass null to trigger auto-generation on server
           p_embedding: embedding.length > 0 ? embedding : null,
           p_metadata: metadata
         }
@@ -61,15 +60,11 @@ export const VectorMemoryService = {
     } = {}
   ) => {
     try {
-      // Note: This requires an embedding generation service or function
-      // For now we'll pass the text directly to the PostgreSQL function
-      // which will handle embedding generation server-side
-      
+      // Call the search_memory_embeddings function with the text query
       const { data, error } = await supabase.rpc(
         'search_memory_embeddings',
         {
-          // Pass empty array as query_embedding to signal server to generate embedding
-          query_text: query, // Add this parameter to pass the text query
+          query_text: query,
           match_threshold: options.threshold || 0.7,
           match_count: options.limit || 10,
           filter_memory_type: options.memoryType || null
