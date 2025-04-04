@@ -21,6 +21,10 @@ export const VectorMemoryService = {
     metadata: Record<string, any> = {}
   ) => {
     try {
+      // Convert the number[] to a string representation for the RPC call
+      // This matches what Supabase expects based on the types
+      const embeddingString = embedding.length > 0 ? JSON.stringify(embedding) : null;
+
       // Use the stored procedure to handle embedding storage
       const { data, error } = await supabase.rpc(
         'store_memory_embedding',
@@ -28,8 +32,8 @@ export const VectorMemoryService = {
           p_memory_id: memoryId,
           p_memory_type: memoryType,
           p_content: content,
-          // Pass null to trigger auto-generation on server
-          p_embedding: embedding.length > 0 ? embedding : null,
+          // Pass string representation of embedding or null to trigger auto-generation
+          p_embedding: embeddingString,
           p_metadata: metadata
         }
       );
@@ -60,11 +64,24 @@ export const VectorMemoryService = {
     } = {}
   ) => {
     try {
-      // Call the search_memory_embeddings function with the text query
+      // First, generate an embedding for the query text using the generate-embedding function
+      const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embedding', {
+        body: { content: query }
+      });
+      
+      if (embeddingError) {
+        console.error("Error generating embedding:", embeddingError);
+        return [];
+      }
+      
+      // Use the generated embedding for the semantic search
+      const queryEmbedding = embeddingData.embedding;
+      
+      // Call the search_memory_embeddings function with the embedding
       const { data, error } = await supabase.rpc(
         'search_memory_embeddings',
         {
-          query_text: query,
+          query_embedding: queryEmbedding,
           match_threshold: options.threshold || 0.7,
           match_count: options.limit || 10,
           filter_memory_type: options.memoryType || null
