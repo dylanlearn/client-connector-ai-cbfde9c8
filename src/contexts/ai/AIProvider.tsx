@@ -80,9 +80,6 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       // Simulate a delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Combine responses into a single string for analysis
-      const combinedResponses = Object.values(responses).join(' ');
-
       // Perform analysis using AIAnalyzerService
       const analysisResult = await AIAnalyzerService.analyzeResponses(responses);
 
@@ -171,20 +168,26 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   /**
    * Summarize feedback from users
    */
-  const summarizeFeedback = useCallback(async (feedback: string[]) => {
+  const summarizeFeedback = useCallback(async (feedback: string | string[]) => {
     setIsProcessing(true);
     try {
       // Simulate a delay
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Convert array to string if needed
-      const feedbackText = Array.isArray(feedback) ? feedback.join('\n') : feedback.toString();
+      const feedbackText = Array.isArray(feedback) ? feedback.join('\n') : feedback;
       
-      // Use the AIFeedbackService from AIGeneratorService
+      // Use the AIGeneratorService
       const summary = await AIGeneratorService.summarizeFeedback(feedbackText);
       
-      // Return as string for compatibility
-      return Array.isArray(summary) ? summary.join('\n') : summary.toString();
+      // Handle different return types safely
+      if (Array.isArray(summary)) {
+        return summary.join('\n');
+      } else if (typeof summary === 'string') {
+        return summary;
+      } else {
+        return '';
+      }
     } catch (error) {
       console.error("Error summarizing feedback:", error);
       return '';

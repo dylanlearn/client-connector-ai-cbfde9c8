@@ -1,9 +1,12 @@
+
 import { ReactNode } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AIProvider } from "@/contexts/ai";
+import { MemoryProvider } from "@/contexts/ai/MemoryContext";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter as Router } from "react-router-dom";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -59,9 +62,13 @@ export const AppProviders = ({
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AIProvider>
-          {children}
-          <Toaster />
-          <SonnerToaster position="top-right" />
+          <MemoryProvider>
+            <Router>
+              {children}
+              <Toaster />
+              <SonnerToaster position="top-right" />
+            </Router>
+          </MemoryProvider>
         </AIProvider>
       </AuthProvider>
     </QueryClientProvider>
