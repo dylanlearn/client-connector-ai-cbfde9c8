@@ -69,12 +69,7 @@ export const WebsiteAnalysisService = {
         tags: analysis.tags,
         source_url: analysis.source,
         image_url: analysis.imageUrl,
-        relevance_score: analysis.effectivenessScore || 0.8,
-        metadata: {
-          user_experience: analysis.userExperience,
-          content_analysis: analysis.contentAnalysis,
-          target_audience: analysis.targetAudience
-        }
+        relevance_score: analysis.effectivenessScore || 0.8
       };
 
       // Store the design memory entry
