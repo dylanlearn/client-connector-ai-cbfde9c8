@@ -1,8 +1,8 @@
 
 import { Sparkles } from "lucide-react";
-import AnimationPreview from "../AnimationPreview";
+import AnimationPreview from "../animation-preview";
 import { InteractionPreview } from "../interaction";
-import { DesignOption } from "../DesignPreview";
+import { DesignOption } from "./types";
 
 interface EffectsPreviewProps {
   hasAnimation: boolean;

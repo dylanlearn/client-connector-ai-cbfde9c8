@@ -1,6 +1,6 @@
 
 import { EyeOff } from "lucide-react";
-import { DesignOption } from "../DesignPreview";
+import { DesignOption } from "./types";
 
 interface LayoutPreviewProps {
   selectedDesigns: Record<string, DesignOption>;

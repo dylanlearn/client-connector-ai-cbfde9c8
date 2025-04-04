@@ -4,22 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PreviewHeader from "./preview/PreviewHeader";
 import LayoutPreview from "./preview/LayoutPreview";
 import EffectsPreview from "./preview/EffectsPreview";
+import { DesignPreviewProps } from "./preview/types";
 
-// Update the DesignOption type to include animation and interaction categories
-export interface DesignOption {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  category: "hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction";
-  rank?: number;
-  notes?: string;
-}
-
-interface DesignPreviewProps {
-  selectedDesigns: Record<string, DesignOption>;
-  className?: string;
-}
+// Re-export the DesignOption type
+export type { DesignOption } from "./preview/types";
 
 const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) => {
   const [activeView, setActiveView] = useState<"mobile" | "desktop">("desktop");
