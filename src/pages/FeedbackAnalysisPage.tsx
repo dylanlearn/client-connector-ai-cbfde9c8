@@ -1,88 +1,226 @@
 
-import React from "react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Lightbulb, ListChecks } from "lucide-react";
-import FeedbackAnalyzer from "@/components/feedback/FeedbackAnalyzer";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { useFeedbackAnalysis } from '@/hooks/use-feedback-analysis';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { AlertTriangle, Check, Clock, Loader2 } from 'lucide-react';
 
-const FeedbackAnalysisPage = () => {
-  const navigate = useNavigate();
+export default function FeedbackAnalysisPage() {
+  const [feedbackText, setFeedbackText] = useState('');
+  const { 
+    analyzeFeedback, 
+    isAnalyzing, 
+    analysisResult, 
+    getOverallSentiment, 
+    resetAnalysis 
+  } = useFeedbackAnalysis();
 
-  const handleActionItemsGenerated = (actionItems: Array<{task: string; priority: string}>) => {
-    // In a real implementation, you might save these to a project or task list
-    toast.success(`${actionItems.length} action items generated`, {
-      description: "Items can be added to your project tasks"
-    });
+  const handleAnalyze = async () => {
+    if (!feedbackText.trim()) return;
+    await analyzeFeedback(feedbackText);
+  };
+
+  const handleReset = () => {
+    setFeedbackText('');
+    resetAnalysis();
+  };
+
+  const getSentimentColor = () => {
+    const sentiment = getOverallSentiment();
+    if (sentiment === 'positive') return 'bg-green-100 text-green-800';
+    if (sentiment === 'negative') return 'bg-red-100 text-red-800';
+    return 'bg-blue-100 text-blue-800';
   };
 
   return (
     <DashboardLayout>
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mr-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">Feedback Analysis</h1>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <FeedbackAnalyzer onAnalysisComplete={handleActionItemsGenerated} />
-        </div>
+      <div className="container max-w-5xl py-8">
+        <h1 className="text-3xl font-bold mb-6">Feedback Analysis</h1>
         
-        <div className="space-y-6">
-          <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
-            <Lightbulb className="h-8 w-8 text-blue-500 mb-2" />
-            <h3 className="text-lg font-semibold mb-2">How It Works</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Our AI-powered feedback analyzer helps you extract actionable insights from client feedback and detect tone patterns.
-            </p>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start">
-                <ListChecks className="h-4 w-4 text-blue-500 mr-2 mt-0.5" />
-                <span>Converts feedback into prioritized action items</span>
-              </li>
-              <li className="flex items-start">
-                <ListChecks className="h-4 w-4 text-blue-500 mr-2 mt-0.5" />
-                <span>Detects tone: positive, negative, urgent, critical</span>
-              </li>
-              <li className="flex items-start">
-                <ListChecks className="h-4 w-4 text-blue-500 mr-2 mt-0.5" />
-                <span>Identifies vague feedback that needs clarification</span>
-              </li>
-              <li className="flex items-start">
-                <ListChecks className="h-4 w-4 text-blue-500 mr-2 mt-0.5" />
-                <span>Creates shareable to-do lists from feedback</span>
-              </li>
-            </ul>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Analyze Client Feedback</CardTitle>
+            <CardDescription>
+              Paste client feedback to extract actionable insights, sentiment analysis, and prioritized tasks
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Textarea 
+              placeholder="Paste client feedback here..."
+              className="min-h-[150px]"
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              disabled={isAnalyzing}
+            />
+            <div className="flex gap-2">
+              <Button onClick={handleAnalyze} disabled={isAnalyzing || !feedbackText.trim()}>
+                {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isAnalyzing ? 'Analyzing...' : 'Analyze Feedback'}
+              </Button>
+              <Button variant="outline" onClick={handleReset} disabled={isAnalyzing}>
+                Reset
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {analysisResult && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Analysis Summary</span>
+                  <Badge className={getSentimentColor()}>
+                    {getOverallSentiment()?.toUpperCase()}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>{analysisResult.summary}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  {analysisResult.toneAnalysis.urgent && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Urgent
+                    </Badge>
+                  )}
+                  {analysisResult.toneAnalysis.critical && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Critical
+                    </Badge>
+                  )}
+                  {analysisResult.toneAnalysis.vague && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> Vague
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="flex flex-col items-center p-3 bg-green-50 rounded-lg">
+                    <span className="text-sm text-green-600 mb-1">Positive</span>
+                    <span className="text-2xl font-semibold text-green-600">
+                      {Math.round(analysisResult.toneAnalysis.positive * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 bg-blue-50 rounded-lg">
+                    <span className="text-sm text-blue-600 mb-1">Neutral</span>
+                    <span className="text-2xl font-semibold text-blue-600">
+                      {Math.round(analysisResult.toneAnalysis.neutral * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 bg-red-50 rounded-lg">
+                    <span className="text-sm text-red-600 mb-1">Negative</span>
+                    <span className="text-2xl font-semibold text-red-600">
+                      {Math.round(analysisResult.toneAnalysis.negative * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Tabs defaultValue="all">
+              <TabsList>
+                <TabsTrigger value="all">All Items</TabsTrigger>
+                <TabsTrigger value="high">High Priority</TabsTrigger>
+                <TabsTrigger value="medium">Medium Priority</TabsTrigger>
+                <TabsTrigger value="low">Low Priority</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="all" className="mt-4">
+                <ActionItemsList items={analysisResult.actionItems} />
+              </TabsContent>
+              
+              <TabsContent value="high" className="mt-4">
+                <ActionItemsList 
+                  items={analysisResult.actionItems.filter(item => item.priority === 'high')} 
+                  emptyMessage="No high priority items found"
+                />
+              </TabsContent>
+              
+              <TabsContent value="medium" className="mt-4">
+                <ActionItemsList 
+                  items={analysisResult.actionItems.filter(item => item.priority === 'medium')}
+                  emptyMessage="No medium priority items found"
+                />
+              </TabsContent>
+              
+              <TabsContent value="low" className="mt-4">
+                <ActionItemsList 
+                  items={analysisResult.actionItems.filter(item => item.priority === 'low')}
+                  emptyMessage="No low priority items found"
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-          
-          <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-            <FileText className="h-8 w-8 text-gray-600 mb-2" />
-            <h3 className="text-lg font-semibold mb-2">Tips for Better Analysis</h3>
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li className="pb-2 border-b border-gray-200">
-                Include complete feedback without summarizing to get better analysis
-              </li>
-              <li className="pb-2 border-b border-gray-200">
-                The longer and more detailed the feedback, the more accurate the action items
-              </li>
-              <li className="pb-2 border-b border-gray-200">
-                Copy action items directly into your project management tool
-              </li>
-              <li>
-                Look for urgency indicators to prioritize critical work
-              </li>
-            </ul>
-          </div>
-        </div>
+        )}
       </div>
     </DashboardLayout>
   );
-};
+}
 
-export default FeedbackAnalysisPage;
+interface ActionItemsListProps {
+  items: Array<{
+    task: string;
+    priority: 'high' | 'medium' | 'low';
+    urgency: number;
+  }>;
+  emptyMessage?: string;
+}
+
+function ActionItemsList({ items, emptyMessage = "No action items found" }: ActionItemsListProps) {
+  if (items.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'medium': return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'low': return <Check className="h-4 w-4 text-green-500" />;
+      default: return null;
+    }
+  };
+
+  const getPriorityClass = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-50 border-red-200';
+      case 'medium': return 'bg-amber-50 border-amber-200';
+      case 'low': return 'bg-green-50 border-green-200';
+      default: return 'bg-gray-50 border-gray-200';
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, index) => (
+        <div 
+          key={index} 
+          className={`p-4 rounded-lg border flex items-start ${getPriorityClass(item.priority)}`}
+        >
+          <div className="mr-3 mt-1">
+            {getPriorityIcon(item.priority)}
+          </div>
+          <div className="flex-1">
+            <div className="font-medium">{item.task}</div>
+            <div className="flex items-center mt-2 text-sm">
+              <Badge variant="outline" className="mr-2">
+                {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
+              </Badge>
+              <div className="text-sm text-gray-500">
+                Urgency: {item.urgency}/100
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

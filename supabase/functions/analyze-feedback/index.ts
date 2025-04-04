@@ -1,31 +1,6 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, FeedbackAnalysisRequest, FeedbackAnalysisResult, ActionItem, ToneAnalysis } from "./types.ts";
-
-// Types for feedback analysis
-interface FeedbackAnalysisRequest {
-  feedbackText: string;
-}
-
-interface FeedbackAnalysisResult {
-  actionItems: ActionItem[];
-  toneAnalysis: ToneAnalysis;
-  summary: string;
-}
-
-interface ActionItem {
-  task: string;
-  priority: 'high' | 'medium' | 'low';
-  urgency: number;
-}
-
-interface ToneAnalysis {
-  positive: number;
-  neutral: number;
-  negative: number;
-  urgent: boolean;
-  vague: boolean;
-  critical: boolean;
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
