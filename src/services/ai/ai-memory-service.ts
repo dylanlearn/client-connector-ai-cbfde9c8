@@ -3,6 +3,8 @@ import {
   UserMemoryService,
   GlobalMemoryService,
   ProjectMemoryService,
+  EnhancedMemoryService,
+  VectorMemoryService,
   MemoryCategory,
   MemoryQueryOptions
 } from './memory';
@@ -33,6 +35,23 @@ export const AIMemoryService = {
     analyzeInsights: GlobalMemoryService.analyzeInsights,
     realtime: GlobalMemoryService.realtime
   },
+  
+  // Vector search capabilities
+  vector: {
+    store: VectorMemoryService.storeEmbedding,
+    search: VectorMemoryService.semanticSearch,
+    stats: VectorMemoryService.getMemorySystemStats
+  },
+  
+  /**
+   * Enhanced store function that also creates embeddings
+   */
+  storeWithEmbedding: EnhancedMemoryService.storeMemoryWithEmbedding,
+  
+  /**
+   * Enhanced search function that combines traditional and vector search
+   */
+  enhancedSearch: EnhancedMemoryService.searchMemories,
   
   /**
    * Retrieves memories from all layers based on context
@@ -75,8 +94,22 @@ export const AIMemoryService = {
     category: MemoryCategory,
     projectId?: string,
     metadata: Record<string, any> = {},
-    anonymizeForGlobal: boolean = true
+    anonymizeForGlobal: boolean = true,
+    generateEmbedding: boolean = true
   ) => {
+    if (generateEmbedding) {
+      // Use the enhanced version that also creates embeddings
+      return await EnhancedMemoryService.storeMemoryWithEmbedding(
+        userId,
+        content,
+        category,
+        projectId,
+        metadata,
+        anonymizeForGlobal
+      );
+    }
+    
+    // Traditional storage without embeddings
     // Store in user-specific memory
     await UserMemoryService.storeMemory(userId, content, category, metadata);
     

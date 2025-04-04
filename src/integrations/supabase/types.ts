@@ -1138,6 +1138,36 @@ export type Database = {
         }
         Relationships: []
       }
+      memory_embeddings: {
+        Row: {
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          memory_id: string
+          memory_type: string
+          metadata: Json | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          memory_id: string
+          memory_type: string
+          metadata?: Json | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          memory_id?: string
+          memory_type?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       monitoring_configuration: {
         Row: {
           check_interval: number
@@ -1939,7 +1969,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      memory_system_stats: {
+        Row: {
+          avg_clusters_per_memory: number | null
+          memory_count: number | null
+          memory_type: string | null
+          newest_memory: string | null
+          oldest_memory: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       analyze_wireframe_sections: {
@@ -1954,6 +1993,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      binary_quantize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       check_wireframe_cache: {
         Args: {
           p_params_hash: string
@@ -2103,6 +2155,54 @@ export type Database = {
           wireframe_id: string
         }[]
       }
+      halfvec_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
       increment_cache_hit: {
         Args: {
           p_cache_id: string
@@ -2134,6 +2234,56 @@ export type Database = {
         }
         Returns: boolean
       }
+      ivfflat_bit_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      l2_norm:
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      l2_normalize:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: unknown
+          }
       query_interaction_events: {
         Args: {
           query_text: string
@@ -2220,12 +2370,57 @@ export type Database = {
             }
             Returns: undefined
           }
+      search_memory_embeddings: {
+        Args: {
+          query_embedding: string
+          match_threshold?: number
+          match_count?: number
+          filter_memory_type?: string
+        }
+        Returns: {
+          id: string
+          memory_id: string
+          memory_type: string
+          content: string
+          similarity: number
+          created_at: string
+          metadata: Json
+        }[]
+      }
       set_versions_inactive: {
         Args: {
           p_wireframe_id: string
           p_branch_name: string
         }
         Returns: undefined
+      }
+      sparsevec_out: {
+        Args: {
+          "": unknown
+        }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: {
+          "": unknown
+        }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
+      }
+      store_memory_embedding: {
+        Args: {
+          p_memory_id: string
+          p_memory_type: string
+          p_content: string
+          p_embedding: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
       store_wireframe_in_cache: {
         Args: {
@@ -2290,6 +2485,49 @@ export type Database = {
           p_wireframe_data: Json
         }
         Returns: undefined
+      }
+      vector_avg: {
+        Args: {
+          "": number[]
+        }
+        Returns: string
+      }
+      vector_dims:
+        | {
+            Args: {
+              "": string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              "": unknown
+            }
+            Returns: number
+          }
+      vector_norm: {
+        Args: {
+          "": string
+        }
+        Returns: number
+      }
+      vector_out: {
+        Args: {
+          "": string
+        }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: {
+          "": string
+        }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: {
+          "": unknown[]
+        }
+        Returns: number
       }
     }
     Enums: {
