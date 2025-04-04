@@ -33,8 +33,7 @@ export const useSampleData = () => {
         
       if (existingProjects && existingProjects.length > 0) {
         // User already has projects, no need to create sample data
-        toast({
-          title: "Sample data not generated",
+        toast.info("Sample data not generated", {
           description: "You already have projects in your account",
         });
         setIsGenerating(false);
