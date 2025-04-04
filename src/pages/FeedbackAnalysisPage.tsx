@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +22,6 @@ const FeedbackAnalysisPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -38,7 +36,6 @@ const FeedbackAnalysisPage = () => {
     checkAuth();
   }, []);
 
-  // Load past analyses when auth state is determined
   useEffect(() => {
     const loadPastAnalyses = async () => {
       if (isAuthenticated === false) {
@@ -68,13 +65,11 @@ const FeedbackAnalysisPage = () => {
   }, [isAuthenticated]);
 
   const handleAnalysisComplete = (result: FeedbackAnalysisResult) => {
-    // Store analysis results in session storage for potential use in other parts of the app
     try {
       sessionStorage.setItem('feedback-analysis-results', JSON.stringify(result));
       
-      // Add to our local state for display
       setSavedAnalyses(prev => [{
-        originalFeedback: result.summary, // Using summary as a preview
+        originalFeedback: result.summary,
         result,
         createdAt: new Date().toISOString()
       }, ...prev.slice(0, 4)]);

@@ -172,7 +172,7 @@ export const FeedbackAnalysisService = {
       // Build query based on whether we have a user ID
       let query = supabase
         .from('feedback_analysis')
-        .select('original_feedback, action_items, tone_analysis, summary, created_at, user_id')
+        .select('original_feedback, action_items, tone_analysis, summary, created_at')
         .order('created_at', { ascending: false })
         .limit(limit);
         
@@ -188,23 +188,50 @@ export const FeedbackAnalysisService = {
         throw error;
       }
 
-      if (!data) {
+      if (!data || data.length === 0) {
         return [];
       }
 
-      return data.map(item => ({
-        originalFeedback: item.original_feedback,
-        result: {
-          summary: item.summary,
-          actionItems: typeof item.action_items === 'string' 
+      // Transform the database records into the expected return format
+      return data.map(item => {
+        // Parse action_items and tone_analysis if they're stored as strings
+        let actionItems: ActionItem[];
+        try {
+          actionItems = typeof item.action_items === 'string' 
             ? JSON.parse(item.action_items) 
-            : item.action_items,
-          toneAnalysis: typeof item.tone_analysis === 'string' 
+            : item.action_items;
+        } catch (e) {
+          console.error('Error parsing action_items:', e);
+          actionItems = [];
+        }
+
+        let toneAnalysis: ToneAnalysis;
+        try {
+          toneAnalysis = typeof item.tone_analysis === 'string' 
             ? JSON.parse(item.tone_analysis) 
-            : item.tone_analysis
-        },
-        createdAt: item.created_at
-      }));
+            : item.tone_analysis;
+        } catch (e) {
+          console.error('Error parsing tone_analysis:', e);
+          toneAnalysis = {
+            positive: 0,
+            neutral: 1,
+            negative: 0,
+            urgent: false,
+            critical: false,
+            vague: false
+          };
+        }
+
+        return {
+          originalFeedback: item.original_feedback,
+          result: {
+            summary: item.summary,
+            actionItems,
+            toneAnalysis
+          },
+          createdAt: item.created_at
+        };
+      });
     } catch (error) {
       console.error('Error fetching past analyses:', error);
       return [];
