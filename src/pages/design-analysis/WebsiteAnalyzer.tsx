@@ -27,7 +27,7 @@ const WebsiteAnalyzer = () => {
     sectionType: string,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']>,
-    contentAnalysis: Partial<WebsiteAnalysisResult['contentAnalysis']>,
+    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']>,
     websiteSource: string,
     imageUrl: string
   ) => {
@@ -35,7 +35,7 @@ const WebsiteAnalyzer = () => {
       sectionType,
       description,
       visualElements,
-      contentAnalysis,
+      contentStructure,
       websiteSource,
       imageUrl
     );
@@ -52,7 +52,7 @@ const WebsiteAnalyzer = () => {
       type: string;
       description: string;
       visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentAnalysis?: Partial<WebsiteAnalysisResult['contentAnalysis']>;
+      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
       imageUrl?: string;
     }[]
   ) => {

@@ -17,7 +17,7 @@ interface SingleSectionFormProps {
     sectionType: string,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']>,
-    contentAnalysis: Partial<WebsiteAnalysisResult['contentAnalysis']>,
+    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']>,
     websiteSource: string,
     imageUrl: string
   ) => Promise<void>;

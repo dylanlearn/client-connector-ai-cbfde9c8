@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ interface FullWebsiteFormProps {
       type: string;
       description: string;
       visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentAnalysis?: Partial<WebsiteAnalysisResult['contentAnalysis']>;
+      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
       imageUrl?: string;
     }[]
   ) => Promise<void>;
@@ -33,7 +32,7 @@ const FullWebsiteForm = ({ isAnalyzing, onSubmit }: FullWebsiteFormProps) => {
       type: string;
       description: string;
       visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentAnalysis?: Partial<WebsiteAnalysisResult['contentAnalysis']>;
+      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
       imageUrl?: string;
     }[]
   >([

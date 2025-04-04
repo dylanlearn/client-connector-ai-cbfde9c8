@@ -144,8 +144,8 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
     submitFeedback(
       suggestionId,
       type,
-      undefined,
-      type === 'like' ? 5 : 1
+      type === 'like' ? 5 : 1,  // This should be a number, not a string
+      undefined
     ).then(success => {
       if (success) {
         toast.success(type === 'like' ? "Thanks for the positive feedback!" : "Thanks for your feedback!");

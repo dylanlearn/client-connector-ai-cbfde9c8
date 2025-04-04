@@ -1,7 +1,7 @@
 
 import { DesignMemoryService, DesignMemoryEntry } from '@/services/ai/design/design-memory-service';
 import { toast } from 'sonner';
-import { WebsiteAnalysisResult, SectionType } from './types';
+import { WebsiteAnalysisResult, SectionType } from '../website-analysis';
 import { DefaultsService } from './defaults-service';
 
 /**
@@ -19,7 +19,7 @@ export const WebsiteAnalysisService = {
       const designMemoryEntry: DesignMemoryEntry = {
         title: analysis.title,
         category: analysis.category,
-        subcategory: analysis.subcategory,
+        subcategory: analysis.subcategory || '',
         description: analysis.description,
         visual_elements: {
           layout: analysis.visualElements.layout,
@@ -29,17 +29,27 @@ export const WebsiteAnalysisService = {
           imagery: analysis.visualElements.imagery
         },
         color_scheme: {
-          value: analysis.visualElements.colorScheme
+          primary: analysis.visualElements.colorScheme,
+          secondary: '',
+          accent: '',
+          background: '',
+          text: ''
         },
         typography: {
-          value: analysis.visualElements.typography
+          headings: analysis.visualElements.typography,
+          body: '',
+          accent: '',
+          size_scale: ''
         },
         layout_pattern: {
-          value: analysis.visualElements.layout
+          type: analysis.visualElements.layout,
+          grid: '',
+          responsive: true,
+          components: []
         },
         tags: analysis.tags,
-        source_url: analysis.source,
-        image_url: analysis.imageUrl,
+        source_url: analysis.sourceUrl || analysis.source || '',
+        image_url: analysis.imageUrl || analysis.screenshotUrl || '',
         relevance_score: analysis.effectivenessScore || 0.8
       };
 

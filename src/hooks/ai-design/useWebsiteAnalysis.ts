@@ -3,8 +3,8 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
   WebsiteAnalysisService, 
-  WebsiteAnalysisResult, 
-  SectionType 
+  WebsiteAnalysisResult,
+  SectionType
 } from '@/services/ai/design/website-analysis';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
@@ -44,7 +44,7 @@ export function useWebsiteAnalysis() {
     section: SectionType,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']> = {},
-    contentAnalysis: Partial<WebsiteAnalysisResult['contentAnalysis']> = {},
+    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']> = {},
     source: string,
     imageUrl?: string
   ) => {
@@ -66,10 +66,15 @@ export function useWebsiteAnalysis() {
         section,
         description,
         visualElements,
-        contentAnalysis,
+        contentStructure,
         source,
         imageUrl
       );
+
+      // Map contentStructure to contentAnalysis for compatibility
+      result.contentAnalysis = result.contentStructure;
+      result.source = source;
+      result.imageUrl = imageUrl;
 
       // Store the analysis
       const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);
@@ -108,7 +113,7 @@ export function useWebsiteAnalysis() {
       type: SectionType;
       description: string;
       visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentAnalysis?: Partial<WebsiteAnalysisResult['contentAnalysis']>;
+      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
       imageUrl?: string;
     }[]
   ) => {
@@ -133,10 +138,15 @@ export function useWebsiteAnalysis() {
           section.type,
           section.description,
           section.visualElements || {},
-          section.contentAnalysis || {},
+          section.contentStructure || {},
           websiteUrl,
           section.imageUrl
         );
+        
+        // Map contentStructure to contentAnalysis for compatibility
+        result.contentAnalysis = result.contentStructure;
+        result.source = websiteUrl;
+        result.imageUrl = section.imageUrl;
         
         // Store the analysis
         const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);

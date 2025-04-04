@@ -38,6 +38,7 @@ const AnalysisResult = ({
   const handleCopyDetails = () => {
     if (!currentResult) return;
     
+    // Access properties safely to handle both old and new interfaces
     const details = `
       Title: ${currentResult.title}
       Category: ${currentResult.category}
@@ -45,13 +46,35 @@ const AnalysisResult = ({
       Layout: ${currentResult.visualElements.layout}
       Color Scheme: ${currentResult.visualElements.colorScheme}
       Typography: ${currentResult.visualElements.typography}
-      Value Proposition: ${currentResult.contentAnalysis.valueProposition}
-      Call to Action: ${currentResult.contentAnalysis.callToAction}
-      Source: ${currentResult.source}
+      Value Proposition: ${currentResult.contentStructure?.valueProposition || currentResult.contentAnalysis?.valueProposition || ""}
+      Call to Action: ${currentResult.contentStructure?.callToAction || currentResult.contentAnalysis?.callToAction || ""}
+      Source: ${currentResult.sourceUrl || currentResult.source || ""}
     `;
     
     navigator.clipboard.writeText(details.trim());
     toast.success("Analysis details copied to clipboard");
+  };
+
+  // Helper function to safely access nested properties
+  const getContentValue = (field: string): string => {
+    if (!currentResult) return '';
+    return (currentResult.contentStructure && field in currentResult.contentStructure)
+      ? (currentResult.contentStructure as any)[field]
+      : (currentResult.contentAnalysis && currentResult.contentAnalysis[field as keyof typeof currentResult.contentAnalysis])
+        ? (currentResult.contentAnalysis as any)[field]
+        : '';
+  };
+
+  // Helper function to get source URL safely
+  const getSourceUrl = (): string => {
+    if (!currentResult) return '';
+    return currentResult.sourceUrl || currentResult.source || '';
+  };
+
+  // Helper function to get target audience safely
+  const getTargetAudience = (): string[] => {
+    if (!currentResult) return [];
+    return currentResult.targetAudience || [];
   };
 
   return (
@@ -80,7 +103,7 @@ const AnalysisResult = ({
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 text-xs">
                 <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>{currentResult.source}</span>
+                <span>{getSourceUrl()}</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
                 <span className="flex items-center">
@@ -100,28 +123,28 @@ const AnalysisResult = ({
                     <span>{currentResult.visualElements.layout}</span>
                   </div>
                 )}
-                {currentResult.contentAnalysis.valueProposition && (
+                {getContentValue('valueProposition') && (
                   <div className="flex items-start gap-2">
                     <MessageSquare className="h-3.5 w-3.5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span>{currentResult.contentAnalysis.valueProposition}</span>
+                    <span>{getContentValue('valueProposition')}</span>
                   </div>
                 )}
-                {currentResult.contentAnalysis.callToAction && (
+                {getContentValue('callToAction') && (
                   <div className="flex items-start gap-2">
                     <Award className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-                    <span>{currentResult.contentAnalysis.callToAction}</span>
+                    <span>{getContentValue('callToAction')}</span>
                   </div>
                 )}
               </div>
             </div>
             
-            {currentResult.targetAudience.length > 0 && (
+            {getTargetAudience().length > 0 && (
               <>
                 <Separator />
                 <div>
                   <h4 className="text-sm font-medium">Target Audience</h4>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {currentResult.targetAudience.map((audience, i) => (
+                    {getTargetAudience().map((audience, i) => (
                       <Badge key={i} variant="outline" className="text-xs">
                         <Users className="mr-1 h-3 w-3" />
                         {audience}
