@@ -38,8 +38,8 @@ export interface FeedbackAnalysisRecord {
   id?: string;
   user_id?: string;
   original_feedback: string;
-  action_items: ActionItem[];
-  tone_analysis: ToneAnalysis;
+  action_items: ActionItem[] | string;
+  tone_analysis: ToneAnalysis | string;
   summary: string;
   created_at?: string;
   updated_at?: string;
@@ -95,7 +95,7 @@ export const FeedbackAnalysisService = {
 
         // Store the feedback analysis in the database for future reference
         try {
-          // Convert ActionItem[] and ToneAnalysis to JSON for database storage
+          // Create a record for database storage
           const record = {
             user_id: userId,
             original_feedback: feedbackText,
@@ -188,7 +188,11 @@ export const FeedbackAnalysisService = {
         throw error;
       }
 
-      return (data || []).map(item => ({
+      if (!data) {
+        return [];
+      }
+
+      return data.map(item => ({
         originalFeedback: item.original_feedback,
         result: {
           summary: item.summary,
