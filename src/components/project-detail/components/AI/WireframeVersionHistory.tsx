@@ -82,8 +82,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
       await wireframeVersionControl.createBranch(
         selectedVersion,
         newBranchName,
-        userId,
-        branchDescription
+        userId
       );
       
       setNewBranchName('');

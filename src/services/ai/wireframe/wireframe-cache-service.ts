@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeData, WireframeGenerationParams } from "./wireframe-types";
 
@@ -42,37 +41,40 @@ export const WireframeCacheService = {
   /**
    * Check if a wireframe with similar parameters exists in cache
    */
-  checkCache: async (params: WireframeGenerationParams): Promise<WireframeData | null> => {
+  checkCache: async (paramsHash: string): Promise<{
+    hit: boolean;
+    cacheId?: string;
+    wireframeData?: any;
+  }> => {
     try {
-      const paramsHash = WireframeCacheService.generateParamsHash(params);
-      
-      // Use edge function for cache lookup
-      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
-        body: {
-          operation: "check_cache",
-          params_hash: paramsHash
-        }
+      const { data, error } = await supabase.rpc('check_wireframe_cache', {
+        p_params_hash: paramsHash
       });
       
-      if (error || !data || !data.wireframe) {
-        return null;
+      if (error) {
+        console.error('Cache check error:', error);
+        return { hit: false };
       }
       
-      // Update hit count
-      if (data.wireframe.id) {
-        await supabase.functions.invoke("process-wireframe-tasks", {
-          body: {
-            operation: "increment_cache_hit",
-            cache_id: data.wireframe.id
-          }
+      if (!data) {
+        return { hit: false };
+      }
+      
+      // Increment the hit counter for the found cache
+      if (data.id) {
+        await supabase.rpc('increment_cache_hit', {
+          p_cache_id: data.id
         });
       }
       
-      console.log(`Cache hit for wireframe params hash: ${paramsHash}`);
-      return data.wireframe.wireframe_data as WireframeData;
+      return {
+        hit: !!data,
+        cacheId: data?.id,
+        wireframeData: data?.wireframe_data
+      };
     } catch (error) {
-      console.error("Error checking wireframe cache:", error);
-      return null;
+      console.error('Error checking wireframe cache:', error);
+      return { hit: false };
     }
   },
   

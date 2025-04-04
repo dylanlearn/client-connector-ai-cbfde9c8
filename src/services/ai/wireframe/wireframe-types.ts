@@ -1,83 +1,72 @@
-
-// Update wireframe types to match usage in components and services
+/**
+ * Type definitions for the Wireframe service
+ */
+export interface WireframeData {
+  id?: string;
+  title?: string;
+  description?: string;
+  sections: WireframeSection[];
+  style?: WireframeStyle;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface WireframeSection {
   id?: string;
+  name: string;
   sectionType: string;
-  layout: string;
-  components: any[];
-  // Adding missing fields that are used in the components
-  name?: string;
-  description?: string;
-  layoutType?: string;
+  layoutType: string;
+  layout: any; // Layout specifics will depend on the section type
+  components: WireframeComponent[];
+  copySuggestions: CopySuggestions;
+  designReasoning?: string;
   mobileLayout?: any;
-  styleVariants?: any;
   animationSuggestions?: any;
-  copySuggestions?: any;
-  designReasoning?: string;
-  // Add other section properties as needed
-}
-
-export interface WireframeData {
-  title: string;
-  description?: string;
-  sections: WireframeSection[];
-  // Adding missing fields that are used in the components
-  designTokens?: any;
-  mobileLayouts?: any;
+  dynamicElements?: any;
   styleVariants?: any;
-  designReasoning?: string;
-  animations?: any;
-  imageUrl?: string;
-  mobileConsiderations?: string;
-  accessibilityNotes?: string;
-  qualityFlags?: any;
-  // Add other wireframe data properties as needed
+  positionOrder?: number;
 }
 
-export interface WireframeGenerationParams {
-  prompt: string;
-  userId?: string;
-  projectId?: string;
-  sectionTypes?: string[];
-  stylePreferences?: Record<string, string>;
-  baseWireframe?: any;
-  templateId?: string;
-  // Adding missing fields used in components and services
-  style?: string;
-  complexity?: string;
-  industry?: string;
-  pages?: number;
-  moodboardSelections?: any;
-  additionalInstructions?: string;
-  typography?: string;
-  // Add other parameters as needed
+export interface WireframeComponent {
+  type: string;
+  content: string;
+  // Additional component properties as needed
 }
 
-export interface WireframeGenerationResult {
-  wireframe?: WireframeData;
-  model?: string;
-  success: boolean;
-  errorMessage?: string;
-  generationTime?: number;
-  usage?: any;
-  // Add other result properties as needed
+export interface CopySuggestions {
+  heading?: string;
+  subheading?: string;
+  cta?: string;
+  // Other copy elements as needed
 }
 
-export interface AIWireframe {
-  id: string;
-  project_id?: string;
-  description?: string;
-  prompt: string;
-  generation_params?: any;
-  data?: WireframeData;
-  status?: string;
-  created_at: string;
-  updated_at?: string;
-  feedback?: string;
-  rating?: number;
-  sections?: WireframeSection[];
-  // Add other wireframe properties as needed
+export interface WireframeStyle {
+  colorScheme?: ColorScheme;
+  typography?: Typography;
+  spacing?: SpacingSystem;
+  // Other style properties as needed
+}
+
+export interface ColorScheme {
+  primary: string;
+  secondary: string;
+  accent?: string;
+  background: string;
+  text: string;
+  // Other color properties as needed
+}
+
+export interface Typography {
+  headingFont: string;
+  bodyFont: string;
+  scale?: any;
+  // Other typography properties as needed
+}
+
+export interface SpacingSystem {
+  unit?: number;
+  scale?: number[];
+  // Other spacing properties as needed
 }
 
 export interface WireframeVersion {
@@ -90,7 +79,7 @@ export interface WireframeVersion {
   created_by?: string;
   is_current: boolean;
   parent_version_id?: string;
-  branch_name?: string;
+  branch_name: string;
 }
 
 export interface WireframeRevisionHistory {
@@ -107,10 +96,10 @@ export interface BranchInfo {
 }
 
 export interface VersionComparisonResult {
-  changes: {
+  changes: Array<{
     type: 'added' | 'removed' | 'modified';
     path: string;
     values: [any, any];
-  }[];
+  }>;
   summary: string;
 }
