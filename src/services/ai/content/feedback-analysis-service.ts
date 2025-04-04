@@ -32,11 +32,20 @@ export interface FeedbackAnalysisResult {
 }
 
 /**
+ * Status of the feedback implementation
+ */
+export type FeedbackStatus = 'open' | 'in_progress' | 'implemented' | 'declined';
+
+/**
  * Database record for feedback analysis
  */
 export interface FeedbackAnalysisRecord {
   id?: string;
   user_id?: string;
+  project_id?: string;
+  category?: string;
+  priority?: 'high' | 'medium' | 'low';
+  status?: FeedbackStatus;
   original_feedback: string;
   action_items: ActionItem[] | string;
   tone_analysis: ToneAnalysis | string;
@@ -58,9 +67,17 @@ export const FeedbackAnalysisService = {
    * Analyzes feedback text and returns structured analysis results
    * 
    * @param feedbackText - The feedback text to analyze
+   * @param options - Optional parameters (project_id, category)
    * @returns Structured analysis of the feedback
    */
-  analyzeFeedback: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
+  analyzeFeedback: async (
+    feedbackText: string, 
+    options?: { 
+      projectId?: string; 
+      category?: string; 
+      priority?: 'high' | 'medium' | 'low';
+    }
+  ): Promise<FeedbackAnalysisResult> => {
     // Validate input
     if (!feedbackText?.trim()) {
       throw new Error('Feedback text cannot be empty');
@@ -95,9 +112,19 @@ export const FeedbackAnalysisService = {
 
         // Store the feedback analysis in the database for future reference
         try {
+          // Determine priority if not provided 
+          const calculatedPriority = options?.priority || 
+            (data.toneAnalysis.urgent ? 'high' : 
+              (data.toneAnalysis.negative > 0.7 ? 'high' : 
+                (data.toneAnalysis.negative > 0.4 ? 'medium' : 'low')));
+
           // Create a record for database storage
-          const record = {
+          const record: FeedbackAnalysisRecord = {
             user_id: userId,
+            project_id: options?.projectId,
+            category: options?.category,
+            priority: calculatedPriority,
+            status: 'open',
             original_feedback: feedbackText,
             action_items: JSON.stringify(data.actionItems),
             tone_analysis: JSON.stringify(data.toneAnalysis),
@@ -157,12 +184,25 @@ export const FeedbackAnalysisService = {
    * Retrieves past feedback analyses
    * 
    * @param limit - Maximum number of analyses to return
+   * @param filters - Optional filters for the query (project_id, category, status)
    * @returns List of past feedback analyses
    */
-  getPastAnalyses: async (limit: number = 10): Promise<{
+  getPastAnalyses: async (
+    limit: number = 10,
+    filters?: {
+      projectId?: string;
+      category?: string;
+      status?: FeedbackStatus;
+    }
+  ): Promise<{
+    id: string;
     originalFeedback: string;
     result: FeedbackAnalysisResult;
     createdAt: string;
+    priority?: string;
+    status?: FeedbackStatus;
+    category?: string;
+    projectId?: string;
   }[]> => {
     try {
       // Get the current user ID if available
@@ -179,6 +219,19 @@ export const FeedbackAnalysisService = {
       // If we have a user ID, filter by it
       if (userId) {
         query = query.eq('user_id', userId);
+      }
+      
+      // Apply additional filters if provided
+      if (filters?.projectId) {
+        query = query.eq('project_id', filters.projectId);
+      }
+      
+      if (filters?.category) {
+        query = query.eq('category', filters.category);
+      }
+      
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
       }
       
       const { data, error } = await query;
@@ -223,17 +276,156 @@ export const FeedbackAnalysisService = {
         }
 
         return {
+          id: item.id,
           originalFeedback: item.original_feedback,
           result: {
             summary: item.summary,
             actionItems,
             toneAnalysis
           },
-          createdAt: item.created_at
+          createdAt: item.created_at,
+          priority: item.priority,
+          status: item.status,
+          category: item.category,
+          projectId: item.project_id
         };
       });
     } catch (error) {
       console.error('Error fetching past analyses:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Updates the status of a feedback analysis
+   * 
+   * @param id - The ID of the feedback analysis to update
+   * @param status - New status value
+   * @returns True if update was successful
+   */
+  updateFeedbackStatus: async (id: string, status: FeedbackStatus): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('feedback_analysis')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error updating feedback status:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating feedback status:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Updates the priority of a feedback analysis
+   * 
+   * @param id - The ID of the feedback analysis to update
+   * @param priority - New priority value
+   * @returns True if update was successful
+   */
+  updateFeedbackPriority: async (id: string, priority: 'high' | 'medium' | 'low'): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('feedback_analysis')
+        .update({ priority, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error updating feedback priority:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating feedback priority:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Adds a comment to a feedback analysis
+   * 
+   * @param feedbackId - The ID of the feedback analysis 
+   * @param comment - The comment text
+   * @returns The ID of the created comment if successful
+   */
+  addComment: async (feedbackId: string, comment: string): Promise<string | null> => {
+    try {
+      // Get the current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User must be authenticated to add comments');
+      }
+      
+      const { data, error } = await supabase
+        .from('feedback_comments')
+        .insert({
+          feedback_id: feedbackId,
+          user_id: user.id,
+          comment
+        })
+        .select('id')
+        .single();
+      
+      if (error) {
+        console.error('Error adding comment:', error);
+        return null;
+      }
+      
+      return data.id;
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Gets comments for a feedback analysis
+   * 
+   * @param feedbackId - The ID of the feedback analysis
+   * @returns List of comments with user information
+   */
+  getComments: async (feedbackId: string): Promise<{
+    id: string;
+    comment: string;
+    createdAt: string;
+    userId: string;
+    userEmail?: string;
+  }[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('feedback_comments')
+        .select(`
+          id,
+          comment,
+          created_at,
+          user_id,
+          profiles:user_id (email)
+        `)
+        .eq('feedback_id', feedbackId)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching comments:', error);
+        return [];
+      }
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        comment: item.comment,
+        createdAt: item.created_at,
+        userId: item.user_id,
+        userEmail: item.profiles?.email
+      }));
+    } catch (error) {
+      console.error('Error fetching comments:', error);
       return [];
     }
   }

@@ -1,26 +1,42 @@
+
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer";
 import { toast } from "sonner";
-import { FeedbackAnalysisResult, FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
+import { FeedbackAnalysisResult, FeedbackAnalysisService, FeedbackStatus } from '@/services/ai/content/feedback-analysis-service';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle, FileText, BarChart, Check, ArrowLeft, Clock, ShieldAlert, AlertCircle } from "lucide-react";
+import { PlusCircle, FileText, BarChart, Check, ArrowLeft, Clock, ShieldAlert, AlertCircle, Filter } from "lucide-react";
 import { format } from 'date-fns';
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const FeedbackAnalysisPage = () => {
   const navigate = useNavigate();
   const [savedAnalyses, setSavedAnalyses] = useState<Array<{
+    id: string;
     originalFeedback: string;
     result: FeedbackAnalysisResult;
     createdAt: string;
+    priority?: string;
+    status?: FeedbackStatus;
+    category?: string;
   }>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState<FeedbackStatus | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string | 'all'>('all');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -50,8 +66,21 @@ const FeedbackAnalysisPage = () => {
       setLoadError(null);
       
       try {
-        const analyses = await FeedbackAnalysisService.getPastAnalyses(5);
-        setSavedAnalyses(analyses);
+        const filters: { status?: FeedbackStatus } = {};
+        
+        if (statusFilter !== 'all') {
+          filters.status = statusFilter;
+        }
+        
+        // Priority filtering is done client-side as it's more flexible that way
+        const analyses = await FeedbackAnalysisService.getPastAnalyses(10, filters);
+        
+        // Client-side filtering for priority if needed
+        const filteredAnalyses = priorityFilter !== 'all' 
+          ? analyses.filter(analysis => analysis.priority === priorityFilter)
+          : analyses;
+          
+        setSavedAnalyses(filteredAnalyses);
       } catch (error: any) {
         console.error("Error loading past analyses:", error);
         setLoadError(error?.message || "Failed to load past analyses");
@@ -62,16 +91,19 @@ const FeedbackAnalysisPage = () => {
     };
     
     loadPastAnalyses();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, statusFilter, priorityFilter]);
 
   const handleAnalysisComplete = (result: FeedbackAnalysisResult) => {
     try {
       sessionStorage.setItem('feedback-analysis-results', JSON.stringify(result));
       
       setSavedAnalyses(prev => [{
+        id: 'new-' + Date.now(),
         originalFeedback: result.summary,
         result,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        status: 'open',
+        priority: result.toneAnalysis.urgent ? 'high' : 'medium'
       }, ...prev.slice(0, 4)]);
       
       toast.success("Analysis complete!", {
@@ -80,6 +112,56 @@ const FeedbackAnalysisPage = () => {
     } catch (error) {
       console.error("Error saving analysis results:", error);
       toast.error("Failed to save analysis results");
+    }
+  };
+
+  const handleStatusChange = async (analysisId: string, newStatus: FeedbackStatus) => {
+    try {
+      const success = await FeedbackAnalysisService.updateFeedbackStatus(analysisId, newStatus);
+      
+      if (success) {
+        // Update the local state to reflect the change
+        setSavedAnalyses(prev => prev.map(analysis => {
+          if (analysis.id === analysisId) {
+            return { ...analysis, status: newStatus };
+          }
+          return analysis;
+        }));
+        
+        toast.success("Status updated", {
+          description: `Feedback status updated to ${newStatus}`
+        });
+      } else {
+        toast.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Error updating status");
+    }
+  };
+
+  const handlePriorityChange = async (analysisId: string, newPriority: 'high' | 'medium' | 'low') => {
+    try {
+      const success = await FeedbackAnalysisService.updateFeedbackPriority(analysisId, newPriority);
+      
+      if (success) {
+        // Update the local state to reflect the change
+        setSavedAnalyses(prev => prev.map(analysis => {
+          if (analysis.id === analysisId) {
+            return { ...analysis, priority: newPriority };
+          }
+          return analysis;
+        }));
+        
+        toast.success("Priority updated", {
+          description: `Feedback priority updated to ${newPriority}`
+        });
+      } else {
+        toast.error("Failed to update priority");
+      }
+    } catch (error) {
+      console.error("Error updating priority:", error);
+      toast.error("Error updating priority");
     }
   };
 
@@ -93,6 +175,21 @@ const FeedbackAnalysisPage = () => {
         return <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Low</span>;
       default:
         return null;
+    }
+  };
+
+  const renderStatusBadge = (status?: FeedbackStatus) => {
+    switch (status) {
+      case 'open':
+        return <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Open</span>;
+      case 'in_progress':
+        return <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">In Progress</span>;
+      case 'implemented':
+        return <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Implemented</span>;
+      case 'declined':
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Declined</span>;
+      default:
+        return <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Open</span>;
     }
   };
 
@@ -168,11 +265,52 @@ const FeedbackAnalysisPage = () => {
             </Card>
             
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Analyses</CardTitle>
-                <CardDescription>
-                  Your latest feedback analysis results
-                </CardDescription>
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Recent Analyses</CardTitle>
+                    <CardDescription>
+                      Your latest feedback analysis results
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                </div>
+                
+                <div className="flex gap-2 mt-4">
+                  <Select 
+                    value={statusFilter} 
+                    onValueChange={(value) => setStatusFilter(value as FeedbackStatus | 'all')}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="implemented">Implemented</SelectItem>
+                      <SelectItem value="declined">Declined</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select 
+                    value={priorityFilter} 
+                    onValueChange={setPriorityFilter}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priorities</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
@@ -197,13 +335,46 @@ const FeedbackAnalysisPage = () => {
                           </span>
                         </div>
                         <div className="flex gap-2 mb-2">
-                          {analysis.result.actionItems.slice(0, 3).map((item, idx) => (
-                            <div key={idx}>{renderActionItemBadge(item.priority)}</div>
-                          ))}
-                          {analysis.result.actionItems.length > 3 && (
-                            <span className="text-xs text-gray-500">
-                              +{analysis.result.actionItems.length - 3} more
+                          {renderStatusBadge(analysis.status)}
+                          {renderActionItemBadge(analysis.priority || 'medium')}
+                          {analysis.category && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                              {analysis.category}
                             </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          {analysis.id && !analysis.id.startsWith('new-') && (
+                            <>
+                              <Select 
+                                value={analysis.status || 'open'} 
+                                onValueChange={(value) => handleStatusChange(analysis.id, value as FeedbackStatus)}
+                              >
+                                <SelectTrigger className="h-7 text-xs px-2">
+                                  <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="open">Open</SelectItem>
+                                  <SelectItem value="in_progress">In Progress</SelectItem>
+                                  <SelectItem value="implemented">Implemented</SelectItem>
+                                  <SelectItem value="declined">Declined</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              <Select 
+                                value={analysis.priority || 'medium'} 
+                                onValueChange={(value) => handlePriorityChange(analysis.id, value as 'high' | 'medium' | 'low')}
+                              >
+                                <SelectTrigger className="h-7 text-xs px-2">
+                                  <SelectValue placeholder="Priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="high">High</SelectItem>
+                                  <SelectItem value="medium">Medium</SelectItem>
+                                  <SelectItem value="low">Low</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </>
                           )}
                         </div>
                       </li>

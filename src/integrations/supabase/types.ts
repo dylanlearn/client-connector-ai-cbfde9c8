@@ -874,32 +874,90 @@ export type Database = {
       feedback_analysis: {
         Row: {
           action_items: Json
+          category: string | null
           created_at: string
           id: string
           original_feedback: string
+          priority: string | null
+          project_id: string | null
+          status: string
           summary: string
           tone_analysis: Json
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           action_items: Json
+          category?: string | null
           created_at?: string
           id?: string
           original_feedback: string
+          priority?: string | null
+          project_id?: string | null
+          status?: string
           summary: string
           tone_analysis: Json
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           action_items?: Json
+          category?: string | null
           created_at?: string
           id?: string
           original_feedback?: string
+          priority?: string | null
+          project_id?: string | null
+          status?: string
           summary?: string
           tone_analysis?: Json
           updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "feedback_analysis_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_comments: {
+        Row: {
+          comment: string
+          created_at: string | null
+          feedback_id: string | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          feedback_id?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          feedback_id?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_comments_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "feedback_analysis"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       global_memories: {
         Row: {
