@@ -1,9 +1,18 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
   WireframeVersion, 
   WireframeRevisionHistory 
 } from "../wireframe-types";
+
+// Define the BranchInfo type
+export interface BranchInfo {
+  name: string;
+  created_at: string;
+  version_count: number;
+  latest_version_id: string;
+}
 
 /**
  * Service for wireframe version control operations
@@ -172,7 +181,8 @@ export const wireframeVersionControl = {
   createBranch: async (
     versionId: string,
     newBranchName: string,
-    userId: string | undefined
+    userId: string | undefined,
+    description?: string
   ): Promise<boolean> => {
     try {
       // Get the version to branch from
@@ -200,7 +210,7 @@ export const wireframeVersionControl = {
           p_wireframe_id: wireframeId,
           p_version_number: 1, // Start with version 1 in the new branch
           p_data: wireframeData,
-          p_change_description: `Branch created from ${version.branch_name || 'main'} version ${version.version_number}`,
+          p_change_description: description || `Branch created from ${version.branch_name || 'main'} version ${version.version_number}`,
           p_created_by: userId,
           p_is_current: true,
           p_parent_version_id: versionId,
@@ -298,7 +308,7 @@ export const wireframeVersionControl = {
         throw error;
       }
       
-      return (branchData || []);
+      return (branchData || []) as BranchInfo[];
     } catch (error) {
       console.error("Error in getBranches:", error);
       return [];
@@ -331,7 +341,7 @@ export const wireframeVersionControl = {
         : branchVersion.data;
       
       // Create a new version on the main branch
-      return this.createVersion(
+      return wireframeVersionControl.createVersion(
         branchVersion.wireframe_id,
         wireframeData,
         description,

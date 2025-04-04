@@ -290,7 +290,7 @@ export const WireframeService = {
   /**
    * Revert to a specific wireframe version
    */
-  revertToVersion: (versionId: string, userId: string, description?: string) => {
-    return wireframeVersionControl.revertToVersion(versionId, userId, description);
+  revertToVersion: (versionId: string, userId: string) => {
+    return wireframeVersionControl.revertToVersion(versionId, userId);
   }
 };

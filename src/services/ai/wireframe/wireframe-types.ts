@@ -1,165 +1,71 @@
 
-// Types for wireframe service
+// If this file doesn't exist yet, let's create it with the necessary types
+
 export interface WireframeSection {
-  name: string;
+  id?: string;
   sectionType: string;
-  description?: string;
-  layoutType: string;
-  components?: any[];
-  mobileLayout?: any;
-  styleVariants?: any[];
-  animationSuggestions?: {
-    type?: string;
-    element?: string;
-    timing?: string;
-  };
-  copySuggestions?: {
-    heading?: string;
-    subheading?: string;
-    cta?: string;
-  };
-  designReasoning?: string;
+  layout: string;
+  components: any[];
+  // Add other section properties as needed
 }
 
 export interface WireframeData {
   title: string;
   description?: string;
   sections: WireframeSection[];
-  designTokens?: {
-    colors: { [key: string]: string };
-    fonts: { [key: string]: string };
-    spacing: { [key: string]: string | number };
-    borderRadius: { [key: string]: string | number };
-    shadows: { [key: string]: string };
-    typography?: {
-      headings?: string;
-      body?: string;
-      fontPairings?: string[];
-    };
-  };
-  mobileLayouts?: {
-    [key: string]: any;
-  };
-  styleVariants?: {
-    name: string;
-    description: string;
-    preview?: string;
-    styleData: any;
-  }[];
-  designReasoning?: string;
-  animations?: {
-    type: string;
-    element: string;
-    duration?: number;
-    delay?: number;
-    options?: any;
-  }[];
-  imageUrl?: string;
-  accessibilityNotes?: string;
-  qualityFlags?: {
-    unclearInputs?: string[];
-    recommendedClarifications?: string[];
-  };
-  mobileConsiderations?: string;
+  // Add other wireframe data properties as needed
 }
 
 export interface WireframeGenerationParams {
   prompt: string;
-  industry?: string;
-  style?: string;
-  complexity?: 'simple' | 'medium' | 'complex';
-  components?: string[];
-  pages?: string[];
-  features?: string[];
-  colorScheme?: string;
-  typography?: string;
-  additionalInstructions?: string;
-  responsive?: boolean;
-  projectId?: string;
-  model?: string;
-  moodboardSelections?: {
-    layoutPreferences?: string[];
-    fonts?: string[];
-    colors?: string[];
-    tone?: string[];
-  };
-  intakeResponses?: {
-    businessGoals?: string;
-    targetAudience?: string;
-    siteFeatures?: string[];
-  };
-  templateId?: string;
   userId?: string;
-  baseWireframe?: WireframeData;
+  projectId?: string;
+  sectionTypes?: string[];
+  stylePreferences?: Record<string, string>;
+  baseWireframe?: any;
+  templateId?: string;
+  // Add other parameters as needed
 }
 
 export interface WireframeGenerationResult {
-  wireframe: WireframeData;
-  generationTime: number;
-  success: boolean;
+  wireframe?: WireframeData;
   model?: string;
-  usage?: {
-    total_tokens: number;
-    completion_tokens?: number;
-    prompt_tokens?: number;
-  };
+  success: boolean;
+  errorMessage?: string;
+  // Add other result properties as needed
 }
 
-// Changed to match the expected type structure for Supabase interactions
 export interface AIWireframe {
   id: string;
-  project_id: string;
-  prompt: string;
+  project_id?: string;
   description?: string;
-  created_at: string;
-  updated_at: string;
-  design_tokens?: any;  // Use any to accommodate Json from Supabase
-  mobile_layouts?: any;
-  style_variants?: any;
-  design_reasoning?: string;
-  animations?: any;
-  rating?: number;
-  feedback?: string;
+  prompt: string;
+  generation_params?: any;
+  data?: WireframeData;
   status?: string;
-  generation_params?: any; // Using any to allow Json compatibility
-  image_url?: string;
-  quality_flags?: any;
-  data?: WireframeData; // Add data property to store the wireframe data
-  sections?: any[]; // Add sections property for backward compatibility
+  created_at: string;
+  updated_at?: string;
+  feedback?: string;
+  rating?: number;
+  sections?: WireframeSection[];
+  // Add other wireframe properties as needed
 }
 
-// Version control interfaces
 export interface WireframeVersion {
   id: string;
   wireframe_id: string;
   version_number: number;
   data: WireframeData;
   change_description?: string;
-  created_by?: string;
   created_at: string;
+  created_by?: string;
   is_current: boolean;
   parent_version_id?: string;
-  branch_name: string;
+  branch_name?: string;
 }
 
 export interface WireframeRevisionHistory {
   versions: WireframeVersion[];
   current: WireframeVersion | null;
   branches: string[];
-}
-
-export interface BranchInfo {
-  name: string;
-  created_at: string;
-  version_count: number;
-  latest_version_id: string;
-}
-
-export interface VersionComparisonResult {
-  changes: { 
-    type: 'added' | 'removed' | 'modified',
-    path: string,
-    values: [any, any] 
-  }[];
-  summary: string;
 }

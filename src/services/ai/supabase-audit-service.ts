@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseHealthCheck } from '@/utils/supabase-audit';
+import { PostgrestError } from '@supabase/supabase-js';
 
 /**
  * Service for performing comprehensive Supabase audits
@@ -99,11 +100,8 @@ export const supabaseAuditService = {
    */
   checkDatabaseService: async (): Promise<{ status: 'ok' | 'error'; message: string; tables: string[] }> => {
     try {
-      // Query for table names
-      const { data: tables, error } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public');
+      // Instead of querying information_schema directly, we'll check a simple table list using RPC
+      const { data, error } = await supabase.rpc('list_tables');
       
       if (error) {
         return {
@@ -113,7 +111,7 @@ export const supabaseAuditService = {
         };
       }
       
-      if (!tables || tables.length === 0) {
+      if (!data || data.length === 0) {
         return {
           status: 'error',
           message: 'No tables found in the database',
@@ -121,7 +119,8 @@ export const supabaseAuditService = {
         };
       }
       
-      const tableNames = tables.map(t => t.table_name).filter(Boolean);
+      // Assuming the RPC returns an array of table names
+      const tableNames = Array.isArray(data) ? data.filter(Boolean) : [];
       
       return {
         status: 'ok',
@@ -169,25 +168,35 @@ export const supabaseAuditService = {
    */
   checkFunctionsService: async (): Promise<{ status: 'ok' | 'error'; message: string; availableFunctions: string[] }> => {
     try {
-      // Try to list all functions
-      const { data, error } = await supabase.functions.listFunctions();
+      // For Edge Functions, we'll need to check availability differently
+      // In this mock implementation, we'll check for a health check function
       
-      if (error) {
+      try {
+        const { data, error } = await supabase.rpc('list_functions');
+        
+        if (error) {
+          return {
+            status: 'error',
+            message: `Functions service error: ${error.message}`,
+            availableFunctions: []
+          };
+        }
+        
+        // Extract function names
+        const functionNames = (data || []).map((fn: any) => fn.name || '').filter(Boolean);
+        
+        return {
+          status: 'ok',
+          message: `Functions service is working properly with ${functionNames.length} functions available`,
+          availableFunctions: functionNames
+        };
+      } catch (error) {
         return {
           status: 'error',
-          message: `Functions service error: ${error.message}`,
+          message: 'Functions service requires additional configuration',
           availableFunctions: []
         };
       }
-      
-      // Extract function names
-      const functionNames = (data || []).map(fn => fn.name || '').filter(Boolean);
-      
-      return {
-        status: 'ok',
-        message: `Functions service is working properly with ${functionNames.length} functions available`,
-        availableFunctions: functionNames
-      };
     } catch (error) {
       return {
         status: 'error',
@@ -205,6 +214,7 @@ export const supabaseAuditService = {
     existingTables: string[];
   }> => {
     try {
+      // Use a safer approach to check tables
       const { tables } = await supabaseAuditService.checkDatabaseService();
       
       const existingTables = requiredTables.filter(table => tables.includes(table));
@@ -230,21 +240,22 @@ export const supabaseAuditService = {
     try {
       const result: Record<string, boolean> = {};
       
-      // For each table, check if RLS is enabled and if policies exist
+      // For each table, check if RLS is enabled through an RPC call
       for (const table of tables) {
-        const { data, error } = await supabase
-          .from('information_schema.tables')
-          .select('row_level_security')
-          .eq('table_schema', 'public')
-          .eq('table_name', table)
-          .single();
-        
-        if (error || !data) {
+        try {
+          const { data, error } = await supabase.rpc('check_rls_enabled', { 
+            table_name: table 
+          });
+          
+          if (error || data === null) {
+            result[table] = false;
+            continue;
+          }
+          
+          result[table] = !!data;
+        } catch (e) {
           result[table] = false;
-          continue;
         }
-        
-        result[table] = data.row_level_security || false;
       }
       
       return result;

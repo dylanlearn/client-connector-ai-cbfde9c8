@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,8 +23,7 @@ import {
 import { wireframeVersionControl } from '@/services/ai/wireframe/version-control';
 import { 
   WireframeVersion,
-  WireframeRevisionHistory,
-  BranchInfo
+  WireframeRevisionHistory
 } from '@/services/ai/wireframe/wireframe-types';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -88,7 +86,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
         selectedVersion,
         newBranchName,
         userId,
-        branchDescription || `Created branch ${newBranchName}`
+        branchDescription
       );
       
       // Reset form and refresh
@@ -149,8 +147,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
     try {
       await wireframeVersionControl.revertToVersion(
         versionId,
-        userId,
-        "Manually reverted to previous version"
+        userId
       );
       
       loadVersionHistory();

@@ -1,5 +1,4 @@
 
-/**
- * Export the wireframe version control service
- */
-export * from './wireframe-version-control-service';
+// Export the wireframeVersionControl service
+export { wireframeVersionControl } from './wireframe-version-control-service';
+export type { BranchInfo } from './wireframe-version-control-service';
