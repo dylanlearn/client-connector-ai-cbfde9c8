@@ -36,7 +36,7 @@ export const PageFlowsAnalysisService = {
         valueProposition: 'Seamless user experience',
         testimonials: []
       },
-      ['pageflows', 'ux', 'user-journey', 'interaction'],
+      ['pageflows', 'ux', 'user-journey', 'interaction'], // This needs to be an array, not a string
       url,
       undefined // Add undefined for the missing screenshot URL parameter
     );
