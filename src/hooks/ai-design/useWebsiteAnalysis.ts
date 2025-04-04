@@ -3,8 +3,9 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
   WebsiteAnalysisService, 
-  WebsiteAnalysisResult 
-} from '@/services/ai/design/website-analysis-service';
+  WebsiteAnalysisResult, 
+  SectionType 
+} from '@/services/ai/design/website-analysis';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 
@@ -40,7 +41,7 @@ export function useWebsiteAnalysis() {
    * Analyze and store a website section
    */
   const analyzeWebsiteSection = useCallback(async (
-    section: 'hero' | 'testimonials' | 'features' | 'pricing' | 'footer' | 'navigation' | string,
+    section: SectionType,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']> = {},
     contentAnalysis: Partial<WebsiteAnalysisResult['contentAnalysis']> = {},
@@ -104,7 +105,7 @@ export function useWebsiteAnalysis() {
     websiteName: string,
     websiteUrl: string,
     sections: {
-      type: 'hero' | 'testimonials' | 'features' | 'pricing' | 'footer' | 'navigation' | string;
+      type: SectionType;
       description: string;
       visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
       contentAnalysis?: Partial<WebsiteAnalysisResult['contentAnalysis']>;
