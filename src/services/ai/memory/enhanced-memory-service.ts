@@ -5,6 +5,7 @@ import { GlobalMemoryService } from './global-memory-service';
 import { VectorMemoryService } from './vector-memory-service';
 import { MemoryCategory, MemoryQueryOptions } from "./memory-types";
 import { v4 as uuidv4 } from 'uuid';
+import type { VectorSearchResult } from '@/hooks/ai-memory/useVectorMemory';
 
 /**
  * Enhanced memory service that integrates traditional database queries with vector search
@@ -124,7 +125,7 @@ export const EnhancedMemoryService = {
   ) => {
     const results = {
       exactMatches: [] as any[],
-      semanticMatches: [] as any[],
+      semanticMatches: [] as VectorSearchResult[],
     };
     
     // Traditional database query
@@ -150,11 +151,13 @@ export const EnhancedMemoryService = {
     
     // Vector similarity search if enabled
     if (options.useVectorSearch !== false) {
-      results.semanticMatches = await VectorMemoryService.semanticSearch(query, {
+      const vectorResults = await VectorMemoryService.semanticSearch(query, {
         threshold: options.similarityThreshold || 0.7,
         limit: options.limit,
         memoryType: options.userId ? 'user' : (options.projectId ? 'project' : undefined)
       });
+      
+      results.semanticMatches = vectorResults as VectorSearchResult[];
     }
     
     return results;

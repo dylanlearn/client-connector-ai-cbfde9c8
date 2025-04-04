@@ -3,11 +3,11 @@ import {
   UserMemoryService,
   GlobalMemoryService,
   ProjectMemoryService,
-  EnhancedMemoryService,
   VectorMemoryService,
   MemoryCategory,
   MemoryQueryOptions
 } from './memory';
+import { EnhancedMemoryService } from './memory/enhanced-memory-service';
 
 /**
  * Unified service for AI memory management across different layers

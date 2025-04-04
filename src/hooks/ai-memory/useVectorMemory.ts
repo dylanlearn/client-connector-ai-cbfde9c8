@@ -3,13 +3,7 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth'; 
 import { VectorMemoryService } from '@/services/ai/memory/vector-memory-service';
 
-interface VectorSearchOptions {
-  memoryType?: string;
-  threshold?: number;
-  limit?: number;
-}
-
-interface VectorSearchResult {
+export interface VectorSearchResult {
   id: string;
   memory_id: string;
   memory_type: string;
@@ -17,6 +11,20 @@ interface VectorSearchResult {
   similarity: number;
   created_at: string;
   metadata: Record<string, any>;
+}
+
+export interface MemoryStat {
+  memory_type: string;
+  memory_count: number;
+  oldest_memory?: string;
+  newest_memory?: string;
+  avg_clusters_per_memory?: number;
+}
+
+interface VectorSearchOptions {
+  memoryType?: string;
+  threshold?: number;
+  limit?: number;
 }
 
 export function useVectorMemory() {
@@ -43,8 +51,9 @@ export function useVectorMemory() {
         options
       );
       
-      setResults(searchResults);
-      return searchResults;
+      const typedResults = searchResults as VectorSearchResult[];
+      setResults(typedResults);
+      return typedResults;
     } catch (err) {
       const errorObj = err instanceof Error ? err : new Error('Failed to search memories');
       setError(errorObj);
@@ -82,12 +91,13 @@ export function useVectorMemory() {
   /**
    * Get memory system statistics for visualization or monitoring
    */
-  const getMemoryStats = useCallback(async () => {
+  const getMemoryStats = useCallback(async (): Promise<MemoryStat[]> => {
     try {
-      return await VectorMemoryService.getMemorySystemStats();
+      const stats = await VectorMemoryService.getMemorySystemStats();
+      return stats as MemoryStat[];
     } catch (err) {
       console.error("Error fetching memory stats:", err);
-      return null;
+      return [];
     }
   }, []);
 
