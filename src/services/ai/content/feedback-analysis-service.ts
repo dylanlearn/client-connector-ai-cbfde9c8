@@ -85,7 +85,7 @@ export const FeedbackAnalysisService = {
               action_items: data.actionItems,
               tone_analysis: data.toneAnalysis,
               summary: data.summary
-            });
+            } as any);  // Using 'any' as a temporary fix for the type issue
           
           if (insertError) {
             console.error('Error saving feedback analysis:', insertError);
