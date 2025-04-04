@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.0.0';
+import { BackgroundTask, TaskProcessingResult } from './types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,8 +44,8 @@ serve(async (req) => {
     }
 
     // Process each task
-    const results = [];
-    for (const task of tasks) {
+    const results: TaskProcessingResult[] = [];
+    for (const task of tasks as BackgroundTask[]) {
       try {
         // Mark as processing
         await supabase
@@ -95,7 +96,7 @@ serve(async (req) => {
           .from('wireframe_background_tasks')
           .update({
             status: 'failed',
-            error_message: taskError.message || 'Unknown error',
+            error_message: taskError instanceof Error ? taskError.message : 'Unknown error',
             completed_at: new Date().toISOString()
           })
           .eq('id', task.id);
@@ -103,7 +104,8 @@ serve(async (req) => {
         results.push({
           id: task.id,
           status: 'failed',
-          error: taskError.message
+          task_type: task.task_type,
+          error: taskError instanceof Error ? taskError.message : 'Unknown error'
         });
       }
     }
@@ -120,7 +122,7 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({
-        error: error.message || 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         success: false
       }),
       { 

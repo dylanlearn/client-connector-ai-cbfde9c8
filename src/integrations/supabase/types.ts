@@ -1678,11 +1678,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      analyze_wireframe_sections: {
+        Args: {
+          p_start_date: string
+        }
+        Returns: Json
+      }
       batch_insert_interaction_events: {
         Args: {
           p_events: Json
         }
         Returns: undefined
+      }
+      check_wireframe_cache: {
+        Args: {
+          p_params_hash: string
+        }
+        Returns: Json
+      }
+      check_wireframe_rate_limits: {
+        Args: {
+          p_user_id: string
+          p_max_daily: number
+          p_max_hourly: number
+        }
+        Returns: Json
+      }
+      clear_expired_wireframe_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      create_background_task: {
+        Args: {
+          p_task_type: string
+          p_input_data: Json
+        }
+        Returns: string
       }
       get_interaction_events: {
         Args: {
@@ -1708,11 +1739,28 @@ export type Database = {
           y_position: number
         }[]
       }
+      get_next_pending_task: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_user_role: {
         Args: {
           user_id: string
         }
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_wireframe_metrics: {
+        Args: {
+          p_start_date: string
+          p_project_id?: string
+        }
+        Returns: Json
+      }
+      increment_cache_hit: {
+        Args: {
+          p_cache_id: string
+        }
+        Returns: undefined
       }
       insert_interaction_event: {
         Args: {
@@ -1790,6 +1838,14 @@ export type Database = {
         }
         Returns: string
       }
+      record_system_event: {
+        Args: {
+          p_event_type: string
+          p_details: Json
+          p_severity?: string
+        }
+        Returns: undefined
+      }
       record_template_purchase: {
         Args: {
           p_user_id: string
@@ -1799,16 +1855,32 @@ export type Database = {
         }
         Returns: undefined
       }
-      record_wireframe_generation: {
+      record_wireframe_generation:
+        | {
+            Args: {
+              p_project_id: string
+              p_prompt: string
+              p_generation_params: Json
+              p_result_data: Json
+              p_success: boolean
+              p_generation_time: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+      store_wireframe_in_cache: {
         Args: {
-          p_project_id: string
-          p_prompt: string
+          p_params_hash: string
+          p_wireframe_data: Json
+          p_expires_at: string
           p_generation_params: Json
-          p_result_data: Json
-          p_success: boolean
-          p_generation_time: number
         }
-        Returns: string
+        Returns: undefined
       }
       track_interaction: {
         Args: {
@@ -1820,6 +1892,15 @@ export type Database = {
           p_element_selector?: string
           p_session_id?: string
           p_metadata?: Json
+        }
+        Returns: undefined
+      }
+      update_background_task_status: {
+        Args: {
+          p_task_id: string
+          p_status: string
+          p_output_data?: Json
+          p_error_message?: string
         }
         Returns: undefined
       }
