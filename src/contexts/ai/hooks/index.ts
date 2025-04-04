@@ -5,4 +5,4 @@ export * from './useDesignRecommendations';
 export * from './useContentGeneration';
 export * from './useFeedbackSummary';
 export * from './useFeedbackAnalysis';
-export * from './memory';
+export { useMemory } from '@/contexts/ai/MemoryContext';

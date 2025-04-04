@@ -22,20 +22,22 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AIProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="projects" element={<Projects />} />
-              <Route path="projects/:id" element={<ProjectDetail />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="intake" element={<IntakeForm />} />
-              <Route path="results" element={<QuestionnaireResults />} />
-            </Route>
-          </Routes>
-          <Toaster />
-        </Router>
+        <MemoryProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Layout>{/* Layout will render Outlet */}</Layout>}>
+                <Route index element={<Dashboard />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="projects/:id" element={<ProjectDetail />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="intake" element={<IntakeForm />} />
+                <Route path="results" element={<QuestionnaireResults />} />
+              </Route>
+            </Routes>
+            <Toaster />
+          </Router>
+        </MemoryProvider>
       </AIProvider>
     </QueryClientProvider>
   );

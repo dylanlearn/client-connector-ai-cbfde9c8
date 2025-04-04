@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, ReactNode, useCallback } from "react";
 import { AIContextType, AIMemoryContext as AIMemoryContextType, AIAnalysis, DesignRecommendation } from "@/types/ai";
 import { 
@@ -7,7 +6,7 @@ import {
   useDesignRecommendations,
   useContentGeneration,
   useFeedbackSummary,
-  useAIMemory,
+  useMemory,
   useFeedbackAnalysis
 } from "./hooks";
 
@@ -59,7 +58,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     storeInteractionMemory,
     refreshMemoryContext,
     resetMemoryContext
-  } = useAIMemory();
+  } = useMemory();
 
   // Determine overall processing state
   const isProcessing = 

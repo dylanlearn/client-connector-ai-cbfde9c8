@@ -1,7 +1,7 @@
 
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useAIMemory } from "@/contexts/ai/hooks";
+import { useMemory } from "@/contexts/ai/MemoryContext";
 import { MemoryCategory } from "@/services/ai/memory";
 
 /**
@@ -9,7 +9,7 @@ import { MemoryCategory } from "@/services/ai/memory";
  */
 export const useToneTracking = () => {
   const { user } = useAuth();
-  const { storeMemory } = useAIMemory();
+  const { storeMemory } = useMemory();
   
   /**
    * Track tone preferences based on user interactions with text content
