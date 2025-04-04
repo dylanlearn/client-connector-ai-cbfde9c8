@@ -75,8 +75,8 @@ export interface PastAnalysisResult {
   originalFeedback: string;
   result: FeedbackAnalysisResult;
   createdAt: string;
-  priority?: string;
-  status?: FeedbackStatus;
+  priority: 'high' | 'medium' | 'low';
+  status: FeedbackStatus;
   category?: string;
   projectId?: string;
 }

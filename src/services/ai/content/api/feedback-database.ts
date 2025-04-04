@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   FeedbackAnalysisRecord, 
   FeedbackStatus,
-  FeedbackComment,
   ActionItem,
   ToneAnalysis,
   PastAnalysisResult,
@@ -148,8 +147,8 @@ export const FeedbackDatabase = {
           : 'open' as FeedbackStatus;
         
         const priority = (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low')
-          ? item.priority
-          : 'medium';
+          ? item.priority as 'high' | 'medium' | 'low'
+          : 'medium' as 'high' | 'medium' | 'low';
 
         return {
           id: item.id,
