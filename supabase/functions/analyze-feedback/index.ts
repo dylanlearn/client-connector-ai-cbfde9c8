@@ -1,11 +1,10 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { ActionItem, FeedbackAnalysisRequest, FeedbackAnalysisResult, ToneAnalysis } from "./types.ts";
 
 // OpenAI API configuration
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY") || "";
-const MODEL = "gpt-3.5-turbo"; // Can be upgraded to GPT-4 for better analysis if needed
+const MODEL = "gpt-4o-mini"; // Using a modern, efficient model
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,7 +16,7 @@ serve(async (req) => {
     // Get feedback text from request
     const { feedbackText } = await req.json() as FeedbackAnalysisRequest;
     
-    if (!feedbackText) {
+    if (!feedbackText || feedbackText.trim() === '') {
       return new Response(
         JSON.stringify({ error: "Feedback text is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -39,7 +38,11 @@ serve(async (req) => {
     console.error("Error in analyze-feedback function:", error);
     
     return new Response(
-      JSON.stringify({ error: error.message || "An error occurred while analyzing feedback" }),
+      JSON.stringify({ 
+        error: error.message || "An error occurred while analyzing feedback",
+        // Return a fallback result that the client can use
+        fallback: generateFallbackResult("Error occurred during analysis")
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -76,55 +79,78 @@ async function analyzeFeedback(feedbackText: string): Promise<FeedbackAnalysisRe
     }
   `;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert at analyzing client feedback and extracting actionable insights. Provide detailed analysis in the requested JSON format only."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.3,
-    }),
-  });
-
-  if (!response.ok) {
-    const responseText = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} ${responseText}`);
-  }
-
-  const responseData = await response.json();
-  const content = responseData.choices[0].message.content;
+  let retryCount = 0;
+  const maxRetries = 2;
   
-  // Parse the JSON response
-  try {
-    // Extract JSON from the response (in case there's any non-JSON text)
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    const jsonString = jsonMatch ? jsonMatch[0] : content;
-    
-    const result = JSON.parse(jsonString) as FeedbackAnalysisResult;
-    
-    // Validate the parsed result
-    validateResult(result);
-    
-    return result;
-  } catch (error) {
-    console.error("Error parsing OpenAI response:", error);
-    console.log("Raw response:", content);
-    
-    // Return a fallback result if parsing fails
-    return generateFallbackResult(feedbackText);
+  while (retryCount <= maxRetries) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert at analyzing client feedback and extracting actionable insights. Provide detailed analysis in the requested JSON format only."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.3,
+        }),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(`OpenAI API error: ${response.status} ${responseText}`);
+      }
+
+      const responseData = await response.json();
+      const content = responseData.choices[0].message.content;
+      
+      // Parse the JSON response
+      try {
+        // Extract JSON from the response (in case there's any non-JSON text)
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const jsonString = jsonMatch ? jsonMatch[0] : content;
+        
+        const result = JSON.parse(jsonString) as FeedbackAnalysisResult;
+        
+        // Validate the parsed result
+        validateResult(result);
+        
+        return result;
+      } catch (error) {
+        console.error("Error parsing OpenAI response:", error);
+        console.log("Raw response:", content);
+        
+        // Return a fallback result if parsing fails
+        return generateFallbackResult(feedbackText);
+      }
+    } catch (error) {
+      retryCount++;
+      console.error(`Error in OpenAI request (attempt ${retryCount}/${maxRetries + 1}):`, error);
+      
+      // If we've hit max retries, throw the error
+      if (retryCount > maxRetries) {
+        throw error;
+      }
+      
+      // Otherwise, wait with exponential backoff before retrying
+      const backoffDelay = Math.pow(2, retryCount) * 1000;
+      console.log(`Retrying in ${backoffDelay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, backoffDelay));
+    }
   }
+  
+  // This should never be reached due to the throw in the retry loop
+  return generateFallbackResult(feedbackText);
 }
 
 /**
@@ -142,14 +168,43 @@ function validateResult(result: any): asserts result is FeedbackAnalysisResult {
   if (!result.toneAnalysis || typeof result.toneAnalysis !== 'object') {
     throw new Error("Missing or invalid toneAnalysis object");
   }
+  
+  // Validate actionItems have required properties
+  result.actionItems.forEach((item: any, index: number) => {
+    if (!item.task || typeof item.task !== 'string') {
+      throw new Error(`Missing or invalid task in actionItem at index ${index}`);
+    }
+    if (!['high', 'medium', 'low'].includes(item.priority)) {
+      throw new Error(`Invalid priority in actionItem at index ${index}`);
+    }
+    if (typeof item.urgency !== 'number' || item.urgency < 1 || item.urgency > 10) {
+      throw new Error(`Invalid urgency in actionItem at index ${index}`);
+    }
+  });
+  
+  // Validate toneAnalysis has required properties
+  const toneAnalysis = result.toneAnalysis;
+  if (typeof toneAnalysis.positive !== 'number' || 
+      typeof toneAnalysis.neutral !== 'number' || 
+      typeof toneAnalysis.negative !== 'number' ||
+      typeof toneAnalysis.urgent !== 'boolean' ||
+      typeof toneAnalysis.critical !== 'boolean' ||
+      typeof toneAnalysis.vague !== 'boolean') {
+    throw new Error("Missing or invalid properties in toneAnalysis object");
+  }
 }
 
 /**
  * Generates a fallback result when OpenAI analysis fails
  */
 function generateFallbackResult(feedbackText: string): FeedbackAnalysisResult {
+  // Create a very basic summary if we have feedback text
+  const summary = feedbackText && feedbackText.length > 0
+    ? `Basic analysis of feedback: "${feedbackText.substring(0, 50)}${feedbackText.length > 50 ? '...' : ''}"`
+    : "Automated analysis failed. This is a basic summary of the feedback.";
+    
   return {
-    summary: "Automated analysis failed. This is a basic summary of the feedback.",
+    summary,
     actionItems: [
       {
         task: "Review feedback manually",

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FeedbackAnalysisResult } from '@/services/ai/content/feedback-analysis-service';
+import { FeedbackAnalysisResult, FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
 
 export function useFeedbackAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -23,21 +23,9 @@ export function useFeedbackAnalysis() {
     try {
       console.log('Sending feedback for analysis:', feedbackText.substring(0, 50) + '...');
       
-      const { data, error } = await supabase.functions.invoke<FeedbackAnalysisResult>(
-        'analyze-feedback',
-        {
-          body: { feedbackText }
-        }
-      );
-
-      if (error) {
-        throw new Error(error.message || 'Failed to analyze feedback');
-      }
-
-      if (!data) {
-        throw new Error('No analysis data returned');
-      }
-
+      // Use the service to analyze feedback
+      const data = await FeedbackAnalysisService.analyzeFeedback(feedbackText);
+      
       setResult(data);
       return data;
     } catch (err: any) {

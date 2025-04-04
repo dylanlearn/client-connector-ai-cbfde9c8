@@ -20,6 +20,9 @@ export interface FeedbackAnalysisResult {
   };
 }
 
+/**
+ * Service for analyzing client feedback and extracting actionable insights
+ */
 export const FeedbackAnalysisService = {
   /**
    * Analyzes feedback text and returns structured analysis results
