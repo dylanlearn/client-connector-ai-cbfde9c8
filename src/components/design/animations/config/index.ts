@@ -24,10 +24,19 @@ let configCache: Record<string, AnimationConfigType> = {};
  */
 export const getAnimationConfig = (
   animationType: string,
-  isPlaying: boolean
+  isPlaying: boolean,
+  preferences?: {
+    intensity?: number;
+    speed?: 'slow' | 'normal' | 'fast';
+    reduced_motion?: boolean;
+  }
 ): AnimationConfigType => {
+  // Generate a cache key that includes preferences
+  const prefString = preferences ? 
+    `-i${preferences.intensity}-s${preferences.speed}-r${preferences.reduced_motion}` : '';
+  const cacheKey = `${animationType}-${isPlaying ? 'playing' : 'paused'}${prefString}`;
+  
   // Return from cache if exists
-  const cacheKey = `${animationType}-${isPlaying ? 'playing' : 'paused'}`;
   if (configCache[cacheKey]) {
     return configCache[cacheKey];
   }
@@ -35,20 +44,38 @@ export const getAnimationConfig = (
   // Get configuration based on animation type
   let config: AnimationConfigType;
   
+  // Apply preference adjustments (speed factor)
+  const speedFactor = preferences?.speed === 'slow' ? 1.5 :
+                      preferences?.speed === 'fast' ? 0.7 : 1;
+  
+  // Apply preference adjustments (intensity factor 1-10 scale)
+  const intensityFactor = preferences?.intensity ? (preferences.intensity / 5) : 1;
+  
+  // Apply reduced motion preferences
+  const reducedMotion = preferences?.reduced_motion || false;
+  
   // Handle basic animation types
   if (basicConfigs[animationType]) {
-    config = basicConfigs[animationType](isPlaying);
+    config = basicConfigs[animationType](isPlaying, { 
+      speedFactor, 
+      intensityFactor,
+      reducedMotion
+    });
   } 
   // Handle complex animation types
   else if (complexConfigs[animationType]) {
-    config = complexConfigs[animationType](isPlaying);
+    config = complexConfigs[animationType](isPlaying, { 
+      speedFactor, 
+      intensityFactor,
+      reducedMotion
+    });
   } 
   // Default fallback configuration
   else {
     config = {
       initial: { opacity: 0 },
       animate: isPlaying ? { opacity: 1 } : { opacity: 0 },
-      transition: { duration: 0.5 }
+      transition: { duration: reducedMotion ? 0.1 : 0.5 * speedFactor }
     };
   }
   

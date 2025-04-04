@@ -20,3 +20,8 @@ export interface AnimationConfigType {
     transition: any;
   }[];
 }
+
+/**
+ * Animation category definition
+ */
+export type AnimationCategory = string;
