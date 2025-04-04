@@ -2,23 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-export interface FeedbackAnalysisResult {
-  actionItems: Array<{
-    task: string;
-    priority: 'high' | 'medium' | 'low';
-    urgency: number;
-  }>;
-  toneAnalysis: {
-    positive: number;
-    neutral: number;
-    negative: number;
-    urgent: boolean;
-    vague: boolean;
-    critical: boolean;
-  };
-  summary: string;
-}
+import { FeedbackAnalysisResult } from '@/services/ai/content/feedback-analysis-service';
 
 export function useFeedbackAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);

@@ -1,16 +1,20 @@
 
 import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer"; // Changed to named import
+import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, Lightbulb, ListChecks } from "lucide-react";
 import { toast } from "sonner";
+import { FeedbackAnalysisResult } from "@/services/ai/content/feedback-analysis-service";
 
 const FeedbackAnalysis = () => {
   const navigate = useNavigate();
 
-  const handleActionItemsGenerated = (actionItems: Array<{task: string; priority: string}>) => {
+  const handleAnalysisComplete = (result: FeedbackAnalysisResult) => {
+    // Extract action items from the result
+    const actionItems = result.actionItems;
+    
     // In a real implementation, you might save these to a project or task list
     toast.success(`${actionItems.length} action items generated`, {
       description: "Items can be added to your project tasks"
@@ -31,7 +35,7 @@ const FeedbackAnalysis = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
-          <FeedbackAnalyzer onAnalysisComplete={handleActionItemsGenerated} />
+          <FeedbackAnalyzer onAnalysisComplete={handleAnalysisComplete} />
         </div>
         
         <div className="space-y-6">
