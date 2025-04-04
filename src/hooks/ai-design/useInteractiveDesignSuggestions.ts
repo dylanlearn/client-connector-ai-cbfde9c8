@@ -85,9 +85,10 @@ export function useInteractiveDesignSuggestions() {
           break;
         case 'layout':
           result = await AIDesignService.recommendLayouts({
-            industry: context.industry || '',
-            contentType: context.contentType || '',
-            preferences: context.preferences || []
+            siteType: context.siteType || context.industry || 'general',
+            features: context.features || [],
+            inspirations: context.inspirations || [],
+            audience: context.audience || ''
           });
           break;
         case 'component':

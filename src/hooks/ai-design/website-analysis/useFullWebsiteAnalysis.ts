@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
 import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
@@ -125,9 +124,11 @@ export function useFullWebsiteAnalysis(
       if (results.length > 0) {
         // Generate a progressive disclosure message about the analysis
         const resultSummary = `Analysis of ${websiteName} completed with ${results.length} sections analyzed.`;
-        const insightsContent = results.map(r => 
-          `${r.type || 'Unknown'} section: ${r.description || 'No description available'}`
-        ).join('\n\n');
+        const insightsContent = results.map(r => {
+          // Use category or section type fallback from the source URL
+          const sectionType = r.category.split('-')[1] || 'Unknown';
+          return `${sectionType} section: ${r.description || 'No description available'}`;
+        }).join('\n\n');
         
         const segments = ProgressiveDisclosureService.segmentContent(
           insightsContent,
