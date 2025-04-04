@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { FileText, PlusCircle, Loader2 } from "lucide-react";
+import { FileText, PlusCircle, Loader2, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/dashboard/EmptyState";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useProjects } from "@/hooks/use-projects";
 import { Button } from "@/components/ui/button";
 import ProjectBoard from "@/components/projects/ProjectBoard";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Projects = () => {
   const navigate = useNavigate();
@@ -26,6 +27,15 @@ const Projects = () => {
           <span className={isMobile ? "sr-only" : ""}>New Project</span>
         </Button>
       </div>
+
+      {activeProjects.length > 0 && (
+        <Alert className="mb-6 bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription>
+            Click on any project card to view detailed information, notes, site map, and wireframes.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">

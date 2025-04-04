@@ -1,14 +1,15 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Project } from '@/types/project';
-import { CalendarClock, User, FileText } from 'lucide-react';
+import { CalendarClock, User, FileText, ArrowRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ProjectCardProps {
-  project: Project;
+  project: Project & { boardStatus?: string };
   index?: number;
   statusColor?: string;
 }
@@ -28,12 +29,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, statusColor }
     }
   };
   
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    navigate(`/projects/${project.id}`);
+  };
+  
   return (
     <Card 
-      className="cursor-pointer transition-all hover:shadow-md" 
+      className="transition-all hover:shadow-md mb-3" 
       onClick={() => navigate(`/projects/${project.id}`)}
     >
-      <CardContent className="p-5">
+      <CardContent className="p-5 pt-5 cursor-pointer">
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-semibold text-lg">{project.title}</h3>
           <Badge className={`${getStatusColor(project.status)} text-white capitalize`}>
@@ -56,6 +62,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, statusColor }
           </div>
         </div>
       </CardContent>
+      <CardFooter className="p-2 bg-gray-50 flex justify-end border-t">
+        <Button variant="ghost" size="sm" className="text-primary" onClick={handleViewDetails}>
+          View Details <ArrowRight className="ml-1 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
