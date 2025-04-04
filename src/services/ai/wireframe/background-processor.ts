@@ -22,18 +22,14 @@ export const WireframeBackgroundProcessor = {
    */
   queueTask: async <T>(taskType: string, inputData: T): Promise<string> => {
     try {
-      const { data, error } = await supabase
-        .from('wireframe_background_tasks')
-        .insert({
-          task_type: taskType,
-          status: 'pending',
-          input_data: inputData as any
-        })
-        .select('id')
-        .single();
+      // Use RPC instead of direct table access
+      const { data, error } = await supabase.rpc('create_background_task', {
+        p_task_type: taskType,
+        p_input_data: inputData as any
+      });
       
       if (error) throw error;
-      return data.id;
+      return data;
     } catch (error) {
       console.error(`Error queueing ${taskType} task:`, error);
       throw error;
@@ -50,24 +46,20 @@ export const WireframeBackgroundProcessor = {
     errorMessage?: string
   ): Promise<void> => {
     try {
-      const update: any = { status };
+      const updateParams: any = {
+        p_task_id: taskId,
+        p_status: status
+      };
       
       if (outputData !== undefined) {
-        update.output_data = outputData;
+        updateParams.p_output_data = outputData;
       }
       
       if (errorMessage !== undefined) {
-        update.error_message = errorMessage;
+        updateParams.p_error_message = errorMessage;
       }
       
-      if (status === 'completed' || status === 'failed') {
-        update.completed_at = new Date().toISOString();
-      }
-      
-      await supabase
-        .from('wireframe_background_tasks')
-        .update(update)
-        .eq('id', taskId);
+      await supabase.rpc('update_background_task_status', updateParams);
     } catch (error) {
       console.error(`Error updating task ${taskId} status:`, error);
     }
@@ -78,14 +70,8 @@ export const WireframeBackgroundProcessor = {
    */
   processNextTask: async (): Promise<boolean> => {
     try {
-      // First get the next pending task
-      const { data: nextTask, error: fetchError } = await supabase
-        .from('wireframe_background_tasks')
-        .select('*')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .single();
+      // Get next pending task using RPC
+      const { data: nextTask, error: fetchError } = await supabase.rpc('get_next_pending_task');
       
       if (fetchError || !nextTask) {
         // No pending tasks
@@ -97,7 +83,7 @@ export const WireframeBackgroundProcessor = {
       
       try {
         // Process the task based on type
-        const task = nextTask as unknown as BackgroundProcessingTask;
+        const task = nextTask as BackgroundProcessingTask;
         
         switch (task.task_type) {
           case 'optimize_wireframe':
@@ -147,8 +133,8 @@ export const WireframeBackgroundProcessor = {
       ...wireframeData,
       // Add optimized properties here
       qualityFlags: {
-        ...wireframeData.qualityFlags,
-        optimized: true
+        ...(wireframeData.qualityFlags || {}),
+        isOptimized: true
       }
     };
   },

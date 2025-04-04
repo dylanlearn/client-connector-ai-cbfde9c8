@@ -46,39 +46,33 @@ export const WireframeMonitoringService = {
           break;
       }
       
-      // Build query
-      let query = supabase
-        .from('wireframe_generation_metrics')
-        .select('*')
-        .gte('created_at', startDate.toISOString());
-      
-      if (projectId) {
-        query = query.eq('project_id', projectId);
-      }
-      
-      const { data, error } = await query;
+      // Get metrics using RPC
+      const { data, error } = await supabase.rpc('get_wireframe_metrics', {
+        p_start_date: startDate.toISOString(),
+        p_project_id: projectId || null
+      });
       
       if (error) throw error;
       
-      // Calculate metrics
-      const totalCount = data.length;
-      const successCount = data.filter(item => item.success).length;
-      const failureCount = totalCount - successCount;
-      const successRate = totalCount > 0 ? (successCount / totalCount) * 100 : 0;
-      
-      // Calculate average generation time
-      const successfulGenerations = data.filter(item => item.success && item.generation_time);
-      const totalTime = successfulGenerations.reduce((sum, item) => sum + (item.generation_time || 0), 0);
-      const averageGenerationTime = successfulGenerations.length > 0 
-        ? totalTime / successfulGenerations.length 
-        : 0;
+      if (!data) {
+        // Return default metrics if no data
+        return {
+          averageGenerationTime: 0,
+          successRate: 0,
+          totalCount: 0,
+          successCount: 0,
+          failureCount: 0,
+          timeRange,
+          projectId
+        };
+      }
       
       return {
-        averageGenerationTime,
-        successRate,
-        totalCount,
-        successCount,
-        failureCount,
+        averageGenerationTime: data.average_generation_time || 0,
+        successRate: data.success_rate || 0,
+        totalCount: data.total_count || 0,
+        successCount: data.success_count || 0,
+        failureCount: data.failure_count || 0,
         timeRange,
         projectId
       };
@@ -119,39 +113,24 @@ export const WireframeMonitoringService = {
           break;
       }
       
-      // Get wireframes from the time period
-      const { data: wireframes, error } = await supabase
-        .from('ai_wireframes')
-        .select('generation_params')
-        .gte('created_at', startDate.toISOString());
+      // Get wireframes from the time period using SQL stored procedure
+      const { data, error } = await supabase.rpc('analyze_wireframe_sections', {
+        p_start_date: startDate.toISOString()
+      });
       
       if (error) throw error;
-      
-      // Extract sections from wireframe data
-      const sectionCounts: Record<string, number> = {};
-      let totalSections = 0;
-      
-      wireframes.forEach(wireframe => {
-        const params = wireframe.generation_params || {};
-        const resultData = params.result_data || {};
-        const sections = resultData.sections || [];
-        
-        sections.forEach((section: any) => {
-          const sectionType = section.sectionType || 'unknown';
-          sectionCounts[sectionType] = (sectionCounts[sectionType] || 0) + 1;
-          totalSections++;
-        });
-      });
       
       // Convert to expected output format
       const result: WireframeSections = {};
       
-      Object.entries(sectionCounts).forEach(([sectionType, count]) => {
-        result[sectionType] = {
-          count,
-          percentage: totalSections > 0 ? (count / totalSections) * 100 : 0
-        };
-      });
+      if (data && Array.isArray(data)) {
+        data.forEach(item => {
+          result[item.section_type] = {
+            count: item.count,
+            percentage: item.percentage
+          };
+        });
+      }
       
       return result;
     } catch (error) {
@@ -169,13 +148,12 @@ export const WireframeMonitoringService = {
     severity: 'info' | 'warning' | 'error' = 'info'
   ): Promise<void> => {
     try {
-      await supabase
-        .from('wireframe_system_events')
-        .insert({
-          event_type: eventType,
-          details,
-          severity
-        });
+      // Use RPC instead of direct table access
+      await supabase.rpc('record_system_event', {
+        p_event_type: eventType,
+        p_details: details,
+        p_severity: severity
+      });
     } catch (error) {
       console.error('Error recording system event:', error);
     }

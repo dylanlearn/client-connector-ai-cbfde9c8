@@ -40,21 +40,16 @@ export const WireframeRateLimiterService = {
     try {
       const limits = WireframeRateLimiterService.getDefaultLimits(userRole);
       const now = new Date();
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
       
-      const hourStart = new Date(now);
-      hourStart.setMinutes(0, 0, 0);
+      // Use RPC to check rate limits
+      const { data, error } = await supabase.rpc('check_wireframe_rate_limits', {
+        p_user_id: userId,
+        p_max_daily: limits.daily,
+        p_max_hourly: limits.hourly
+      });
       
-      // Get today's generations
-      const { data: dailyData, error: dailyError } = await supabase
-        .from('wireframe_generation_metrics')
-        .select('id', { count: 'exact' })
-        .eq('project_id', userId)
-        .gte('created_at', todayStart.toISOString());
-      
-      if (dailyError) {
-        console.error("Error checking daily rate limit:", dailyError);
+      if (error) {
+        console.error("Error checking rate limits:", error);
         return {
           canGenerate: false,
           dailyRemaining: 0,
@@ -64,40 +59,32 @@ export const WireframeRateLimiterService = {
         };
       }
       
-      // Get hourly generations
-      const { data: hourlyData, error: hourlyError } = await supabase
-        .from('wireframe_generation_metrics')
-        .select('id', { count: 'exact' })
-        .eq('project_id', userId)
-        .gte('created_at', hourStart.toISOString());
+      const rateLimitInfo = data || {
+        daily_count: 0,
+        hourly_count: 0,
+        is_rate_limited: false
+      };
       
-      if (hourlyError) {
-        console.error("Error checking hourly rate limit:", hourlyError);
-        return {
-          canGenerate: false,
-          dailyRemaining: 0,
-          hourlyRemaining: 0,
-          resetTime: new Date(now.getTime() + 60 * 60 * 1000),
-          isRateLimited: true
-        };
-      }
+      const dailyRemaining = Math.max(0, limits.daily - rateLimitInfo.daily_count);
+      const hourlyRemaining = Math.max(0, limits.hourly - rateLimitInfo.hourly_count);
       
-      const dailyCount = dailyData?.count || 0;
-      const hourlyCount = hourlyData?.count || 0;
-      
-      const dailyRemaining = Math.max(0, limits.daily - dailyCount);
-      const hourlyRemaining = Math.max(0, limits.hourly - hourlyCount);
-      
-      // Determine if rate limited and when it resets
+      // Determine when limits reset
       const isHourlyLimited = hourlyRemaining <= 0;
       const isDailyLimited = dailyRemaining <= 0;
       const isRateLimited = isHourlyLimited || isDailyLimited;
       
       let resetTime = new Date();
+      
       if (isHourlyLimited) {
-        resetTime = new Date(hourStart.getTime() + 60 * 60 * 1000);
+        // Reset at the next hour
+        resetTime = new Date(now);
+        resetTime.setHours(resetTime.getHours() + 1);
+        resetTime.setMinutes(0, 0, 0);
       } else if (isDailyLimited) {
-        resetTime = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+        // Reset at midnight tonight
+        resetTime = new Date(now);
+        resetTime.setDate(resetTime.getDate() + 1);
+        resetTime.setHours(0, 0, 0, 0);
       }
       
       return {
@@ -124,13 +111,9 @@ export const WireframeRateLimiterService = {
    */
   recordGeneration: async (userId: string): Promise<void> => {
     try {
-      await supabase
-        .from('wireframe_generation_metrics')
-        .insert({
-          project_id: userId,
-          prompt: 'Rate limit tracking',
-          success: true
-        });
+      await supabase.rpc('record_wireframe_generation', {
+        p_user_id: userId
+      });
     } catch (error) {
       console.error("Error recording generation for rate limiting:", error);
     }
