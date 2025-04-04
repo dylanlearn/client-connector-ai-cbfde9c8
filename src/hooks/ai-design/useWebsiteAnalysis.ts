@@ -1,176 +1,45 @@
 
-import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
-import { WebsiteAnalysisResult, SectionType } from '@/services/ai/design/website-analysis/types';
-import { useToast } from '@/hooks/use-toast';
-import { toast } from 'sonner';
+import { WebsiteAnalysisHook } from './website-analysis/types';
+import { useWebsiteAnalysisState } from './website-analysis/useWebsiteAnalysisState';
+import { useToastHandler } from './website-analysis/useToastHandler';
+import { useWebsiteSectionAnalysis } from './website-analysis/useWebsiteSectionAnalysis';
+import { useFullWebsiteAnalysis } from './website-analysis/useFullWebsiteAnalysis';
 
 /**
  * Hook for analyzing and storing website design patterns
  */
-export function useWebsiteAnalysis() {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<WebsiteAnalysisResult[]>([]);
-  const [error, setError] = useState<Error | null>(null);
+export function useWebsiteAnalysis(): WebsiteAnalysisHook {
+  // Get state management
+  const { isAnalyzing, analysisResults, error, ...stateActions } = useWebsiteAnalysisState();
   
-  // Use optional chaining to handle cases where AuthContext isn't available
-  const authContext = useAuth?.();
-  const user = authContext?.user;
-  
-  // Use toast from sonner if useToast hook fails (fallback)
-  let toastHandler;
+  // Try to get auth context, but don't throw if it doesn't exist
+  let user;
   try {
-    toastHandler = useToast();
+    const auth = useAuth?.();
+    user = auth?.user;
   } catch (e) {
-    // If useToast fails, we'll use sonner's toast directly
-    toastHandler = { 
-      toast: (args: any) => {
-        toast[args.variant === 'destructive' ? 'error' : 'success'](args.title, {
-          description: args.description
-        });
-      }
-    };
+    // Auth context not available, user remains undefined
   }
-  const { toast: showToast } = toastHandler;
+  
+  // Get toast handler
+  const { toast: showToast } = useToastHandler();
 
-  /**
-   * Analyze and store a website section
-   */
-  const analyzeWebsiteSection = useCallback(async (
-    section: SectionType,
-    description: string,
-    visualElements: Partial<WebsiteAnalysisResult['visualElements']> = {},
-    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']> = {},
-    source: string,
-    imageUrl?: string
-  ) => {
-    if (!user) {
-      showToast({
-        title: "Authentication required",
-        description: "Please log in to analyze and store website designs.",
-        variant: "destructive"
-      });
-      return null;
-    }
+  // Get section analysis
+  const { analyzeWebsiteSection } = useWebsiteSectionAnalysis({
+    isAnalyzing,
+    analysisResults,
+    error,
+    ...stateActions
+  }, user, showToast);
 
-    try {
-      setIsAnalyzing(true);
-      setError(null);
-
-      // Analyze the website section
-      const result = await WebsiteAnalysisService.analyzeWebsiteSection(
-        section,
-        description,
-        visualElements,
-        contentStructure,
-        source,
-        imageUrl
-      );
-
-      // Store the analysis
-      const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);
-      
-      if (stored) {
-        setAnalysisResults(prevResults => [...prevResults, result]);
-        showToast({
-          title: "Analysis stored",
-          description: `The ${section} section analysis has been stored successfully.`
-        });
-        return result;
-      } else {
-        throw new Error("Failed to store analysis");
-      }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to analyze website section');
-      setError(error);
-      showToast({
-        title: "Analysis failed",
-        description: error.message,
-        variant: "destructive"
-      });
-      return null;
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [user, showToast]);
-
-  /**
-   * Create a complete website analysis with multiple sections
-   */
-  const analyzeWebsite = useCallback(async (
-    websiteName: string,
-    websiteUrl: string,
-    sections: {
-      type: SectionType;
-      description: string;
-      visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
-      imageUrl?: string;
-    }[]
-  ) => {
-    if (!user) {
-      showToast({
-        title: "Authentication required",
-        description: "Please log in to analyze websites.",
-        variant: "destructive"
-      });
-      return [];
-    }
-
-    try {
-      setIsAnalyzing(true);
-      setError(null);
-      
-      const results: WebsiteAnalysisResult[] = [];
-      
-      // Process each section
-      for (const section of sections) {
-        const result = await WebsiteAnalysisService.analyzeWebsiteSection(
-          section.type,
-          section.description,
-          section.visualElements || {},
-          section.contentStructure || {},
-          websiteUrl,
-          section.imageUrl
-        );
-        
-        // Store the analysis
-        const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);
-        
-        if (stored) {
-          results.push(result);
-        }
-      }
-      
-      setAnalysisResults(prev => [...prev, ...results]);
-      
-      if (results.length > 0) {
-        showToast({
-          title: "Website analysis complete",
-          description: `${results.length} sections from ${websiteName} have been analyzed and stored.`
-        });
-      } else {
-        showToast({
-          title: "Analysis completed with warnings",
-          description: "No sections were successfully stored. Check for errors."
-        });
-      }
-      
-      return results;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to analyze website');
-      setError(error);
-      showToast({
-        title: "Analysis failed",
-        description: error.message,
-        variant: "destructive"
-      });
-      return [];
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [user, showToast]);
+  // Get full website analysis
+  const { analyzeWebsite } = useFullWebsiteAnalysis({
+    isAnalyzing,
+    analysisResults,
+    error,
+    ...stateActions
+  }, user, showToast);
 
   return {
     isAnalyzing,

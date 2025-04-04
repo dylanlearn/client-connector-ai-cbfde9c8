@@ -1,84 +1,71 @@
 
 import React from 'react';
-import DefaultDemo from './demonstrations/DefaultDemo';
-import HoverEffectDemo from './demonstrations/HoverEffectDemo';
-import ScrollAnimationDemo from './demonstrations/ScrollAnimationDemo';
-import ParallaxTiltDemo from './demonstrations/ParallaxTiltDemo';
-import CustomCursorDemo from './demonstrations/CustomCursorDemo';
-import ModalDialogDemo from './demonstrations/ModalDialogDemo';
-import MorphingShapeDemo from './demonstrations/MorphingShapeDemo';
-import MagneticElementDemo from './demonstrations/MagneticElementDemo';
-import DragInteractionDemo from './demonstrations/DragInteractionDemo';
-import ColorShiftDemo from './demonstrations/ColorShiftDemo';
-import IntentBasedMotionDemo from './demonstrations/IntentBasedMotionDemo';
-import ProgressiveDisclosureDemo from './demonstrations/ProgressiveDisclosureDemo';
-import GlassmorphismDemo from './demonstrations/GlassmorphismDemo';
-import AIDesignSuggestionDemo from './demonstrations/AIDesignSuggestionDemo';
+import { DesignOption } from '../DesignPreview';
+import {
+  DefaultDemo,
+  HoverEffectDemo,
+  ScrollAnimationDemo,
+  ParallaxTiltDemo,
+  CustomCursorDemo,
+  ModalDialogDemo,
+  MorphingShapeDemo,
+  MagneticElementDemo,
+  DragInteractionDemo,
+  ColorShiftDemo,
+  IntentBasedMotionDemo,
+  ProgressiveDisclosureDemo,
+  GlassmorphismDemo,
+  AIDesignSuggestionDemo
+} from './demonstrations';
 
 export interface DemonstrationRendererProps {
-  demoId: string;
-  isActive?: boolean;
+  interaction: DesignOption;
+  isActive: boolean;
+  isDemonstrating: boolean;
+  cursorPosition: { x: number; y: number };
+  handleMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-/**
- * Renders the appropriate interaction demonstration based on the provided ID
- */
-export const DemonstrationRenderer = ({ 
-  demoId, 
-  isActive = true 
+const DemonstrationRenderer = ({
+  interaction,
+  isActive,
+  isDemonstrating,
+  cursorPosition,
+  handleMouseMove
 }: DemonstrationRendererProps) => {
-  // Render the appropriate demo based on the ID
-  const renderDemo = () => {
-    switch (demoId) {
-      case 'hover-effect':
-        return <HoverEffectDemo isActive={isActive} />;
-        
-      case 'scroll-animation':
-        return <ScrollAnimationDemo isActive={isActive} />;
-        
-      case 'parallax-tilt':
-        return <ParallaxTiltDemo isActive={isActive} />;
-        
-      case 'custom-cursor':
-        return <CustomCursorDemo isActive={isActive} />;
-        
-      case 'modal-dialog':
-        return <ModalDialogDemo isActive={isActive} />;
-        
-      case 'morphing-shape':
-        return <MorphingShapeDemo isActive={isActive} />;
-        
-      case 'magnetic-element':
-        return <MagneticElementDemo isActive={isActive} />;
-        
-      case 'drag-interaction':
-        return <DragInteractionDemo isActive={isActive} />;
-        
-      case 'color-shift':
-        return <ColorShiftDemo isActive={isActive} />;
-        
-      case 'intent-motion':
-        return <IntentBasedMotionDemo isActive={isActive} />;
-        
-      case 'progressive-disclosure':
-        return <ProgressiveDisclosureDemo isActive={isActive} />;
-        
-      case 'glassmorphism':
-        return <GlassmorphismDemo isActive={isActive} />;
-        
-      case 'ai-design-suggestion':
-        return <AIDesignSuggestionDemo isActive={isActive} />;
-        
-      default:
-        return <DefaultDemo isActive={isActive} />;
-    }
-  };
+  const interactionConfig = { isActive };
 
-  return (
-    <div className="demo-container h-full w-full overflow-hidden">
-      {renderDemo()}
-    </div>
-  );
+  // Render the appropriate demonstration based on the interaction ID
+  switch (interaction.id) {
+    case 'interaction-1':
+      return <HoverEffectDemo interactionConfig={interactionConfig} />;
+    case 'interaction-2':
+      return <ScrollAnimationDemo interactionConfig={interactionConfig} />;
+    case 'interaction-3':
+      return <ParallaxTiltDemo interactionConfig={interactionConfig} />;
+    case 'interaction-4':
+      return <CustomCursorDemo interactionConfig={interactionConfig} cursorPosition={cursorPosition} />;
+    case 'interaction-5':
+      return <ModalDialogDemo interactionConfig={interactionConfig} />;
+    case 'interaction-6':
+      return <MorphingShapeDemo interactionConfig={interactionConfig} />;
+    case 'interaction-7':
+      return <MagneticElementDemo interactionConfig={interactionConfig} />;
+    case 'interaction-8':
+      return <DragInteractionDemo interactionConfig={interactionConfig} />;
+    case 'interaction-9':
+      return <ColorShiftDemo interactionConfig={interactionConfig} />;
+    case 'interaction-10':
+      return <IntentBasedMotionDemo interactionConfig={interactionConfig} />;
+    case 'interaction-11':
+      return <ProgressiveDisclosureDemo interactionConfig={interactionConfig} />;
+    case 'interaction-12':
+      return <GlassmorphismDemo interactionConfig={interactionConfig} />;
+    case 'interaction-13':
+      return <AIDesignSuggestionDemo interactionConfig={interactionConfig} />;
+    default:
+      return <DefaultDemo interactionConfig={interactionConfig} />;
+  }
 };
 
 export default DemonstrationRenderer;
