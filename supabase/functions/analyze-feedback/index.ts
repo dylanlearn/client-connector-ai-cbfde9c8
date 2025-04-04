@@ -1,15 +1,11 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// Define CORS headers for cross-origin requests
+// CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Type definitions for the request and response
-interface FeedbackAnalysisRequest {
-  feedbackText: string;
 }
 
 interface ActionItem {
@@ -33,226 +29,134 @@ interface FeedbackAnalysisResult {
   toneAnalysis: ToneAnalysis;
 }
 
+interface RequestBody {
+  feedbackText: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get feedback text from request
-    const { feedbackText } = await req.json() as FeedbackAnalysisRequest;
-    
-    if (!feedbackText || feedbackText.trim() === '') {
+    // Get the request body and parse it
+    const body: RequestBody = await req.json();
+    const { feedbackText } = body;
+
+    // Validate input
+    if (!feedbackText?.trim()) {
       return new Response(
-        JSON.stringify({ error: "Missing or invalid feedback text" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Feedback text is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get OpenAI API key from environment variable
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured");
+    // Create an instance of Supabase client for the edge function
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    );
+
+    // Here you would typically call an AI service to analyze the feedback
+    // For now, we'll use a simple algorithm to generate dummy analysis
+
+    // Extract sentiment based on keyword matching (simplified)
+    const positiveWords = ['great', 'good', 'excellent', 'like', 'love', 'happy', 'pleased'];
+    const negativeWords = ['bad', 'terrible', 'hate', 'dislike', 'poor', 'disappointed', 'issue'];
+    const urgentWords = ['urgent', 'immediately', 'asap', 'critical', 'now', 'emergency'];
+
+    const lowerText = feedbackText.toLowerCase();
+    let positiveCount = 0;
+    let negativeCount = 0;
+    let urgentCount = 0;
+
+    positiveWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      const matches = lowerText.match(regex);
+      if (matches) positiveCount += matches.length;
+    });
+
+    negativeWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      const matches = lowerText.match(regex);
+      if (matches) negativeCount += matches.length;
+    });
+
+    urgentWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      const matches = lowerText.match(regex);
+      if (matches) urgentCount += matches.length;
+    });
+
+    const total = Math.max(1, positiveCount + negativeCount);
+    const positive = positiveCount / total;
+    const negative = negativeCount / total;
+    const neutral = 1 - (positive + negative);
+
+    // Generate a summary (simplified)
+    const sentences = feedbackText.match(/[^.!?]+[.!?]+/g) || [feedbackText];
+    const summary = sentences.length > 2 
+      ? `${sentences[0]} ${sentences[sentences.length - 1]}`
+      : feedbackText;
+
+    // Extract action items (simplified)
+    const actionItems: ActionItem[] = [];
+    const patterns = [
+      { pattern: /need to\s+([^.!?]+)/gi, priority: 'high' },
+      { pattern: /should\s+([^.!?]+)/gi, priority: 'medium' },
+      { pattern: /would like\s+([^.!?]+)/gi, priority: 'low' },
+      { pattern: /can you\s+([^.!?]+)/gi, priority: 'medium' },
+      { pattern: /please\s+([^.!?]+)/gi, priority: 'medium' },
+    ];
+
+    patterns.forEach(({ pattern, priority }) => {
+      const matches = [...feedbackText.matchAll(pattern)];
+      matches.forEach((match, index) => {
+        if (match[1]) {
+          actionItems.push({
+            task: match[1].trim(),
+            priority: priority as 'high' | 'medium' | 'low',
+            urgency: priority === 'high' ? 8 : priority === 'medium' ? 5 : 3
+          });
+        }
+      });
+    });
+
+    // If no action items were found, create a default one
+    if (actionItems.length === 0) {
+      actionItems.push({
+        task: 'Review the feedback and determine appropriate actions',
+        priority: 'medium',
+        urgency: 5
+      });
     }
 
-    // Analyze the feedback using OpenAI
-    const result = await analyzeFeedback(feedbackText, OPENAI_API_KEY);
-    
+    // Create the analysis result
+    const result: FeedbackAnalysisResult = {
+      summary: summary.trim(),
+      actionItems,
+      toneAnalysis: {
+        positive,
+        neutral,
+        negative,
+        urgent: urgentCount > 0,
+        critical: negative > 0.5,
+        vague: sentences.length < 2
+      }
+    };
+
     return new Response(
       JSON.stringify(result),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error("Error in analyze-feedback function:", error);
+    console.error('Error processing feedback:', error);
     
     return new Response(
-      JSON.stringify({ 
-        error: error.message || "An error occurred while analyzing feedback",
-        // Return a fallback result that the client can use
-        fallback: generateFallbackResult("Error occurred during analysis")
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: 'Failed to analyze feedback' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
-
-/**
- * Analyzes feedback text using OpenAI
- */
-async function analyzeFeedback(feedbackText: string, apiKey: string): Promise<FeedbackAnalysisResult> {
-  // Prompt for generating actionable tasks from feedback
-  const prompt = `
-    Analyze the following client feedback:
-    
-    "${feedbackText}"
-    
-    Provide:
-    1. A brief summary (2-3 sentences)
-    2. A list of actionable tasks with priorities (high/medium/low) and urgency score (1-10)
-    3. Tone analysis with percentages for positive, neutral, and negative sentiments
-    4. Flags for urgent, critical, or vague feedback
-    
-    Format as JSON with:
-    {
-      "summary": "...",
-      "actionItems": [{"task": "...", "priority": "high|medium|low", "urgency": number}],
-      "toneAnalysis": {
-        "positive": number, // decimal between 0-1
-        "neutral": number, // decimal between 0-1
-        "negative": number, // decimal between 0-1
-        "urgent": boolean,
-        "critical": boolean,
-        "vague": boolean
-      }
-    }
-  `;
-
-  let retryCount = 0;
-  const maxRetries = 2;
-  
-  while (retryCount <= maxRetries) {
-    try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini", // Using a modern, efficient model
-          messages: [
-            {
-              role: "system",
-              content: "You are an expert at analyzing client feedback and extracting actionable insights. Provide detailed analysis in the requested JSON format only."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.3,
-        }),
-      });
-
-      if (!response.ok) {
-        const responseText = await response.text();
-        throw new Error(`OpenAI API error: ${response.status} ${responseText}`);
-      }
-
-      const responseData = await response.json();
-      const content = responseData.choices[0].message.content;
-      
-      // Parse the JSON response
-      try {
-        // Extract JSON from the response (in case there's any non-JSON text)
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : content;
-        
-        const result = JSON.parse(jsonString) as FeedbackAnalysisResult;
-        
-        // Validate the parsed result
-        validateResult(result);
-        
-        return result;
-      } catch (error) {
-        console.error("Error parsing OpenAI response:", error);
-        console.log("Raw response:", content);
-        
-        // Return a fallback result if parsing fails
-        return generateFallbackResult(feedbackText);
-      }
-    } catch (error) {
-      retryCount++;
-      console.error(`Error in OpenAI request (attempt ${retryCount}/${maxRetries + 1}):`, error);
-      
-      // If we've hit max retries, throw the error
-      if (retryCount > maxRetries) {
-        throw error;
-      }
-      
-      // Otherwise, wait with exponential backoff before retrying
-      const backoffDelay = Math.pow(2, retryCount) * 1000;
-      console.log(`Retrying in ${backoffDelay}ms...`);
-      await new Promise(resolve => setTimeout(resolve, backoffDelay));
-    }
-  }
-  
-  // This should never be reached due to the throw in the retry loop
-  return generateFallbackResult(feedbackText);
-}
-
-/**
- * Validates that the result has all required properties
- */
-function validateResult(result: any): asserts result is FeedbackAnalysisResult {
-  if (!result.summary || typeof result.summary !== 'string') {
-    throw new Error("Missing or invalid summary");
-  }
-  
-  if (!Array.isArray(result.actionItems)) {
-    throw new Error("Missing or invalid actionItems array");
-  }
-  
-  if (!result.toneAnalysis || typeof result.toneAnalysis !== 'object') {
-    throw new Error("Missing or invalid toneAnalysis object");
-  }
-  
-  // Validate actionItems have required properties
-  result.actionItems.forEach((item: any, index: number) => {
-    if (!item.task || typeof item.task !== 'string') {
-      throw new Error(`Missing or invalid task in actionItem at index ${index}`);
-    }
-    if (!['high', 'medium', 'low'].includes(item.priority)) {
-      throw new Error(`Invalid priority in actionItem at index ${index}`);
-    }
-    if (typeof item.urgency !== 'number' || item.urgency < 1 || item.urgency > 10) {
-      throw new Error(`Invalid urgency in actionItem at index ${index}`);
-    }
-  });
-  
-  // Validate toneAnalysis has required properties
-  const toneAnalysis = result.toneAnalysis;
-  if (typeof toneAnalysis.positive !== 'number' || 
-      typeof toneAnalysis.neutral !== 'number' || 
-      typeof toneAnalysis.negative !== 'number' ||
-      typeof toneAnalysis.urgent !== 'boolean' ||
-      typeof toneAnalysis.critical !== 'boolean' ||
-      typeof toneAnalysis.vague !== 'boolean') {
-    throw new Error("Missing or invalid properties in toneAnalysis object");
-  }
-}
-
-/**
- * Generates a fallback result when OpenAI analysis fails
- */
-function generateFallbackResult(feedbackText: string): FeedbackAnalysisResult {
-  // Create a very basic summary if we have feedback text
-  const summary = feedbackText && feedbackText.length > 0
-    ? `Basic analysis of feedback: "${feedbackText.substring(0, 50)}${feedbackText.length > 50 ? '...' : ''}"`
-    : "Automated analysis failed. This is a basic summary of the feedback.";
-    
-  return {
-    summary,
-    actionItems: [
-      {
-        task: "Review feedback manually",
-        priority: "high",
-        urgency: 10
-      },
-      {
-        task: "Investigate analysis failure",
-        priority: "medium",
-        urgency: 7
-      }
-    ],
-    toneAnalysis: {
-      positive: 0.33,
-      neutral: 0.34,
-      negative: 0.33,
-      urgent: false,
-      critical: false,
-      vague: false
-    }
-  };
-}
+})
