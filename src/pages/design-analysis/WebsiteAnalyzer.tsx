@@ -10,10 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Layout, Eye, Check, Loader2, Copy, Tags, Users, PanelTop, MessageSquare, Award } from 'lucide-react';
+import { Layout, Eye, Check, Loader2, Copy, Tags, Users, PanelTop, MessageSquare, Award, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 /**
  * Page for analyzing website design patterns and storing them in memory
@@ -22,6 +24,15 @@ const WebsiteAnalyzer = () => {
   const { analyzeWebsiteSection, analyzeWebsite, isAnalyzing, analysisResults } = useWebsiteAnalysis();
   const [activeTab, setActiveTab] = useState<string>('single-section');
   const [currentResult, setCurrentResult] = useState<WebsiteAnalysisResult | null>(null);
+
+  // Try to get auth context, but don't throw if it doesn't exist
+  let user;
+  try {
+    const auth = useAuth();
+    user = auth?.user;
+  } catch (e) {
+    // Auth context not available, user remains undefined
+  }
 
   // Form state for analyzing a single section
   const [sectionType, setSectionType] = useState<string>('hero');
@@ -137,6 +148,15 @@ const WebsiteAnalyzer = () => {
       <p className="text-muted-foreground mb-8">
         Analyze website design patterns and store them in the design memory database to enhance AI design recommendations.
       </p>
+
+      {!user && (
+        <Alert className="mb-6 border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+            You are not logged in. Please sign in to save your analyses to the database.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2">

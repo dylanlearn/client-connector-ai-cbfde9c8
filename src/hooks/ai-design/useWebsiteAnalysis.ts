@@ -6,6 +6,7 @@ import {
   WebsiteAnalysisResult 
 } from '@/services/ai/design/website-analysis-service';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 /**
  * Hook for analyzing and storing website design patterns
@@ -14,8 +15,26 @@ export function useWebsiteAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<WebsiteAnalysisResult[]>([]);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
+  
+  // Use optional chaining to handle cases where AuthContext isn't available
+  const authContext = useAuth?.();
+  const user = authContext?.user;
+  
+  // Use toast from sonner if useToast hook fails (fallback)
+  let toastHandler;
+  try {
+    toastHandler = useToast();
+  } catch (e) {
+    // If useToast fails, we'll use sonner's toast directly
+    toastHandler = { 
+      toast: (args: any) => {
+        toast[args.variant === 'destructive' ? 'error' : 'success'](args.title, {
+          description: args.description
+        });
+      }
+    };
+  }
+  const { toast: showToast } = toastHandler;
 
   /**
    * Analyze and store a website section
@@ -29,7 +48,7 @@ export function useWebsiteAnalysis() {
     imageUrl?: string
   ) => {
     if (!user) {
-      toast({
+      showToast({
         title: "Authentication required",
         description: "Please log in to analyze and store website designs.",
         variant: "destructive"
@@ -56,7 +75,7 @@ export function useWebsiteAnalysis() {
       
       if (stored) {
         setAnalysisResults(prevResults => [...prevResults, result]);
-        toast({
+        showToast({
           title: "Analysis stored",
           description: `The ${section} section analysis has been stored successfully.`
         });
@@ -67,7 +86,7 @@ export function useWebsiteAnalysis() {
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to analyze website section');
       setError(error);
-      toast({
+      showToast({
         title: "Analysis failed",
         description: error.message,
         variant: "destructive"
@@ -76,7 +95,7 @@ export function useWebsiteAnalysis() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [user, toast]);
+  }, [user, showToast]);
 
   /**
    * Create a complete website analysis with multiple sections
@@ -93,7 +112,7 @@ export function useWebsiteAnalysis() {
     }[]
   ) => {
     if (!user) {
-      toast({
+      showToast({
         title: "Authentication required",
         description: "Please log in to analyze websites.",
         variant: "destructive"
@@ -129,12 +148,12 @@ export function useWebsiteAnalysis() {
       setAnalysisResults(prev => [...prev, ...results]);
       
       if (results.length > 0) {
-        toast({
+        showToast({
           title: "Website analysis complete",
           description: `${results.length} sections from ${websiteName} have been analyzed and stored.`
         });
       } else {
-        toast({
+        showToast({
           title: "Analysis completed with warnings",
           description: "No sections were successfully stored. Check for errors."
         });
@@ -144,7 +163,7 @@ export function useWebsiteAnalysis() {
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to analyze website');
       setError(error);
-      toast({
+      showToast({
         title: "Analysis failed",
         description: error.message,
         variant: "destructive"
@@ -153,7 +172,7 @@ export function useWebsiteAnalysis() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [user, toast]);
+  }, [user, showToast]);
 
   return {
     isAnalyzing,
