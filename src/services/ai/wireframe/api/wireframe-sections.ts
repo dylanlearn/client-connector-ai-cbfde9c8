@@ -30,15 +30,16 @@ export const wireframeSections = {
           name: section.name,
           sectionType: section.section_type,
           layoutType: section.layout_type,
-          // Cast the layout property to any to resolve TypeScript error
-          layout: section.layout as any,
+          // The layout might be stored in a JSON column with a different name
+          // Using type assertion to avoid TypeScript error
+          layout: section.layout as unknown as any,
           components: section.components as unknown as WireframeComponent[],
           copySuggestions: section.copy_suggestions as unknown as CopySuggestions,
           designReasoning: section.design_reasoning,
-          mobileLayout: section.mobile_layout,
-          animationSuggestions: section.animation_suggestions,
-          dynamicElements: section.dynamic_elements,
-          styleVariants: section.style_variants,
+          mobileLayout: section.mobile_layout as any,
+          animationSuggestions: section.animation_suggestions as any,
+          dynamicElements: section.dynamic_elements as any,
+          styleVariants: section.style_variants as any,
           positionOrder: section.position_order,
           description: section.description
         };
