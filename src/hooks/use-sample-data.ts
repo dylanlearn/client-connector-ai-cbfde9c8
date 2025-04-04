@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/components/ui/use-toast';
@@ -7,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const useSampleData = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const generateSampleData = async () => {
     if (!user) {
@@ -18,16 +20,27 @@ export const useSampleData = () => {
       return;
     }
     
+    setIsGenerating(true);
+    
     try {
       // Check if user already has projects
-      const { data: existingProjects } = await supabase
+      const { data: existingProjects, error: projectsError } = await supabase
         .from('projects')
         .select('id')
         .eq('user_id', user.id)
         .limit(1);
         
+      if (projectsError) {
+        throw new Error(`Error checking existing projects: ${projectsError.message}`);
+      }
+        
       if (existingProjects && existingProjects.length > 0) {
         // User already has projects, no need to create sample data
+        toast({
+          title: "Sample data not generated",
+          description: "You already have projects in your account",
+        });
+        setIsGenerating(false);
         return;
       }
       
@@ -46,10 +59,12 @@ export const useSampleData = () => {
         .select()
         .single();
         
-      if (projectError) throw projectError;
+      if (projectError) {
+        throw new Error(`Error creating project: ${projectError.message}`);
+      }
       
       // Add sample design tokens
-      await supabase.from('design_tokens').insert([
+      const { error: tokensError } = await supabase.from('design_tokens').insert([
         {
           name: 'Primary',
           category: 'color',
@@ -77,8 +92,12 @@ export const useSampleData = () => {
         }
       ]);
       
+      if (tokensError) {
+        throw new Error(`Error creating design tokens: ${tokensError.message}`);
+      }
+      
       // Add a sample wireframe
-      await supabase.from('ai_wireframes').insert({
+      const { error: wireframeError } = await supabase.from('ai_wireframes').insert({
         prompt: 'Modern business landing page with hero section and services overview',
         description: 'A clean, professional landing page for a business consulting firm',
         project_id: project.id,
@@ -89,13 +108,21 @@ export const useSampleData = () => {
         }
       });
       
+      if (wireframeError) {
+        throw new Error(`Error creating wireframe: ${wireframeError.message}`);
+      }
+      
       // Add sample animation preferences - Fixed type here to use "scroll_animation" instead of "scroll_reveal"
-      await supabase.from('animation_preferences').insert({
+      const { error: animationError } = await supabase.from('animation_preferences').insert({
         animation_type: 'scroll_animation',
         user_id: user.id,
         enabled: true,
         intensity_preference: 7
       });
+      
+      if (animationError) {
+        throw new Error(`Error creating animation preferences: ${animationError.message}`);
+      }
       
       toast({
         title: "Sample data created",
@@ -112,8 +139,10 @@ export const useSampleData = () => {
         description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive"
       });
+    } finally {
+      setIsGenerating(false);
     }
   };
   
-  return { generateSampleData };
+  return { generateSampleData, isGenerating };
 };

@@ -15,17 +15,10 @@ const Projects = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { projects, isLoading, error, updateProject } = useProjects();
-  const { generateSampleData } = useSampleData();
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { generateSampleData, isGenerating } = useSampleData();
   
   // Filter out archived projects
   const activeProjects = projects.filter(project => project.status !== 'archived');
-
-  const handleGenerateSampleData = async () => {
-    setIsGenerating(true);
-    await generateSampleData();
-    setIsGenerating(false);
-  };
 
   return (
     <DashboardLayout>
@@ -53,7 +46,7 @@ const Projects = () => {
       ) : error ? (
         <div className="bg-red-50 p-4 rounded-lg text-red-800">
           <p className="font-semibold">Error loading projects</p>
-          <p className="text-sm">Please try refreshing the page.</p>
+          <p className="text-sm">{error instanceof Error ? error.message : "Please try refreshing the page."}</p>
         </div>
       ) : activeProjects.length === 0 ? (
         <EmptyState 
@@ -62,7 +55,12 @@ const Projects = () => {
           buttonText="Create Project"
           buttonAction={() => navigate("/new-project")}
           secondaryButton={
-            <Button variant="outline" onClick={handleGenerateSampleData} disabled={isGenerating}>
+            <Button 
+              variant="outline" 
+              onClick={generateSampleData} 
+              disabled={isGenerating}
+              className="w-full sm:w-auto"
+            >
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

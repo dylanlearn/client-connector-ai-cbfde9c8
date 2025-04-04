@@ -1,5 +1,5 @@
 
-import { DragDropContext } from "react-beautiful-dnd";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { Clock, ArrowRight, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import ProjectColumn from "./ProjectColumn";
@@ -77,7 +77,7 @@ const ProjectBoard = ({ projects, updateProject }: ProjectBoardProps) => {
     };
   });
 
-  const handleDragEnd = (result) => {
+  const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     // Drop outside of any droppable
