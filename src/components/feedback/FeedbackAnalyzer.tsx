@@ -21,7 +21,7 @@ const FeedbackAnalyzer = ({
   const [feedbackText, setFeedbackText] = useState(initialFeedback);
   const { 
     analyzeFeedback, 
-    clearAnalysis, 
+    resetAnalysis, 
     isAnalyzing, 
     analysisResult 
   } = useFeedbackAnalysis();
@@ -37,7 +37,7 @@ const FeedbackAnalyzer = ({
 
   const handleClear = () => {
     setFeedbackText("");
-    clearAnalysis();
+    resetAnalysis();
   };
 
   const isFormDisabled = isAnalyzing || !feedbackText.trim();
