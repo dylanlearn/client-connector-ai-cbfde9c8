@@ -120,5 +120,113 @@ export const VectorMemoryService = {
       console.error("Error in getMemorySystemStats:", error);
       return [];
     }
+  },
+
+  /**
+   * Get embedding similarity trends across different memory segments
+   * Groups similar embeddings to identify clusters per client segment
+   */
+  getEmbeddingSimilarityTrends: async (
+    options: {
+      segmentBy?: 'user' | 'project' | 'category';
+      timeframe?: { from: Date, to?: Date };
+      limit?: number;
+    } = {}
+  ) => {
+    try {
+      // Call the new function to get embedding similarity trends
+      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+        body: { 
+          analysis_type: 'similarity_trends',
+          segment_by: options.segmentBy || 'category',
+          timeframe: options.timeframe ? {
+            from: options.timeframe.from.toISOString(),
+            to: options.timeframe.to?.toISOString() || new Date().toISOString()
+          } : undefined,
+          limit: options.limit || 10
+        }
+      });
+
+      if (error) {
+        console.error("Error fetching embedding similarity trends:", error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Error in getEmbeddingSimilarityTrends:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Get prompt heatmaps showing which phrases lead to certain outcomes
+   */
+  getPromptHeatmaps: async (
+    options: {
+      outcomeMetric?: string;
+      timeRange?: { from: Date, to?: Date };
+      minSimilarity?: number;
+    } = {}
+  ) => {
+    try {
+      // Call the function to get prompt heatmaps
+      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+        body: {
+          analysis_type: 'prompt_heatmaps',
+          outcome_metric: options.outcomeMetric || 'relevance_score',
+          time_range: options.timeRange ? {
+            from: options.timeRange.from.toISOString(),
+            to: options.timeRange.to?.toISOString() || new Date().toISOString()
+          } : undefined,
+          min_similarity: options.minSimilarity || 0.5
+        }
+      });
+
+      if (error) {
+        console.error("Error fetching prompt heatmaps:", error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Error in getPromptHeatmaps:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Get behavioral fingerprints to cluster user styles for personalized memory recall
+   */
+  getBehavioralFingerprints: async (
+    userId?: string,
+    options: {
+      clusterCount?: number;
+      includeGlobalPatterns?: boolean;
+      minInteractions?: number;
+    } = {}
+  ) => {
+    try {
+      // Call the function to get behavioral fingerprints
+      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+        body: {
+          analysis_type: 'behavioral_fingerprints',
+          user_id: userId,
+          cluster_count: options.clusterCount || 5,
+          include_global_patterns: options.includeGlobalPatterns !== false,
+          min_interactions: options.minInteractions || 10
+        }
+      });
+
+      if (error) {
+        console.error("Error fetching behavioral fingerprints:", error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Error in getBehavioralFingerprints:", error);
+      return [];
+    }
   }
 };
