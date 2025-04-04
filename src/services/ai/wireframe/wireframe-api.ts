@@ -242,11 +242,12 @@ export const WireframeApiService = {
       const wireframeDataJson = JSON.parse(JSON.stringify(data));
       
       // Update the wireframe in the database using the RPC function
-      const { data: updatedWireframe, error } = await supabase
+      // Use type assertion to bypass the TypeScript error with RPC
+      const { data: updatedWireframe, error } = await (supabase
         .rpc('update_wireframe_data', {
           p_wireframe_id: wireframeId,
           p_data: wireframeDataJson
-        });
+        }) as any);
       
       if (error) {
         throw new Error(`Error updating wireframe data: ${error.message}`);
