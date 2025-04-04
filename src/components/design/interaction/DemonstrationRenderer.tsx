@@ -39,7 +39,10 @@ const DemonstrationRenderer: React.FC<DemonstrationRendererProps> = ({
       <div className="w-full h-full flex items-center justify-center">
         {selectedInteraction === 'hover-effect' && (
           <HoverEffectDemo 
-            interactionConfig={{}} 
+            interactionConfig={{
+              animate: { scale: 1.1 },
+              whileHover: { scale: 1.2 }
+            }} 
           />
         )}
         {selectedInteraction === 'scroll-animation' && (
