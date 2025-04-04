@@ -26,13 +26,19 @@ export const getElementSelector = (element: HTMLElement): string => {
  * Create a consistent session ID for tracking
  */
 export const getSessionId = (): string => {
-  // Get or create a session ID stored in sessionStorage
-  let id = sessionStorage.getItem('analytics_session_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    sessionStorage.setItem('analytics_session_id', id);
+  try {
+    // Get or create a session ID stored in sessionStorage
+    let id = sessionStorage.getItem('analytics_session_id');
+    if (!id) {
+      id = crypto.randomUUID();
+      sessionStorage.setItem('analytics_session_id', id);
+    }
+    return id;
+  } catch (error) {
+    // Fallback in case sessionStorage is unavailable
+    console.warn('Error accessing sessionStorage:', error);
+    return crypto.randomUUID();
   }
-  return id;
 };
 
 /**
@@ -46,10 +52,26 @@ export const createTrackingEvent = (
   elementSelector?: string,
   metadata?: Record<string, any>
 ) => {
+  if (!userId || !eventType) {
+    throw new Error('Missing required tracking parameters');
+  }
+  
+  // Validate position data
+  if (typeof position.x !== 'number' || typeof position.y !== 'number') {
+    position = {
+      x: typeof position.x === 'number' ? position.x : 0,
+      y: typeof position.y === 'number' ? position.y : 0
+    };
+  }
+  
   // Extract deviceInfo from metadata if it exists
   const deviceInfo: DeviceInfo | undefined = metadata?.deviceInfo;
 
+  // Generate an ID for this event to help with retries
+  const eventId = crypto.randomUUID();
+
   return {
+    id: eventId,
     user_id: userId,
     event_type: eventType,
     page_url: window.location.pathname,
@@ -61,6 +83,19 @@ export const createTrackingEvent = (
     viewport_width: window.innerWidth,
     viewport_height: window.innerHeight,
     device_type: deviceInfo?.deviceType || 'unknown',
-    scroll_depth: metadata?.scrollDepth || null
+    scroll_depth: metadata?.scrollDepth || null,
+    timestamp: new Date().toISOString()
   };
+};
+
+/**
+ * Safely parse JSON with error handling
+ */
+export const safeJsonParse = (jsonString: string): any => {
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error('Error parsing JSON:', error);
+    return null;
+  }
 };
