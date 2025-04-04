@@ -62,11 +62,11 @@ export const WireframeCacheService = {
       // Update hit count
       await supabase
         .from('wireframe_cache')
-        .update({ hit_count: (data as CachedWireframe).hit_count + 1 })
-        .eq('id', (data as CachedWireframe).id);
+        .update({ hit_count: (data as unknown as CachedWireframe).hit_count + 1 })
+        .eq('id', (data as unknown as CachedWireframe).id);
       
       console.log(`Cache hit for wireframe params hash: ${paramsHash}`);
-      return (data as CachedWireframe).wireframe_data;
+      return (data as unknown as CachedWireframe).wireframe_data;
     } catch (error) {
       console.error("Error checking wireframe cache:", error);
       return null;

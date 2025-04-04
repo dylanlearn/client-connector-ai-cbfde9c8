@@ -97,7 +97,7 @@ export const WireframeBackgroundProcessor = {
       
       try {
         // Process the task based on type
-        const task = nextTask as BackgroundProcessingTask;
+        const task = nextTask as unknown as BackgroundProcessingTask;
         
         switch (task.task_type) {
           case 'optimize_wireframe':

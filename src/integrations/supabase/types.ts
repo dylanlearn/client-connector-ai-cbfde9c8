@@ -1394,6 +1394,69 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_background_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          input_data: Json
+          output_data: Json | null
+          status: string
+          task_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_data: Json
+          output_data?: Json | null
+          status?: string
+          task_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_data?: Json
+          output_data?: Json | null
+          status?: string
+          task_type?: string
+        }
+        Relationships: []
+      }
+      wireframe_cache: {
+        Row: {
+          created_at: string
+          expires_at: string
+          generation_params: Json | null
+          hit_count: number
+          id: string
+          params_hash: string
+          wireframe_data: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          generation_params?: Json | null
+          hit_count?: number
+          id?: string
+          params_hash: string
+          wireframe_data: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          generation_params?: Json | null
+          hit_count?: number
+          id?: string
+          params_hash?: string
+          wireframe_data?: Json
+        }
+        Relationships: []
+      }
       wireframe_elements: {
         Row: {
           created_at: string | null
@@ -1546,6 +1609,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wireframe_system_events: {
+        Row: {
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          severity: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          severity?: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          severity?: string
+        }
+        Relationships: []
       }
       wireframe_templates: {
         Row: {

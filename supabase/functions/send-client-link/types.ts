@@ -1,29 +1,35 @@
 
-export interface SendLinkRequest {
+export interface ClientLinkParams {
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  projectId: string;
+  designerId: string;
+  personalMessage?: string;
+  expiresInDays?: number;
+}
+
+export interface ClientLinkResponse {
+  success: boolean;
+  linkId?: string;
+  linkUrl?: string;
+  error?: string;
+}
+
+export interface DeliveryResult {
+  success: boolean;
+  deliveryId?: string;
+  error?: string;
+}
+
+export interface ClientTaskParams {
   linkId: string;
-  deliveryType: 'email' | 'sms';
-  recipient: string;
-  personalMessage?: string | null;
+  taskType: string;
+  designerNotes?: string;
 }
 
-export interface LinkData {
-  token: string;
-  designer_id: string;
-  client_name: string;
+export interface ClientTaskResponse {
+  success: boolean;
+  taskId?: string;
+  error?: string;
 }
-
-export interface EmailResponse {
-  id: string;
-  [key: string]: any;
-}
-
-export interface SMSResponse {
-  messageId: string;
-  [key: string]: any;
-}
-
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};

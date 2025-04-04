@@ -100,6 +100,7 @@ export interface WireframeDesignTokens {
 export interface WireframeQualityFlags {
   unclearInputs?: string[];
   recommendedClarifications?: string[];
+  optimized?: boolean;
 }
 
 export interface WireframeData {

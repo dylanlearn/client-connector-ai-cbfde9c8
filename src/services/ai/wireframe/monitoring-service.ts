@@ -132,14 +132,15 @@ export const WireframeMonitoringService = {
       let totalSections = 0;
       
       wireframes.forEach(wireframe => {
-        if (wireframe.generation_params?.result_data?.sections) {
-          const sections = wireframe.generation_params.result_data.sections;
-          sections.forEach((section: any) => {
-            const sectionType = section.sectionType || 'unknown';
-            sectionCounts[sectionType] = (sectionCounts[sectionType] || 0) + 1;
-            totalSections++;
-          });
-        }
+        const params = wireframe.generation_params || {};
+        const resultData = params.result_data || {};
+        const sections = resultData.sections || [];
+        
+        sections.forEach((section: any) => {
+          const sectionType = section.sectionType || 'unknown';
+          sectionCounts[sectionType] = (sectionCounts[sectionType] || 0) + 1;
+          totalSections++;
+        });
       });
       
       // Convert to expected output format

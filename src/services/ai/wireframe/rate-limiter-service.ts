@@ -49,10 +49,9 @@ export const WireframeRateLimiterService = {
       // Get today's generations
       const { data: dailyData, error: dailyError } = await supabase
         .from('wireframe_generation_metrics')
-        .select('id')
+        .select('id', { count: 'exact' })
         .eq('project_id', userId)
-        .gte('created_at', todayStart.toISOString())
-        .count();
+        .gte('created_at', todayStart.toISOString());
       
       if (dailyError) {
         console.error("Error checking daily rate limit:", dailyError);
@@ -68,10 +67,9 @@ export const WireframeRateLimiterService = {
       // Get hourly generations
       const { data: hourlyData, error: hourlyError } = await supabase
         .from('wireframe_generation_metrics')
-        .select('id')
+        .select('id', { count: 'exact' })
         .eq('project_id', userId)
-        .gte('created_at', hourStart.toISOString())
-        .count();
+        .gte('created_at', hourStart.toISOString());
       
       if (hourlyError) {
         console.error("Error checking hourly rate limit:", hourlyError);
@@ -84,8 +82,8 @@ export const WireframeRateLimiterService = {
         };
       }
       
-      const dailyCount = (dailyData as any).count || 0;
-      const hourlyCount = (hourlyData as any).count || 0;
+      const dailyCount = dailyData?.count || 0;
+      const hourlyCount = hourlyData?.count || 0;
       
       const dailyRemaining = Math.max(0, limits.daily - dailyCount);
       const hourlyRemaining = Math.max(0, limits.hourly - hourlyCount);
