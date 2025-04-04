@@ -11,8 +11,21 @@ import { UseMutationResult } from '@tanstack/react-query';
 interface ProjectCardProps {
   project: Project;
   onStatusChange?: (id: string, newStatus: string) => void;
-  updateProject?: UseMutationResult<any, Error, any, unknown>;
+  updateProject?: UseMutationResult<unknown, Error, unknown, unknown>;
   onClick?: () => void;
+}
+
+interface ProjectNotification {
+  project_id: string;
+  client_email: string;
+  notification_type: string;
+  message: string;
+  metadata: {
+    previousStatus: string;
+    newStatus: string;
+  };
+  status: string;
+  sent_at: null;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onClick, updateProject }) => {
@@ -39,7 +52,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
           },
           status: 'pending',
           sent_at: null
-        });
+        } as ProjectNotification);
       }
     }
   };

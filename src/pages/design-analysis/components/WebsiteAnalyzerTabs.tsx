@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
 import SingleSectionForm from './SingleSectionForm';
 import FullWebsiteForm from './FullWebsiteForm';
+import { Section } from './types';
 
 interface WebsiteAnalyzerTabsProps {
   isAnalyzing: boolean;
@@ -18,13 +19,7 @@ interface WebsiteAnalyzerTabsProps {
   onAnalyzeFullWebsite: (
     websiteName: string,
     websiteUrl: string,
-    sections: {
-      type: string;
-      description: string;
-      visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
-      imageUrl?: string;
-    }[]
+    sections: Section[]
   ) => Promise<void>;
 }
 

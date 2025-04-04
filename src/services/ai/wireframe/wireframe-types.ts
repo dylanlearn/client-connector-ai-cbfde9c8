@@ -1,77 +1,128 @@
 
-// Centralizing wireframe-related types in one file
+// Types for wireframe service
+export interface WireframeSection {
+  name: string;
+  sectionType: string;
+  description?: string;
+  layoutType: string;
+  components?: any[];
+  mobileLayout?: any;
+  styleVariants?: any[];
+  animationSuggestions?: any[];
+  copySuggestions?: any[];
+  designReasoning?: string;
+}
+
 export interface WireframeData {
   title: string;
   description?: string;
-  sections: WireframeSection[];
-  layout?: any;
-  styleGuide?: any;
-  designTokens?: any;
-  qualityFlags?: any;
-  accessibilityNotes?: string;
-  mobileConsiderations?: string;
-}
-
-export interface WireframeSection {
-  id: string;
-  name: string;
-  description?: string;
-  components?: any[];
-  layout?: any;
-  sectionType?: string;
-  layoutType?: string;
-  copySuggestions?: any;
-  animationSuggestions?: any;
+  sections?: WireframeSection[];
+  designTokens?: {
+    colors: { [key: string]: string };
+    fonts: { [key: string]: string };
+    spacing: { [key: string]: string | number };
+    borderRadius: { [key: string]: string | number };
+    shadows: { [key: string]: string };
+  };
+  mobileLayouts?: {
+    [key: string]: any;
+  };
+  styleVariants?: {
+    name: string;
+    description: string;
+    preview?: string;
+    styleData: any;
+  }[];
   designReasoning?: string;
-  mobileLayout?: any;
-  dynamicElements?: any;
-  styleVariants?: any;
+  animations?: {
+    type: string;
+    element: string;
+    duration?: number;
+    delay?: number;
+    options?: any;
+  }[];
+  imageUrl?: string;
 }
 
 export interface WireframeGenerationParams {
   prompt: string;
-  projectId?: string;
+  industry?: string;
   style?: string;
   complexity?: 'simple' | 'medium' | 'complex';
-  includeAnimations?: boolean;
-  includeMobileLayouts?: boolean;
-  result_data?: WireframeData;
-  industry?: string;
-  additionalInstructions?: string;
-  moodboardSelections?: any;
-  intakeResponses?: any;
+  components?: string[];
   pages?: string[];
+  features?: string[];
+  colorScheme?: string;
+  typography?: string;
+  additionalInstructions?: string;
+  responsive?: boolean;
+  projectId?: string;
+  model?: string;
 }
 
 export interface WireframeGenerationResult {
   wireframe: WireframeData;
-  generationTime?: number;
+  generationTime: number;
   success: boolean;
-  error?: string;
   model?: string;
   usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
     total_tokens: number;
+    completion_tokens?: number;
+    prompt_tokens?: number;
   };
 }
 
 export interface AIWireframe {
   id: string;
-  project_id?: string;
+  project_id: string;
   prompt: string;
   description?: string;
-  generation_params?: WireframeGenerationParams;
-  rating?: number;
-  feedback?: string;
   created_at: string;
   updated_at: string;
-  status?: string;
-  design_tokens?: any;
-  mobile_layouts?: any;
-  animations?: any;
+  design_tokens?: {
+    colors: { [key: string]: string };
+    fonts: { [key: string]: string };
+    spacing: { [key: string]: string | number };
+    borderRadius: { [key: string]: string | number };
+    shadows: { [key: string]: string };
+  };
+  mobile_layouts?: {
+    [key: string]: any;
+  };
+  style_variants?: {
+    name: string;
+    description: string;
+    preview?: string;
+    styleData: any;
+  }[];
   design_reasoning?: string;
-  style_variants?: any;
-  quality_flags?: any;
+  animations?: {
+    type: string;
+    element: string;
+    duration?: number;
+    delay?: number;
+    options?: any;
+  }[];
+  rating?: number;
+  feedback?: string;
+  status?: string;
+  generation_params?: {
+    prompt: string;
+    industry?: string;
+    style?: string;
+    complexity?: string;
+    components?: string[];
+    pages?: string[];
+    features?: string[];
+    colorScheme?: string;
+    typography?: string;
+    additionalInstructions?: string;
+    responsive?: boolean;
+    model?: string;
+    result_data?: {
+      sections?: WireframeSection[];
+    };
+  };
   image_url?: string;
+  quality_flags?: string[];
 }

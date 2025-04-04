@@ -9,6 +9,23 @@ interface AnimationDisplayProps {
   animationConfig: AnimationConfigType;
 }
 
+interface SecondaryElement {
+  className: string;
+  style?: React.CSSProperties;
+  initial: Record<string, unknown>;
+  animate: Record<string, unknown>;
+  transition: {
+    duration?: number;
+    delay?: number;
+    type?: string;
+    stiffness?: number;
+    damping?: number;
+    repeat?: number | "Infinity";
+    repeatType?: "loop" | "reverse" | "mirror";
+    ease?: string;
+  };
+}
+
 export const AnimationDisplay = memo(({ 
   isPlaying, 
   animationKey, 
@@ -53,7 +70,7 @@ export const AnimationDisplay = memo(({
       </motion.div>
       
       {/* Secondary elements for complex animations */}
-      {animationConfig.secondaryElements?.map((element, index) => (
+      {animationConfig.secondaryElements?.map((element: SecondaryElement, index: number) => (
         <motion.div
           key={`secondary-${index}`}
           className={element.className}

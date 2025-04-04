@@ -1,53 +1,63 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeMonitoringService } from "./monitoring-service";
 import { 
+  WireframeData, 
   WireframeGenerationParams, 
-  WireframeGenerationResult, 
-  AIWireframe,
-  WireframeData
+  WireframeGenerationResult,
+  AIWireframe
 } from "./wireframe-types";
-import { withRetry } from "@/utils/retry-utils";
 
 /**
- * Service for API interactions related to wireframe generation
+ * Service for interfacing with wireframe API functions and database
  */
 export const WireframeApiService = {
   /**
-   * Generate a wireframe using the edge function
+   * Generate wireframe by calling the Edge Function
    */
-  generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
+  generateWireframe: async (
+    params: WireframeGenerationParams
+  ): Promise<WireframeGenerationResult> => {
     try {
-      const { data, error } = await withRetry(
-        async () => supabase.functions.invoke("generate-wireframe", { body: params }),
-        { 
-          maxRetries: 2,
-          onRetry: (attempt) => {
-            WireframeMonitoringService.recordEvent('wireframe_generation_retry', {
-              projectId: params.projectId,
-              attempt
-            });
-          }
-        }
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      return data as WireframeGenerationResult;
-    } catch (error) {
-      WireframeMonitoringService.recordEvent('wireframe_generation_failure', {
-        projectId: params.projectId,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }, 'error');
+      const startTime = performance.now();
       
+      const { data, error } = await supabase.functions.invoke<{
+        wireframe: WireframeData;
+        model?: string;
+        usage?: { 
+          total_tokens: number;
+          completion_tokens: number;
+          prompt_tokens: number;
+        };
+      }>('generate-wireframe', {
+        body: params
+      });
+      
+      if (error) {
+        throw new Error(`Edge function error: ${error.message}`);
+      }
+      
+      if (!data || !data.wireframe) {
+        throw new Error("No wireframe data returned from API");
+      }
+      
+      const endTime = performance.now();
+      const generationTime = (endTime - startTime) / 1000; // Convert to seconds
+      
+      return {
+        wireframe: data.wireframe,
+        model: data.model,
+        usage: data.usage,
+        generationTime,
+        success: true
+      };
+    } catch (error) {
+      console.error("Error generating wireframe:", error);
       throw error;
     }
   },
-
+  
   /**
-   * Save generated wireframe to the database
+   * Save wireframe to database
    */
   saveWireframe: async (
     projectId: string,
@@ -56,158 +66,196 @@ export const WireframeApiService = {
     params: WireframeGenerationParams,
     model: string
   ): Promise<AIWireframe> => {
-    const sections = wireframeData.sections && Array.isArray(wireframeData.sections) ? wireframeData.sections : [];
-    
-    const mobileLayouts = sections.reduce<Record<string, any>>((acc, section) => {
-      if (section.name && section.mobileLayout) {
-        acc[section.name] = section.mobileLayout;
+    try {
+      // Extract main wireframe data
+      const { 
+        title, 
+        description, 
+        sections = [], 
+        designTokens, 
+        mobileLayouts,
+        styleVariants,
+        designReasoning,
+        animations,
+        imageUrl
+      } = wireframeData;
+      
+      // Insert wireframe into database
+      const { data, error } = await supabase
+        .from('ai_wireframes')
+        .insert({
+          project_id: projectId,
+          prompt: prompt,
+          description: description || title,
+          design_tokens: designTokens,
+          mobile_layouts: mobileLayouts,
+          style_variants: styleVariants,
+          design_reasoning: designReasoning,
+          animations: animations,
+          generation_params: {
+            ...params,
+            model,
+            result_data: { 
+              sections: sections 
+            }
+          },
+          image_url: imageUrl
+        })
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw new Error(`Error saving wireframe: ${error.message}`);
       }
-      return acc;
-    }, {});
-    
-    const animations = sections.reduce<Record<string, any>>((acc, section) => {
-      if (section.name && section.animationSuggestions) {
-        acc[section.name] = section.animationSuggestions;
+      
+      // Handle sections if present
+      if (Array.isArray(sections) && sections.length > 0) {
+        // Insert all sections for this wireframe
+        const sectionData = sections.map((section, index) => ({
+          wireframe_id: data.id,
+          name: section.name || `Section ${index + 1}`,
+          section_type: section.sectionType,
+          description: section.description,
+          layout_type: section.layoutType,
+          components: section.components,
+          position_order: index,
+          mobile_layout: section.mobileLayout,
+          style_variants: section.styleVariants,
+          animation_suggestions: section.animationSuggestions,
+          copy_suggestions: section.copySuggestions,
+          design_reasoning: section.designReasoning
+        }));
+        
+        const { error: sectionsError } = await supabase
+          .from('wireframe_sections')
+          .insert(sectionData);
+        
+        if (sectionsError) {
+          console.error("Error saving wireframe sections:", sectionsError);
+        }
       }
-      return acc;
-    }, {});
-    
-    const styleVariants = sections.reduce<Record<string, any>>((acc, section) => {
-      if (section.name && section.styleVariants) {
-        acc[section.name] = section.styleVariants;
-      }
-      return acc;
-    }, {});
-    
-    const designReasoning = sections
-      .map(s => s.designReasoning)
-      .filter(Boolean)
-      .join('\n\n');
-
-    const { data, error } = await supabase
-      .from('ai_wireframes')
-      .insert({
-        project_id: projectId,
-        prompt: prompt,
-        description: wireframeData.description,
-        generation_params: {
-          style: params.style,
-          complexity: params.complexity,
-          industry: params.industry,
-          additionalInstructions: params.additionalInstructions,
-          moodboardSelections: params.moodboardSelections,
-          intakeResponses: params.intakeResponses,
-          model: model,
-          result_data: wireframeData
-        } as any,
-        design_tokens: wireframeData.designTokens as any,
-        mobile_layouts: mobileLayouts,
-        animations: animations,
-        style_variants: styleVariants,
-        design_reasoning: designReasoning,
-        quality_flags: wireframeData.qualityFlags as any,
-        status: 'completed'
-      })
-      .select();
-
-    if (error) {
+      
+      return data as AIWireframe;
+    } catch (error) {
+      console.error("Error saving wireframe:", error);
       throw error;
     }
-
-    return data[0] as unknown as AIWireframe;
   },
-
+  
   /**
    * Get all wireframes for a project
    */
   getProjectWireframes: async (projectId: string): Promise<AIWireframe[]> => {
-    const { data, error } = await supabase
-      .from('ai_wireframes')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('ai_wireframes')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw new Error(`Error fetching wireframes: ${error.message}`);
+      }
+      
+      return data as AIWireframe[];
+    } catch (error) {
+      console.error("Error fetching project wireframes:", error);
       throw error;
     }
-
-    return data as unknown as AIWireframe[];
   },
-
+  
   /**
-   * Get a specific wireframe by ID
+   * Get a specific wireframe by ID with its sections
    */
   getWireframe: async (wireframeId: string): Promise<AIWireframe & { sections?: any[] }> => {
-    const { data: wireframe, error: wireframeError } = await supabase
-      .from('ai_wireframes')
-      .select('*')
-      .eq('id', wireframeId)
-      .single();
-
-    if (wireframeError) {
-      throw wireframeError;
+    try {
+      // Get the wireframe
+      const { data: wireframe, error } = await supabase
+        .from('ai_wireframes')
+        .select('*')
+        .eq('id', wireframeId)
+        .single();
+      
+      if (error) {
+        throw new Error(`Error fetching wireframe: ${error.message}`);
+      }
+      
+      // Get sections for this wireframe
+      const { data: sections, error: sectionsError } = await supabase
+        .from('wireframe_sections')
+        .select('*')
+        .eq('wireframe_id', wireframeId)
+        .order('position_order', { ascending: true });
+      
+      if (sectionsError) {
+        console.error("Error fetching wireframe sections:", sectionsError);
+      }
+      
+      return { 
+        ...wireframe as AIWireframe,
+        sections: sections || []
+      };
+    } catch (error) {
+      console.error("Error fetching wireframe:", error);
+      throw error;
     }
-
-    const typedWireframe = wireframe as unknown as AIWireframe;
-    const generationParams = typedWireframe.generation_params || {};
-    
-    // Safely access result_data with type checking
-    const resultData = generationParams && typeof generationParams === 'object' && 'result_data' in generationParams 
-      ? (generationParams as any).result_data as WireframeData | undefined
-      : undefined;
-    
-    const sections = resultData?.sections || [];
-
-    return {
-      ...typedWireframe,
-      sections: sections.map((section, index) => ({
-        id: `section-${index}`,
-        wireframe_id: wireframeId,
-        name: section.name,
-        description: section.description,
-        section_type: section.sectionType,
-        layout_type: section.layoutType,
-        components: section.components,
-        copy_suggestions: section.copySuggestions,
-        animation_suggestions: section.animationSuggestions,
-        design_reasoning: section.designReasoning,
-        position_order: index,
-        mobile_layout: section.mobileLayout,
-        dynamic_elements: section.dynamicElements,
-        style_variants: section.styleVariants
-      }))
-    };
   },
-
+  
   /**
    * Update wireframe feedback and rating
    */
-  updateWireframeFeedback: async (wireframeId: string, feedback: string, rating?: number): Promise<void> => {
-    const updateData: Record<string, any> = { feedback };
-    if (rating !== undefined) {
-      updateData.rating = rating;
-    }
-
-    const { error } = await supabase
-      .from('ai_wireframes')
-      .update(updateData)
-      .eq('id', wireframeId);
-
-    if (error) {
+  updateWireframeFeedback: async (
+    wireframeId: string, 
+    feedback: string, 
+    rating?: number
+  ): Promise<void> => {
+    try {
+      const updateData: { feedback: string; rating?: number } = { feedback };
+      
+      if (rating !== undefined) {
+        updateData.rating = rating;
+      }
+      
+      const { error } = await supabase
+        .from('ai_wireframes')
+        .update(updateData)
+        .eq('id', wireframeId);
+      
+      if (error) {
+        throw new Error(`Error updating wireframe feedback: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating wireframe feedback:", error);
       throw error;
     }
   },
-
+  
   /**
    * Delete a wireframe
    */
   deleteWireframe: async (wireframeId: string): Promise<void> => {
-    const { error } = await supabase
-      .from('ai_wireframes')
-      .delete()
-      .eq('id', wireframeId);
-
-    if (error) {
+    try {
+      // First delete sections
+      const { error: sectionsError } = await supabase
+        .from('wireframe_sections')
+        .delete()
+        .eq('wireframe_id', wireframeId);
+      
+      if (sectionsError) {
+        console.error("Error deleting wireframe sections:", sectionsError);
+      }
+      
+      // Then delete the wireframe
+      const { error } = await supabase
+        .from('ai_wireframes')
+        .delete()
+        .eq('id', wireframeId);
+      
+      if (error) {
+        throw new Error(`Error deleting wireframe: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Error deleting wireframe:", error);
       throw error;
     }
   }
