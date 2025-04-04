@@ -1,5 +1,5 @@
 
-import { pageFlowsAnalysis } from '@/services/ai/design/pageflows-analysis';
+import { PageFlowsAnalysisService } from '@/services/ai/design/pageflows-analysis';
 
 /**
  * Initialize PageFlows design patterns in memory
@@ -7,5 +7,6 @@ import { pageFlowsAnalysis } from '@/services/ai/design/pageflows-analysis';
  */
 export const initializePageFlowsPatterns = async () => {
   // Store pre-analyzed patterns from PageFlows
-  return await pageFlowsAnalysis.storePageFlowsPatterns();
+  return await PageFlowsAnalysisService.storePageFlowsPatterns();
 };
+
