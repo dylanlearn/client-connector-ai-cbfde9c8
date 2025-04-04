@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DesignMemoryService, DesignMemoryEntry } from '@/services/ai/design/design-memory-service';
 import { Badge } from '@/components/ui/badge';
 import { Check, Heart, ThumbsDown, ThumbsUp } from 'lucide-react';
 
@@ -12,7 +10,7 @@ interface AIDesignSuggestionDemoProps {
 }
 
 export const AIDesignSuggestionDemo: React.FC<AIDesignSuggestionDemoProps> = ({ isActive }) => {
-  const [designEntries, setDesignEntries] = useState<DesignMemoryEntry[]>([]);
+  const [designEntries, setDesignEntries] = useState<any[]>([]);
   const [currentEntryIndex, setCurrentEntryIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<'liked' | 'disliked' | null>(null);
@@ -26,9 +24,7 @@ export const AIDesignSuggestionDemo: React.FC<AIDesignSuggestionDemoProps> = ({ 
   const fetchDesignEntries = async () => {
     setIsLoading(true);
     try {
-      // Simulate fetching design entries
-      // In a real app, this would come from an API
-      const mockEntries: DesignMemoryEntry[] = [
+      const mockEntries: any[] = [
         {
           title: "Modern Hero Section",
           category: "layout-hero",
@@ -113,13 +109,11 @@ export const AIDesignSuggestionDemo: React.FC<AIDesignSuggestionDemoProps> = ({ 
 
   const handleLike = () => {
     setFeedback('liked');
-    // In a real app, this would send feedback to the API
     console.log("Design suggestion liked:", designEntries[currentEntryIndex]?.title);
   };
 
   const handleDislike = () => {
     setFeedback('disliked');
-    // In a real app, this would send feedback to the API
     console.log("Design suggestion disliked:", designEntries[currentEntryIndex]?.title);
   };
 

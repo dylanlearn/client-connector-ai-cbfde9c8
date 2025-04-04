@@ -19,6 +19,9 @@ import AIDesignSuggestionDemo from './demonstrations/AIDesignSuggestionDemo';
 interface DemonstrationRendererProps {
   selectedInteraction: string;
   isActive: boolean;
+  isDemonstrating?: boolean;
+  cursorPosition?: { x: number; y: number };
+  handleMouseMove?: (e: React.MouseEvent<HTMLDivElement>) => void;
 }
 
 /**
@@ -26,61 +29,104 @@ interface DemonstrationRendererProps {
  */
 const DemonstrationRenderer: React.FC<DemonstrationRendererProps> = ({ 
   selectedInteraction, 
-  isActive 
+  isActive,
+  isDemonstrating = false,
+  cursorPosition = { x: 0, y: 0 },
+  handleMouseMove = () => {}
 }) => {
-  // Use the isActive prop to control animations in the demonstrations
-  const getInteractionConfig = () => ({
-    isActive,
-    animate: isActive ? { opacity: 1, scale: 1 } : { opacity: 0.7, scale: 0.95 },
-    initial: { opacity: 0, scale: 0.9 },
-    whileHover: { scale: 1.05 },
-    drag: isActive,
-    dragConstraints: { left: 0, right: 0, top: 0, bottom: 0 }
-  });
-
-  const config = getInteractionConfig();
-
   return (
     <AnimatePresence mode="wait">
       <div className="w-full h-full flex items-center justify-center">
         {selectedInteraction === 'hover-effect' && (
-          <HoverEffectDemo interactionConfig={config} />
+          <HoverEffectDemo 
+            interactionConfig={{}} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'scroll-animation' && (
-          <ScrollAnimationDemo interactionConfig={config} />
+          <ScrollAnimationDemo 
+            interactionConfig={{
+              initial: { opacity: 0, y: 50 },
+              animate: { opacity: 1, y: 0 }
+            }} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'parallax-tilt' && (
-          <ParallaxTiltDemo interactionConfig={config} />
+          <ParallaxTiltDemo 
+            interactionConfig={{
+              animate: { rotateX: 0, rotateY: 0 }
+            }} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'custom-cursor' && (
-          <CustomCursorDemo interactionConfig={config} />
+          <CustomCursorDemo 
+            interactionConfig={{
+              animate: { x: cursorPosition.x, y: cursorPosition.y }
+            }} 
+            isDemonstrating={isDemonstrating}
+            handleMouseMove={handleMouseMove} 
+          />
         )}
         {selectedInteraction === 'modal-dialog' && (
-          <ModalDialogDemo interactionConfig={config} />
+          <ModalDialogDemo 
+            interactionConfig={{}} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'morphing-shape' && (
-          <MorphingShapeDemo interactionConfig={config} />
+          <MorphingShapeDemo 
+            interactionConfig={{}} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'magnetic-element' && (
-          <MagneticElementDemo interactionConfig={config} />
+          <MagneticElementDemo 
+            interactionConfig={{
+              animate: { x: 0, y: 0 }
+            }} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'drag-interaction' && (
-          <DragInteractionDemo interactionConfig={config} />
+          <DragInteractionDemo 
+            interactionConfig={{
+              drag: true,
+              dragConstraints: { left: 0, right: 0, top: 0, bottom: 0 }
+            }} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'color-shift' && (
-          <ColorShiftDemo interactionConfig={config} />
+          <ColorShiftDemo 
+            interactionConfig={{
+              animate: {},
+              whileHover: {}
+            }} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'intent-based-motion' && (
-          <IntentBasedMotionDemo interactionConfig={config} />
+          <IntentBasedMotionDemo 
+            interactionConfig={{}} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'progressive-disclosure' && (
-          <ProgressiveDisclosureDemo interactionConfig={config} />
+          <ProgressiveDisclosureDemo 
+            interactionConfig={{}} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'glassmorphism' && (
-          <GlassmorphismDemo interactionConfig={config} />
+          <GlassmorphismDemo 
+            interactionConfig={{}} 
+            isActive={isActive} 
+          />
         )}
         {selectedInteraction === 'ai-design-suggestion' && (
-          <AIDesignSuggestionDemo />
+          <AIDesignSuggestionDemo isActive={isActive} />
         )}
         {!selectedInteraction && (
           <DefaultDemo />
