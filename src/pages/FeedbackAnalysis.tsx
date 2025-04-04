@@ -1,7 +1,7 @@
 
 import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import FeedbackAnalyzer from "@/components/feedback/FeedbackAnalyzer";
+import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer"; // Changed to named import
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, Lightbulb, ListChecks } from "lucide-react";

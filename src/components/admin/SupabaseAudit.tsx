@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -17,7 +16,7 @@ import {
   Database, 
   Key, 
   HardDrive, 
-  Function as FunctionIcon, 
+  FunctionSquare, 
   Loader2, 
   Shield 
 } from 'lucide-react';
@@ -36,7 +35,6 @@ export function SupabaseAudit() {
   const runAudit = async () => {
     setIsLoading(true);
     try {
-      // Required tables that should exist in your application
       const requiredTables = [
         'profiles', 
         'global_memories', 
@@ -46,15 +44,12 @@ export function SupabaseAudit() {
         'projects'
       ];
       
-      // Run health check
       const health = await checkSupabaseHealth();
       setHealthCheck(health);
       
-      // Verify required tables
       const tables = await verifyRequiredTables(requiredTables);
       setTablesCheck(tables);
       
-      // Check RLS policies on key tables
       const tablesToCheckRLS = ['profiles', 'global_memories', 'user_memories', 'project_memories', 'feedback_analysis'];
       const rls = await checkRLSPolicies(tablesToCheckRLS.filter(table => 
         tables.existingTables.includes(table)
@@ -147,7 +142,6 @@ export function SupabaseAudit() {
         {healthCheck && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Service Health */}
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Service Health</h3>
                 
@@ -193,7 +187,7 @@ export function SupabaseAudit() {
                   
                   <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                     <div className="flex items-center">
-                      <FunctionIcon className="h-4 w-4 mr-2 text-gray-500" />
+                      <FunctionSquare className="h-4 w-4 mr-2 text-gray-500" />
                       <span className="text-sm">Edge Functions</span>
                     </div>
                     <div className="flex items-center">
@@ -206,7 +200,6 @@ export function SupabaseAudit() {
                 </div>
               </div>
               
-              {/* Edge Functions */}
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Edge Functions</h3>
                 <div className="p-3 border rounded-md bg-gray-50 h-[160px] overflow-y-auto">
@@ -214,7 +207,7 @@ export function SupabaseAudit() {
                     <ul className="space-y-2">
                       {healthCheck.functions.availableFunctions.map((fn: string) => (
                         <li key={fn} className="flex items-center text-sm">
-                          <FunctionIcon className="h-3 w-3 mr-2 text-blue-500" />
+                          <FunctionSquare className="h-3 w-3 mr-2 text-blue-500" />
                           {fn}
                         </li>
                       ))}
@@ -226,7 +219,6 @@ export function SupabaseAudit() {
               </div>
             </div>
             
-            {/* Database Tables */}
             {tablesCheck && (
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Database Tables</h3>

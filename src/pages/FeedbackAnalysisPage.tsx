@@ -2,7 +2,7 @@
 import React from 'react';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
-import FeedbackAnalyzer from "@/components/feedback/FeedbackAnalyzer";
+import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer"; // Changed to named import
 import { toast } from "sonner";
 import { ActionItem } from '@/services/ai/content/feedback-analysis-service';
 
