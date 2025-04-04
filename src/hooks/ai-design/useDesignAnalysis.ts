@@ -1,73 +1,113 @@
 
 import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
-import { 
-  AIDesignAnalysisService, 
-  DesignAnalysisRequest, 
-  DesignAnalysisResponse 
-} from '@/services/ai/design/ai-design-analysis-service';
+import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
+export type DesignAnalysisResult = {
+  title: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  visualElements: Record<string, any>;
+  colorScheme: {
+    palette: string[];
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+  };
+  typography: {
+    headingFont: string;
+    bodyFont: string;
+    fontPairings: string[];
+  };
+  layoutPattern: {
+    type: string;
+    structure: string;
+    spacing: string;
+  };
+  tags: string[];
+  relevanceScore: number;
+};
+
+/**
+ * Hook for analyzing design patterns and storing results in memory
+ */
 export function useDesignAnalysis() {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<DesignAnalysisResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<DesignAnalysisResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   /**
-   * Analyze a design concept or description
+   * Analyze a design pattern or concept using AI
    */
-  const analyzeDesign = useCallback(async (
+  const analyzeDesignPattern = useCallback(async (
     promptOrDescription: string,
-    options: { 
-      industry?: string; 
-      category?: string; 
-      context?: Record<string, any>;
-      storeResult?: boolean;
-      sourceUrl?: string;
-      imageUrl?: string;
-    } = {}
+    context?: Record<string, any>,
+    industry?: string,
+    category?: string
   ) => {
-    setIsAnalyzing(true);
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to use the design analysis feature.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    setIsLoading(true);
     setError(null);
     
     try {
-      const request: DesignAnalysisRequest = {
-        promptOrDescription,
-        industry: options.industry,
-        category: options.category,
-        context: options.context
-      };
-
-      const result = await AIDesignAnalysisService.analyzeDesignPattern(request);
-      setAnalysisResult(result);
-      
-      // Optionally store the result in the database
-      if (options.storeResult) {
-        const id = await AIDesignAnalysisService.storeAnalysisResult(
-          result,
-          options.sourceUrl,
-          options.imageUrl
-        );
-        
-        if (id) {
-          toast.success("Design analysis stored in memory");
+      const { data, error } = await supabase.functions.invoke('analyze-design-patterns', {
+        body: {
+          promptOrDescription,
+          context,
+          industry,
+          category
         }
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setResult(data.analysis);
       
-      return result;
+      toast({
+        title: "Analysis complete",
+        description: "Design pattern has been analyzed successfully."
+      });
+      
+      return data.analysis;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to analyze design');
+      const error = err instanceof Error ? err : new Error('Failed to analyze design pattern');
       setError(error);
-      toast.error(error.message);
+      
+      toast({
+        title: "Analysis failed",
+        description: error.message,
+        variant: "destructive"
+      });
+      
       return null;
     } finally {
-      setIsAnalyzing(false);
+      setIsLoading(false);
     }
-  }, []);
+  }, [user, toast]);
 
   return {
-    analyzeDesign,
-    isAnalyzing,
-    analysisResult,
-    error
+    isLoading,
+    result,
+    error,
+    analyzeDesignPattern
   };
 }
