@@ -1,6 +1,6 @@
 
 import { modernMinimalistLayouts } from './data/modern-minimalist-layouts';
-import { DesignPattern } from './types/design-pattern-types';
+import { DesignPattern } from './types/design-patterns';
 
 export interface ModernLayoutRecommendation {
   patternId: string;

@@ -1,11 +1,11 @@
 
-import { DesignPattern } from '../types/design-pattern-types';
+import { DesignPattern, DesignPatternCollection } from '../types/design-patterns';
 
 /**
  * Collection of modern minimalist layout patterns
  * that are currently trending and optimized for conversions
  */
-export const modernMinimalistLayouts: DesignPattern[] = [
+export const modernMinimalistLayouts: DesignPatternCollection = [
   {
     id: 'dark-hero-dual-image',
     name: 'Dark Hero with Dual Images',
