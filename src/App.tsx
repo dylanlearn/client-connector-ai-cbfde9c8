@@ -2,18 +2,17 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
 import Projects from "@/pages/Projects";
+import ProjectDetail from "@/pages/ProjectDetail";
 import ClientHub from "@/pages/ClientHub";
 import IntakeForm from "@/pages/IntakeForm";
 import DesignPicker from "@/pages/DesignPicker";
 import Analytics from "@/pages/Analytics";
 import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
 import FeedbackAnalysisPage from "@/pages/FeedbackAnalysisPage";
+import WebsiteAnalyzer from "@/pages/design-analysis/WebsiteAnalyzer";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import { AppProviders } from "@/providers/AppProviders";
-
-// Import WebsiteAnalyzer from the correct path
-import WebsiteAnalyzer from "@/pages/design-analysis/WebsiteAnalyzer";
 
 // Create placeholder auth components since the imports can't be resolved
 const Login = () => (<div>Login Page</div>);
@@ -28,6 +27,7 @@ const App = () => {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/client-hub" element={<ClientHub />} />
         <Route path="/intake-form" element={<IntakeForm />} />
         <Route path="/design-picker" element={<DesignPicker />} />
