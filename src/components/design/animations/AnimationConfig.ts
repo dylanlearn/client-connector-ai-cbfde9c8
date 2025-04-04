@@ -2,7 +2,7 @@
 import { AnimationCategory } from "@/types/animations";
 
 export interface AnimationConfigType {
-  initial: {
+  initial?: {
     opacity?: number;
     y?: number;
     scale?: number;
@@ -11,7 +11,7 @@ export interface AnimationConfigType {
   };
   animate: {
     opacity?: number;
-    y?: number;
+    y?: number | number[];
     scale?: number | number[];
     rotateY?: number | number[];
     perspective?: number;
@@ -56,7 +56,7 @@ export const getAnimationConfig = (animationType: string, isPlaying: boolean): A
         animate: { opacity: 1, scale: 1 },
         transition: { 
           duration: 1.5, // Slower reveal
-          delay: 0.2,
+          // Remove delay property as it's not in the interface
           repeat: isPlaying ? Infinity : 0,
           repeatDelay: 3,
           repeatType: "reverse"
@@ -86,6 +86,7 @@ export const getAnimationConfig = (animationType: string, isPlaying: boolean): A
       };
     case "animation-5": // Microinteractions
       return {
+        initial: {}, // Add empty initial property to fix error
         whileHover: { scale: 1.05 },
         whileTap: { scale: 0.95 },
         animate: isPlaying ? {
@@ -130,8 +131,9 @@ export const getAnimationConfig = (animationType: string, isPlaying: boolean): A
       };
     case "animation-8": // Floating Elements - Enhanced
       return {
+        initial: {}, // Add empty initial property to fix error
         animate: isPlaying ? { 
-          y: [0, -12, 0, -8, 0],
+          y: [0, -12, 0, -8, 0], // Use this format for array values
           rotate: [0, 2, 0, -2, 0],
           transition: {
             duration: 5,
@@ -142,6 +144,7 @@ export const getAnimationConfig = (animationType: string, isPlaying: boolean): A
       };
     case "animation-9": // Elastic Motion - Enhanced
       return {
+        initial: {}, // Add empty initial property to fix error
         animate: isPlaying ? {
           scale: [1, 1.1, 0.9, 1.05, 0.95, 1],
           rotate: [0, 1, -1, 2, -2, 0],
