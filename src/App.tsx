@@ -15,6 +15,7 @@ import NotFound from "@/pages/NotFound";
 import { AppProviders } from "@/providers/AppProviders";
 import Index from "@/pages/Index";
 import NewProject from "@/pages/NewProject";
+import AdminAnalytics from "@/pages/AdminAnalytics";
 
 // Create placeholder auth components since the imports can't be resolved
 const Login = () => (<div>Login Page</div>);
@@ -40,6 +41,7 @@ const App = () => {
         <Route path="/feedback-analysis" element={<FeedbackAnalysisPage />} />
         <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin-analytics" element={<AdminAnalytics />} />
         
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />

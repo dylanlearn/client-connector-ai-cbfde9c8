@@ -11,14 +11,18 @@ import {
   Users,
   MessageSquareText,
   BrainCircuit,
-  Globe
+  Globe,
+  ShieldAlert
 } from "lucide-react";
+import { useAdminStatus } from "@/hooks/use-admin-status";
 
 interface SidebarNavigationProps {
   currentPath: string;
 }
 
 export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
+  const { isAdmin } = useAdminStatus();
+  
   const navItems = [
     {
       title: "Dashboard",
@@ -65,6 +69,14 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
       href: "/website-analyzer",
       icon: <Globe className="h-5 w-5" />,
     },
+    // Show Admin Analytics only to admin users
+    ...(isAdmin ? [
+      {
+        title: "Admin Analytics",
+        href: "/admin-analytics",
+        icon: <ShieldAlert className="h-5 w-5" />,
+      }
+    ] : []),
     {
       title: "Settings",
       href: "/settings",

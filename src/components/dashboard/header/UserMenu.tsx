@@ -40,10 +40,16 @@ export const UserMenu = () => {
         <DropdownMenuSeparator />
         
         {isAdmin && (
-          <DropdownMenuItem onClick={() => navigate("/admin")} className="text-indigo-600">
-            <ShieldCheck className="mr-2 h-4 w-4" />
-            Admin Panel
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={() => navigate("/admin")} className="text-indigo-600">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Admin Panel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin-analytics")} className="text-indigo-600">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Admin Analytics
+            </DropdownMenuItem>
+          </>
         )}
         
         <DropdownMenuItem onClick={() => navigate("/settings")}>
