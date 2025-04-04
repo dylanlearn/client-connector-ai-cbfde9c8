@@ -16,12 +16,13 @@ const WebsiteAnalyzer = () => {
   const [currentResult, setCurrentResult] = useState<WebsiteAnalysisResult | null>(null);
 
   // Try to get auth context, but don't throw if it doesn't exist
-  let user;
+  let user = null;
   try {
     const auth = useAuth();
-    user = auth?.user;
+    user = auth?.user ?? null;
   } catch (e) {
-    // Auth context not available, user remains undefined
+    // Auth context not available, user remains null
+    console.log('Auth context not available:', e);
   }
 
   const handleSingleSectionAnalysis = async (

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeCacheService } from "./wireframe-cache-service";
 import { WireframeRateLimiterService } from "./rate-limiter-service";
@@ -174,6 +173,11 @@ export const WireframeService = {
    */
   getUserRole: async (userId: string): Promise<string> => {
     try {
+      if (!userId) {
+        console.warn("No user ID provided for role check");
+        return 'free'; // Default to free tier if no user ID
+      }
+      
       // Get the user profile that contains the role
       const { data, error } = await supabase
         .from('profiles')
@@ -181,9 +185,14 @@ export const WireframeService = {
         .eq('id', userId)
         .single();
       
-      if (error || !data) {
+      if (error) {
         console.error("Error fetching user role:", error);
         return 'free'; // Default to free tier if there's an error
+      }
+      
+      if (!data || !data.role) {
+        console.warn("No role found for user:", userId);
+        return 'free';
       }
       
       return data.role;

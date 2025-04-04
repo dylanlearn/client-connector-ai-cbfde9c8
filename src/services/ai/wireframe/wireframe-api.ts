@@ -73,25 +73,33 @@ export const WireframeApiService = {
           result_data: wireframeData
         } as any,
         design_tokens: wireframeData.designTokens as any,
-        mobile_layouts: wireframeData.sections.reduce((acc, section) => {
-          if (section.mobileLayout) {
-            acc[section.name] = section.mobileLayout;
-          }
-          return acc;
-        }, {} as Record<string, any>),
-        animations: wireframeData.sections.reduce((acc, section) => {
-          if (section.animationSuggestions) {
-            acc[section.name] = section.animationSuggestions;
-          }
-          return acc;
-        }, {} as Record<string, any>),
-        style_variants: wireframeData.sections.reduce((acc, section) => {
-          if (section.styleVariants) {
-            acc[section.name] = section.styleVariants;
-          }
-          return acc;
-        }, {} as Record<string, any>),
-        design_reasoning: wireframeData.sections.map(s => s.designReasoning).filter(Boolean).join('\n\n'),
+        mobile_layouts: wireframeData.sections && Array.isArray(wireframeData.sections) 
+          ? wireframeData.sections.reduce((acc, section) => {
+              if (section.mobileLayout) {
+                acc[section.name] = section.mobileLayout;
+              }
+              return acc;
+            }, {} as Record<string, any>)
+          : {},
+        animations: wireframeData.sections && Array.isArray(wireframeData.sections) 
+          ? wireframeData.sections.reduce((acc, section) => {
+              if (section.animationSuggestions) {
+                acc[section.name] = section.animationSuggestions;
+              }
+              return acc;
+            }, {} as Record<string, any>)
+          : {},
+        style_variants: wireframeData.sections && Array.isArray(wireframeData.sections) 
+          ? wireframeData.sections.reduce((acc, section) => {
+              if (section.styleVariants) {
+                acc[section.name] = section.styleVariants;
+              }
+              return acc;
+            }, {} as Record<string, any>)
+          : {},
+        design_reasoning: wireframeData.sections && Array.isArray(wireframeData.sections) 
+          ? wireframeData.sections.map(s => s.designReasoning).filter(Boolean).join('\n\n')
+          : '',
         quality_flags: wireframeData.qualityFlags as any,
         status: 'completed'
       })
