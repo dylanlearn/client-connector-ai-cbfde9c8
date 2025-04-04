@@ -1,21 +1,21 @@
 
 import React from 'react';
-import { DefaultDemo } from './demonstrations/DefaultDemo';
-import { HoverEffectDemo } from './demonstrations/HoverEffectDemo';
-import { ScrollAnimationDemo } from './demonstrations/ScrollAnimationDemo';
-import { ParallaxTiltDemo } from './demonstrations/ParallaxTiltDemo';
-import { CustomCursorDemo } from './demonstrations/CustomCursorDemo';
-import { ModalDialogDemo } from './demonstrations/ModalDialogDemo';
-import { MorphingShapeDemo } from './demonstrations/MorphingShapeDemo';
-import { MagneticElementDemo } from './demonstrations/MagneticElementDemo';
-import { DragInteractionDemo } from './demonstrations/DragInteractionDemo';
-import { ColorShiftDemo } from './demonstrations/ColorShiftDemo';
-import { IntentBasedMotionDemo } from './demonstrations/IntentBasedMotionDemo';
-import { ProgressiveDisclosureDemo } from './demonstrations/ProgressiveDisclosureDemo';
-import { GlassmorphismDemo } from './demonstrations/GlassmorphismDemo';
-import { AIDesignSuggestionDemo } from './demonstrations/AIDesignSuggestionDemo';
+import DefaultDemo from './demonstrations/DefaultDemo';
+import HoverEffectDemo from './demonstrations/HoverEffectDemo';
+import ScrollAnimationDemo from './demonstrations/ScrollAnimationDemo';
+import ParallaxTiltDemo from './demonstrations/ParallaxTiltDemo';
+import CustomCursorDemo from './demonstrations/CustomCursorDemo';
+import ModalDialogDemo from './demonstrations/ModalDialogDemo';
+import MorphingShapeDemo from './demonstrations/MorphingShapeDemo';
+import MagneticElementDemo from './demonstrations/MagneticElementDemo';
+import DragInteractionDemo from './demonstrations/DragInteractionDemo';
+import ColorShiftDemo from './demonstrations/ColorShiftDemo';
+import IntentBasedMotionDemo from './demonstrations/IntentBasedMotionDemo';
+import ProgressiveDisclosureDemo from './demonstrations/ProgressiveDisclosureDemo';
+import GlassmorphismDemo from './demonstrations/GlassmorphismDemo';
+import AIDesignSuggestionDemo from './demonstrations/AIDesignSuggestionDemo';
 
-interface DemonstrationRendererProps {
+export interface DemonstrationRendererProps {
   demoId: string;
   isActive?: boolean;
 }

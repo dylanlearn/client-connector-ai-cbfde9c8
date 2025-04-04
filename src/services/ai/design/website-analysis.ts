@@ -4,7 +4,7 @@ import { WebsiteAnalysisResult, SectionType } from './website-analysis/types';
 /**
  * Service for analyzing website patterns
  */
-export { WebsiteAnalysisResult, SectionType };
+export type { WebsiteAnalysisResult, SectionType };
 
 export const WebsiteAnalysisService = {
   /**
