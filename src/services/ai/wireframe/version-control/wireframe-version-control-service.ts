@@ -3,16 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
   WireframeVersion, 
-  WireframeRevisionHistory 
+  WireframeRevisionHistory,
+  BranchInfo
 } from "../wireframe-types";
-
-// Define the BranchInfo type
-export interface BranchInfo {
-  name: string;
-  created_at: string;
-  version_count: number;
-  latest_version_id: string;
-}
 
 /**
  * Service for wireframe version control operations
@@ -320,7 +313,7 @@ export const wireframeVersionControl = {
    */
   mergeBranch: async (
     branchVersionId: string,
-    userId: string,
+    userId: string | undefined,
     description: string = "Merged branch into main"
   ): Promise<WireframeVersion | null> => {
     try {

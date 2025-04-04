@@ -43,12 +43,10 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('versions');
   
-  // Dialog states
   const [isBranchDialogOpen, setBranchDialogOpen] = useState(false);
   const [isMergeDialogOpen, setMergeDialogOpen] = useState(false);
   const [isCompareDialogOpen, setCompareDialogOpen] = useState(false);
   
-  // Form states
   const [newBranchName, setNewBranchName] = useState('');
   const [branchDescription, setBranchDescription] = useState('');
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
@@ -59,7 +57,6 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
     summary: string
   } | null>(null);
   
-  // Load version history
   useEffect(() => {
     loadVersionHistory();
   }, [wireframeId]);
@@ -89,7 +86,6 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
         branchDescription
       );
       
-      // Reset form and refresh
       setNewBranchName('');
       setBranchDescription('');
       setBranchDialogOpen(false);
@@ -113,11 +109,9 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
       
       await wireframeVersionControl.mergeBranch(
         branch.latest_version_id,
-        userId,
-        `Merged branch ${selectedBranch} into main`
+        userId
       );
       
-      // Reset form and refresh
       setSelectedBranch(null);
       setMergeDialogOpen(false);
       loadVersionHistory();
@@ -387,7 +381,6 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  // Use current version as default if no specific version is selected
                   if (history.current) {
                     setSelectedVersion(history.current.id);
                   }
@@ -402,7 +395,6 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
         </Tabs>
       </Card>
       
-      {/* Create Branch Dialog */}
       <Dialog open={isBranchDialogOpen} onOpenChange={setBranchDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -444,7 +436,6 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Merge Branch Dialog */}
       <Dialog open={isMergeDialogOpen} onOpenChange={setMergeDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -493,7 +484,6 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
         </DialogContent>
       </Dialog>
       
-      {/* Compare Versions Dialog */}
       <Dialog open={isCompareDialogOpen} onOpenChange={setCompareDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

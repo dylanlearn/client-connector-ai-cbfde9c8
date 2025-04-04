@@ -100,7 +100,7 @@ export const supabaseAuditService = {
    */
   checkDatabaseService: async (): Promise<{ status: 'ok' | 'error'; message: string; tables: string[] }> => {
     try {
-      // Instead of querying information_schema directly, we'll check a simple table list using RPC
+      // Use a safer approach to get tables via an RPC function
       const { data, error } = await supabase.rpc('list_tables');
       
       if (error) {
@@ -111,16 +111,11 @@ export const supabaseAuditService = {
         };
       }
       
-      if (!data || data.length === 0) {
-        return {
-          status: 'error',
-          message: 'No tables found in the database',
-          tables: []
-        };
+      // Process the returned data safely
+      let tableNames: string[] = [];
+      if (data && Array.isArray(data)) {
+        tableNames = data.filter(Boolean).map(item => String(item));
       }
-      
-      // Assuming the RPC returns an array of table names
-      const tableNames = Array.isArray(data) ? data.filter(Boolean) : [];
       
       return {
         status: 'ok',
@@ -168,11 +163,10 @@ export const supabaseAuditService = {
    */
   checkFunctionsService: async (): Promise<{ status: 'ok' | 'error'; message: string; availableFunctions: string[] }> => {
     try {
-      // For Edge Functions, we'll need to check availability differently
-      // In this mock implementation, we'll check for a health check function
-      
+      // For Edge Functions, use a suitable method to check availability
       try {
-        const { data, error } = await supabase.rpc('list_functions');
+        // Use a custom RPC to get function information instead
+        const { data, error } = await supabase.rpc('get_function_list');
         
         if (error) {
           return {
@@ -182,8 +176,11 @@ export const supabaseAuditService = {
           };
         }
         
-        // Extract function names
-        const functionNames = (data || []).map((fn: any) => fn.name || '').filter(Boolean);
+        // Process function names safely
+        let functionNames: string[] = [];
+        if (data && Array.isArray(data)) {
+          functionNames = data.map(fn => (typeof fn === 'object' && fn ? fn.name || '' : '')).filter(Boolean);
+        }
         
         return {
           status: 'ok',
@@ -214,7 +211,7 @@ export const supabaseAuditService = {
     existingTables: string[];
   }> => {
     try {
-      // Use a safer approach to check tables
+      // Use the safer approach to get tables
       const { tables } = await supabaseAuditService.checkDatabaseService();
       
       const existingTables = requiredTables.filter(table => tables.includes(table));
