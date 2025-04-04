@@ -7,11 +7,13 @@ import {
   AIAccessibilityService
 } from './design';
 import { AIDesignAnalysisService } from './design/ai-design-analysis-service';
+import { ModernLayoutService } from './design/modern-layout-service';
 
 export type { ColorPaletteOptions } from './design/color-service';
 export type { LayoutRecommendationOptions } from './design/layout-service';
 export type { DesignAnalysisRequest, DesignAnalysisResponse } from './design/ai-design-analysis-service';
 export type { DesignMemoryEntry, DesignMemoryQueryOptions } from './design/design-memory-service';
+export type { ModernLayoutRecommendation } from './design/modern-layout-service';
 
 /**
  * Unified service for AI-powered design recommendations
@@ -36,5 +38,13 @@ export const AIDesignService = {
   analyzeDesignPattern: AIDesignAnalysisService.analyzeDesignPattern,
   
   // Store design analysis
-  storeDesignAnalysis: AIDesignAnalysisService.storeAnalysisResult
+  storeDesignAnalysis: AIDesignAnalysisService.storeAnalysisResult,
+  
+  // Modern conversion-optimized layouts
+  modernLayouts: {
+    getAll: ModernLayoutService.getAllPatterns,
+    getById: ModernLayoutService.getPatternById,
+    recommendForIndustry: ModernLayoutService.recommendLayoutsForIndustry
+  }
 };
+
