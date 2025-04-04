@@ -164,4 +164,4 @@ export const useAnimationPreferences = () => {
   };
 };
 
-export type { AnimationPreference };
+// Removed the duplicate export to fix the conflict
