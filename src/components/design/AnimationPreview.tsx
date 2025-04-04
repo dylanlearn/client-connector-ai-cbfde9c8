@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { DesignOption } from "./DesignPreview";
@@ -655,4 +656,464 @@ const WebsiteMicrointeractionsDemo = ({ isPlaying }: AnimationDemoProps) => {
               className="w-24 h-24 bg-gray-100 rounded-lg p-2 flex flex-col justify-center items-center"
               whileHover={{ scale: 1.05, y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
             >
-              <div className="w-8 h-8
+              <div className="w-8 h-8 rounded-full bg-blue-400 mb-2"></div>
+              <div className="w-full h-2 bg-gray-300 rounded mb-1"></div>
+              <div className="w-2/3 h-2 bg-gray-300 rounded"></div>
+            </motion.div>
+            
+            <motion.div
+              className="w-24 h-24 bg-gray-100 rounded-lg p-2 flex flex-col justify-center items-center"
+              whileHover={{ scale: 1.05, y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+            >
+              <div className="w-8 h-8 rounded-full bg-green-400 mb-2"></div>
+              <div className="w-full h-2 bg-gray-300 rounded mb-1"></div>
+              <div className="w-2/3 h-2 bg-gray-300 rounded"></div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Text Animation Demo
+const WebsiteTextAnimationDemo = ({ isPlaying }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      <div className="bg-white h-56 p-3 flex flex-col items-center justify-center gap-8">
+        {/* Animated Text Header */}
+        <div className="flex flex-col items-center">
+          <div className="flex space-x-1">
+            {["C", "R", "E", "A", "T", "I", "V", "E"].map((letter, index) => (
+              <motion.div
+                key={index}
+                className="w-6 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded flex items-center justify-center text-white font-bold"
+                animate={isPlaying ? {
+                  y: [0, -10, 0],
+                  color: ["#ffffff", "#f0f9ff", "#ffffff"],
+                  scale: [1, 1.2, 1]
+                } : {}}
+                transition={{
+                  duration: 1.5,
+                  delay: index * 0.1,
+                  repeat: isPlaying ? Infinity : 0,
+                  repeatDelay: 1.5,
+                  ease: "easeInOut"
+                }}
+              >
+                {letter}
+              </motion.div>
+            ))}
+          </div>
+          
+          <motion.div
+            className="w-36 h-3 mt-2 bg-gray-200 rounded"
+            animate={isPlaying ? {
+              width: ["144px", "120px", "144px"],
+              backgroundColor: ["#e5e7eb", "#d1d5db", "#e5e7eb"]
+            } : {}}
+            transition={{
+              duration: 2,
+              delay: 1.2,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 1,
+              ease: "easeInOut"
+            }}
+          />
+        </div>
+        
+        {/* Animated text content */}
+        <div className="flex flex-col gap-2 w-full max-w-xs">
+          {[1, 2, 3].map((i) => (
+            <motion.div
+              key={i}
+              className="w-full h-3 bg-gray-200 rounded"
+              animate={isPlaying ? {
+                backgroundColor: ["#e5e7eb", "#d1d5db", "#e5e7eb"],
+                width: i === 1 ? "100%" : i === 2 ? ["80%", "90%", "80%"] : ["60%", "70%", "60%"]
+              } : {}}
+              transition={{
+                duration: 3,
+                delay: i * 0.2,
+                repeat: isPlaying ? Infinity : 0,
+                repeatDelay: 1,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* CTA button with text animation */}
+        <motion.div
+          className="w-32 h-9 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full flex items-center justify-center overflow-hidden"
+          animate={isPlaying ? {
+            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+          } : {}}
+          transition={{
+            duration: 3,
+            repeat: isPlaying ? Infinity : 0,
+            ease: "easeInOut"
+          }}
+          style={{
+            backgroundSize: "200% 200%"
+          }}
+        >
+          <motion.div
+            className="w-20 h-3 bg-white/80 rounded"
+            animate={isPlaying ? {
+              width: ["80px", "60px", "80px"],
+            } : {}}
+            transition={{
+              duration: 2,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 1,
+              ease: "easeInOut"
+            }}
+          />
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+// Staggered Reveal Demo
+const WebsiteStaggeredRevealDemo = ({ isPlaying }: AnimationDemoProps) => {
+  const containerControls = useAnimationControls();
+  
+  useEffect(() => {
+    if (isPlaying) {
+      const animation = async () => {
+        await containerControls.start("visible");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await containerControls.start("hidden");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        animation();
+      };
+      animation();
+    } else {
+      containerControls.stop();
+    }
+    
+    return () => {
+      containerControls.stop();
+    };
+  }, [isPlaying, containerControls]);
+  
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      }
+    }
+  };
+  
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 120, damping: 12 }
+    }
+  };
+  
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      
+      <div className="bg-white h-56 p-4 overflow-hidden">
+        {/* Header */}
+        <motion.div 
+          className="w-full flex justify-center mb-4"
+          variants={container}
+          initial="hidden"
+          animate={containerControls}
+        >
+          <motion.div variants={item} className="w-40 h-6 bg-indigo-600 rounded"></motion.div>
+        </motion.div>
+        
+        {/* Feature items */}
+        <motion.div 
+          className="grid grid-cols-2 gap-4"
+          variants={container}
+          initial="hidden"
+          animate={containerControls}
+        >
+          {[1, 2, 3, 4].map((i) => (
+            <motion.div 
+              key={i}
+              variants={item}
+              className="bg-white shadow-md rounded-lg p-3 flex flex-col gap-2"
+            >
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full bg-${i % 2 === 0 ? 'blue' : 'indigo'}-${i % 3 === 0 ? '500' : '400'}`}></div>
+                <div className="w-16 h-3 bg-gray-800 rounded"></div>
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded"></div>
+              <div className="w-4/5 h-2 bg-gray-200 rounded"></div>
+              <div className="w-3/5 h-2 bg-gray-200 rounded"></div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+// Floating Elements Demo
+const WebsiteFloatingElementsDemo = ({ isPlaying }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      
+      <div className="bg-gradient-to-b from-indigo-50 to-blue-100 h-56 p-4 relative">
+        {/* Floating hero content */}
+        <div className="absolute inset-x-0 top-4 flex justify-center">
+          <motion.div 
+            className="bg-white rounded-lg p-3 w-4/5 shadow-lg"
+            animate={isPlaying ? {
+              y: [0, -8, 0],
+              rotate: [0, 1, 0, -1, 0]
+            } : {}}
+            transition={{
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full flex justify-center mb-2">
+              <div className="w-32 h-4 bg-indigo-600 rounded"></div>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded mb-1"></div>
+            <div className="w-4/5 mx-auto h-2 bg-gray-200 rounded mb-3"></div>
+            <div className="flex justify-center">
+              <div className="w-24 h-6 bg-blue-500 rounded-full"></div>
+            </div>
+          </motion.div>
+        </div>
+        
+        {/* Floating elements */}
+        <motion.div
+          className="absolute w-12 h-12 rounded-full bg-blue-200 opacity-60 left-4 top-24"
+          animate={isPlaying ? {
+            y: [-10, 10, -10],
+            x: [0, 5, 0],
+            scale: [1, 1.1, 1]
+          } : {}}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        
+        <motion.div
+          className="absolute w-8 h-8 rounded-full bg-indigo-300 opacity-60 right-8 top-12"
+          animate={isPlaying ? {
+            y: [-8, 8, -8],
+            x: [0, -5, 0],
+            scale: [1, 1.05, 1]
+          } : {}}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5
+          }}
+        />
+        
+        <motion.div
+          className="absolute w-6 h-6 rounded-full bg-purple-200 opacity-70 right-16 bottom-16"
+          animate={isPlaying ? {
+            y: [-6, 6, -6],
+            x: [-3, 3, -3],
+            scale: [1, 1.08, 1]
+          } : {}}
+          transition={{
+            duration: 4.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+        
+        <motion.div
+          className="absolute w-10 h-10 rounded-full bg-cyan-200 opacity-70 left-16 bottom-12"
+          animate={isPlaying ? {
+            y: [-7, 7, -7],
+            x: [3, -3, 3],
+            scale: [1, 1.06, 1]
+          } : {}}
+          transition={{
+            duration: 5.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.75
+          }}
+        />
+        
+        {/* Background floating shapes */}
+        <motion.div
+          className="absolute w-20 h-20 rounded-full border-2 border-indigo-100 opacity-50 right-2 bottom-2"
+          animate={isPlaying ? {
+            scale: [1, 1.2, 1],
+            rotate: [0, 45, 0]
+          } : {}}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        
+        <motion.div
+          className="absolute w-16 h-16 rounded-lg border-2 border-blue-100 opacity-40 left-4 bottom-4 rotate-12"
+          animate={isPlaying ? {
+            scale: [1, 1.1, 1],
+            rotate: [12, -12, 12]
+          } : {}}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Elastic Motion Demo
+const WebsiteElasticMotionDemo = ({ isPlaying }: AnimationDemoProps) => {
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <div className="w-full h-8 bg-gray-800 flex items-center px-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div className="w-32 mx-auto h-4 bg-gray-700 rounded-full"></div>
+      </div>
+      
+      <div className="bg-white h-56 p-4 flex flex-col items-center justify-center">
+        {/* Elastic bouncing logo */}
+        <motion.div 
+          className="w-24 h-24 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl mb-6 flex items-center justify-center shadow-lg"
+          animate={isPlaying ? {
+            scale: [1, 1.2, 0.9, 1.1, 0.95, 1],
+            rotate: [0, 10, -10, 5, -5, 0],
+            borderRadius: ["16px", "40%", "35%", "25%", "40%", "16px"]
+          } : {}}
+          transition={{
+            duration: 3,
+            repeat: isPlaying ? Infinity : 0,
+            repeatDelay: 1,
+            ease: [0.25, 0.1, 0.25, 1]
+          }}
+        >
+          <motion.div 
+            className="w-12 h-12 rounded-full bg-white opacity-90 flex items-center justify-center"
+            animate={isPlaying ? {
+              scale: [1, 0.9, 1.1, 0.95, 1.05, 1]
+            } : {}}
+            transition={{
+              duration: 3,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 1,
+              ease: [0.25, 0.1, 0.25, 1],
+              delay: 0.1
+            }}
+          >
+            <div className="w-6 h-6 rounded-full bg-indigo-500"></div>
+          </motion.div>
+        </motion.div>
+        
+        {/* Elastic text lines */}
+        <div className="space-y-3 w-full max-w-xs">
+          <motion.div
+            className="w-3/4 h-4 bg-gray-800 rounded mx-auto"
+            animate={isPlaying ? {
+              width: ["75%", "80%", "70%", "78%", "75%"],
+              x: [0, 5, -5, 2, 0]
+            } : {}}
+            transition={{
+              duration: 3,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 1,
+              ease: "easeInOut"
+            }}
+          />
+          
+          <div className="flex flex-col gap-2">
+            {[1, 2, 3].map((i) => (
+              <motion.div
+                key={i}
+                className="w-full h-2 bg-gray-200 rounded"
+                animate={isPlaying ? {
+                  width: i === 1 ? ["100%", "95%", "100%"] : 
+                         i === 2 ? ["100%", "90%", "98%", "100%"] : 
+                         ["100%", "92%", "96%", "100%"],
+                  x: i === 1 ? [0, 5, 0] : 
+                      i === 2 ? [0, -5, 2, 0] : 
+                      [0, 3, -2, 0]
+                } : {}}
+                transition={{
+                  duration: 3,
+                  repeat: isPlaying ? Infinity : 0,
+                  repeatDelay: 1,
+                  ease: "easeInOut",
+                  delay: i * 0.1
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Button with elastic effect */}
+          <motion.div
+            className="w-32 h-8 bg-indigo-500 rounded-full mx-auto mt-4 flex items-center justify-center"
+            animate={isPlaying ? {
+              scale: [1, 1.05, 0.95, 1.02, 1],
+              width: ["128px", "140px", "120px", "132px", "128px"]
+            } : {}}
+            transition={{
+              duration: 3,
+              repeat: isPlaying ? Infinity : 0,
+              repeatDelay: 1,
+              ease: [0.25, 0.1, 0.25, 1]
+            }}
+          >
+            <div className="w-16 h-2 bg-white opacity-90 rounded"></div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AnimationPreview;
