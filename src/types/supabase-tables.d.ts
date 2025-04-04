@@ -4,7 +4,7 @@
  * the auto-generated types.
  */
 
-import { ActionItem, ToneAnalysis, FeedbackStatus } from "@/services/ai/content/feedback-analysis-service";
+import { ActionItem, ToneAnalysis, FeedbackStatus } from "@/services/ai/content/feedback-types";
 
 /**
  * Feedback analysis types

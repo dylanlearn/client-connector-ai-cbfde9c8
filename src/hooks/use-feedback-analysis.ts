@@ -1,7 +1,11 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { FeedbackAnalysisResult, FeedbackAnalysisService, FeedbackStatus } from '@/services/ai/content/feedback-analysis-service';
+import { 
+  FeedbackAnalysisResult, 
+  FeedbackStatus, 
+  FeedbackAnalysisService 
+} from '@/services/ai/content/feedback-analysis-service';
 import { supabase } from "@/integrations/supabase/client";
 
 /**
