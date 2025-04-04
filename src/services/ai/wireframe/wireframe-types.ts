@@ -1,3 +1,4 @@
+
 /**
  * Type definitions for the Wireframe service
  */
@@ -9,6 +10,26 @@ export interface WireframeData {
   style?: WireframeStyle;
   createdAt?: string;
   updatedAt?: string;
+  
+  // Additional properties needed by components
+  designTokens?: {
+    colors?: Record<string, string>;
+    typography?: {
+      headings?: string;
+      body?: string;
+      fontPairings?: string[];
+    };
+  };
+  mobileConsiderations?: string;
+  accessibilityNotes?: string;
+  qualityFlags?: {
+    unclearInputs?: string[];
+  };
+  imageUrl?: string;
+  designReasoning?: string;
+  styleVariants?: any;
+  mobileLayouts?: any;
+  animations?: any;
 }
 
 export interface WireframeSection {
@@ -25,6 +46,7 @@ export interface WireframeSection {
   dynamicElements?: any;
   styleVariants?: any;
   positionOrder?: number;
+  description?: string; // Added description property
 }
 
 export interface WireframeComponent {
@@ -102,4 +124,51 @@ export interface VersionComparisonResult {
     values: [any, any];
   }>;
   summary: string;
+}
+
+// Additional types needed by components
+export interface AIWireframe {
+  id: string;
+  project_id: string;
+  prompt: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+  design_tokens?: any;
+  mobile_layouts?: any;
+  style_variants?: any;
+  design_reasoning?: string;
+  animations?: any;
+  generation_params?: any;
+  image_url?: string;
+  data?: WireframeData;
+}
+
+export interface WireframeGenerationParams {
+  projectId: string;
+  prompt: string;
+  style?: string;
+  complexity?: 'simple' | 'medium' | 'complex';
+  industry?: string;
+  pages?: string[];
+  moodboardSelections?: {
+    layoutPreferences?: string[];
+    fonts?: string[];
+    colors?: string[];
+    tone?: string[];
+  };
+  typography?: string;
+  additionalInstructions?: string;
+}
+
+export interface WireframeGenerationResult {
+  wireframe: WireframeData;
+  model?: string;
+  usage?: {
+    total_tokens: number;
+    completion_tokens: number;
+    prompt_tokens: number;
+  };
+  generationTime: number;
+  success: boolean;
 }

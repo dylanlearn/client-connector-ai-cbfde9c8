@@ -1,3 +1,4 @@
+
 import { WireframeData, WireframeSection, WireframeComponent, CopySuggestions } from "@/services/ai/wireframe/wireframe-types";
 
 /**
@@ -52,7 +53,8 @@ export const questionnaireWireframeBridge = {
         copySuggestions: {
           heading: sectionHeadings[index] || `Section ${index + 1}`,
           subheading: sectionDescriptions[index] || "A brief overview of this section."
-        }
+        },
+        description: sectionDescriptions[index] || "Default section description." // Add description property
       };
     };
 
@@ -92,7 +94,8 @@ export const questionnaireWireframeBridge = {
         copySuggestions: {
           heading: sectionHeading,
           subheading: sectionDescription
-        }
+        },
+        description: sectionDescription // Add description property
       };
     });
 
@@ -117,9 +120,57 @@ export const questionnaireWireframeBridge = {
           unit: 8,
           scale: [0, 1, 2, 3, 4, 5, 6, 7, 8]
         }
-      }
+      },
+      // Add additional fields needed by components
+      designTokens: {
+        colors: {
+          primary: primaryColor,
+          secondary: secondaryColor,
+          accent: accentColor,
+          background: backgroundColor,
+          text: textColor
+        },
+        typography: {
+          headings: headingFont,
+          body: bodyFont
+        }
+      },
+      mobileConsiderations: "Responsive design with mobile-first approach.",
+      accessibilityNotes: "Ensure all elements meet WCAG 2.1 AA standards."
     };
 
     return wireframeData;
+  },
+  
+  // Add the methods that are referenced in ProjectWireframesTab.tsx
+  transformIntakeToWireframeParams: (intakeData: any, designRecommendations: any): any => {
+    return {
+      projectId: intakeData.formId,
+      prompt: `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`,
+      style: intakeData.designStyle || 'modern',
+      industry: intakeData.industry,
+      complexity: 'medium'
+    };
+  },
+  
+  getRecommendedSections: (intakeData: any): string[] => {
+    // Default sections
+    const defaultSections = ['hero', 'features', 'footer'];
+    
+    // Add sections based on site type
+    const siteType = intakeData.siteType?.toLowerCase() || '';
+    
+    if (siteType.includes('ecommerce')) {
+      return [...defaultSections, 'products', 'testimonials', 'cart'];
+    } else if (siteType.includes('portfolio')) {
+      return [...defaultSections, 'work', 'skills', 'contact'];
+    } else if (siteType.includes('blog')) {
+      return [...defaultSections, 'posts', 'categories', 'subscribe'];
+    }
+    
+    return defaultSections;
   }
 };
+
+// Export alias for backward compatibility
+export const QuestionnaireWireframeBridge = questionnaireWireframeBridge;

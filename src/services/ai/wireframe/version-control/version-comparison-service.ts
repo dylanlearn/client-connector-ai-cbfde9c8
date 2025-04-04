@@ -21,8 +21,9 @@ export const versionComparisonService = {
       }
       
       // Ensure we have a properly typed result
-      if (data && typeof data === 'object' && 'changes' in data && 'summary' in data) {
-        return data as VersionComparisonResult;
+      if (data && typeof data === 'object') {
+        // Convert data to VersionComparisonResult type with proper casting
+        return data as unknown as VersionComparisonResult;
       }
       
       // Create a fallback result if the data doesn't match expected format

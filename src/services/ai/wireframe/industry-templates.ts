@@ -1,195 +1,177 @@
-export const ecommerceTemplate = {
-  id: "ecommerce-standard",
-  name: "E-Commerce Standard",
-  sections: [
-    {
-      name: "Hero Banner",
-      sectionType: "hero",
-      layoutType: "full-width",
-      layout: {
-        type: "standard-hero",
-        alignment: "center"
-      }, // Added missing layout property
-      components: [
-        { type: "hero-image", content: "Product showcase image" },
-        { type: "heading", content: "Shop Our Latest Collection" },
-        { type: "cta-button", content: "Shop Now" }
-      ],
-      copySuggestions: {
-        heading: "Discover Our Premium Collection",
-        subheading: "Quality products for your lifestyle",
-        cta: "Browse Products"
-      },
-      designReasoning: "A bold hero section grabs attention and immediately showcases featured products."
-    },
-    {
-      name: "Product Categories",
-      sectionType: "grid",
-      layoutType: "contained",
-      layout: {
-        type: "grid",
-        columns: 3
-      }, // Added missing layout property
-      components: [
-        { type: "category-card", content: "Category 1" },
-        { type: "category-card", content: "Category 2" },
-        { type: "category-card", content: "Category 3" }
-      ],
-      copySuggestions: {
-        heading: "Shop By Category"
-      },
-      designReasoning: "Categorized product display helps users quickly find what they're looking for."
-    },
-    {
-      name: "Featured Products",
-      sectionType: "products",
-      layoutType: "contained",
-      layout: {
-        type: "slider",
-        items: 4
-      }, // Added missing layout property
-      components: [
-        { type: "product-card", content: "Product 1" },
-        { type: "product-card", content: "Product 2" },
-        { type: "product-card", content: "Product 3" },
-        { type: "product-card", content: "Product 4" }
-      ],
-      copySuggestions: {
-        heading: "Bestsellers",
-        subheading: "Our most popular items this season"
-      },
-      designReasoning: "Highlighting popular products increases conversion rates and showcases your best offerings."
-    }
-  ],
-};
 
-export const saasTemplate = {
-  id: "saas-standard",
-  name: "SaaS Standard",
-  sections: [
-    {
-      name: "Hero Banner",
-      sectionType: "hero",
-      layoutType: "full-width",
-      layout: {
-        type: "split-hero",
-        alignment: "left"
-      }, // Added missing layout property
-      components: [
-        { type: "hero-image", content: "Software dashboard preview" },
-        { type: "heading", content: "Simplify Your Workflow" },
-        { type: "subheading", content: "All-in-one solution for your business needs" },
-        { type: "cta-button", content: "Start Free Trial" }
-      ],
-      copySuggestions: {
-        heading: "Boost Your Team's Productivity",
-        subheading: "The all-in-one platform that streamlines your workflow",
-        cta: "Try For Free"
-      },
-      designReasoning: "Clean hero section with product screenshot immediately communicates the software's value proposition."
-    },
-    {
-      name: "Features Section",
-      sectionType: "features",
-      layoutType: "contained",
-      layout: {
-        type: "grid",
-        columns: 3
-      }, // Added missing layout property
-      components: [
-        { type: "feature-card", content: "Feature 1" },
-        { type: "feature-card", content: "Feature 2" },
-        { type: "feature-card", content: "Feature 3" }
-      ],
-      copySuggestions: {
-        heading: "Key Features"
-      },
-      designReasoning: "Concise feature highlights help users quickly understand the product's capabilities."
-    },
-    {
-      name: "How It Works",
-      sectionType: "process",
-      layoutType: "contained",
-      layout: {
-        type: "timeline",
-        steps: 3
-      }, // Added missing layout property
-      components: [
-        { type: "step-card", content: "Step 1" },
-        { type: "step-card", content: "Step 2" },
-        { type: "step-card", content: "Step 3" }
-      ],
-      copySuggestions: {
-        heading: "How It Works",
-        subheading: "Getting started is easy"
-      },
-      designReasoning: "Step-by-step explanation reduces friction in the user adoption process."
-    }
-  ],
-};
+/**
+ * Service for industry-specific wireframe templates
+ */
+export const IndustryTemplateService = {
+  /**
+   * Get template suggestions for a specific industry
+   */
+  getTemplatesForIndustry: (industry: string) => {
+    // Default/fallback template
+    const defaultTemplate = {
+      sections: [
+        {
+          name: "Hero",
+          sectionType: "hero",
+          layoutType: "centered",
+          layout: { type: "centered-content" },
+          components: [
+            { type: "heading", content: "Welcome to Our Website" },
+            { type: "paragraph", content: "We provide quality services to meet your needs." },
+            { type: "button", content: "Get Started" }
+          ],
+          copySuggestions: {
+            heading: "Welcome to Our Website",
+            subheading: "We provide quality services to meet your needs.",
+            cta: "Get Started"
+          }
+        },
+        {
+          name: "Features",
+          sectionType: "features",
+          layoutType: "grid",
+          layout: { type: "grid-layout" },
+          components: [
+            { type: "heading", content: "Our Features" },
+            { type: "feature-card", content: "Feature 1" },
+            { type: "feature-card", content: "Feature 2" },
+            { type: "feature-card", content: "Feature 3" }
+          ],
+          copySuggestions: {
+            heading: "Our Features",
+            subheading: "Discover what makes us special"
+          }
+        },
+        {
+          name: "Contact",
+          sectionType: "contact",
+          layoutType: "split",
+          layout: { type: "split-layout" },
+          components: [
+            { type: "heading", content: "Get In Touch" },
+            { type: "form", content: "Contact Form" },
+            { type: "map", content: "Location Map" }
+          ],
+          copySuggestions: {
+            heading: "Get In Touch",
+            subheading: "We'd love to hear from you"
+          }
+        }
+      ]
+    };
 
-export const portfolioTemplate = {
-  id: "portfolio-standard",
-  name: "Portfolio Standard",
-  sections: [
-    {
-      name: "Hero Banner",
-      sectionType: "hero",
-      layoutType: "full-width",
-      layout: {
-        type: "creative-hero",
-        alignment: "center"
-      }, // Added missing layout property
-      components: [
-        { type: "profile-image", content: "Professional photo" },
-        { type: "heading", content: "John Doe" },
-        { type: "subheading", content: "UX Designer & Developer" },
-        { type: "cta-button", content: "View My Work" }
-      ],
-      copySuggestions: {
-        heading: "Creating Digital Experiences",
-        subheading: "Specializing in UI/UX and web development",
-        cta: "Explore My Projects"
-      },
-      designReasoning: "A personal introduction creates a connection with potential clients and employers."
-    },
-    {
-      name: "About Me",
-      sectionType: "about",
-      layoutType: "contained",
-      layout: {
-        type: "split",
-        alignment: "left"
-      }, // Added missing layout property
-      components: [
-        { type: "image", content: "Personal image" },
-        { type: "heading", content: "About Me" },
-        { type: "paragraph", content: "Brief biography" }
-      ],
-      copySuggestions: {
-        heading: "My Story",
-        subheading: "Background and experience"
-      },
-      designReasoning: "Personal background information builds trust and shows personality."
-    },
-    {
-      name: "Portfolio Gallery",
-      sectionType: "gallery",
-      layoutType: "contained",
-      layout: {
-        type: "masonry",
-        columns: 3
-      }, // Added missing layout property
-      components: [
-        { type: "project-card", content: "Project 1" },
-        { type: "project-card", content: "Project 2" },
-        { type: "project-card", content: "Project 3" }
-      ],
-      copySuggestions: {
-        heading: "Recent Projects",
-        subheading: "Selected works from my portfolio"
-      },
-      designReasoning: "Visual showcase of work is essential for a portfolio site."
+    // Industry-specific templates
+    switch (industry.toLowerCase()) {
+      case 'ecommerce':
+        return {
+          sections: [
+            {
+              name: "Hero",
+              sectionType: "hero",
+              layoutType: "split",
+              layout: { type: "split-layout" },
+              components: [
+                { type: "heading", content: "Shop the Latest Products" },
+                { type: "image", content: "Product Showcase" },
+                { type: "button", content: "Shop Now" }
+              ],
+              copySuggestions: {
+                heading: "Shop the Latest Products",
+                subheading: "Quality items at competitive prices",
+                cta: "Shop Now"
+              }
+            },
+            {
+              name: "Featured Products",
+              sectionType: "products",
+              layoutType: "grid",
+              layout: { type: "product-grid" },
+              components: [
+                { type: "heading", content: "Featured Products" },
+                { type: "product-card", content: "Product 1" },
+                { type: "product-card", content: "Product 2" },
+                { type: "product-card", content: "Product 3" }
+              ],
+              copySuggestions: {
+                heading: "Featured Products",
+                subheading: "Our best selling items"
+              }
+            },
+            {
+              name: "Testimonials",
+              sectionType: "testimonials",
+              layoutType: "carousel",
+              layout: { type: "carousel-layout" },
+              components: [
+                { type: "heading", content: "What Our Customers Say" },
+                { type: "testimonial-card", content: "Testimonial 1" },
+                { type: "testimonial-card", content: "Testimonial 2" },
+                { type: "testimonial-card", content: "Testimonial 3" }
+              ],
+              copySuggestions: {
+                heading: "What Our Customers Say",
+                subheading: "Real reviews from satisfied customers"
+              }
+            }
+          ]
+        };
+      
+      case 'portfolio':
+        return {
+          sections: [
+            {
+              name: "Hero",
+              sectionType: "hero",
+              layoutType: "fullwidth",
+              layout: { type: "fullwidth-layout" },
+              components: [
+                { type: "heading", content: "Hi, I'm [Name]" },
+                { type: "paragraph", content: "I create amazing designs" },
+                { type: "button", content: "View My Work" }
+              ],
+              copySuggestions: {
+                heading: "Hi, I'm [Name]",
+                subheading: "I create amazing designs",
+                cta: "View My Work"
+              }
+            },
+            {
+              name: "Portfolio",
+              sectionType: "portfolio",
+              layoutType: "masonry",
+              layout: { type: "masonry-grid" },
+              components: [
+                { type: "heading", content: "My Work" },
+                { type: "portfolio-item", content: "Project 1" },
+                { type: "portfolio-item", content: "Project 2" },
+                { type: "portfolio-item", content: "Project 3" }
+              ],
+              copySuggestions: {
+                heading: "My Work",
+                subheading: "Check out my latest projects"
+              }
+            },
+            {
+              name: "Skills",
+              sectionType: "skills",
+              layoutType: "list",
+              layout: { type: "list-layout" },
+              components: [
+                { type: "heading", content: "My Skills" },
+                { type: "skill-bar", content: "Skill 1" },
+                { type: "skill-bar", content: "Skill 2" },
+                { type: "skill-bar", content: "Skill 3" }
+              ],
+              copySuggestions: {
+                heading: "My Skills",
+                subheading: "What I bring to the table"
+              }
+            }
+          ]
+        };
+      
+      default:
+        return defaultTemplate;
     }
-  ],
+  }
 };

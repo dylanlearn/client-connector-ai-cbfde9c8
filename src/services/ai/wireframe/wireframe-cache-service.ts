@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeData, WireframeGenerationParams } from "./wireframe-types";
 
@@ -60,17 +61,20 @@ export const WireframeCacheService = {
         return { hit: false };
       }
       
+      // Type guard to check if data has the expected structure
+      const typedData = data as any;
+      
       // Increment the hit counter for the found cache
-      if (data.id) {
+      if (typedData && typedData.id) {
         await supabase.rpc('increment_cache_hit', {
-          p_cache_id: data.id
+          p_cache_id: typedData.id
         });
       }
       
       return {
-        hit: !!data,
-        cacheId: data?.id,
-        wireframeData: data?.wireframe_data
+        hit: !!typedData,
+        cacheId: typedData?.id,
+        wireframeData: typedData?.wireframe_data
       };
     } catch (error) {
       console.error('Error checking wireframe cache:', error);
@@ -121,7 +125,9 @@ export const WireframeCacheService = {
         return 0;
       }
       
-      const removedCount = data?.removed || 0;
+      // Type guard for the response data
+      const typedData = data as any;
+      const removedCount = typedData?.removed || 0;
       console.log(`Cleared ${removedCount} expired wireframe cache entries`);
       return removedCount;
     } catch (error) {

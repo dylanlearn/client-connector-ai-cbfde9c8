@@ -1,12 +1,9 @@
-
-import { supabase } from '@/integrations/supabase/client';
-import { SupabaseHealthCheck } from '@/utils/supabase-audit';
-import { PostgrestError } from '@supabase/supabase-js';
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Service for performing comprehensive Supabase audits
  */
-export const supabaseAuditService = {
+export const SupabaseAuditService = {
   /**
    * Run a full health check on all Supabase services
    */
@@ -19,16 +16,16 @@ export const supabaseAuditService = {
   }> => {
     try {
       // Check authentication service
-      const authStatus = await supabaseAuditService.checkAuthService();
+      const authStatus = await SupabaseAuditService.checkAuthService();
       
       // Check database service
-      const dbStatus = await supabaseAuditService.checkDatabaseService();
+      const dbStatus = await SupabaseAuditService.checkDatabaseService();
       
       // Check storage service
-      const storageStatus = await supabaseAuditService.checkStorageService();
+      const storageStatus = await SupabaseAuditService.checkStorageService();
       
       // Check functions
-      const functionsStatus = await supabaseAuditService.checkFunctionsService();
+      const functionsStatus = await SupabaseAuditService.checkFunctionsService();
       
       // Determine overall health
       let overall: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
@@ -298,6 +295,85 @@ export const supabaseAuditService = {
     } catch (error) {
       console.error('Error checking expired cache entries:', error);
       return 0;
+    }
+  },
+  
+  /**
+   * Get all tables from the database
+   */
+  getTables: async () => {
+    try {
+      // Use RPC instead of raw query to avoid TypeScript errors
+      const { data, error } = await supabase.rpc('get_all_tables');
+      
+      if (error) {
+        console.error("Error fetching tables:", error);
+        return [];
+      }
+      
+      // Assuming the RPC function returns an array of table names
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Exception in getTables:", error);
+      return [];
+    }
+  },
+  
+  /**
+   * Get all functions from the database
+   */
+  getFunctions: async () => {
+    try {
+      // Use RPC for this instead of direct access to supabase.functions.listFunctions
+      const { data, error } = await supabase.rpc('list_functions');
+      
+      if (error) {
+        console.error("Error fetching functions:", error);
+        return [];
+      }
+      
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Exception in getFunctions:", error);
+      return [];
+    }
+  },
+  
+  /**
+   * Get information about a specific table
+   */
+  getTableInfo: async (tableName: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_table_info', { p_table_name: tableName });
+      
+      if (error) {
+        console.error(`Error fetching info for table ${tableName}:`, error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Exception in getTableInfo for ${tableName}:`, error);
+      return null;
+    }
+  },
+  
+  /**
+   * Get RLS information about a specific table
+   */
+  getTableRLS: async (tableName: string) => {
+    try {
+      const { data, error } = await supabase.rpc('get_table_rls', { p_table_name: tableName });
+      
+      if (error) {
+        console.error(`Error fetching RLS for table ${tableName}:`, error);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Exception in getTableRLS for ${tableName}:`, error);
+      return null;
     }
   }
 };

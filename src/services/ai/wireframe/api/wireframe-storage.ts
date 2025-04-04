@@ -26,12 +26,12 @@ export const wireframeStorage = {
         title, 
         description, 
         sections = [], 
-        designTokens, 
-        mobileLayouts,
-        styleVariants,
-        designReasoning,
-        animations,
-        imageUrl
+        designTokens = {}, 
+        mobileLayouts = null,
+        styleVariants = null,
+        designReasoning = null,
+        animations = null,
+        imageUrl = null
       } = wireframeData;
       
       // Convert wireframeData to a JSON-compatible format
