@@ -6,6 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Send, Lightbulb, Bot, Sparkles } from "lucide-react";
 import { DesignOption } from "./VisualPicker";
+import { useConversationalMemory } from "@/hooks/ai-design/useConversationalMemory";
+import { useToneAdaptation } from "@/hooks/ai-design/useToneAdaptation";
+import { useInteractiveDesignSuggestions } from "@/hooks/ai-design/useInteractiveDesignSuggestions";
+import AIDesignSuggestionCard from "./AIDesignSuggestionCard";
 
 interface AIDesignAssistantProps {
   selectedDesigns: Record<string, DesignOption>;
@@ -19,9 +23,34 @@ const AIDesignAssistant = ({
   className = "",
 }: AIDesignAssistantProps) => {
   const { messages, isProcessing, simulateResponse } = useAI();
+  const { getPersonalizedGreeting, storeConversationEntry } = useConversationalMemory();
+  const { adaptMessageTone } = useToneAdaptation();
+  const { 
+    activeSuggestion,
+    isGenerating,
+    generateSuggestion,
+    processFeedback
+  } = useInteractiveDesignSuggestions();
+  
   const [input, setInput] = useState("");
+  const [hasGreeted, setHasGreeted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [aiSuggestions, setAiSuggestions] = useState<DesignOption[]>([]);
+
+  // Send the initial greeting when component mounts
+  useEffect(() => {
+    if (!hasGreeted) {
+      const greeting = getPersonalizedGreeting();
+      simulateResponse(greeting);
+      setHasGreeted(true);
+      
+      // Generate design suggestions based on selected designs if any
+      if (Object.keys(selectedDesigns).length > 0) {
+        setTimeout(() => {
+          generateSuggestionsFromSelections();
+        }, 1000);
+      }
+    }
+  }, [hasGreeted]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -29,58 +58,128 @@ const AIDesignAssistant = ({
   }, [messages]);
 
   // Generate AI suggestions based on selected designs
-  useEffect(() => {
-    if (Object.keys(selectedDesigns).length > 0) {
-      // This would be replaced with actual AI-generated suggestions
-      const generateSuggestions = async () => {
-        const categories = Object.values(selectedDesigns).map(design => design.category);
-        
-        if (categories.includes("hero")) {
-          simulateResponse(`I notice you've selected a ${getDesignStyle(selectedDesigns)} hero section. 
-          Would you like to see complementary navbar designs that would pair well with this style?`);
-        } else if (categories.includes("navbar") && !categories.includes("hero")) {
-          simulateResponse(`Your navbar selection has a ${getDesignStyle(selectedDesigns)} feel. 
-          Let me suggest some hero sections that would create a cohesive look with this navigation style.`);
-        }
-      };
+  const generateSuggestionsFromSelections = async () => {
+    if (Object.keys(selectedDesigns).length === 0) return;
+    
+    const categories = Object.values(selectedDesigns).map(design => design.category);
+    const allStyles = Object.values(selectedDesigns).map(design => design.title);
+    
+    // Determine which type of suggestions to generate
+    if (categories.includes("hero") && !categories.includes("navbar")) {
+      simulateResponse(adaptMessageTone(`I notice you've selected a ${getDesignStyle(selectedDesigns)} hero section. Would you like to see complementary navbar designs that would pair well with this style?`));
       
-      generateSuggestions();
+      // Generate a navbar suggestion
+      await generateSuggestion(
+        'component',
+        `Navbar designs that complement a ${getDesignStyle(selectedDesigns)} hero section`,
+        { 
+          category: 'navbar',
+          styles: allStyles,
+          selectedComponents: categories
+        }
+      );
+      
+    } else if (categories.includes("navbar") && !categories.includes("hero")) {
+      simulateResponse(adaptMessageTone(`Your navbar selection has a ${getDesignStyle(selectedDesigns)} feel. Let me suggest some hero sections that would create a cohesive look with this navigation style.`));
+      
+      // Generate a hero suggestion
+      await generateSuggestion(
+        'component',
+        `Hero designs that complement a ${getDesignStyle(selectedDesigns)} navbar`,
+        { 
+          category: 'hero',
+          styles: allStyles,
+          selectedComponents: categories
+        }
+      );
+    } else if (!categories.includes("footer")) {
+      simulateResponse(adaptMessageTone(`I see you've selected both navbar and hero sections. Would you like me to suggest a complementary footer design?`));
+      
+      // Generate a footer suggestion
+      await generateSuggestion(
+        'component',
+        `Footer designs that complement the selected ${allStyles.join(', ')} components`,
+        { 
+          category: 'footer',
+          styles: allStyles,
+          selectedComponents: categories
+        }
+      );
+    } else {
+      // Suggest a color palette that ties everything together
+      simulateResponse(adaptMessageTone(`You've selected several key components. Would you like me to suggest a cohesive color palette that would work well across all of these elements?`));
+      
+      await generateSuggestion(
+        'color',
+        `Color palette that works well with ${allStyles.join(', ')} design elements`,
+        { 
+          styles: allStyles,
+          selectedComponents: categories
+        }
+      );
     }
-  }, [selectedDesigns]);
+  };
 
   const getDesignStyle = (designs: Record<string, DesignOption>): string => {
-    // This would be more sophisticated in a real implementation
-    const styles = ["modern", "minimal", "bold", "classic", "playful"];
-    return styles[Math.floor(Math.random() * styles.length)];
+    // Extract design styles from selected components
+    const styles = Object.values(designs).map(design => {
+      if (design.title.toLowerCase().includes('minimal')) return 'minimal';
+      if (design.title.toLowerCase().includes('modern')) return 'modern';
+      if (design.title.toLowerCase().includes('bold')) return 'bold';
+      if (design.title.toLowerCase().includes('playful')) return 'playful';
+      if (design.title.toLowerCase().includes('classic')) return 'classic';
+      if (design.title.toLowerCase().includes('corporate')) return 'corporate';
+      return 'modern'; // Default
+    });
+    
+    // Return the most common style
+    const styleCounts = styles.reduce((counts, style) => {
+      counts[style] = (counts[style] || 0) + 1;
+      return counts;
+    }, {} as Record<string, number>);
+    
+    const dominantStyle = Object.entries(styleCounts)
+      .sort((a, b) => b[1] - a[1])[0][0];
+      
+    return dominantStyle;
   };
 
   const handleSend = async () => {
     if (input.trim() === "") return;
     
+    // Store the conversation entry
+    storeConversationEntry(input, 'user');
+    
     await simulateResponse(input);
     setInput("");
     
     // After user asks for help, generate some design suggestions
-    if (input.toLowerCase().includes("suggest") || input.toLowerCase().includes("recommend")) {
-      setTimeout(() => {
-        // Mock AI-generated design suggestions (would be actual API calls)
-        setAiSuggestions([
-          {
-            id: "suggestion-1",
-            title: "Clean Hero Layout",
-            description: "A minimalist hero with strong typography that would complement your selected navbar",
-            imageUrl: "https://placehold.co/600x400/e2e8f0/1e293b?text=Hero+Design",
-            category: "hero"
-          },
-          {
-            id: "suggestion-2",
-            title: "Bold Footer Design",
-            description: "A bold footer with clear sections for navigation and contact info",
-            imageUrl: "https://placehold.co/600x400/e2e8f0/1e293b?text=Footer+Design",
-            category: "footer"
-          }
-        ]);
-      }, 1000);
+    if (input.toLowerCase().includes("suggest") || 
+        input.toLowerCase().includes("recommend") ||
+        input.toLowerCase().includes("show me")) {
+      
+      // Determine what type of suggestion to show
+      if (input.toLowerCase().includes("color") || input.toLowerCase().includes("palette")) {
+        await generateSuggestion('color', input, { source: 'user-request' });
+      } 
+      else if (input.toLowerCase().includes("layout")) {
+        await generateSuggestion('layout', input, { source: 'user-request' });
+      }
+      else if (input.toLowerCase().includes("font") || input.toLowerCase().includes("typography")) {
+        await generateSuggestion('typography', input, { source: 'user-request' });
+      }
+      else if (input.toLowerCase().includes("button") || 
+               input.toLowerCase().includes("card") || 
+               input.toLowerCase().includes("component") ||
+               input.toLowerCase().includes("section")) {
+        await generateSuggestion('component', input, { source: 'user-request' });
+      }
+      else {
+        // General suggestion - pick the most likely category
+        const categories = ['color', 'layout', 'component', 'typography'] as const;
+        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+        await generateSuggestion(randomCategory, input, { source: 'user-request' });
+      }
     }
   };
 
@@ -91,11 +190,45 @@ const AIDesignAssistant = ({
     }
   };
 
-  const handleSuggestionSelect = (suggestion: DesignOption) => {
-    if (onSuggestionSelect) {
-      onSuggestionSelect(suggestion);
-      setAiSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
-      simulateResponse(`I've added the ${suggestion.title} to your selections. This will pair nicely with your existing design choices.`);
+  const handleSuggestionSelect = (suggestion: any) => {
+    if (onSuggestionSelect && suggestion.value) {
+      // Convert to DesignOption format
+      const designOption: DesignOption = {
+        id: suggestion.id,
+        title: suggestion.title,
+        description: suggestion.description || '',
+        imageUrl: suggestion.imageUrl || '',
+        category: suggestion.value.category || 'component'
+      };
+      
+      onSuggestionSelect(designOption);
+      
+      simulateResponse(adaptMessageTone(`I've added the ${suggestion.title} to your selections. This will pair nicely with your existing design choices.`));
+    }
+  };
+
+  const handleFeedback = async (feedback: { message: string, type: 'like' | 'dislike' | 'refine' }) => {
+    if (!activeSuggestion) return;
+    
+    storeConversationEntry(feedback.message, 'user');
+    
+    if (feedback.type === 'like') {
+      simulateResponse(adaptMessageTone("I'm glad you like these suggestions! Let me know if you'd like to explore more options."));
+    } else if (feedback.type === 'dislike') {
+      simulateResponse(adaptMessageTone("I understand these don't quite match what you're looking for. Let me know what you'd prefer, and I can generate new suggestions."));
+    } else {
+      simulateResponse(adaptMessageTone("Thanks for your feedback. Let me refine these suggestions based on your comments."));
+      
+      // Process the feedback to generate refined suggestions
+      await processFeedback({
+        suggestionId: activeSuggestion.id,
+        message: feedback.message,
+        options: {
+          refine: true,
+          moreOptions: false,
+          differentDirection: false
+        }
+      });
     }
   };
 
@@ -119,7 +252,7 @@ const AIDesignAssistant = ({
               <Lightbulb className="h-4 w-4" />
             </div>
             <div className="text-sm text-blue-800">
-              I'm your AI design assistant! I can help you create a cohesive design by suggesting complementary elements and color schemes. Ask me anything about your design choices.
+              {adaptMessageTone("I'm your AI design assistant! I can help you create a cohesive design by suggesting complementary elements and color schemes. Ask me anything about your design choices.")}
             </div>
           </div>
         )}
@@ -147,7 +280,12 @@ const AIDesignAssistant = ({
                   <div className="w-4 h-4 flex items-center justify-center text-xs">U</div>
                 )}
               </div>
-              <div className="text-sm leading-relaxed">{message.content}</div>
+              <div className="text-sm leading-relaxed">
+                {message.role === "assistant" 
+                  ? adaptMessageTone(message.content) 
+                  : message.content
+                }
+              </div>
             </div>
           ))}
           
@@ -158,39 +296,20 @@ const AIDesignAssistant = ({
                 <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
                 <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-blue-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
-              <span className="text-sm text-muted-foreground">Thinking...</span>
+              <span className="text-sm text-muted-foreground">{adaptMessageTone("Thinking...")}</span>
             </div>
           )}
           
-          {aiSuggestions.length > 0 && (
-            <div className="border rounded-lg p-4 bg-gradient-to-br from-blue-50/50 to-purple-50/50 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-purple-500" />
-                <h4 className="font-medium text-sm">AI Design Suggestions</h4>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {aiSuggestions.map(suggestion => (
-                  <div key={suggestion.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white">
-                    <img 
-                      src={suggestion.imageUrl} 
-                      alt={suggestion.title} 
-                      className="w-full h-24 object-cover"
-                    />
-                    <div className="p-3">
-                      <h5 className="font-medium text-sm">{suggestion.title}</h5>
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{suggestion.description}</p>
-                      <Button 
-                        size="sm" 
-                        className="w-full text-xs h-8 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                        onClick={() => handleSuggestionSelect(suggestion)}
-                      >
-                        Add to selections
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {/* Show active suggestion card */}
+          {activeSuggestion && (
+            <AIDesignSuggestionCard
+              title={activeSuggestion.title}
+              description={activeSuggestion.description}
+              options={activeSuggestion.options}
+              onSelect={handleSuggestionSelect}
+              onFeedback={handleFeedback}
+              isLoading={isGenerating}
+            />
           )}
           
           <div ref={messagesEndRef} />
@@ -203,7 +322,7 @@ const AIDesignAssistant = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask for design advice or suggestions..."
+            placeholder={adaptMessageTone("Ask for design advice or suggestions...")}
             className="flex-grow min-h-[60px] resize-none rounded-xl bg-muted/30 backdrop-blur-sm border-blue-100 focus-visible:ring-1 focus-visible:ring-blue-400"
           />
           <Button

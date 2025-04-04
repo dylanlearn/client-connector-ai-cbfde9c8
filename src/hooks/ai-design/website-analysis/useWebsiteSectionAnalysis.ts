@@ -3,9 +3,11 @@ import { useCallback } from 'react';
 import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
 import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
 import { WebsiteAnalysisState } from './types';
+import { useToneAdaptation } from '../useToneAdaptation';
+import { useConversationalMemory } from '../useConversationalMemory';
 
 /**
- * Hook for analyzing single website sections
+ * Hook for analyzing single website sections with personalized messaging
  */
 export function useWebsiteSectionAnalysis(
   state: WebsiteAnalysisState,
@@ -13,9 +15,11 @@ export function useWebsiteSectionAnalysis(
   showToast: (args: any) => void
 ) {
   const { setIsAnalyzing, setError, setAnalysisResults } = state;
+  const { adaptMessageTone } = useToneAdaptation();
+  const { storeConversationEntry } = useConversationalMemory();
 
   /**
-   * Analyze and store a website section
+   * Analyze and store a website section with personalized feedback
    */
   const analyzeWebsiteSection = useCallback(async (
     section: string,
@@ -26,9 +30,10 @@ export function useWebsiteSectionAnalysis(
     imageUrl?: string
   ) => {
     if (!user) {
+      const message = adaptMessageTone("Please log in to analyze and store website designs.");
       showToast({
         title: "Authentication required",
-        description: "Please log in to analyze and store website designs.",
+        description: message,
         variant: "destructive"
       });
       return null;
@@ -37,6 +42,16 @@ export function useWebsiteSectionAnalysis(
     try {
       setIsAnalyzing(true);
       setError(null);
+
+      // Store in conversational memory that user is analyzing a website section
+      await storeConversationEntry(
+        `User is analyzing a ${section} section with description: ${description}`,
+        'assistant',
+        { 
+          designActivity: 'website-analysis',
+          section: section
+        }
+      );
 
       // Analyze the website section
       const result = await WebsiteAnalysisService.analyzeWebsiteSection(
@@ -58,7 +73,7 @@ export function useWebsiteSectionAnalysis(
         
         showToast({
           title: "Analysis stored",
-          description: `The ${section} section analysis has been stored successfully.`
+          description: adaptMessageTone(`The ${section} section analysis has been stored successfully.`)
         });
         return result;
       } else {
@@ -69,14 +84,14 @@ export function useWebsiteSectionAnalysis(
       setError(error);
       showToast({
         title: "Analysis failed",
-        description: error.message,
+        description: adaptMessageTone(error.message),
         variant: "destructive"
       });
       return null;
     } finally {
       setIsAnalyzing(false);
     }
-  }, [user, showToast, setIsAnalyzing, setError, setAnalysisResults, state.analysisResults]);
+  }, [user, showToast, setIsAnalyzing, setError, setAnalysisResults, state.analysisResults, adaptMessageTone, storeConversationEntry]);
 
   return { analyzeWebsiteSection };
 }
