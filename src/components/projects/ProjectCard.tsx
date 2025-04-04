@@ -7,28 +7,16 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { useClientNotifications } from '@/hooks/use-client-notifications';
 import { UseMutationResult } from '@tanstack/react-query';
-import { NotificationStatus, NotificationType } from '@/types/client-notification';
+import { ClientNotification, NotificationStatus, NotificationType } from '@/types/client-notification';
 import { toast } from 'sonner';
 import { AppErrorBoundary } from '@/components/error-handling/AppErrorBoundary';
+import { LoadingOverlay } from '@/components/export/LoadingOverlay';
 
 interface ProjectCardProps {
   project: Project;
   onStatusChange?: (id: string, newStatus: string) => void;
   updateProject?: UseMutationResult<unknown, Error, unknown, unknown>;
   onClick?: () => void;
-}
-
-interface ProjectNotification {
-  project_id: string;
-  client_email: string;
-  notification_type: NotificationType;
-  message: string;
-  metadata: {
-    previousStatus: string;
-    newStatus: string;
-  };
-  status: NotificationStatus;
-  sent_at: null;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onClick, updateProject }) => {
@@ -56,7 +44,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
             },
             status: 'pending' as NotificationStatus,
             sent_at: null
-          } as ProjectNotification);
+          });
           
           toast.success("Notification sent to client about status change");
         }
@@ -96,12 +84,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
     );
   }
 
+  // Show loading state when the notification is being sent
+  const isProcessingNotification = createNotification.isPending;
+
   return (
     <AppErrorBoundary>
       <Card 
-        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
         onClick={handleCardClick}
       >
+        {isProcessingNotification && (
+          <LoadingOverlay 
+            message="Sending notification..." 
+            spinnerSize="sm"
+            className="rounded-lg"
+          />
+        )}
         <CardContent className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -120,6 +118,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
               to={`/projects/${project.id}`} 
               className="text-blue-600 hover:underline" 
               onClick={(e) => e.stopPropagation()}
+              aria-label={`View details for project ${project.title || 'Untitled'}`}
             >
               View Details
             </Link>
@@ -127,21 +126,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
               <button
                 onClick={(e) => handleStatusChange(e, 'draft')}
                 className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors duration-200 text-sm"
-                disabled={createNotification.isLoading}
+                disabled={createNotification.isPending}
+                aria-label="Set project status to draft"
               >
                 Draft
               </button>
               <button
                 onClick={(e) => handleStatusChange(e, 'active')}
                 className="px-3 py-1 bg-green-200 text-green-700 rounded hover:bg-green-300 transition-colors duration-200 text-sm"
-                disabled={createNotification.isLoading}
+                disabled={createNotification.isPending}
+                aria-label="Set project status to active"
               >
                 Active
               </button>
               <button
                 onClick={(e) => handleStatusChange(e, 'completed')}
                 className="px-3 py-1 bg-blue-200 text-blue-700 rounded hover:bg-blue-300 transition-colors duration-200 text-sm"
-                disabled={createNotification.isLoading}
+                disabled={createNotification.isPending}
+                aria-label="Set project status to completed"
               >
                 Completed
               </button>
