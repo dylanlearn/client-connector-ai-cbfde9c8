@@ -21,12 +21,12 @@ import {
   AlertCircle 
 } from 'lucide-react';
 
+import { WireframeVersionControlService } from '@/services/ai/wireframe/wireframe-version-control';
 import { 
-  WireframeVersionControlService,
   WireframeVersion,
   WireframeRevisionHistory,
   BranchInfo
-} from '@/services/ai/wireframe/wireframe-version-control';
+} from '@/services/ai/wireframe/wireframe-types';
 import { formatDistanceToNow } from 'date-fns';
 
 interface WireframeVersionHistoryProps {

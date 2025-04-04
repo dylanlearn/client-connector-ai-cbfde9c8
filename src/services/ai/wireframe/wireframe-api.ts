@@ -240,15 +240,12 @@ export const WireframeApiService = {
       // Convert wireframeData to JSON-compatible format
       const wireframeDataJson = JSON.parse(JSON.stringify(data));
       
-      // Update the wireframe in the database
+      // Update the wireframe in the database using raw SQL via RPC
       const { data: updatedWireframe, error } = await supabase
-        .from('ai_wireframes')
-        .update({
-          generation_params: supabase.sql`jsonb_set(generation_params, '{result_data}', ${wireframeDataJson}::jsonb)`
-        })
-        .eq('id', wireframeId)
-        .select('*')
-        .single();
+        .rpc('update_wireframe_data', {
+          p_wireframe_id: wireframeId,
+          p_data: wireframeDataJson
+        });
       
       if (error) {
         throw new Error(`Error updating wireframe data: ${error.message}`);

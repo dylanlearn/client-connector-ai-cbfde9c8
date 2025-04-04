@@ -27,8 +27,8 @@ export const WireframeVersionControlService = {
       // First, convert wireframeData to JSON-compatible format
       const wireframeDataJson = JSON.parse(JSON.stringify(data));
       
-      // Get the latest version number for this wireframe using the RPC function
-      const { data: versions, error: versionError } = await supabase
+      // Get the latest version number for this wireframe
+      const { data: versionNumber, error: versionError } = await supabase
         .rpc('get_latest_version_number', { 
           p_wireframe_id: wireframeId,
           p_branch_name: branchName
@@ -40,11 +40,11 @@ export const WireframeVersionControlService = {
       }
       
       // Calculate next version number
-      const nextVersion = typeof versions === 'number' && versions > 0 ? versions + 1 : 1;
+      const nextVersion = typeof versionNumber === 'number' && versionNumber > 0 ? versionNumber + 1 : 1;
       
       // If this is a new version on the main branch, set all previous versions as not current
       if (branchName === "main") {
-        // Use RPC function to update previous versions
+        // Update previous versions as inactive
         const { error: updateError } = await supabase
           .rpc('set_versions_inactive', { 
             p_wireframe_id: wireframeId, 
@@ -56,7 +56,7 @@ export const WireframeVersionControlService = {
         }
       }
       
-      // Insert the new version using RPC function
+      // Insert the new version
       const { data: newVersion, error: insertError } = await supabase
         .rpc('create_wireframe_version', {
           p_wireframe_id: wireframeId,
@@ -91,7 +91,7 @@ export const WireframeVersionControlService = {
         }
       }
       
-      return newVersion as WireframeVersion;
+      return newVersion as unknown as WireframeVersion;
     } catch (error) {
       console.error("Error in wireframe version creation:", error);
       return null;
@@ -103,7 +103,7 @@ export const WireframeVersionControlService = {
    */
   getVersionHistory: async (wireframeId: string): Promise<WireframeRevisionHistory> => {
     try {
-      // Get all versions for this wireframe using the RPC function
+      // Get all versions for this wireframe
       const { data: versionsData, error } = await supabase
         .rpc('get_wireframe_versions', { p_wireframe_id: wireframeId });
       
@@ -141,7 +141,7 @@ export const WireframeVersionControlService = {
     description: string = "Reverted to previous version"
   ): Promise<WireframeVersion | null> => {
     try {
-      // Get the version to revert to using RPC function
+      // Get the version to revert to
       const { data: versionData, error } = await supabase
         .rpc('get_wireframe_version', { p_version_id: versionId });
       
@@ -176,7 +176,7 @@ export const WireframeVersionControlService = {
     description: string = `Created branch ${branchName}`
   ): Promise<WireframeVersion | null> => {
     try {
-      // Get the version to branch from using RPC function
+      // Get the version to branch from
       const { data: versionData, error } = await supabase
         .rpc('get_wireframe_version', { p_version_id: versionId });
       
@@ -211,7 +211,7 @@ export const WireframeVersionControlService = {
     description: string = "Merged branch into main"
   ): Promise<WireframeVersion | null> => {
     try {
-      // Get the branch version using RPC function
+      // Get the branch version
       const { data: versionData, error } = await supabase
         .rpc('get_wireframe_version', { p_version_id: branchVersionId });
       
@@ -264,7 +264,7 @@ export const WireframeVersionControlService = {
     versionId2: string
   ): Promise<VersionComparisonResult> => {
     try {
-      // Use RPC function to compare versions
+      // Compare versions
       const { data: comparisonData, error } = await supabase
         .rpc('compare_wireframe_versions', { 
           p_version_id1: versionId1,
