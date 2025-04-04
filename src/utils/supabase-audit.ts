@@ -128,8 +128,10 @@ export async function verifyRequiredTables(requiredTables: string[]): Promise<{
     
     // Check each required table by attempting to query it
     for (const table of requiredTables) {
+      // We need to use type assertion here since we're dynamically selecting tables
+      // This avoids the TypeScript error while still allowing us to check table existence
       const { error } = await supabase
-        .from(table)
+        .from(table as any)
         .select('id')
         .limit(1);
       
