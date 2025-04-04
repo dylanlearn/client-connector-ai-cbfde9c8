@@ -1,154 +1,164 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeData } from "./wireframe-service";
+import { toast } from "sonner";
 
-export interface BackgroundProcessingTask {
+interface BackgroundProcessingTask {
   id: string;
   task_type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: string;
+  input_data: Record<string, any>;
+  output_data?: Record<string, any>;
+  error_message?: string;
   created_at: string;
   completed_at?: string;
-  error_message?: string;
-  input_data: any;
-  output_data?: any;
 }
 
 /**
- * Service for handling background processing of wireframe-related tasks
+ * Service for handling background tasks for wireframe processing
+ * Using edge functions for reliable processing
  */
 export const WireframeBackgroundProcessor = {
   /**
    * Queue a task for background processing
    */
-  queueTask: async <T>(taskType: string, inputData: T): Promise<string> => {
+  queueTask: async (taskType: string, inputData: Record<string, any>): Promise<string | null> => {
     try {
-      // Use RPC instead of direct table access
       const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
         body: {
           operation: "create_task",
           task_type: taskType,
           input_data: inputData
-        },
+        }
       });
       
-      if (error) throw error;
-      return data.taskId;
+      if (error) {
+        console.error('Error queuing background task:', error);
+        return null;
+      }
+      
+      return data?.taskId || null;
     } catch (error) {
-      console.error(`Error queueing ${taskType} task:`, error);
-      throw error;
+      console.error('Exception in queueTask:', error);
+      return null;
     }
   },
   
   /**
-   * Update task status
+   * Update the status of a background task
    */
   updateTaskStatus: async (
     taskId: string, 
-    status: 'processing' | 'completed' | 'failed', 
-    outputData?: any, 
+    status: 'processing' | 'completed' | 'failed',
+    outputData?: Record<string, any>,
     errorMessage?: string
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     try {
-      await supabase.functions.invoke("process-wireframe-tasks", {
+      const { error } = await supabase.functions.invoke("process-wireframe-tasks", {
         body: {
           operation: "update_task",
           task_id: taskId,
-          status: status,
+          status,
           output_data: outputData,
           error_message: errorMessage
         }
       });
+      
+      if (error) {
+        console.error('Error updating task status:', error);
+        return false;
+      }
+      
+      return true;
     } catch (error) {
-      console.error(`Error updating task ${taskId} status:`, error);
+      console.error('Exception in updateTaskStatus:', error);
+      return false;
     }
   },
   
   /**
-   * Process next pending task
+   * Process the next pending task
    */
   processNextTask: async (): Promise<boolean> => {
     try {
-      // Get next pending task using edge function
+      // Get the next pending task
       const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
         body: {
           operation: "get_next_task"
         }
       });
       
-      if (error || !data || !data.task) {
-        // No pending tasks
+      if (error) {
+        console.error('Error getting next task:', error);
         return false;
       }
       
-      // Mark as processing
-      const nextTask = data.task as BackgroundProcessingTask;
-      await WireframeBackgroundProcessor.updateTaskStatus(nextTask.id, 'processing');
+      if (!data || !data.task) {
+        console.log('No pending tasks found');
+        return false;
+      }
+      
+      const task = data.task as BackgroundProcessingTask;
+      
+      // Mark the task as processing
+      await WireframeBackgroundProcessor.updateTaskStatus(task.id, 'processing');
+      
+      // Process the task based on its type
+      let result: Record<string, any> | null = null;
+      let success = false;
+      let errorMessage = '';
       
       try {
-        // Process the task based on type
-        switch (nextTask.task_type) {
+        // Task-specific processing logic
+        switch (task.task_type) {
           case 'optimize_wireframe':
-            // This would be where you implement task-specific logic
-            const optimizedData = await WireframeBackgroundProcessor.optimizeWireframe(nextTask.input_data);
-            await WireframeBackgroundProcessor.updateTaskStatus(nextTask.id, 'completed', optimizedData);
+            result = await WireframeBackgroundProcessor._optimizeWireframe(task.input_data);
+            success = true;
             break;
-            
-          case 'generate_assets':
-            // Example for asset generation
-            const assets = await WireframeBackgroundProcessor.generateAssets(nextTask.input_data);
-            await WireframeBackgroundProcessor.updateTaskStatus(nextTask.id, 'completed', assets);
-            break;
-            
+          // Add more task types as needed
           default:
-            await WireframeBackgroundProcessor.updateTaskStatus(
-              nextTask.id, 
-              'failed', 
-              null, 
-              `Unknown task type: ${nextTask.task_type}`
-            );
+            errorMessage = `Unknown task type: ${task.task_type}`;
+            break;
         }
-        
-        return true;
-      } catch (processingError) {
-        // Handle errors during processing
-        await WireframeBackgroundProcessor.updateTaskStatus(
-          nextTask.id, 
-          'failed', 
-          null, 
-          processingError instanceof Error ? processingError.message : 'Unknown error'
-        );
-        return true;
+      } catch (processingError: any) {
+        errorMessage = processingError.message || 'Error processing task';
+        console.error(`Error processing task ${task.id}:`, processingError);
       }
+      
+      // Update the task status based on the processing result
+      if (success && result) {
+        await WireframeBackgroundProcessor.updateTaskStatus(task.id, 'completed', result);
+      } else {
+        await WireframeBackgroundProcessor.updateTaskStatus(task.id, 'failed', undefined, errorMessage);
+      }
+      
+      return true;
     } catch (error) {
-      console.error('Error processing tasks:', error);
+      console.error('Exception in processNextTask:', error);
       return false;
     }
   },
   
   /**
-   * Example task handler: Optimize wireframe
+   * Private method to optimize a wireframe
    */
-  optimizeWireframe: async (wireframeData: WireframeData): Promise<WireframeData> => {
-    // This is a placeholder - would normally perform optimization
-    return {
+  _optimizeWireframe: async (wireframeData: any): Promise<Record<string, any>> => {
+    // Example optimization logic - in reality, this would be more complex
+    // and might involve calling external AI services
+    
+    // Add quality optimizations
+    const optimized = {
       ...wireframeData,
-      // Add optimized properties here
       qualityFlags: {
         ...(wireframeData.qualityFlags || {}),
-        optimized: true
+        optimized: true,
+        optimizationLevel: 'high',
+        optimizationTimestamp: new Date().toISOString()
       }
     };
-  },
-  
-  /**
-   * Example task handler: Generate assets based on wireframe
-   */
-  generateAssets: async (input: { wireframeId: string }): Promise<any> => {
-    // Placeholder for asset generation logic
-    return {
-      generatedAssets: true,
-      assetCount: 5,
-      wireframeId: input.wireframeId
-    };
+    
+    // Simulated processing delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return optimized;
   }
 };

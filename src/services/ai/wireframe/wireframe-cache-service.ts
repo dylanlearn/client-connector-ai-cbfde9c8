@@ -59,15 +59,17 @@ export const WireframeCacheService = {
       }
       
       // Update hit count
-      await supabase.functions.invoke("process-wireframe-tasks", {
-        body: {
-          operation: "increment_cache_hit",
-          cache_id: data.wireframe.id
-        }
-      });
+      if (data.wireframe.id) {
+        await supabase.functions.invoke("process-wireframe-tasks", {
+          body: {
+            operation: "increment_cache_hit",
+            cache_id: data.wireframe.id
+          }
+        });
+      }
       
       console.log(`Cache hit for wireframe params hash: ${paramsHash}`);
-      return data.wireframe.wireframe_data;
+      return data.wireframe.wireframe_data as WireframeData;
     } catch (error) {
       console.error("Error checking wireframe cache:", error);
       return null;

@@ -75,3 +75,9 @@ url = ""
 [functions]
 [functions.process-wireframe-tasks]
 verify_jwt = true
+# Configure with higher timeout for enterprise-level processing
+timeout_seconds = 60
+# Increase memory allocation for complex wireframe operations
+memory_size = 1024
+# Configure for high concurrency
+max_instances = 50
