@@ -120,7 +120,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                     <div className="text-sm">
                       {section.mobileLayout.stackOrder.map((item, i) => (
                         <Badge key={i} variant="outline" className="mr-1 mb-1">
-                          {i+1}. {item}
+                          {i+1}. {String(item)}
                         </Badge>
                       ))}
                     </div>
@@ -294,13 +294,13 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                       {wireframe.designTokens.typography.headings && (
                         <div className="grid grid-cols-3 gap-2 items-center">
                           <div className="text-sm font-medium">Headings:</div>
-                          <div className="col-span-2 text-sm">{wireframe.designTokens.typography.headings}</div>
+                          <div className="col-span-2 text-sm">{String(wireframe.designTokens.typography.headings)}</div>
                         </div>
                       )}
                       {wireframe.designTokens.typography.body && (
                         <div className="grid grid-cols-3 gap-2 items-center">
                           <div className="text-sm font-medium">Body:</div>
-                          <div className="col-span-2 text-sm">{wireframe.designTokens.typography.body}</div>
+                          <div className="col-span-2 text-sm">{String(wireframe.designTokens.typography.body)}</div>
                         </div>
                       )}
                       {wireframe.designTokens.typography.fontPairings && wireframe.designTokens.typography.fontPairings.length > 0 && (

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeMonitoringService } from "./monitoring-service";
 import { 
@@ -137,7 +138,11 @@ export const WireframeApiService = {
     const typedWireframe = wireframe as unknown as AIWireframe;
     const generationParams = typedWireframe.generation_params || {};
     
-    const resultData = (generationParams as any)?.result_data as WireframeData | undefined;
+    // Safely access result_data with type checking
+    const resultData = generationParams && typeof generationParams === 'object' && 'result_data' in generationParams 
+      ? (generationParams as any).result_data as WireframeData | undefined
+      : undefined;
+    
     const sections = resultData?.sections || [];
 
     return {
@@ -173,20 +178,6 @@ export const WireframeApiService = {
     const { error } = await supabase
       .from('ai_wireframes')
       .update(updateData)
-      .eq('id', wireframeId);
-
-    if (error) {
-      throw error;
-    }
-  },
-  
-  /**
-   * Delete a wireframe
-   */
-  deleteWireframe: async (wireframeId: string): Promise<void> => {
-    const { error } = await supabase
-      .from('ai_wireframes')
-      .delete()
       .eq('id', wireframeId);
 
     if (error) {
