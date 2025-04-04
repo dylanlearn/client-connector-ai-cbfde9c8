@@ -80,7 +80,22 @@ export const DesignEntryService = {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match the DesignMemoryEntry type
+      return (data || []).map(item => ({
+        category: item.category,
+        subcategory: item.subcategory,
+        title: item.title,
+        description: item.description,
+        tags: item.tags,
+        source_url: item.source_url,
+        image_url: item.image_url,
+        visual_elements: item.visual_elements as DesignMemoryEntry['visual_elements'],
+        color_scheme: item.color_scheme as DesignMemoryEntry['color_scheme'],
+        typography: item.typography as DesignMemoryEntry['typography'],
+        layout_pattern: item.layout_pattern as DesignMemoryEntry['layout_pattern'],
+        relevance_score: item.relevance_score
+      }));
     } catch (error) {
       console.error('Error querying design memory:', error);
       return [];

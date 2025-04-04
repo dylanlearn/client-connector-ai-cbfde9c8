@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DesignMemoryEntry } from "./types/design-memory-types";
+import { DesignMemoryEntry } from './types/design-memory-types';
 
 export interface DesignAnalysisRequest {
   promptOrDescription: string;
@@ -23,8 +23,8 @@ export interface DesignAnalysisResponse {
     background: string;
   };
   typography: {
-    headingFont: string;
-    bodyFont: string;
+    headings: string;
+    body: string;
     fontPairings: string[];
   };
   layoutPattern: {
@@ -82,10 +82,32 @@ export const AIDesignAnalysisService = {
         subcategory: analysis.subcategory,
         title: analysis.title,
         description: analysis.description,
-        visual_elements: analysis.visualElements,
-        color_scheme: analysis.colorScheme,
-        typography: analysis.typography,
-        layout_pattern: analysis.layoutPattern,
+        visual_elements: {
+          layout: analysis.visualElements.layout || analysis.layoutPattern.type,
+          color_scheme: analysis.visualElements.colorScheme || analysis.colorScheme.primary,
+          typography: analysis.visualElements.typography || analysis.typography.headings,
+          spacing: analysis.visualElements.spacing || analysis.layoutPattern.spacing,
+          imagery: analysis.visualElements.imagery || ''
+        },
+        color_scheme: {
+          primary: analysis.colorScheme.primary,
+          secondary: analysis.colorScheme.secondary,
+          accent: analysis.colorScheme.accent,
+          background: analysis.colorScheme.background,
+          text: ''
+        },
+        typography: {
+          headings: analysis.typography.headings,
+          body: analysis.typography.body,
+          accent: '',
+          size_scale: ''
+        },
+        layout_pattern: {
+          type: analysis.layoutPattern.type,
+          grid: analysis.layoutPattern.structure,
+          responsive: true,
+          components: []
+        },
         tags: analysis.tags,
         source_url: sourceUrl,
         image_url: imageUrl,

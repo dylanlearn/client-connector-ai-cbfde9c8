@@ -63,7 +63,7 @@ const AIDesignSuggestionDemo = ({ isActive }: AIDesignSuggestionDemoProps) => {
     if (isActive) {
       queryDesignPatterns({
         limit: 10,
-        relevanceThreshold: 0.6
+        relevance_threshold: 0.6
       });
     }
   }, [isActive, queryDesignPatterns]);

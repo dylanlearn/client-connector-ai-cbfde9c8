@@ -39,19 +39,19 @@ export function useDesignMemory() {
   const submitFeedback = useCallback(async (
     designSuggestionId: string,
     feedbackType: 'like' | 'dislike' | 'comment',
-    feedbackContent?: string,
     rating?: number,
+    feedbackContent?: string,
     context: Record<string, any> = {}
   ) => {
     if (!user?.id) return false;
     
     try {
       return await DesignMemoryService.recordFeedback(
-        user.id,
         designSuggestionId,
+        user.id,
         feedbackType,
-        feedbackContent,
         rating,
+        feedbackContent,
         context
       );
     } catch (err) {
@@ -76,8 +76,8 @@ export function useDesignMemory() {
         user.id,
         prompt,
         result,
-        usedReferences,
-        context
+        context,
+        usedReferences
       );
     } catch (err) {
       console.error("Error storing suggestion:", err);
