@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -168,16 +169,16 @@ export const FeedbackAnalysisService = {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
       
-      // Define a simplified query with explicit string type to avoid deep instantiation
-      const query = supabase
+      // Use a raw query approach without complex type parameters
+      let query = supabase
         .from('feedback_analysis')
-        .select('original_feedback, action_items, tone_analysis, summary, created_at')
+        .select()
         .order('created_at', { ascending: false })
         .limit(limit);
         
       // If we have a user ID, filter by it
       if (userId) {
-        query.eq('user_id', userId);
+        query = query.eq('user_id', userId);
       }
       
       const { data, error } = await query;
