@@ -30,6 +30,7 @@ export const wireframeSections = {
           name: section.name,
           sectionType: section.section_type,
           layoutType: section.layout_type,
+          // Cast the layout property to any to resolve TypeScript error
           layout: section.layout as any,
           components: section.components as unknown as WireframeComponent[],
           copySuggestions: section.copy_suggestions as unknown as CopySuggestions,
