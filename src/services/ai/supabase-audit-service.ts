@@ -1,49 +1,65 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 
 /**
- * Service for auditing Supabase configuration
+ * Type definitions for SupabaseAuditService
+ */
+export interface SupabaseHealthCheck {
+  auth: {
+    status: 'ok' | 'error';
+    message: string;
+  };
+  database: {
+    status: 'ok' | 'error';
+    message: string;
+    tables: string[];
+  };
+  storage: {
+    status: 'ok' | 'error';
+    message: string;
+  };
+  functions: {
+    status: 'ok' | 'error';
+    message: string;
+    availableFunctions: string[];
+  };
+  overall: 'healthy' | 'degraded' | 'unhealthy';
+}
+
+/**
+ * Service for auditing and monitoring Supabase resources
  */
 export const SupabaseAuditService = {
   /**
-   * Run a full health check on all Supabase services
+   * Run a comprehensive health check on all Supabase services
    */
-  runFullHealthCheck: async (): Promise<{
-    auth: { status: 'ok' | 'error'; message: string };
-    database: { status: 'ok' | 'error'; message: string; tables: string[] };
-    storage: { status: 'ok' | 'error'; message: string };
-    functions: { status: 'ok' | 'error'; message: string; availableFunctions: string[] };
-    overall: 'healthy' | 'degraded' | 'unhealthy';
-  }> => {
+  runFullHealthCheck: async (): Promise<SupabaseHealthCheck> => {
     try {
-      // Check authentication service
-      const authStatus = await SupabaseAuditService.checkAuthService();
+      const [authStatus, dbStatus, storageStatus, functionsStatus] = await Promise.all([
+        SupabaseAuditService.checkAuthStatus(),
+        SupabaseAuditService.checkDatabaseStatus(),
+        SupabaseAuditService.checkStorageStatus(),
+        SupabaseAuditService.checkEdgeFunctionsStatus()
+      ]);
       
-      // Check database service
-      const dbStatus = await SupabaseAuditService.checkDatabaseService();
-      
-      // Check storage service
-      const storageStatus = await SupabaseAuditService.checkStorageService();
-      
-      // Check functions
-      const functionsStatus = await SupabaseAuditService.checkFunctionsService();
-      
-      // Determine overall health
       let overall: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
       
       if (
-        authStatus.status === 'error' ||
-        dbStatus.status === 'error' ||
-        storageStatus.status === 'error' ||
+        authStatus.status === 'error' || 
+        dbStatus.status === 'error' || 
+        storageStatus.status === 'error' || 
         functionsStatus.status === 'error'
       ) {
         overall = 'unhealthy';
       } else if (
-        authStatus.message.includes('warning') ||
-        dbStatus.message.includes('warning') ||
-        storageStatus.message.includes('warning') ||
-        functionsStatus.message.includes('warning')
+        authStatus.status === 'ok' && 
+        dbStatus.status === 'ok' && 
+        storageStatus.status === 'ok' && 
+        functionsStatus.status === 'ok' 
       ) {
+        overall = 'healthy';
+      } else {
         overall = 'degraded';
       }
       
@@ -55,383 +71,217 @@ export const SupabaseAuditService = {
         overall
       };
     } catch (error) {
-      console.error('Error running Supabase health check:', error);
+      console.error('Error running full health check:', error);
       return {
-        auth: { status: 'error', message: 'Failed to check auth service' },
-        database: { status: 'error', message: 'Failed to check database service', tables: [] },
-        storage: { status: 'error', message: 'Failed to check storage service' },
-        functions: { status: 'error', message: 'Failed to check functions service', availableFunctions: [] },
+        auth: { status: 'error', message: 'Unable to check auth status' },
+        database: { status: 'error', message: 'Unable to check database status', tables: [] },
+        storage: { status: 'error', message: 'Unable to check storage status' },
+        functions: { status: 'error', message: 'Unable to check functions status', availableFunctions: [] },
         overall: 'unhealthy'
       };
     }
   },
   
   /**
-   * Check authentication service health
+   * Check authentication service status
    */
-  checkAuthService: async (): Promise<{ status: 'ok' | 'error'; message: string }> => {
+  checkAuthStatus: async (): Promise<{ status: 'ok' | 'error'; message: string }> => {
     try {
-      // Attempt to get settings to verify connection
-      const { data, error } = await supabase.auth.getSession();
+      // Try to access a public table or function that doesn't require auth
+      const { error } = await supabase
+        .from('ai_wireframes')
+        .select('count')
+        .limit(1)
+        .maybeSingle();
       
-      if (error) {
-        return {
-          status: 'error',
-          message: `Auth service error: ${error.message}`
-        };
+      if (error && error.message.includes('authentication')) {
+        return { status: 'error', message: 'Authentication service issues: ' + error.message };
       }
       
-      return {
-        status: 'ok',
-        message: 'Auth service is working properly'
-      };
+      return { status: 'ok', message: 'Authentication service is running properly' };
     } catch (error) {
       return {
         status: 'error',
-        message: `Auth service error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `Error checking auth status: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   },
   
   /**
-   * Check database service health
+   * Check database service status
    */
-  checkDatabaseService: async (): Promise<{ status: 'ok' | 'error'; message: string; tables: string[] }> => {
+  checkDatabaseStatus: async (): Promise<{ status: 'ok' | 'error'; message: string; tables: string[] }> => {
     try {
-      // Instead of using direct schema queries, we'll use a safer approach
-      // that doesn't require specific RPC function names
-      let tableNames: string[] = [];
+      // Use RPC with type safety to fetch table information
+      // Cast to any to avoid TypeScript errors with dynamic RPC calls
+      const { data, error } = await (supabase.rpc('get_all_tables' as any) as any);
       
-      try {
-        // Try to query a known table to check database connectivity
-        const { error: testError } = await supabase
-          .from('profiles')
-          .select('id')
-          .limit(1);
-          
-        if (testError) {
-          throw new Error(`Database query error: ${testError.message}`);
-        }
-        
-        // If we can reach the database, return a success with empty tables list
-        // We'll avoid trying to list all tables as it's causing type issues
+      if (error) {
         return {
-          status: 'ok',
-          message: `Database service is working properly`,
-          tables: ['profiles'] // We know this one exists at minimum
+          status: 'error',
+          message: `Database error: ${error.message}`,
+          tables: []
         };
-      } catch (dbError) {
-        throw new Error(`Database service error: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
       }
+      
+      const tables = Array.isArray(data) 
+        ? data.map((table: any) => table.table_name as string)
+        : [];
+      
+      return {
+        status: 'ok',
+        message: `Database is running with ${tables.length} tables`,
+        tables
+      };
     } catch (error) {
       return {
         status: 'error',
-        message: `Database service error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: `Error checking database status: ${error instanceof Error ? error.message : String(error)}`,
         tables: []
       };
     }
   },
   
   /**
-   * Check storage service health
+   * Check storage service status
    */
-  checkStorageService: async (): Promise<{ status: 'ok' | 'error'; message: string }> => {
+  checkStorageStatus: async (): Promise<{ status: 'ok' | 'error'; message: string }> => {
     try {
-      // List all buckets to check storage functionality
-      const { data: buckets, error } = await supabase.storage.listBuckets();
+      const { data, error } = await supabase.storage.listBuckets();
       
       if (error) {
         return {
           status: 'error',
-          message: `Storage service error: ${error.message}`
+          message: `Storage error: ${error.message}`
         };
       }
       
       return {
         status: 'ok',
-        message: `Storage service is working properly with ${buckets?.length || 0} buckets`
+        message: `Storage service is running with ${data.length} buckets`
       };
     } catch (error) {
       return {
         status: 'error',
-        message: `Storage service error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `Error checking storage status: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   },
   
   /**
-   * Check Functions service health
+   * Check edge functions service status
    */
-  checkFunctionsService: async (): Promise<{ status: 'ok' | 'error'; message: string; availableFunctions: string[] }> => {
+  checkEdgeFunctionsStatus: async (): Promise<{ status: 'ok' | 'error'; message: string; availableFunctions: string[] }> => {
     try {
-      // For Edge Functions, use a simple approach to check availability
-      // We'll just try to invoke a simple function to check if the functions service is working
-      try {
-        // Since we can't easily list functions and there's no standard RPC for it,
-        // we'll just check if the functions client is available
-        if (supabase.functions) {
-          return {
-            status: 'ok',
-            message: 'Functions service appears to be available',
-            availableFunctions: [] // We can't easily list them, so return empty array
-          };
-        } else {
-          throw new Error('Functions client not available');
-        }
-      } catch (error) {
+      // Use RPC with type safety to fetch function information
+      // Cast to any to avoid TypeScript errors with dynamic RPC calls
+      const { data, error } = await (supabase.rpc('list_functions' as any) as any);
+      
+      if (error) {
         return {
           status: 'error',
-          message: 'Functions service requires additional configuration',
+          message: `Edge functions error: ${error.message}`,
           availableFunctions: []
         };
       }
+      
+      const functions = Array.isArray(data) 
+        ? data.map((fn: any) => fn.function_name as string)
+        : [];
+      
+      return {
+        status: 'ok',
+        message: `Edge functions service is running with ${functions.length} functions`,
+        availableFunctions: functions
+      };
     } catch (error) {
       return {
         status: 'error',
-        message: `Functions service error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        message: `Error checking edge functions status: ${error instanceof Error ? error.message : String(error)}`,
         availableFunctions: []
       };
     }
   },
   
   /**
-   * Check database schema against required tables
+   * Check if required tables exist in the database
    */
   checkDatabaseSchema: async (requiredTables: string[]): Promise<{
     missingTables: string[];
     existingTables: string[];
   }> => {
     try {
-      // We'll check each required table individually instead of trying to get all tables
-      const existingTables: string[] = [];
+      // Use RPC with type safety to fetch table information
+      // Cast to any to avoid TypeScript errors with dynamic RPC calls
+      const { data, error } = await (supabase.rpc('get_table_info' as any) as any);
       
-      // Check each table by attempting a simple query
-      for (const tableName of requiredTables) {
-        try {
-          const { error } = await supabase
-            .from(tableName)
-            .select('id')
-            .limit(1);
-            
-          // If no error, table exists
-          if (!error || (error.code !== '42P01' && !error.message.includes('does not exist'))) {
-            existingTables.push(tableName);
-          }
-        } catch (e) {
-          // Table likely doesn't exist
-          console.log(`Table check error for ${tableName}:`, e);
-        }
+      if (error) {
+        throw new Error(`Error checking database schema: ${error.message}`);
       }
       
-      const missingTables = requiredTables.filter(table => !existingTables.includes(table));
+      const allTables: string[] = Array.isArray(data) 
+        ? data.map((table: any) => table.table_name as string)
+        : [];
+      
+      const missingTables = requiredTables.filter(table => !allTables.includes(table));
+      const existingTables = requiredTables.filter(table => allTables.includes(table));
       
       return {
-        existingTables,
-        missingTables
+        missingTables,
+        existingTables
       };
     } catch (error) {
       console.error('Error checking database schema:', error);
       return {
-        existingTables: [],
-        missingTables: requiredTables
+        missingTables: requiredTables,
+        existingTables: []
       };
     }
   },
   
   /**
-   * Check Row Level Security (RLS) policies on specified tables
+   * Check RLS policies on specified tables
    */
   checkRLSPolicies: async (tables: string[]): Promise<Record<string, boolean>> => {
     try {
-      const result: Record<string, boolean> = {};
+      // Use RPC with type safety to fetch RLS policy information
+      // Cast to any to avoid TypeScript errors with dynamic RPC calls
+      const { data, error } = await (supabase.rpc('get_table_rls' as any) as any);
       
-      // For each table, check if RLS is enabled by checking if we can query it directly
-      // This is a simplification since we can't easily check RLS status programmatically
-      for (const table of tables) {
-        try {
-          // First verify the table exists
-          const { error: tableCheckError } = await supabase
-            .from(table)
-            .select('id')
-            .limit(1);
-            
-          if (tableCheckError && (tableCheckError.code === '42P01' || tableCheckError.message.includes('does not exist'))) {
-            // Table doesn't exist
-            result[table] = false;
-          } else {
-            // Table exists, assume RLS is enabled (simplified approach)
-            // In a real implementation, you'd need admin privileges to check RLS status
-            result[table] = true;
-          }
-        } catch (e) {
-          result[table] = false;
-        }
+      if (error) {
+        throw new Error(`Error checking RLS policies: ${error.message}`);
       }
       
-      return result;
+      const rlsPolicies: Record<string, boolean> = {};
+      
+      if (Array.isArray(data)) {
+        // Process the data to determine which tables have RLS enabled
+        data.forEach((table: any) => {
+          const tableName = table.table_name as string;
+          const hasRls = table.has_rls as boolean;
+          
+          if (tables.includes(tableName)) {
+            rlsPolicies[tableName] = hasRls;
+          }
+        });
+      }
+      
+      // Set default value for tables that weren't found
+      tables.forEach(table => {
+        if (rlsPolicies[table] === undefined) {
+          rlsPolicies[table] = false;
+        }
+      });
+      
+      return rlsPolicies;
     } catch (error) {
       console.error('Error checking RLS policies:', error);
-      return {};
-    }
-  },
-  
-  /**
-   * Check for expired cache entries and potentially clean them up
-   */
-  checkExpiredCacheEntries: async (): Promise<number> => {
-    try {
-      // Check for expired entries in ai_content_cache
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('ai_content_cache')
-        .select('id')
-        .lt('expires_at', now);
       
-      if (error) {
-        console.error('Error checking expired cache entries:', error);
-        return 0;
-      }
-      
-      return data?.length || 0;
-    } catch (error) {
-      console.error('Error checking expired cache entries:', error);
-      return 0;
-    }
-  },
-  
-  /**
-   * Get a list of all tables in the database
-   */
-  getTables: async (): Promise<{
-    tables: string[];
-    error?: string;
-  }> => {
-    try {
-      // Use RPC call to get tables securely
-      const { data, error } = await supabase.rpc('get_all_tables');
-      
-      if (error) {
-        console.error('Error getting tables:', error);
-        return { tables: [], error: error.message };
-      }
-      
-      // Convert array of objects to array of strings
-      const tables = Array.isArray(data) 
-        ? data.map(item => (item as any).table_name as string) 
-        : [];
-      
-      return { tables };
-    } catch (error) {
-      console.error('Exception getting tables:', error);
-      return { 
-        tables: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  },
-  
-  /**
-   * Get list of all functions in the database
-   */
-  getFunctions: async (): Promise<{
-    functions: string[];
-    error?: string;
-  }> => {
-    try {
-      // Use RPC call to get functions securely
-      const { data, error } = await supabase.rpc('list_functions');
-      
-      if (error) {
-        console.error('Error getting functions:', error);
-        return { functions: [], error: error.message };
-      }
-      
-      // Convert array of objects to array of strings
-      const functions = Array.isArray(data) 
-        ? data.map(item => (item as any).function_name as string)
-        : [];
-      
-      return { functions };
-    } catch (error) {
-      console.error('Exception getting functions:', error);
-      return { 
-        functions: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  },
-  
-  /**
-   * Get table information
-   */
-  getTableInfo: async (tableName: string): Promise<{
-    columns: any[];
-    error?: string;
-  }> => {
-    try {
-      // Use RPC call to get table information securely
-      const { data, error } = await supabase.rpc('get_table_info', {
-        p_table_name: tableName
-      });
-      
-      if (error) {
-        console.error(`Error getting table info for ${tableName}:`, error);
-        return { columns: [], error: error.message };
-      }
-      
-      return { columns: data || [] };
-    } catch (error) {
-      console.error(`Exception getting table info for ${tableName}:`, error);
-      return { 
-        columns: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  },
-  
-  /**
-   * Get Row Level Security (RLS) policies for a table
-   */
-  getTableRLS: async (tableName: string): Promise<{
-    policies: any[];
-    hasRLS: boolean;
-    error?: string;
-  }> => {
-    try {
-      // Use RPC call to get RLS policies securely
-      const { data, error } = await supabase.rpc('get_table_rls', {
-        p_table_name: tableName
-      });
-      
-      if (error) {
-        console.error(`Error getting RLS for ${tableName}:`, error);
-        return { policies: [], hasRLS: false, error: error.message };
-      }
-      
-      const tableData = data as any;
-      let hasRLS = false;
-      let policies: any[] = [];
-      
-      if (tableData && Array.isArray(tableData)) {
-        // Extract RLS information
-        hasRLS = tableData.length > 0 ? 
-          tableData[0].row_level_security === true : 
-          false;
-        
-        policies = tableData;
-      }
-      
-      return { policies, hasRLS };
-    } catch (error) {
-      console.error(`Exception getting RLS for ${tableName}:`, error);
-      return { 
-        policies: [],
-        hasRLS: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+      // Return all tables as not having RLS in case of error
+      return tables.reduce((acc, table) => {
+        acc[table] = false;
+        return acc;
+      }, {} as Record<string, boolean>);
     }
   }
 };
-
-// Export as default and named export for backward compatibility
-export default SupabaseAuditService;

@@ -1,4 +1,3 @@
-
 import { WireframeApiService } from './api';
 import { 
   WireframeGenerationParams, 
@@ -231,7 +230,7 @@ export const WireframeService = {
       if (preserveSections && currentWireframe.data) {
         // Keep existing sections and add template sections
         const existingSections = currentWireframe.data.sections || [];
-        const templateSections = templateData.sections || [];
+        const templateSections = templateData?.sections || [];
         
         updatedData = {
           ...currentWireframe.data,
@@ -240,8 +239,12 @@ export const WireframeService = {
       } else {
         // Replace with template but preserve wireframe metadata
         updatedData = {
-          ...templateData,
-          title: currentWireframe.data?.title || templateData.title
+          // Ensure title exists with fallback
+          title: (currentWireframe.data?.title || templateData?.title || "Untitled Wireframe"),
+          description: (currentWireframe.data?.description || templateData?.description || ""),
+          sections: templateData?.sections || [],
+          // Other properties will come from templateData or be undefined
+          ...(templateData || {}),
         };
       }
       
