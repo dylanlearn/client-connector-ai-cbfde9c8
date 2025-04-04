@@ -1,6 +1,5 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../send-client-link/types.ts";
+import { corsHeaders, FeedbackAnalysisRequest, FeedbackAnalysisResult, ActionItem, ToneAnalysis } from "./types.ts";
 
 // Types for feedback analysis
 interface FeedbackAnalysisRequest {

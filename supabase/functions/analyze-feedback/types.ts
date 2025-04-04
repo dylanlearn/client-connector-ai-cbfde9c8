@@ -1,34 +1,31 @@
 
 /**
- * Types shared across edge functions
+ * Types for feedback analysis
  */
 
-export interface ClientErrorData {
-  errorMessage: string;
-  errorStack?: string;
-  componentName?: string;
-  userId?: string;
-  browserInfo?: string;
-  url?: string;
+export interface FeedbackAnalysisRequest {
+  feedbackText: string;
 }
 
-export interface FeedbackData {
-  userId: string;
-  feedbackType: 'bug' | 'feature' | 'improvement' | 'other';
-  content: string;
-  sentiment?: 'positive' | 'neutral' | 'negative';
-  metadata?: Record<string, any>;
+export interface FeedbackAnalysisResult {
+  actionItems: ActionItem[];
+  toneAnalysis: ToneAnalysis;
+  summary: string;
 }
 
-export interface AnalysisResult {
-  id: string;
-  analysis: {
-    sentiment: string;
-    topics: string[];
-    priority: 'low' | 'medium' | 'high';
-    actionable: boolean;
-    suggestedResponse?: string;
-  };
+export interface ActionItem {
+  task: string;
+  priority: 'high' | 'medium' | 'low';
+  urgency: number;
+}
+
+export interface ToneAnalysis {
+  positive: number;
+  neutral: number;
+  negative: number;
+  urgent: boolean;
+  vague: boolean;
+  critical: boolean;
 }
 
 export const corsHeaders = {
