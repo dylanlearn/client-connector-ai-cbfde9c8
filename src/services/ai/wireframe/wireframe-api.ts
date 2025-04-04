@@ -165,6 +165,34 @@ export const WireframeApiService = {
   },
   
   /**
+   * Get the latest wireframe for a project
+   */
+  getLatestWireframe: async (projectId: string): Promise<AIWireframe | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('ai_wireframes')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        // If no wireframes found, return null instead of throwing error
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw new Error(`Error fetching latest wireframe: ${error.message}`);
+      }
+      
+      return data as unknown as AIWireframe;
+    } catch (error) {
+      console.error("Error fetching latest wireframe:", error);
+      throw error;
+    }
+  },
+  
+  /**
    * Get a specific wireframe by ID with its sections
    */
   getWireframe: async (wireframeId: string): Promise<AIWireframe & { sections?: any[] }> => {
@@ -197,6 +225,74 @@ export const WireframeApiService = {
       };
     } catch (error) {
       console.error("Error fetching wireframe:", error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Update wireframe data
+   */
+  updateWireframeData: async (
+    wireframeId: string,
+    data: WireframeData
+  ): Promise<AIWireframe | null> => {
+    try {
+      // Update the wireframe in the database
+      const { data: updatedWireframe, error } = await supabase
+        .from('ai_wireframes')
+        .update({
+          generation_params: {
+            result_data: data
+          }
+        })
+        .eq('id', wireframeId)
+        .select('*')
+        .single();
+      
+      if (error) {
+        throw new Error(`Error updating wireframe data: ${error.message}`);
+      }
+      
+      // If there are sections, update or insert them
+      if (data.sections && data.sections.length > 0) {
+        // First, delete existing sections
+        const { error: deleteError } = await supabase
+          .from('wireframe_sections')
+          .delete()
+          .eq('wireframe_id', wireframeId);
+        
+        if (deleteError) {
+          console.error("Error deleting existing wireframe sections:", deleteError);
+        }
+        
+        // Then insert the new sections
+        const sectionData = data.sections.map((section, index) => ({
+          wireframe_id: wireframeId,
+          name: section.name || `Section ${index + 1}`,
+          section_type: section.sectionType,
+          description: section.description,
+          layout_type: section.layoutType,
+          components: section.components,
+          position_order: index,
+          mobile_layout: section.mobileLayout,
+          style_variants: section.styleVariants,
+          animation_suggestions: section.animationSuggestions,
+          copy_suggestions: section.copySuggestions,
+          design_reasoning: section.designReasoning
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('wireframe_sections')
+          .insert(sectionData);
+        
+        if (insertError) {
+          console.error("Error inserting new wireframe sections:", insertError);
+        }
+      }
+      
+      return updatedWireframe as unknown as AIWireframe;
+    } catch (error) {
+      console.error("Error updating wireframe data:", error);
       throw error;
     }
   },
