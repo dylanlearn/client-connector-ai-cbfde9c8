@@ -1,7 +1,11 @@
 
-import { corsHeaders } from "../../_shared/cors-headers";
+// Import the corsHeaders directly without using the shared module
+// This avoids the file path resolution error in the edge function
 
-export { corsHeaders };
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 export interface FeedbackAnalysisRequest {
   feedbackText: string;

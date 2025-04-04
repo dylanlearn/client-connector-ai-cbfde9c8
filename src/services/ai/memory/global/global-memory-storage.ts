@@ -1,96 +1,115 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { GlobalMemory, MemoryCategory } from "../memory-types";
+import { MemoryCategory, GlobalMemoryType } from "../memory-types";
 import { v4 as uuidv4 } from "uuid";
-import { GlobalMemoryBase } from "./global-memory-base";
 
-/**
- * Service for storing and updating global memory entries
- */
+// Global memory storage operations
 export const GlobalMemoryStorage = {
   /**
-   * Store an anonymized memory entry in the global layer
+   * Store an anonymized memory entry
    */
   storeAnonymizedMemory: async (
     content: string,
     category: MemoryCategory,
     relevanceScore: number = 0.5,
     metadata: Record<string, any> = {}
-  ): Promise<GlobalMemory | null> => {
+  ): Promise<GlobalMemoryType | null> => {
     try {
-      // Before trying to use the database, create a memory object we can return
-      // if the database operations fail (temporary workaround until tables are created)
-      const memoryEntry: GlobalMemory = {
+      const memoryEntry: GlobalMemoryType = {
         id: uuidv4(),
         content,
         category,
-        timestamp: new Date(),
-        frequency: 1,
         relevanceScore,
+        frequency: 1,
+        timestamp: new Date(),
         metadata
       };
 
-      // Check for similar existing memories to update frequency
-      const { data: existingMemories } = await (supabase
-        .from('global_memories') as any)
-        .select('*')
-        .eq('category', category)
-        .textSearch('content', content, {
-          config: 'english',
-          type: 'plain'
+      // Using type assertion to work around type checking limitations
+      const { data, error } = await (supabase
+        .from('memory_analysis_results') as any)
+        .insert({
+          id: memoryEntry.id,
+          content: memoryEntry.content,
+          category: memoryEntry.category,
+          relevance_score: memoryEntry.relevanceScore,
+          frequency: memoryEntry.frequency,
+          timestamp: memoryEntry.timestamp,
+          metadata: memoryEntry.metadata
         })
-        .limit(1);
+        .select()
+        .single();
 
-      if (existingMemories && existingMemories.length > 0) {
-        // Update existing memory frequency and relevance
-        const existingMemory = existingMemories[0];
-        const newFrequency = existingMemory.frequency + 1;
-        const newRelevance = (existingMemory.relevance_score + relevanceScore) / 2; // Average
-        
-        const { data, error } = await (supabase
-          .from('global_memories') as any)
-          .update({
-            frequency: newFrequency,
-            relevance_score: newRelevance,
-            timestamp: new Date(), // Update timestamp to reflect recent usage
-            metadata: { ...existingMemory.metadata, ...metadata }
-          })
-          .eq('id', existingMemory.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Error updating global memory:", error);
-          return memoryEntry; // Return the original object as fallback
-        }
-        
-        return GlobalMemoryBase.mapToGlobalMemory(data);
-      } else {
-        // Create new memory entry
-        const { data, error } = await (supabase
-          .from('global_memories') as any)
-          .insert({
-            id: memoryEntry.id,
-            content: memoryEntry.content,
-            category: memoryEntry.category,
-            timestamp: memoryEntry.timestamp,
-            frequency: memoryEntry.frequency,
-            relevance_score: memoryEntry.relevanceScore,
-            metadata: memoryEntry.metadata
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Error storing global memory:", error);
-          return memoryEntry; // Return the original object as fallback
-        }
-        
-        return GlobalMemoryBase.mapToGlobalMemory(data);
+      if (error) {
+        console.error("Error storing anonymized global memory:", error);
+        return null;
       }
+      
+      return {
+        id: data.id,
+        content: data.content,
+        category: data.category as MemoryCategory,
+        relevanceScore: data.relevance_score,
+        frequency: data.frequency,
+        timestamp: new Date(data.timestamp),
+        metadata: data.metadata
+      };
     } catch (error) {
-      console.error("Error storing global memory:", error);
+      console.error("Error storing anonymized global memory:", error);
       return null;
     }
-  }
+  },
+
+  /**
+   * Process user feedback on a global memory entry
+   */
+  processUserFeedback: async (
+    memoryId: string,
+    isHelpful: boolean
+  ): Promise<boolean> => {
+    try {
+      // Fetch the existing memory entry
+      const { data: existingMemory, error: fetchError } = await (supabase
+        .from('memory_analysis_results') as any)
+        .select('*')
+        .eq('id', memoryId)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching global memory for feedback:", fetchError);
+        return false;
+      }
+
+      if (!existingMemory) {
+        console.warn("Global memory entry not found for feedback:", memoryId);
+        return false;
+      }
+
+      // Update relevance score based on feedback
+      const currentRelevance = existingMemory.relevance_score || 0.5;
+      const updatedRelevance = isHelpful ? Math.min(1, currentRelevance + 0.1) : Math.max(0, currentRelevance - 0.1);
+
+      // Update frequency (helpful or not)
+      const currentFrequency = existingMemory.frequency || 1;
+      const updatedFrequency = currentFrequency + 1;
+
+      // Update the memory entry with new relevance and frequency
+      const { error: updateError } = await (supabase
+        .from('memory_analysis_results') as any)
+        .update({
+          relevance_score: updatedRelevance,
+          frequency: updatedFrequency
+        })
+        .eq('id', memoryId);
+
+      if (updateError) {
+        console.error("Error updating global memory with feedback:", updateError);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error processing user feedback on global memory:", error);
+      return false;
+    }
+  },
 };

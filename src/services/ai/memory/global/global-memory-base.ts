@@ -1,5 +1,5 @@
-
-import { GlobalMemory, MemoryCategory } from "../memory-types";
+import { supabase } from "@/integrations/supabase/client";
+import { MemoryCategory, GlobalMemoryType } from "../memory-types";
 
 /**
  * Base service with utility functions for global memory
@@ -8,7 +8,7 @@ export const GlobalMemoryBase = {
   /**
    * Map database response to GlobalMemory object
    */
-  mapToGlobalMemory: (data: any): GlobalMemory => {
+  mapToGlobalMemory: (data: any): GlobalMemoryType => {
     return {
       id: data.id,
       content: data.content,

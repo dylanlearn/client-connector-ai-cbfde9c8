@@ -21,7 +21,7 @@ export function useMemoryInitialization() {
     
     try {
       // Add initial design preference memories
-      await AIMemoryService.user.storeMemory(
+      await AIMemoryService.user.store(
         user.id,
         "User prefers clean and minimal design aesthetics",
         MemoryCategory.DesignPreference,
@@ -34,7 +34,7 @@ export function useMemoryInitialization() {
       );
       
       // Add initial tone preference memory
-      await AIMemoryService.user.storeMemory(
+      await AIMemoryService.user.store(
         user.id,
         "User prefers a professional but friendly communication tone",
         MemoryCategory.TonePreference,
@@ -47,7 +47,7 @@ export function useMemoryInitialization() {
       
       // If a project ID is provided, add project-specific memory
       if (projectId) {
-        await AIMemoryService.project.storeMemory(
+        await AIMemoryService.project.store(
           projectId,
           user.id,
           "Initial project context for design approach",
@@ -83,7 +83,7 @@ export function useMemoryInitialization() {
     if (!user?.id) return;
     
     try {
-      const memories = await AIMemoryService.user.getMemories(user.id, {
+      const memories = await AIMemoryService.user.get(user.id, {
         limit: 1 // Just need to check if any exist
       });
       

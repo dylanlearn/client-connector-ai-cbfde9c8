@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { GlobalMemory, MemoryCategory, MemoryQueryOptions } from "../memory-types";
+import { MemoryCategory, GlobalMemoryType, MemoryQueryOptions } from "../memory-types";
 import { GlobalMemoryBase } from "./global-memory-base";
 
 /**
@@ -12,7 +11,7 @@ export const GlobalMemoryRetrieval = {
    */
   getMemories: async (
     options: MemoryQueryOptions = {}
-  ): Promise<GlobalMemory[]> => {
+  ): Promise<GlobalMemoryType[]> => {
     try {
       const { 
         categories, 
