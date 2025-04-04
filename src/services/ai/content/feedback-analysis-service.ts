@@ -37,6 +37,17 @@ export interface FeedbackAnalysisResult {
 export type FeedbackStatus = 'open' | 'in_progress' | 'implemented' | 'declined';
 
 /**
+ * Type for feedback comment
+ */
+export interface FeedbackComment {
+  id: string;
+  comment: string;
+  createdAt: string;
+  userId: string;
+  userEmail?: string;
+}
+
+/**
  * Database record for feedback analysis
  */
 export interface FeedbackAnalysisRecord {
@@ -119,12 +130,12 @@ export const FeedbackAnalysisService = {
                 (data.toneAnalysis.negative > 0.4 ? 'medium' : 'low')));
 
           // Create a record for database storage
-          const record: FeedbackAnalysisRecord = {
+          const record = {
             user_id: userId,
             project_id: options?.projectId,
             category: options?.category,
             priority: calculatedPriority,
-            status: 'open',
+            status: 'open' as FeedbackStatus,
             original_feedback: feedbackText,
             action_items: JSON.stringify(data.actionItems),
             tone_analysis: JSON.stringify(data.toneAnalysis),
@@ -209,7 +220,6 @@ export const FeedbackAnalysisService = {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
       
-      // Use a raw query approach without complex type parameters
       let query = supabase
         .from('feedback_analysis')
         .select()
@@ -392,13 +402,7 @@ export const FeedbackAnalysisService = {
    * @param feedbackId - The ID of the feedback analysis
    * @returns List of comments with user information
    */
-  getComments: async (feedbackId: string): Promise<{
-    id: string;
-    comment: string;
-    createdAt: string;
-    userId: string;
-    userEmail?: string;
-  }[]> => {
+  getComments: async (feedbackId: string): Promise<FeedbackComment[]> => {
     try {
       const { data, error } = await supabase
         .from('feedback_comments')

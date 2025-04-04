@@ -4,7 +4,7 @@
  * the auto-generated types.
  */
 
-import { ActionItem, ToneAnalysis } from "@/services/ai/content/feedback-analysis-service";
+import { ActionItem, ToneAnalysis, FeedbackStatus } from "@/services/ai/content/feedback-analysis-service";
 
 /**
  * Feedback analysis types
@@ -12,10 +12,26 @@ import { ActionItem, ToneAnalysis } from "@/services/ai/content/feedback-analysi
 export interface FeedbackAnalysisTable {
   id: string;
   user_id?: string;
+  project_id?: string;
+  category?: string;
+  priority?: 'high' | 'medium' | 'low';
+  status?: FeedbackStatus;
   original_feedback: string;
-  action_items: ActionItem[]; 
-  tone_analysis: ToneAnalysis;
+  action_items: ActionItem[] | string; 
+  tone_analysis: ToneAnalysis | string;
   summary: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Feedback comments types
+ */
+export interface FeedbackCommentsTable {
+  id: string;
+  feedback_id: string;
+  user_id: string;
+  comment: string;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +45,11 @@ declare module '@supabase/supabase-js' {
           Row: FeedbackAnalysisTable;
           Insert: Omit<FeedbackAnalysisTable, 'id' | 'created_at' | 'updated_at'>;
           Update: Partial<Omit<FeedbackAnalysisTable, 'id' | 'created_at' | 'updated_at'>>;
+        };
+        feedback_comments: {
+          Row: FeedbackCommentsTable;
+          Insert: Omit<FeedbackCommentsTable, 'id' | 'created_at' | 'updated_at'>;
+          Update: Partial<Omit<FeedbackCommentsTable, 'id' | 'created_at' | 'updated_at'>>;
         };
       };
     };
