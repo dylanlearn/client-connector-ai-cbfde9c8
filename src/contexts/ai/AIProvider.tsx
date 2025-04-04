@@ -156,7 +156,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       };
       
       const content = await AIGeneratorService.generateContent(options);
-      return content;
+      return String(content); // Fix: Ensure content is converted to string
     } catch (error) {
       console.error("Error generating content:", error);
       return '';
@@ -186,7 +186,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       } else if (typeof summary === 'string') {
         return summary;
       } else {
-        return '';
+        return String(summary || ''); // Fix: Ensure summary is converted to string
       }
     } catch (error) {
       console.error("Error summarizing feedback:", error);

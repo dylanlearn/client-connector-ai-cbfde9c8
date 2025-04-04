@@ -1,7 +1,7 @@
 
 import { ReactNode } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AIProvider } from "@/contexts/ai";
+import { AIProvider } from "@/contexts/ai/AIProvider";
 import { MemoryProvider } from "@/contexts/ai/MemoryContext";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
