@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,7 +7,7 @@ import WireframeList from '../components/AI/WireframeList';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { QuestionnaireWireframeBridge } from '@/services/wireframe/questionnaire-wireframe-bridge';
+import { questionnaireWireframeBridge } from '@/services/wireframe/questionnaire-wireframe-bridge';
 import { useDesignRecommendations } from '@/contexts/ai/hooks/useDesignRecommendations';
 import { useIntakeForm } from '@/hooks/intake-form';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +28,6 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
   const [intakeData, setIntakeData] = useState<IntakeFormData | null>(null);
   const [hasLoadedWireframes, setHasLoadedWireframes] = useState(false);
 
-  // Load project wireframes when component mounts
   useEffect(() => {
     if (project?.id && !hasLoadedWireframes) {
       loadProjectWireframes(project.id);
@@ -37,35 +35,29 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
     }
   }, [project?.id, loadProjectWireframes, hasLoadedWireframes]);
 
-  // Load intake data if available
   useEffect(() => {
     if (formData && Object.keys(formData).length > 0) {
       setIntakeData(formData);
     }
   }, [formData]);
 
-  // Generate wireframe from questionnaire
   const handleGenerateFromQuestionnaire = async () => {
     if (!intakeData || !project.id) return;
     
-    // Enhance intake data with project ID for proper association
     const enhancedIntakeData = {
       ...intakeData,
       formId: project.id
     };
 
     try {
-      // Transform intake data to wireframe parameters using the bridge
-      const wireframeParams = QuestionnaireWireframeBridge.transformIntakeToWireframeParams(
+      const wireframeParams = questionnaireWireframeBridge.transformIntakeToWireframeParams(
         enhancedIntakeData,
         Array.isArray(designRecommendations) && designRecommendations.length > 0 ? designRecommendations[0] : null
       );
       
-      // Generate the wireframe using the parameters
       const result = await generateWireframe(wireframeParams);
       
       if (result) {
-        // After successful generation, reload the wireframes
         loadProjectWireframes(project.id);
       }
     } catch (error) {
@@ -73,7 +65,6 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
     }
   };
 
-  // Calculate completion of questionnaire data
   const getIntakeCompletionPercentage = (): number => {
     if (!intakeData) return 0;
     
@@ -86,10 +77,9 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
   const intakeCompletionPercentage = getIntakeCompletionPercentage();
   const hasEnoughData = intakeCompletionPercentage >= 50;
   
-  // Get recommended sections based on intake data
   const getRecommendedSections = (): string[] => {
     if (!intakeData) return ['hero', 'features', 'footer'];
-    return QuestionnaireWireframeBridge.getRecommendedSections(intakeData);
+    return questionnaireWireframeBridge.getRecommendedSections(intakeData);
   };
 
   return (
@@ -111,7 +101,6 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
         </TabsList>
         
         <TabsContent value="wireframes">
-          {/* Questionnaire Integration Alert */}
           {!hasInProgressForm() && intakeCompletionPercentage < 25 && (
             <Alert className="mb-6 border-blue-200 bg-blue-50">
               <Rocket className="h-5 w-5 text-blue-500" />
@@ -132,7 +121,6 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
             </Alert>
           )}
 
-          {/* Questionnaire Data Summary */}
           {intakeData && intakeCompletionPercentage > 0 && (
             <Card className="mb-6">
               <CardHeader>

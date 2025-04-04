@@ -1,3 +1,4 @@
+
 import { WireframeApiService } from './api';
 import { 
   WireframeGenerationParams, 
@@ -20,18 +21,19 @@ export const WireframeService = {
     params: WireframeGenerationParams
   ): Promise<WireframeGenerationResult> => {
     try {
-      // Apply industry templates if specified
-      if (params.templateId) {
+      // Apply industry templates if specified in params
+      if (params.industry) {
         try {
-          const baseWireframe = IndustryTemplateService.applyTemplate(params.templateId);
+          const baseWireframe = IndustryTemplateService.getTemplatesForIndustry(params.industry);
           
           // Merge template with any custom parameters
           params = {
             ...params,
-            baseWireframe
+            // Using industry data as a base
+            baseWireframe: baseWireframe
           };
         } catch (error) {
-          console.warn("Error applying template:", error);
+          console.warn("Error applying industry template:", error);
           // Continue without template if error occurs
         }
       }
@@ -49,23 +51,21 @@ export const WireframeService = {
           result.model || 'default'
         );
         
-        // If user ID is provided, create initial version in version control
-        if (params.userId) {
-          try {
-            const lastWireframe = await WireframeApiService.getLatestWireframe(params.projectId);
-            
-            if (lastWireframe) {
-              await wireframeVersionControl.createVersion(
-                lastWireframe.id,
-                result.wireframe,
-                "Initial wireframe generation",
-                params.userId
-              );
-            }
-          } catch (error) {
-            console.error("Error creating initial wireframe version:", error);
-            // Continue even if version control fails
+        // If project is provided, create initial version in version control
+        try {
+          const lastWireframe = await WireframeApiService.getLatestWireframe(params.projectId);
+          
+          if (lastWireframe) {
+            await wireframeVersionControl.createVersion(
+              lastWireframe.id,
+              result.wireframe,
+              "Initial wireframe generation",
+              params.projectId // Using projectId instead of userId
+            );
           }
+        } catch (error) {
+          console.error("Error creating initial wireframe version:", error);
+          // Continue even if version control fails
         }
       }
       
@@ -210,7 +210,7 @@ export const WireframeService = {
    */
   applyTemplateToWireframe: async (
     wireframeId: string,
-    templateId: string,
+    industry: string,
     userId: string,
     preserveSections: boolean = true
   ): Promise<AIWireframe | null> => {
@@ -222,8 +222,8 @@ export const WireframeService = {
         throw new Error("Wireframe not found");
       }
       
-      // Get the template
-      const templateData = IndustryTemplateService.applyTemplate(templateId);
+      // Get the template for the industry
+      const templateData = IndustryTemplateService.getTemplatesForIndustry(industry);
       
       // Combine data based on preserveSections setting
       let updatedData: WireframeData;
@@ -250,7 +250,7 @@ export const WireframeService = {
         wireframeId,
         updatedData,
         userId,
-        `Applied template: ${templateId}`
+        `Applied template: ${industry}`
       );
     } catch (error) {
       console.error("Error applying template to wireframe:", error);

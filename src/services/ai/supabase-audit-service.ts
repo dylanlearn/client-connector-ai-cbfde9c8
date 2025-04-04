@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 /**
- * Service for performing comprehensive Supabase audits
+ * Service for auditing Supabase configuration
  */
 export const SupabaseAuditService = {
   /**
@@ -299,81 +300,138 @@ export const SupabaseAuditService = {
   },
   
   /**
-   * Get all tables from the database
+   * Get a list of all tables in the database
    */
-  getTables: async () => {
+  getTables: async (): Promise<{
+    tables: string[];
+    error?: string;
+  }> => {
     try {
-      // Use RPC instead of raw query to avoid TypeScript errors
+      // Use RPC call to get tables securely
       const { data, error } = await supabase.rpc('get_all_tables');
       
       if (error) {
-        console.error("Error fetching tables:", error);
-        return [];
+        console.error('Error getting tables:', error);
+        return { tables: [], error: error.message };
       }
       
-      // Assuming the RPC function returns an array of table names
-      return Array.isArray(data) ? data : [];
+      // Convert array of objects to array of strings
+      const tables = Array.isArray(data) 
+        ? data.map(item => (item as any).table_name as string) 
+        : [];
+      
+      return { tables };
     } catch (error) {
-      console.error("Exception in getTables:", error);
-      return [];
+      console.error('Exception getting tables:', error);
+      return { 
+        tables: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   },
   
   /**
-   * Get all functions from the database
+   * Get list of all functions in the database
    */
-  getFunctions: async () => {
+  getFunctions: async (): Promise<{
+    functions: string[];
+    error?: string;
+  }> => {
     try {
-      // Use RPC for this instead of direct access to supabase.functions.listFunctions
+      // Use RPC call to get functions securely
       const { data, error } = await supabase.rpc('list_functions');
       
       if (error) {
-        console.error("Error fetching functions:", error);
-        return [];
+        console.error('Error getting functions:', error);
+        return { functions: [], error: error.message };
       }
       
-      return Array.isArray(data) ? data : [];
+      // Convert array of objects to array of strings
+      const functions = Array.isArray(data) 
+        ? data.map(item => (item as any).function_name as string)
+        : [];
+      
+      return { functions };
     } catch (error) {
-      console.error("Exception in getFunctions:", error);
-      return [];
+      console.error('Exception getting functions:', error);
+      return { 
+        functions: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   },
   
   /**
-   * Get information about a specific table
+   * Get table information
    */
-  getTableInfo: async (tableName: string) => {
+  getTableInfo: async (tableName: string): Promise<{
+    columns: any[];
+    error?: string;
+  }> => {
     try {
-      const { data, error } = await supabase.rpc('get_table_info', { p_table_name: tableName });
+      // Use RPC call to get table information securely
+      const { data, error } = await supabase.rpc('get_table_info', {
+        p_table_name: tableName
+      });
       
       if (error) {
-        console.error(`Error fetching info for table ${tableName}:`, error);
-        return null;
+        console.error(`Error getting table info for ${tableName}:`, error);
+        return { columns: [], error: error.message };
       }
       
-      return data;
+      return { columns: data || [] };
     } catch (error) {
-      console.error(`Exception in getTableInfo for ${tableName}:`, error);
-      return null;
+      console.error(`Exception getting table info for ${tableName}:`, error);
+      return { 
+        columns: [],
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   },
   
   /**
-   * Get RLS information about a specific table
+   * Get Row Level Security (RLS) policies for a table
    */
-  getTableRLS: async (tableName: string) => {
+  getTableRLS: async (tableName: string): Promise<{
+    policies: any[];
+    hasRLS: boolean;
+    error?: string;
+  }> => {
     try {
-      const { data, error } = await supabase.rpc('get_table_rls', { p_table_name: tableName });
+      // Use RPC call to get RLS policies securely
+      const { data, error } = await supabase.rpc('get_table_rls', {
+        p_table_name: tableName
+      });
       
       if (error) {
-        console.error(`Error fetching RLS for table ${tableName}:`, error);
-        return null;
+        console.error(`Error getting RLS for ${tableName}:`, error);
+        return { policies: [], hasRLS: false, error: error.message };
       }
       
-      return data;
+      const tableData = data as any;
+      let hasRLS = false;
+      let policies: any[] = [];
+      
+      if (tableData && Array.isArray(tableData)) {
+        // Extract RLS information
+        hasRLS = tableData.length > 0 ? 
+          tableData[0].row_level_security === true : 
+          false;
+        
+        policies = tableData;
+      }
+      
+      return { policies, hasRLS };
     } catch (error) {
-      console.error(`Exception in getTableRLS for ${tableName}:`, error);
-      return null;
+      console.error(`Exception getting RLS for ${tableName}:`, error);
+      return { 
+        policies: [],
+        hasRLS: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 };
+
+// Export as default and named export for backward compatibility
+export default SupabaseAuditService;

@@ -1,54 +1,74 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { AIWireframe, WireframeSection } from "../wireframe-types";
+import { Json } from "@/integrations/supabase/types";
+import { AIWireframe, WireframeSection, WireframeComponent, CopySuggestions, WireframeData } from "../wireframe-types";
 
 /**
- * Service for handling wireframe sections operations
+ * Service for managing wireframe sections in the database
  */
-export const wireframeSections = {
+export const wireframeSectionsService = {
   /**
    * Get all sections for a wireframe
    */
-  getWireframeSections: async (wireframeId: string): Promise<WireframeSection[]> => {
+  getSectionsForWireframe: async (wireframeId: string): Promise<WireframeSection[]> => {
     try {
       const { data, error } = await supabase
         .from('wireframe_sections')
         .select('*')
         .eq('wireframe_id', wireframeId)
         .order('position_order', { ascending: true });
-        
+      
       if (error) {
-        throw new Error(`Error fetching wireframe sections: ${error.message}`);
+        console.error("Error fetching wireframe sections:", error);
+        return [];
       }
       
-      return data as unknown as WireframeSection[];
+      // Convert from database format to WireframeSection type
+      return (data || []).map(section => {
+        return {
+          id: section.id,
+          name: section.name,
+          sectionType: section.section_type,
+          layoutType: section.layout_type,
+          layout: section.layout,
+          components: section.components as unknown as WireframeComponent[],
+          copySuggestions: section.copy_suggestions as unknown as CopySuggestions,
+          designReasoning: section.design_reasoning,
+          mobileLayout: section.mobile_layout,
+          animationSuggestions: section.animation_suggestions,
+          dynamicElements: section.dynamic_elements,
+          styleVariants: section.style_variants,
+          positionOrder: section.position_order,
+          description: section.description
+        };
+      });
     } catch (error) {
-      console.error("Error fetching wireframe sections:", error);
-      throw error;
+      console.error("Error in getSectionsForWireframe:", error);
+      return [];
     }
   },
-
+  
   /**
-   * Add a section to a wireframe
+   * Save a single section
    */
-  addWireframeSection: async (
-    wireframeId: string, 
-    section: WireframeSection
-  ): Promise<WireframeSection> => {
+  saveSection: async (section: WireframeSection, wireframeId: string): Promise<string | null> => {
     try {
-      // Convert the section to the format expected by the database
+      // Convert section to database format
       const dbSection = {
         wireframe_id: wireframeId,
         name: section.name,
         section_type: section.sectionType,
-        description: section.description || null,
+        description: section.description || '',
         layout_type: section.layoutType,
-        components: section.components || null,
-        mobile_layout: section.mobileLayout || null,
-        style_variants: section.styleVariants || null,
-        animation_suggestions: section.animationSuggestions || null,
-        copy_suggestions: section.copySuggestions || null,
-        design_reasoning: section.designReasoning || null
+        layout: section.layout as Json,
+        components: section.components as unknown as Json,
+        mobile_layout: section.mobileLayout as Json,
+        style_variants: section.styleVariants as Json,
+        animation_suggestions: section.animationSuggestions as Json,
+        copy_suggestions: section.copySuggestions as Json,
+        design_reasoning: section.designReasoning || '',
+        dynamic_elements: section.dynamicElements as Json,
+        position_order: section.positionOrder || 0
       };
       
       const { data, error } = await supabase
@@ -56,107 +76,59 @@ export const wireframeSections = {
         .insert(dbSection)
         .select()
         .single();
-        
+      
       if (error) {
-        throw new Error(`Error adding wireframe section: ${error.message}`);
+        console.error("Error saving wireframe section:", error);
+        return null;
       }
       
-      return data as unknown as WireframeSection;
+      return data.id;
     } catch (error) {
-      console.error("Error adding wireframe section:", error);
-      throw error;
+      console.error("Error in saveSection:", error);
+      return null;
     }
   },
   
   /**
-   * Update wireframe sections batch
+   * Update sections for a wireframe
    */
-  updateWireframeSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
+  updateSections: async (sections: WireframeSection[], wireframeId: string): Promise<boolean> => {
     try {
-      // First, delete existing sections
-      const { error: deleteError } = await supabase
+      // First, delete all existing sections for this wireframe
+      await supabase
         .from('wireframe_sections')
         .delete()
         .eq('wireframe_id', wireframeId);
       
-      if (deleteError) {
-        throw new Error(`Error deleting existing wireframe sections: ${deleteError.message}`);
-      }
-      
-      // Then, insert new sections if there are any
-      if (sections && sections.length > 0) {
-        // Convert each section to the DB format
-        const newSections = sections.map((section, index) => ({
+      // Then insert all sections with position order
+      const sectionPromises = sections.map((section, index) => {
+        // Convert section to database format
+        const dbSection = {
           wireframe_id: wireframeId,
           position_order: index,
           name: section.name,
-          section_type: section.sectionType || '', 
-          description: section.description || null,
-          layout_type: section.layoutType || '', 
-          components: section.components || null,
-          mobile_layout: section.mobileLayout || null,
-          style_variants: section.styleVariants || null,
-          animation_suggestions: section.animationSuggestions || null,
-          copy_suggestions: section.copySuggestions || null,
-          design_reasoning: section.designReasoning || null
-        }));
+          section_type: section.sectionType,
+          description: section.description || '',
+          layout_type: section.layoutType,
+          layout: section.layout as Json,
+          components: section.components as unknown as Json,
+          mobile_layout: section.mobileLayout as Json,
+          style_variants: section.styleVariants as Json,
+          animation_suggestions: section.animationSuggestions as Json,
+          copy_suggestions: section.copySuggestions as Json,
+          design_reasoning: section.designReasoning || '',
+          dynamic_elements: section.dynamicElements as Json
+        };
         
-        // Insert each section individually to avoid type errors with bulk insert
-        for (const section of newSections) {
-          const { error: insertError } = await supabase
-            .from('wireframe_sections')
-            .insert(section);
-          
-          if (insertError) {
-            throw new Error(`Error inserting new wireframe section: ${insertError.message}`);
-          }
-        }
-      }
+        return this.saveSection(section, wireframeId);
+      });
+      
+      await Promise.all(sectionPromises);
       
       return true;
     } catch (error) {
       console.error("Error updating wireframe sections:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get all sections for a wireframe - alias for getWireframeSections
-   */
-  getSections: async (wireframeId: string): Promise<WireframeSection[]> => {
-    return wireframeSections.getWireframeSections(wireframeId);
-  },
-
-  /**
-   * Save sections for a wireframe
-   */
-  saveSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
-    return wireframeSections.updateWireframeSections(wireframeId, sections);
-  },
-
-  /**
-   * Update sections for a wireframe - alias for updateWireframeSections
-   */
-  updateSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
-    return wireframeSections.updateWireframeSections(wireframeId, sections);
-  },
-
-  /**
-   * Delete sections for a wireframe
-   */
-  deleteSections: async (wireframeId: string): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('wireframe_sections')
-        .delete()
-        .eq('wireframe_id', wireframeId);
-      
-      if (error) {
-        throw new Error(`Error deleting wireframe sections: ${error.message}`);
-      }
-    } catch (error) {
-      console.error("Error deleting wireframe sections:", error);
-      throw error;
+      return false;
     }
   }
 };

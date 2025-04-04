@@ -142,6 +142,7 @@ export interface AIWireframe {
   generation_params?: any;
   image_url?: string;
   data?: WireframeData;
+  sections?: WireframeSection[];
 }
 
 export interface WireframeGenerationParams {
@@ -159,6 +160,7 @@ export interface WireframeGenerationParams {
   };
   typography?: string;
   additionalInstructions?: string;
+  baseWireframe?: any; // Allow passing a base wireframe template
 }
 
 export interface WireframeGenerationResult {

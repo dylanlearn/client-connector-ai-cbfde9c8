@@ -1,4 +1,3 @@
-
 import { WireframeData, WireframeSection, WireframeComponent, CopySuggestions } from "@/services/ai/wireframe/wireframe-types";
 
 /**
@@ -142,7 +141,9 @@ export const questionnaireWireframeBridge = {
     return wireframeData;
   },
   
-  // Add the methods that are referenced in ProjectWireframesTab.tsx
+  /**
+   * Transforms intake data to wireframe generation parameters
+   */
   transformIntakeToWireframeParams: (intakeData: any, designRecommendations: any): any => {
     return {
       projectId: intakeData.formId,
@@ -153,6 +154,9 @@ export const questionnaireWireframeBridge = {
     };
   },
   
+  /**
+   * Get recommended sections based on intake data
+   */
   getRecommendedSections: (intakeData: any): string[] => {
     // Default sections
     const defaultSections = ['hero', 'features', 'footer'];

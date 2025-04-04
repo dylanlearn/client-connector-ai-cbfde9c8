@@ -1,6 +1,6 @@
-
-import { supabase } from '@/integrations/supabase/client';
-import { supabaseAuditService } from '@/services/ai/supabase-audit-service';
+import { Json } from "@/integrations/supabase/types";
+import { Database } from "@/integrations/supabase/types";
+import { SupabaseAuditService } from "@/services/ai/supabase-audit-service";
 
 export interface SupabaseHealthCheck {
   auth: {
@@ -28,7 +28,7 @@ export interface SupabaseHealthCheck {
  * Performs a comprehensive health check on Supabase services
  */
 export async function checkSupabaseHealth(): Promise<SupabaseHealthCheck> {
-  const { auth, database, storage, functions, overall } = await supabaseAuditService.runFullHealthCheck();
+  const { auth, database, storage, functions, overall } = await SupabaseAuditService.runFullHealthCheck();
   
   return {
     auth,
@@ -46,12 +46,12 @@ export async function verifyRequiredTables(requiredTables: string[]): Promise<{
   missingTables: string[];
   existingTables: string[];
 }> {
-  return await supabaseAuditService.checkDatabaseSchema(requiredTables);
+  return await SupabaseAuditService.checkDatabaseSchema(requiredTables);
 }
 
 /**
  * Checks RLS policies on specified tables based on application knowledge
  */
 export async function checkRLSPolicies(tables: string[]): Promise<Record<string, boolean>> {
-  return await supabaseAuditService.checkRLSPolicies(tables);
+  return await SupabaseAuditService.checkRLSPolicies(tables);
 }

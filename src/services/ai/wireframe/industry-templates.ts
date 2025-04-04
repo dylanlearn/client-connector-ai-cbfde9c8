@@ -1,4 +1,3 @@
-
 /**
  * Service for industry-specific wireframe templates
  */
@@ -173,5 +172,29 @@ export const IndustryTemplateService = {
       default:
         return defaultTemplate;
     }
+  },
+
+  /**
+   * Get all available templates
+   */
+  getAllTemplates: () => {
+    return {
+      'default': IndustryTemplateService.getTemplatesForIndustry('default'),
+      'ecommerce': IndustryTemplateService.getTemplatesForIndustry('ecommerce'),
+      'portfolio': IndustryTemplateService.getTemplatesForIndustry('portfolio')
+    };
+  },
+
+  /**
+   * Apply a template by ID
+   */
+  applyTemplate: (templateId: string) => {
+    // If template ID is actually an industry name
+    if (['ecommerce', 'portfolio', 'default'].includes(templateId.toLowerCase())) {
+      return IndustryTemplateService.getTemplatesForIndustry(templateId);
+    }
+
+    // Otherwise, use a default template
+    return IndustryTemplateService.getTemplatesForIndustry('default');
   }
 };
