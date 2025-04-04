@@ -14,6 +14,11 @@ import ClientHub from '@/pages/ClientHub';
 import ClientAccess from '@/pages/ClientAccess';
 import AdminPanel from '@/pages/AdminPanel';
 import DesignPicker from '@/pages/DesignPicker';
+import Login from '@/pages/Login';
+import Signup from '@/pages/Signup';
+import AIDesignSuggestions from '@/pages/AIDesignSuggestions';
+import FeedbackAnalysisPage from '@/pages/FeedbackAnalysisPage';
+import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
 import Index from '@/pages/Index';
 import './App.css';
 import { AppProviders } from '@/providers/AppProviders';
@@ -35,6 +40,11 @@ function App() {
           <Route path="client-access" element={<ClientAccess />} />
           <Route path="admin" element={<AdminPanel />} />
           <Route path="design-picker" element={<DesignPicker />} />
+          <Route path="login" element={<Login />} />
+          <Route path="signup" element={<Signup />} />
+          <Route path="ai-suggestions" element={<AIDesignSuggestions />} />
+          <Route path="feedback-analysis" element={<FeedbackAnalysisPage />} />
+          <Route path="website-analyzer" element={<WebsiteAnalyzer />} />
         </Routes>
       </Layout>
       <Toaster />

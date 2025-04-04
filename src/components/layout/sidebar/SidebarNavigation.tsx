@@ -10,7 +10,8 @@ import {
   Settings,
   Users,
   MessageSquareText,
-  BrainCircuit
+  BrainCircuit,
+  Globe
 } from "lucide-react";
 
 interface SidebarNavigationProps {
@@ -58,6 +59,11 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
       title: "Feedback Analysis",
       href: "/feedback-analysis",
       icon: <MessageSquareText className="h-5 w-5" />,
+    },
+    {
+      title: "Website Analyzer",
+      href: "/website-analyzer",
+      icon: <Globe className="h-5 w-5" />,
     },
     {
       title: "Settings",

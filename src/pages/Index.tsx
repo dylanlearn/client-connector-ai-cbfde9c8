@@ -118,8 +118,14 @@ const Index = () => {
                 Client Access
               </Button>
               <div className="flex flex-col space-y-3 pt-2">
-                <Button variant="outline" onClick={() => navigate("/login")}>Log In</Button>
-                <Button onClick={() => navigate("/signup")}>Get Started</Button>
+                <Button variant="outline" onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/login");
+                }}>Log In</Button>
+                <Button onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/signup");
+                }}>Get Started</Button>
               </div>
             </nav>
           </div>
