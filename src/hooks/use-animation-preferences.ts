@@ -1,165 +1,174 @@
 
-import { useCallback, useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { AnimationCategory, AnimationPreference } from "@/types/animations";
 
-// Animation preference type
-export interface AnimationPreference {
-  animation_type: string;
-  enabled: boolean;
-  intensity_preference: number;
-  speed_preference: 'slow' | 'normal' | 'fast';
-  reduced_motion_preference: boolean;
+// Internal types for the hook
+interface PreferenceState {
+  loading: boolean;
+  preferences: Partial<Record<AnimationCategory, UserAnimationPreference>>;
+  error: string | null;
 }
 
+interface UserAnimationPreference {
+  enabled: boolean;
+  speedPreference: 'slow' | 'normal' | 'fast';
+  intensityPreference: number;
+  reducedMotion: boolean;
+}
+
+const DEFAULT_PREFERENCES: UserAnimationPreference = {
+  enabled: true,
+  speedPreference: 'normal',
+  intensityPreference: 5,
+  reducedMotion: false
+};
+
 /**
- * Hook to manage user's animation preferences
+ * Hook to manage animation preferences
  */
 export const useAnimationPreferences = () => {
-  const [preferences, setPreferences] = useState<AnimationPreference[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [state, setState] = useState<PreferenceState>({
+    loading: true,
+    preferences: {},
+    error: null
+  });
   
-  // Check for system-level reduced motion preference
-  const prefersReducedMotion = typeof window !== 'undefined' 
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
-    : false;
-  
-  // Load preferences from local storage on mount
-  useEffect(() => {
-    const loadPreferences = () => {
-      try {
-        const savedPrefs = localStorage.getItem('animation-preferences');
-        if (savedPrefs) {
-          setPreferences(JSON.parse(savedPrefs));
-        } else {
-          // Initialize with default preferences if none exist
-          initializeDefaultPreferences();
-        }
-      } catch (error) {
-        console.error('Error loading animation preferences:', error);
-        initializeDefaultPreferences();
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Load animation preferences
+  const loadPreferences = useCallback(async () => {
+    if (!user) {
+      setState(prev => ({ ...prev, loading: false }));
+      return;
+    }
     
-    loadPreferences();
-  }, []);
-  
-  // Initialize default preferences
-  const initializeDefaultPreferences = () => {
-    const defaultTypes = [
-      'morphing_shape',
-      'progressive_disclosure',
-      'intent_based_motion',
-      'glassmorphism',
-      'hover_effect',
-      'modal_dialog',
-      'custom_cursor',
-      'scroll_animation',
-      'drag_interaction',
-      'magnetic_element',
-      'color_shift',
-      'parallax_tilt'
-    ];
-    
-    const defaults = defaultTypes.map(type => ({
-      animation_type: type,
-      enabled: !prefersReducedMotion,
-      intensity_preference: 5,
-      speed_preference: 'normal' as const,
-      reduced_motion_preference: prefersReducedMotion
-    }));
-    
-    setPreferences(defaults);
-    savePreferences(defaults);
-  };
-  
-  // Save preferences to local storage
-  const savePreferences = (prefs: AnimationPreference[]) => {
     try {
-      localStorage.setItem('animation-preferences', JSON.stringify(prefs));
-    } catch (error) {
-      console.error('Error saving animation preferences:', error);
-    }
-  };
-  
-  /**
-   * Check if an animation type is enabled based on user preferences
-   */
-  const isAnimationEnabled = useCallback((type: string): boolean => {
-    const pref = preferences.find(p => p.animation_type === type);
-    if (!pref) {
-      return !prefersReducedMotion;
-    }
-    return pref.enabled && !pref.reduced_motion_preference;
-  }, [preferences, prefersReducedMotion]);
-  
-  /**
-   * Get specific animation preferences for a type
-   */
-  const getPreference = useCallback((type: string) => {
-    const pref = preferences.find(p => p.animation_type === type);
-    if (!pref) {
-      return {
-        intensity_preference: 5,
-        speed_preference: 'normal' as 'slow' | 'normal' | 'fast',
-        accessibility_mode: false,
-        reduced_motion_preference: prefersReducedMotion
-      };
-    }
-    
-    return {
-      intensity_preference: pref.intensity_preference,
-      speed_preference: pref.speed_preference,
-      accessibility_mode: false,
-      reduced_motion_preference: pref.reduced_motion_preference
-    };
-  }, [preferences, prefersReducedMotion]);
-  
-  /**
-   * Update preference for a specific animation type
-   */
-  const updatePreference = useCallback(async (
-    type: string, 
-    updates: Partial<Omit<AnimationPreference, 'animation_type'>>
-  ): Promise<boolean> => {
-    try {
-      const newPreferences = [...preferences];
-      const index = newPreferences.findIndex(p => p.animation_type === type);
+      setState(prev => ({ ...prev, loading: true }));
       
-      if (index >= 0) {
-        // Update existing preference
-        newPreferences[index] = {
-          ...newPreferences[index],
-          ...updates
-        };
+      // For now, use local storage as a temporary solution
+      // In a real implementation, this would fetch from a database
+      const storedPrefs = localStorage.getItem(`animation_prefs_${user.id}`);
+      if (storedPrefs) {
+        const parsedPrefs = JSON.parse(storedPrefs);
+        setState({
+          loading: false,
+          preferences: parsedPrefs,
+          error: null
+        });
       } else {
-        // Create new preference if it doesn't exist
-        newPreferences.push({
-          animation_type: type,
-          enabled: updates.enabled ?? !prefersReducedMotion,
-          intensity_preference: updates.intensity_preference ?? 5,
-          speed_preference: updates.speed_preference ?? 'normal',
-          reduced_motion_preference: updates.reduced_motion_preference ?? prefersReducedMotion
+        // Initialize with defaults if nothing stored
+        setState({
+          loading: false,
+          preferences: {},
+          error: null
         });
       }
+    } catch (error) {
+      console.error('Error loading animation preferences:', error);
+      setState({
+        loading: false,
+        preferences: {},
+        error: 'Failed to load animation preferences'
+      });
       
-      setPreferences(newPreferences);
-      savePreferences(newPreferences);
-      return true;
+      toast({
+        title: "Error loading preferences",
+        description: "There was a problem loading your animation preferences.",
+        variant: "destructive",
+      });
+    }
+  }, [user, toast]);
+  
+  // Update a specific animation preference
+  const updatePreference = useCallback(async (
+    animationType: AnimationCategory,
+    preferenceUpdate: Partial<UserAnimationPreference>
+  ) => {
+    if (!user) return;
+    
+    try {
+      setState(prev => ({
+        ...prev,
+        preferences: {
+          ...prev.preferences,
+          [animationType]: {
+            ...(prev.preferences[animationType] || DEFAULT_PREFERENCES),
+            ...preferenceUpdate
+          }
+        }
+      }));
+      
+      // Save to local storage for now
+      // In a real implementation, this would save to a database
+      const updatedPrefs = {
+        ...state.preferences,
+        [animationType]: {
+          ...(state.preferences[animationType] || DEFAULT_PREFERENCES),
+          ...preferenceUpdate
+        }
+      };
+      
+      localStorage.setItem(`animation_prefs_${user.id}`, JSON.stringify(updatedPrefs));
+      
+      toast({
+        title: "Preferences updated",
+        description: "Your animation preferences have been updated.",
+      });
     } catch (error) {
       console.error('Error updating animation preference:', error);
-      toast.error('Failed to update preference');
-      return false;
+      
+      toast({
+        title: "Update failed",
+        description: "There was a problem updating your animation preferences.",
+        variant: "destructive",
+      });
     }
-  }, [preferences, prefersReducedMotion]);
+  }, [user, state.preferences, toast]);
   
+  // Get preference value for a specific animation type
+  const getPreference = useCallback((
+    animationType: AnimationCategory
+  ): UserAnimationPreference => {
+    return state.preferences[animationType] || DEFAULT_PREFERENCES;
+  }, [state.preferences]);
+  
+  // Get animation config options based on user preferences
+  const getAnimationConfigOptions = useCallback((
+    animationType: AnimationCategory
+  ) => {
+    const prefs = getPreference(animationType);
+    
+    // Convert speed preference to factor
+    const speedFactor = prefs.speedPreference === 'slow' ? 1.5 :
+                        prefs.speedPreference === 'fast' ? 0.7 : 1;
+    
+    // Convert intensity (1-10 scale) to factor
+    const intensityFactor = prefs.intensityPreference / 5;
+    
+    return {
+      speedFactor,
+      intensityFactor,
+      reducedMotion: prefs.reducedMotion
+    };
+  }, [getPreference]);
+  
+  // Load preferences on mount
+  useEffect(() => {
+    loadPreferences();
+  }, [loadPreferences]);
+
   return {
-    preferences,
-    loading,
-    isAnimationEnabled,
-    getPreference,
+    loading: state.loading,
+    preferences: state.preferences,
+    error: state.error,
     updatePreference,
-    prefersReducedMotion
+    getPreference,
+    getAnimationConfigOptions,
+    loadPreferences
   };
 };
+
+// Export types for consumers of this hook
+export type { UserAnimationPreference };

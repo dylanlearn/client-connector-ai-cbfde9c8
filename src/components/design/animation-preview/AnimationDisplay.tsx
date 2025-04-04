@@ -1,7 +1,7 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { AnimationConfigType } from "../animations/AnimationConfig";
+import { AnimationConfigType } from "../animations/config/types";
 
 interface AnimationDisplayProps {
   isPlaying: boolean;

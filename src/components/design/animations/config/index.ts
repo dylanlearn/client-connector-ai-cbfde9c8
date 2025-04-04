@@ -1,7 +1,7 @@
 
 import { basicConfigs } from './basic-configs';
 import { complexConfigs } from './complex-configs';
-import { AnimationConfigType } from './types';
+import { AnimationConfigType, AnimationPreferenceOptions } from './types';
 
 // Animation category mapping
 const animationCategories: Record<string, string> = {
@@ -25,15 +25,11 @@ let configCache: Record<string, AnimationConfigType> = {};
 export const getAnimationConfig = (
   animationType: string,
   isPlaying: boolean,
-  preferences?: {
-    intensity?: number;
-    speed?: 'slow' | 'normal' | 'fast';
-    reduced_motion?: boolean;
-  }
+  preferences?: AnimationPreferenceOptions
 ): AnimationConfigType => {
   // Generate a cache key that includes preferences
   const prefString = preferences ? 
-    `-i${preferences.intensity}-s${preferences.speed}-r${preferences.reduced_motion}` : '';
+    `-i${preferences.intensityFactor}-s${preferences.speedFactor}-r${preferences.reducedMotion}` : '';
   const cacheKey = `${animationType}-${isPlaying ? 'playing' : 'paused'}${prefString}`;
   
   // Return from cache if exists
@@ -42,14 +38,13 @@ export const getAnimationConfig = (
   }
   
   // Apply preference adjustments (speed factor)
-  const speedFactor = preferences?.speed === 'slow' ? 1.5 :
-                      preferences?.speed === 'fast' ? 0.7 : 1;
+  const speedFactor = preferences?.speedFactor || 1;
   
   // Apply preference adjustments (intensity factor 1-10 scale)
-  const intensityFactor = preferences?.intensity ? (preferences.intensity / 5) : 1;
+  const intensityFactor = preferences?.intensityFactor || 1;
   
   // Apply reduced motion preferences
-  const reducedMotion = preferences?.reduced_motion || false;
+  const reducedMotion = preferences?.reducedMotion || false;
 
   // Options object for configs
   const options = {
