@@ -1,25 +1,25 @@
 
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
-import { AnimationCategory } from "@/types/animations";
+import { Play, Pause, RefreshCw, ThumbsDown, ThumbsUp, ExternalLink } from "lucide-react";
+import { AnimationFeedback } from "@/types/animations";
 
 interface AnimationControlsProps {
   isPlaying: boolean;
   feedbackGiven: 'positive' | 'negative' | null;
   showWebsitePreview: boolean;
-  animCategory: AnimationCategory;
+  animCategory: string;
   onPlayToggle: () => void;
   onReset: () => void;
   onFeedback: (feedback: 'positive' | 'negative') => void;
   onPreviewToggle: () => void;
 }
 
-export const AnimationControls = memo(({
-  isPlaying,
+export const AnimationControls = memo(({ 
+  isPlaying, 
   feedbackGiven,
   showWebsitePreview,
-  onPlayToggle,
+  onPlayToggle, 
   onReset,
   onFeedback,
   onPreviewToggle
@@ -35,6 +35,7 @@ export const AnimationControls = memo(({
           {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
           {isPlaying ? "Pause" : "Play"}
         </Button>
+        
         <Button 
           variant="ghost" 
           size="sm"
@@ -45,26 +46,24 @@ export const AnimationControls = memo(({
         </Button>
       </div>
       
-      <div className="flex items-center gap-2">
-        {/* Feedback buttons */}
-        <div className="flex gap-1 mr-2">
-          <Button
-            variant={feedbackGiven === 'positive' ? 'default' : 'ghost'}
-            size="sm" 
-            className={feedbackGiven === 'positive' ? 'bg-green-500 hover:bg-green-600' : ''}
-            onClick={() => onFeedback('positive')}
-          >
-            <ThumbsUp className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={feedbackGiven === 'negative' ? 'default' : 'ghost'}
-            size="sm"
-            className={feedbackGiven === 'negative' ? 'bg-red-500 hover:bg-red-600' : ''}
-            onClick={() => onFeedback('negative')}
-          >
-            <ThumbsDown className="h-4 w-4" />
-          </Button>
-        </div>
+      <div className="flex gap-2">
+        <Button
+          variant={feedbackGiven === 'positive' ? "default" : "ghost"}
+          size="sm"
+          onClick={() => onFeedback('positive')}
+          className={feedbackGiven === 'positive' ? "bg-green-500 hover:bg-green-600" : ""}
+        >
+          <ThumbsUp className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant={feedbackGiven === 'negative' ? "default" : "ghost"}
+          size="sm"
+          onClick={() => onFeedback('negative')}
+          className={feedbackGiven === 'negative' ? "bg-red-500 hover:bg-red-600" : ""}
+        >
+          <ThumbsDown className="h-4 w-4" />
+        </Button>
         
         <Button
           variant="secondary"

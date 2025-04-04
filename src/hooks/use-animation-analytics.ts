@@ -1,122 +1,135 @@
 
-import { useCallback, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useDeviceDetection } from "@/hooks/tracking/use-device-detection";
-import { 
-  AnimationCategory, 
-  AnimationFeedback, 
-  AnimationPerformanceMetrics 
-} from "@/types/animations";
-import { animationAnalyticsService, trackAnimationView } from "@/services/analytics/animation-analytics-service";
+import { useCallback } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
+import { AnimationFeedback, AnimationPerformanceMetrics } from "@/types/animations";
 
-export function useAnimationAnalytics() {
-  const deviceInfo = useDeviceDetection();
-  // Add a ref to track if component is mounted
-  const isMounted = useRef(true);
-  
-  // Clean up analytics service on unmount
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-      animationAnalyticsService.cleanup();
-    };
-  }, []);
-  
-  // Track an animation view/interaction
-  const trackAnimation = useCallback(async (
-    animationType: AnimationCategory,
-    metrics?: AnimationPerformanceMetrics,
-    feedback?: AnimationFeedback
-  ) => {
-    try {
-      // Only track if component is still mounted
-      if (isMounted.current) {
-        // Use the service function instead of direct API call
-        trackAnimationView(
-          animationType,
-          metrics,
-          {
-            deviceType: deviceInfo.deviceType || 'unknown',
-            browser: deviceInfo.browserName || 'unknown',
-            os: deviceInfo.osName || 'unknown',
-            viewport: {
-              width: window.innerWidth,
-              height: window.innerHeight
-            }
-          },
-          feedback as 'positive' | 'negative'
-        );
-      }
-    } catch (err) {
-      console.error('Error tracking animation:', err);
-    }
-  }, [deviceInfo]);
-  
-  // Record animation start time for performance tracking
+/**
+ * Hook for tracking animation usage and performance
+ */
+export const useAnimationAnalytics = () => {
+  const { user } = useAuth();
+
+  /**
+   * Start tracking animation metrics
+   */
   const startAnimationTracking = useCallback(() => {
+    const startTime = Date.now();
+    const fps: number[] = [];
+    
+    // Simple FPS monitoring
+    let frameCount = 0;
+    let lastTime = performance.now();
+    
+    const trackFrame = () => {
+      frameCount++;
+      const now = performance.now();
+      
+      if (now - lastTime >= 1000) {
+        // Record FPS once per second
+        const currentFps = Math.round(frameCount * 1000 / (now - lastTime));
+        fps.push(currentFps);
+        frameCount = 0;
+        lastTime = now;
+      }
+      
+      requestAnimationFrame(trackFrame);
+    };
+    
+    requestAnimationFrame(trackFrame);
+    
     return {
-      startTime: performance.now(),
-      fps: [] as number[]
+      startTime,
+      fps
     };
   }, []);
-  
-  // Complete animation tracking and record analytics
-  const completeAnimationTracking = useCallback(async (
-    animationType: AnimationCategory,
-    trackingData: { startTime: number; fps: number[] },
-    feedback?: AnimationFeedback
+
+  /**
+   * Complete animation tracking and record metrics
+   */
+  const completeAnimationTracking = useCallback((
+    animationType: string,
+    trackingData: { startTime: number; fps: number[] }
   ) => {
-    if (!isMounted.current) return;
-    
-    const endTime = performance.now();
+    const endTime = Date.now();
     const duration = endTime - trackingData.startTime;
     
-    // Calculate average FPS if available
-    let avgFps;
-    if (trackingData.fps.length > 0) {
-      avgFps = trackingData.fps.reduce((sum, fps) => sum + fps, 0) / trackingData.fps.length;
-    }
+    // Calculate average FPS 
+    const avgFps = trackingData.fps.length > 0 
+      ? trackingData.fps.reduce((sum, val) => sum + val, 0) / trackingData.fps.length 
+      : null;
     
-    const metrics: AnimationPerformanceMetrics = {
-      startTime: trackingData.startTime,
-      endTime,
+    // We would typically send metrics to backend here
+    console.log('Animation completed:', {
+      type: animationType,
       duration,
-      fps: avgFps
-    };
+      avgFps,
+      fpsReadings: trackingData.fps.length,
+      timestamp: new Date().toISOString()
+    });
     
-    await trackAnimation(animationType, metrics, feedback);
-    
-    return metrics;
-  }, [trackAnimation]);
-  
-  // Get a function to measure FPS
-  const measureFps = useCallback(() => {
-    let lastCalledTime: number | null = null;
-    let fps: number[] = [];
-    
-    return () => {
-      if (!lastCalledTime) {
-        lastCalledTime = performance.now();
-        return 0;
-      }
-      
-      const delta = (performance.now() - lastCalledTime) / 1000;
-      lastCalledTime = performance.now();
-      const currentFps = 1 / delta;
-      
-      // Only record reasonable FPS values (between 1 and 120)
-      if (currentFps > 0 && currentFps < 120) {
-        fps.push(currentFps);
-      }
-      
-      return fps;
-    };
   }, []);
+
+  /**
+   * Track animation view or interaction
+   */
+  const trackAnimation = useCallback((
+    animationType: string,
+    metrics?: Partial<AnimationPerformanceMetrics>,
+    feedback?: AnimationFeedback
+  ) => {
+    if (!user) return;
+    
+    try {
+      // We would typically send this data to backend via an API call
+      console.log('Animation tracked:', {
+        animationType,
+        userId: user.id,
+        metrics,
+        feedback,
+        timestamp: new Date().toISOString(),
+        device: {
+          width: window.innerWidth,
+          height: window.innerHeight,
+          userAgent: navigator.userAgent
+        }
+      });
+    } catch (error) {
+      console.error('Failed to track animation:', error);
+    }
+  }, [user]);
 
   return {
     trackAnimation,
     startAnimationTracking,
-    completeAnimationTracking,
-    measureFps
+    completeAnimationTracking
   };
-}
+};
+
+/**
+ * Mock hook for animation preferences (would connect to user settings in real app)
+ */
+export const useAnimationPreferences = () => {
+  // Check for system-level reduced motion preference
+  const prefersReducedMotion = typeof window !== 'undefined' 
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
+    : false;
+  
+  return {
+    isAnimationEnabled: (type: string) => {
+      // Check if user has explicitly disabled this animation type
+      // For now, we just respect system preference
+      return !prefersReducedMotion;
+    },
+    
+    getPreference: (type: string) => {
+      // Return user preferences for this animation type
+      // This would typically come from a database or local storage
+      return {
+        intensity_preference: 5,  // 1-10 scale
+        speed_preference: 'normal', // slow, normal, fast
+        accessibility_mode: false
+      };
+    }
+  };
+};

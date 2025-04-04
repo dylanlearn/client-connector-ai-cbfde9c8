@@ -1,6 +1,6 @@
 
 import { memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { AnimationConfigType } from "../animations/AnimationConfig";
 
 interface AnimationDisplayProps {
@@ -14,22 +14,55 @@ export const AnimationDisplay = memo(({
   animationKey, 
   animationConfig 
 }: AnimationDisplayProps) => {
+  if (!animationConfig) {
+    return (
+      <div className="h-64 bg-gray-50 rounded-md flex items-center justify-center">
+        <p className="text-gray-400">No animation configuration available</p>
+      </div>
+    );
+  }
+
+  // Apply animation configs conditionally based on play state
+  const animateProps = isPlaying ? animationConfig.animate : animationConfig.initial;
+  
   return (
-    <div className="relative h-64 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-md flex items-center justify-center mb-4">
-      <AnimatePresence mode="wait">
-        {isPlaying && (
-          <motion.div
-            key={animationKey}
-            className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center justify-center gap-2 w-3/4"
-            {...animationConfig}
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full"/>
-            <div className="w-full h-3 bg-gray-200 rounded-full"/>
-            <div className="w-4/5 h-3 bg-gray-200 rounded-full"/>
-            <div className="w-2/3 h-3 bg-gray-200 rounded-full"/>
-          </motion.div>
+    <div className="h-64 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-md flex items-center justify-center relative overflow-hidden" key={animationKey}>
+      {/* Background elements for depth */}
+      <div className="absolute inset-0 grid grid-cols-6 grid-rows-3 gap-4 opacity-5">
+        {Array.from({ length: 18 }).map((_, i) => (
+          <div key={i} className="border border-gray-400 rounded"></div>
+        ))}
+      </div>
+      
+      {/* Main animated element */}
+      <motion.div
+        className={`${animationConfig.elementStyle || 'w-32 h-32 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow-lg'}`}
+        initial={animationConfig.initial}
+        animate={animateProps}
+        transition={animationConfig.transition}
+        whileHover={animationConfig.whileHover}
+        whileTap={animationConfig.whileTap}
+        drag={animationConfig.drag}
+        dragConstraints={animationConfig.dragConstraints}
+      >
+        {animationConfig.content && (
+          <div className="w-full h-full flex items-center justify-center text-white font-medium">
+            {animationConfig.content}
+          </div>
         )}
-      </AnimatePresence>
+      </motion.div>
+      
+      {/* Secondary elements for complex animations */}
+      {animationConfig.secondaryElements?.map((element, index) => (
+        <motion.div
+          key={`secondary-${index}`}
+          className={element.className}
+          style={element.style}
+          initial={element.initial}
+          animate={isPlaying ? element.animate : element.initial}
+          transition={element.transition}
+        />
+      ))}
     </div>
   );
 });
