@@ -48,7 +48,7 @@ export const modernMinimalistLayouts: DesignPattern[] = [
       layout: 'Horizontal split on desktop, vertical stack on mobile',
       cta: 'Positioned prominently within the text section',
       spacing: 'Clear separation between content blocks',
-      branding: 'Subtle branding elements that don't compete with core message'
+      branding: 'Subtle branding elements that don\'t compete with core message'
     },
     bestFor: ['Product showcases', 'Portfolio sites', 'SaaS products', 'Fashion brands', 'Real estate'],
     conversionFeatures: [
