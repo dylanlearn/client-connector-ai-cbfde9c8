@@ -57,9 +57,15 @@ export const WebsiteAnalysisService = {
           spacing: analysis.visualElements.spacing,
           imagery: analysis.visualElements.imagery
         },
-        color_scheme: analysis.visualElements.colorScheme,
-        typography: analysis.visualElements.typography,
-        layout_pattern: analysis.visualElements.layout,
+        color_scheme: {
+          value: analysis.visualElements.colorScheme
+        },
+        typography: {
+          value: analysis.visualElements.typography
+        },
+        layout_pattern: {
+          value: analysis.visualElements.layout
+        },
         tags: analysis.tags,
         source_url: analysis.source,
         image_url: analysis.imageUrl,
@@ -188,6 +194,9 @@ const getDefaultsForSection = (section: string): Partial<WebsiteAnalysisResult> 
       visualElements: {
         layout: 'Center-aligned with prominent call-to-action',
         spacing: 'Generous white space to highlight key message',
+        colorScheme: 'High contrast for visibility',
+        typography: 'Large, bold headings with readable body text',
+        imagery: 'Hero image or product showcase'
       },
       userExperience: {
         userFlow: 'Entry point for user journey',
@@ -195,7 +204,11 @@ const getDefaultsForSection = (section: string): Partial<WebsiteAnalysisResult> 
         accessibility: 'High contrast for readability'
       },
       contentAnalysis: {
+        headline: 'Clear value proposition headline',
+        subheadline: 'Supporting subheading text',
+        callToAction: 'Strong CTA button',
         valueProposition: 'Clear value proposition is essential',
+        testimonials: []
       },
       targetAudience: ['All users', 'First-time visitors'],
       tags: ['hero', 'value proposition', 'conversion']
@@ -204,6 +217,9 @@ const getDefaultsForSection = (section: string): Partial<WebsiteAnalysisResult> 
       visualElements: {
         layout: 'Grid or carousel layout',
         spacing: 'Card-based with consistent spacing',
+        colorScheme: 'Neutral background with accent colors',
+        typography: 'Quote styling with attribution',
+        imagery: 'Customer photos or company logos'
       },
       userExperience: {
         userFlow: 'Social proof to reinforce decision making',
@@ -211,7 +227,11 @@ const getDefaultsForSection = (section: string): Partial<WebsiteAnalysisResult> 
         accessibility: 'Text testimonials with proper contrast'
       },
       contentAnalysis: {
+        headline: 'Trust-building headline',
+        subheadline: 'Supporting context',
+        callToAction: 'Secondary CTA',
         valueProposition: 'Reinforces value through social proof',
+        testimonials: ['Sample testimonial']
       },
       targetAudience: ['Considering users', 'Researchers'],
       tags: ['social proof', 'trust', 'credibility']
@@ -220,6 +240,9 @@ const getDefaultsForSection = (section: string): Partial<WebsiteAnalysisResult> 
       visualElements: {
         layout: 'Grid or column-based layout',
         spacing: 'Consistent spacing between feature blocks',
+        colorScheme: 'Consistent color coding for features',
+        typography: 'Clear feature headings with descriptive text',
+        imagery: 'Feature icons or screenshots'
       },
       userExperience: {
         userFlow: 'Product explanation and benefits showcase',
@@ -227,21 +250,38 @@ const getDefaultsForSection = (section: string): Partial<WebsiteAnalysisResult> 
         accessibility: 'Clear feature descriptions'
       },
       contentAnalysis: {
+        headline: 'Feature-focused headline',
+        subheadline: 'Feature overview text',
+        callToAction: 'Learn more or trial CTA',
         valueProposition: 'Specific benefits of each feature',
+        testimonials: []
       },
       targetAudience: ['Researchers', 'Comparison shoppers'],
       tags: ['features', 'benefits', 'product details']
     }
   };
 
+  // Ensure we return a properly structured object even for undefined sections
   return defaults[section] || {
-    visualElements: {},
+    visualElements: {
+      layout: '',
+      colorScheme: '',
+      typography: '',
+      spacing: '',
+      imagery: ''
+    },
     userExperience: {
       userFlow: '',
       interactions: '',
       accessibility: ''
     },
-    contentAnalysis: {},
+    contentAnalysis: {
+      headline: '',
+      subheadline: '',
+      callToAction: '',
+      valueProposition: '',
+      testimonials: []
+    },
     targetAudience: [],
     tags: []
   };
