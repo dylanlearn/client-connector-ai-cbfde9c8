@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ import {
   AlertCircle 
 } from 'lucide-react';
 
-import { WireframeVersionControlService } from '@/services/ai/wireframe/wireframe-version-control';
+import { WireframeVersionControlService } from '@/services/ai/wireframe/version-control';
 import { 
   WireframeVersion,
   WireframeRevisionHistory,

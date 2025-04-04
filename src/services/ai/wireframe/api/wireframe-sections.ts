@@ -1,102 +1,114 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeSection } from "../wireframe-types";
+import { AIWireframe, WireframeSection } from "../wireframe-types";
 
 /**
- * Service for handling wireframe section operations
+ * Service for handling wireframe sections operations
  */
 export const wireframeSections = {
   /**
-   * Save sections for a wireframe
+   * Get all sections for a wireframe
    */
-  saveSections: async (wireframeId: string, sections: WireframeSection[]): Promise<void> => {
+  getWireframeSections: async (wireframeId: string): Promise<WireframeSection[]> => {
     try {
-      // Insert all sections for this wireframe
-      const sectionData = sections.map((section, index) => ({
-        wireframe_id: wireframeId,
-        name: section.name || `Section ${index + 1}`,
-        section_type: section.sectionType,
-        description: section.description,
-        layout_type: section.layoutType,
-        components: section.components,
-        position_order: index,
-        mobile_layout: section.mobileLayout,
-        style_variants: section.styleVariants,
-        animation_suggestions: section.animationSuggestions,
-        copy_suggestions: section.copySuggestions,
-        design_reasoning: section.designReasoning
-      }));
-      
-      const { error } = await supabase
-        .from('wireframe_sections')
-        .insert(sectionData);
-      
-      if (error) {
-        console.error("Error saving wireframe sections:", error);
-        throw error;
-      }
-    } catch (error) {
-      console.error("Error saving wireframe sections:", error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Get sections for a wireframe
-   */
-  getSections: async (wireframeId: string): Promise<any[]> => {
-    try {
-      const { data: sections, error } = await supabase
+      const { data, error } = await supabase
         .from('wireframe_sections')
         .select('*')
         .eq('wireframe_id', wireframeId)
         .order('position_order', { ascending: true });
-      
+        
       if (error) {
-        console.error("Error fetching wireframe sections:", error);
-        throw error;
+        throw new Error(`Error fetching wireframe sections: ${error.message}`);
       }
       
-      return sections || [];
+      return data as unknown as WireframeSection[];
     } catch (error) {
       console.error("Error fetching wireframe sections:", error);
-      return [];
+      throw error;
     }
   },
-  
+
   /**
-   * Update sections for a wireframe
-   * First deletes existing sections, then inserts new ones
+   * Add a section to a wireframe
    */
-  updateSections: async (wireframeId: string, sections: WireframeSection[]): Promise<void> => {
+  addWireframeSection: async (
+    wireframeId: string, 
+    section: WireframeSection
+  ): Promise<WireframeSection> => {
     try {
-      // First, delete existing sections
-      await this.deleteSections(wireframeId);
+      const { data, error } = await supabase
+        .from('wireframe_sections')
+        .insert({
+          wireframe_id: wireframeId,
+          name: section.name,
+          section_type: section.sectionType,
+          description: section.description || null,
+          layout_type: section.layoutType,
+          components: section.components || null,
+          mobile_layout: section.mobileLayout || null,
+          style_variants: section.styleVariants || null,
+          animation_suggestions: section.animationSuggestions || null,
+          copy_suggestions: section.copySuggestions || null,
+          design_reasoning: section.designReasoning || null
+        })
+        .select()
+        .single();
+        
+      if (error) {
+        throw new Error(`Error adding wireframe section: ${error.message}`);
+      }
       
-      // Then insert the new sections
-      await this.saveSections(wireframeId, sections);
+      return data as unknown as WireframeSection;
     } catch (error) {
-      console.error("Error updating wireframe sections:", error);
+      console.error("Error adding wireframe section:", error);
       throw error;
     }
   },
   
   /**
-   * Delete all sections for a wireframe
+   * Update wireframe sections batch
    */
-  deleteSections: async (wireframeId: string): Promise<void> => {
+  updateWireframeSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      // First, delete existing sections
+      const { error: deleteError } = await supabase
         .from('wireframe_sections')
         .delete()
         .eq('wireframe_id', wireframeId);
       
-      if (error) {
-        console.error("Error deleting wireframe sections:", error);
-        throw error;
+      if (deleteError) {
+        throw new Error(`Error deleting existing wireframe sections: ${deleteError.message}`);
       }
+      
+      // Then, insert new sections if there are any
+      if (sections && sections.length > 0) {
+        const newSections = sections.map((section, index) => ({
+          wireframe_id: wireframeId,
+          position_order: index,
+          name: section.name,
+          section_type: section.sectionType,
+          description: section.description || null,
+          layout_type: section.layoutType,
+          components: section.components || null,
+          mobile_layout: section.mobileLayout || null,
+          style_variants: section.styleVariants || null,
+          animation_suggestions: section.animationSuggestions || null,
+          copy_suggestions: section.copySuggestions || null,
+          design_reasoning: section.designReasoning || null
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('wireframe_sections')
+          .insert(newSections);
+        
+        if (insertError) {
+          throw new Error(`Error inserting new wireframe sections: ${insertError.message}`);
+        }
+      }
+      
+      return true;
     } catch (error) {
-      console.error("Error deleting wireframe sections:", error);
+      console.error("Error updating wireframe sections:", error);
       throw error;
     }
   }
