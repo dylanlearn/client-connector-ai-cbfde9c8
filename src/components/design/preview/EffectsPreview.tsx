@@ -1,8 +1,11 @@
 
-import { Sparkles } from "lucide-react";
-import AnimationPreview from "../animation-preview";
-import { InteractionPreview } from "../interaction";
+import { memo } from "react";
 import { DesignOption } from "./types";
+import { 
+  EmptyEffectsPreview, 
+  AnimationSection, 
+  InteractionSection 
+} from "./effects";
 
 interface EffectsPreviewProps {
   hasAnimation: boolean;
@@ -12,7 +15,7 @@ interface EffectsPreviewProps {
   isFullscreen: boolean;
 }
 
-const EffectsPreview = ({
+const EffectsPreview = memo(({
   hasAnimation,
   hasInteraction,
   selectedAnimations,
@@ -24,40 +27,16 @@ const EffectsPreview = ({
   }
 
   return (
-    <div className="overflow-auto p-4" style={{ height: isFullscreen ? "calc(100vh - 150px)" : "500px" }}>
-      {hasAnimation && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Animations</h2>
-          <div className="grid grid-cols-1 gap-6">
-            {selectedAnimations.map(animation => (
-              <AnimationPreview key={animation.id} animation={animation} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {hasInteraction && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Interactions</h2>
-          <div className="grid grid-cols-1 gap-6">
-            {selectedInteractions.map(interaction => (
-              <InteractionPreview key={interaction.id} interaction={interaction} />
-            ))}
-          </div>
-        </div>
-      )}
+    <div 
+      className="overflow-auto p-4" 
+      style={{ height: isFullscreen ? "calc(100vh - 150px)" : "500px" }}
+    >
+      {hasAnimation && <AnimationSection animations={selectedAnimations} />}
+      {hasInteraction && <InteractionSection interactions={selectedInteractions} />}
     </div>
   );
-};
+});
 
-const EmptyEffectsPreview = () => (
-  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-    <Sparkles className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-    <h3 className="text-lg font-medium text-muted-foreground">No animations or interactions selected</h3>
-    <p className="text-sm text-muted-foreground max-w-md mt-2">
-      Select animations and interactions to see them previewed here. These will add life and engagement to your website.
-    </p>
-  </div>
-);
+EffectsPreview.displayName = "EffectsPreview";
 
 export default EffectsPreview;
