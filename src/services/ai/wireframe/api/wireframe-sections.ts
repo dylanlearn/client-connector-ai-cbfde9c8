@@ -86,9 +86,9 @@ export const wireframeSections = {
           wireframe_id: wireframeId,
           position_order: index,
           name: section.name,
-          section_type: section.sectionType,
+          section_type: section.sectionType || '', // Add default empty string to handle undefined
           description: section.description || null,
-          layout_type: section.layoutType,
+          layout_type: section.layoutType || '', // Add default empty string to handle undefined
           components: section.components || null,
           mobile_layout: section.mobileLayout || null,
           style_variants: section.styleVariants || null,
