@@ -278,6 +278,56 @@ export type Database = {
           },
         ]
       }
+      ai_wireframes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          feedback: string | null
+          generation_params: Json | null
+          id: string
+          image_url: string | null
+          project_id: string | null
+          prompt: string
+          rating: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          feedback?: string | null
+          generation_params?: Json | null
+          id?: string
+          image_url?: string | null
+          project_id?: string | null
+          prompt: string
+          rating?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          feedback?: string | null
+          generation_params?: Json | null
+          id?: string
+          image_url?: string | null
+          project_id?: string | null
+          prompt?: string
+          rating?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_wireframes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       animation_analytics: {
         Row: {
           animation_type: Database["public"]["Enums"]["animation_category"]
@@ -1293,6 +1343,133 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_elements: {
+        Row: {
+          created_at: string | null
+          element_data: Json
+          element_type: string
+          height: number | null
+          id: string
+          updated_at: string | null
+          width: number | null
+          wireframe_id: string | null
+          x_position: number | null
+          y_position: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          element_data: Json
+          element_type: string
+          height?: number | null
+          id?: string
+          updated_at?: string | null
+          width?: number | null
+          wireframe_id?: string | null
+          x_position?: number | null
+          y_position?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          element_data?: Json
+          element_type?: string
+          height?: number | null
+          id?: string
+          updated_at?: string | null
+          width?: number | null
+          wireframe_id?: string | null
+          x_position?: number | null
+          y_position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_elements_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "ai_wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_generation_metrics: {
+        Row: {
+          created_at: string | null
+          generation_params: Json | null
+          generation_time: number | null
+          id: string
+          project_id: string | null
+          prompt: string
+          result_data: Json | null
+          success: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          generation_params?: Json | null
+          generation_time?: number | null
+          id?: string
+          project_id?: string | null
+          prompt: string
+          result_data?: Json | null
+          success?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          generation_params?: Json | null
+          generation_time?: number | null
+          id?: string
+          project_id?: string | null
+          prompt?: string
+          result_data?: Json | null
+          success?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_generation_metrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_templates: {
+        Row: {
+          category: string | null
+          complexity: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          preview_url: string | null
+          prompt_template: string
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          complexity?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          preview_url?: string | null
+          prompt_template: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          complexity?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          preview_url?: string | null
+          prompt_template?: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1418,6 +1595,17 @@ export type Database = {
           p_transaction_id: string
         }
         Returns: undefined
+      }
+      record_wireframe_generation: {
+        Args: {
+          p_project_id: string
+          p_prompt: string
+          p_generation_params: Json
+          p_result_data: Json
+          p_success: boolean
+          p_generation_time: number
+        }
+        Returns: string
       }
       track_interaction: {
         Args: {
