@@ -9,7 +9,7 @@ import {
 import { AIDesignAnalysisService } from './design/ai-design-analysis-service';
 import { ModernLayoutService } from './design/modern-layout-service';
 import { LandBookService } from './design/land-book/land-book-service';
-import { PatternRecognitionService } from './design/pattern-recognition-service';
+import { PatternRecognitionService } from './design/pattern-recognition';
 
 export type { ColorPaletteOptions } from './design/color-service';
 export type { LayoutRecommendationOptions } from './design/layout-service';
@@ -25,7 +25,7 @@ export type {
   PatternRecognitionResult, 
   PatternFeatureVector, 
   PatternRecognitionOptions 
-} from './design/pattern-recognition-service';
+} from './design/pattern-recognition';
 export type { DesignInsight } from './design/types/design-insight-types';
 
 /**
