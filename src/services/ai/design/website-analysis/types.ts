@@ -45,4 +45,19 @@ export interface WebsiteAnalysisResult {
   imageUrl?: string;
 }
 
-export type SectionType = 'hero' | 'testimonials' | 'features' | 'pricing' | 'footer' | 'navigation' | string;
+export type SectionType = 
+  | 'hero' 
+  | 'testimonials' 
+  | 'features' 
+  | 'pricing' 
+  | 'footer' 
+  | 'navigation' 
+  | 'about' 
+  | 'contact' 
+  | 'services' 
+  | 'cta' 
+  | 'blog' 
+  | 'gallery' 
+  | 'faq' 
+  | 'team' 
+  | string;

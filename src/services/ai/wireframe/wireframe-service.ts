@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeCacheService } from "./wireframe-cache-service";
 import { WireframeRateLimiterService } from "./rate-limiter-service";
@@ -34,8 +35,8 @@ export const WireframeService = {
       const startTime = performance.now();
       
       // Check rate limits first
-      const userRole = await WireframeService.getUserRole(params.projectId);
-      const rateLimitStatus = await WireframeRateLimiterService.checkRateLimit(params.projectId, userRole);
+      const userRole = await WireframeService.getUserRole(params.projectId || '');
+      const rateLimitStatus = await WireframeRateLimiterService.checkRateLimit(params.projectId || '', userRole);
       
       if (rateLimitStatus.isRateLimited) {
         throw new Error(`Rate limit exceeded. You can generate ${rateLimitStatus.dailyRemaining} more wireframes today. Resets at ${rateLimitStatus.resetTime.toLocaleTimeString()}`);
@@ -66,49 +67,51 @@ export const WireframeService = {
       const wireframeData = wireframeResult.wireframe;
       
       // Store the generated wireframe in the database
-      try {
-        const savedWireframe = await WireframeApiService.saveWireframe(
-          params.projectId, 
-          params.prompt, 
-          wireframeData,
-          params,
-          wireframeResult.model || 'default'
-        );
-        
-        // Save design tokens if available
-        if (wireframeData.designTokens) {
-          try {
-            // Instead of RPC, directly insert into the design_tokens table
-            const { error: tokenError } = await supabase
-              .from('design_tokens')
-              .insert({
-                project_id: params.projectId,
-                name: `${wireframeData.title} Design Tokens`,
-                category: 'wireframe',
-                value: wireframeData.designTokens as any,
-                description: `Design tokens for wireframe: ${wireframeData.title}`
-              });
-            
-            if (tokenError) {
-              console.error("Error saving design tokens:", tokenError);
+      if (params.projectId) {
+        try {
+          const savedWireframe = await WireframeApiService.saveWireframe(
+            params.projectId, 
+            params.prompt, 
+            wireframeData,
+            params,
+            wireframeResult.model || 'default'
+          );
+          
+          // Save design tokens if available
+          if (wireframeData.designTokens) {
+            try {
+              // Instead of RPC, directly insert into the design_tokens table
+              const { error: tokenError } = await supabase
+                .from('design_tokens')
+                .insert({
+                  project_id: params.projectId,
+                  name: `${wireframeData.title} Design Tokens`,
+                  category: 'wireframe',
+                  value: wireframeData.designTokens as any,
+                  description: `Design tokens for wireframe: ${wireframeData.title}`
+                });
+              
+              if (tokenError) {
+                console.error("Error saving design tokens:", tokenError);
+              }
+            } catch (tokenError) {
+              console.error("Exception saving design tokens:", tokenError);
             }
-          } catch (tokenError) {
-            console.error("Exception saving design tokens:", tokenError);
           }
+          
+          // Cache the wireframe for future similar requests
+          WireframeCacheService.storeInCache(params, wireframeData);
+          
+          // Queue background optimization task
+          WireframeBackgroundProcessor.queueTask('optimize_wireframe', wireframeData);
+        } catch (saveError) {
+          // Log the error but don't fail the generation
+          console.error("Error saving wireframe:", saveError);
+          WireframeMonitoringService.recordEvent('wireframe_save_error', {
+            projectId: params.projectId,
+            error: saveError instanceof Error ? saveError.message : 'Unknown error'
+          }, 'error');
         }
-        
-        // Cache the wireframe for future similar requests
-        WireframeCacheService.storeInCache(params, wireframeData);
-        
-        // Queue background optimization task
-        WireframeBackgroundProcessor.queueTask('optimize_wireframe', wireframeData);
-      } catch (saveError) {
-        // Log the error but don't fail the generation
-        console.error("Error saving wireframe:", saveError);
-        WireframeMonitoringService.recordEvent('wireframe_save_error', {
-          projectId: params.projectId,
-          error: saveError instanceof Error ? saveError.message : 'Unknown error'
-        }, 'error');
       }
       
       // Record metrics for this generation
@@ -116,7 +119,9 @@ export const WireframeService = {
       const totalTime = (endTime - startTime) / 1000;
       
       // Record generation for rate limiting purposes
-      WireframeRateLimiterService.recordGeneration(params.projectId);
+      if (params.projectId) {
+        WireframeRateLimiterService.recordGeneration(params.projectId);
+      }
       
       // Record success for monitoring
       WireframeMonitoringService.recordEvent('wireframe_generation_success', {

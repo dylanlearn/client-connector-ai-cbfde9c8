@@ -56,6 +56,34 @@ export const WireframeApiService = {
     params: WireframeGenerationParams,
     model: string
   ): Promise<AIWireframe> => {
+    const sections = wireframeData.sections && Array.isArray(wireframeData.sections) ? wireframeData.sections : [];
+    
+    const mobileLayouts = sections.reduce<Record<string, any>>((acc, section) => {
+      if (section.name && section.mobileLayout) {
+        acc[section.name] = section.mobileLayout;
+      }
+      return acc;
+    }, {});
+    
+    const animations = sections.reduce<Record<string, any>>((acc, section) => {
+      if (section.name && section.animationSuggestions) {
+        acc[section.name] = section.animationSuggestions;
+      }
+      return acc;
+    }, {});
+    
+    const styleVariants = sections.reduce<Record<string, any>>((acc, section) => {
+      if (section.name && section.styleVariants) {
+        acc[section.name] = section.styleVariants;
+      }
+      return acc;
+    }, {});
+    
+    const designReasoning = sections
+      .map(s => s.designReasoning)
+      .filter(Boolean)
+      .join('\n\n');
+
     const { data, error } = await supabase
       .from('ai_wireframes')
       .insert({
@@ -73,33 +101,10 @@ export const WireframeApiService = {
           result_data: wireframeData
         } as any,
         design_tokens: wireframeData.designTokens as any,
-        mobile_layouts: wireframeData.sections && Array.isArray(wireframeData.sections) 
-          ? wireframeData.sections.reduce((acc, section) => {
-              if (section.mobileLayout) {
-                acc[section.name] = section.mobileLayout;
-              }
-              return acc;
-            }, {} as Record<string, any>)
-          : {},
-        animations: wireframeData.sections && Array.isArray(wireframeData.sections) 
-          ? wireframeData.sections.reduce((acc, section) => {
-              if (section.animationSuggestions) {
-                acc[section.name] = section.animationSuggestions;
-              }
-              return acc;
-            }, {} as Record<string, any>)
-          : {},
-        style_variants: wireframeData.sections && Array.isArray(wireframeData.sections) 
-          ? wireframeData.sections.reduce((acc, section) => {
-              if (section.styleVariants) {
-                acc[section.name] = section.styleVariants;
-              }
-              return acc;
-            }, {} as Record<string, any>)
-          : {},
-        design_reasoning: wireframeData.sections && Array.isArray(wireframeData.sections) 
-          ? wireframeData.sections.map(s => s.designReasoning).filter(Boolean).join('\n\n')
-          : '',
+        mobile_layouts: mobileLayouts,
+        animations: animations,
+        style_variants: styleVariants,
+        design_reasoning: designReasoning,
         quality_flags: wireframeData.qualityFlags as any,
         status: 'completed'
       })

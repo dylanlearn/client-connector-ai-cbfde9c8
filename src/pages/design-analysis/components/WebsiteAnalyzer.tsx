@@ -1,12 +1,13 @@
 
 import { useState } from 'react';
 import { useWebsiteAnalysis } from '@/hooks/ai-design/useWebsiteAnalysis';
-import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
+import { WebsiteAnalysisResult, SectionType } from '@/services/ai/design/website-analysis/types';
 import { useAuth } from '@/hooks/use-auth';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import WebsiteAnalyzerHeader from './WebsiteAnalyzerHeader';
 import WebsiteAnalyzerTabs from './WebsiteAnalyzerTabs';
 import AnalysisResult from './AnalysisResult';
+import { Section } from './types';
 
 /**
  * Page for analyzing website design patterns and storing them in memory
@@ -26,7 +27,7 @@ const WebsiteAnalyzer = () => {
   }
 
   const handleSingleSectionAnalysis = async (
-    sectionType: string,
+    sectionType: SectionType,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']>,
     contentStructure: Partial<WebsiteAnalysisResult['contentStructure']>,
@@ -50,13 +51,7 @@ const WebsiteAnalyzer = () => {
   const handleFullWebsiteAnalysis = async (
     websiteName: string,
     websiteUrl: string,
-    sections: {
-      type: string;
-      description: string;
-      visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
-      imageUrl?: string;
-    }[]
+    sections: Section[]
   ) => {
     const results = await analyzeWebsite(websiteName, websiteUrl, sections);
     

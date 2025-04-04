@@ -19,7 +19,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
   const { createNotification } = useClientNotifications();
   
   // Function to handle status change and notifications
-  const handleStatusChange = async (e: React.MouseEvent, newStatus: string) => {
+  const handleStatusChange = async (e: React.MouseEvent<HTMLButtonElement>, newStatus: string) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -44,7 +44,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case 'draft': return 'bg-gray-500';
       case 'active': return 'bg-green-500';
@@ -54,7 +54,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onCl
     }
   };
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (onClick) {
       onClick();
     }
