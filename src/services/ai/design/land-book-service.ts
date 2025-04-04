@@ -8,6 +8,21 @@ export interface LandBookQueryOptions {
   pattern?: string;
   conversionFocus?: boolean;
   tags?: string[];
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'relevance' | 'newest' | 'popularity';
+}
+
+export interface LandBookPaginatedResult<T> {
+  data: T[];
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface LandBookAnalysis {
@@ -25,14 +40,59 @@ export interface LandBookAnalysis {
   }[];
 }
 
+// Cache implementation
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  expiresAt: number;
+}
+
 /**
  * Service for accessing and analyzing web design patterns inspired by Land-book
+ * with enhanced performance through caching and pagination
  */
 export const LandBookService = {
+  // Cache configuration
+  _cacheEnabled: true,
+  _cacheExpirationMs: 30 * 60 * 1000, // 30 minutes
+  _cache: new Map<string, CacheEntry<any>>(),
+
   /**
-   * Query design patterns with specific criteria
+   * Enable or disable the cache
    */
-  queryPatterns(options: LandBookQueryOptions = {}): DesignPattern[] {
+  setCacheEnabled(enabled: boolean): void {
+    this._cacheEnabled = enabled;
+  },
+
+  /**
+   * Set cache expiration time
+   */
+  setCacheExpiration(expirationMs: number): void {
+    this._cacheExpirationMs = expirationMs;
+  },
+
+  /**
+   * Clear the entire cache
+   */
+  clearCache(): void {
+    this._cache.clear();
+  },
+
+  /**
+   * Query design patterns with specific criteria and pagination
+   */
+  queryPatterns(options: LandBookQueryOptions = {}): LandBookPaginatedResult<DesignPattern> {
+    // Generate cache key based on query options
+    const cacheKey = `query_${JSON.stringify(options)}`;
+    
+    // Check cache if enabled
+    if (this._cacheEnabled) {
+      const cachedResult = this._getFromCache<LandBookPaginatedResult<DesignPattern>>(cacheKey);
+      if (cachedResult) {
+        return cachedResult;
+      }
+    }
+    
     let patterns = [...modernMinimalistLayouts];
     
     // Filter by industry
@@ -67,21 +127,72 @@ export const LandBookService = {
       );
     }
     
-    return patterns;
+    // Sort results
+    if (options.sortBy) {
+      patterns = this._sortPatterns(patterns, options.sortBy);
+    }
+    
+    // Apply pagination
+    const page = options.page || 1;
+    const pageSize = options.pageSize || 10;
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedPatterns = patterns.slice(startIndex, endIndex);
+    
+    // Create pagination metadata
+    const paginationData = {
+      currentPage: page,
+      pageSize: pageSize,
+      totalItems: patterns.length,
+      totalPages: Math.ceil(patterns.length / pageSize),
+      hasNextPage: endIndex < patterns.length,
+      hasPreviousPage: page > 1
+    };
+    
+    // Create result
+    const result: LandBookPaginatedResult<DesignPattern> = {
+      data: paginatedPatterns,
+      pagination: paginationData
+    };
+    
+    // Add to cache
+    if (this._cacheEnabled) {
+      this._addToCache(cacheKey, result);
+    }
+    
+    return result;
   },
   
   /**
-   * Get design patterns specifically for an industry
+   * Get design patterns specifically for an industry with pagination
    */
-  getPatternsForIndustry(industry: string): DesignPattern[] {
-    return this.queryPatterns({ industry });
+  getPatternsForIndustry(industry: string, page: number = 1, pageSize: number = 10): LandBookPaginatedResult<DesignPattern> {
+    return this.queryPatterns({ industry, page, pageSize });
   },
   
   /**
    * Get comprehensive analysis of design patterns for specific criteria
    */
   getDesignAnalysis(options: LandBookQueryOptions = {}): LandBookAnalysis {
-    const patterns = this.queryPatterns(options);
+    // Generate cache key
+    const cacheKey = `analysis_${JSON.stringify(options)}`;
+    
+    // Check cache if enabled
+    if (this._cacheEnabled) {
+      const cachedResult = this._getFromCache<LandBookAnalysis>(cacheKey);
+      if (cachedResult) {
+        return cachedResult;
+      }
+    }
+    
+    // Get all patterns without pagination for analysis
+    const queryResult = this.queryPatterns({
+      ...options,
+      page: 1,
+      pageSize: 1000 // Large number to get all patterns
+    });
+    
+    const patterns = queryResult.data;
     
     // Generate insights based on the patterns
     const insights: DesignInsight[] = generateInsightsFromPatterns(patterns);
@@ -92,12 +203,98 @@ export const LandBookService = {
     // Extract technical considerations
     const technicalConsiderations = extractTechnicalConsiderations(patterns);
     
-    return {
+    const result = {
       patterns,
       insights,
       psychologyPrinciples,
       technicalConsiderations
     };
+    
+    // Add to cache
+    if (this._cacheEnabled) {
+      this._addToCache(cacheKey, result);
+    }
+    
+    return result;
+  },
+  
+  /**
+   * Add item to cache with expiration
+   */
+  _addToCache<T>(key: string, data: T): void {
+    const now = Date.now();
+    const expiresAt = now + this._cacheExpirationMs;
+    
+    this._cache.set(key, {
+      data,
+      timestamp: now,
+      expiresAt
+    });
+    
+    // Clean expired entries occasionally
+    if (Math.random() < 0.1) { // 10% chance to clean on each write
+      this._cleanExpiredCache();
+    }
+  },
+  
+  /**
+   * Get item from cache if not expired
+   */
+  _getFromCache<T>(key: string): T | null {
+    const entry = this._cache.get(key);
+    
+    if (!entry) {
+      return null;
+    }
+    
+    const now = Date.now();
+    
+    // Check if expired
+    if (now > entry.expiresAt) {
+      this._cache.delete(key);
+      return null;
+    }
+    
+    return entry.data as T;
+  },
+  
+  /**
+   * Clean expired cache entries
+   */
+  _cleanExpiredCache(): void {
+    const now = Date.now();
+    
+    for (const [key, entry] of this._cache.entries()) {
+      if (now > entry.expiresAt) {
+        this._cache.delete(key);
+      }
+    }
+  },
+  
+  /**
+   * Sort patterns based on criteria
+   */
+  _sortPatterns(patterns: DesignPattern[], sortBy: 'relevance' | 'newest' | 'popularity'): DesignPattern[] {
+    switch (sortBy) {
+      case 'relevance':
+        // Sort by relevance (this would use a more complex algorithm in production)
+        return [...patterns].sort((a, b) => 
+          b.conversionOptimized === true ? 1 : -1
+        );
+      
+      case 'newest':
+        // In a real implementation, this would use creation dates
+        return patterns;
+      
+      case 'popularity':
+        // In a real implementation, this would use popularity metrics
+        return [...patterns].sort((a, b) => 
+          b.bestFor.length - a.bestFor.length
+        );
+      
+      default:
+        return patterns;
+    }
   }
 };
 
