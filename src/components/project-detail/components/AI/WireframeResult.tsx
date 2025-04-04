@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, ThumbsDown, Code, Laptop, Smartphone, Palette, Type, Layout, Zap } from 'lucide-react';
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-service';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeResultProps {
   wireframe: WireframeData;
@@ -86,7 +87,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <div className="text-xs text-gray-500">Type:</div>
-                    <div className="text-sm">{String(section.animationSuggestions?.type)}</div>
+                    <div className="text-sm">{String(section.animationSuggestions?.type || '')}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">Element:</div>
@@ -236,7 +237,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                           .filter(s => s.animationSuggestions)
                           .map(s => s.animationSuggestions?.type)))
                           .map((type, i) => (
-                            <Badge key={i} variant="outline">{type}</Badge>
+                            <Badge key={i} variant="outline">{String(type || '')}</Badge>
                           ))
                         }
                       </div>
@@ -272,7 +273,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                       {Object.entries(wireframe.designTokens.colors).map(([key, value]) => (
                         <div key={key} className="grid grid-cols-3 gap-2 items-center">
                           <div className="text-sm font-medium capitalize">{key}:</div>
-                          <div className="col-span-2 text-sm">{value}</div>
+                          <div className="col-span-2 text-sm">{String(value)}</div>
                         </div>
                       ))}
                     </div>
@@ -307,7 +308,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                           <div className="text-sm font-medium mb-1">Font Pairings:</div>
                           <div className="flex flex-wrap gap-1">
                             {wireframe.designTokens.typography.fontPairings.map((pair, index) => (
-                              <Badge key={index} variant="outline">{pair}</Badge>
+                              <Badge key={index} variant="outline">{String(pair)}</Badge>
                             ))}
                           </div>
                         </div>
@@ -327,7 +328,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                       {Object.entries(wireframe.designTokens.spacing).map(([key, value]) => (
                         <div key={key} className="grid grid-cols-2 gap-2 items-center">
                           <div className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</div>
-                          <div className="text-sm">{value}</div>
+                          <div className="text-sm">{String(value)}</div>
                         </div>
                       ))}
                     </div>
@@ -377,7 +378,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <h4 className="text-sm font-medium mb-1">Structure</h4>
-                              <p className="text-sm text-gray-700">{String(section.mobileLayout.structure)}</p>
+                              <p className="text-sm text-gray-700">{String(section.mobileLayout.structure || '')}</p>
                             </div>
                             
                             {section.mobileLayout.stackOrder && section.mobileLayout.stackOrder.length > 0 && (
@@ -385,7 +386,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                                 <h4 className="text-sm font-medium mb-1">Stack Order</h4>
                                 <ol className="list-decimal list-inside text-sm text-gray-700">
                                   {section.mobileLayout.stackOrder.map((item, i) => (
-                                    <li key={i}>{item}</li>
+                                    <li key={i}>{String(item)}</li>
                                   ))}
                                 </ol>
                               </div>
