@@ -1,163 +1,137 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+import { SupabaseHealthCheck } from '@/utils/supabase-audit';
 
 /**
- * Service for comprehensive Supabase auditing at enterprise level
+ * Service for performing comprehensive Supabase audits
  */
 export const supabaseAuditService = {
   /**
-   * Check database schema - validates that all required tables exist
+   * Run a full health check on all Supabase services
    */
-  checkDatabaseSchema: async (requiredTables: string[]): Promise<{
-    missingTables: string[];
-    existingTables: string[];
+  runFullHealthCheck: async (): Promise<{
+    auth: { status: 'ok' | 'error'; message: string };
+    database: { status: 'ok' | 'error'; message: string; tables: string[] };
+    storage: { status: 'ok' | 'error'; message: string };
+    functions: { status: 'ok' | 'error'; message: string; availableFunctions: string[] };
+    overall: 'healthy' | 'degraded' | 'unhealthy';
   }> => {
     try {
-      const existingTableNames: string[] = [];
-      const missingTableNames: string[] = [];
+      // Check authentication service
+      const authStatus = await supabaseAuditService.checkAuthService();
       
-      // Check each required table by attempting to query it
-      for (const table of requiredTables) {
-        try {
-          // We need to use type assertion here since we're dynamically selecting tables
-          const { error } = await supabase
-            .from(table as any)
-            .select('id')
-            .limit(1);
-          
-          if (error && error.code === 'PGRST116') {
-            // Table does not exist
-            missingTableNames.push(table);
-          } else {
-            // Table exists or other error (we'll assume it exists)
-            existingTableNames.push(table);
-          }
-        } catch (err) {
-          // If table doesn't exist, add to missing tables
-          missingTableNames.push(table);
-        }
+      // Check database service
+      const dbStatus = await supabaseAuditService.checkDatabaseService();
+      
+      // Check storage service
+      const storageStatus = await supabaseAuditService.checkStorageService();
+      
+      // Check functions
+      const functionsStatus = await supabaseAuditService.checkFunctionsService();
+      
+      // Determine overall health
+      let overall: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+      
+      if (
+        authStatus.status === 'error' ||
+        dbStatus.status === 'error' ||
+        storageStatus.status === 'error' ||
+        functionsStatus.status === 'error'
+      ) {
+        overall = 'unhealthy';
+      } else if (
+        authStatus.message.includes('warning') ||
+        dbStatus.message.includes('warning') ||
+        storageStatus.message.includes('warning') ||
+        functionsStatus.message.includes('warning')
+      ) {
+        overall = 'degraded';
       }
       
       return {
-        missingTables: missingTableNames,
-        existingTables: existingTableNames
+        auth: authStatus,
+        database: dbStatus,
+        storage: storageStatus,
+        functions: functionsStatus,
+        overall
       };
     } catch (error) {
-      console.error('Error checking database schema:', error);
+      console.error('Error running Supabase health check:', error);
       return {
-        missingTables: requiredTables,
-        existingTables: []
+        auth: { status: 'error', message: 'Failed to check auth service' },
+        database: { status: 'error', message: 'Failed to check database service', tables: [] },
+        storage: { status: 'error', message: 'Failed to check storage service' },
+        functions: { status: 'error', message: 'Failed to check functions service', availableFunctions: [] },
+        overall: 'unhealthy'
       };
-    }
-  },
-  
-  /**
-   * Check Row Level Security (RLS) policies
-   */
-  checkRLSPolicies: async (tables: string[]): Promise<Record<string, boolean>> => {
-    try {
-      const results: Record<string, boolean> = {};
-      
-      // For each table, check if it has RLS policies
-      // Since we can't query pg_policies directly through the JavaScript client,
-      // we'll use our application knowledge about which tables should have RLS
-      const knownSecuredTables = [
-        'profiles', 
-        'projects', 
-        'ai_wireframes',
-        'wireframe_sections',
-        'wireframe_versions',
-        'feedback_analysis',
-        'global_memories',
-        'user_memories',
-        'project_memories'
-      ];
-      
-      for (const table of tables) {
-        results[table] = knownSecuredTables.includes(table);
-      }
-      
-      return results;
-    } catch (error) {
-      console.error('Error checking RLS policies:', error);
-      return tables.reduce((acc, table) => {
-        acc[table] = false;
-        return acc;
-      }, {} as Record<string, boolean>);
-    }
-  },
-  
-  /**
-   * Check for expired tables in cache
-   */
-  checkExpiredCacheEntries: async (): Promise<number> => {
-    try {
-      const { data, error } = await supabase.rpc('clear_expired_wireframe_cache');
-      
-      if (error) {
-        console.error('Error clearing expired cache:', error);
-        return 0;
-      }
-      
-      return data || 0;
-    } catch (error) {
-      console.error('Error checking expired cache entries:', error);
-      return 0;
     }
   },
   
   /**
    * Check authentication service health
    */
-  checkAuthServiceHealth: async (): Promise<{
-    status: 'ok' | 'error';
-    message: string;
-  }> => {
+  checkAuthService: async (): Promise<{ status: 'ok' | 'error'; message: string }> => {
     try {
-      await supabase.auth.getSession();
-      return { status: 'ok', message: 'Authentication service is operational' };
+      // Attempt to get settings to verify connection
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        return {
+          status: 'error',
+          message: `Auth service error: ${error.message}`
+        };
+      }
+      
+      return {
+        status: 'ok',
+        message: 'Auth service is working properly'
+      };
     } catch (error) {
-      return { 
-        status: 'error', 
-        message: `Authentication service error: ${error instanceof Error ? error.message : String(error)}` 
+      return {
+        status: 'error',
+        message: `Auth service error: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   },
   
   /**
-   * Check database connectivity
+   * Check database service health
    */
-  checkDatabaseConnectivity: async (): Promise<{
-    status: 'ok' | 'error';
-    message: string;
-    tables: string[];
-  }> => {
+  checkDatabaseService: async (): Promise<{ status: 'ok' | 'error'; message: string; tables: string[] }> => {
     try {
-      // Just check if we can access the profiles table as a health check
-      const { error } = await supabase
-        .from('profiles')
-        .select('id')
-        .limit(1);
+      // Query for table names
+      const { data: tables, error } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public');
       
-      if (error) throw error;
+      if (error) {
+        return {
+          status: 'error',
+          message: `Database service error: ${error.message}`,
+          tables: []
+        };
+      }
       
-      // Return some default tables we know exist in the app
+      if (!tables || tables.length === 0) {
+        return {
+          status: 'error',
+          message: 'No tables found in the database',
+          tables: []
+        };
+      }
+      
+      const tableNames = tables.map(t => t.table_name).filter(Boolean);
+      
       return {
         status: 'ok',
-        message: 'Database is operational',
-        tables: [
-          'profiles', 
-          'ai_wireframes',
-          'wireframe_sections',
-          'wireframe_versions',
-          'feedback_analysis',
-          'projects'
-        ]
+        message: `Database service is working properly with ${tableNames.length} tables`,
+        tables: tableNames
       };
     } catch (error) {
-      return { 
-        status: 'error', 
-        message: `Database connectivity error: ${error instanceof Error ? error.message : String(error)}`,
+      return {
+        status: 'error',
+        message: `Database service error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         tables: []
       };
     }
@@ -166,150 +140,141 @@ export const supabaseAuditService = {
   /**
    * Check storage service health
    */
-  checkStorageHealth: async (): Promise<{
-    status: 'ok' | 'error';
-    message: string;
-  }> => {
+  checkStorageService: async (): Promise<{ status: 'ok' | 'error'; message: string }> => {
     try {
-      // Note: We're just checking if the storage API is accessible
-      // This does not actually create anything
-      const storageTest = supabase.storage;
-      if (!storageTest) throw new Error('Storage API unavailable');
+      // List all buckets to check storage functionality
+      const { data: buckets, error } = await supabase.storage.listBuckets();
       
-      return { status: 'ok', message: 'Storage service is operational' };
+      if (error) {
+        return {
+          status: 'error',
+          message: `Storage service error: ${error.message}`
+        };
+      }
+      
+      return {
+        status: 'ok',
+        message: `Storage service is working properly with ${buckets?.length || 0} buckets`
+      };
     } catch (error) {
-      return { 
-        status: 'error', 
-        message: `Storage service error: ${error instanceof Error ? error.message : String(error)}` 
+      return {
+        status: 'error',
+        message: `Storage service error: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   },
   
   /**
-   * Check edge functions
+   * Check Functions service health
    */
-  checkEdgeFunctions: async (): Promise<{
-    status: 'ok' | 'error';
-    message: string;
-    availableFunctions: string[];
-  }> => {
+  checkFunctionsService: async (): Promise<{ status: 'ok' | 'error'; message: string; availableFunctions: string[] }> => {
     try {
-      // List of functions we expect to exist
-      const expectedFunctions = [
-        'analyze-feedback',
-        'generate-wireframe',
-        'initialize-memory',
-        'setup-rpc-functions',
-        'process-wireframe-tasks',
-        'admin-user-management',
-        'admin-invitations'
-      ];
+      // Try to list all functions
+      const { data, error } = await supabase.functions.listFunctions();
       
-      // Test one function to verify connectivity - this should fail with a controlled error
-      // since we're not sending proper parameters
-      const { error: functionError } = await supabase.functions.invoke('analyze-feedback', {
-        body: { feedbackText: '' } // Minimal payload just to test connection
-      });
-      
-      // We expect an error since we sent empty feedback, but connectivity should work
-      if (functionError && !functionError.message.includes('Missing or invalid feedback text')) {
-        throw new Error(`Unexpected error: ${functionError.message}`);
+      if (error) {
+        return {
+          status: 'error',
+          message: `Functions service error: ${error.message}`,
+          availableFunctions: []
+        };
       }
       
-      return { 
-        status: 'ok', 
-        message: 'Edge functions are operational',
-        availableFunctions: expectedFunctions
+      // Extract function names
+      const functionNames = (data || []).map(fn => fn.name || '').filter(Boolean);
+      
+      return {
+        status: 'ok',
+        message: `Functions service is working properly with ${functionNames.length} functions available`,
+        availableFunctions: functionNames
       };
     } catch (error) {
-      return { 
-        status: 'error', 
-        message: `Edge functions error: ${error instanceof Error ? error.message : String(error)}`,
+      return {
+        status: 'error',
+        message: `Functions service error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         availableFunctions: []
       };
     }
   },
   
   /**
-   * Comprehensive health check of all Supabase services
+   * Check database schema against required tables
    */
-  runFullHealthCheck: async (): Promise<{
-    auth: { status: 'ok' | 'error'; message: string; };
-    database: { status: 'ok' | 'error'; message: string; tables: string[]; };
-    storage: { status: 'ok' | 'error'; message: string; };
-    functions: { status: 'ok' | 'error'; message: string; availableFunctions: string[]; };
-    schemaCheck: { missingTables: string[]; existingTables: string[]; };
-    rlsCheck: Record<string, boolean>;
-    cacheCleanup: number;
-    overall: 'healthy' | 'degraded' | 'unhealthy';
+  checkDatabaseSchema: async (requiredTables: string[]): Promise<{
+    missingTables: string[];
+    existingTables: string[];
   }> => {
-    // Run all checks in parallel
-    const [
-      auth,
-      database,
-      storage,
-      functions,
-      schemaCheck,
-      rlsCheck,
-      cacheCleanup
-    ] = await Promise.all([
-      this.checkAuthServiceHealth(),
-      this.checkDatabaseConnectivity(),
-      this.checkStorageHealth(),
-      this.checkEdgeFunctions(),
-      this.checkDatabaseSchema([
-        'profiles', 
-        'projects', 
-        'ai_wireframes',
-        'wireframe_sections',
-        'wireframe_versions',
-        'feedback_analysis',
-        'global_memories',
-        'user_memories',
-        'project_memories'
-      ]),
-      this.checkRLSPolicies([
-        'profiles', 
-        'projects', 
-        'ai_wireframes',
-        'wireframe_sections',
-        'wireframe_versions',
-        'feedback_analysis',
-        'global_memories',
-        'user_memories',
-        'project_memories'
-      ]),
-      this.checkExpiredCacheEntries()
-    ]);
-    
-    // Determine overall health
-    const errorCount = [
-      auth.status, 
-      database.status, 
-      storage.status, 
-      functions.status
-    ].filter(status => status === 'error').length;
-    
-    let overall: 'healthy' | 'degraded' | 'unhealthy';
-    
-    if (errorCount === 0) {
-      overall = 'healthy';
-    } else if (errorCount < 2) {
-      overall = 'degraded';
-    } else {
-      overall = 'unhealthy';
+    try {
+      const { tables } = await supabaseAuditService.checkDatabaseService();
+      
+      const existingTables = requiredTables.filter(table => tables.includes(table));
+      const missingTables = requiredTables.filter(table => !tables.includes(table));
+      
+      return {
+        existingTables,
+        missingTables
+      };
+    } catch (error) {
+      console.error('Error checking database schema:', error);
+      return {
+        existingTables: [],
+        missingTables: requiredTables
+      };
     }
-    
-    // Return comprehensive results
-    return {
-      auth,
-      database,
-      storage,
-      functions,
-      schemaCheck,
-      rlsCheck,
-      cacheCleanup,
-      overall
-    };
+  },
+  
+  /**
+   * Check Row Level Security (RLS) policies on specified tables
+   */
+  checkRLSPolicies: async (tables: string[]): Promise<Record<string, boolean>> => {
+    try {
+      const result: Record<string, boolean> = {};
+      
+      // For each table, check if RLS is enabled and if policies exist
+      for (const table of tables) {
+        const { data, error } = await supabase
+          .from('information_schema.tables')
+          .select('row_level_security')
+          .eq('table_schema', 'public')
+          .eq('table_name', table)
+          .single();
+        
+        if (error || !data) {
+          result[table] = false;
+          continue;
+        }
+        
+        result[table] = data.row_level_security || false;
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error checking RLS policies:', error);
+      return {};
+    }
+  },
+  
+  /**
+   * Check for expired cache entries and potentially clean them up
+   */
+  checkExpiredCacheEntries: async (): Promise<number> => {
+    try {
+      // Check for expired entries in ai_content_cache
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('ai_content_cache')
+        .select('id')
+        .lt('expires_at', now);
+      
+      if (error) {
+        console.error('Error checking expired cache entries:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
+    } catch (error) {
+      console.error('Error checking expired cache entries:', error);
+      return 0;
+    }
   }
 };

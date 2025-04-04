@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -41,12 +40,14 @@ export const wireframeVersionControl = {
         p_branch_name: branchName
       });
       
-      // Create the new version
+      // Create the new version - converting WireframeData to a JSON compatible format
+      const jsonData = JSON.parse(JSON.stringify(data));
+      
       const { data: versionData, error: createVersionError } = await supabase
         .rpc('create_wireframe_version', {
           p_wireframe_id: wireframeId,
           p_version_number: newVersionNumber,
-          p_data: data,
+          p_data: jsonData,
           p_change_description: changeDescription || `Version ${newVersionNumber}`,
           p_created_by: userId,
           p_is_current: true,
@@ -66,10 +67,13 @@ export const wireframeVersionControl = {
       };
       
       // Update the wireframe with the version data
+      // Convert WireframeData to JSON compatible format for the update
+      const jsonDataForUpdate = JSON.parse(JSON.stringify(data));
+      
       await supabase.rpc('update_wireframe_with_version', {
         p_wireframe_id: wireframeId,
         p_version_id: version.id,
-        p_wireframe_data: data
+        p_wireframe_data: jsonDataForUpdate
       });
       
       return version;
@@ -239,5 +243,104 @@ export const wireframeVersionControl = {
       console.error('Error in compareVersions:', error);
       return null;
     }
-  }
+  },
+
+  /**
+   * Get all versions of a wireframe
+   */
+  getVersionHistory: async (wireframeId: string): Promise<WireframeRevisionHistory> => {
+    try {
+      // Get all versions for this wireframe
+      const { data: versionsData, error } = await supabase
+        .rpc('get_wireframe_versions', { p_wireframe_id: wireframeId });
+      
+      if (error || !versionsData) {
+        console.error("Error getting wireframe versions:", error);
+        throw error || new Error("Failed to get wireframe versions");
+      }
+      
+      // Process the versions to ensure correct types
+      const versions = versionsData.map(version => ({
+        ...version,
+        data: typeof version.data === 'string' 
+          ? JSON.parse(version.data) 
+          : version.data
+      }));
+      
+      // Find current version and branches
+      const current = versions.find(version => 
+        version.is_current && version.branch_name === "main") || null;
+      
+      // Find all unique branches
+      const branches = Array.from(new Set(versions.map(v => v.branch_name)));
+      
+      return {
+        versions,
+        current,
+        branches
+      };
+    } catch (error) {
+      console.error("Error in getVersionHistory:", error);
+      return { versions: [], current: null, branches: [] };
+    }
+  },
+
+  /**
+   * Get all branches for a wireframe
+   */
+  getBranches: async (wireframeId: string): Promise<BranchInfo[]> => {
+    try {
+      const { data: branchData, error } = await supabase
+        .rpc('get_wireframe_branches', { p_wireframe_id: wireframeId });
+      
+      if (error) {
+        console.error("Error getting wireframe branches:", error);
+        throw error;
+      }
+      
+      return (branchData || []);
+    } catch (error) {
+      console.error("Error in getBranches:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Merge a branch into the main branch
+   */
+  mergeBranch: async (
+    branchVersionId: string,
+    userId: string,
+    description: string = "Merged branch into main"
+  ): Promise<WireframeVersion | null> => {
+    try {
+      // Get the branch version
+      const { data: versionData, error: versionError } = await supabase
+        .rpc('get_wireframe_version', { p_version_id: branchVersionId });
+      
+      if (versionError || !versionData) {
+        console.error("Error getting branch version:", versionError);
+        throw versionError || new Error("Branch version not found");
+      }
+
+      const branchVersion = versionData;
+      
+      // Parse the data if it's a string
+      const wireframeData = typeof branchVersion.data === 'string' 
+        ? JSON.parse(branchVersion.data) 
+        : branchVersion.data;
+      
+      // Create a new version on the main branch
+      return this.createVersion(
+        branchVersion.wireframe_id,
+        wireframeData,
+        description,
+        userId,
+        'main'
+      );
+    } catch (error) {
+      console.error("Error merging branch:", error);
+      return null;
+    }
+  },
 };
