@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { DesignMemoryService } from "./design-memory-service";
-import { DesignMemoryQueryOptions } from "./types/design-memory-types";
+import { DesignMemoryQueryOptions, DesignMemoryEntry } from "./types/design-memory-types";
 
 export interface LandBookQueryOptions extends DesignMemoryQueryOptions {
   pageSize?: number;
@@ -19,7 +19,7 @@ export interface LandBookAnalysis {
 }
 
 export interface LandBookPaginatedResult {
-  data: any[];
+  data: DesignMemoryEntry[];
   total: number;
   page: number;
   pageSize: number;
@@ -233,7 +233,7 @@ export const LandBookService = {
 /**
  * Extract key elements from a design memory entry
  */
-function extractKeyElements(design: any): string[] {
+function extractKeyElements(design: DesignMemoryEntry): string[] {
   const elements: string[] = [];
   
   if (design.visual_elements) {
