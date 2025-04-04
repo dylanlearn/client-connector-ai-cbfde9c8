@@ -1,4 +1,3 @@
-
 import { WebsiteAnalysisService, WebsiteAnalysisResult } from './website-analysis';
 
 /**
@@ -37,6 +36,7 @@ export const PageFlowsAnalysisService = {
         testimonials: []
       },
       ['pageflows', 'ux', 'user-journey', 'interaction'],
+      ['ux-designers', 'product-managers'],
       url,
       undefined
     );
