@@ -6,7 +6,7 @@ import {
   WireframeData 
 } from './wireframe-types';
 import { wireframeVersionControl } from './version-control';
-import { IndustryTemplateService } from './industry-templates';
+import { industryTemplateService } from './industry-templates';
 
 /**
  * Service layer for wireframe generation and management
@@ -23,7 +23,7 @@ export const WireframeService = {
       // Apply industry templates if specified in params
       if (params.industry) {
         try {
-          const baseWireframe = IndustryTemplateService.getTemplatesForIndustry(params.industry);
+          const baseWireframe = industryTemplateService.getTemplatesForIndustry(params.industry);
           
           // Merge template with any custom parameters
           params = {
@@ -222,7 +222,7 @@ export const WireframeService = {
       }
       
       // Get the template for the industry
-      const templateData = IndustryTemplateService.getTemplatesForIndustry(industry);
+      const templateData = industryTemplateService.getTemplatesForIndustry(industry);
       
       // Combine data based on preserveSections setting
       let updatedData: WireframeData;
@@ -239,12 +239,11 @@ export const WireframeService = {
       } else {
         // Replace with template but preserve wireframe metadata
         updatedData = {
-          // Ensure title exists with fallback
-          title: (currentWireframe.data?.title || templateData?.title || "Untitled Wireframe"),
-          description: (currentWireframe.data?.description || templateData?.description || ""),
+          title: currentWireframe.data?.title || templateData?.title || "Untitled Wireframe",
+          description: currentWireframe.data?.description || templateData?.description || "",
           sections: templateData?.sections || [],
           // Other properties will come from templateData or be undefined
-          ...(templateData || {}),
+          ...(templateData || {})
         };
       }
       
@@ -278,9 +277,9 @@ export const WireframeService = {
    */
   getIndustryTemplates: (industry?: string) => {
     if (industry) {
-      return IndustryTemplateService.getTemplatesForIndustry(industry);
+      return industryTemplateService.getTemplatesForIndustry(industry);
     }
-    return IndustryTemplateService.getAllTemplates();
+    return industryTemplateService.getAllTemplates();
   },
   
   /**

@@ -66,9 +66,9 @@ export const wireframeSections = {
           section_type: section.sectionType || "",
           description: section.description || "",
           layout_type: section.layoutType || "",
-          layout: section.layout || {} as Json,
-          components: section.components as unknown as Json,
-          copy_suggestions: section.copySuggestions as unknown as Json,
+          layout: (section.layout || {}) as Json,
+          components: (section.components || []) as unknown as Json,
+          copy_suggestions: (section.copySuggestions || {}) as unknown as Json,
           design_reasoning: section.designReasoning || "",
           mobile_layout: section.mobileLayout as Json,
           animation_suggestions: section.animationSuggestions as Json,
@@ -107,7 +107,7 @@ export const wireframeSections = {
       
       // Then insert all sections with position order
       if (sections && sections.length > 0) {
-        return await this.saveSections(wireframeId, sections);
+        return await wireframeSections.saveSections(wireframeId, sections);
       }
       
       return true;
