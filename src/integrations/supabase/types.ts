@@ -611,6 +611,50 @@ export type Database = {
           },
         ]
       }
+      client_notifications: {
+        Row: {
+          client_email: string
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          notification_type: string
+          project_id: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          client_email: string
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          project_id: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          client_email?: string
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          project_id?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_tasks: {
         Row: {
           client_response: Json | null
@@ -1198,6 +1242,91 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      project_files: {
+        Row: {
+          description: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          is_deleted: boolean
+          project_id: string
+          storage_path: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          is_deleted?: boolean
+          project_id: string
+          storage_path: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          is_deleted?: boolean
+          project_id?: string
+          storage_path?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_history: {
+        Row: {
+          changed_at: string
+          id: string
+          new_status: string
+          notes: string | null
+          previous_status: string | null
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_status: string
+          notes?: string | null
+          previous_status?: string | null
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_status?: string
+          notes?: string | null
+          previous_status?: string | null
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_memories: {
         Row: {

@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { useClientNotifications } from '@/hooks/use-client-notifications';
 
 interface ProjectCardProps {
   project: Project;
@@ -20,19 +21,37 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, updateProject, onClick }) => {
+  const { notifyStatusChange } = useClientNotifications(project.id);
+
   const handleArchive = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
+    
+    const previousStatus = project.status;
     updateProject.mutate({ 
       id: project.id, 
       status: 'archived'
+    }, {
+      onSuccess: () => {
+        // Send notification when status changes to archived
+        notifyStatusChange({...project, status: 'archived'}, previousStatus);
+      }
     });
   };
   
   const handleStatusChange = (status: 'draft' | 'active' | 'completed') => (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
+    
+    const previousStatus = project.status;
     updateProject.mutate({
       id: project.id,
       status
+    }, {
+      onSuccess: () => {
+        // Send notification when status changes
+        if (status !== previousStatus) {
+          notifyStatusChange({...project, status}, previousStatus);
+        }
+      }
     });
   };
 
