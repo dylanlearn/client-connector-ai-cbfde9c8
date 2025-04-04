@@ -1,7 +1,9 @@
+
 import React, { useState, useCallback } from 'react';
 import { AIMessage, AIAnalysis, DesignRecommendation, AIContextType } from '@/types/ai';
 import { AIAnalyzerService, AIGeneratorService } from '@/services/ai';
 import { AIContext } from './AIContext';
+import { useMemory } from './MemoryContext';
 import { v4 as uuidv4 } from 'uuid';
 
 export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -9,6 +11,13 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [designRecommendations, setDesignRecommendations] = useState<DesignRecommendation[] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Get memory context and functions from MemoryProvider
+  const { 
+    memoryContext, 
+    storeMemory: storeMemoryInContext,
+    isRealtime
+  } = useMemory();
 
   /**
    * Simulates an AI response for demo purposes
@@ -114,12 +123,26 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
       // Update state with the recommendations
       setDesignRecommendations([recommendations]);
+      
+      // Store this in memory for future context
+      if (storeMemoryInContext) {
+        await storeMemoryInContext(
+          `Generated design recommendations: ${JSON.stringify(recommendations)}`,
+          'SuccessfulOutput',
+          undefined,
+          { 
+            prompt, 
+            timestamp: new Date().toISOString(),
+            type: 'design_recommendation'
+          }
+        );
+      }
     } catch (error) {
       console.error("Error generating design recommendations:", error);
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [storeMemoryInContext]);
 
   /**
    * Generate content based on prompt and type
@@ -138,14 +161,29 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       };
       
       const content = await AIGeneratorService.generateContent(options);
-      return String(content); // Fix: Ensure content is converted to string
+      
+      // Store successful content generation in memory
+      if (storeMemoryInContext) {
+        await storeMemoryInContext(
+          `Generated ${contentType} content: ${content}`,
+          'SuccessfulOutput',
+          undefined,
+          { 
+            prompt, 
+            contentType,
+            timestamp: new Date().toISOString() 
+          }
+        );
+      }
+      
+      return String(content);
     } catch (error) {
       console.error("Error generating content:", error);
       return '';
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [storeMemoryInContext]);
 
   /**
    * Summarize feedback from users
@@ -162,6 +200,19 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
       // Use the AIGeneratorService
       const summary = await AIGeneratorService.summarizeFeedback(feedbackText);
       
+      // Store feedback in memory
+      if (storeMemoryInContext) {
+        await storeMemoryInContext(
+          `Summarized feedback: ${summary}`,
+          'ClientFeedback',
+          undefined,
+          { 
+            originalFeedback: feedbackText,
+            timestamp: new Date().toISOString() 
+          }
+        );
+      }
+      
       // Handle different return types safely
       if (Array.isArray(summary)) {
         return summary.join('\n');
@@ -176,7 +227,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [storeMemoryInContext]);
 
   /**
    * Reset all state
@@ -187,22 +238,31 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     setDesignRecommendations(null);
   }, []);
 
-  // Create a placeholder function for storeMemory to satisfy the context type
-  const storeMemory = async () => {};
+  // Use the storeMemory function from the MemoryContext
+  const storeMemory = useCallback(async (
+    content: string,
+    category: string,
+    projectId?: string,
+    metadata?: Record<string, any>
+  ) => {
+    if (storeMemoryInContext) {
+      return storeMemoryInContext(content, category, projectId, metadata);
+    }
+  }, [storeMemoryInContext]);
 
   const aiContextValue: AIContextType = {
     messages,
     isProcessing,
     analysis,
     designRecommendations,
-    memoryContext: undefined, // Will be provided by MemoryProvider
-    isRealtime: false,
+    memoryContext,
+    isRealtime,
     simulateResponse,
     analyzeResponses,
     generateDesignRecommendations,
     generateContent,
     summarizeFeedback,
-    storeMemory, // Placeholder that will be overridden
+    storeMemory,
     reset,
   };
 

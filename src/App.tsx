@@ -1,55 +1,52 @@
 
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import Layout from '@/components/layout/Layout';
-import Dashboard from '@/pages/Dashboard';
-import Analytics from '@/pages/Analytics';
-import Projects from '@/pages/Projects';
-import ProjectDetail from '@/pages/ProjectDetail';
-import Settings from '@/pages/Settings';
-import IntakeForm from '@/pages/IntakeForm';
-import QuestionnaireResults from '@/pages/QuestionnaireResults';
-import ClientHub from '@/pages/ClientHub';
-import ClientAccess from '@/pages/ClientAccess';
-import AdminPanel from '@/pages/AdminPanel';
-import DesignPicker from '@/pages/DesignPicker';
-import Login from '@/pages/Login';
-import Signup from '@/pages/Signup';
-import AIDesignSuggestions from '@/pages/AIDesignSuggestions';
-import FeedbackAnalysisPage from '@/pages/FeedbackAnalysisPage';
-import WebsiteAnalyzer from '@/pages/design-analysis/WebsiteAnalyzer';
-import Index from '@/pages/Index';
-import './App.css';
-import { AppProviders } from '@/providers/AppProviders';
+import { Routes, Route, Navigate } from "react-router-dom";
+import Dashboard from "@/pages/Dashboard";
+import Projects from "@/pages/Projects";
+import ClientHub from "@/pages/ClientHub";
+import IntakeForm from "@/pages/IntakeForm";
+import DesignPicker from "@/pages/DesignPicker";
+import Analytics from "@/pages/Analytics";
+import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
+import FeedbackAnalysisPage from "@/pages/FeedbackAnalysisPage";
+import WebsiteAnalyzer from "@/pages/WebsiteAnalyzer";
+import Settings from "@/pages/Settings";
+import NotFound from "@/pages/NotFound";
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
+import ResetPassword from "@/pages/auth/ResetPassword";
+import { AppProviders } from "@/providers/AppProviders";
 
-function App() {
+const App = () => {
   return (
     <AppProviders>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="projects/:id" element={<ProjectDetail />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="intake-form" element={<IntakeForm />} />
-          <Route path="results" element={<QuestionnaireResults />} />
-          <Route path="client-hub" element={<ClientHub />} />
-          <Route path="client-access" element={<ClientAccess />} />
-          <Route path="admin" element={<AdminPanel />} />
-          <Route path="design-picker" element={<DesignPicker />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
-          <Route path="ai-suggestions" element={<AIDesignSuggestions />} />
-          <Route path="feedback-analysis" element={<FeedbackAnalysisPage />} />
-          <Route path="website-analyzer" element={<WebsiteAnalyzer />} />
-        </Routes>
-      </Layout>
-      <Toaster />
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/client-hub" element={<ClientHub />} />
+        <Route path="/intake-form" element={<IntakeForm />} />
+        <Route path="/design-picker" element={<DesignPicker />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
+        <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
+        <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+        <Route path="/settings" element={<Settings />} />
+        
+        {/* Auth Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        
+        {/* Default route for admin path */}
+        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
+        
+        {/* 404 Route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </AppProviders>
   );
-}
+};
 
 export default App;

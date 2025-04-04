@@ -62,13 +62,13 @@ export const AppProviders = ({
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <AIProvider>
-            <MemoryProvider>
+          <MemoryProvider>
+            <AIProvider>
               {children}
               <Toaster />
               <SonnerToaster position="top-right" />
-            </MemoryProvider>
-          </AIProvider>
+            </AIProvider>
+          </MemoryProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>

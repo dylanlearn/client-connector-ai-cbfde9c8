@@ -1,4 +1,6 @@
 
-export * from "./AIContext";
-export * from "./useAI";
-export { type AIMessage, type AIAnalysis } from "@/types/ai";
+export { AIProvider } from './AIProvider';
+export { AIContext } from './AIContext';
+export { useAI } from './useAI';
+export { useMemory } from './MemoryContext';
+export * from './hooks';
