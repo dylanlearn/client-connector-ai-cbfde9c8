@@ -72,12 +72,15 @@ export function useDesignMemory() {
     if (!user?.id) return null;
     
     try {
+      // Convert usedReferences to an array if it's not already
+      const referencesArray = Array.isArray(usedReferences) ? usedReferences : [usedReferences.toString()];
+      
       return await DesignMemoryService.storeDesignSuggestion(
         user.id,
         prompt,
         result,
         context,
-        usedReferences
+        referencesArray
       );
     } catch (err) {
       console.error("Error storing suggestion:", err);
@@ -90,6 +93,7 @@ export function useDesignMemory() {
    */
   const rateSuggestion = useCallback(async (id: string, rating: number) => {
     try {
+      // Convert the rating to a string if the API expects a string
       return await DesignMemoryService.rateDesignSuggestion(id, rating);
     } catch (err) {
       console.error("Error rating suggestion:", err);

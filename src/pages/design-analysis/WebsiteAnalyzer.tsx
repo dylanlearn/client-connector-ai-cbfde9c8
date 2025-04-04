@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useWebsiteAnalysis } from '@/hooks/ai-design/useWebsiteAnalysis';
-import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis';
+import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
 import { useAuth } from '@/hooks/use-auth';
 import WebsiteAnalyzerHeader from './components/WebsiteAnalyzerHeader';
 import WebsiteAnalyzerTabs from './components/WebsiteAnalyzerTabs';

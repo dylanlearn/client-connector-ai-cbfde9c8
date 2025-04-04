@@ -1,15 +1,13 @@
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Layout, Loader2 } from 'lucide-react';
-import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis';
-import { toast } from 'sonner';
+import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
+import { Loader2 } from 'lucide-react';
 
 interface SingleSectionFormProps {
   isAnalyzing: boolean;
@@ -24,211 +22,173 @@ interface SingleSectionFormProps {
 }
 
 const SingleSectionForm = ({ isAnalyzing, onSubmit }: SingleSectionFormProps) => {
-  // Form state
-  const [sectionType, setSectionType] = useState<string>('hero');
-  const [description, setDescription] = useState<string>('');
-  const [websiteSource, setWebsiteSource] = useState<string>('');
-  const [imageUrl, setImageUrl] = useState<string>('');
+  const [section, setSection] = useState('hero');
+  const [description, setDescription] = useState('');
+  const [layout, setLayout] = useState('');
+  const [colorScheme, setColorScheme] = useState('');
+  const [typography, setTypography] = useState('');
+  const [headline, setHeadline] = useState('');
+  const [callToAction, setCallToAction] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
 
-  // Content analysis state
-  const [headline, setHeadline] = useState<string>('');
-  const [subheadline, setSubheadline] = useState<string>('');
-  const [callToAction, setCallToAction] = useState<string>('');
-  const [valueProposition, setValueProposition] = useState<string>('');
-
-  // Visual elements state
-  const [layout, setLayout] = useState<string>('');
-  const [colorScheme, setColorScheme] = useState<string>('');
-  const [typography, setTypography] = useState<string>('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!description || !websiteSource) {
-      toast.error('Please fill out the required fields');
-      return;
-    }
-    
-    await onSubmit(
-      sectionType,
+    onSubmit(
+      section,
       description,
-      { layout, colorScheme, typography },
-      { headline, subheadline, callToAction, valueProposition },
-      websiteSource,
+      {
+        layout,
+        colorScheme,
+        typography,
+        spacing: '',
+        imagery: ''
+      },
+      {
+        headline,
+        callToAction,
+        subheadline: '',
+        valueProposition: '',
+        testimonials: []
+      },
+      sourceUrl,
       imageUrl
     );
-    
-    // Reset form
-    setSectionType('hero');
-    setDescription('');
-    setWebsiteSource('');
-    setImageUrl('');
-    setHeadline('');
-    setSubheadline('');
-    setCallToAction('');
-    setValueProposition('');
-    setLayout('');
-    setColorScheme('');
-    setTypography('');
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Analyze Website Section</CardTitle>
-        <CardDescription>
-          Analyze a specific section of a website and store the design pattern in memory.
-        </CardDescription>
+        <CardTitle className="text-lg">Analyze a Website Section</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="section-type">Section Type</Label>
-                <Select value={sectionType} onValueChange={setSectionType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select section type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hero">Hero Section</SelectItem>
-                    <SelectItem value="testimonials">Testimonials</SelectItem>
-                    <SelectItem value="features">Features</SelectItem>
-                    <SelectItem value="pricing">Pricing</SelectItem>
-                    <SelectItem value="footer">Footer</SelectItem>
-                    <SelectItem value="navigation">Navigation</SelectItem>
-                    <SelectItem value="cta">Call to Action</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Describe what makes this section effective" 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="h-24"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="website-source">Website Source</Label>
-                <Input 
-                  id="website-source" 
-                  placeholder="e.g., pageflows.com" 
-                  value={websiteSource} 
-                  onChange={(e) => setWebsiteSource(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="image-url">Image URL (Optional)</Label>
-                <Input 
-                  id="image-url" 
-                  placeholder="URL to screenshot or image of the section" 
-                  value={imageUrl} 
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium mb-2">Content Analysis</h3>
-              <div>
-                <Label htmlFor="headline">Headline</Label>
-                <Input 
-                  id="headline" 
-                  placeholder="Main headline text" 
-                  value={headline} 
-                  onChange={(e) => setHeadline(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="subheadline">Subheadline</Label>
-                <Input 
-                  id="subheadline" 
-                  placeholder="Supporting subheadline text" 
-                  value={subheadline} 
-                  onChange={(e) => setSubheadline(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="cta">Call to Action</Label>
-                <Input 
-                  id="cta" 
-                  placeholder="Primary CTA text" 
-                  value={callToAction} 
-                  onChange={(e) => setCallToAction(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="value-prop">Value Proposition</Label>
-                <Input 
-                  id="value-prop" 
-                  placeholder="Main value proposition" 
-                  value={valueProposition} 
-                  onChange={(e) => setValueProposition(e.target.value)}
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="section-type">Section Type</Label>
+            <Select
+              value={section}
+              onValueChange={setSection}
+              disabled={isAnalyzing}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a section type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hero">Hero Section</SelectItem>
+                <SelectItem value="testimonials">Testimonials</SelectItem>
+                <SelectItem value="features">Features</SelectItem>
+                <SelectItem value="pricing">Pricing</SelectItem>
+                <SelectItem value="footer">Footer</SelectItem>
+                <SelectItem value="navigation">Navigation</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <Separator className="my-6" />
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Describe the section's purpose and content"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              required
+              disabled={isAnalyzing}
+            />
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="layout">Layout Structure</Label>
-              <Input 
-                id="layout" 
-                placeholder="e.g., Two-column with left alignment" 
-                value={layout} 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="layout">Layout</Label>
+              <Input
+                id="layout"
+                placeholder="e.g., Grid, Two-column, Center-aligned"
+                value={layout}
                 onChange={(e) => setLayout(e.target.value)}
+                disabled={isAnalyzing}
               />
             </div>
-
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="color-scheme">Color Scheme</Label>
-              <Input 
-                id="color-scheme" 
-                placeholder="e.g., Dark background with blue accents" 
-                value={colorScheme} 
+              <Input
+                id="color-scheme"
+                placeholder="e.g., Blue-dominant, High contrast"
+                value={colorScheme}
                 onChange={(e) => setColorScheme(e.target.value)}
+                disabled={isAnalyzing}
               />
             </div>
+          </div>
 
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="typography">Typography</Label>
-              <Input 
-                id="typography" 
-                placeholder="e.g., Sans-serif headings with serif body" 
-                value={typography} 
+              <Input
+                id="typography"
+                placeholder="e.g., Sans-serif, Large headings"
+                value={typography}
                 onChange={(e) => setTypography(e.target.value)}
+                disabled={isAnalyzing}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="headline">Headline</Label>
+              <Input
+                id="headline"
+                placeholder="Main headline text or style"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                disabled={isAnalyzing}
               />
             </div>
           </div>
 
-          <div className="mt-6">
-            <Button type="submit" disabled={isAnalyzing} className="w-full">
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Layout className="mr-2 h-4 w-4" />
-                  Analyze Section
-                </>
-              )}
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="call-to-action">Call to Action</Label>
+              <Input
+                id="call-to-action"
+                placeholder="e.g., 'Get Started', 'Learn More'"
+                value={callToAction}
+                onChange={(e) => setCallToAction(e.target.value)}
+                disabled={isAnalyzing}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="source-url">Website Source</Label>
+              <Input
+                id="source-url"
+                placeholder="URL or name of the website"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                required
+                disabled={isAnalyzing}
+              />
+            </div>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image-url">Screenshot URL (optional)</Label>
+            <Input
+              id="image-url"
+              placeholder="URL to a screenshot of the section"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              disabled={isAnalyzing}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isAnalyzing}>
+            {isAnalyzing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              'Analyze Section'
+            )}
+          </Button>
         </form>
       </CardContent>
     </Card>

@@ -1,11 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { 
-  WebsiteAnalysisService, 
-  WebsiteAnalysisResult,
-  SectionType
-} from '@/services/ai/design/website-analysis';
+import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
+import { WebsiteAnalysisResult, SectionType } from '@/services/ai/design/website-analysis/types';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 
@@ -70,11 +67,6 @@ export function useWebsiteAnalysis() {
         source,
         imageUrl
       );
-
-      // Map contentStructure to contentAnalysis for compatibility
-      result.contentAnalysis = result.contentStructure;
-      result.source = source;
-      result.imageUrl = imageUrl;
 
       // Store the analysis
       const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);
@@ -142,11 +134,6 @@ export function useWebsiteAnalysis() {
           websiteUrl,
           section.imageUrl
         );
-        
-        // Map contentStructure to contentAnalysis for compatibility
-        result.contentAnalysis = result.contentStructure;
-        result.source = websiteUrl;
-        result.imageUrl = section.imageUrl;
         
         // Store the analysis
         const stored = await WebsiteAnalysisService.storeWebsiteAnalysis(result);

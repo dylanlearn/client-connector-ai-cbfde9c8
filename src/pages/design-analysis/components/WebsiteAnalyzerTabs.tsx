@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis';
+import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
 import SingleSectionForm from './SingleSectionForm';
 import FullWebsiteForm from './FullWebsiteForm';
 
