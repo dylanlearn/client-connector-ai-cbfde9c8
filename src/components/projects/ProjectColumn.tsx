@@ -2,15 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Droppable } from "react-beautiful-dnd";
 import ProjectCard from "./ProjectCard";
-
-interface Project {
-  id: string;
-  title: string;
-  description: string | null;
-  client_name: string;
-  status: string;
-  created_at: string;
-}
+import { Project } from "@/types/project";
 
 interface ProjectColumnProps {
   column: {

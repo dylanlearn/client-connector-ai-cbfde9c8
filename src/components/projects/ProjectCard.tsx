@@ -9,12 +9,16 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface ProjectCardProps {
   project: Project;
+  index?: number;
+  statusColor?: string;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, statusColor }) => {
   const navigate = useNavigate();
   
   const getStatusColor = (status: string) => {
+    if (statusColor) return statusColor;
+    
     switch (status) {
       case 'draft': return 'bg-gray-500';
       case 'active': return 'bg-green-500';
