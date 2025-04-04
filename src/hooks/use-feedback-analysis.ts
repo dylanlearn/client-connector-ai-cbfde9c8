@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { FeedbackAnalysisResult, FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
 
@@ -8,7 +8,7 @@ export function useFeedbackAnalysis() {
   const [result, setResult] = useState<FeedbackAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const analyzeFeedback = async (feedbackText: string): Promise<FeedbackAnalysisResult | null> => {
+  const analyzeFeedback = useCallback(async (feedbackText: string): Promise<FeedbackAnalysisResult | null> => {
     if (!feedbackText.trim()) {
       setError('Feedback text cannot be empty');
       toast.error('Feedback text cannot be empty');
@@ -38,12 +38,12 @@ export function useFeedbackAnalysis() {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, []);
 
-  const resetAnalysis = () => {
+  const resetAnalysis = useCallback(() => {
     setResult(null);
     setError(null);
-  };
+  }, []);
 
   return {
     analyzeFeedback,

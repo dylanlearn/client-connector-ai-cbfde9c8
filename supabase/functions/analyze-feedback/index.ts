@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { ActionItem, FeedbackAnalysisRequest, FeedbackAnalysisResult, ToneAnalysis } from "./types.ts";
@@ -18,7 +19,7 @@ serve(async (req) => {
     
     if (!feedbackText || feedbackText.trim() === '') {
       return new Response(
-        JSON.stringify({ error: "Feedback text is required" }),
+        JSON.stringify({ error: "Missing or invalid feedback text" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

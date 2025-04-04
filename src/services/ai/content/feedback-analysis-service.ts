@@ -7,17 +7,19 @@ export interface ActionItem {
   urgency: number;
 }
 
+export interface ToneAnalysis {
+  positive: number;
+  neutral: number;
+  negative: number;
+  urgent: boolean;
+  critical: boolean;
+  vague: boolean;
+}
+
 export interface FeedbackAnalysisResult {
   summary: string;
   actionItems: ActionItem[];
-  toneAnalysis: {
-    positive: number;
-    neutral: number;
-    negative: number;
-    urgent: boolean;
-    critical: boolean;
-    vague: boolean;
-  };
+  toneAnalysis: ToneAnalysis;
 }
 
 /**
@@ -44,6 +46,19 @@ export const FeedbackAnalysisService = {
         throw new Error('No analysis data returned');
       }
 
+      // Store the feedback analysis in the database for future reference
+      try {
+        await supabase.from('feedback_analysis').insert({
+          original_feedback: feedbackText,
+          action_items: data.actionItems,
+          tone_analysis: data.toneAnalysis,
+          summary: data.summary
+        });
+      } catch (saveError) {
+        // Log the error but don't fail the operation
+        console.error('Error saving feedback analysis to database:', saveError);
+      }
+
       return data;
     } catch (error) {
       console.error('Error analyzing feedback:', error);
@@ -65,6 +80,38 @@ export const FeedbackAnalysisService = {
           vague: false
         }
       };
+    }
+  },
+
+  /**
+   * Retrieves past feedback analyses
+   */
+  getPastAnalyses: async (limit: number = 10): Promise<{
+    originalFeedback: string;
+    result: FeedbackAnalysisResult;
+    createdAt: string;
+  }[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('feedback_analysis')
+        .select('original_feedback, action_items, tone_analysis, summary, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      return (data || []).map(item => ({
+        originalFeedback: item.original_feedback,
+        result: {
+          summary: item.summary,
+          actionItems: item.action_items,
+          toneAnalysis: item.tone_analysis
+        },
+        createdAt: item.created_at
+      }));
+    } catch (error) {
+      console.error('Error fetching past analyses:', error);
+      return [];
     }
   }
 };
