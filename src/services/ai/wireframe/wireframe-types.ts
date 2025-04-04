@@ -88,7 +88,6 @@ export interface WireframeGenerationParams {
     targetAudience?: string;
     siteFeatures?: string[];
   };
-  // Add missing properties that were referenced in the code
   templateId?: string;
   userId?: string;
   baseWireframe?: WireframeData;
@@ -127,4 +126,40 @@ export interface AIWireframe {
   quality_flags?: any;
   data?: WireframeData; // Add data property to store the wireframe data
   sections?: any[]; // Add sections property for backward compatibility
+}
+
+// Version control interfaces
+export interface WireframeVersion {
+  id: string;
+  wireframe_id: string;
+  version_number: number;
+  data: WireframeData;
+  change_description?: string;
+  created_by?: string;
+  created_at: string;
+  is_current: boolean;
+  parent_version_id?: string;
+  branch_name: string;
+}
+
+export interface WireframeRevisionHistory {
+  versions: WireframeVersion[];
+  current: WireframeVersion | null;
+  branches: string[];
+}
+
+export interface BranchInfo {
+  name: string;
+  created_at: string;
+  version_count: number;
+  latest_version_id: string;
+}
+
+export interface VersionComparisonResult {
+  changes: { 
+    type: 'added' | 'removed' | 'modified',
+    path: string,
+    values: [any, any] 
+  }[];
+  summary: string;
 }

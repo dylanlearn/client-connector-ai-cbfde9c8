@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -79,6 +80,9 @@ export const WireframeApiService = {
         imageUrl
       } = wireframeData;
       
+      // Convert wireframeData to a JSON-compatible format
+      const wireframeDataJson = JSON.parse(JSON.stringify(wireframeData));
+      
       // Insert wireframe into database - using type assertion since we know the structure
       const { data, error } = await supabase
         .from('ai_wireframes')
@@ -94,7 +98,7 @@ export const WireframeApiService = {
           generation_params: {
             ...params,
             model,
-            result_data: wireframeData // Store the complete wireframe data as JSON
+            result_data: wireframeDataJson // Store the complete wireframe data as JSON
           } as any,
           image_url: imageUrl
         })
@@ -234,12 +238,15 @@ export const WireframeApiService = {
     data: WireframeData
   ): Promise<AIWireframe | null> => {
     try {
+      // Convert wireframeData to JSON-compatible format
+      const wireframeDataJson = JSON.parse(JSON.stringify(data));
+      
       // Update the wireframe in the database
       const { data: updatedWireframe, error } = await supabase
         .from('ai_wireframes')
         .update({
           generation_params: {
-            result_data: data
+            result_data: wireframeDataJson
           }
         })
         .eq('id', wireframeId)
@@ -353,3 +360,4 @@ export const WireframeApiService = {
     }
   }
 };
+

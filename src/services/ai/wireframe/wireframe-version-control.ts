@@ -1,32 +1,12 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeData } from './wireframe-types';
-
-export interface WireframeVersion {
-  id: string;
-  wireframe_id: string;
-  version_number: number;
-  created_at: string;
-  created_by: string;
-  data: WireframeData;
-  change_description: string;
-  is_current: boolean;
-  parent_version_id?: string;
-  branch_name?: string;
-}
-
-export interface WireframeRevisionHistory {
-  versions: WireframeVersion[];
-  current: WireframeVersion | null;
-  branches: string[];
-}
-
-export interface BranchInfo {
-  name: string;
-  created_at: string;
-  version_count: number;
-  latest_version_id: string;
-}
+import { 
+  WireframeData, 
+  WireframeVersion, 
+  WireframeRevisionHistory,
+  BranchInfo,
+  VersionComparisonResult
+} from './wireframe-types';
 
 /**
  * Version control service for wireframes
@@ -44,14 +24,15 @@ export const WireframeVersionControlService = {
     branchName: string = "main"
   ): Promise<WireframeVersion | null> => {
     try {
+      // First, convert wireframeData to JSON-compatible format
+      const wireframeDataJson = JSON.parse(JSON.stringify(data));
+      
       // Get the latest version number for this wireframe
       const { data: versions, error: versionError } = await supabase
-        .from('wireframe_versions')
-        .select('version_number')
-        .eq('wireframe_id', wireframeId)
-        .eq('branch_name', branchName)
-        .order('version_number', { ascending: false })
-        .limit(1);
+        .rpc('get_latest_version_number', { 
+          p_wireframe_id: wireframeId,
+          p_branch_name: branchName
+        });
       
       if (versionError) {
         console.error("Error fetching last version:", versionError);
@@ -59,55 +40,48 @@ export const WireframeVersionControlService = {
       }
       
       // Calculate next version number
-      const nextVersion = versions && versions.length > 0 
-        ? (versions[0] as any).version_number + 1 
-        : 1;
+      const nextVersion = versions && versions > 0 ? versions + 1 : 1;
       
       // If this is a new version on the main branch, set all previous versions as not current
       if (branchName === "main") {
+        // Use RPC function to update previous versions
         const { error: updateError } = await supabase
-          .from('wireframe_versions')
-          .update({ is_current: false })
-          .eq('wireframe_id', wireframeId)
-          .eq('branch_name', branchName);
+          .rpc('set_versions_inactive', { p_wireframe_id: wireframeId, p_branch_name: branchName });
         
         if (updateError) {
           console.error("Error updating previous versions:", updateError);
         }
       }
       
-      // Insert the new version
+      // Insert the new version using RPC function
       const { data: newVersion, error: insertError } = await supabase
-        .from('wireframe_versions')
-        .insert({
-          wireframe_id: wireframeId,
-          version_number: nextVersion,
-          data: data,
-          change_description: changeDescription,
-          created_by: userId,
-          is_current: true,
-          parent_version_id: parentVersionId,
-          branch_name: branchName
-        })
-        .select('*')
-        .single();
+        .rpc('create_wireframe_version', {
+          p_wireframe_id: wireframeId,
+          p_version_number: nextVersion,
+          p_data: wireframeDataJson,
+          p_change_description: changeDescription,
+          p_created_by: userId,
+          p_is_current: true,
+          p_parent_version_id: parentVersionId || null,
+          p_branch_name: branchName
+        });
       
-      if (insertError) {
-        console.error("Error creating wireframe version:", insertError);
-        throw insertError;
+      if (insertError || !newVersion) {
+        console.error("Error creating wireframe version:", insertError || "No version data returned");
+        throw insertError || new Error("Failed to create version");
       }
       
-      // Update the main wireframe to reference this version's data
+      // Update the main wireframe to reference this version's data if on main branch
       if (branchName === "main") {
+        // Convert wireframeData to JSON-compatible format again to ensure clean data
+        const dataForMainWireframe = JSON.parse(JSON.stringify(data));
+        
         const { error: wireframeUpdateError } = await supabase
-          .from('ai_wireframes')
-          .update({
-            generation_params: {
-              result_data: data,
-              latest_version_id: newVersion.id
-            }
-          })
-          .eq('id', wireframeId);
+          .rpc('update_wireframe_with_version', {
+            p_wireframe_id: wireframeId,
+            p_version_id: newVersion.id,
+            p_wireframe_data: dataForMainWireframe
+          });
         
         if (wireframeUpdateError) {
           console.error("Error updating wireframe with new version:", wireframeUpdateError);
@@ -126,23 +100,21 @@ export const WireframeVersionControlService = {
    */
   getVersionHistory: async (wireframeId: string): Promise<WireframeRevisionHistory> => {
     try {
-      // Get all versions for this wireframe
+      // Get all versions for this wireframe using RPC
       const { data: versions, error } = await supabase
-        .from('wireframe_versions')
-        .select('*')
-        .eq('wireframe_id', wireframeId)
-        .order('created_at', { ascending: false });
+        .rpc('get_wireframe_versions', { p_wireframe_id: wireframeId });
       
-      if (error) {
-        throw error;
+      if (error || !versions) {
+        console.error("Error getting wireframe versions:", error);
+        throw error || new Error("Failed to get wireframe versions");
       }
       
-      // Find current version
-      const current = versions.find(version => 
-        (version as any).is_current && (version as any).branch_name === "main") || null;
+      // Find current version and branches
+      const current = versions.find((version: any) => 
+        version.is_current && version.branch_name === "main") || null;
       
       // Find all unique branches
-      const branches = Array.from(new Set(versions.map(v => (v as any).branch_name)));
+      const branches = Array.from(new Set(versions.map((v: any) => v.branch_name)));
       
       return {
         versions: versions as unknown as WireframeVersion[],
@@ -164,21 +136,19 @@ export const WireframeVersionControlService = {
     description: string = "Reverted to previous version"
   ): Promise<WireframeVersion | null> => {
     try {
-      // Get the version to revert to
+      // Get the version to revert to using RPC
       const { data: version, error } = await supabase
-        .from('wireframe_versions')
-        .select('*')
-        .eq('id', versionId)
-        .single();
+        .rpc('get_wireframe_version', { p_version_id: versionId });
       
-      if (error) {
-        throw error;
+      if (error || !version) {
+        console.error("Error getting version to revert to:", error);
+        throw error || new Error("Version not found");
       }
       
       // Create a new version with the content of the old version
       return WireframeVersionControlService.createVersion(
-        (version as any).wireframe_id,
-        (version as any).data,
+        version.wireframe_id,
+        version.data,
         description,
         userId,
         version.id
@@ -199,21 +169,19 @@ export const WireframeVersionControlService = {
     description: string = `Created branch ${branchName}`
   ): Promise<WireframeVersion | null> => {
     try {
-      // Get the version to branch from
+      // Get the version to branch from using RPC
       const { data: version, error } = await supabase
-        .from('wireframe_versions')
-        .select('*')
-        .eq('id', versionId)
-        .single();
+        .rpc('get_wireframe_version', { p_version_id: versionId });
       
-      if (error) {
-        throw error;
+      if (error || !version) {
+        console.error("Error getting version to branch from:", error);
+        throw error || new Error("Version not found");
       }
       
       // Create a new version on the new branch
       return WireframeVersionControlService.createVersion(
-        (version as any).wireframe_id,
-        (version as any).data,
+        version.wireframe_id,
+        version.data,
         description,
         userId,
         version.id,
@@ -234,21 +202,19 @@ export const WireframeVersionControlService = {
     description: string = "Merged branch into main"
   ): Promise<WireframeVersion | null> => {
     try {
-      // Get the branch version
+      // Get the branch version using RPC
       const { data: branchVersion, error } = await supabase
-        .from('wireframe_versions')
-        .select('*')
-        .eq('id', branchVersionId)
-        .single();
+        .rpc('get_wireframe_version', { p_version_id: branchVersionId });
       
-      if (error) {
-        throw error;
+      if (error || !branchVersion) {
+        console.error("Error getting branch version:", error);
+        throw error || new Error("Branch version not found");
       }
       
       // Create a new version on the main branch using the branch version data
       return WireframeVersionControlService.createVersion(
-        (branchVersion as any).wireframe_id,
-        (branchVersion as any).data,
+        branchVersion.wireframe_id,
+        branchVersion.data,
         description,
         userId,
         branchVersion.id
@@ -264,40 +230,15 @@ export const WireframeVersionControlService = {
    */
   getBranches: async (wireframeId: string): Promise<BranchInfo[]> => {
     try {
-      const { data: versions, error } = await supabase
-        .from('wireframe_versions')
-        .select('*')
-        .eq('wireframe_id', wireframeId);
+      const { data: branchData, error } = await supabase
+        .rpc('get_wireframe_branches', { p_wireframe_id: wireframeId });
       
       if (error) {
+        console.error("Error getting wireframe branches:", error);
         throw error;
       }
       
-      const branchMap = new Map<string, BranchInfo>();
-      
-      // Group by branch name
-      versions.forEach(version => {
-        const branchName = (version as any).branch_name || 'main';
-        
-        if (!branchMap.has(branchName)) {
-          branchMap.set(branchName, {
-            name: branchName,
-            created_at: version.created_at as string,
-            version_count: 1,
-            latest_version_id: version.id
-          });
-        } else {
-          const branch = branchMap.get(branchName)!;
-          branch.version_count += 1;
-          
-          // Check if this version is newer
-          if (new Date(version.created_at as string) > new Date(branch.created_at)) {
-            branch.latest_version_id = version.id;
-          }
-        }
-      });
-      
-      return Array.from(branchMap.values());
+      return (branchData || []) as unknown as BranchInfo[];
     } catch (error) {
       console.error("Error getting wireframe branches:", error);
       return [];
@@ -310,32 +251,21 @@ export const WireframeVersionControlService = {
   compareVersions: async (
     versionId1: string,
     versionId2: string
-  ): Promise<{ 
-    changes: { type: 'added' | 'removed' | 'modified', path: string, values: [any, any] }[],
-    summary: string
-  }> => {
+  ): Promise<VersionComparisonResult> => {
     try {
-      // Fetch both versions
-      const { data: versions, error } = await supabase
-        .from('wireframe_versions')
-        .select('*')
-        .in('id', [versionId1, versionId2]);
+      // Fetch both versions using RPC
+      const { data: comparisonData, error } = await supabase
+        .rpc('compare_wireframe_versions', { 
+          p_version_id1: versionId1,
+          p_version_id2: versionId2 
+        });
       
-      if (error || !versions || versions.length !== 2) {
-        throw error || new Error("Could not find both versions");
+      if (error || !comparisonData) {
+        console.error("Error comparing wireframe versions:", error);
+        throw error || new Error("Could not compare versions");
       }
       
-      // Get data from both versions for comparison
-      const v1 = (versions[0] as any).data;
-      const v2 = (versions[1] as any).data;
-      
-      // Perform a deep comparison (simplified version)
-      const changes = compareObjects(v1, v2);
-      
-      // Generate a summary of changes
-      const summary = generateChangeSummary(changes);
-      
-      return { changes, summary };
+      return comparisonData as unknown as VersionComparisonResult;
     } catch (error) {
       console.error("Error comparing wireframe versions:", error);
       return { changes: [], summary: "Could not compare versions due to an error." };
@@ -345,6 +275,7 @@ export const WireframeVersionControlService = {
 
 /**
  * Helper function to compare two objects and find differences
+ * This function is kept here for reference, but we'll use a server-side RPC function instead
  */
 function compareObjects(
   obj1: any,
@@ -352,9 +283,6 @@ function compareObjects(
   path: string = ''
 ): { type: 'added' | 'removed' | 'modified', path: string, values: [any, any] }[] {
   const changes: { type: 'added' | 'removed' | 'modified', path: string, values: [any, any] }[] = [];
-  
-  // Simple implementation for demonstration
-  // In a real app, this would be a more sophisticated deep comparison
   
   if (typeof obj1 !== typeof obj2) {
     changes.push({ type: 'modified', path, values: [obj1, obj2] });
@@ -369,7 +297,6 @@ function compareObjects(
   }
   
   if (Array.isArray(obj1) && Array.isArray(obj2)) {
-    // Simple array comparison (not tracking moved items)
     const maxLength = Math.max(obj1.length, obj2.length);
     for (let i = 0; i < maxLength; i++) {
       const newPath = `${path}[${i}]`;
@@ -384,7 +311,6 @@ function compareObjects(
     return changes;
   }
   
-  // Compare object properties
   const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
   
   for (const key of allKeys) {
@@ -400,59 +326,4 @@ function compareObjects(
   }
   
   return changes;
-}
-
-/**
- * Generate a human-readable summary of changes
- */
-function generateChangeSummary(
-  changes: { type: 'added' | 'removed' | 'modified', path: string, values: [any, any] }[]
-): string {
-  if (changes.length === 0) {
-    return "No changes detected between versions.";
-  }
-  
-  const added = changes.filter(c => c.type === 'added').length;
-  const removed = changes.filter(c => c.type === 'removed').length;
-  const modified = changes.filter(c => c.type === 'modified').length;
-  
-  let summary = `${changes.length} changes detected: `;
-  
-  const parts = [];
-  if (added) parts.push(`${added} additions`);
-  if (removed) parts.push(`${removed} removals`);
-  if (modified) parts.push(`${modified} modifications`);
-  
-  summary += parts.join(', ');
-  
-  // Add details about significant changes
-  const significantChanges = changes.filter(c => {
-    // Focus on high-level structure changes
-    return c.path.split('.').length <= 2 || 
-           c.path.includes('sections') || 
-           c.path.includes('title') ||
-           c.path.includes('layout');
-  }).slice(0, 3);
-  
-  if (significantChanges.length > 0) {
-    summary += ". Key changes include: ";
-    summary += significantChanges
-      .map(c => {
-        switch (c.type) {
-          case 'added':
-            return `Added ${c.path.split('.').pop()}`;
-          case 'removed':
-            return `Removed ${c.path.split('.').pop()}`;
-          case 'modified':
-            return `Changed ${c.path.split('.').pop()}`;
-        }
-      })
-      .join(', ');
-    
-    if (significantChanges.length < changes.length) {
-      summary += `, and ${changes.length - significantChanges.length} other changes`;
-    }
-  }
-  
-  return summary;
 }

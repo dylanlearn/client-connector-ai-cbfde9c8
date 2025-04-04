@@ -1890,6 +1890,53 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_versions: {
+        Row: {
+          branch_name: string | null
+          change_description: string | null
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          id: string
+          is_current: boolean | null
+          parent_version_id: string | null
+          version_number: number
+          wireframe_id: string
+        }
+        Insert: {
+          branch_name?: string | null
+          change_description?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data: Json
+          id?: string
+          is_current?: boolean | null
+          parent_version_id?: string | null
+          version_number: number
+          wireframe_id: string
+        }
+        Update: {
+          branch_name?: string | null
+          change_description?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          data?: Json
+          id?: string
+          is_current?: boolean | null
+          parent_version_id?: string | null
+          version_number?: number
+          wireframe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_versions_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "ai_wireframes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
