@@ -8,9 +8,8 @@ import { FeedbackAnalysisResult, FeedbackAnalysisService } from '@/services/ai/c
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { PlusCircle, FileText, BarChart, Check, ArrowLeft, Clock, ShieldAlert } from "lucide-react";
+import { PlusCircle, FileText, BarChart, Check, ArrowLeft, Clock, ShieldAlert, AlertCircle } from "lucide-react";
 import { format } from 'date-fns';
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const FeedbackAnalysisPage = () => {
@@ -124,7 +123,7 @@ const FeedbackAnalysisPage = () => {
         </p>
         
         {isAuthenticated === false && (
-          <Alert variant="warning" className="mb-8">
+          <Alert className="mb-8">
             <ShieldAlert className="h-4 w-4" />
             <AlertTitle>Authentication Required</AlertTitle>
             <AlertDescription className="flex items-center gap-4">

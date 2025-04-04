@@ -1,16 +1,12 @@
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
+import OpenAI from "https://esm.sh/openai@4.0.0";
 
-// CORS headers for browser requests
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
+// Define the interfaces needed for the feedback analysis 
 interface ActionItem {
   task: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   urgency: number;
 }
 
@@ -33,187 +29,92 @@ interface RequestBody {
   feedbackText: string;
 }
 
-interface ErrorResponse {
-  error: string;
-  details?: string;
-}
-
-// Helper function to create an error response
-function createErrorResponse(message: string, details?: string, status = 400): Response {
-  const errorBody: ErrorResponse = { error: message };
-  if (details) errorBody.details = details;
-  
-  return new Response(
-    JSON.stringify(errorBody),
-    { 
-      status, 
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      } 
-    }
-  );
-}
-
-// Helper function to log and track execution
-function logOperation(operation: string, metadata: Record<string, any> = {}): void {
-  console.log(`[analyze-feedback] ${operation}`, metadata);
-}
-
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  // Set up CORS headers
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey, content-type",
+    "Content-Type": "application/json"
+  };
+
+  // Handle preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers, status: 204 });
   }
 
   try {
-    logOperation('Request received');
-    
-    // Get the request body and parse it
-    let body: RequestBody;
-    try {
-      body = await req.json();
-    } catch (error) {
-      logOperation('JSON parse error', { error: error.message });
-      return createErrorResponse('Invalid JSON in request body');
-    }
-    
+    // Get the request body and validate it
+    const body = await req.json() as RequestBody;
     const { feedbackText } = body;
 
-    // Validate input
-    if (!feedbackText?.trim()) {
-      logOperation('Validation error', { reason: 'Empty feedback text' });
-      return createErrorResponse('Feedback text is required');
+    if (!feedbackText) {
+      return new Response(
+        JSON.stringify({ error: "Feedback text is required" }),
+        { headers, status: 400 }
+      );
     }
 
-    // Create an instance of Supabase client for the edge function
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    );
-    
-    // Get current user if authenticated
-    let userId = null;
-    try {
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-      if (!userError && user) {
-        userId = user.id;
-        logOperation('User identified', { userId });
-      }
-    } catch (error) {
-      // Non-critical error, continue without user ID
-      logOperation('Failed to identify user', { error: error.message });
-    }
+    // Create a Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Here you would typically call an AI service to analyze the feedback
-    // For now, we'll use a simple algorithm to generate results
-    logOperation('Analyzing feedback', { textLength: feedbackText.length });
-
-    // Extract sentiment based on keyword matching (simplified)
-    const positiveWords = ['great', 'good', 'excellent', 'like', 'love', 'happy', 'pleased'];
-    const negativeWords = ['bad', 'terrible', 'hate', 'dislike', 'poor', 'disappointed', 'issue'];
-    const urgentWords = ['urgent', 'immediately', 'asap', 'critical', 'now', 'emergency'];
-
-    const lowerText = feedbackText.toLowerCase();
-    let positiveCount = 0;
-    let negativeCount = 0;
-    let urgentCount = 0;
-
-    positiveWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      const matches = lowerText.match(regex);
-      if (matches) positiveCount += matches.length;
+    // Create an OpenAI client
+    const openai = new OpenAI({
+      apiKey: Deno.env.get("OPENAI_API_KEY") as string,
     });
 
-    negativeWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      const matches = lowerText.match(regex);
-      if (matches) negativeCount += matches.length;
-    });
-
-    urgentWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      const matches = lowerText.match(regex);
-      if (matches) urgentCount += matches.length;
-    });
-
-    const total = Math.max(1, positiveCount + negativeCount);
-    const positive = positiveCount / total;
-    const negative = negativeCount / total;
-    const neutral = 1 - (positive + negative);
-
-    // Generate a summary (simplified)
-    const sentences = feedbackText.match(/[^.!?]+[.!?]+/g) || [feedbackText];
-    const summary = sentences.length > 2 
-      ? `${sentences[0]} ${sentences[sentences.length - 1]}`
-      : feedbackText;
-
-    // Extract action items (simplified)
-    const actionItems: ActionItem[] = [];
-    const patterns = [
-      { pattern: /need to\s+([^.!?]+)/gi, priority: 'high' },
-      { pattern: /should\s+([^.!?]+)/gi, priority: 'medium' },
-      { pattern: /would like\s+([^.!?]+)/gi, priority: 'low' },
-      { pattern: /can you\s+([^.!?]+)/gi, priority: 'medium' },
-      { pattern: /please\s+([^.!?]+)/gi, priority: 'medium' },
-    ];
-
-    patterns.forEach(({ pattern, priority }) => {
-      const matches = [...feedbackText.matchAll(pattern)];
-      matches.forEach((match, index) => {
-        if (match[1]) {
-          actionItems.push({
-            task: match[1].trim(),
-            priority: priority as 'high' | 'medium' | 'low',
-            urgency: priority === 'high' ? 8 : priority === 'medium' ? 5 : 3
-          });
+    // Analyze the feedback using OpenAI
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // Using the latest model for best results
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert at analyzing client feedback and extracting actionable insights.
+            Analyze the following client feedback and structure your response as a JSON object with the following properties:
+            1. summary: A concise summary of the feedback in 1-2 sentences.
+            2. actionItems: An array of objects with {task, priority, urgency} where:
+              - task is a clear actionable task
+              - priority is one of: "high", "medium", "low"
+              - urgency is a number from 1-10
+            3. toneAnalysis: An object with:
+              - positive: A number 0-1 representing positive sentiment
+              - neutral: A number 0-1 representing neutral sentiment
+              - negative: A number 0-1 representing negative sentiment
+              - urgent: Boolean indicating if the feedback has urgent language
+              - critical: Boolean indicating if the feedback is critical
+              - vague: Boolean indicating if the feedback lacks specificity
+              
+            The sum of positive, neutral, and negative should equal 1.
+            `
+        },
+        {
+          role: "user",
+          content: feedbackText
         }
-      });
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.4, // Lower temperature for more consistent analysis
     });
 
-    // If no action items were found, create a default one
-    if (actionItems.length === 0) {
-      actionItems.push({
-        task: 'Review the feedback and determine appropriate actions',
-        priority: 'medium',
-        urgency: 5
-      });
-    }
+    // Parse the completion to get the analysis
+    const analysisText = response.choices[0]?.message?.content || "";
+    const analysis = JSON.parse(analysisText) as FeedbackAnalysisResult;
 
-    // Create the analysis result
-    const result: FeedbackAnalysisResult = {
-      summary: summary.trim(),
-      actionItems,
-      toneAnalysis: {
-        positive,
-        neutral,
-        negative,
-        urgent: urgentCount > 0,
-        critical: negative > 0.5,
-        vague: sentences.length < 2
-      }
-    };
+    // Log basic information for monitoring
+    console.log(`Analyzed feedback of length ${feedbackText.length} characters`);
+    console.log(`Identified ${analysis.actionItems.length} action items`);
 
-    logOperation('Analysis completed', { 
-      actionItemsCount: actionItems.length,
-      sentimentScores: { positive, neutral, negative }
-    });
-
-    return new Response(
-      JSON.stringify(result),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(analysis), { headers, status: 200 });
   } catch (error) {
-    logOperation('Error processing feedback', { 
-      error: error.message,
-      stack: error.stack
-    });
+    console.error("Error processing feedback:", error);
     
-    return createErrorResponse(
-      'Failed to analyze feedback', 
-      error.message,
-      500
+    return new Response(
+      JSON.stringify({ 
+        error: "Failed to analyze feedback", 
+        details: error.message 
+      }),
+      { headers, status: 500 }
     );
   }
-})
+});

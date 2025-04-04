@@ -95,12 +95,12 @@ export const FeedbackAnalysisService = {
 
         // Store the feedback analysis in the database for future reference
         try {
-          // Create a properly typed record to insert
-          const record: FeedbackAnalysisRecord = {
+          // Convert ActionItem[] and ToneAnalysis to JSON for database storage
+          const record = {
             user_id: userId,
             original_feedback: feedbackText,
-            action_items: data.actionItems,
-            tone_analysis: data.toneAnalysis,
+            action_items: JSON.stringify(data.actionItems),
+            tone_analysis: JSON.stringify(data.toneAnalysis),
             summary: data.summary
           };
           
@@ -192,8 +192,12 @@ export const FeedbackAnalysisService = {
         originalFeedback: item.original_feedback,
         result: {
           summary: item.summary,
-          actionItems: item.action_items as ActionItem[],
-          toneAnalysis: item.tone_analysis as ToneAnalysis
+          actionItems: typeof item.action_items === 'string' 
+            ? JSON.parse(item.action_items) 
+            : item.action_items,
+          toneAnalysis: typeof item.tone_analysis === 'string' 
+            ? JSON.parse(item.tone_analysis) 
+            : item.tone_analysis
         },
         createdAt: item.created_at
       }));
