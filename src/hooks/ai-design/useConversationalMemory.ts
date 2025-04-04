@@ -38,7 +38,7 @@ export function useConversationalMemory() {
       const conversationMemories = await AIMemoryService.user.get(
         user.id,
         {
-          category: MemoryCategory.Conversation,
+          categories: [MemoryCategory.ProjectContext], // Using existing category instead of Conversation
           limit: 50,
           timeframe: {
             // Get memories from the last 30 days
@@ -62,7 +62,7 @@ export function useConversationalMemory() {
       const userPreferenceMemories = await AIMemoryService.user.get(
         user.id,
         {
-          category: MemoryCategory.UserPreference,
+          categories: [MemoryCategory.TonePreference], // Using existing category for preferences
           limit: 20
         }
       );
@@ -143,7 +143,7 @@ export function useConversationalMemory() {
       await AIMemoryService.storeMemoryAcrossLayers(
         user.id,
         content,
-        MemoryCategory.Conversation,
+        MemoryCategory.ProjectContext, // Using ProjectContext instead of Conversation
         undefined,
         {
           type,
@@ -158,7 +158,7 @@ export function useConversationalMemory() {
         await AIMemoryService.user.store(
           user.id,
           "User preference update",
-          MemoryCategory.UserPreference,
+          MemoryCategory.TonePreference, // Using TonePreference instead of UserPreference
           {
             preferredTone: metadata.preferredTone,
             designPreferences: metadata.designPreferences,

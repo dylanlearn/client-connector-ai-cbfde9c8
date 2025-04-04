@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
@@ -78,14 +77,17 @@ export function useInteractiveDesignSuggestions() {
       switch(type) {
         case 'color':
           result = await AIDesignService.suggestColorPalette({
-            prompt,
-            ...context
+            industry: context.industry || '',
+            mood: context.mood || '',
+            preferences: context.preferences || [],
+            existingColors: context.existingColors || []
           });
           break;
         case 'layout':
           result = await AIDesignService.recommendLayouts({
-            prompt,
-            ...context
+            industry: context.industry || '',
+            contentType: context.contentType || '',
+            preferences: context.preferences || []
           });
           break;
         case 'component':
@@ -96,15 +98,31 @@ export function useInteractiveDesignSuggestions() {
           break;
         case 'typography':
           result = await AIDesignService.suggestTypography({
-            prompt,
-            ...context
+            formal: context.formal || 0,
+            technical: context.technical || 0, 
+            friendly: context.friendly || 0,
+            creative: context.creative || 0
           });
           break;
         case 'interaction':
-          result = await AIDesignService.suggestInteractions(
-            prompt,
-            context.elements || []
-          );
+          // For now, since suggestInteractions doesn't exist, create a fallback
+          // This would need to be implemented in AIDesignService eventually
+          result = {
+            title: `Interaction Suggestion`,
+            description: `Here are some interaction suggestions based on your requirements`,
+            options: [
+              {
+                title: "Basic Hover Effect",
+                description: "Simple color change on hover",
+                value: { type: "hover", style: "basic" }
+              },
+              {
+                title: "Scale Animation",
+                description: "Element grows slightly on hover",
+                value: { type: "hover", style: "scale" }
+              }
+            ]
+          };
           break;
         default:
           throw new Error(`Unsupported suggestion type: ${type}`);

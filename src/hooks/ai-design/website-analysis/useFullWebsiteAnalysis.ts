@@ -126,7 +126,7 @@ export function useFullWebsiteAnalysis(
         // Generate a progressive disclosure message about the analysis
         const resultSummary = `Analysis of ${websiteName} completed with ${results.length} sections analyzed.`;
         const insightsContent = results.map(r => 
-          `${r.section} section: ${r.summary || r.description}`
+          `${r.type || 'Unknown'} section: ${r.description || 'No description available'}`
         ).join('\n\n');
         
         const segments = ProgressiveDisclosureService.segmentContent(
