@@ -1,55 +1,10 @@
 
+import { WebsiteAnalysisResult, SectionType } from './website-analysis/types';
+
 /**
  * Service for analyzing website patterns
  */
-export interface WebsiteAnalysisResult {
-  title: string;
-  description: string;
-  category: string;
-  visualElements: {
-    layout: string;
-    colorScheme: string;
-    typography: string;
-    spacing: string;
-    imagery: string;
-  };
-  interactionPatterns: {
-    userFlow: string;
-    interactions: string;
-    accessibility: string;
-  };
-  contentStructure: {
-    headline: string;
-    subheadline: string;
-    callToAction: string;
-    valueProposition: string;
-    testimonials: string[];
-  };
-  tags: string[];
-  sourceUrl?: string;
-  screenshotUrl?: string;
-  // Additional properties used in other components
-  subcategory?: string;
-  contentAnalysis?: {
-    headline: string;
-    subheadline: string;
-    callToAction: string;
-    valueProposition: string;
-    testimonials: string[];
-  };
-  userExperience?: {
-    userFlow: string;
-    interactions: string;
-    accessibility: string;
-  };
-  targetAudience?: string[];
-  effectivenessScore?: number;
-  source?: string;
-  imageUrl?: string;
-}
-
-// Export SectionType from this file to match imports
-export type SectionType = 'hero' | 'testimonials' | 'features' | 'pricing' | 'footer' | 'navigation' | string;
+export { WebsiteAnalysisResult, SectionType };
 
 export const WebsiteAnalysisService = {
   /**
@@ -88,16 +43,19 @@ export const WebsiteAnalysisService = {
       title,
       description,
       category,
+      subcategory: category.includes('-') ? category.split('-')[1].trim() : '',
       visualElements,
       interactionPatterns,
       contentStructure,
       tags,
+      targetAudience: [],
+      effectivenessScore: 0,
+      source: sourceUrl || '',
       sourceUrl,
       screenshotUrl,
       // Map to additional properties for compatibility
       contentAnalysis: contentStructure,
       userExperience: interactionPatterns,
-      source: sourceUrl,
       imageUrl: screenshotUrl
     };
   },
@@ -109,7 +67,7 @@ export const WebsiteAnalysisService = {
     section: SectionType,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']> = {},
-    contentAnalysis: Partial<WebsiteAnalysisResult['contentAnalysis']> = {},
+    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']> = {},
     source: string,
     imageUrl?: string
   ): Promise<WebsiteAnalysisResult> => {
@@ -120,13 +78,13 @@ export const WebsiteAnalysisService = {
       accessibility: "Standard accessibility"
     };
 
-    // Convert contentAnalysis to contentStructure format
-    const contentStructure = {
-      headline: contentAnalysis.headline || "",
-      subheadline: contentAnalysis.subheadline || "",
-      callToAction: contentAnalysis.callToAction || "",
-      valueProposition: contentAnalysis.valueProposition || "",
-      testimonials: contentAnalysis.testimonials || []
+    // Fill in any missing content structure fields
+    const fullContentStructure = {
+      headline: contentStructure.headline || "",
+      subheadline: contentStructure.subheadline || "",
+      callToAction: contentStructure.callToAction || "",
+      valueProposition: contentStructure.valueProposition || "",
+      testimonials: contentStructure.testimonials || []
     };
 
     // Fill in any missing visual elements
@@ -147,7 +105,7 @@ export const WebsiteAnalysisService = {
       category,
       fullVisualElements,
       interactionPatterns,
-      contentStructure,
+      fullContentStructure,
       [`${section}`, "analysis", "website-section"],
       source,
       imageUrl

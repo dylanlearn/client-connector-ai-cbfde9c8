@@ -1,175 +1,227 @@
 
 import React, { useState, useEffect } from 'react';
-import { DesignMemoryService } from '@/services/ai/design/design-memory-service';
-import { Card, CardContent } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { DesignMemoryService, DesignMemoryEntry } from '@/services/ai/design/design-memory-service';
+import { Badge } from '@/components/ui/badge';
+import { Check, Heart, ThumbsDown, ThumbsUp } from 'lucide-react';
 
-// Define the type for a suggestion
-interface DesignSuggestion {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
+interface AIDesignSuggestionDemoProps {
+  isActive: boolean;
 }
 
-// This demo shows how AI design suggestions work
-const AIDesignSuggestionDemo = () => {
-  const [suggestions, setSuggestions] = useState<DesignSuggestion[]>([]);
+export const AIDesignSuggestionDemo: React.FC<AIDesignSuggestionDemoProps> = ({ isActive }) => {
+  const [designEntries, setDesignEntries] = useState<DesignMemoryEntry[]>([]);
+  const [currentEntryIndex, setCurrentEntryIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [feedback, setFeedback] = useState<'liked' | 'disliked' | null>(null);
 
-  // Fetch initial suggestions on component mount
   useEffect(() => {
-    fetchSuggestions();
-  }, []);
+    if (isActive) {
+      fetchDesignEntries();
+    }
+  }, [isActive]);
 
-  // Function to fetch design suggestions from memory service
-  const fetchSuggestions = async () => {
+  const fetchDesignEntries = async () => {
     setIsLoading(true);
     try {
-      // Query design patterns with relevance threshold of 0.7
-      const results = await DesignMemoryService.queryDesignMemory({
-        relevance_threshold: 0.7, // Use underscore format to match the API
-        limit: 5
-      });
+      // Simulate fetching design entries
+      // In a real app, this would come from an API
+      const mockEntries: DesignMemoryEntry[] = [
+        {
+          title: "Modern Hero Section",
+          category: "layout-hero",
+          subcategory: "hero",
+          description: "Clean, modern hero section with gradient background and centered content",
+          visual_elements: {
+            layout: "Centered content with clear hierarchy",
+            color_scheme: "Blue gradient with high contrast",
+            typography: "Large, bold sans-serif headings",
+            spacing: "Generous whitespace",
+            imagery: "Abstract shapes and illustrations"
+          },
+          color_scheme: {
+            primary: "Blue",
+            secondary: "Purple",
+            accent: "Teal",
+            background: "Gradient",
+            text: "White"
+          },
+          typography: {
+            headings: "Sans-serif, bold",
+            body: "Light sans-serif",
+            accent: "Medium weight",
+            size_scale: "1.25 ratio"
+          },
+          layout_pattern: {
+            type: "Centered",
+            grid: "12-column grid",
+            responsive: true,
+            components: ["Headline", "Subheading", "CTA Button"]
+          },
+          tags: ["modern", "clean", "hero", "gradient"],
+          source_url: "https://example.com",
+          image_url: "",
+          relevance_score: 0.92
+        },
+        {
+          title: "Feature Grid Layout",
+          category: "layout-features",
+          subcategory: "features",
+          description: "Three column grid for showcasing product features with icons",
+          visual_elements: {
+            layout: "Three column grid layout",
+            color_scheme: "Monochromatic with accent color",
+            typography: "Medium size headings with small descriptive text",
+            spacing: "Equal spacing between elements",
+            imagery: "Simple line icons"
+          },
+          color_scheme: {
+            primary: "Navy",
+            secondary: "Light blue",
+            accent: "Orange",
+            background: "White",
+            text: "Dark gray"
+          },
+          typography: {
+            headings: "Medium weight sans-serif",
+            body: "Regular weight sans-serif",
+            accent: "Semibold",
+            size_scale: "1.2 ratio"
+          },
+          layout_pattern: {
+            type: "Grid",
+            grid: "Three column",
+            responsive: true,
+            components: ["Icon", "Feature name", "Description"]
+          },
+          tags: ["features", "grid", "icons", "product"],
+          source_url: "https://example.com/features",
+          image_url: "",
+          relevance_score: 0.85
+        }
+      ];
       
-      // Map results to suggestion format
-      const mappedSuggestions = results.map(result => ({
-        id: result.id || 'unknown',
-        title: result.title,
-        category: result.category,
-        description: result.description
-      }));
-      
-      setSuggestions(mappedSuggestions);
+      setDesignEntries(mockEntries);
     } catch (error) {
-      console.error('Error fetching design suggestions:', error);
+      console.error("Error fetching design entries:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Function to handle feedback on a suggestion
-  const handleFeedback = async (like: boolean) => {
-    if (suggestions.length === 0 || feedbackGiven) return;
-    
-    const currentSuggestion = suggestions[selectedIndex];
-    
-    try {
-      // Record feedback using the design memory service
-      await DesignMemoryService.recordFeedback(
-        currentSuggestion.id,
-        'user123', // Placeholder user ID - in a real app, use the actual user ID
-        like ? 'like' : 'dislike',
-        like ? 5 : 2, // Rating number based on like/dislike
-        `User ${like ? 'liked' : 'disliked'} the suggestion`, // Feedback content
-        { interactionType: 'demo' } // Additional context
-      );
-      
-      setFeedbackGiven(true);
-      
-      // If disliked, get a new suggestion
-      if (!like && selectedIndex < suggestions.length - 1) {
-        setSelectedIndex(selectedIndex + 1);
-        setFeedbackGiven(false);
-      }
-    } catch (error) {
-      console.error('Error recording feedback:', error);
-    }
+  const handleLike = () => {
+    setFeedback('liked');
+    // In a real app, this would send feedback to the API
+    console.log("Design suggestion liked:", designEntries[currentEntryIndex]?.title);
   };
 
-  // Function to generate a new suggestion
-  const handleGenerateNew = async () => {
-    await fetchSuggestions();
-    setSelectedIndex(0);
-    setFeedbackGiven(false);
+  const handleDislike = () => {
+    setFeedback('disliked');
+    // In a real app, this would send feedback to the API
+    console.log("Design suggestion disliked:", designEntries[currentEntryIndex]?.title);
   };
 
-  // If there are no suggestions or still loading, show appropriate UI
-  if (isLoading) {
+  const handleNextSuggestion = () => {
+    setFeedback(null);
+    setCurrentEntryIndex((prevIndex) => 
+      prevIndex < designEntries.length - 1 ? prevIndex + 1 : 0
+    );
+  };
+
+  if (isLoading || designEntries.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-        <p className="text-sm text-muted-foreground">Loading design suggestions...</p>
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground text-sm">Loading design suggestions...</p>
       </div>
     );
   }
 
-  if (suggestions.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <p className="text-sm text-muted-foreground mb-4">No design suggestions available.</p>
-        <Button onClick={handleGenerateNew}>Generate Suggestions</Button>
-      </div>
-    );
-  }
-
-  const currentSuggestion = suggestions[selectedIndex];
+  const currentEntry = designEntries[currentEntryIndex];
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-2">{currentSuggestion.title}</h3>
-          <p className="text-sm text-muted-foreground mb-4">{currentSuggestion.category}</p>
-          <p className="text-sm">{currentSuggestion.description}</p>
-          
-          {!feedbackGiven ? (
-            <div className="flex justify-center gap-4 mt-6">
-              <Button 
-                variant="outline" 
-                onClick={() => handleFeedback(false)}
-                className="w-32"
-              >
-                Not helpful
-              </Button>
-              <Button 
-                onClick={() => handleFeedback(true)}
-                className="w-32"
-              >
-                Helpful
-              </Button>
+    <div className="h-full flex flex-col justify-center">
+      <motion.div 
+        className="w-full max-w-md mx-auto"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex justify-between items-center">
+              <span>{currentEntry.title}</span>
+              <Badge variant="outline" className="ml-2">{currentEntry.category}</Badge>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">{currentEntry.description}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Visual Elements</h4>
+                <ul className="text-sm space-y-1">
+                  <li><span className="font-medium">Layout:</span> {currentEntry.visual_elements.layout}</li>
+                  <li><span className="font-medium">Colors:</span> {currentEntry.visual_elements.color_scheme}</li>
+                  <li><span className="font-medium">Typography:</span> {currentEntry.visual_elements.typography}</li>
+                </ul>
+              </div>
+              
+              <div className="flex flex-wrap gap-1 pt-2">
+                {currentEntry.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                ))}
+              </div>
+              
+              {!feedback ? (
+                <div className="flex justify-center space-x-4 pt-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex items-center" 
+                    onClick={handleDislike}
+                  >
+                    <ThumbsDown className="h-4 w-4 mr-1" />
+                    Not for me
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    className="flex items-center" 
+                    onClick={handleLike}
+                  >
+                    <ThumbsUp className="h-4 w-4 mr-1" />
+                    I like this
+                  </Button>
+                </div>
+              ) : (
+                <div className="pt-2">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="bg-muted p-2 rounded-md text-center mb-2">
+                      <p className="text-sm flex items-center justify-center">
+                        <Check className="h-4 w-4 mr-1 text-green-500" />
+                        {feedback === 'liked' ? 'Thanks! We\'ll remember your preference.' : 'Feedback recorded. We\'ll show you different options.'}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full" 
+                      onClick={handleNextSuggestion}
+                    >
+                      View next suggestion
+                    </Button>
+                  </motion.div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center mt-6">
-              <p className="text-sm text-green-600 mb-2">Thanks for your feedback!</p>
-              <Button onClick={handleGenerateNew}>Get New Suggestions</Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {suggestions.length > 1 && (
-        <div className="flex justify-between items-center px-2">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            disabled={selectedIndex === 0}
-            onClick={() => {
-              setSelectedIndex(selectedIndex - 1);
-              setFeedbackGiven(false);
-            }}
-          >
-            Previous
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {selectedIndex + 1} of {suggestions.length}
-          </span>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            disabled={selectedIndex === suggestions.length - 1}
-            onClick={() => {
-              setSelectedIndex(selectedIndex + 1);
-              setFeedbackGiven(false);
-            }}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };

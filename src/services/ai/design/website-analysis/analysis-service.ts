@@ -1,7 +1,7 @@
 
 import { DesignMemoryService, DesignMemoryEntry } from '@/services/ai/design/design-memory-service';
 import { toast } from 'sonner';
-import { WebsiteAnalysisResult, SectionType } from '../website-analysis';
+import { WebsiteAnalysisResult, SectionType } from '../website-analysis/types';
 import { DefaultsService } from './defaults-service';
 
 /**
@@ -141,7 +141,7 @@ export const WebsiteAnalysisService = {
     section: SectionType,
     description: string,
     visualElements: Partial<WebsiteAnalysisResult['visualElements']>,
-    contentAnalysis: Partial<WebsiteAnalysisResult['contentAnalysis']>,
+    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']>,
     source: string,
     imageUrl?: string
   ): Promise<WebsiteAnalysisResult> => {
@@ -151,6 +151,9 @@ export const WebsiteAnalysisService = {
     
     // Generate sensible default values based on the section type
     const sectionDefaults = DefaultsService.getDefaultsForSection(section);
+
+    // Convert contentStructure to contentAnalysis for compatibility
+    const contentAnalysis = contentStructure as unknown as Partial<WebsiteAnalysisResult['contentAnalysis']>;
 
     return WebsiteAnalysisService.analyzeWebsitePattern(
       `${section.charAt(0).toUpperCase() + section.slice(1)} Section Analysis - ${source}`,

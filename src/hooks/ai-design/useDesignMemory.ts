@@ -66,14 +66,16 @@ export function useDesignMemory() {
   const storeSuggestion = useCallback(async (
     prompt: string,
     result: Record<string, any>,
-    usedReferences: string[] = [],
+    usedReferences: string[] | string = [],
     context: Record<string, any> = {}
   ) => {
     if (!user?.id) return null;
     
     try {
       // Convert usedReferences to an array if it's not already
-      const referencesArray = Array.isArray(usedReferences) ? usedReferences : [usedReferences.toString()];
+      const referencesArray = Array.isArray(usedReferences) 
+        ? usedReferences 
+        : (usedReferences ? [usedReferences] : []);
       
       return await DesignMemoryService.storeDesignSuggestion(
         user.id,

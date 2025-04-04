@@ -12,12 +12,24 @@ export interface WebsiteAnalysisResult {
     spacing: string;
     imagery: string;
   };
+  interactionPatterns: {
+    userFlow: string;
+    interactions: string;
+    accessibility: string;
+  };
+  contentStructure: {
+    headline: string;
+    subheadline: string;
+    callToAction: string;
+    valueProposition: string;
+    testimonials: string[];
+  };
   userExperience: {
     userFlow: string;
     interactions: string;
     accessibility: string;
   };
-  contentAnalysis: {
+  contentAnalysis?: {
     headline: string;
     subheadline: string;
     callToAction: string;
@@ -28,6 +40,8 @@ export interface WebsiteAnalysisResult {
   effectivenessScore: number;
   tags: string[];
   source: string;
+  sourceUrl?: string;
+  screenshotUrl?: string;
   imageUrl?: string;
 }
 

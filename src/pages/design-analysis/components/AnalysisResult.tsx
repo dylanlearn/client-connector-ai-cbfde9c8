@@ -50,7 +50,7 @@ const AnalysisResult = ({
               >
                 <h3 className="font-medium text-sm">{result.title}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {result.sourceUrl || result.source}
+                  {result.source || "Unknown source"}
                 </p>
               </div>
             ))}
@@ -66,7 +66,7 @@ const AnalysisResult = ({
         <div>
           <CardTitle className="text-lg">{currentResult.title}</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            {currentResult.sourceUrl || currentResult.source}
+            {currentResult.source || "Unknown source"}
           </p>
         </div>
         <Button
