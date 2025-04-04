@@ -77,8 +77,7 @@ export const FeedbackAnalysisService = {
 
         // Store the feedback analysis in the database for future reference
         try {
-          // Use a type assertion to confirm to TypeScript that our table exists
-          // Later, when the types are properly generated, this assertion can be removed
+          // Use a type assertion to make TypeScript recognize the proper table type
           const { error: insertError } = await supabase
             .from('feedback_analysis')
             .insert({
@@ -145,7 +144,6 @@ export const FeedbackAnalysisService = {
     createdAt: string;
   }[]> => {
     try {
-      // Use a type assertion to confirm to TypeScript that our table exists
       const { data, error } = await supabase
         .from('feedback_analysis')
         .select('original_feedback, action_items, tone_analysis, summary, created_at')
@@ -161,8 +159,9 @@ export const FeedbackAnalysisService = {
         originalFeedback: item.original_feedback,
         result: {
           summary: item.summary,
-          actionItems: item.action_items as ActionItem[],
-          toneAnalysis: item.tone_analysis as ToneAnalysis
+          // Use type assertion to inform TypeScript of the correct types
+          actionItems: (item.action_items as unknown) as ActionItem[],
+          toneAnalysis: (item.tone_analysis as unknown) as ToneAnalysis
         },
         createdAt: item.created_at
       }));
