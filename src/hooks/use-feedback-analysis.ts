@@ -28,6 +28,7 @@ export const useFeedbackAnalysis = () => {
     try {
       const result = await FeedbackAnalysisService.analyzeFeedback(feedbackText);
       setAnalysisResult(result);
+      toast.success("Feedback analysis complete");
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";

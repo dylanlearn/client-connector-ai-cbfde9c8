@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useFeedbackAnalysis } from "@/hooks/use-feedback-analysis";
+import { toast } from "sonner";
 import FeedbackAnalysisCard from "./FeedbackAnalysisResult";
 
 interface FeedbackAnalyzerProps {
@@ -23,15 +24,25 @@ const FeedbackAnalyzer = ({
     analyzeFeedback, 
     resetAnalysis, 
     isAnalyzing, 
-    analysisResult 
+    analysisResult,
+    error 
   } = useFeedbackAnalysis();
 
   const handleAnalyze = async () => {
-    if (!feedbackText.trim()) return;
+    if (!feedbackText.trim()) {
+      toast.error("Please enter feedback text to analyze");
+      return;
+    }
     
     const result = await analyzeFeedback(feedbackText);
     if (result && onAnalysisComplete) {
-      onAnalysisComplete(result.actionItems);
+      try {
+        onAnalysisComplete(result.actionItems);
+        toast.success("Action items exported successfully");
+      } catch (err) {
+        console.error("Error exporting action items:", err);
+        toast.error("Failed to export action items");
+      }
     }
   };
 
@@ -60,6 +71,9 @@ const FeedbackAnalyzer = ({
             className="min-h-[200px]"
             disabled={isAnalyzing}
           />
+          {error && (
+            <p className="mt-2 text-sm text-red-500">{error}</p>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button 
@@ -86,7 +100,15 @@ const FeedbackAnalyzer = ({
       {analysisResult && (
         <FeedbackAnalysisCard 
           result={analysisResult} 
-          onExport={onAnalysisComplete ? () => onAnalysisComplete(analysisResult.actionItems) : undefined}
+          onExport={onAnalysisComplete ? () => {
+            try {
+              onAnalysisComplete(analysisResult.actionItems);
+              toast.success("Action items exported successfully");
+            } catch (err) {
+              console.error("Error exporting action items:", err);
+              toast.error("Failed to export action items");
+            }
+          } : undefined}
         />
       )}
     </div>

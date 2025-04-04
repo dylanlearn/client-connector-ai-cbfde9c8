@@ -1,8 +1,11 @@
-
-export * from './useAIMessages';
+// Re-export all hooks for simpler imports
 export * from './useAIAnalysis';
-export * from './useDesignRecommendations';
+export * from './useAIMemory';
+export * from './useAIMessages';
 export * from './useContentGeneration';
+export * from './useDesignRecommendations';
 export * from './useFeedbackSummary';
 export * from './useFeedbackAnalysis';
-export { useMemory } from '@/contexts/ai/MemoryContext';
+
+// Re-export memory hooks specifically
+export * from './memory';

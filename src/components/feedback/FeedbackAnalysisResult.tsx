@@ -159,7 +159,7 @@ const FeedbackAnalysisCard = ({ result, onExport }: FeedbackAnalysisCardProps) =
                     </Badge>
                   </div>
                   
-                  {item.urgency > 70 && (
+                  {item.urgency !== undefined && item.urgency > 70 && (
                     <div className="mt-1">
                       <Badge variant="outline" className="text-xs">
                         Urgency: {item.urgency}%

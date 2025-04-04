@@ -1,16 +1,10 @@
 
-/**
- * Types for feedback analysis
- */
+import { corsHeaders } from "../../_shared/cors-headers";
+
+export { corsHeaders };
 
 export interface FeedbackAnalysisRequest {
   feedbackText: string;
-}
-
-export interface FeedbackAnalysisResult {
-  actionItems: ActionItem[];
-  toneAnalysis: ToneAnalysis;
-  summary: string;
 }
 
 export interface ActionItem {
@@ -28,7 +22,8 @@ export interface ToneAnalysis {
   critical: boolean;
 }
 
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+export interface FeedbackAnalysisResult {
+  actionItems: ActionItem[];
+  toneAnalysis: ToneAnalysis;
+  summary: string;
+}
