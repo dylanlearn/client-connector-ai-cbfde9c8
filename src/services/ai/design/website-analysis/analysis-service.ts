@@ -98,22 +98,36 @@ export const WebsiteAnalysisService = {
         spacing: visualElements.spacing || '',
         imagery: visualElements.imagery || ''
       },
+      interactionPatterns: {
+        userFlow: userExperience?.userFlow || '',
+        interactions: userExperience?.interactions || '',
+        accessibility: userExperience?.accessibility || ''
+      },
+      contentStructure: {
+        headline: contentAnalysis?.headline || '',
+        subheadline: contentAnalysis?.subheadline || '',
+        callToAction: contentAnalysis?.callToAction || '',
+        valueProposition: contentAnalysis?.valueProposition || '',
+        testimonials: contentAnalysis?.testimonials || []
+      },
       userExperience: {
-        userFlow: userExperience.userFlow || '',
-        interactions: userExperience.interactions || '',
-        accessibility: userExperience.accessibility || ''
+        userFlow: userExperience?.userFlow || '',
+        interactions: userExperience?.interactions || '',
+        accessibility: userExperience?.accessibility || ''
       },
       contentAnalysis: {
-        headline: contentAnalysis.headline || '',
-        subheadline: contentAnalysis.subheadline || '',
-        callToAction: contentAnalysis.callToAction || '',
-        valueProposition: contentAnalysis.valueProposition || '',
-        testimonials: contentAnalysis.testimonials || []
+        headline: contentAnalysis?.headline || '',
+        subheadline: contentAnalysis?.subheadline || '',
+        callToAction: contentAnalysis?.callToAction || '',
+        valueProposition: contentAnalysis?.valueProposition || '',
+        testimonials: contentAnalysis?.testimonials || []
       },
       targetAudience,
       effectivenessScore: 0.85, // Default high score for manually analyzed patterns
       tags,
       source,
+      sourceUrl: source,
+      screenshotUrl: imageUrl,
       imageUrl
     };
 
