@@ -3,6 +3,3 @@ project_id = "bmkhbqxukiakhafqllux"
 
 [functions.analyze-feedback]
 verify_jwt = true
-
-[functions.initialize-memory]
-verify_jwt = true

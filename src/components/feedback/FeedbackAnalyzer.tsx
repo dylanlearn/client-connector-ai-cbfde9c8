@@ -1,144 +1,93 @@
-import React, { useState } from 'react';
-import { useFeedbackAnalysis } from '@/hooks/use-feedback-analysis';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle, Check, Info } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { FeedbackAnalyzerProps } from './types';
 
-export function FeedbackAnalyzer({ 
-  onAnalysisComplete, 
-  initialFeedback = '', 
-  placeholder = 'Enter feedback to analyze...',
-  className = ''
+import React, { useState, useRef } from "react";
+import { useFeedbackAnalysis } from "@/hooks/use-feedback-analysis";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { FeedbackAnalyzerProps } from "./types";
+import { FeedbackAnalysisResult } from '@/services/ai/content/feedback-analysis-service';
+
+export function FeedbackAnalyzer({
+  onAnalysisComplete,
+  initialFeedback = "",
+  placeholder = "Paste client feedback here to analyze...",
+  className = "",
 }: FeedbackAnalyzerProps) {
-  const [feedbackText, setFeedbackText] = useState(initialFeedback);
-  const { analyzeFeedback, resetAnalysis, isAnalyzing, result, error } = useFeedbackAnalysis();
+  const [feedback, setFeedback] = useState(initialFeedback);
+  const { analyzeFeedback, isAnalyzing, result, error, resetAnalysis } = useFeedbackAnalysis();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleAnalyze = async () => {
-    const analysisResult = await analyzeFeedback(feedbackText);
+    if (!feedback.trim()) return;
+    
+    const analysisResult = await analyzeFeedback(feedback);
+    
     if (analysisResult && onAnalysisComplete) {
       onAnalysisComplete(analysisResult);
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 hover:bg-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 hover:bg-green-200';
-      default: return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+  const handleReset = () => {
+    setFeedback("");
+    resetAnalysis();
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
   };
 
-  const getSentimentScore = () => {
-    if (!result?.toneAnalysis) return 0;
-    
-    const { positive, neutral, negative } = result.toneAnalysis;
-    // Calculate a score from 0-100 where 0 is very negative and 100 is very positive
-    return Math.round((positive * 100) + (neutral * 50));
-  };
-
   return (
-    <div className={`space-y-4 ${className}`}>
-      <Textarea
-        value={feedbackText}
-        onChange={(e) => setFeedbackText(e.target.value)}
-        placeholder={placeholder}
-        rows={5}
-        className="w-full resize-none"
-        disabled={isAnalyzing}
-      />
+    <Card className={`w-full ${className}`}>
+      <CardHeader>
+        <CardTitle>Client Feedback Analyzer</CardTitle>
+      </CardHeader>
       
-      <div className="flex justify-end gap-2">
-        {result && (
-          <Button variant="outline" onClick={resetAnalysis}>
-            Reset Analysis
-          </Button>
-        )}
-        
-        <Button onClick={handleAnalyze} disabled={isAnalyzing || !feedbackText.trim()}>
-          {isAnalyzing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : 'Analyze Feedback'}
-        </Button>
-      </div>
-      
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 text-red-700 flex items-start">
-          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium">Analysis Error</p>
-            <p className="text-sm">{error}</p>
+      <CardContent className="space-y-4">
+        <Textarea
+          ref={textareaRef}
+          placeholder={placeholder}
+          className="min-h-[200px]"
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          disabled={isAnalyzing}
+        />
+
+        {error && (
+          <div className="bg-destructive/10 p-4 rounded-md flex items-center gap-3 text-sm">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <span>Error analyzing feedback: {error}</span>
           </div>
-        </div>
-      )}
-      
-      {result && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Feedback Analysis</CardTitle>
-            <CardDescription>AI-powered analysis of the provided feedback</CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-4">
-            {/* Summary */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Summary</h3>
-              <p className="text-gray-700 text-sm">{result.summary}</p>
+        )}
+
+        {result && !error && (
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-md">
+              <h3 className="font-medium mb-2">Summary</h3>
+              <p className="text-sm text-gray-600">{result.summary}</p>
             </div>
             
-            {/* Sentiment Analysis */}
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Sentiment Analysis</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Negative</span>
-                  <span className="text-xs">Positive</span>
-                </div>
-                <Progress value={getSentimentScore()} className="h-2" />
-                
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {result.toneAnalysis.urgent && (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                      Urgent
-                    </Badge>
-                  )}
-                  {result.toneAnalysis.critical && (
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                      Critical
-                    </Badge>
-                  )}
-                  {result.toneAnalysis.vague && (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      Vague
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Action Items */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Action Items</h3>
+              <h3 className="font-medium mb-2">Action Items</h3>
               <ul className="space-y-2">
                 {result.actionItems.map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <div className="mr-2 mt-0.5">
-                      <Check className="h-4 w-4 text-green-500" />
-                    </div>
+                  <li key={index} className="flex items-start gap-2 p-2 border border-gray-100 rounded bg-gray-50">
+                    <div 
+                      className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
+                        item.priority === 'high' ? 'bg-red-500' : 
+                        item.priority === 'medium' ? 'bg-amber-500' : 'bg-blue-500'
+                      }`}
+                    />
                     <div className="flex-1">
-                      <p className="text-sm text-gray-700">{item.task}</p>
-                      <div className="flex items-center mt-1 gap-2">
-                        <Badge variant="outline" className={getPriorityColor(item.priority)}>
+                      <p className="text-sm">{item.task}</p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          item.priority === 'high' ? 'bg-red-100 text-red-700' : 
+                          item.priority === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
                           {item.priority}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
+                        </span>
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
                           Urgency: {item.urgency}/10
                         </span>
                       </div>
@@ -147,16 +96,68 @@ export function FeedbackAnalyzer({
                 ))}
               </ul>
             </div>
-          </CardContent>
-          
-          <CardFooter className="border-t pt-4">
-            <div className="flex items-center text-xs text-gray-500">
-              <Info className="h-3 w-3 mr-1" />
-              This analysis is AI-generated and may not be 100% accurate.
+            
+            <div>
+              <h3 className="font-medium mb-2">Tone Analysis</h3>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="bg-green-50 rounded p-2 text-center">
+                  <span className="text-xs text-gray-600">Positive</span>
+                  <p className="font-medium">{Math.round(result.toneAnalysis.positive * 100)}%</p>
+                </div>
+                <div className="bg-gray-50 rounded p-2 text-center">
+                  <span className="text-xs text-gray-600">Neutral</span>
+                  <p className="font-medium">{Math.round(result.toneAnalysis.neutral * 100)}%</p>
+                </div>
+                <div className="bg-red-50 rounded p-2 text-center">
+                  <span className="text-xs text-gray-600">Negative</span>
+                  <p className="font-medium">{Math.round(result.toneAnalysis.negative * 100)}%</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {result.toneAnalysis.urgent && (
+                  <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">Urgent</span>
+                )}
+                {result.toneAnalysis.critical && (
+                  <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Critical</span>
+                )}
+                {result.toneAnalysis.vague && (
+                  <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">Vague</span>
+                )}
+              </div>
             </div>
-          </CardFooter>
-        </Card>
-      )}
-    </div>
+          </div>
+        )}
+      </CardContent>
+      
+      <CardFooter className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={handleReset}
+          disabled={isAnalyzing || (!result && !error && !feedback.trim())}
+        >
+          Reset
+        </Button>
+        
+        <Button 
+          onClick={handleAnalyze} 
+          disabled={isAnalyzing || !feedback.trim()}
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Analyzing...
+            </>
+          ) : result ? (
+            <>
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Reanalyze
+            </>
+          ) : (
+            'Analyze Feedback'
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

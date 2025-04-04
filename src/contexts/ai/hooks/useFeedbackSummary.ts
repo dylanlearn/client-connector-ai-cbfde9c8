@@ -1,45 +1,54 @@
 
-import { useState } from "react";
-import { toast } from "sonner";
-import { FeedbackAnalysisService } from "@/services/ai/content/feedback-analysis-service";
+import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { FeedbackAnalysisResult } from '@/services/ai/content/feedback-analysis-service';
 
-/**
- * @deprecated Use useFeedbackAnalysis instead which provides more comprehensive feedback analysis
- */
-export const useFeedbackSummary = () => {
-  const [isProcessing, setIsProcessing] = useState(false);
+export function useFeedbackSummary() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [analysis, setAnalysis] = useState<FeedbackAnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Summarize feedback into actionable items
-  const summarizeFeedback = async (feedback: string) => {
-    setIsProcessing(true);
-    
-    try {
-      const toastId = "processing-feedback";
-      toast(toastId, {
-        description: "Processing feedback..."
-      });
-      
-      const analysisResult = await FeedbackAnalysisService.analyzeFeedback(feedback);
-      
-      toast.dismiss(toastId);
-      toast.success("Feedback processed successfully");
-      
-      return analysisResult.actionItems.map(item => item.task);
-    } catch (error) {
-      console.error("Error summarizing feedback:", error);
-      
-      toast.error("Error processing feedback", {
-        description: error instanceof Error ? error.message : "Unknown error"
-      });
-      
-      return ["Error processing feedback"];
-    } finally {
-      setIsProcessing(false);
+  const analyzeFeedback = useCallback(async (feedbackText: string) => {
+    if (!feedbackText.trim()) {
+      setError('Feedback text cannot be empty');
+      toast.error('Feedback text cannot be empty');
+      return null;
     }
-  };
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Import the hook to use the service
+      const { useFeedbackAnalysis } = await import('@/hooks/use-feedback-analysis');
+      const { analyzeFeedback } = useFeedbackAnalysis();
+      
+      const result = await analyzeFeedback(feedbackText);
+      setAnalysis(result);
+      return result;
+    } catch (err: any) {
+      const errorMessage = err?.message || 'An error occurred during feedback analysis';
+      console.error('Feedback analysis error:', err);
+      setError(errorMessage);
+      toast.error('Feedback analysis failed', {
+        description: errorMessage,
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const resetAnalysis = useCallback(() => {
+    setAnalysis(null);
+    setError(null);
+  }, []);
 
   return {
-    isProcessing,
-    summarizeFeedback
+    analyzeFeedback,
+    resetAnalysis,
+    isLoading,
+    analysis,
+    error,
   };
-};
+}
