@@ -24,6 +24,7 @@ import AIDesignAssistant from "@/components/design/AIDesignAssistant";
 import { useDesignSelection, RankedDesignOption } from "@/hooks/use-design-selection";
 import { designOptions } from "@/data/design-options";
 import { motion } from "framer-motion";
+import { AIProvider } from "@/contexts/ai/AIProvider";
 
 const DesignPicker = () => {
   const [activeCategory, setActiveCategory] = useState<"hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction">("hero");
@@ -221,10 +222,12 @@ const DesignPicker = () => {
           {showPreview ? (
             <DesignPreview selectedDesigns={selectedDesigns} />
           ) : (
-            <AIDesignAssistant 
-              selectedDesigns={selectedDesigns}
-              onSuggestionSelect={handleSelectDesign}
-            />
+            <AIProvider>
+              <AIDesignAssistant 
+                selectedDesigns={selectedDesigns}
+                onSuggestionSelect={handleSelectDesign}
+              />
+            </AIProvider>
           )}
         </div>
       </div>
