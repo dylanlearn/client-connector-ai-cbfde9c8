@@ -1,26 +1,8 @@
-
-import React, { createContext, useState, useCallback, useContext } from 'react';
-import { AIMessage, AIAnalysis, DesignRecommendation, AIMemoryContext, AIContextType } from '@/types/ai';
-import { AIAnalyzerService, AIGeneratorService, AISummaryService } from '@/services/ai';
-import { MemoryProvider } from './MemoryContext';
+import React, { useState, useCallback } from 'react';
+import { AIMessage, AIAnalysis, DesignRecommendation, AIContextType } from '@/types/ai';
+import { AIAnalyzerService, AIGeneratorService } from '@/services/ai';
+import { AIContext } from './AIContext';
 import { v4 as uuidv4 } from 'uuid';
-
-// Create AI context with default values
-const AIContext = createContext<AIContextType>({
-  messages: [],
-  isProcessing: false,
-  analysis: null,
-  designRecommendations: null,
-  memoryContext: undefined,
-  isRealtime: false,
-  simulateResponse: async () => {},
-  analyzeResponses: async () => {},
-  generateDesignRecommendations: async () => {},
-  generateContent: async () => '',
-  summarizeFeedback: async () => '',
-  storeMemory: async () => {},
-  reset: () => {},
-});
 
 export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [messages, setMessages] = useState<AIMessage[]>([]);
@@ -206,7 +188,6 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, []);
 
   // Create a placeholder function for storeMemory to satisfy the context type
-  // We'll use the real implementation from MemoryProvider
   const storeMemory = async () => {};
 
   const aiContextValue: AIContextType = {
@@ -231,8 +212,3 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     </AIContext.Provider>
   );
 };
-
-/**
- * Custom hook to use the AI context
- */
-export const useAI = () => useContext(AIContext);
