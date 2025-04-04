@@ -183,5 +183,19 @@ export const WireframeApiService = {
     if (error) {
       throw error;
     }
+  },
+
+  /**
+   * Delete a wireframe
+   */
+  deleteWireframe: async (wireframeId: string): Promise<void> => {
+    const { error } = await supabase
+      .from('ai_wireframes')
+      .delete()
+      .eq('id', wireframeId);
+
+    if (error) {
+      throw error;
+    }
   }
 };
