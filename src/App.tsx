@@ -13,7 +13,6 @@ import NotFound from "@/pages/NotFound";
 import { AppProviders } from "@/providers/AppProviders";
 
 // Import WebsiteAnalyzer from the correct path
-// The file exists at src/pages/design-analysis/WebsiteAnalyzer.tsx but is imported as a component
 import WebsiteAnalyzer from "@/pages/design-analysis/WebsiteAnalyzer";
 
 // Create placeholder auth components since the imports can't be resolved
