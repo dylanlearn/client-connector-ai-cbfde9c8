@@ -1,23 +1,24 @@
 
-import { ActionItem, ToneAnalysis, FeedbackStatus, FeedbackAnalysisResult } from "./feedback-types";
+import { FeedbackAnalysisResult, ActionItem, ToneAnalysis } from './feedback-types';
 
 /**
- * Utility functions for the feedback analysis service
+ * Utility functions for feedback analysis
  */
 export const FeedbackUtils = {
   /**
-   * Determine priority from tone analysis if not provided
+   * Validates feedback input text
    */
-  calculatePriorityFromToneAnalysis: (toneAnalysis: ToneAnalysis, providedPriority?: 'high' | 'medium' | 'low'): 'high' | 'medium' | 'low' => {
-    if (providedPriority) {
-      return providedPriority;
-    }
-    
-    if (toneAnalysis.urgent) {
+  validateFeedbackInput: (text: string): boolean => {
+    return !!text && text.trim().length > 0;
+  },
+
+  /**
+   * Calculates priority based on tone analysis
+   */
+  calculatePriorityFromToneAnalysis: (toneAnalysis: ToneAnalysis): 'high' | 'medium' | 'low' => {
+    if (toneAnalysis.urgent || toneAnalysis.critical || toneAnalysis.negative > 0.5) {
       return 'high';
-    } else if (toneAnalysis.negative > 0.7) {
-      return 'high';
-    } else if (toneAnalysis.negative > 0.4) {
+    } else if (toneAnalysis.negative > 0.2 || toneAnalysis.vague) {
       return 'medium';
     } else {
       return 'low';
@@ -25,68 +26,26 @@ export const FeedbackUtils = {
   },
 
   /**
-   * Generate a fallback analysis result in case of failure
+   * Generates a fallback analysis result when AI analysis fails
    */
   generateFallbackAnalysisResult: (): FeedbackAnalysisResult => {
     return {
-      summary: 'Failed to analyze feedback.',
-      actionItems: [{ 
-        task: 'Review feedback manually', 
-        priority: 'high' as const, 
-        urgency: 10 
-      }],
+      summary: "We were unable to analyze this feedback automatically.",
+      actionItems: [
+        {
+          task: "Review the feedback manually",
+          priority: 'medium',
+          urgency: 5
+        }
+      ],
       toneAnalysis: {
         positive: 0,
         neutral: 1,
         negative: 0,
         urgent: false,
         critical: false,
-        vague: false
+        vague: true
       }
     };
-  },
-
-  /**
-   * Validate input for feedback analysis
-   */
-  validateFeedbackInput: (feedbackText: string): boolean => {
-    return !!feedbackText?.trim();
-  },
-
-  /**
-   * Format feedback status for display
-   */
-  formatFeedbackStatus: (status: FeedbackStatus): string => {
-    switch (status) {
-      case 'open': return 'Open';
-      case 'in_progress': return 'In Progress';
-      case 'implemented': return 'Implemented';
-      case 'declined': return 'Declined';
-      default: return status;
-    }
-  },
-
-  /**
-   * Format priority for display
-   */
-  formatPriority: (priority: string): string => {
-    switch (priority) {
-      case 'high': return 'High';
-      case 'medium': return 'Medium';
-      case 'low': return 'Low';
-      default: return priority;
-    }
-  },
-
-  /**
-   * Get priority color
-   */
-  getPriorityColor: (priority: string): string => {
-    switch (priority) {
-      case 'high': return 'red';
-      case 'medium': return 'orange';
-      case 'low': return 'green';
-      default: return 'gray';
-    }
   }
 };

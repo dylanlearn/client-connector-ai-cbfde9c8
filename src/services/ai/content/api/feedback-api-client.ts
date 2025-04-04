@@ -45,7 +45,7 @@ export const FeedbackApiClient = {
           // Validate priority is one of the allowed values
           let priority: 'high' | 'medium' | 'low' = 'medium';
           if (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low') {
-            priority = item.priority;
+            priority = item.priority as 'high' | 'medium' | 'low';
           }
           
           return {

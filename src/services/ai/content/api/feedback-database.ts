@@ -100,11 +100,25 @@ export const FeedbackDatabase = {
       // Transform the database records into the expected return format
       return data.map(item => {
         // Parse action_items and tone_analysis if they're stored as strings
-        let actionItems: ActionItem[];
+        let actionItems: ActionItem[] = [];
         try {
-          actionItems = typeof item.action_items === 'string' 
+          const parsedItems = typeof item.action_items === 'string' 
             ? JSON.parse(item.action_items) 
             : item.action_items;
+            
+          // Ensure each action item has a valid priority
+          actionItems = Array.isArray(parsedItems) ? parsedItems.map(actionItem => {
+            let priority: 'high' | 'medium' | 'low' = 'medium';
+            if (actionItem.priority === 'high' || actionItem.priority === 'medium' || actionItem.priority === 'low') {
+              priority = actionItem.priority as 'high' | 'medium' | 'low';
+            }
+            
+            return {
+              task: actionItem.task,
+              priority,
+              urgency: Number(actionItem.urgency) || 5
+            };
+          }) : [];
         } catch (e) {
           console.error('Error parsing action_items:', e);
           actionItems = [];
@@ -127,6 +141,16 @@ export const FeedbackDatabase = {
           };
         }
 
+        // Validate status and priority
+        const status = (item.status === 'open' || item.status === 'in_progress' || 
+                        item.status === 'implemented' || item.status === 'declined')
+          ? item.status as FeedbackStatus
+          : 'open' as FeedbackStatus;
+        
+        const priority = (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low')
+          ? item.priority
+          : 'medium';
+
         return {
           id: item.id,
           originalFeedback: item.original_feedback,
@@ -136,8 +160,8 @@ export const FeedbackDatabase = {
             toneAnalysis
           },
           createdAt: item.created_at,
-          priority: item.priority,
-          status: item.status as FeedbackStatus,
+          priority,
+          status,
           category: item.category,
           projectId: item.project_id
         };

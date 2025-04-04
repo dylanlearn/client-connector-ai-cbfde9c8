@@ -78,7 +78,7 @@ export const FeedbackComments = {
             .from('profiles')
             .select('email')
             .eq('id', item.user_id)
-            .single();
+            .maybeSingle();
             
           if (!userError && userData) {
             userEmail = userData.email;
