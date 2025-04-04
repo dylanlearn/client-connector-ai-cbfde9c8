@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeMonitoringService } from "./monitoring-service";
 import { 
@@ -137,7 +136,8 @@ export const WireframeApiService = {
 
     const typedWireframe = wireframe as unknown as AIWireframe;
     const generationParams = typedWireframe.generation_params || {};
-    const resultData = generationParams.result_data as WireframeData | undefined;
+    
+    const resultData = (generationParams as any)?.result_data as WireframeData | undefined;
     const sections = resultData?.sections || [];
 
     return {

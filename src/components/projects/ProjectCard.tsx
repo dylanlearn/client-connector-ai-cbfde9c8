@@ -6,13 +6,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { useClientNotifications } from '@/hooks/use-client-notifications';
+import { UseMutationResult } from '@tanstack/react-query';
 
 interface ProjectCardProps {
   project: Project;
   onStatusChange?: (id: string, newStatus: string) => void;
+  updateProject?: UseMutationResult<any, Error, any, unknown>;
+  onClick?: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange, onClick, updateProject }) => {
   const { createNotification } = useClientNotifications();
   
   // Function to handle status change and notifications
@@ -49,7 +52,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange }) =>
   };
 
   return (
-    <Card className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+    <Card 
+      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
@@ -64,24 +70,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onStatusChange }) =>
         </div>
         <p className="text-gray-700 mb-4">{project.description}</p>
         <div className="flex justify-between items-center">
-          <Link to={`/projects/${project.id}`} className="text-blue-600 hover:underline">
+          <Link to={`/projects/${project.id}`} className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
             View Details
           </Link>
           <div className="flex space-x-2">
             <button
-              onClick={() => handleStatusChange('draft')}
+              onClick={(e) => { e.stopPropagation(); handleStatusChange('draft'); }}
               className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors duration-200 text-sm"
             >
               Draft
             </button>
             <button
-              onClick={() => handleStatusChange('active')}
+              onClick={(e) => { e.stopPropagation(); handleStatusChange('active'); }}
               className="px-3 py-1 bg-green-200 text-green-700 rounded hover:bg-green-300 transition-colors duration-200 text-sm"
             >
               Active
             </button>
             <button
-              onClick={() => handleStatusChange('completed')}
+              onClick={(e) => { e.stopPropagation(); handleStatusChange('completed'); }}
               className="px-3 py-1 bg-blue-200 text-blue-700 rounded hover:bg-blue-300 transition-colors duration-200 text-sm"
             >
               Completed

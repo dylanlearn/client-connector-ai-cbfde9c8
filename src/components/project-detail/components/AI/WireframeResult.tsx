@@ -86,7 +86,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <div className="text-xs text-gray-500">Type:</div>
-                    <div className="text-sm">{String(section.animationSuggestions.type)}</div>
+                    <div className="text-sm">{String(section.animationSuggestions?.type)}</div>
                   </div>
                   <div>
                     <div className="text-xs text-gray-500">Element:</div>
@@ -111,7 +111,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
                 <div className="text-xs text-gray-500">Structure:</div>
-                <div className="text-sm mb-2">{String(section.mobileLayout.structure)}</div>
+                <div className="text-sm mb-2">{section.mobileLayout.structure && String(section.mobileLayout.structure)}</div>
                 
                 {section.mobileLayout.stackOrder && section.mobileLayout.stackOrder.length > 0 && (
                   <div>
