@@ -11,7 +11,7 @@ interface ProjectColumnProps {
     icon: React.ReactNode;
     color: string;
   };
-  projects: Project[];
+  projects: (Project & { boardStatus?: string })[];
 }
 
 const ProjectColumn = ({ column, projects }: ProjectColumnProps) => {

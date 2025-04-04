@@ -33,6 +33,23 @@ const columns = [
   }
 ];
 
+// Map from board status to Project status type
+const boardToProjectStatus: Record<string, Project['status']> = {
+  'not_started': 'draft',
+  'in_progress': 'active',
+  'ready': 'completed',
+  'archived': 'archived',
+  'delivered': 'archived' // Map delivered to archived as well
+};
+
+// Map from Project status to board status
+const projectToBoardStatus: Record<Project['status'], string> = {
+  'draft': 'not_started',
+  'active': 'in_progress',
+  'completed': 'ready',
+  'archived': 'delivered'
+};
+
 interface ProjectBoardProps {
   projects: Project[];
   updateProject: any;
@@ -41,17 +58,13 @@ interface ProjectBoardProps {
 const ProjectBoard = ({ projects, updateProject }: ProjectBoardProps) => {
   // Normalize project statuses to match our columns
   const normalizedProjects = projects.map(project => {
-    // Convert from existing statuses to new board statuses
-    let newStatus = 'not_started';
-    
-    if (project.status === 'draft') newStatus = 'not_started';
-    else if (project.status === 'active') newStatus = 'in_progress';
-    else if (project.status === 'completed') newStatus = 'ready';
-    else if (project.status === 'archived') newStatus = 'delivered';
+    // Get board status from project status
+    const boardStatus = projectToBoardStatus[project.status];
     
     return {
       ...project,
-      status: newStatus
+      // This is just for internal use in the board component, not changing the actual project status
+      boardStatus
     };
   });
 
@@ -59,7 +72,8 @@ const ProjectBoard = ({ projects, updateProject }: ProjectBoardProps) => {
   const columnData = columns.map(column => {
     return {
       ...column,
-      projects: normalizedProjects.filter(p => p.status === column.id)
+      // Filter projects that match this column's id
+      projects: normalizedProjects.filter(p => p.boardStatus === column.id)
     };
   });
 
@@ -75,20 +89,23 @@ const ProjectBoard = ({ projects, updateProject }: ProjectBoardProps) => {
       destination.index === source.index
     ) return;
 
-    // Get the new status from the destination column
-    const newStatus = destination.droppableId;
+    // Get the new board status from the destination column
+    const newBoardStatus = destination.droppableId;
+    
+    // Map board status to project status
+    const newProjectStatus = boardToProjectStatus[newBoardStatus];
     
     // Find the project
     const project = projects.find(p => p.id === draggableId);
     
     if (project) {
-      // Update the project status
+      // Update the project status with proper typed value
       updateProject.mutate({
         id: project.id,
-        status: newStatus
+        status: newProjectStatus
       });
       
-      toast.success(`Project moved to ${columns.find(col => col.id === newStatus)?.title}`);
+      toast.success(`Project moved to ${columns.find(col => col.id === newBoardStatus)?.title}`);
     }
   };
 
