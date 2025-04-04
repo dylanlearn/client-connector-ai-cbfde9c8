@@ -36,7 +36,7 @@ export const PageFlowsAnalysisService = {
         valueProposition: 'Seamless user experience',
         testimonials: []
       },
-      ['pageflows', 'ux', 'user-journey', 'interaction'], // This needs to be an array, not a string
+      ['pageflows', 'ux', 'user-journey', 'interaction'], // Fixed: This is now correctly an array of strings
       url,
       undefined // Add undefined for the missing screenshot URL parameter
     );
@@ -52,4 +52,3 @@ export const PageFlowsAnalysisService = {
     return Promise.resolve();
   }
 };
-
