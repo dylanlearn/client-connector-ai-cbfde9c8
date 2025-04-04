@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -245,9 +244,7 @@ export const WireframeApiService = {
       const { data: updatedWireframe, error } = await supabase
         .from('ai_wireframes')
         .update({
-          generation_params: {
-            result_data: wireframeDataJson
-          }
+          generation_params: supabase.sql`jsonb_set(generation_params, '{result_data}', ${wireframeDataJson}::jsonb)`
         })
         .eq('id', wireframeId)
         .select('*')
@@ -360,4 +357,3 @@ export const WireframeApiService = {
     }
   }
 };
-

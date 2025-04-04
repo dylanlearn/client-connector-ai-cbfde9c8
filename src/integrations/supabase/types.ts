@@ -1972,12 +1972,43 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      compare_wireframe_versions: {
+        Args: {
+          p_version_id1: string
+          p_version_id2: string
+        }
+        Returns: Json
+      }
       create_background_task: {
         Args: {
           p_task_type: string
           p_input_data: Json
         }
         Returns: string
+      }
+      create_wireframe_version: {
+        Args: {
+          p_wireframe_id: string
+          p_version_number: number
+          p_data: Json
+          p_change_description: string
+          p_created_by: string
+          p_is_current: boolean
+          p_parent_version_id: string
+          p_branch_name: string
+        }
+        Returns: {
+          branch_name: string | null
+          change_description: string | null
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          id: string
+          is_current: boolean | null
+          parent_version_id: string | null
+          version_number: number
+          wireframe_id: string
+        }
       }
       get_interaction_events: {
         Args: {
@@ -2003,6 +2034,13 @@ export type Database = {
           y_position: number
         }[]
       }
+      get_latest_version_number: {
+        Args: {
+          p_wireframe_id: string
+          p_branch_name: string
+        }
+        Returns: number
+      }
       get_next_pending_task: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2013,12 +2051,57 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      get_wireframe_branches: {
+        Args: {
+          p_wireframe_id: string
+        }
+        Returns: {
+          name: string
+          created_at: string
+          version_count: number
+          latest_version_id: string
+        }[]
+      }
       get_wireframe_metrics: {
         Args: {
           p_start_date: string
           p_project_id?: string
         }
         Returns: Json
+      }
+      get_wireframe_version: {
+        Args: {
+          p_version_id: string
+        }
+        Returns: {
+          branch_name: string | null
+          change_description: string | null
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          id: string
+          is_current: boolean | null
+          parent_version_id: string | null
+          version_number: number
+          wireframe_id: string
+        }
+      }
+      get_wireframe_versions: {
+        Args: {
+          p_wireframe_id: string
+        }
+        Returns: {
+          branch_name: string | null
+          change_description: string | null
+          created_at: string | null
+          created_by: string | null
+          data: Json
+          id: string
+          is_current: boolean | null
+          parent_version_id: string | null
+          version_number: number
+          wireframe_id: string
+        }[]
       }
       increment_cache_hit: {
         Args: {
@@ -2137,6 +2220,13 @@ export type Database = {
             }
             Returns: undefined
           }
+      set_versions_inactive: {
+        Args: {
+          p_wireframe_id: string
+          p_branch_name: string
+        }
+        Returns: undefined
+      }
       store_wireframe_in_cache: {
         Args: {
           p_params_hash: string
@@ -2165,6 +2255,14 @@ export type Database = {
           p_status: string
           p_output_data?: Json
           p_error_message?: string
+        }
+        Returns: undefined
+      }
+      update_wireframe_with_version: {
+        Args: {
+          p_wireframe_id: string
+          p_version_id: string
+          p_wireframe_data: Json
         }
         Returns: undefined
       }
