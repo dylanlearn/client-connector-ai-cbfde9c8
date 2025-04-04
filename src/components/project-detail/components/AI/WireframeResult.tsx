@@ -85,14 +85,18 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <div className="text-xs text-gray-500">Type:</div>
-                    <div className="text-sm">{String(section.animationSuggestions?.type || '')}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500">Element:</div>
-                    <div className="text-sm">{String(section.animationSuggestions.element)}</div>
-                  </div>
+                  {section.animationSuggestions.type && (
+                    <div>
+                      <div className="text-xs text-gray-500">Type:</div>
+                      <div className="text-sm">{String(section.animationSuggestions.type)}</div>
+                    </div>
+                  )}
+                  {section.animationSuggestions.element && (
+                    <div>
+                      <div className="text-xs text-gray-500">Element:</div>
+                      <div className="text-sm">{String(section.animationSuggestions.element)}</div>
+                    </div>
+                  )}
                 </div>
                 {section.animationSuggestions.timing && (
                   <div className="mt-2">
@@ -234,7 +238,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                       <p>Animation types:</p>
                       <div className="mt-1 flex flex-wrap gap-1">
                         {Array.from(new Set(wireframe.sections
-                          .filter(s => s.animationSuggestions)
+                          .filter(s => s.animationSuggestions?.type)
                           .map(s => s.animationSuggestions?.type)))
                           .map((type, i) => (
                             <Badge key={i} variant="outline">{String(type || '')}</Badge>
@@ -317,31 +321,11 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                   )}
                 </CardContent>
               </Card>
-              
-              {wireframe.designTokens.spacing && (
-                <Card className="md:col-span-2">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Spacing & Layout</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(wireframe.designTokens.spacing).map(([key, value]) => (
-                        <div key={key} className="grid grid-cols-2 gap-2 items-center">
-                          <div className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}:</div>
-                          <div className="text-sm">{String(value)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           ) : (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-gray-500">No design tokens available for this wireframe.</p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-8">
+              <p className="text-gray-500">No design token information available</p>
+            </div>
           )}
         </TabsContent>
         
@@ -349,59 +333,56 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Smartphone className="h-5 w-5 mr-2 text-primary" />
-                Mobile Adaptations
+                <Smartphone className="h-5 w-5 mr-2" />
+                Mobile Considerations
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {wireframe.mobileConsiderations && (
-                <div className="mb-6">
-                  <h3 className="font-medium mb-2">Overall Mobile Strategy</h3>
-                  <p className="text-gray-700">{wireframe.mobileConsiderations}</p>
-                </div>
+              {wireframe.mobileConsiderations ? (
+                <p className="text-gray-700">{wireframe.mobileConsiderations}</p>
+              ) : (
+                <p className="text-gray-500">No specific mobile considerations documented.</p>
               )}
               
-              <div className="space-y-6">
-                {wireframe.sections
-                  .filter(section => section.mobileLayout)
-                  .map((section, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <h3 className="font-medium mb-2 flex items-center">
-                        <Badge variant="outline" className="mr-2">
-                          {section.sectionType}
-                        </Badge>
-                        {section.name}
-                      </h3>
-                      
-                      {section.mobileLayout && (
-                        <div className="mt-3">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="text-sm font-medium mb-1">Structure</h4>
-                              <p className="text-sm text-gray-700">{String(section.mobileLayout.structure || '')}</p>
+              <div className="mt-6">
+                <h3 className="text-lg font-medium mb-4">Mobile Layouts by Section</h3>
+                <div className="space-y-4">
+                  {wireframe.sections.filter(s => s.mobileLayout).map((section, index) => (
+                    <Card key={index} className="bg-gray-50">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-md">{section.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="text-sm">
+                          {section.mobileLayout && section.mobileLayout.structure && (
+                            <div className="mb-3">
+                              <div className="font-medium">Structure:</div>
+                              <p>{section.mobileLayout.structure}</p>
                             </div>
-                            
-                            {section.mobileLayout.stackOrder && section.mobileLayout.stackOrder.length > 0 && (
-                              <div>
-                                <h4 className="text-sm font-medium mb-1">Stack Order</h4>
-                                <ol className="list-decimal list-inside text-sm text-gray-700">
-                                  {section.mobileLayout.stackOrder.map((item, i) => (
-                                    <li key={i}>{String(item)}</li>
-                                  ))}
-                                </ol>
+                          )}
+                          
+                          {section.mobileLayout && section.mobileLayout.stackOrder && (
+                            <div>
+                              <div className="font-medium mb-1">Stack Order:</div>
+                              <div className="flex flex-col gap-1 pl-4">
+                                {section.mobileLayout.stackOrder.map((item, i) => (
+                                  <div key={i} className="flex items-center">
+                                    <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs mr-2">{i+1}</span>
+                                    <span>{String(item)}</span>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                   
-                {wireframe.sections.filter(section => section.mobileLayout).length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No specific mobile adaptations defined.</p>
-                  </div>
-                )}
+                  {wireframe.sections.filter(s => s.mobileLayout).length === 0 && (
+                    <p className="text-gray-500">No specific mobile layouts defined for sections.</p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -409,25 +390,16 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
       </Tabs>
       
       {onFeedback && (
-        <CardFooter className="flex justify-end pt-4 space-x-2 border-t">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onFeedback(false)}
-            className="text-red-500"
-          >
-            <ThumbsDown className="h-4 w-4 mr-2" />
-            Not Helpful
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="outline" onClick={() => onFeedback(false)} className="flex items-center gap-2">
+            <ThumbsDown className="h-4 w-4" />
+            Not helpful
           </Button>
-          <Button 
-            variant="default"
-            size="sm" 
-            onClick={() => onFeedback(true)}
-          >
-            <ThumbsUp className="h-4 w-4 mr-2" />
-            Helpful
+          <Button onClick={() => onFeedback(true)} className="flex items-center gap-2">
+            <ThumbsUp className="h-4 w-4" />
+            This is helpful
           </Button>
-        </CardFooter>
+        </div>
       )}
     </div>
   );

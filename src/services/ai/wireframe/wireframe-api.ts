@@ -80,25 +80,25 @@ export const WireframeApiService = {
         imageUrl
       } = wireframeData;
       
-      // Insert wireframe into database
+      // Insert wireframe into database - using type assertion since we know the structure
       const { data, error } = await supabase
         .from('ai_wireframes')
         .insert({
           project_id: projectId,
           prompt: prompt,
           description: description || title,
-          design_tokens: designTokens,
-          mobile_layouts: mobileLayouts,
-          style_variants: styleVariants,
+          design_tokens: designTokens as any,
+          mobile_layouts: mobileLayouts as any,
+          style_variants: styleVariants as any,
           design_reasoning: designReasoning,
-          animations: animations,
+          animations: animations as any,
           generation_params: {
             ...params,
             model,
             result_data: { 
               sections: sections 
             }
-          },
+          } as any,
           image_url: imageUrl
         })
         .select('*')
@@ -135,7 +135,7 @@ export const WireframeApiService = {
         }
       }
       
-      return data as AIWireframe;
+      return data as unknown as AIWireframe;
     } catch (error) {
       console.error("Error saving wireframe:", error);
       throw error;
@@ -157,7 +157,7 @@ export const WireframeApiService = {
         throw new Error(`Error fetching wireframes: ${error.message}`);
       }
       
-      return data as AIWireframe[];
+      return data as unknown as AIWireframe[];
     } catch (error) {
       console.error("Error fetching project wireframes:", error);
       throw error;
@@ -192,7 +192,7 @@ export const WireframeApiService = {
       }
       
       return { 
-        ...wireframe as AIWireframe,
+        ...wireframe as unknown as AIWireframe,
         sections: sections || []
       };
     } catch (error) {

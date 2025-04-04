@@ -79,3 +79,6 @@ export type InteractionConfig =
   | IntentBasedMotionConfig
   | GlassmorphismConfig
   | BaseInteractionConfig;
+
+// Export all config types for use in demonstration components
+export * from './interactionTypes';

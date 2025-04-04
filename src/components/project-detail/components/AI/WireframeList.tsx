@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus, History, Star, Trash2, Palette, Layout, Zap } from 'lucide-react';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
-import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-service';
+import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import WireframeResult from './WireframeResult';
 import WireframeGenerator from './WireframeGenerator';
 
@@ -44,7 +44,13 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
     try {
       // Parse the wireframe data from generation_params
       if (wireframe.generation_params && wireframe.generation_params.result_data) {
-        setWireframeData(wireframe.generation_params.result_data as WireframeData);
+        // Add a title from the prompt if the result_data doesn't have one
+        const resultData = wireframe.generation_params.result_data as unknown as WireframeData;
+        const data = {
+          ...resultData,
+          title: resultData.title || wireframe.description || "Untitled Wireframe"
+        };
+        setWireframeData(data);
       } else {
         setWireframeData(null);
       }

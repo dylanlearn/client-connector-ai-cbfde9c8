@@ -1,6 +1,6 @@
 
 import { memo } from "react";
-import { motion } from "framer-motion";
+import { motion, Target, Transition, Variant, Variants } from "framer-motion";
 import { AnimationConfigType } from "../animations/config/types";
 
 interface AnimationDisplayProps {
@@ -12,18 +12,9 @@ interface AnimationDisplayProps {
 interface SecondaryElement {
   className: string;
   style?: React.CSSProperties;
-  initial: Record<string, unknown>;
-  animate: Record<string, unknown>;
-  transition: {
-    duration?: number;
-    delay?: number;
-    type?: string;
-    stiffness?: number;
-    damping?: number;
-    repeat?: number | "Infinity";
-    repeatType?: "loop" | "reverse" | "mirror";
-    ease?: string;
-  };
+  initial: Target;
+  animate: Target;
+  transition: Transition;
 }
 
 export const AnimationDisplay = memo(({ 
@@ -54,11 +45,11 @@ export const AnimationDisplay = memo(({
       {/* Main animated element */}
       <motion.div
         className={`${animationConfig.elementStyle || 'w-32 h-32 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg shadow-lg'}`}
-        initial={animationConfig.initial}
-        animate={animateProps}
-        transition={animationConfig.transition}
-        whileHover={animationConfig.whileHover}
-        whileTap={animationConfig.whileTap}
+        initial={animationConfig.initial as Target}
+        animate={animateProps as Target}
+        transition={animationConfig.transition as Transition}
+        whileHover={animationConfig.whileHover as Target}
+        whileTap={animationConfig.whileTap as Target}
         drag={animationConfig.drag}
         dragConstraints={animationConfig.dragConstraints}
       >
