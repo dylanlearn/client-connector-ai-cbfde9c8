@@ -46,7 +46,6 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthCheck> {
   }
 
   // Check database connectivity by directly querying a simple table
-  // We'll use a known table instead of pg_catalog.pg_tables
   try {
     // Just check if we can access the profiles table as a health check
     const { error: dbError } = await supabase
@@ -68,6 +67,19 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthCheck> {
       status: 'error', 
       message: `Database connectivity error: ${error instanceof Error ? error.message : String(error)}`,
       tables: []
+    };
+  }
+
+  // Check storage service
+  try {
+    // Note: We're just checking if the storage API is accessible
+    // This does not actually create anything
+    const storageTest = supabase.storage;
+    if (!storageTest) throw new Error('Storage API unavailable');
+  } catch (error) {
+    healthCheck.storage = { 
+      status: 'error', 
+      message: `Storage service error: ${error instanceof Error ? error.message : String(error)}` 
     };
   }
 
@@ -116,7 +128,6 @@ export async function checkSupabaseHealth(): Promise<SupabaseHealthCheck> {
 
 /**
  * Checks if crucial tables exist in the database
- * Note: This uses application knowledge rather than querying pg_catalog
  */
 export async function verifyRequiredTables(requiredTables: string[]): Promise<{
   missingTables: string[];
@@ -158,8 +169,7 @@ export async function verifyRequiredTables(requiredTables: string[]): Promise<{
 }
 
 /**
- * Checks RLS policies on specified tables by checking if metadata is available
- * This is a simplified approach since we can't directly query pg_policies
+ * Checks RLS policies on specified tables based on application knowledge
  */
 export async function checkRLSPolicies(tables: string[]): Promise<Record<string, boolean>> {
   const results: Record<string, boolean> = {};

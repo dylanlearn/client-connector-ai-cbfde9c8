@@ -1,154 +1,122 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-type MemoryCategory = 
-  | 'DesignPreference' 
-  | 'TonePreference' 
-  | 'InteractionPattern'
-  | 'LayoutPreference'
-  | 'ColorPreference'
-  | 'ProjectContext'
-  | 'ClientFeedback'
-  | 'SuccessfulOutput';
-
-interface InitializeRequest {
-  userId: string;
-  projectId?: string;
-  categories?: MemoryCategory[];
-}
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: corsHeaders
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Get the authorization header from the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
 
-    // Get request data
-    const requestData: InitializeRequest = await req.json();
-    const { userId, projectId, categories } = requestData;
+    // Get the user from the authorization header
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: 'Missing userId parameter' }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (userError || !user) {
+      throw new Error(userError?.message || 'Unauthorized');
     }
+
+    // Get the project ID from the request body
+    const { projectId } = await req.json();
     
-    // Set of memory categories to initialize
-    const memoriesToInitialize = categories || [
-      'DesignPreference',
-      'TonePreference',
-      'InteractionPattern'
-    ];
-    
-    // Initialize standard user memories
-    const initialMemories = [];
-    
-    // Design preferences
-    if (memoriesToInitialize.includes('DesignPreference')) {
-      initialMemories.push({
-        user_id: userId,
-        content: "User prefers clean and minimal design aesthetics",
-        category: 'DesignPreference',
-        metadata: {
-          preferenceType: 'aesthetic',
-          preference: 'clean',
-          confidence: 0.8,
-          timestamp: new Date().toISOString()
-        }
-      });
+    if (!projectId) {
+      throw new Error('Missing project ID');
     }
-    
-    // Tone preferences
-    if (memoriesToInitialize.includes('TonePreference')) {
-      initialMemories.push({
-        user_id: userId,
-        content: "User prefers a professional but friendly communication tone",
-        category: 'TonePreference',
-        metadata: {
-          preferredTone: 'professional-friendly',
-          confidence: 0.7,
-          timestamp: new Date().toISOString()
-        }
-      });
-    }
-    
-    // Store user memories
-    if (initialMemories.length > 0) {
-      const { error: userMemoriesError } = await supabase
-        .from('user_memories')
-        .insert(initialMemories);
-        
-      if (userMemoriesError) {
-        console.error('Error storing user memories:', userMemoriesError);
-      }
-    }
-    
-    // If project ID is provided, initialize project memories
-    if (projectId) {
-      const projectMemory = {
-        project_id: projectId,
-        user_id: userId,
-        content: "Initial project context for design approach",
-        category: 'ProjectContext',
-        metadata: {
-          contextType: 'design-approach',
-          importance: 'high',
-          timestamp: new Date().toISOString()
-        }
-      };
-      
-      const { error: projectMemoryError } = await supabase
-        .from('project_memories')
-        .insert([projectMemory]);
-        
-      if (projectMemoryError) {
-        console.error('Error storing project memory:', projectMemoryError);
-      }
-    }
-    
-    // Initialize some global memory insights if needed
-    const { error: globalMemoryError } = await supabase
-      .from('memory_analysis_results')
-      .insert({
-        category: 'DesignPreference',
-        insights: { 
-          results: [
-            "Clean, minimal designs are preferred by most users",
-            "Professional color schemes perform better for business sites",
-            "Clear typography hierarchy improves usability scores"
-          ]
-        },
-        source_count: 10
-      });
-      
-    if (globalMemoryError) {
-      console.error('Error storing global memory insights:', globalMemoryError);
-    }
+
+    // Initialize project memory
+    await initializeProjectMemory(user.id, projectId);
     
     return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, message: "Memory initialized successfully" }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
     );
-    
   } catch (error) {
-    console.error('Error initializing memory:', error);
+    console.error("Error initializing memory:", error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: error.message || "Failed to initialize memory" }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
     );
   }
 });
+
+/**
+ * Initializes memory for a project by storing essential context and preferences
+ */
+async function initializeProjectMemory(userId: string, projectId: string) {
+  // First, get project details
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('id', projectId)
+    .single();
+  
+  if (projectError) {
+    throw new Error(`Failed to retrieve project: ${projectError.message}`);
+  }
+
+  // Next, store project context in project_memories table
+  await supabase
+    .from('project_memories')
+    .insert([
+      {
+        project_id: projectId,
+        user_id: userId,
+        category: 'project_context',
+        content: `Project title: ${project.title}. Client: ${project.client_name}. Type: ${project.project_type}. Description: ${project.description || 'No description provided'}`,
+        metadata: {
+          source: 'initialization',
+          project_data: {
+            title: project.title,
+            client: project.client_name,
+            type: project.project_type
+          }
+        }
+      }
+    ]);
+  
+  // Record user preferences if they exist
+  const { data: preferences } = await supabase
+    .from('design_preferences')
+    .select('*')
+    .eq('user_id', userId)
+    .limit(5);
+  
+  if (preferences && preferences.length > 0) {
+    await supabase
+      .from('project_memories')
+      .insert([
+        {
+          project_id: projectId,
+          user_id: userId,
+          category: 'design_preferences',
+          content: `User prefers design options: ${preferences.map(p => p.title).join(', ')}`,
+          metadata: {
+            source: 'initialization',
+            preference_data: preferences
+          }
+        }
+      ]);
+  }
+  
+  return true;
+}

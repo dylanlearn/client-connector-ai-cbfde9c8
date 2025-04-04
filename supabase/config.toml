@@ -6,4 +6,3 @@ verify_jwt = true
 
 [functions.initialize-memory]
 verify_jwt = true
-

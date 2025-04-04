@@ -1,16 +1,29 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.23.0";
 import { corsHeaders } from "../_shared/cors.ts";
-import { FeedbackAnalysisRequest, FeedbackAnalysisResult, ActionItem, ToneAnalysis } from "./types.ts";
 
-// Initialize OpenAI
-const openaiApiKey = Deno.env.get('OPENAI_API_KEY') || '';
+interface FeedbackRequest {
+  feedbackText: string;
+}
 
-// Initialize Supabase client with service role for admin access
-const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+interface ActionItem {
+  task: string;
+  priority: 'high' | 'medium' | 'low';
+  urgency: number;
+}
+
+interface AnalysisResponse {
+  summary: string;
+  actionItems: ActionItem[];
+  toneAnalysis: {
+    positive: number;
+    neutral: number;
+    negative: number;
+    urgent: boolean;
+    critical: boolean;
+    vague: boolean;
+  };
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -19,138 +32,116 @@ serve(async (req) => {
   }
 
   try {
-    // Extract feedback text from request
-    const { feedbackText }: FeedbackAnalysisRequest = await req.json();
+    // Parse request body
+    const { feedbackText } = await req.json() as FeedbackRequest;
     
-    if (!feedbackText || typeof feedbackText !== 'string') {
-      throw new Error('Missing or invalid feedback text');
+    // Validate request
+    if (!feedbackText || feedbackText.trim().length < 5) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid feedback text" }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
-
-    console.log('Analyzing feedback:', feedbackText.substring(0, 50) + '...');
     
-    // Get feedback analysis using OpenAI
-    const analysisResult = await analyzeFeedback(feedbackText);
+    // For now, we'll implement a basic analysis engine
+    // In a production environment, this would call an AI service like OpenAI
+    const analysis = analyzeFeedback(feedbackText);
     
-    // Store analysis result in database for auditing and insights
-    await storeAnalysisResult(analysisResult, feedbackText);
-    
-    // Return the analysis
-    return new Response(JSON.stringify(analysisResult), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200 
-    });
+    return new Response(
+      JSON.stringify(analysis),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
+    );
   } catch (error) {
-    console.error('Error in analyze-feedback function:', error);
+    console.error("Error processing feedback:", error);
     
-    return new Response(JSON.stringify({ 
-      error: error.message || 'An error occurred during feedback analysis' 
-    }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500 
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || "Failed to process feedback" }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
   }
 });
 
 /**
- * Analyze feedback text using OpenAI
+ * Simple feedback analysis engine
+ * This is a placeholder that could be replaced with a real ML model
  */
-async function analyzeFeedback(feedbackText: string): Promise<FeedbackAnalysisResult> {
-  try {
-    // If no OpenAI key, return mock data for development
-    if (!openaiApiKey) {
-      console.warn('No OpenAI API key found. Using mock data.');
-      return getMockAnalysisResult(feedbackText);
-    }
-    
-    // Call OpenAI API to analyze the feedback
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an AI assistant that analyzes client feedback and extracts actionable insights. 
-            Analyze the feedback and provide:
-            1. A list of actionable items with priority levels (high, medium, low) and urgency score (1-10)
-            2. A tone analysis with metrics (positive: 0-1, neutral: 0-1, negative: 0-1, and flags for urgent, vague, or critical)
-            3. A brief summary of the feedback
-            Format your response as JSON matching this exact structure:
-            {
-              "actionItems": [{"task": "string", "priority": "high|medium|low", "urgency": number}],
-              "toneAnalysis": {"positive": number, "neutral": number, "negative": number, "urgent": boolean, "vague": boolean, "critical": boolean},
-              "summary": "string"
-            }`
-          },
-          { role: 'user', content: feedbackText }
-        ],
-        response_format: { type: 'json_object' }
-      }),
-    });
-
-    const data = await response.json();
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('Invalid response from OpenAI');
-    }
-    
-    // Parse the response as JSON
-    const analysisResult = JSON.parse(data.choices[0].message.content) as FeedbackAnalysisResult;
-    
-    return analysisResult;
-  } catch (error) {
-    console.error('Error analyzing feedback with OpenAI:', error);
-    throw new Error(`Failed to analyze feedback: ${error.message}`);
-  }
-}
-
-/**
- * Store analysis result in database for future reference and pattern analysis
- */
-async function storeAnalysisResult(result: FeedbackAnalysisResult, originalFeedback: string): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('feedback_analysis')
-      .insert({
-        original_feedback: originalFeedback,
-        action_items: result.actionItems,
-        tone_analysis: result.toneAnalysis,
-        summary: result.summary,
-      });
+function analyzeFeedback(text: string): AnalysisResponse {
+  // Convert to lowercase for simple text analysis
+  const lowerText = text.toLowerCase();
+  
+  // Simple sentiment indicators
+  const positiveWords = ['great', 'good', 'excellent', 'amazing', 'love', 'helpful', 'impressed'];
+  const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'hate', 'disappointed', 'frustrating'];
+  const urgentWords = ['asap', 'urgent', 'immediately', 'critical', 'emergency'];
+  
+  // Count word occurrences
+  const positiveCount = positiveWords.filter(word => lowerText.includes(word)).length;
+  const negativeCount = negativeWords.filter(word => lowerText.includes(word)).length;
+  const urgentCount = urgentWords.filter(word => lowerText.includes(word)).length;
+  
+  // Calculate basic sentiment scores
+  const totalIndicators = positiveCount + negativeCount + 1; // Avoid division by zero
+  const positiveScore = positiveCount / totalIndicators;
+  const negativeScore = negativeCount / totalIndicators;
+  const neutralScore = 1 - (positiveScore + negativeScore);
+  
+  // Extract potential action items (sentences with action words)
+  const actionWords = ['need', 'should', 'must', 'fix', 'improve', 'update', 'change', 'add'];
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  
+  const actionItems: ActionItem[] = sentences
+    .filter(sentence => actionWords.some(word => sentence.toLowerCase().includes(word)))
+    .map(sentence => {
+      // Determine priority based on urgent words and negative sentiment
+      const containsUrgent = urgentWords.some(word => sentence.toLowerCase().includes(word));
+      const containsNegative = negativeWords.some(word => sentence.toLowerCase().includes(word));
+      let priority: 'high' | 'medium' | 'low' = 'medium';
       
-    if (error) {
-      console.error('Error storing feedback analysis:', error);
-    }
-  } catch (error) {
-    console.error('Exception storing feedback analysis:', error);
-    // Continue execution even if storage fails
-  }
-}
-
-/**
- * Get mock analysis result for development without OpenAI API key
- */
-function getMockAnalysisResult(feedbackText: string): FeedbackAnalysisResult {
-  return {
-    actionItems: [
-      {
-        task: "Implement suggested improvements based on feedback",
-        priority: "medium",
-        urgency: 5
+      if (containsUrgent) {
+        priority = 'high';
+      } else if (containsNegative) {
+        priority = 'medium';
+      } else {
+        priority = 'low';
       }
-    ],
+      
+      return {
+        task: sentence.trim(),
+        priority,
+        urgency: containsUrgent ? 8 : containsNegative ? 5 : 3
+      };
+    })
+    .slice(0, 5); // Limit to top 5 action items
+  
+  // Generate a simple summary
+  let summary = '';
+  if (positiveScore > negativeScore + 0.2) {
+    summary = "Overall positive feedback with some suggestions for improvement.";
+  } else if (negativeScore > positiveScore + 0.2) {
+    summary = "Feedback indicates several areas of concern that need attention.";
+  } else {
+    summary = "Balanced feedback with both positive aspects and areas for improvement.";
+  }
+  
+  return {
+    summary,
+    actionItems,
     toneAnalysis: {
-      positive: 0.4,
-      neutral: 0.5,
-      negative: 0.1,
-      urgent: false,
-      vague: false,
-      critical: false
-    },
-    summary: "This is a mock analysis of the feedback text for development purposes."
+      positive: parseFloat(positiveScore.toFixed(2)),
+      neutral: parseFloat(neutralScore.toFixed(2)),
+      negative: parseFloat(negativeScore.toFixed(2)),
+      urgent: urgentCount > 0,
+      critical: negativeScore > 0.6,
+      vague: sentences.length < 3 || text.length < 50
+    }
   };
 }

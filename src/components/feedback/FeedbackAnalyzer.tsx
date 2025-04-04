@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useFeedbackAnalysis } from '@/hooks/use-feedback-analysis';
 import { Button } from '@/components/ui/button';
@@ -7,19 +6,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, Check, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-
-interface FeedbackAnalyzerProps {
-  onAnalysisComplete?: (result: any) => void;
-  initialFeedback?: string;
-  placeholder?: string;
-  className?: string; // Add className prop to the interface
-}
+import { FeedbackAnalyzerProps } from './types';
 
 export function FeedbackAnalyzer({ 
   onAnalysisComplete, 
   initialFeedback = '', 
   placeholder = 'Enter feedback to analyze...',
-  className = '' // Initialize with empty string
+  className = ''
 }: FeedbackAnalyzerProps) {
   const [feedbackText, setFeedbackText] = useState(initialFeedback);
   const { analyzeFeedback, resetAnalysis, isAnalyzing, result, error } = useFeedbackAnalysis();

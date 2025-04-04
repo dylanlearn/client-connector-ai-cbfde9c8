@@ -2,23 +2,23 @@
 import React from 'react';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
-import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer"; // Changed to named import
+import { FeedbackAnalyzer } from "@/components/feedback/FeedbackAnalyzer";
 import { toast } from "sonner";
-import { ActionItem } from '@/services/ai/content/feedback-analysis-service';
+import { FeedbackAnalysisResult } from '@/services/ai/content/feedback-analysis-service';
 
 const FeedbackAnalysisPage = () => {
   const navigate = useNavigate();
 
-  const handleAnalysisComplete = (actionItems: ActionItem[]) => {
-    // Store action items in session storage for potential use in other parts of the app
+  const handleAnalysisComplete = (result: FeedbackAnalysisResult) => {
+    // Store analysis results in session storage for potential use in other parts of the app
     try {
-      sessionStorage.setItem('feedback-action-items', JSON.stringify(actionItems));
+      sessionStorage.setItem('feedback-analysis-results', JSON.stringify(result));
       
       // Optionally navigate to another page or use the action items
-      toast.success("Analysis complete! Action items are ready to use.");
+      toast.success("Analysis complete! Results are ready to use.");
     } catch (error) {
-      console.error("Error saving action items:", error);
-      toast.error("Failed to save action items");
+      console.error("Error saving analysis results:", error);
+      toast.error("Failed to save analysis results");
     }
   };
 
