@@ -30,3 +30,6 @@ verify_jwt = true
 
 [functions.send-client-link]
 verify_jwt = true
+
+[functions.process-wireframe-tasks]
+verify_jwt = true

@@ -1,5 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { WireframeCacheService } from "./wireframe-cache-service";
+import { WireframeRateLimiterService } from "./rate-limiter-service";
+import { WireframeBackgroundProcessor } from "./background-processor";
+import { WireframeMonitoringService } from "./monitoring-service";
 
 export interface WireframeGenerationParams {
   prompt: string;
@@ -149,18 +152,62 @@ export const WireframeService = {
    */
   generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
     try {
+      // Track start time for performance monitoring
+      const startTime = performance.now();
+      
+      // Check rate limits first
+      const userRole = await WireframeService.getUserRole(params.projectId);
+      const rateLimitStatus = await WireframeRateLimiterService.checkRateLimit(params.projectId, userRole);
+      
+      if (rateLimitStatus.isRateLimited) {
+        throw new Error(`Rate limit exceeded. You can generate ${rateLimitStatus.dailyRemaining} more wireframes today. Resets at ${rateLimitStatus.resetTime.toLocaleTimeString()}`);
+      }
+      
+      // Check cache for similar wireframe
+      const cachedWireframe = await WireframeCacheService.checkCache(params);
+      if (cachedWireframe) {
+        // If found in cache, return immediately
+        const endTime = performance.now();
+        const generationTime = (endTime - startTime) / 1000;
+        
+        // Record cache hit for analytics
+        WireframeMonitoringService.recordEvent('wireframe_cache_hit', {
+          projectId: params.projectId,
+          generationTime
+        });
+        
+        return {
+          wireframe: cachedWireframe,
+          generationTime,
+          model: 'cache',
+          usage: {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0
+          }
+        };
+      }
+      
+      // If not in cache, generate from OpenAI
       const { data, error } = await supabase.functions.invoke("generate-wireframe", {
         body: params,
       });
 
       if (error) {
         console.error("Error generating wireframe:", error);
+        
+        // Record error for monitoring
+        WireframeMonitoringService.recordEvent('wireframe_generation_error', {
+          projectId: params.projectId,
+          error: error.message
+        }, 'error');
+        
         throw error;
       }
 
       const wireframeResult = data as WireframeGenerationResult;
       const wireframeData = wireframeResult.wireframe;
-
+      
       // Store the generated wireframe in the database
       const { data: savedWireframe, error: saveError } = await supabase
         .from('ai_wireframes')
@@ -205,13 +252,14 @@ export const WireframeService = {
 
       if (saveError) {
         console.error("Error saving wireframe:", saveError);
+        
+        // Record error for monitoring
+        WireframeMonitoringService.recordEvent('wireframe_save_error', {
+          projectId: params.projectId,
+          error: saveError.message
+        }, 'error');
       } else if (savedWireframe && savedWireframe.length > 0) {
         const wireframeId = savedWireframe[0].id;
-        
-        // Save sections separately with manual SQL query to avoid type issues
-        // We'll handle this for now by omitting this part as it's not working with the Supabase client types
-        // Instead, we'll store the section data in the generation_params.result_data field
-        // This will still allow us to access the data even though it's not normalized
         
         // Save design tokens if available
         if (wireframeData.designTokens) {
@@ -234,11 +282,39 @@ export const WireframeService = {
             console.error("Exception saving design tokens:", tokenError);
           }
         }
+        
+        // Cache the wireframe for future similar requests
+        WireframeCacheService.storeInCache(params, wireframeData);
+        
+        // Queue background optimization task
+        WireframeBackgroundProcessor.queueTask('optimize_wireframe', wireframeData);
       }
+      
+      // Record metrics for this generation
+      const endTime = performance.now();
+      const totalTime = (endTime - startTime) / 1000;
+      
+      // Record generation for rate limiting purposes
+      WireframeRateLimiterService.recordGeneration(params.projectId);
+      
+      // Record success for monitoring
+      WireframeMonitoringService.recordEvent('wireframe_generation_success', {
+        projectId: params.projectId,
+        generationTime: totalTime,
+        modelUsed: wireframeResult.model,
+        tokenUsage: wireframeResult.usage.total_tokens
+      });
 
       return wireframeResult;
     } catch (error) {
       console.error("Wireframe generation failed:", error);
+      
+      // Record metrics for failed generation
+      WireframeMonitoringService.recordEvent('wireframe_generation_failure', {
+        projectId: params.projectId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }, 'error');
+      
       throw error;
     }
   },
@@ -335,6 +411,91 @@ export const WireframeService = {
 
     if (error) {
       console.error("Error deleting wireframe:", error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get user's role for rate limiting and permissions
+   */
+  getUserRole: async (userId: string): Promise<string> => {
+    try {
+      // Get the user profile that contains the role
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (error || !data) {
+        console.error("Error fetching user role:", error);
+        return 'free'; // Default to free tier if there's an error
+      }
+      
+      return data.role;
+    } catch (error) {
+      console.error("Exception fetching user role:", error);
+      return 'free';
+    }
+  },
+  
+  /**
+   * Clear expired wireframe cache entries
+   */
+  cleanupCache: async (): Promise<number> => {
+    try {
+      return await WireframeCacheService.clearExpiredCache();
+    } catch (error) {
+      console.error("Error cleaning up wireframe cache:", error);
+      return 0;
+    }
+  },
+  
+  /**
+   * Get rate limit status for a user
+   */
+  getRateLimitStatus: async (userId: string): Promise<any> => {
+    try {
+      const userRole = await WireframeService.getUserRole(userId);
+      return await WireframeRateLimiterService.checkRateLimit(userId, userRole);
+    } catch (error) {
+      console.error("Error getting rate limit status:", error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Process background tasks (can be called from a cron job or scheduler)
+   */
+  processBackgroundTasks: async (maxTasks: number = 5): Promise<number> => {
+    let processed = 0;
+    
+    for (let i = 0; i < maxTasks; i++) {
+      const hasMore = await WireframeBackgroundProcessor.processNextTask();
+      if (hasMore) {
+        processed++;
+      } else {
+        break; // No more tasks to process
+      }
+    }
+    
+    return processed;
+  },
+  
+  /**
+   * Get system performance metrics
+   */
+  getPerformanceMetrics: async (timeRange: 'day' | 'week' | 'month' = 'day'): Promise<any> => {
+    try {
+      const metrics = await WireframeMonitoringService.getMetrics(timeRange);
+      const sectionTypes = await WireframeMonitoringService.analyzeSectionTypes(timeRange);
+      
+      return {
+        metrics,
+        sectionTypes
+      };
+    } catch (error) {
+      console.error("Error getting performance metrics:", error);
       throw error;
     }
   }
