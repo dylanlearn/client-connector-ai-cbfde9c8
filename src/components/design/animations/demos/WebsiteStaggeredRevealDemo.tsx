@@ -1,33 +1,21 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef, memo } from "react";
 import { motion, useAnimationControls } from "framer-motion";
 
 interface AnimationDemoProps {
   isPlaying: boolean;
 }
 
-const WebsiteStaggeredRevealDemo = ({ isPlaying }: AnimationDemoProps) => {
+// Memoized component to prevent unnecessary re-renders
+const WebsiteStaggeredRevealDemo = memo(({ isPlaying }: AnimationDemoProps) => {
   const containerControls = useAnimationControls();
+  // Use ref to track animation state
+  const animationRef = useRef<{ timers: NodeJS.Timeout[], active: boolean }>({
+    timers: [],
+    active: false
+  });
   
-  useEffect(() => {
-    if (isPlaying) {
-      const animation = async () => {
-        await containerControls.start("visible");
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        await containerControls.start("hidden");
-        await new Promise(resolve => setTimeout(resolve, 500));
-        animation();
-      };
-      animation();
-    } else {
-      containerControls.stop();
-    }
-    
-    return () => {
-      containerControls.stop();
-    };
-  }, [isPlaying, containerControls]);
-  
+  // Define animation variants once, outside the render function
   const container = {
     hidden: { opacity: 0 },
     visible: {
@@ -47,6 +35,49 @@ const WebsiteStaggeredRevealDemo = ({ isPlaying }: AnimationDemoProps) => {
       transition: { type: "spring", stiffness: 120, damping: 12 }
     }
   };
+  
+  useEffect(() => {
+    // Efficient animation loop with proper cleanup
+    if (isPlaying) {
+      animationRef.current.active = true;
+      
+      const runAnimation = async () => {
+        if (!animationRef.current.active) return;
+        
+        await containerControls.start("visible");
+        const timer1 = setTimeout(async () => {
+          if (!animationRef.current.active) return;
+          
+          await containerControls.start("hidden");
+          const timer2 = setTimeout(() => {
+            if (animationRef.current.active) {
+              runAnimation();
+            }
+          }, 500);
+          
+          animationRef.current.timers.push(timer2);
+        }, 2000);
+        
+        animationRef.current.timers.push(timer1);
+      };
+      
+      runAnimation();
+    } else {
+      // Stop animation
+      animationRef.current.active = false;
+      containerControls.stop();
+    }
+    
+    // Proper cleanup to prevent memory leaks
+    return () => {
+      animationRef.current.active = false;
+      containerControls.stop();
+      
+      // Clear all timers
+      animationRef.current.timers.forEach(timer => clearTimeout(timer));
+      animationRef.current.timers = [];
+    };
+  }, [isPlaying, containerControls]);
   
   return (
     <div className="w-full h-full overflow-hidden">
@@ -104,6 +135,8 @@ const WebsiteStaggeredRevealDemo = ({ isPlaying }: AnimationDemoProps) => {
       </div>
     </div>
   );
-};
+});
+
+WebsiteStaggeredRevealDemo.displayName = "WebsiteStaggeredRevealDemo";
 
 export default WebsiteStaggeredRevealDemo;

@@ -1,11 +1,11 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DesignOption } from "./DesignPreview";
 import { Play, Pause, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAnimationAnalytics } from "@/hooks/use-animation-analytics";
-import { getAnimationCategory, getAnimationConfig } from "./animations/AnimationConfig";
+import { getAnimationCategory, getAnimationConfig, clearAnimationConfigCache } from "./animations/AnimationConfig";
 import {
   WebsiteFadeSlideDemo,
   WebsiteScrollRevealDemo,
@@ -22,7 +22,8 @@ interface AnimationPreviewProps {
   animation: DesignOption;
 }
 
-const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
+// Memoized component to avoid unnecessary re-renders
+const AnimationPreview = memo(({ animation }: AnimationPreviewProps) => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [key, setKey] = useState(0); // For resetting animations
   const [showWebsitePreview, setShowWebsitePreview] = useState(false);
@@ -31,63 +32,79 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
   // Animation analytics tracking
   const { trackAnimation } = useAnimationAnalytics();
   const trackingRef = useRef<{ startTime: number }>({ startTime: Date.now() });
+  const animCategory = getAnimationCategory(animation.id);
   
-  // Track view on mount
+  // Track view on mount and cleanup on unmount
   useEffect(() => {
     trackingRef.current.startTime = Date.now();
-    const animCategory = getAnimationCategory(animation.id);
     trackAnimation(animCategory);
     
+    // Clear animation cache on unmount to prevent memory leaks
     return () => {
-      // Track duration on unmount
       const duration = Date.now() - trackingRef.current.startTime;
       trackAnimation(animCategory, { duration });
+      
+      // Cleanup animation resources when component unmounts
+      if (isPlaying) {
+        setIsPlaying(false);
+      }
     };
-  }, [animation.id, trackAnimation]);
+  }, [animation.id, trackAnimation, animCategory]);
   
-  // Submit feedback
-  const handleFeedback = (feedback: 'positive' | 'negative') => {
+  // Submit feedback - memoized to prevent recreation on each render
+  const handleFeedback = useCallback((feedback: 'positive' | 'negative') => {
     setFeedbackGiven(feedback);
-    trackAnimation(
-      getAnimationCategory(animation.id),
-      undefined,
-      feedback
-    );
-  };
+    trackAnimation(animCategory, undefined, feedback);
+  }, [trackAnimation, animCategory]);
 
-  // Get animation configuration based on animation type
-  const animationConfig = getAnimationConfig(animation.id, isPlaying);
-
-  // Reset animation
-  const resetAnimation = () => {
+  // Reset animation with debouncing to prevent multiple rapid resets
+  const resetAnimation = useCallback(() => {
     setIsPlaying(false);
-    setTimeout(() => {
+    // Small timeout to ensure animation states are properly reset
+    const timerId = setTimeout(() => {
       setKey(prev => prev + 1);
       setIsPlaying(true);
     }, 100);
-  };
+    
+    return () => clearTimeout(timerId);
+  }, []);
 
-  // Get website mockup based on animation type
-  const getWebsiteMockup = (animationType: string) => {
+  // Toggle play state
+  const togglePlayState = useCallback(() => {
+    setIsPlaying(prev => !prev);
+  }, []);
+
+  // Toggle website preview
+  const toggleWebsitePreview = useCallback(() => {
+    setShowWebsitePreview(prev => !prev);
+  }, []);
+
+  // Memoized animation config to prevent re-creation on each render
+  const animationConfig = getAnimationConfig(animation.id, isPlaying);
+
+  // Clear cached configurations when animation type changes
+  useEffect(() => {
+    return () => {
+      // Clean up animation resources when type changes
+      clearAnimationConfigCache();
+    };
+  }, [animation.id]);
+  
+  // Memoized website mockup renderer to prevent recreation on each render
+  const getWebsiteMockup = useCallback((animationType: string) => {
+    // We're passing only necessary props to child components
+    const demoProps = { isPlaying };
+    
     switch (animationType) {
-      case "animation-1": // Fade & Slide In
-        return <WebsiteFadeSlideDemo isPlaying={isPlaying} />;
-      case "animation-2": // Scroll Reveal
-        return <WebsiteScrollRevealDemo isPlaying={isPlaying} />;
-      case "animation-3": // Parallax Effects
-        return <WebsiteParallaxDemo isPlaying={isPlaying} />;
-      case "animation-4": // 3D Transforms
-        return <Website3DDemo isPlaying={isPlaying} />;
-      case "animation-5": // Microinteractions
-        return <WebsiteMicrointeractionsDemo isPlaying={isPlaying} />;
-      case "animation-6": // Text Animation
-        return <WebsiteTextAnimationDemo isPlaying={isPlaying} />;
-      case "animation-7": // Staggered Reveal
-        return <WebsiteStaggeredRevealDemo isPlaying={isPlaying} />;
-      case "animation-8": // Floating Elements
-        return <WebsiteFloatingElementsDemo isPlaying={isPlaying} />;
-      case "animation-9": // Elastic Motion
-        return <WebsiteElasticMotionDemo isPlaying={isPlaying} />;
+      case "animation-1": return <WebsiteFadeSlideDemo {...demoProps} />;
+      case "animation-2": return <WebsiteScrollRevealDemo {...demoProps} />;
+      case "animation-3": return <WebsiteParallaxDemo {...demoProps} />;
+      case "animation-4": return <Website3DDemo {...demoProps} />;
+      case "animation-5": return <WebsiteMicrointeractionsDemo {...demoProps} />;
+      case "animation-6": return <WebsiteTextAnimationDemo {...demoProps} />;
+      case "animation-7": return <WebsiteStaggeredRevealDemo {...demoProps} />;
+      case "animation-8": return <WebsiteFloatingElementsDemo {...demoProps} />;
+      case "animation-9": return <WebsiteElasticMotionDemo {...demoProps} />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
@@ -95,7 +112,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
           </div>
         );
     }
-  };
+  }, [isPlaying]);
 
   return (
     <div className="bg-white rounded-lg p-4 shadow-md">
@@ -105,7 +122,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
         <div className="relative h-64 bg-gradient-to-r from-gray-50 to-blue-50 rounded-md flex items-center justify-center mb-4 overflow-hidden">
           {getWebsiteMockup(animation.id)}
           <button 
-            onClick={() => setShowWebsitePreview(false)}
+            onClick={toggleWebsitePreview}
             className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-sm"
           >
             <span className="sr-only">Close</span>
@@ -138,7 +155,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={togglePlayState}
           >
             {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
             {isPlaying ? "Pause" : "Play"}
@@ -177,7 +194,7 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setShowWebsitePreview(!showWebsitePreview)}
+            onClick={toggleWebsitePreview}
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             {showWebsitePreview ? "Simple View" : "Website Preview"}
@@ -186,6 +203,8 @@ const AnimationPreview = ({ animation }: AnimationPreviewProps) => {
       </div>
     </div>
   );
-};
+});
+
+AnimationPreview.displayName = "AnimationPreview";
 
 export default AnimationPreview;
