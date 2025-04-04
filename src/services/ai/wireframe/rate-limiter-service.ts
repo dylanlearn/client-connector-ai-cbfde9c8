@@ -41,11 +41,14 @@ export const WireframeRateLimiterService = {
       const limits = WireframeRateLimiterService.getDefaultLimits(userRole);
       const now = new Date();
       
-      // Use RPC to check rate limits
-      const { data, error } = await supabase.rpc('check_wireframe_rate_limits', {
-        p_user_id: userId,
-        p_max_daily: limits.daily,
-        p_max_hourly: limits.hourly
+      // Use edge function to check rate limits
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "check_rate_limits",
+          user_id: userId,
+          max_daily: limits.daily,
+          max_hourly: limits.hourly
+        }
       });
       
       if (error) {
@@ -111,8 +114,11 @@ export const WireframeRateLimiterService = {
    */
   recordGeneration: async (userId: string): Promise<void> => {
     try {
-      await supabase.rpc('record_wireframe_generation', {
-        p_user_id: userId
+      await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "record_generation",
+          user_id: userId
+        }
       });
     } catch (error) {
       console.error("Error recording generation for rate limiting:", error);

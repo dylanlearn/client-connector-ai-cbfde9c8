@@ -46,22 +46,28 @@ export const WireframeCacheService = {
     try {
       const paramsHash = WireframeCacheService.generateParamsHash(params);
       
-      // Use RPC for cache lookup
-      const { data, error } = await supabase.rpc('check_wireframe_cache', {
-        p_params_hash: paramsHash
+      // Use edge function for cache lookup
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "check_cache",
+          params_hash: paramsHash
+        }
       });
       
-      if (error || !data) {
+      if (error || !data || !data.wireframe) {
         return null;
       }
       
       // Update hit count
-      await supabase.rpc('increment_cache_hit', {
-        p_cache_id: data.id
+      await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "increment_cache_hit",
+          cache_id: data.wireframe.id
+        }
       });
       
       console.log(`Cache hit for wireframe params hash: ${paramsHash}`);
-      return data.wireframe_data;
+      return data.wireframe.wireframe_data;
     } catch (error) {
       console.error("Error checking wireframe cache:", error);
       return null;
@@ -77,12 +83,15 @@ export const WireframeCacheService = {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + expiryHours * 60 * 60 * 1000);
       
-      // Use RPC to store in cache
-      await supabase.rpc('store_wireframe_in_cache', {
-        p_params_hash: paramsHash,
-        p_wireframe_data: wireframeData as any,
-        p_expires_at: expiresAt.toISOString(),
-        p_generation_params: params as any
+      // Use edge function to store in cache
+      await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "store_in_cache",
+          params_hash: paramsHash,
+          wireframe_data: wireframeData,
+          expires_at: expiresAt.toISOString(),
+          generation_params: params
+        }
       });
         
       console.log(`Stored wireframe in cache with hash: ${paramsHash}`);
@@ -96,15 +105,19 @@ export const WireframeCacheService = {
    */
   clearExpiredCache: async (): Promise<number> => {
     try {
-      // Use RPC to clear expired entries
-      const { data, error } = await supabase.rpc('clear_expired_wireframe_cache');
+      // Use edge function to clear expired entries
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "clear_expired_cache"
+        }
+      });
       
       if (error) {
         console.error("Error clearing expired wireframe cache:", error);
         return 0;
       }
       
-      const removedCount = data || 0;
+      const removedCount = data?.removed || 0;
       console.log(`Cleared ${removedCount} expired wireframe cache entries`);
       return removedCount;
     } catch (error) {

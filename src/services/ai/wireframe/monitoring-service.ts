@@ -46,15 +46,18 @@ export const WireframeMonitoringService = {
           break;
       }
       
-      // Get metrics using RPC
-      const { data, error } = await supabase.rpc('get_wireframe_metrics', {
-        p_start_date: startDate.toISOString(),
-        p_project_id: projectId || null
+      // Get metrics using edge function
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "get_metrics",
+          start_date: startDate.toISOString(),
+          project_id: projectId || null
+        }
       });
       
       if (error) throw error;
       
-      if (!data) {
+      if (!data || !data.metrics) {
         // Return default metrics if no data
         return {
           averageGenerationTime: 0,
@@ -67,12 +70,14 @@ export const WireframeMonitoringService = {
         };
       }
       
+      const metrics = data.metrics;
+      
       return {
-        averageGenerationTime: data.average_generation_time || 0,
-        successRate: data.success_rate || 0,
-        totalCount: data.total_count || 0,
-        successCount: data.success_count || 0,
-        failureCount: data.failure_count || 0,
+        averageGenerationTime: metrics.average_generation_time || 0,
+        successRate: metrics.success_rate || 0,
+        totalCount: metrics.total_count || 0,
+        successCount: metrics.success_count || 0,
+        failureCount: metrics.failure_count || 0,
         timeRange,
         projectId
       };
@@ -113,9 +118,12 @@ export const WireframeMonitoringService = {
           break;
       }
       
-      // Get wireframes from the time period using SQL stored procedure
-      const { data, error } = await supabase.rpc('analyze_wireframe_sections', {
-        p_start_date: startDate.toISOString()
+      // Get section analysis using edge function
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "analyze_sections",
+          start_date: startDate.toISOString()
+        }
       });
       
       if (error) throw error;
@@ -123,8 +131,8 @@ export const WireframeMonitoringService = {
       // Convert to expected output format
       const result: WireframeSections = {};
       
-      if (data && Array.isArray(data)) {
-        data.forEach(item => {
+      if (data && data.sections && Array.isArray(data.sections)) {
+        data.sections.forEach((item: any) => {
           result[item.section_type] = {
             count: item.count,
             percentage: item.percentage
@@ -148,11 +156,13 @@ export const WireframeMonitoringService = {
     severity: 'info' | 'warning' | 'error' = 'info'
   ): Promise<void> => {
     try {
-      // Use RPC instead of direct table access
-      await supabase.rpc('record_system_event', {
-        p_event_type: eventType,
-        p_details: details,
-        p_severity: severity
+      await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "record_event",
+          event_type: eventType,
+          details: details,
+          severity: severity
+        }
       });
     } catch (error) {
       console.error('Error recording system event:', error);

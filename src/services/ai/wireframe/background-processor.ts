@@ -23,13 +23,16 @@ export const WireframeBackgroundProcessor = {
   queueTask: async <T>(taskType: string, inputData: T): Promise<string> => {
     try {
       // Use RPC instead of direct table access
-      const { data, error } = await supabase.rpc('create_background_task', {
-        p_task_type: taskType,
-        p_input_data: inputData as any
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "create_task",
+          task_type: taskType,
+          input_data: inputData
+        },
       });
       
       if (error) throw error;
-      return data;
+      return data.taskId;
     } catch (error) {
       console.error(`Error queueing ${taskType} task:`, error);
       throw error;
@@ -46,20 +49,15 @@ export const WireframeBackgroundProcessor = {
     errorMessage?: string
   ): Promise<void> => {
     try {
-      const updateParams: any = {
-        p_task_id: taskId,
-        p_status: status
-      };
-      
-      if (outputData !== undefined) {
-        updateParams.p_output_data = outputData;
-      }
-      
-      if (errorMessage !== undefined) {
-        updateParams.p_error_message = errorMessage;
-      }
-      
-      await supabase.rpc('update_background_task_status', updateParams);
+      await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "update_task",
+          task_id: taskId,
+          status: status,
+          output_data: outputData,
+          error_message: errorMessage
+        }
+      });
     } catch (error) {
       console.error(`Error updating task ${taskId} status:`, error);
     }
@@ -70,40 +68,43 @@ export const WireframeBackgroundProcessor = {
    */
   processNextTask: async (): Promise<boolean> => {
     try {
-      // Get next pending task using RPC
-      const { data: nextTask, error: fetchError } = await supabase.rpc('get_next_pending_task');
+      // Get next pending task using edge function
+      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
+        body: {
+          operation: "get_next_task"
+        }
+      });
       
-      if (fetchError || !nextTask) {
+      if (error || !data || !data.task) {
         // No pending tasks
         return false;
       }
       
       // Mark as processing
+      const nextTask = data.task as BackgroundProcessingTask;
       await WireframeBackgroundProcessor.updateTaskStatus(nextTask.id, 'processing');
       
       try {
         // Process the task based on type
-        const task = nextTask as BackgroundProcessingTask;
-        
-        switch (task.task_type) {
+        switch (nextTask.task_type) {
           case 'optimize_wireframe':
             // This would be where you implement task-specific logic
-            const optimizedData = await WireframeBackgroundProcessor.optimizeWireframe(task.input_data);
-            await WireframeBackgroundProcessor.updateTaskStatus(task.id, 'completed', optimizedData);
+            const optimizedData = await WireframeBackgroundProcessor.optimizeWireframe(nextTask.input_data);
+            await WireframeBackgroundProcessor.updateTaskStatus(nextTask.id, 'completed', optimizedData);
             break;
             
           case 'generate_assets':
             // Example for asset generation
-            const assets = await WireframeBackgroundProcessor.generateAssets(task.input_data);
-            await WireframeBackgroundProcessor.updateTaskStatus(task.id, 'completed', assets);
+            const assets = await WireframeBackgroundProcessor.generateAssets(nextTask.input_data);
+            await WireframeBackgroundProcessor.updateTaskStatus(nextTask.id, 'completed', assets);
             break;
             
           default:
             await WireframeBackgroundProcessor.updateTaskStatus(
-              task.id, 
+              nextTask.id, 
               'failed', 
               null, 
-              `Unknown task type: ${task.task_type}`
+              `Unknown task type: ${nextTask.task_type}`
             );
         }
         
@@ -134,7 +135,7 @@ export const WireframeBackgroundProcessor = {
       // Add optimized properties here
       qualityFlags: {
         ...(wireframeData.qualityFlags || {}),
-        isOptimized: true
+        optimized: true
       }
     };
   },
