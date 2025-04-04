@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
@@ -90,11 +89,11 @@ export const WireframeService = {
             industry: params.industry,
             additionalInstructions: params.additionalInstructions,
             model: data.model,
+            result_data: data.wireframe
           },
           status: 'completed'
         })
-        .select()
-        .single();
+        .select();
 
       if (saveError) {
         console.error("Error saving wireframe:", saveError);

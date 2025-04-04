@@ -119,42 +119,6 @@ FORMAT YOUR RESPONSE AS VALID JSON with the following structure:
     const endTime = performance.now();
     const generationTime = (endTime - startTime) / 1000; // Convert to seconds
 
-    // Record metrics (even if there was a parsing error)
-    try {
-      const { data: metricsData, error: metricsError } = await fetch(
-        `${Deno.env.get('SUPABASE_URL')}/rest/v1/rpc/record_wireframe_generation`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': Deno.env.get('SUPABASE_ANON_KEY') || '',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          },
-          body: JSON.stringify({
-            p_project_id: projectId,
-            p_prompt: prompt,
-            p_generation_params: {
-              style,
-              complexity,
-              pages,
-              industry,
-              additionalInstructions,
-              model: 'gpt-4o-mini'
-            },
-            p_result_data: wireframeData,
-            p_success: !wireframeData.error,
-            p_generation_time: generationTime
-          }),
-        }
-      ).then(r => r.json());
-
-      if (metricsError) {
-        console.error('Error recording metrics:', metricsError);
-      }
-    } catch (error) {
-      console.error('Failed to record metrics:', error);
-    }
-
     console.log('Successfully generated wireframe data');
 
     return new Response(

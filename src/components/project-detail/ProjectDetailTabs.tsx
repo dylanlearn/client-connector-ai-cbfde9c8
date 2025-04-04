@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Project } from '@/types/project';
-import { Cube, FileText, BarChart4, MessageSquare, Layers } from 'lucide-react';
+import { FileText, BarChart4, MessageSquare, Layers, BoxIcon, Grid3X3 } from 'lucide-react';
 import ProjectSummaryTab from './tabs/ProjectSummaryTab';
 import ProjectSiteMapTab from './tabs/ProjectSiteMapTab';
 import ProjectAnalyticsTab from './tabs/ProjectAnalyticsTab';
@@ -30,7 +30,7 @@ const ProjectDetailTabs: React.FC<ProjectDetailTabsProps> = ({ project }) => {
           <span className="hidden md:inline">Summary</span>
         </TabsTrigger>
         <TabsTrigger value="sitemap" className="flex items-center">
-          <Cube className="h-4 w-4 mr-2" />
+          <Grid3X3 className="h-4 w-4 mr-2" />
           <span className="hidden md:inline">Site Map</span>
         </TabsTrigger>
         <TabsTrigger value="wireframes" className="flex items-center">
@@ -38,7 +38,7 @@ const ProjectDetailTabs: React.FC<ProjectDetailTabsProps> = ({ project }) => {
           <span className="hidden md:inline">Wireframes</span>
         </TabsTrigger>
         <TabsTrigger value="design" className="flex items-center">
-          <Cube className="h-4 w-4 mr-2" />
+          <BoxIcon className="h-4 w-4 mr-2" />
           <span className="hidden md:inline">Design</span>
         </TabsTrigger>
         <TabsTrigger value="analytics" className="flex items-center">
