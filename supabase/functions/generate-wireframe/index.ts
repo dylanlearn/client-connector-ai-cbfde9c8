@@ -17,6 +17,17 @@ interface WireframeRequest {
   pages?: string[];
   industry?: string;
   additionalInstructions?: string;
+  moodboardSelections?: {
+    layoutPreferences?: string[];
+    fonts?: string[];
+    colors?: string[];
+    tone?: string[];
+  };
+  intakeResponses?: {
+    businessGoals?: string;
+    targetAudience?: string;
+    siteFeatures?: string[];
+  };
 }
 
 serve(async (req) => {
@@ -33,7 +44,17 @@ serve(async (req) => {
 
     // Parse request body
     const requestData: WireframeRequest = await req.json();
-    const { prompt, projectId, style, complexity, pages, industry, additionalInstructions } = requestData;
+    const { 
+      prompt, 
+      projectId, 
+      style, 
+      complexity, 
+      pages = [], 
+      industry, 
+      additionalInstructions,
+      moodboardSelections = {},
+      intakeResponses = {}
+    } = requestData;
     
     if (!prompt || !projectId) {
       return new Response(
@@ -44,24 +65,48 @@ serve(async (req) => {
 
     const startTime = performance.now();
     
-    // Construct a detailed system prompt for wireframe generation
-    const systemPrompt = `You are an expert UI/UX designer specialized in creating modern, professional wireframes.
+    // Construct a detailed system prompt for advanced wireframe generation
+    const systemPrompt = `You are an expert senior UX designer specializing in creating professional wireframes for website development. 
     
-- Create a detailed wireframe description for a ${industry || ''} website or application
-- Focus on layout structure, component placement, and information hierarchy
-- Consider best practices for conversion rate optimization and user engagement
+You are building a world-class wireframe that offers personalized, context-aware, and stylistically intelligent layout output.
+
+Your task is to create structured, section-by-section wireframes based on:
+- Project type: ${industry || 'Not specified'}
+- Style preferences: ${style || 'Modern and clean'} 
 - Complexity level: ${complexity || 'medium'}
-- Design style: ${style || 'modern and clean'}
+- Moodboard selections: ${JSON.stringify(moodboardSelections) || '{}'}
+- Client intake responses: ${JSON.stringify(intakeResponses) || '{}'}
 ${additionalInstructions ? `- Additional requirements: ${additionalInstructions}` : ''}
+
+For each key section of the website (hero, about, features, testimonials, pricing, contact, footer, etc.), generate:
+1. Section Name (e.g., "Hero Banner", "Core Feature Grid")
+2. Layout Type (e.g., "2-column with text left + image right")
+3. Components Used (e.g., button, card, icon, video)
+4. Suggested Copy Block (H1, H2, CTA line — placeholder content)
+5. Animation Suggestion (specific animation type that would enhance this section)
+6. Reasoning (brief insight on why this section/structure fits this brand or goal)
+7. Mobile Layout Considerations (how the section will stack or transform on mobile)
+8. Dynamic Elements (e.g., "carousel for testimonials", "FAQ accordion")
+9. Style Variants (provide 2-3 layout alternatives when appropriate)
+
+Additional requirements:
+- Ensure all layout suggestions reflect client style preferences
+- Include tone descriptors to align with typography and spacing logic
+- Flag any unclear input with specific recommendations
+- Provide a color scheme recommendation with primary, secondary, and accent colors
+- Suggest typography pairings (headings and body text)
+- Consider accessibility best practices
 
 FORMAT YOUR RESPONSE AS VALID JSON with the following structure:
 {
   "title": "Brief title for the wireframe",
-  "description": "Detailed description of the overall wireframe design",
+  "description": "Detailed description of the overall wireframe design and strategy",
   "sections": [
     {
       "name": "Section name (e.g., Hero, Features, etc.)",
+      "sectionType": "hero|features|about|testimonials|pricing|contact|footer|etc",
       "description": "Detailed description of this section",
+      "layoutType": "Specific layout structure (e.g., 2-column, z-pattern, etc.)",
       "components": [
         {
           "type": "component type (e.g., heading, paragraph, button, image, etc.)",
@@ -69,16 +114,67 @@ FORMAT YOUR RESPONSE AS VALID JSON with the following structure:
           "style": "Styling notes for this component",
           "position": "Positioning information (e.g., top-left, centered, etc.)"
         }
+      ],
+      "copySuggestions": {
+        "heading": "Suggested heading text",
+        "subheading": "Suggested subheading text",
+        "cta": "Call to action text"
+      },
+      "animationSuggestions": {
+        "type": "fade-in|slide-up|parallax|etc",
+        "element": "Which elements should be animated",
+        "timing": "Animation timing notes"
+      },
+      "designReasoning": "Explanation of why this design works for this purpose",
+      "mobileLayout": {
+        "structure": "How the layout changes for mobile",
+        "stackOrder": ["element1", "element2", "etc"]
+      },
+      "dynamicElements": [
+        {
+          "type": "carousel|accordion|tabs|etc",
+          "purpose": "Why this dynamic element is beneficial",
+          "implementation": "Implementation notes"
+        }
+      ],
+      "styleVariants": [
+        {
+          "name": "Variant name",
+          "description": "Description of this style variant",
+          "keyDifferences": ["difference1", "difference2", "etc"]
+        }
       ]
     }
   ],
-  "layout": "Overall layout description",
-  "colorScheme": "Suggested color scheme (without specific colors)",
-  "typography": "Typography recommendations"
+  "designTokens": {
+    "colors": {
+      "primary": "Description of primary color",
+      "secondary": "Description of secondary color",
+      "accent": "Description of accent color",
+      "background": "Description of background color",
+      "text": "Description of text color"
+    },
+    "typography": {
+      "headings": "Heading font recommendation",
+      "body": "Body text font recommendation",
+      "fontPairings": ["font1 + font2", "etc"]
+    },
+    "spacing": {
+      "sectionPadding": "Padding recommendation",
+      "elementGap": "Gap recommendation"
+    }
+  },
+  "qualityFlags": {
+    "unclearInputs": ["input1", "input2", "etc"],
+    "recommendedClarifications": ["clarification1", "clarification2", "etc"]
+  },
+  "mobileConsiderations": "Overall mobile strategy",
+  "accessibilityNotes": "Accessibility considerations and recommendations"
 }`;
 
     // Call OpenAI API to generate wireframe description
-    console.log(`Generating wireframe for prompt: ${prompt.substring(0, 100)}...`);
+    console.log(`Generating advanced wireframe for prompt: ${prompt.substring(0, 100)}...`);
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -86,7 +182,7 @@ FORMAT YOUR RESPONSE AS VALID JSON with the following structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini', // Using gpt-4o-mini for a good balance of capabilities and cost
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
@@ -119,7 +215,7 @@ FORMAT YOUR RESPONSE AS VALID JSON with the following structure:
     const endTime = performance.now();
     const generationTime = (endTime - startTime) / 1000; // Convert to seconds
 
-    console.log('Successfully generated wireframe data');
+    console.log('Successfully generated advanced wireframe data');
 
     return new Response(
       JSON.stringify({ 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Plus, History, Star, Trash2 } from 'lucide-react';
+import { Loader2, Plus, History, Star, Trash2, Palette, Layout, Zap } from 'lucide-react';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-service';
 import WireframeResult from './WireframeResult';
@@ -76,6 +76,25 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
     setActiveTab('history');
   };
 
+  // Helper to get wireframe features
+  const getWireframeFeatures = (wireframe: AIWireframe) => {
+    const features = [];
+    
+    if (wireframe.design_tokens) {
+      features.push({ icon: <Palette className="h-3 w-3" />, label: 'Design Tokens' });
+    }
+    
+    if (wireframe.animations && Object.keys(wireframe.animations).length > 0) {
+      features.push({ icon: <Zap className="h-3 w-3" />, label: 'Animations' });
+    }
+    
+    if (wireframe.mobile_layouts && Object.keys(wireframe.mobile_layouts).length > 0) {
+      features.push({ icon: <Layout className="h-3 w-3" />, label: 'Mobile Layouts' });
+    }
+    
+    return features;
+  };
+
   return (
     <div>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -125,13 +144,24 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
                         className="border rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex items-start justify-between">
-                          <div>
+                          <div className="flex-1">
                             <h3 className="font-medium line-clamp-1">
-                              {wireframe.prompt}
+                              {wireframe.generation_params?.result_data?.title || wireframe.prompt}
                             </h3>
                             <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                               {wireframe.description || "No description"}
                             </p>
+                            
+                            {/* Feature tags */}
+                            <div className="flex flex-wrap mt-2 gap-1">
+                              {getWireframeFeatures(wireframe).map((feature, idx) => (
+                                <div key={idx} className="flex items-center text-xs bg-gray-100 rounded px-2 py-1">
+                                  {feature.icon}
+                                  <span className="ml-1">{feature.label}</span>
+                                </div>
+                              ))}
+                            </div>
+                            
                             <div className="flex items-center text-xs text-gray-400 mt-2">
                               <span>
                                 Created: {new Date(wireframe.created_at as string).toLocaleDateString()}
@@ -164,9 +194,11 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
       </Tabs>
       
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Wireframe Details</DialogTitle>
+            <DialogTitle>
+              {wireframeData?.title || "Wireframe Details"}
+            </DialogTitle>
           </DialogHeader>
           
           {selectedWireframe && wireframeData ? (

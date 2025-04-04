@@ -280,42 +280,60 @@ export type Database = {
       }
       ai_wireframes: {
         Row: {
+          animations: Json | null
           created_at: string | null
           description: string | null
+          design_reasoning: string | null
+          design_tokens: Json | null
           feedback: string | null
           generation_params: Json | null
           id: string
           image_url: string | null
+          mobile_layouts: Json | null
           project_id: string | null
           prompt: string
+          quality_flags: Json | null
           rating: number | null
           status: string | null
+          style_variants: Json | null
           updated_at: string | null
         }
         Insert: {
+          animations?: Json | null
           created_at?: string | null
           description?: string | null
+          design_reasoning?: string | null
+          design_tokens?: Json | null
           feedback?: string | null
           generation_params?: Json | null
           id?: string
           image_url?: string | null
+          mobile_layouts?: Json | null
           project_id?: string | null
           prompt: string
+          quality_flags?: Json | null
           rating?: number | null
           status?: string | null
+          style_variants?: Json | null
           updated_at?: string | null
         }
         Update: {
+          animations?: Json | null
           created_at?: string | null
           description?: string | null
+          design_reasoning?: string | null
+          design_tokens?: Json | null
           feedback?: string | null
           generation_params?: Json | null
           id?: string
           image_url?: string | null
+          mobile_layouts?: Json | null
           project_id?: string | null
           prompt?: string
+          quality_flags?: Json | null
           rating?: number | null
           status?: string | null
+          style_variants?: Json | null
           updated_at?: string | null
         }
         Relationships: [
@@ -817,6 +835,39 @@ export type Database = {
           result?: Json
           used_references?: string[] | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      design_tokens: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          updated_at?: string | null
+          value?: Json
         }
         Relationships: []
       }
@@ -1427,6 +1478,71 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_sections: {
+        Row: {
+          animation_suggestions: Json | null
+          components: Json | null
+          copy_suggestions: Json | null
+          created_at: string | null
+          description: string | null
+          design_reasoning: string | null
+          dynamic_elements: Json | null
+          id: string
+          layout_type: string
+          mobile_layout: Json | null
+          name: string
+          position_order: number | null
+          section_type: string
+          style_variants: Json | null
+          updated_at: string | null
+          wireframe_id: string | null
+        }
+        Insert: {
+          animation_suggestions?: Json | null
+          components?: Json | null
+          copy_suggestions?: Json | null
+          created_at?: string | null
+          description?: string | null
+          design_reasoning?: string | null
+          dynamic_elements?: Json | null
+          id?: string
+          layout_type: string
+          mobile_layout?: Json | null
+          name: string
+          position_order?: number | null
+          section_type: string
+          style_variants?: Json | null
+          updated_at?: string | null
+          wireframe_id?: string | null
+        }
+        Update: {
+          animation_suggestions?: Json | null
+          components?: Json | null
+          copy_suggestions?: Json | null
+          created_at?: string | null
+          description?: string | null
+          design_reasoning?: string | null
+          dynamic_elements?: Json | null
+          id?: string
+          layout_type?: string
+          mobile_layout?: Json | null
+          name?: string
+          position_order?: number | null
+          section_type?: string
+          style_variants?: Json | null
+          updated_at?: string | null
+          wireframe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_sections_wireframe_id_fkey"
+            columns: ["wireframe_id"]
+            isOneToOne: false
+            referencedRelation: "ai_wireframes"
             referencedColumns: ["id"]
           },
         ]
