@@ -1,14 +1,14 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { WireframeCacheService } from "./wireframe-cache-service";
 import { WireframeRateLimiterService } from "./rate-limiter-service";
 import { WireframeBackgroundProcessor } from "./background-processor";
 import { WireframeMonitoringService } from "./monitoring-service";
 import { WireframeApiService } from "./wireframe-api";
-import { 
-  WireframeGenerationParams, 
-  WireframeGenerationResult, 
+import {
   WireframeData,
+  WireframeSection,
+  WireframeGenerationParams,
+  WireframeGenerationResult,
   AIWireframe
 } from "./wireframe-types";
 

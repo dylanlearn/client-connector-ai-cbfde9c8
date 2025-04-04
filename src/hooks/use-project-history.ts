@@ -1,50 +1,38 @@
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ProjectHistory } from '@/types/project-history';
-import { withRetry } from '@/utils/retry-utils';
 import { toast } from 'sonner';
 
-/**
- * Enterprise-grade hook for fetching and managing project history
- * with comprehensive error handling and retries
- */
-export const useProjectHistory = (projectId?: string) => {
+export function useProjectHistory(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  // Fetch project history
   const {
     data: history,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ['project-history', projectId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ProjectHistory[]> => {
       if (!projectId) return [];
       
-      return withRetry(async () => {
-        const { data, error } = await supabase
-          .from('project_history')
-          .select('*')
-          .eq('project_id', projectId)
-          .order('changed_at', { ascending: false });
-        
-        if (error) {
-          throw new Error(`Error fetching project history: ${error.message}`);
-        }
-        
-        return data as ProjectHistory[];
-      }, {
-        maxRetries: 3,
-        initialDelay: 500, 
-        onRetry: (attempt, error) => {
-          console.warn(`Retry #${attempt} fetching project history: ${error.message}`);
-        }
-      });
+      const { data, error } = await supabase
+        .from('project_history')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('changed_at', { ascending: false });
+      
+      if (error) throw new Error(error.message);
+      return data as ProjectHistory[];
     },
     enabled: !!projectId,
-    onError: (err: Error) => {
-      toast.error('Error loading project history', {
-        description: err.message
-      });
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load project history', {
+          description: error.message
+        });
+      }
     }
   });
 
@@ -106,4 +94,4 @@ export const useProjectHistory = (projectId?: string) => {
     refetch,
     addHistoryEntry
   };
-};
+}

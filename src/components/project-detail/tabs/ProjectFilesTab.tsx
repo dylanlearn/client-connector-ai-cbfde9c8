@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Project } from '@/types/project';
 import { useProjectFiles } from '@/hooks/use-project-files';
 import { useClientNotifications } from '@/hooks/use-client-notifications';
-import { File, Upload, Trash2, Download, Loader2, FileIcon, FileText } from 'lucide-react';
+import { File, Upload, Trash2, Download, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,7 @@ const ProjectFilesTab: React.FC<ProjectFilesTabProps> = ({ project }) => {
       
       // Optional: Notify client about the new file
       if (project.client_email) {
-        await createNotification({
+        await createNotification.mutateAsync({
           project_id: project.id,
           client_email: project.client_email,
           notification_type: 'file_uploaded',
