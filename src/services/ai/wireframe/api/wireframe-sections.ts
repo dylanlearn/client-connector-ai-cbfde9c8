@@ -25,23 +25,39 @@ export const wireframeSections = {
       
       // Convert from database format to WireframeSection type
       return (data || []).map(section => {
+        // Cast the database record to include the fields we need
+        const dbSection = section as unknown as {
+          id: string;
+          name: string;
+          section_type: string;
+          layout_type: string;
+          layout: Json;
+          components: Json;
+          copy_suggestions: Json;
+          design_reasoning: string;
+          mobile_layout: Json;
+          animation_suggestions: Json;
+          dynamic_elements: Json;
+          style_variants: Json;
+          position_order: number;
+          description: string;
+        };
+        
         return {
-          id: section.id,
-          name: section.name,
-          sectionType: section.section_type,
-          layoutType: section.layout_type,
-          // The layout might be stored in a JSON column with a different name
-          // Using type assertion to avoid TypeScript error
-          layout: section.layout as unknown as any,
-          components: section.components as unknown as WireframeComponent[],
-          copySuggestions: section.copy_suggestions as unknown as CopySuggestions,
-          designReasoning: section.design_reasoning,
-          mobileLayout: section.mobile_layout as any,
-          animationSuggestions: section.animation_suggestions as any,
-          dynamicElements: section.dynamic_elements as any,
-          styleVariants: section.style_variants as any,
-          positionOrder: section.position_order,
-          description: section.description
+          id: dbSection.id,
+          name: dbSection.name,
+          sectionType: dbSection.section_type,
+          layoutType: dbSection.layout_type,
+          layout: dbSection.layout as any,
+          components: dbSection.components as unknown as WireframeComponent[],
+          copySuggestions: dbSection.copy_suggestions as unknown as CopySuggestions,
+          designReasoning: dbSection.design_reasoning,
+          mobileLayout: dbSection.mobile_layout as any,
+          animationSuggestions: dbSection.animation_suggestions as any,
+          dynamicElements: dbSection.dynamic_elements as any,
+          styleVariants: dbSection.style_variants as any,
+          positionOrder: dbSection.position_order,
+          description: dbSection.description
         };
       });
     } catch (error) {
