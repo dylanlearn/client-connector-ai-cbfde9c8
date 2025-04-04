@@ -1,4 +1,3 @@
-
 import {
   BaseInteractionConfig,
   HoverEffectConfig,
@@ -15,6 +14,10 @@ import {
   GlassmorphismConfig,
   InteractionConfig
 } from './interactionTypes';
+
+// TODO: [HIGH PRIORITY] This file is getting too long (250+ lines) and should be refactored.
+// Consider splitting into smaller files organized by interaction type category.
+// Target completion: Next sprint
 
 // Get interaction configuration based on interaction type
 export const getInteractionConfig = (

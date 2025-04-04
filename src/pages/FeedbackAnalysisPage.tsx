@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +19,10 @@ import {
 } from "@/components/ui/select";
 
 const FeedbackAnalysisPage = () => {
+  // TODO: [MEDIUM PRIORITY] Refactor this component into smaller sub-components
+  // It currently exceeds 400 lines and handles too many responsibilities
+  // Target completion: End of quarter
+  
   const navigate = useNavigate();
   const [savedAnalyses, setSavedAnalyses] = useState<Array<{
     id: string;

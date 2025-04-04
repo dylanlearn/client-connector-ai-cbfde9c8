@@ -1,7 +1,10 @@
+
 import { ReactNode, memo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertMessage } from "@/components/ui/alert-message";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 interface DashboardTabContentProps {
   title?: string;
@@ -31,6 +34,15 @@ interface DashboardTabContentProps {
    * Custom error component
    */
   errorComponent?: ReactNode;
+  /**
+   * Whether to show an error boundary around content
+   * @default true
+   */
+  withErrorBoundary?: boolean;
+  /**
+   * Function to retry loading data on failure
+   */
+  onRetry?: () => void;
 }
 
 /**
@@ -47,7 +59,9 @@ const DashboardTabContent = memo(({
   skeletonHeight = "h-12",
   loadingComponent,
   error,
-  errorComponent
+  errorComponent,
+  withErrorBoundary = true,
+  onRetry
 }: DashboardTabContentProps) => {
   // Handle loading state
   const renderLoadingState = () => {
@@ -59,7 +73,7 @@ const DashboardTabContent = memo(({
     // If skeleton count is specified, render skeletons
     if (skeletonCount > 0) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-4" aria-label="Loading content">
           {Array.from({ length: skeletonCount }).map((_, index) => (
             <Skeleton key={index} className={`w-full ${skeletonHeight}`} />
           ))}
@@ -69,9 +83,10 @@ const DashboardTabContent = memo(({
     
     // Default loading spinner
     return (
-      <div className="flex justify-center items-center py-12">
+      <div className="flex justify-center items-center py-12" role="status" aria-live="polite">
         <LoadingSpinner size="lg" />
         <span className="ml-3 text-muted-foreground">Loading content...</span>
+        <span className="sr-only">Loading content, please wait</span>
       </div>
     );
   };
@@ -83,12 +98,19 @@ const DashboardTabContent = memo(({
     }
     
     return (
-      <div className="bg-red-50 p-4 rounded-md">
-        <h3 className="text-red-800 font-medium">Error loading content</h3>
-        <p className="text-red-700 text-sm mt-1">
+      <AlertMessage type="error" title="Error loading content">
+        <p className="mb-4">
           {error?.message || "An unknown error occurred. Please try again."}
         </p>
-      </div>
+        {onRetry && (
+          <button 
+            onClick={onRetry}
+            className="px-4 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded"
+          >
+            Retry
+          </button>
+        )}
+      </AlertMessage>
     );
   };
   
@@ -100,6 +122,14 @@ const DashboardTabContent = memo(({
     
     if (error) {
       return renderErrorState();
+    }
+    
+    if (withErrorBoundary) {
+      return (
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      );
     }
     
     return children;
