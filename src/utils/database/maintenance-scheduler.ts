@@ -90,7 +90,7 @@ export async function checkDatabaseHealth(showToasts: boolean = true): Promise<b
         : '';
       
       toast.warning("Database maintenance recommended", {
-        description: `Tables with high dead row ratios: ${tableList} ${additionalTables}`,
+        description: `Tables with high dead rows: ${tableList} ${additionalTables}`,
         duration: 8000,
         action: {
           label: "View",
@@ -106,6 +106,67 @@ export async function checkDatabaseHealth(showToasts: boolean = true): Promise<b
   } catch (error) {
     console.error("Error checking database health:", error);
     return false;
+  }
+}
+
+/**
+ * Independently verify dead row percentages by directly querying pg_stat_user_tables
+ * This provides a second source of truth to validate what's shown in the UI
+ */
+export async function verifyDeadRowPercentages(): Promise<{ 
+  accurate: boolean; 
+  tableStats: Array<{ 
+    table: string; 
+    uiPercentage?: number | null; 
+    actualPercentage: number;
+    discrepancy?: number;
+  }>;
+}> {
+  try {
+    // Make a direct query to get the actual statistics from PostgreSQL
+    const { data: pgStats, error: pgError } = await supabase.rpc('check_database_performance');
+    
+    if (pgError) {
+      console.error("Error fetching actual database statistics:", pgError);
+      throw pgError;
+    }
+    
+    // Compare the stats from the database with what we have stored in memory
+    const tableStats = [];
+    let hasDiscrepancies = false;
+    
+    if (pgStats && pgStats.table_stats) {
+      for (const tableStat of pgStats.table_stats) {
+        const tableName = tableStat.table;
+        const actualPercentage = tableStat.dead_row_ratio;
+        const uiPercentage = tableMaintenanceState[tableName]?.deadRowRatio;
+        
+        // Calculate discrepancy if we have both values
+        let discrepancy = null;
+        if (uiPercentage !== null && uiPercentage !== undefined) {
+          discrepancy = Math.abs(actualPercentage - uiPercentage);
+          // If discrepancy is more than 1%, consider it significant
+          if (discrepancy > 1) {
+            hasDiscrepancies = true;
+          }
+        }
+        
+        tableStats.push({
+          table: tableName,
+          uiPercentage,
+          actualPercentage,
+          discrepancy
+        });
+      }
+    }
+    
+    return {
+      accurate: !hasDiscrepancies,
+      tableStats
+    };
+  } catch (error) {
+    console.error("Error verifying dead row percentages:", error);
+    throw error;
   }
 }
 
@@ -189,5 +250,6 @@ export default {
   checkDatabaseHealth,
   recordTableVacuumed,
   initDatabaseHealthMonitoring,
-  vacuumTable
+  vacuumTable,
+  verifyDeadRowPercentages
 };
