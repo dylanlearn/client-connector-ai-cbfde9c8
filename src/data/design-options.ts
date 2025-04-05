@@ -7,105 +7,105 @@ export const designOptions: DesignOption[] = [
     id: "hero-1",
     title: "Gradient Hero",
     description: "A modern hero with a bold gradient background and centered content. Great for bold first impressions, startup launches, and high-energy brands.",
-    imageUrl: "https://images.unsplash.com/photo-1531297484001-80022131f5a1",
+    imageUrl: "https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-2",
     title: "Split Content Hero",
     description: "A balanced layout with text on one side and space for product images or illustrations. Ideal for SaaS, product features, and service explainers.",
-    imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d",
+    imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-3",
     title: "Minimal Hero",
     description: "A clean, typography-first hero that focuses entirely on copy. Perfect for portfolios, creative studios, and high-end branding websites.",
-    imageUrl: "https://images.unsplash.com/photo-1501854140801-50d01698950b",
+    imageUrl: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-4",
     title: "Video Background Hero",
     description: "A full-width hero with a cinematic video background and overlaid text. Designed for storytelling, travel sites, and immersive landing pages.",
-    imageUrl: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81",
+    imageUrl: "https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-5",
     title: "Animated Particles Hero",
     description: "A futuristic hero with dynamic particle motion in the background. Perfect for AI tools, dev platforms, and forward-thinking brands.",
-    imageUrl: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b",
+    imageUrl: "https://images.unsplash.com/photo-1535223289827-42f1e9919769?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-6",
     title: "Full-Screen Hero",
     description: "A bold layout that fills the entire viewport, with no scroll needed. Ideal for bold launches, personal brands, and immersive storytelling.",
-    imageUrl: "https://images.unsplash.com/photo-1523712999610-f77fbcfc3843",
+    imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-7",
     title: "Headline-Only Hero",
     description: "A stripped-down hero with one strong, high-impact message. Great for campaign pages, disruptor brands, and minimalist startups.",
-    imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+    imageUrl: "https://images.unsplash.com/photo-1560472355-536de3962603?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-8",
     title: "Image-Focused Hero",
     description: "A visual-first layout that puts imagery at the center. Excellent for fashion, product showcases, lifestyle brands, and editorial content.",
-    imageUrl: "https://images.unsplash.com/photo-1615729947596-a598e5de0ab3",
+    imageUrl: "https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-9",
     title: "Illustration Hero",
     description: "A playful layout with a branded illustration next to strong copy. Ideal for SaaS, fintech, startups, and character-rich storytelling.",
-    imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+    imageUrl: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-10",
     title: "Center-Stacked Hero",
     description: "A clean layout with everything centered — headline, subtext, and CTA. Universal structure for portfolios, agencies, and business sites.",
-    imageUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
+    imageUrl: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-11",
     title: "Form-Focused Hero",
     description: "A utility-first hero built around a key form — signup, search, or booking. Best for SaaS tools, lead gen pages, and waitlist launches.",
-    imageUrl: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952",
+    imageUrl: "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-12",
     title: "Carousel Hero",
     description: "A dynamic hero with slides for rotating messages or products. Works well for multi-product brands, marketplaces, and feature-rich apps.",
-    imageUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158",
+    imageUrl: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-13",
     title: "Overlay Hero",
     description: "A stylish, layered hero where text overlays a background image. Best for premium brands, visual creatives, and elevated eCommerce.",
-    imageUrl: "https://images.unsplash.com/photo-1483058712412-4245e9b90334",
+    imageUrl: "https://images.unsplash.com/photo-1559028012-481c04fa702d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-14",
     title: "Text on Blur Hero",
     description: "A moody, editorial-style hero with sharp text over blurred media. Perfect for creative studios, storytelling brands, and photography sites.",
-    imageUrl: "https://images.unsplash.com/photo-1721322800607-8c38375eef04",
+    imageUrl: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   {
     id: "hero-15",
     title: "Stacked Image + Text Hero",
     description: "A mobile-friendly layout where image, text, and CTA stack vertically. Elegant for scroll-first brands, newsletters, or minimalist websites.",
-    imageUrl: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
+    imageUrl: "https://images.unsplash.com/photo-1527689368864-3a821dbccc34?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
     category: "hero"
   },
   
