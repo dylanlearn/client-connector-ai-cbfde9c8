@@ -21,8 +21,8 @@ import {
 type ProfileQueryStat = {
   query: string;
   calls: number;
-  total_time: number;
-  mean_time: number;
+  total_exec_time: number;
+  mean_exec_time: number;
 };
 
 type ProfileQueryStats = {
@@ -137,8 +137,8 @@ export function ProfileQueryMonitor() {
                             </div>
                           </TableCell>
                           <TableCell>{stat.calls.toLocaleString()}</TableCell>
-                          <TableCell>{formatTime(stat.total_time)}</TableCell>
-                          <TableCell>{formatTime(stat.mean_time)}</TableCell>
+                          <TableCell>{formatTime(stat.total_exec_time)}</TableCell>
+                          <TableCell>{formatTime(stat.mean_exec_time)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
