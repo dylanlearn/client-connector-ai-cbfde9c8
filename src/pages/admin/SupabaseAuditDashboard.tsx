@@ -9,11 +9,12 @@ import { EdgeFunctionsSection } from '@/components/admin/supabase-audit/EdgeFunc
 import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceHealthSection';
 import { LoadingState } from '@/components/admin/supabase-audit/LoadingState';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { SupabaseHealthCheck } from '@/types/supabase-audit';
 
 const SupabaseAuditDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [auditData, setAuditData] = useState<any>(null);
+  const [auditData, setAuditData] = useState<SupabaseHealthCheck | null>(null);
 
   useEffect(() => {
     const runAudit = async () => {
@@ -65,7 +66,7 @@ const SupabaseAuditDashboard = () => {
         <h1 className="text-3xl font-bold tracking-tight mb-6">Supabase Audit Dashboard</h1>
 
         <div className="grid gap-6">
-          <ServiceHealthSection healthData={auditData} />
+          {auditData && <ServiceHealthSection healthCheck={auditData} />}
           
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
@@ -79,7 +80,7 @@ const SupabaseAuditDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DatabaseTablesSection databaseData={auditData?.database} />
+                {auditData && <DatabaseTablesSection databaseData={auditData.database} />}
               </CardContent>
             </Card>
 
@@ -94,7 +95,7 @@ const SupabaseAuditDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <EdgeFunctionsSection functionsData={auditData?.functions} />
+                {auditData && <EdgeFunctionsSection functionsData={auditData.functions} />}
               </CardContent>
             </Card>
           </div>

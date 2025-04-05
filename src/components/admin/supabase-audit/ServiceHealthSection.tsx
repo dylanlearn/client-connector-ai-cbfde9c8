@@ -1,15 +1,29 @@
 
 import React from 'react';
-import { Key, Database, HardDrive, FunctionSquare } from 'lucide-react';
+import { Key, Database, HardDrive, FunctionSquare, Check, AlertTriangle, X } from 'lucide-react';
+import { SupabaseHealthCheck } from '@/types/supabase-audit';
 
 interface ServiceHealthProps {
-  healthCheck: any;
-  getStatusIcon: (status: 'ok' | 'error' | boolean) => React.ReactNode;
-  getHealthColor: (status: string) => string;
+  healthCheck: SupabaseHealthCheck;
 }
 
-export function ServiceHealthSection({ healthCheck, getStatusIcon, getHealthColor }: ServiceHealthProps) {
+export function ServiceHealthSection({ healthCheck }: ServiceHealthProps) {
   if (!healthCheck) return null;
+  
+  const getStatusIcon = (status: string) => {
+    if (status === 'ok') {
+      return <Check className="h-5 w-5 text-green-500" />;
+    } else if (status === 'error') {
+      return <X className="h-5 w-5 text-red-500" />;
+    }
+    return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+  };
+
+  const getHealthColor = (status: string) => {
+    if (status === 'healthy' || status === 'ok') return 'text-green-600';
+    if (status === 'degraded') return 'text-yellow-600';
+    return 'text-red-600';
+  };
 
   return (
     <div className="space-y-4">

@@ -29,10 +29,7 @@ export function AuditLogViewer() {
       
       let query = supabase
         .from('audit_logs')
-        .select(`
-          *,
-          profiles:user_id (email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
       
@@ -53,20 +50,29 @@ export function AuditLogViewer() {
         return;
       }
       
-      // Map the data to include user email
-      const logsWithUserInfo = data.map(log => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        resource_type: log.resource_type,
-        resource_id: log.resource_id,
-        metadata: log.metadata,
-        ip_address: log.ip_address,
-        created_at: log.created_at,
-        user_email: log.profiles?.email || 'Unknown'
-      }));
+      // Get user emails separately since the join is causing issues
+      const logsWithEmail = await Promise.all(
+        data.map(async (log) => {
+          if (log.user_id) {
+            const { data: userData } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', log.user_id)
+              .single();
+              
+            return {
+              ...log,
+              user_email: userData?.email || 'Unknown'
+            };
+          }
+          return {
+            ...log,
+            user_email: 'Unknown'
+          };
+        })
+      );
       
-      setLogs(logsWithUserInfo as AuditLog[]);
+      setLogs(logsWithEmail as AuditLog[]);
     } catch (err) {
       console.error('Error fetching audit logs:', err);
       setError('Failed to load audit logs');

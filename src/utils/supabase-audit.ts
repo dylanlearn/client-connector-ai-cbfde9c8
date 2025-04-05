@@ -1,42 +1,14 @@
+
 import { Json } from "@/integrations/supabase/types";
 import { Database } from "@/integrations/supabase/types";
 import { SupabaseAuditService } from "@/services/ai/supabase-audit-service";
-
-export interface SupabaseHealthCheck {
-  auth: {
-    status: 'ok' | 'error';
-    message: string;
-  };
-  database: {
-    status: 'ok' | 'error';
-    message: string;
-    tables: string[];
-  };
-  storage: {
-    status: 'ok' | 'error';
-    message: string;
-  };
-  functions: {
-    status: 'ok' | 'error';
-    message: string;
-    availableFunctions: string[];
-  };
-  overall: 'healthy' | 'degraded' | 'unhealthy';
-}
+import { SupabaseHealthCheck } from "@/types/supabase-audit";
 
 /**
  * Performs a comprehensive health check on Supabase services
  */
 export async function checkSupabaseHealth(): Promise<SupabaseHealthCheck> {
-  const { auth, database, storage, functions, overall } = await SupabaseAuditService.runFullHealthCheck();
-  
-  return {
-    auth,
-    database,
-    storage,
-    functions,
-    overall
-  };
+  return await SupabaseAuditService.runFullHealthCheck();
 }
 
 /**

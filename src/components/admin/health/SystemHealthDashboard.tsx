@@ -17,8 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { SystemAlert, SystemHealthCheck, SystemHealthStatus } from '@/types/supabase-audit';
-import { format, formatDistanceToNow } from 'date-fns';
+import { SystemAlert, SystemHealthStatus, SystemHealthCheck } from '@/types/supabase-audit';
 
 export function SystemHealthDashboard() {
   const [healthStatus, setHealthStatus] = useState<SystemHealthStatus[]>([]);
@@ -54,8 +53,29 @@ export function SystemHealthDashboard() {
       
       if (perfError) throw perfError;
       
-      setHealthStatus(statusData || []);
-      setAlerts(alertsData || []);
+      // Convert string values to proper enum values for type safety
+      const typedHealthStatus: SystemHealthStatus[] = (statusData || []).map((item: any) => ({
+        component: item.component,
+        latest_status: (item.latest_status as 'healthy' | 'degraded' | 'unhealthy' | 'error'),
+        last_checked: item.last_checked,
+        issues_last_24h: item.issues_last_24h,
+        avg_response_time_1h: item.avg_response_time_1h
+      }));
+      
+      const typedAlerts: SystemAlert[] = (alertsData || []).map((item: any) => ({
+        id: item.id,
+        severity: (item.severity as 'low' | 'medium' | 'high' | 'critical'),
+        message: item.message,
+        component: item.component,
+        is_resolved: item.is_resolved,
+        resolved_at: item.resolved_at,
+        resolved_by: item.resolved_by,
+        resolution_notes: item.resolution_notes,
+        created_at: item.created_at
+      }));
+      
+      setHealthStatus(typedHealthStatus);
+      setAlerts(typedAlerts);
       setDbPerformance(perfData);
     } catch (err: any) {
       console.error('Error fetching health status:', err);
@@ -108,7 +128,7 @@ export function SystemHealthDashboard() {
         
       if (error) throw error;
       
-      // Refresh alerts
+      // Refresh alerts with proper type conversion
       const { data: alertsData, error: alertsError } = await supabase
         .from('system_alerts')
         .select('*')
@@ -117,7 +137,19 @@ export function SystemHealthDashboard() {
       
       if (alertsError) throw alertsError;
       
-      setAlerts(alertsData || []);
+      const typedAlerts: SystemAlert[] = (alertsData || []).map((item: any) => ({
+        id: item.id,
+        severity: (item.severity as 'low' | 'medium' | 'high' | 'critical'),
+        message: item.message,
+        component: item.component,
+        is_resolved: item.is_resolved,
+        resolved_at: item.resolved_at,
+        resolved_by: item.resolved_by,
+        resolution_notes: item.resolution_notes,
+        created_at: item.created_at
+      }));
+      
+      setAlerts(typedAlerts);
     } catch (err) {
       console.error('Error resolving alert:', err);
     }

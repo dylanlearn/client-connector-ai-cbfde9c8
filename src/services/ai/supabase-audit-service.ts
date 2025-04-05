@@ -1,8 +1,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseHealthCheck } from "@/types/supabase-audit";
 
 export class SupabaseAuditService {
-  static async runFullHealthCheck() {
+  static async runFullHealthCheck(): Promise<SupabaseHealthCheck> {
     try {
       const [authCheck, databaseCheck, storageCheck, functionsCheck] = await Promise.all([
         this.checkAuth(),
@@ -19,7 +20,7 @@ export class SupabaseAuditService {
         functionsCheck.status
       ];
       
-      let overall = 'healthy';
+      let overall: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
       if (statusValues.some(status => status === 'error')) {
         overall = 'unhealthy';
       } else if (statusValues.some(status => status !== 'ok')) {
@@ -45,7 +46,7 @@ export class SupabaseAuditService {
     }
   }
   
-  static async checkAuth() {
+  static async checkAuth(): Promise<{ status: 'ok' | 'error'; message: string }> {
     try {
       await supabase.auth.getSession();
       return { status: 'ok', message: 'Auth service is responding correctly' };
@@ -55,7 +56,12 @@ export class SupabaseAuditService {
     }
   }
   
-  static async checkDatabase() {
+  static async checkDatabase(): Promise<{ 
+    status: 'ok' | 'error'; 
+    message: string; 
+    tables: string[];
+    performance?: any; 
+  }> {
     try {
       const { data: tableData, error: tableError } = await supabase
         .from('profiles')
@@ -70,7 +76,12 @@ export class SupabaseAuditService {
         
       if (tablesError) throw tablesError;
       
-      const tables = tablesList?.table_stats?.map((t: any) => t.table) || [];
+      let tableStats: any[] = [];
+      if (tablesList && typeof tablesList === 'object') {
+        tableStats = tablesList.table_stats || [];
+      }
+      
+      const tables = tableStats.map((t: any) => t.table) || [];
       
       return { 
         status: 'ok', 
@@ -88,7 +99,11 @@ export class SupabaseAuditService {
     }
   }
   
-  static async checkStorage() {
+  static async checkStorage(): Promise<{ 
+    status: 'ok' | 'error'; 
+    message: string;
+    buckets?: string[]; 
+  }> {
     try {
       const { data: buckets, error: bucketsError } = await supabase
         .storage
@@ -110,7 +125,11 @@ export class SupabaseAuditService {
     }
   }
   
-  static async checkFunctions() {
+  static async checkFunctions(): Promise<{
+    status: 'ok' | 'error' | 'degraded';
+    message: string;
+    availableFunctions: string[];
+  }> {
     try {
       // We can't directly check edge functions from the client
       // So we use a heuristic check by looking for function calls in database logs
@@ -157,8 +176,10 @@ export class SupabaseAuditService {
         'upgrade-team-members'
       ];
       
+      const status = error ? 'degraded' as const : 'ok' as const;
+      
       return {
-        status: error ? 'degraded' : 'ok',
+        status,
         message: error 
           ? 'No recent function invocation logs found, but service may still be working' 
           : 'Edge functions service appears to be working correctly',
@@ -174,13 +195,14 @@ export class SupabaseAuditService {
     }
   }
   
-  static async checkDatabaseSchema(requiredTables: string[]) {
+  static async checkDatabaseSchema(requiredTables: string[]): Promise<{
+    missingTables: string[];
+    existingTables: string[];
+  }> {
     try {
-      const { data, error } = await this.checkDatabase();
+      const result = await this.checkDatabase();
       
-      if (error) throw error;
-      
-      const existingTables = data.tables || [];
+      const existingTables = result.tables || [];
       const missingTables = requiredTables.filter(table => !existingTables.includes(table));
       
       return {
@@ -196,7 +218,7 @@ export class SupabaseAuditService {
     }
   }
   
-  static async checkRLSPolicies(tables: string[]) {
+  static async checkRLSPolicies(tables: string[]): Promise<Record<string, boolean>> {
     // This would require admin privileges or a custom backend endpoint
     // For now, we'll return a simulated result
     const result: Record<string, boolean> = {};
