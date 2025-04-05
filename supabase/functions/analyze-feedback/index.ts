@@ -1,12 +1,16 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
-import OpenAI from "https://esm.sh/openai@4.0.0";
 
-// Define the interfaces needed for the feedback analysis 
+const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 interface ActionItem {
   task: string;
-  priority: "high" | "medium" | "low";
+  priority: 'high' | 'medium' | 'low';
   urgency: number;
 }
 
@@ -19,102 +23,159 @@ interface ToneAnalysis {
   vague: boolean;
 }
 
-interface FeedbackAnalysisResult {
-  summary: string;
-  actionItems: ActionItem[];
-  toneAnalysis: ToneAnalysis;
-}
-
-interface RequestBody {
-  feedbackText: string;
-}
-
 serve(async (req) => {
-  // Set up CORS headers
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey, content-type",
-    "Content-Type": "application/json"
-  };
-
-  // Handle preflight OPTIONS request
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers, status: 204 });
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the request body and validate it
-    const body = await req.json() as RequestBody;
-    const { feedbackText } = body;
+    const { feedbackText } = await req.json();
 
-    if (!feedbackText) {
-      return new Response(
-        JSON.stringify({ error: "Feedback text is required" }),
-        { headers, status: 400 }
-      );
+    if (!feedbackText || typeof feedbackText !== 'string' || feedbackText.trim().length < 5) {
+      throw new Error('Valid feedback text is required (minimum 5 characters)');
     }
 
-    // Create a Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
 
-    // Create an OpenAI client
-    const openai = new OpenAI({
-      apiKey: Deno.env.get("OPENAI_API_KEY") as string,
-    });
+    console.log(`Analyzing feedback: ${feedbackText.substring(0, 50)}${feedbackText.length > 50 ? '...' : ''}`);
 
-    // Analyze the feedback using OpenAI
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Using the latest model for best results
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert at analyzing client feedback and extracting actionable insights.
-            Analyze the following client feedback and structure your response as a JSON object with the following properties:
-            1. summary: A concise summary of the feedback in 1-2 sentences.
-            2. actionItems: An array of objects with {task, priority, urgency} where:
-              - task is a clear actionable task
-              - priority is one of: "high", "medium", "low"
-              - urgency is a number from 1-10
-            3. toneAnalysis: An object with:
-              - positive: A number 0-1 representing positive sentiment
-              - neutral: A number 0-1 representing neutral sentiment
-              - negative: A number 0-1 representing negative sentiment
-              - urgent: Boolean indicating if the feedback has urgent language
-              - critical: Boolean indicating if the feedback is critical
-              - vague: Boolean indicating if the feedback lacks specificity
-              
-            The sum of positive, neutral, and negative should equal 1.
-            `
-        },
-        {
-          role: "user",
-          content: feedbackText
-        }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.4, // Lower temperature for more consistent analysis
-    });
-
-    // Parse the completion to get the analysis
-    const analysisText = response.choices[0]?.message?.content || "";
-    const analysis = JSON.parse(analysisText) as FeedbackAnalysisResult;
-
-    // Log basic information for monitoring
-    console.log(`Analyzed feedback of length ${feedbackText.length} characters`);
-    console.log(`Identified ${analysis.actionItems.length} action items`);
-
-    return new Response(JSON.stringify(analysis), { headers, status: 200 });
-  } catch (error) {
-    console.error("Error processing feedback:", error);
+    // Prepare the prompt for OpenAI
+    const prompt = `
+    You are an expert in analyzing client and user feedback for digital products. 
+    Analyze the following feedback text:
     
+    "${feedbackText}"
+    
+    Provide the following in your response:
+    
+    1. Summary: A concise summary of the feedback
+    2. Action Items: A list of specific tasks that should be done based on this feedback, each with priority (high, medium, low) and urgency (1-10)
+    3. Tone Analysis: Analyze the tone as percentages (positive, neutral, negative adding to 1.0), and indicate if it's urgent, critical, or vague
+    
+    Format your response as valid JSON with these properties: summary, actionItems (array of objects with task, priority, urgency), and toneAnalysis (object).
+    `;
+
+    // Call OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are an AI assistant specialized in analyzing customer feedback.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No content returned from OpenAI');
+    }
+
+    // Extract JSON from the response
+    let parsedResponse;
+    try {
+      // Attempt to parse directly
+      parsedResponse = JSON.parse(content);
+    } catch (jsonError) {
+      // If direct parsing fails, try to extract JSON from text response
+      console.log('Direct JSON parsing failed, attempting to extract JSON from text');
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } catch (extractError) {
+          console.error('JSON extraction also failed:', extractError);
+          throw new Error('Failed to parse AI response as JSON');
+        }
+      } else {
+        throw new Error('No JSON found in AI response');
+      }
+    }
+
+    // Validate and normalize the response
+    const summary = parsedResponse.summary || '';
+    
+    // Validate action items
+    const actionItems: ActionItem[] = (parsedResponse.actionItems || []).map((item: any) => {
+      // Ensure priority is one of the allowed values
+      let priority: 'high' | 'medium' | 'low' = 'medium';
+      if (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low') {
+        priority = item.priority;
+      }
+
+      // Ensure urgency is a number between 1-10
+      let urgency = Number(item.urgency) || 5;
+      urgency = Math.min(Math.max(urgency, 1), 10);
+
+      return {
+        task: item.task || 'Unnamed task',
+        priority,
+        urgency
+      };
+    });
+
+    // Validate tone analysis
+    const defaultToneAnalysis: ToneAnalysis = {
+      positive: 0,
+      neutral: 1,
+      negative: 0,
+      urgent: false,
+      critical: false,
+      vague: false
+    };
+
+    const toneAnalysis: ToneAnalysis = {
+      positive: Number(parsedResponse.toneAnalysis?.positive) || defaultToneAnalysis.positive,
+      neutral: Number(parsedResponse.toneAnalysis?.neutral) || defaultToneAnalysis.neutral,
+      negative: Number(parsedResponse.toneAnalysis?.negative) || defaultToneAnalysis.negative,
+      urgent: Boolean(parsedResponse.toneAnalysis?.urgent) || defaultToneAnalysis.urgent,
+      critical: Boolean(parsedResponse.toneAnalysis?.critical) || defaultToneAnalysis.critical,
+      vague: Boolean(parsedResponse.toneAnalysis?.vague) || defaultToneAnalysis.vague
+    };
+
+    // Normalize percentages to sum to 1.0
+    const toneSum = toneAnalysis.positive + toneAnalysis.neutral + toneAnalysis.negative;
+    if (toneSum > 0 && toneSum !== 1) {
+      toneAnalysis.positive /= toneSum;
+      toneAnalysis.neutral /= toneSum;
+      toneAnalysis.negative /= toneSum;
+    }
+
+    const result = { summary, actionItems, toneAnalysis };
+    console.log('Successfully analyzed feedback');
+
+    // Return the analysis results
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error analyzing feedback:', error);
     return new Response(
       JSON.stringify({ 
-        error: "Failed to analyze feedback", 
-        details: error.message 
+        error: error.message || 'Unknown error occurred' 
       }),
-      { headers, status: 500 }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
     );
   }
 });

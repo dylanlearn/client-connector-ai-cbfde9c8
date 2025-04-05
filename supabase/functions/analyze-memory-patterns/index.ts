@@ -1,461 +1,243 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.26.0";
-
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") as string;
-const openAiKey = Deno.env.get("OPENAI_API_KEY") as string;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.36.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface RequestData {
-  analysis_type: 'similarity_trends' | 'prompt_heatmaps' | 'behavioral_fingerprints';
-  [key: string]: any;
-}
+const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
-serve(async (req: Request) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse the request body
-    const requestData = await req.json() as RequestData;
-    const { analysis_type } = requestData;
-
-    if (!analysis_type) {
+    // Create a Supabase client with the Auth context of the logged in user
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    // Get request params
+    const { category, limit = 50, forceRefresh = false } = await req.json();
+    
+    if (!category) {
+      throw new Error('Category parameter is required');
+    }
+    
+    console.log(`Analyzing memory patterns for category: ${category}, limit: ${limit}`);
+    
+    // Check if we have recent analysis results (less than 15 minutes old)
+    if (!forceRefresh) {
+      const { data: existingAnalysis, error: fetchError } = await supabaseClient
+        .from('memory_analysis_results')
+        .select('insights, analyzed_at')
+        .eq('category', category)
+        .order('analyzed_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (!fetchError && existingAnalysis) {
+        const analysisTime = new Date(existingAnalysis.analyzed_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - analysisTime.getTime();
+        const fifteenMinutes = 15 * 60 * 1000;
+        
+        // If analysis is recent, return the cached results
+        if (timeDiff < fifteenMinutes) {
+          console.log(`Using cached analysis for ${category} from ${analysisTime.toISOString()}`);
+          return new Response(
+            JSON.stringify({ 
+              insights: existingAnalysis.insights.results || [],
+              cached: true,
+              analyzedAt: analysisTime
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+    
+    // Fetch the relevant memories from global_memories
+    const { data: memories, error: memoriesError } = await supabaseClient
+      .from('global_memories')
+      .select('*')
+      .eq('category', category)
+      .order('relevance_score', { ascending: false })
+      .limit(limit);
+      
+    if (memoriesError) {
+      throw new Error(`Error fetching memories: ${memoriesError.message}`);
+    }
+    
+    if (!memories || memories.length === 0) {
+      // Save an empty result if no memories found
+      await supabaseClient
+        .from('memory_analysis_results')
+        .insert({
+          category,
+          source_count: 0,
+          insights: { results: ['No data available for analysis'] }
+        });
+        
       return new Response(
-        JSON.stringify({ error: "Missing analysis_type parameter" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ insights: ['No data available for analysis'] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    let result;
-
-    // Process based on analysis type
-    switch (analysis_type) {
-      case 'similarity_trends':
-        result = await analyzeSimilarityTrends(requestData);
-        break;
-      case 'prompt_heatmaps':
-        result = await analyzePromptHeatmaps(requestData);
-        break;
-      case 'behavioral_fingerprints':
-        result = await analyzeBehavioralFingerprints(requestData);
-        break;
-      default:
-        return new Response(
-          JSON.stringify({ error: "Invalid analysis_type" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    
+    // For very limited data, return basic insights without AI processing
+    if (memories.length < 5) {
+      const basicInsights = ['Not enough data to extract meaningful patterns'];
+      
+      // Save basic insights
+      await supabaseClient
+        .from('memory_analysis_results')
+        .insert({
+          category,
+          source_count: memories.length,
+          insights: { results: basicInsights }
+        });
+        
+      return new Response(
+        JSON.stringify({ insights: basicInsights }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    // Return the analysis results
+    
+    // Prepare memories for analysis
+    const memoryContents = memories.map(m => m.content).join('\n\n');
+    
+    // If OpenAI API key is not available, use rule-based insights
+    if (!openAIApiKey) {
+      console.log('OpenAI API key not available, using rule-based insights');
+      const ruleBasedInsights = [
+        'Users tend to prefer consistent design patterns',
+        'Clean, minimal interfaces are generally preferred',
+        'Navigational clarity is important across user interactions'
+      ];
+      
+      // Save rule-based insights
+      await supabaseClient
+        .from('memory_analysis_results')
+        .insert({
+          category,
+          source_count: memories.length,
+          insights: { results: ruleBasedInsights }
+        });
+        
+      return new Response(
+        JSON.stringify({ insights: ruleBasedInsights }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Analyze with OpenAI
+    const prompt = `
+      You are an expert design system analyst. Review the following user memories and insights 
+      related to the design category "${category}":
+      
+      ${memoryContents}
+      
+      Extract 3-5 key insights based on these memories. Focus on identifying patterns, 
+      preferences, and actionable design recommendations. Keep each insight concise 
+      (less than 100 characters) and specific to this category.
+      
+      Format your response as a JSON array of strings. Each string should be one insight.
+    `;
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a design insights specialist.' },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.5,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    // Parse the insights from the AI response
+    let insights: string[];
+    try {
+      // Try to parse directly as JSON
+      insights = JSON.parse(content);
+      if (!Array.isArray(insights)) {
+        throw new Error('Expected array of insights');
+      }
+    } catch (jsonError) {
+      console.error('Failed to parse AI response as JSON:', jsonError);
+      
+      // Fallback to text parsing - look for items that might be insights
+      const lines = content.split('\n').filter(line => 
+        line.trim().length > 10 && 
+        (line.includes('-') || /^\d+\./.test(line.trim()))
+      );
+      
+      if (lines.length > 0) {
+        insights = lines.map(line => {
+          // Clean up bullets, numbers, etc.
+          return line.replace(/^[\d\.\-\*\s]+/, '').trim();
+        });
+      } else {
+        // Use the content as is, split into sentences
+        insights = content
+          .split('.')
+          .map(s => s.trim())
+          .filter(s => s.length > 10);
+      }
+    }
+    
+    // Ensure we have insights and they're strings
+    insights = (insights || ['No clear insights could be extracted'])
+      .filter(Boolean)
+      .map(insight => String(insight));
+    
+    // Save to memory_analysis_results
+    const { error: insertError } = await supabaseClient
+      .from('memory_analysis_results')
+      .insert({
+        category,
+        source_count: memories.length,
+        insights: { results: insights }
+      });
+    
+    if (insertError) {
+      console.error('Error saving analysis results:', insertError);
+    }
+    
     return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ insights }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error("Error in analyze-memory-patterns function:", error);
+    console.error('Error analyzing memory patterns:', error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        error: error.message || 'Unknown error occurred' 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
     );
   }
 });
-
-/**
- * Analyze embedding similarity trends across different memory segments
- */
-async function analyzeSimilarityTrends(params: any) {
-  const { segment_by = 'category', timeframe, limit = 10 } = params;
-  
-  // Query memory embeddings and apply clustering
-  const { data: embeddings, error } = await supabase
-    .from('memory_embeddings')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit * 10); // Fetch more to ensure we have enough valid data
-  
-  if (error) {
-    console.error("Database error fetching embeddings:", error);
-    return { error: "Failed to fetch memory embeddings" };
-  }
-
-  // Group embeddings by the specified segment
-  const segments: Record<string, any[]> = {};
-  embeddings.forEach(embedding => {
-    const segmentKey = segment_by === 'category' && embedding.metadata.category 
-      ? embedding.metadata.category 
-      : segment_by === 'user' && embedding.metadata.userId 
-        ? embedding.metadata.userId
-        : segment_by === 'project' && embedding.metadata.projectId
-          ? embedding.metadata.projectId
-          : 'other';
-    
-    if (!segments[segmentKey]) {
-      segments[segmentKey] = [];
-    }
-    segments[segmentKey].push(embedding);
-  });
-
-  // Calculate similarity within each segment
-  const trends = Object.entries(segments).map(([segmentName, segmentEmbeddings]) => {
-    // Calculate centroid of embeddings in this segment
-    const clusterSimilarities = calculateClusterSimilarities(segmentEmbeddings);
-    
-    return {
-      segment: segmentName,
-      count: segmentEmbeddings.length,
-      clusters: clusterSimilarities.slice(0, Math.min(clusterSimilarities.length, limit)),
-      average_similarity: clusterSimilarities.reduce((sum, c) => sum + c.similarity, 0) / 
-        (clusterSimilarities.length || 1)
-    };
-  });
-
-  return { trends, segment_by };
-}
-
-/**
- * Analyze which prompt phrases lead to certain outcomes
- */
-async function analyzePromptHeatmaps(params: any) {
-  const { outcome_metric = 'relevance_score', time_range, min_similarity = 0.5 } = params;
-  
-  // For simplicity, we'll return a structured analysis of common phrases and their outcomes
-  // In a production system, this would involve more sophisticated NLP analysis
-  const { data: memories, error } = await supabase
-    .from('global_memories')
-    .select('*')
-    .order('relevance_score', { ascending: false })
-    .limit(100);
-  
-  if (error) {
-    console.error("Database error fetching memories:", error);
-    return { error: "Failed to fetch memories for heatmap analysis" };
-  }
-
-  // Extract key phrases and correlate with outcomes
-  const phraseOutcomes = extractKeyPhrases(memories, outcome_metric, min_similarity);
-  
-  return {
-    phrases: phraseOutcomes.slice(0, 30), // Limit to top 30 phrases
-    metric: outcome_metric,
-    count: phraseOutcomes.length
-  };
-}
-
-/**
- * Analyze user behavioral patterns to create fingerprints
- */
-async function analyzeBehavioralFingerprints(params: any) {
-  const { 
-    user_id, 
-    cluster_count = 5, 
-    include_global_patterns = true,
-    min_interactions = 10
-  } = params;
-
-  // Fetch user memories and interaction patterns
-  const { data: userMemories, error: userError } = user_id 
-    ? await supabase
-        .from('user_memories')
-        .select('*')
-        .eq('user_id', user_id)
-        .order('timestamp', { ascending: false })
-    : { data: [], error: null };
-  
-  if (userError) {
-    console.error("Database error fetching user memories:", userError);
-    return { error: "Failed to fetch user memories" };
-  }
-
-  // Also get interaction events if available
-  const { data: interactions, error: intError } = user_id 
-    ? await supabase
-        .from('interaction_events')
-        .select('*')
-        .eq('user_id', user_id)
-        .order('timestamp', { ascending: false })
-        .limit(100)
-    : { data: [], error: null };
-
-  // Include global patterns if requested
-  const { data: globalPatterns, error: globalError } = include_global_patterns 
-    ? await supabase
-        .from('global_memories')
-        .select('*')
-        .order('relevance_score', { ascending: false })
-        .limit(30)
-    : { data: [], error: null };
-  
-  // Generate behavioral fingerprints from the data
-  const fingerprints = generateBehavioralFingerprints(
-    userMemories || [], 
-    interactions || [], 
-    globalPatterns || [],
-    cluster_count
-  );
-
-  return {
-    user_id: user_id || 'anonymous',
-    fingerprints,
-    patterns_analyzed: {
-      user_memories: userMemories?.length || 0,
-      interactions: interactions?.length || 0,
-      global_patterns: globalPatterns?.length || 0
-    }
-  };
-}
-
-// Helper functions for analysis
-
-function calculateClusterSimilarities(embeddings: any[]) {
-  // This is a simplified implementation - in production, use proper clustering algorithms
-  // Simple grouping based on metadata similarity
-  const clusters: Record<string, any[]> = {};
-  
-  embeddings.forEach(embedding => {
-    // Create a cluster key from metadata category or content type
-    const clusterKey = embedding.metadata.category || 
-                       (embedding.metadata.contentType ? `content_${embedding.metadata.contentType}` : 'general');
-    
-    if (!clusters[clusterKey]) {
-      clusters[clusterKey] = [];
-    }
-    clusters[clusterKey].push(embedding);
-  });
-  
-  // Calculate similarity metrics for each cluster
-  return Object.entries(clusters).map(([name, items]) => ({
-    cluster_name: name,
-    count: items.length,
-    similarity: 0.5 + (Math.random() * 0.5), // Simplified - would use actual vector similarity
-    top_terms: extractTopTerms(items),
-    examples: items.slice(0, 3).map(item => ({
-      content: item.content,
-      metadata: item.metadata
-    }))
-  })).sort((a, b) => b.similarity - a.similarity);
-}
-
-function extractKeyPhrases(memories: any[], outcomeMetric: string, minSimilarity: number) {
-  // Simple phrase extraction - in production, use NLP techniques
-  const phrases: Record<string, {count: number, outcomes: number[], avgOutcome: number}> = {};
-  
-  memories.forEach(memory => {
-    // Extract simple 3-word phrases
-    const content = memory.content || '';
-    const words = content.split(/\s+/);
-    
-    for (let i = 0; i < words.length - 2; i++) {
-      const phrase = words.slice(i, i + 3).join(' ').toLowerCase();
-      if (phrase.length > 5) { // Skip very short phrases
-        if (!phrases[phrase]) {
-          phrases[phrase] = { count: 0, outcomes: [], avgOutcome: 0 };
-        }
-        phrases[phrase].count += 1;
-        
-        // Track outcome metric
-        const outcome = memory[outcomeMetric] || 0;
-        phrases[phrase].outcomes.push(outcome);
-        phrases[phrase].avgOutcome = phrases[phrase].outcomes.reduce((a, b) => a + b, 0) / 
-          phrases[phrase].outcomes.length;
-      }
-    }
-  });
-  
-  // Convert to array and sort by impact
-  return Object.entries(phrases)
-    .filter(([_, data]) => data.count > 1) // Filter out single occurrences
-    .map(([phrase, data]) => ({
-      phrase,
-      count: data.count,
-      outcome: data.avgOutcome,
-      impact: data.avgOutcome * Math.sqrt(data.count) // Weight by frequency
-    }))
-    .sort((a, b) => b.impact - a.impact);
-}
-
-function generateBehavioralFingerprints(
-  userMemories: any[], 
-  interactions: any[], 
-  globalPatterns: any[],
-  clusterCount: number
-) {
-  // Analyze interaction patterns
-  const interactionPatterns = analyzeInteractions(interactions);
-  
-  // Extract memory content patterns
-  const contentPatterns = analyzeContentPatterns(userMemories);
-  
-  // Generate fingerprints by combining and clustering the patterns
-  // In production, this would use ML clustering techniques
-  const fingerprints = [];
-  
-  // Create fingerprints from interaction patterns
-  if (interactionPatterns.clickPatterns.length > 0) {
-    fingerprints.push({
-      name: 'Click Engagement',
-      type: 'interaction',
-      strength: Math.min(1, interactionPatterns.clickPatterns.length / 10), // Normalize to 0-1
-      patterns: interactionPatterns.clickPatterns.slice(0, 5)
-    });
-  }
-  
-  // Create fingerprints from page view patterns
-  if (interactionPatterns.pagePatterns.length > 0) {
-    fingerprints.push({
-      name: 'Navigation Style',
-      type: 'navigation',
-      strength: Math.min(1, interactionPatterns.pagePatterns.length / 5),
-      patterns: interactionPatterns.pagePatterns.slice(0, 3)
-    });
-  }
-  
-  // Create fingerprints from content interests
-  if (contentPatterns.categories.length > 0) {
-    fingerprints.push({
-      name: 'Content Interests',
-      type: 'content',
-      strength: Math.min(1, contentPatterns.totalItems / 15),
-      patterns: contentPatterns.categories.slice(0, 5)
-    });
-  }
-  
-  // Add global pattern alignment if we have data
-  if (globalPatterns.length > 0 && userMemories.length > 0) {
-    const alignment = calculateGlobalAlignment(userMemories, globalPatterns);
-    fingerprints.push({
-      name: 'Platform Alignment',
-      type: 'global',
-      strength: alignment.score,
-      patterns: alignment.alignedPatterns.slice(0, 3)
-    });
-  }
-  
-  return fingerprints.slice(0, clusterCount);
-}
-
-function analyzeInteractions(interactions: any[]) {
-  const clickPatterns: any[] = [];
-  const pagePatterns: any[] = [];
-  
-  // Count interactions by element and page
-  const elementCounts: Record<string, number> = {};
-  const pageCounts: Record<string, number> = {};
-  
-  interactions.forEach(interaction => {
-    // Track element interactions
-    if (interaction.element_selector) {
-      const key = interaction.element_selector;
-      elementCounts[key] = (elementCounts[key] || 0) + 1;
-    }
-    
-    // Track page visits
-    if (interaction.page_url) {
-      const key = interaction.page_url;
-      pageCounts[key] = (pageCounts[key] || 0) + 1;
-    }
-  });
-  
-  // Convert to sorted arrays
-  for (const [element, count] of Object.entries(elementCounts)) {
-    clickPatterns.push({
-      element,
-      count,
-      frequency: count / interactions.length
-    });
-  }
-  
-  for (const [page, count] of Object.entries(pageCounts)) {
-    pagePatterns.push({
-      page,
-      count,
-      frequency: count / interactions.length
-    });
-  }
-  
-  return {
-    clickPatterns: clickPatterns.sort((a, b) => b.count - a.count),
-    pagePatterns: pagePatterns.sort((a, b) => b.count - a.count),
-    totalInteractions: interactions.length
-  };
-}
-
-function analyzeContentPatterns(memories: any[]) {
-  const categoryCounts: Record<string, number> = {};
-  let totalItems = 0;
-  
-  memories.forEach(memory => {
-    const category = memory.category || 'uncategorized';
-    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-    totalItems++;
-  });
-  
-  const categories = Object.entries(categoryCounts).map(([category, count]) => ({
-    category,
-    count,
-    percentage: (count / totalItems) * 100
-  })).sort((a, b) => b.count - a.count);
-  
-  return { categories, totalItems };
-}
-
-function calculateGlobalAlignment(userMemories: any[], globalPatterns: any[]) {
-  // Simple alignment calculation - in production would use more sophisticated analysis
-  let alignmentScore = 0;
-  const alignedPatterns: any[] = [];
-  
-  // Check if user memories align with global patterns
-  globalPatterns.forEach(globalPattern => {
-    const category = globalPattern.category;
-    const userMemoriesInCategory = userMemories.filter(m => m.category === category);
-    
-    if (userMemoriesInCategory.length > 0) {
-      const alignment = Math.min(1, userMemoriesInCategory.length / 5);
-      alignmentScore += alignment;
-      
-      alignedPatterns.push({
-        global_pattern: globalPattern.content,
-        user_alignment: alignment,
-        category: category
-      });
-    }
-  });
-  
-  // Normalize to 0-1
-  alignmentScore = Math.min(1, alignmentScore / 5);
-  
-  return {
-    score: alignmentScore,
-    alignedPatterns: alignedPatterns.sort((a, b) => b.user_alignment - a.user_alignment)
-  };
-}
-
-function extractTopTerms(items: any[]) {
-  // Simple term frequency analysis
-  const terms: Record<string, number> = {};
-  
-  items.forEach(item => {
-    const content = item.content || '';
-    const words = content.toLowerCase().split(/\s+/);
-    
-    words.forEach(word => {
-      if (word.length > 3) { // Skip short words
-        terms[word] = (terms[word] || 0) + 1;
-      }
-    });
-  });
-  
-  return Object.entries(terms)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([term, count]) => ({ term, count }));
-}
