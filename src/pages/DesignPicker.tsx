@@ -97,7 +97,7 @@ const DesignPicker = () => {
           </TabsList>
           
           <TabsContent value="layouts" className="pt-4">
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="grid gap-8">
               <Card className="p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium">Hero Sections</h3>
