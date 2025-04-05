@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
 interface DashboardLayoutProps {
@@ -21,6 +21,21 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+  // Navigation items for both desktop sidebar and mobile menu
+  const navItems = [
+    { title: "Dashboard", path: "/dashboard" },
+    { title: "Projects", path: "/projects" },
+    { title: "Templates", path: "/templates" },
+    { title: "Clients", path: "/clients" },
+    { title: "Intake Form", path: "/intake-form" },
+    { title: "Design Picker", path: "/design-picker" },
+    { title: "Analytics", path: "/analytics" },
+    { title: "AI Suggestions", path: "/ai-suggestions" },
+    { title: "Feedback Analysis", path: "/feedback-analysis" },
+    { title: "Website Analyzer", path: "/website-analyzer" },
+    { title: "Settings", path: "/settings" },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -37,38 +52,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Navigation */}
           <nav className="flex-1 p-4">
             <ul className="space-y-2">
-              <li>
-                <a 
-                  href="/dashboard" 
-                  className="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                >
-                  <span>Dashboard</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="/projects" 
-                  className="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                >
-                  <span>Projects</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="/templates" 
-                  className="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                >
-                  <span>Templates</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href="/settings" 
-                  className="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                >
-                  <span>Settings</span>
-                </a>
-              </li>
+              {navItems.map((item) => (
+                <li key={item.path}>
+                  <Link 
+                    to={item.path} 
+                    className="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+                  >
+                    <span>{item.title}</span>
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
           
@@ -127,44 +120,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </svg>
               </button>
             </div>
-            <nav className="p-4">
+            <nav className="p-4 overflow-y-auto max-h-[calc(100vh-120px)]">
               <ul className="space-y-2">
-                <li>
-                  <a 
-                    href="/dashboard" 
-                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                    onClick={toggleMobileMenu}
-                  >
-                    Dashboard
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="/projects" 
-                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                    onClick={toggleMobileMenu}
-                  >
-                    Projects
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="/templates" 
-                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                    onClick={toggleMobileMenu}
-                  >
-                    Templates
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="/settings" 
-                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
-                    onClick={toggleMobileMenu}
-                  >
-                    Settings
-                  </a>
-                </li>
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <Link 
+                      to={item.path} 
+                      className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+                      onClick={toggleMobileMenu}
+                    >
+                      {item.title}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
