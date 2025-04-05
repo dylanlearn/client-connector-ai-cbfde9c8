@@ -14,9 +14,13 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className, customLabel }: StatusBadgeProps) {
   const { label, variant, color } = getStatusConfig(status);
   
+  // Convert variant to a type that Badge accepts
+  // This ensures the variant is compatible with the Badge component
+  const badgeVariant = variant === "warning" ? "default" : variant;
+  
   return (
     <Badge 
-      variant={variant} 
+      variant={badgeVariant} 
       className={className}
     >
       {customLabel || label}

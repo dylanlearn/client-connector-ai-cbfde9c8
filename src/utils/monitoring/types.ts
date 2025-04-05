@@ -48,3 +48,16 @@ export interface MonitoringRecord {
   message?: string;
 }
 
+// Add the missing ClientError interface
+export interface ClientError {
+  id?: string;
+  error_message: string;
+  error_stack?: string;
+  component_name?: string;
+  browser_info?: string;
+  url?: string;
+  timestamp?: string;
+  resolved?: boolean;
+  resolution_notes?: string;
+  user_id?: string;
+}

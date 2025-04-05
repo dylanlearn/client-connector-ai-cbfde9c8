@@ -5,6 +5,7 @@
  */
 
 // Re-export database monitoring utilities
+// Selectively re-export to avoid naming conflicts
 export * from '../database/index';
 
 // Re-export system status monitoring
