@@ -8,7 +8,7 @@ export interface DesignOption {
   id: string;
   title: string;
   description: string;
-  category?: string;
+  category?: "hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction";
   icon?: React.ComponentType;
   preview?: string;
   imageUrl: string; // Changed from optional to required to match preview/types.ts

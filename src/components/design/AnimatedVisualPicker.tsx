@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Check, X, Heart, Sparkles, MousePointer } from "lucide-react";
@@ -6,13 +5,15 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-export type DesignOption = {
+export interface DesignOption {
   id: string;
   title: string;
   description: string;
   imageUrl: string;
   category: "hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction";
-};
+  rank?: number;
+  notes?: string;
+}
 
 interface AnimatedVisualPickerProps {
   options: DesignOption[];
@@ -31,10 +32,8 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Filter options by category
   const filteredOptions = options.filter(option => option.category === category);
   
-  // If no options match the category
   if (filteredOptions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 border rounded-lg bg-muted">
@@ -45,17 +44,14 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
 
   const currentOption = filteredOptions[currentIndex];
 
-  // Animation preview handlers
   const togglePreview = () => {
     setIsPreviewVisible(!isPreviewVisible);
   };
 
-  // Demonstration UI for animation and interaction categories
   const renderPreviewDemo = () => {
     if (category === "animation") {
-      // Simple animation demonstrations
       switch (currentOption.id) {
-        case "animation-1": // Fade & Slide In
+        case "animation-1":
           return (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -68,7 +64,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               <div className="w-4/5 h-2 bg-gray-200 rounded-full"/>
             </motion.div>
           );
-        case "animation-2": // Scroll Reveal
+        case "animation-2":
           return (
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
@@ -81,7 +77,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               <div className="w-4/5 h-2 bg-gray-200 rounded-full"/>
             </motion.div>
           );
-        case "animation-3": // Parallax Effects
+        case "animation-3":
           return (
             <div className="relative h-full">
               <motion.div 
@@ -101,7 +97,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               </motion.div>
             </div>
           );
-        case "animation-4": // 3D Transforms
+        case "animation-4":
           return (
             <motion.div 
               initial={{ rotateY: 0 }}
@@ -111,7 +107,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg"
             />
           );
-        case "animation-5": // Microinteractions
+        case "animation-5":
           return (
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -129,9 +125,8 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
           );
       }
     } else if (category === "interaction") {
-      // Simple interaction demonstrations
       switch (currentOption.id) {
-        case "interaction-1": // Hover Effects
+        case "interaction-1":
           return (
             <motion.div 
               whileHover={{ 
@@ -145,7 +140,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               <p className="text-xs text-gray-400 mt-2 text-center">Hover me</p>
             </motion.div>
           );
-        case "interaction-2": // Modal Dialogs
+        case "interaction-2":
           return (
             <div className="relative w-full h-full flex items-center justify-center">
               <Button 
@@ -198,7 +193,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               </AnimatePresence>
             </div>
           );
-        case "interaction-3": // Custom Cursors
+        case "interaction-3":
           return (
             <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 w-full h-full flex items-center justify-center">
               <motion.div
@@ -211,7 +206,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               <p className="text-xs text-gray-500">Custom cursor follow effect</p>
             </div>
           );
-        case "interaction-4": // Scroll Animations
+        case "interaction-4":
           return (
             <div className="w-full flex flex-col gap-2 items-center">
               <motion.div 
@@ -235,7 +230,7 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
               <p className="text-xs text-gray-400 mt-2">Scroll reveal elements</p>
             </div>
           );
-        case "interaction-5": // Drag Interactions
+        case "interaction-5":
           return (
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 w-full h-full flex items-center justify-center">
               <motion.div 
@@ -261,7 +256,6 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
       }
     }
     
-    // Default preview for other categories
     return null;
   };
 
@@ -277,7 +271,6 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
         setOffsetX(0);
       }, 300);
     } else {
-      // End of options
       toast.success("You've seen all options!");
     }
   };
@@ -293,7 +286,6 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
         setOffsetX(0);
       }, 300);
     } else {
-      // End of options
       toast.success("You've seen all options!");
     }
   };
@@ -326,17 +318,13 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
     if (!isDragging) return;
     setIsDragging(false);
     
-    // Threshold for swipe action
     const threshold = 100;
     
     if (offsetX > threshold) {
-      // Swiped right
       handleLike();
     } else if (offsetX < -threshold) {
-      // Swiped left
       handleDislike();
     } else {
-      // Reset position if not swiped enough
       setOffsetX(0);
     }
   };
@@ -391,7 +379,6 @@ const AnimatedVisualPicker = ({ options, onSelect, category, className }: Animat
             whileTap={{ scale: 0.95 }}
           >
             <div className="h-[65%] overflow-hidden bg-muted relative">
-              {/* Special visual preview for animation and interaction categories */}
               {(category === "animation" || category === "interaction") ? (
                 <div className="w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
                   {renderPreviewDemo()}
