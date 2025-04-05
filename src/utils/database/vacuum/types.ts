@@ -1,14 +1,22 @@
 
-import { MaintenanceResult } from "../types";
-
 /**
- * Auto vacuum recommendation threshold (20% dead rows)
- * Tables with dead rows above this percentage will trigger recommendations
+ * Constants and types used by the vacuum service
  */
+
+// Threshold percentage of dead rows to trigger auto vacuum recommendation
 export const AUTO_VACUUM_THRESHOLD = 20;
 
-/**
- * Minimum time between maintenance recommendations (10 minutes)
- * This prevents spam notifications for the same tables
- */
-export const MIN_RECOMMENDATION_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
+// Minimum time (milliseconds) between vacuum recommendations for the same table
+export const MIN_RECOMMENDATION_INTERVAL = 60 * 60 * 1000; // 1 hour
+
+export interface VacuumOptions {
+  full?: boolean;
+  analyze?: boolean;
+  freeze?: boolean;
+}
+
+export interface VacuumResult {
+  success: boolean;
+  message: string;
+  details?: any;
+}

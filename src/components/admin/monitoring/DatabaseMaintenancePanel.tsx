@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -499,18 +500,9 @@ export function DatabaseMaintenancePanel() {
               onVacuumTable={vacuumSingleTable}
             />
           </>
-        ) : refreshing ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <span className="ml-2 text-muted-foreground">Loading statistics...</span>
-          </div>
         ) : (
           <div className="text-center py-8">
-            <Database className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">No database statistics loaded</p>
-            <Button onClick={handleRefreshStats} variant="outline" className="mt-4">
-              Load Statistics
-            </Button>
+            <p className="text-muted-foreground">No database statistics available. Click Refresh Stats to get the latest information.</p>
           </div>
         )}
       </CardContent>

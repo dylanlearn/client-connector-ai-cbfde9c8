@@ -1,86 +1,51 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { recordTableVacuumed } from "../maintenance-tracker";
 import { toast } from "sonner";
 import { MaintenanceResult } from "../types";
-import { refreshDatabaseStatistics } from "../statistics-service";
-import { recordTableVacuumed } from "../maintenance-tracker";
 
 /**
- * Run database maintenance on all tables or specific tables
- * This performs a full vacuum operation to reclaim space and optimize tables
+ * Run full database cleanup on all tables
  */
-export async function cleanupFullDatabase(tables?: string[]): Promise<MaintenanceResult> {
+export async function cleanupFullDatabase(): Promise<MaintenanceResult> {
   try {
-    console.log("Starting full database cleanup");
-    toast.loading("Cleaning database tables...", {
-      duration: 30000 // 30 seconds timeout for potentially long operation
-    });
+    console.log('Vacuum service: Starting full database cleanup');
     
+    // Call the serverless function to run vacuum on all tables
     const { data, error } = await supabase.functions.invoke('database-maintenance', {
-      body: { 
-        action: 'vacuum',
-        tables: tables // If provided, clean only these tables; otherwise clean all tables
-      }
+      body: { action: 'vacuum_full' }
     });
     
     if (error) {
-      console.error('Error running database cleanup:', error);
-      toast.error("Database cleanup failed", {
-        description: error.message
-      });
-      return {
-        success: false,
-        message: error.message
-      };
+      console.error('Full database cleanup failed:', error);
+      throw error;
     }
     
-    // Check results
-    const successCount = data?.success_tables?.length || 0;
-    const failCount = data?.failed_tables?.length || 0;
-    
-    if (successCount > 0) {
-      // Record each successfully vacuumed table
-      if (data?.success_tables) {
-        data.success_tables.forEach((tableName: string) => {
-          recordTableVacuumed(tableName);
-        });
-      }
-      
-      // Show success message
-      toast.success(`Database cleanup complete`, {
-        description: `Successfully cleaned ${successCount} tables${failCount ? `, ${failCount} failed` : ''}`
+    // Record the maintenance status for each successful table
+    if (data.success_tables && Array.isArray(data.success_tables)) {
+      data.success_tables.forEach((table: string) => {
+        recordTableVacuumed(table);
       });
       
-      // Refresh database statistics after cleanup
-      await refreshDatabaseStatistics(false);
-      
-      return {
-        success: true,
-        message: `Database cleanup complete: ${successCount} tables cleaned${failCount ? `, ${failCount} failed` : ''}`,
-        details: data
-      };
-    } else {
-      toast.error("Database cleanup failed", {
-        description: data?.failed_tables?.length > 0 
-          ? `Failed tables: ${data.failed_tables.map((ft: any) => ft.table).join(', ')}` 
-          : "No tables were successfully cleaned"
+      toast.success(`Database cleaned up successfully`, {
+        description: `Processed ${data.success_tables.length} tables`
       });
-      
-      return {
-        success: false,
-        message: "No tables were successfully cleaned",
-        details: data
-      };
     }
-  } catch (error) {
-    console.error('Error cleaning full database:', error);
-    toast.error("Database cleanup failed", {
-      description: error instanceof Error ? error.message : "Unknown error occurred"
-    });
+    
+    if (data.failed_tables && data.failed_tables.length > 0) {
+      console.warn('Some tables failed during full vacuum:', data.failed_tables);
+    }
     
     return {
+      success: true,
+      message: `Database cleanup completed. ${data.success_tables?.length || 0} tables processed.`,
+      details: data
+    };
+  } catch (error) {
+    console.error('Error in cleanupFullDatabase:', error);
+    return {
       success: false,
-      message: error instanceof Error ? error.message : String(error)
+      message: error instanceof Error ? error.message : 'Unknown error occurred during database cleanup'
     };
   }
 }

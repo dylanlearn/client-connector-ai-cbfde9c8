@@ -1,34 +1,42 @@
 
-import { WebsiteAnalysisResult } from '@/services/ai/design/website-analysis/types';
-
-export interface WebsiteAnalysisState {
-  isAnalyzing: boolean;
-  analysisResults: WebsiteAnalysisResult[];
-  error: Error | null;
-  setIsAnalyzing: (isAnalyzing: boolean) => void;
-  setAnalysisResults: (results: WebsiteAnalysisResult[]) => void;
-  setError: (error: Error | null) => void;
+export interface WebsiteAnalysisResult {
+  id?: string;
+  title: string;
+  description: string;
+  category: string;
+  visualElements: {
+    layout: string;
+    colorScheme: string;
+    typography: string;
+    spacing?: string;
+    imagery?: string;
+  };
+  userExperience: {
+    navigation: string;
+    interactivity: string;
+    responsiveness: string;
+    accessibility: string;
+  };
+  contentAnalysis: {
+    tone: string;
+    messaging: string;
+    callToAction: string;
+  };
+  targetAudience: string[];
+  implementationNotes: string;
+  tags: string[];
+  source: string;
+  imageUrl?: string;
+  createdAt?: string | Date;
+  userId?: string;
 }
 
-export interface WebsiteAnalysisHook extends Omit<WebsiteAnalysisState, 'setIsAnalyzing' | 'setAnalysisResults' | 'setError'> {
-  analyzeWebsiteSection: (
-    sectionType: string,
-    description: string,
-    visualElements: Partial<WebsiteAnalysisResult['visualElements']>,
-    contentStructure: Partial<WebsiteAnalysisResult['contentStructure']>,
-    websiteSource: string,
-    imageUrl?: string
-  ) => Promise<WebsiteAnalysisResult | null>;
-  
-  analyzeWebsite: (
-    websiteName: string,
-    websiteUrl: string,
-    sections: {
-      type: string;
-      description: string;
-      visualElements?: Partial<WebsiteAnalysisResult['visualElements']>;
-      contentStructure?: Partial<WebsiteAnalysisResult['contentStructure']>;
-      imageUrl?: string;
-    }[]
-  ) => Promise<WebsiteAnalysisResult[]>;
+export type SectionType = 'hero' | 'features' | 'testimonial' | 'pricing' | 'contact' | 'footer' | 'about' | 'nav';
+
+export interface WebsiteAnalysisHook {
+  isAnalyzing: boolean;
+  analysisResults: WebsiteAnalysisResult[];
+  error: string | null;
+  analyzeWebsite: (url: string) => Promise<WebsiteAnalysisResult | null>;
+  analyzeWebsiteSection: (section: SectionType, url: string) => Promise<WebsiteAnalysisResult | null>;
 }

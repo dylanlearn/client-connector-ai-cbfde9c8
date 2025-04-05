@@ -1,6 +1,6 @@
 
 /**
- * Types related to system monitoring
+ * Types for system monitoring functionality
  */
 
 export type SystemStatus = 'normal' | 'warning' | 'critical' | 'unknown';
@@ -12,52 +12,24 @@ export interface SystemMonitoringRecord {
   threshold?: number;
   message?: string;
   metadata?: Record<string, any>;
-  event_type: 'status_update' | 'health_check' | 'alert';
+  event_type: 'status_update' | 'alert' | 'info';
 }
 
 export interface MonitoringConfiguration {
   id: string;
   component: string;
-  warning_threshold: number;
-  critical_threshold: number;
-  check_interval: number; // in seconds
+  warning_threshold?: number;
+  critical_threshold?: number;
   enabled: boolean;
-  notification_enabled: boolean;
+  check_interval_seconds?: number;
+  notification_channels?: string[];
   created_at?: string;
   updated_at?: string;
 }
 
-export interface DatabaseStatistics {
-  timestamp: string;
-  table_stats: Array<{
-    table: string;
-    dead_row_ratio: number;
-    total_rows: number;
-    dead_rows: number;
-    last_vacuum: string | null;
-  }>;
-  high_vacuum_tables?: string[];
-}
-
-export interface MonitoringRecord {
-  id: string;
+export interface SystemHealthCheck {
   component: string;
   status: SystemStatus;
-  value?: number;
-  timestamp: string;
-  message?: string;
-}
-
-// Add the missing ClientError interface
-export interface ClientError {
-  id?: string;
-  error_message: string;
-  error_stack?: string;
-  component_name?: string;
-  browser_info?: string;
-  url?: string;
-  timestamp?: string;
-  resolved?: boolean;
-  resolution_notes?: string;
-  user_id?: string;
+  details?: Record<string, any>;
+  last_checked: Date;
 }
