@@ -2,8 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { SystemStatus, SystemMonitoringRecord, MonitoringConfiguration } from "./types";
 
-// Re-export SystemStatus from types
-export { SystemStatus };
+// Re-export SystemStatus from types using export type syntax
+export type { SystemStatus };
 
 /**
  * Record a system status event in the database
