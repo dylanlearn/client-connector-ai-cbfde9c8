@@ -19,7 +19,7 @@ export const HuggingFaceImageService = {
       enhancedCreativity?: boolean;
       size?: string;
     } = {}
-  ): Promise<string> {
+  ): Promise<string> => {
     try {
       const {
         model = 'black-forest-labs/FLUX.1-schnell', // Fast & high quality model
@@ -64,7 +64,7 @@ export const HuggingFaceImageService = {
   generateVariations: async (
     concept: string,
     count: number = 3
-  ): Promise<string[]> {
+  ): Promise<string[]> => {
     try {
       const variations: string[] = [];
       
