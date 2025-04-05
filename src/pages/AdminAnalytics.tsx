@@ -12,6 +12,29 @@ import { useAdminStatus } from "@/hooks/use-admin-status";
 import { SupabaseAudit } from "@/components/admin/SupabaseAudit";
 import { AuditLogViewer } from "@/components/admin/audit/AuditLogViewer";
 import { SystemHealthDashboard } from "@/components/admin/health/SystemHealthDashboard";
+import { motion } from "framer-motion";
+
+// Custom motion tab trigger component
+const MotionTabsTrigger = ({ value, children, className, ...props }) => {
+  return (
+    <TabsTrigger value={value} className={className} asChild {...props}>
+      <motion.div
+        whileHover={{ 
+          scale: 1.05,
+          backgroundColor: "rgba(var(--primary-rgb), 0.1)",
+          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+        }}
+        transition={{ 
+          duration: 0.2, 
+          ease: "easeInOut" 
+        }}
+        className="flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer"
+      >
+        {children}
+      </motion.div>
+    </TabsTrigger>
+  );
+};
 
 const AdminAnalytics = () => {
   const navigate = useNavigate();
@@ -66,30 +89,35 @@ const AdminAnalytics = () => {
         
         <Tabs defaultValue="memory" className="space-y-6">
           <TabsList className="flex flex-wrap gap-2 p-1">
-            <TabsTrigger value="memory" className="flex items-center gap-2 px-4 py-2">
+            <MotionTabsTrigger value="memory">
               <BrainCircuit className="h-4 w-4" />
               Memory Analytics
-            </TabsTrigger>
-            <TabsTrigger value="system" className="flex items-center gap-2 px-4 py-2">
+            </MotionTabsTrigger>
+            
+            <MotionTabsTrigger value="system">
               <Database className="h-4 w-4" />
               System Monitoring
-            </TabsTrigger>
-            <TabsTrigger value="prompts" className="flex items-center gap-2 px-4 py-2">
+            </MotionTabsTrigger>
+            
+            <MotionTabsTrigger value="prompts">
               <LineChart className="h-4 w-4" />
               Prompt Testing
-            </TabsTrigger>
-            <TabsTrigger value="health" className="flex items-center gap-2 px-4 py-2">
+            </MotionTabsTrigger>
+            
+            <MotionTabsTrigger value="health">
               <Activity className="h-4 w-4" />
               System Health
-            </TabsTrigger>
-            <TabsTrigger value="audit" className="flex items-center gap-2 px-4 py-2">
+            </MotionTabsTrigger>
+            
+            <MotionTabsTrigger value="audit">
               <FileText className="h-4 w-4" />
               Audit Logs
-            </TabsTrigger>
-            <TabsTrigger value="supabase" className="flex items-center gap-2 px-4 py-2">
+            </MotionTabsTrigger>
+            
+            <MotionTabsTrigger value="supabase">
               <AlertTriangle className="h-4 w-4" />
               Supabase Audit
-            </TabsTrigger>
+            </MotionTabsTrigger>
           </TabsList>
           
           <TabsContent value="memory" className="space-y-6">
