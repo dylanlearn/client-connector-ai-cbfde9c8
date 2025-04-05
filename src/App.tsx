@@ -1,65 +1,50 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
-import Dashboard from "@/pages/Dashboard";
-import Projects from "@/pages/Projects";
-import ProjectDetail from "@/pages/ProjectDetail";
-import ClientHub from "@/pages/ClientHub";
-import IntakeForm from "@/pages/IntakeForm";
-import DesignPicker from "@/pages/DesignPicker";
-import Analytics from "@/pages/Analytics";
-import AIDesignSuggestions from "@/pages/AIDesignSuggestions";
-import FeedbackAnalysisPage from "@/pages/FeedbackAnalysisPage";
-import WebsiteAnalyzer from "@/pages/design-analysis/WebsiteAnalyzer";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
-import { AppProviders } from "@/providers/AppProviders";
-import Index from "@/pages/Index";
-import NewProject from "@/pages/NewProject";
-import AdminAnalytics from "@/pages/AdminAnalytics";
-import AdminPanel from "@/pages/AdminPanel";
-import SupabaseAuditDashboard from "@/pages/admin/SupabaseAuditDashboard";
+import { Route, Routes } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Projects from './pages/Projects';
+import NewProject from './pages/NewProject';
+import ProjectDetails from './pages/ProjectDetails';
+import Help from './pages/Help';
+import AdminPanel from './pages/AdminPanel';
+import AdminAnalytics from './pages/AdminAnalytics';
+import RegisterPage from './pages/RegisterPage';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
+import Settings from './pages/Settings';
+import FourOhFour from './pages/FourOhFour';
+import ClientTaskPage from './pages/ClientTaskPage';
+import SupabaseAuditDashboard from './pages/admin/SupabaseAuditDashboard';
+import AuditAndMonitoring from './pages/admin/AuditAndMonitoring';
 
-// Create placeholder auth components since the imports can't be resolved
-const Login = () => (<div>Login Page</div>);
-const Register = () => (<div>Register Page</div>);
-const ForgotPassword = () => (<div>Forgot Password Page</div>);
-const ResetPassword = () => (<div>Reset Password Page</div>);
-
-const App = () => {
+function App() {
   return (
-    <AppProviders>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/client/:token" element={<ClientTaskPage />} />
+      
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute />}>
         <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/:id" element={<ProjectDetail />} />
-        <Route path="/project/:id" element={<ProjectDetail />} />
         <Route path="/new-project" element={<NewProject />} />
-        <Route path="/client-hub" element={<ClientHub />} />
-        <Route path="/intake-form" element={<IntakeForm />} />
-        <Route path="/design-picker" element={<DesignPicker />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
-        <Route path="/feedback-analysis" element={<FeedbackAnalysisPage />} />
-        <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+        <Route path="/projects/:projectId" element={<ProjectDetails />} />
         <Route path="/settings" element={<Settings />} />
-        
-        {/* Admin Routes */}
+        <Route path="/help" element={<Help />} />
+      </Route>
+      
+      {/* Admin Routes */}
+      <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/admin-analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
         <Route path="/admin/supabase-audit" element={<SupabaseAuditDashboard />} />
-        
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        
-        {/* 404 Route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AppProviders>
+        <Route path="/admin/audit-and-monitoring" element={<AuditAndMonitoring />} />
+      </Route>
+      
+      <Route path="*" element={<FourOhFour />} />
+    </Routes>
   );
-};
+}
 
 export default App;

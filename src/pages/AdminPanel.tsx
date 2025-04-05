@@ -11,7 +11,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { 
+  Loader2, 
+  ShieldAlert, 
+  DatabaseCog, 
+  ArrowRight, 
+  HeartPulse, 
+  ActivitySquare 
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import RoleManagementGuide from "@/components/admin/RoleManagementGuide";
 
 const AdminPanel = () => {
@@ -69,6 +77,53 @@ const AdminPanel = () => {
           <p className="text-muted-foreground">
             Manage your application settings and user access
           </p>
+        </div>
+        
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 justify-between"
+            onClick={() => navigate('/admin/audit-and-monitoring')}
+          >
+            <div className="flex items-center">
+              <ActivitySquare className="h-5 w-5 text-blue-500 mr-2" />
+              <div className="text-left">
+                <p className="font-medium">System Audit</p>
+                <p className="text-sm text-muted-foreground">Full system health check</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 justify-between"
+            onClick={() => navigate('/admin/supabase-audit')}
+          >
+            <div className="flex items-center">
+              <DatabaseCog className="h-5 w-5 text-purple-500 mr-2" />
+              <div className="text-left">
+                <p className="font-medium">Supabase Audit</p>
+                <p className="text-sm text-muted-foreground">Database and API health</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="h-auto p-4 justify-between"
+            onClick={() => navigate('/admin/analytics')}
+          >
+            <div className="flex items-center">
+              <HeartPulse className="h-5 w-5 text-green-500 mr-2" />
+              <div className="text-left">
+                <p className="font-medium">Admin Analytics</p>
+                <p className="text-sm text-muted-foreground">Usage and performance</p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
         
         <RoleManagementGuide />

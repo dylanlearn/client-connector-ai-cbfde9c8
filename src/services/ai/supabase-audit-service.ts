@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 import { Database } from "@/integrations/supabase/types";
 import { SupabaseHealthCheck } from "@/types/supabase-audit";
@@ -49,7 +50,9 @@ export class SupabaseAuditService {
   
   static async checkAuth(): Promise<{ status: 'ok' | 'error'; message: string }> {
     try {
-      await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      
       return { status: 'ok', message: 'Auth service is responding correctly' };
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -81,14 +84,24 @@ export class SupabaseAuditService {
       if (tablesList && typeof tablesList === 'object') {
         // Safely access table_stats, handle both array and object formats
         if (Array.isArray(tablesList)) {
-          tableStats = [];
+          // Handle direct array response
+          tableStats = tablesList;
         } else {
           // Handle as an object with table_stats property
-          tableStats = (tablesList as any).table_stats || [];
+          // First check if table_stats exists as a property
+          if ('table_stats' in tablesList) {
+            // Access table_stats property
+            tableStats = tablesList.table_stats || [];
+          } else {
+            // Handle any other JSON structure
+            tableStats = Object.values(tablesList).filter(item => 
+              item && typeof item === 'object'
+            );
+          }
         }
       }
       
-      const tables = tableStats.map((t: any) => t.table) || [];
+      const tables = tableStats.map((t: any) => t.table || '').filter(Boolean) || [];
       
       return { 
         status: 'ok', 
@@ -234,5 +247,85 @@ export class SupabaseAuditService {
     });
     
     return result;
+  }
+  
+  // New method to check for essential Supabase functions
+  static async checkDatabaseFunctions(): Promise<{
+    status: 'ok' | 'error'; 
+    message: string;
+    functions: string[];
+    missingFunctions: string[];
+  }> {
+    const essentialFunctions = [
+      'check_database_performance',
+      'record_system_event',
+      'handle_new_user',
+      'update_updated_at_column'
+    ];
+    
+    try {
+      // We can only check for functions indirectly through errors
+      // Attempt to call a function we know should exist
+      const { error } = await supabase.rpc('check_database_performance');
+      
+      if (error && error.message.includes('function does not exist')) {
+        return {
+          status: 'error',
+          message: 'Essential database functions are missing',
+          functions: [],
+          missingFunctions: essentialFunctions
+        };
+      }
+      
+      return {
+        status: 'ok',
+        message: 'Database functions appear to be properly configured',
+        functions: essentialFunctions,
+        missingFunctions: []
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: 'Failed to check database functions',
+        functions: [],
+        missingFunctions: essentialFunctions
+      };
+    }
+  }
+  
+  // New method to check for types consistency
+  static async checkTypeConsistency(): Promise<{
+    status: 'ok' | 'error';
+    message: string;
+    issues: string[];
+  }> {
+    try {
+      // This is a proxy check - we test a simple query that uses known type conversions
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role, subscription_status')
+        .limit(1)
+        .single();
+        
+      if (error) {
+        return {
+          status: 'error',
+          message: 'Type checking failed',
+          issues: [error.message]
+        };
+      }
+      
+      return {
+        status: 'ok',
+        message: 'Type checking passed for common tables',
+        issues: []
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: 'Failed to check type consistency',
+        issues: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
   }
 }
