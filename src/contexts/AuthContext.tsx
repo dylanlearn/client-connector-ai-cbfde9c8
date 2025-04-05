@@ -3,16 +3,22 @@ import { createContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileProvider } from "./ProfileContext";
+import { UserProfile } from "@/utils/auth-utils";
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
+  profile: UserProfile | null;
   isLoading: boolean;
+  signIn?: (email: string, password: string) => Promise<void>;
+  signOut?: () => Promise<void>;
+  signInWithGoogle?: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
+  profile: null,
   isLoading: true,
 });
 
@@ -46,8 +52,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password 
+    });
+    if (error) throw error;
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+    if (error) throw error;
+  };
+
   return (
-    <AuthContext.Provider value={{ session, user, isLoading }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      isLoading,
+      signIn,
+      signOut,
+      signInWithGoogle,
+      profile: null // Will be provided by ProfileProvider
+    }}>
       <ProfileProvider>
         {children}
       </ProfileProvider>

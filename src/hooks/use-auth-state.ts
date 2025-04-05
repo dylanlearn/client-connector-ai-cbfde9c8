@@ -8,9 +8,11 @@ export const useAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { profile, isLoading: isProfileLoading } = useProfile();
+  const { profile, isLoading: isProfileLoading, refetchProfile } = useProfile();
 
   useEffect(() => {
+    let profileChannel: any = null;
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log("Auth state change event:", event);
@@ -25,9 +27,9 @@ export const useAuthState = () => {
       setIsLoading(false);
     });
 
-    // Set up real-time subscription for profile changes
+    // Set up real-time subscription for profile changes only if authenticated
     if (user?.id) {
-      const channel = supabase
+      profileChannel = supabase
         .channel('public:profiles')
         .on(
           'postgres_changes',
@@ -39,21 +41,20 @@ export const useAuthState = () => {
           },
           (payload) => {
             console.log('Profile updated in real-time:', payload);
-            // No need to manually update profile here as React Query will handle it
+            // Refetch profile when changes are detected
+            refetchProfile();
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-        subscription.unsubscribe();
-      };
     }
 
     return () => {
+      if (profileChannel) {
+        supabase.removeChannel(profileChannel);
+      }
       subscription.unsubscribe();
     };
-  }, [user?.id]);
+  }, [user?.id, refetchProfile]);
 
   return {
     session,

@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,8 +13,8 @@ import { AuditLogViewer } from "@/components/admin/audit/AuditLogViewer";
 import { SystemHealthDashboard } from "@/components/admin/health/SystemHealthDashboard";
 import { motion } from "framer-motion";
 import VisualPicker from "@/components/design/VisualPicker";
+import { ProfileQueryMonitor } from "@/components/admin/monitoring/ProfileQueryMonitor";
 
-// Custom motion tab trigger component with proper TypeScript typing
 interface MotionTabsTriggerProps {
   value: string;
   children: React.ReactNode;
@@ -43,7 +42,6 @@ const MotionTabsTrigger = ({ value, children, className = "" }: MotionTabsTrigge
   );
 };
 
-// Sample design options for the VisualPicker demo
 const sampleDesignOptions = [
   {
     id: "1",
@@ -71,13 +69,11 @@ const sampleDesignOptions = [
 const AdminAnalytics = () => {
   const navigate = useNavigate();
   const { isAdmin, isVerifying } = useAdminStatus();
-  // Track if we've already redirected to prevent infinite loop
   const hasRedirected = useRef(false);
   
   useEffect(() => {
-    // Redirect non-admin users - only if not already redirected and not still verifying
     if (!isVerifying && !isAdmin && !hasRedirected.current) {
-      hasRedirected.current = true; // Mark as redirected
+      hasRedirected.current = true;
       navigate("/dashboard");
     }
   }, [isAdmin, isVerifying, navigate]);
@@ -155,6 +151,11 @@ const AdminAnalytics = () => {
               Supabase Audit
             </MotionTabsTrigger>
 
+            <MotionTabsTrigger value="profiles">
+              <Database className="h-4 w-4" />
+              Profile Queries
+            </MotionTabsTrigger>
+
             <MotionTabsTrigger value="design-picker">
               <Activity className="h-4 w-4" />
               Design Picker
@@ -223,6 +224,20 @@ const AdminAnalytics = () => {
 
           <TabsContent value="supabase" className="pt-4">
             <SupabaseAudit />
+          </TabsContent>
+
+          <TabsContent value="profiles" className="pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Queries Monitor</CardTitle>
+                <CardDescription>
+                  Track and optimize database queries to the profile table
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProfileQueryMonitor />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="design-picker" className="pt-4">

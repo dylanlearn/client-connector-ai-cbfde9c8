@@ -11,6 +11,7 @@ export function ProfileQueryMonitor() {
     const fetchQueryStats = async () => {
       setLoading(true);
       try {
+        // Call the RPC function to analyze profile queries
         const { data, error } = await supabase.rpc('analyze_profile_queries');
         
         if (error) {
