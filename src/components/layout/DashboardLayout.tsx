@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -10,10 +10,15 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   return (
@@ -96,13 +101,83 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <span className="font-bold text-xl">DezignSync</span>
           </div>
           {/* Mobile menu button */}
-          <button className="p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+          <button 
+            onClick={toggleMobileMenu} 
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
         </div>
       </div>
+      
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 bg-gray-800 bg-opacity-50 z-20">
+          <div className="fixed top-0 right-0 w-64 h-full bg-white shadow-lg transform transition-transform ease-in-out duration-300">
+            <div className="p-4 border-b flex justify-between items-center">
+              <span className="font-bold">Menu</span>
+              <button 
+                onClick={toggleMobileMenu}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <nav className="p-4">
+              <ul className="space-y-2">
+                <li>
+                  <a 
+                    href="/dashboard" 
+                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="/projects" 
+                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Projects
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="/templates" 
+                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Templates
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="/settings" 
+                    className="block p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+                    onClick={toggleMobileMenu}
+                  >
+                    Settings
+                  </a>
+                </li>
+              </ul>
+            </nav>
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+              <button 
+                onClick={handleSignOut}
+                className="w-full text-center p-2 rounded-lg text-gray-900 hover:bg-gray-100"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Main Content */}
       <div className="flex-1 md:ml-64 pt-16 md:pt-0">
