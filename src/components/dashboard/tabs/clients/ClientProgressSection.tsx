@@ -1,85 +1,69 @@
 
-import { ClientTaskProgress } from "@/types/client";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { ContentCard } from "@/components/ui/content-card";
-import ClientProgressEmpty from "./ClientProgressEmpty";
-import ClientProgressLoading from "./ClientProgressLoading";
-import ClientProgressList from "./ClientProgressList";
-import { useNavigate } from "react-router-dom";
+import { ClientTaskProgress } from "@/types/client";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ClientProgressSectionProps {
-  clientProgress: ClientTaskProgress[] | null;
+  clientProgress: ClientTaskProgress[];
   isLoading: boolean;
   limit?: number;
-  hideViewAll?: boolean;
-  title?: string;
 }
 
-/**
- * Component for displaying client progress section with proper loading and empty states
- */
-export default function ClientProgressSection({
-  clientProgress,
-  isLoading,
-  limit = 3,
-  hideViewAll = false,
-  title = "Client Progress"
-}: ClientProgressSectionProps) {
-  const navigate = useNavigate();
+const ClientProgressSection = ({ clientProgress, isLoading, limit = 5 }: ClientProgressSectionProps) => {
+  const displayProgress = clientProgress.slice(0, limit);
   
-  const handleClientClick = (linkId: string) => {
-    navigate(`/clients/link/${linkId}`);
-  };
-  
-  const renderContent = () => {
-    if (isLoading) {
-      return <ClientProgressLoading count={limit} />;
-    }
-    
-    if (!clientProgress || clientProgress.length === 0) {
-      return (
-        <ClientProgressEmpty 
-          action={{
-            label: "Add Client",
-            onClick: () => navigate("/clients")
-          }}
-        />
-      );
-    }
-    
-    return (
-      <ClientProgressList 
-        clientProgress={clientProgress} 
-        limit={limit}
-        onClientClick={handleClientClick}
-      />
-    );
-  };
-  
-  const renderFooter = () => {
-    if (hideViewAll || !clientProgress || clientProgress.length === 0) {
-      return null;
-    }
-    
-    return (
-      <div className="w-full flex justify-end">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/clients">
-            View All <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
-    );
+  const formatDate = (dateString: string | Date | undefined) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
   
   return (
-    <ContentCard 
-      title={title} 
-      footer={renderFooter()}
-    >
-      {renderContent()}
+    <ContentCard title="Client Progress">
+      {isLoading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-2 w-full" />
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-4 w-[80px]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : displayProgress.length > 0 ? (
+        <div className="space-y-4">
+          {displayProgress.map((client) => (
+            <div key={client.email} className="space-y-2">
+              <div className="flex justify-between">
+                <p className="font-medium">{client.clientName}</p>
+                <span className="text-sm text-muted-foreground">
+                  {client.completed}/{client.total}
+                </span>
+              </div>
+              <Progress value={client.percentage} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Last active: {formatDate(client.lastActive)}</span>
+                <span>{client.percentage.toFixed(0)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="py-8 text-center">
+          <p className="text-muted-foreground">No client progress data available</p>
+        </div>
+      )}
     </ContentCard>
   );
-}
+};
+
+export default ClientProgressSection;

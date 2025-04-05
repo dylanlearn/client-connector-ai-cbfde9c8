@@ -1,45 +1,28 @@
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReactNode } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 interface ContentCardProps {
-  title?: string;
+  title: string;
   description?: string;
-  footer?: ReactNode;
   children: ReactNode;
+  action?: ReactNode;
   className?: string;
-  headerClassName?: string;
-  contentClassName?: string;
-  footerClassName?: string;
 }
 
-export function ContentCard({
-  title,
-  description,
-  footer,
-  children,
-  className,
-  headerClassName,
-  contentClassName,
-  footerClassName
-}: ContentCardProps) {
+export function ContentCard({ title, description, children, action, className = "" }: ContentCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      {(title || description) && (
-        <CardHeader className={headerClassName}>
-          {title && <CardTitle>{title}</CardTitle>}
-          {description && <CardDescription>{description}</CardDescription>}
-        </CardHeader>
-      )}
-      <CardContent className={cn("pt-6", !title && !description && "pt-0", contentClassName)}>
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div>
+          <CardTitle className="text-base font-medium">{title}</CardTitle>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        </div>
+        {action && <div>{action}</div>}
+      </CardHeader>
+      <CardContent className="pt-2">
         {children}
       </CardContent>
-      {footer && (
-        <CardFooter className={cn("border-t bg-muted/50 px-6 py-4", footerClassName)}>
-          {footer}
-        </CardFooter>
-      )}
     </Card>
   );
 }

@@ -1,37 +1,50 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent } from "@/components/ui/card";
+import { Layers, Users, Calendar } from "lucide-react";
 
 interface QuickStatsProps {
   projectCount: number;
 }
 
-const QuickStats = ({ projectCount }: QuickStatsProps) => {
-  const isMobile = useIsMobile();
-  
+const QuickStats = ({ projectCount = 0 }: QuickStatsProps) => {
   return (
-    <Card>
-      <CardHeader className={isMobile ? "px-4 py-4" : ""}>
-        <CardTitle className={isMobile ? "text-lg" : ""}>Quick Stats</CardTitle>
-        <CardDescription className={isMobile ? "text-sm" : ""}>Your activity summary</CardDescription>
-      </CardHeader>
-      <CardContent className={isMobile ? "px-4 pt-0 pb-4" : ""}>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Active Projects</span>
-            <span className="text-lg font-semibold">{projectCount}</span>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 col-span-2">
+      <Card>
+        <CardContent className="p-4 flex items-center space-x-4">
+          <div className="bg-primary/10 rounded-full p-2">
+            <Layers className="h-6 w-6 text-primary" />
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Clients</span>
-            <span className="text-lg font-semibold">0</span>
+          <div>
+            <p className="text-sm text-muted-foreground">Projects</p>
+            <p className="text-2xl font-bold">{projectCount}</p>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">Completed</span>
-            <span className="text-lg font-semibold">0</span>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4 flex items-center space-x-4">
+          <div className="bg-primary/10 rounded-full p-2">
+            <Users className="h-6 w-6 text-primary" />
           </div>
-        </div>
-      </CardContent>
-    </Card>
+          <div>
+            <p className="text-sm text-muted-foreground">Clients</p>
+            <p className="text-2xl font-bold">3</p>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-4 flex items-center space-x-4">
+          <div className="bg-primary/10 rounded-full p-2">
+            <Calendar className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Active Tasks</p>
+            <p className="text-2xl font-bold">8</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
