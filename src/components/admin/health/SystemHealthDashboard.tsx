@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle 
@@ -18,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { SystemAlert, SystemHealthStatus, SystemHealthCheck } from '@/types/supabase-audit';
+import { formatDistanceToNow, format } from 'date-fns';
 
 export function SystemHealthDashboard() {
   const [healthStatus, setHealthStatus] = useState<SystemHealthStatus[]>([]);

@@ -1,5 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
+import { Database } from "@/integrations/supabase/types";
 import { SupabaseHealthCheck } from "@/types/supabase-audit";
 
 export class SupabaseAuditService {
@@ -78,7 +79,13 @@ export class SupabaseAuditService {
       
       let tableStats: any[] = [];
       if (tablesList && typeof tablesList === 'object') {
-        tableStats = tablesList.table_stats || [];
+        // Safely access table_stats, handle both array and object formats
+        if (Array.isArray(tablesList)) {
+          tableStats = [];
+        } else {
+          // Handle as an object with table_stats property
+          tableStats = (tablesList as any).table_stats || [];
+        }
       }
       
       const tables = tableStats.map((t: any) => t.table) || [];
