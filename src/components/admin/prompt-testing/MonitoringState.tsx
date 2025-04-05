@@ -1,190 +1,162 @@
-import { AlertTriangle, Info, AlertCircle } from "lucide-react";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { getMonitoringConfiguration, recordSystemStatus } from "@/utils/monitoring/system-status";
-import { SystemStatus } from "@/utils/monitoring/types";
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Gauge } from '@/components/ui/gauge';
+import { toast } from 'sonner';
+import { recordSystemStatus, SystemStatus, getMonitoringConfiguration } from '@/utils/monitoring/system-status';
+import { Loader2, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { StatusBadge } from '@/components/ui/status-badge';
 
 interface MonitoringStateProps {
-  threshold?: number;
+  component: string;
+  threshold: number;
+  status: SystemStatus;
   currentValue?: number;
-  status?: SystemStatus;
   message?: string;
-  component?: string;
   autoRefresh?: boolean;
-  refreshInterval?: number;
+  refreshInterval?: number; // in seconds
   persistToDb?: boolean;
 }
 
-interface SystemMonitoringRecord {
-  id: string;
-  component: string;
-  status: SystemStatus;
-  value: number;
-  threshold?: number;
-  message?: string;
-  created_at: string;
-}
-
-/**
- * Enhanced component that displays monitoring information about system state
- * Supports database persistence and auto-refresh
- */
-export function MonitoringState({ 
-  threshold = 100, 
-  currentValue = 0, 
-  status = "normal",
+export function MonitoringState({
+  component,
+  threshold,
+  status: initialStatus,
+  currentValue: initialValue = 0,
   message,
-  component = "default",
   autoRefresh = false,
-  refreshInterval = 30, // seconds
-  persistToDb = false
+  refreshInterval = 60,
+  persistToDb = false,
 }: MonitoringStateProps) {
-  const [currentStatus, setCurrentStatus] = useState<SystemStatus>(status);
-  const [currentThreshold, setCurrentThreshold] = useState<number>(threshold);
-  const [currentValueState, setCurrentValueState] = useState<number>(currentValue);
-  const [currentMessage, setCurrentMessage] = useState<string | undefined>(message);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (!component || !autoRefresh) return;
-
-    const fetchMonitoringData = async () => {
-      setIsLoading(true);
-      
-      try {
-        const config = await getMonitoringConfiguration(component);
-        
-        if (config) {
-          setCurrentThreshold(config.critical_threshold);
-          
-          if (config.warning_threshold && config.critical_threshold) {
-            let newStatus: SystemStatus = "normal";
-            if (currentValueState >= config.critical_threshold) {
-              newStatus = "critical";
-            } else if (currentValueState >= config.warning_threshold) {
-              newStatus = "warning";
-            }
-            
-            if (newStatus !== currentStatus) {
-              setCurrentStatus(newStatus);
-              if (newStatus !== "normal") {
-                toast[newStatus === "critical" ? "error" : "warning"](
-                  `${component} status changed to ${newStatus.toUpperCase()}`,
-                  { description: `Current value: ${currentValueState}, Threshold: ${newStatus === "critical" ? config.critical_threshold : config.warning_threshold}` }
-                );
-              }
-            }
-          }
-        }
-        
-        const { data, error } = await (supabase
-          .from('system_monitoring' as any)
-          .select('*')
-          .eq('component', component)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()) as any;
-          
-        if (error) {
-          console.error('Error fetching monitoring data:', error);
-        } else if (data) {
-          setCurrentValueState(data.value || 0);
-          setCurrentStatus(data.status as SystemStatus);
-          setCurrentMessage(data.message);
-          setLastUpdated(new Date(data.created_at));
-        }
-      } catch (error) {
-        console.error('Error in monitoring data fetch:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMonitoringData();
+  const [status, setStatus] = useState<SystemStatus>(initialStatus);
+  const [currentValue, setCurrentValue] = useState<number>(initialValue);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [warningThreshold, setWarningThreshold] = useState<number>(threshold * 0.8);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<number | null>(null);
+  
+  // Simulate a monitoring refresh
+  const refreshMonitoring = useCallback(async () => {
+    setIsRefreshing(true);
+    setError(null);
     
-    if (autoRefresh) {
-      const intervalId = setInterval(fetchMonitoringData, refreshInterval * 1000);
-      return () => clearInterval(intervalId);
+    try {
+      // Get monitoring configuration if available
+      const config = persistToDb ? await getMonitoringConfiguration(component) : null;
+      
+      // If we have a config, use those thresholds
+      if (config) {
+        setWarningThreshold(config.warning_threshold);
+      }
+      
+      // Generate a simulated value (in real app, this would be fetching real metrics)
+      const value = Math.floor(Math.random() * 100);
+      let newStatus: SystemStatus;
+      
+      if (value >= threshold) {
+        newStatus = 'critical';
+      } else if (value >= warningThreshold) {
+        newStatus = 'warning';
+      } else {
+        newStatus = 'normal';
+      }
+      
+      // Update state
+      setCurrentValue(value);
+      setStatus(newStatus);
+      
+      // Persist to database if needed
+      if (persistToDb) {
+        await recordSystemStatus(
+          component,
+          newStatus,
+          value,
+          threshold,
+          `${component} monitoring status: ${newStatus}`
+        );
+      }
+    } catch (error: any) {
+      console.error('Error refreshing monitoring:', error);
+      setError(error.message || 'Failed to refresh monitoring data');
+    } finally {
+      setIsRefreshing(false);
     }
-  }, [component, autoRefresh, refreshInterval, currentValueState, currentStatus]);
+  }, [component, threshold, persistToDb, warningThreshold]);
 
+  // Set up automatic refresh
   useEffect(() => {
-    if (persistToDb && component) {
-      recordSystemStatus(
-        component,
-        currentStatus,
-        currentValueState,
-        currentThreshold,
-        currentMessage
-      );
+    if (autoRefresh) {
+      refreshMonitoring();
+      
+      const interval = window.setInterval(() => {
+        refreshMonitoring();
+      }, refreshInterval * 1000);
+      
+      intervalRef.current = interval;
+      
+      return () => {
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+        }
+      };
     }
-  }, [persistToDb, component, currentStatus, currentValueState, currentThreshold, currentMessage]);
+  }, [autoRefresh, refreshInterval, refreshMonitoring]);
 
-  const StatusIcon = () => {
-    switch (currentStatus) {
-      case "warning":
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-      case "critical":
+  // Get status icon
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'critical':
         return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+      case 'normal':
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
       default:
-        return <Info className="h-5 w-5 text-green-500" />;
+        return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
 
+  // Calculate gauge color
+  const gaugeColor = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f59e0b' : '#10b981';
+
   return (
-    <div className="rounded-lg border p-4 flex items-center">
-      <StatusIcon />
-      <div className="ml-2 flex-1">
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium flex items-center justify-between">
+          <span>{component.charAt(0).toUpperCase() + component.slice(1)} Status</span>
+          <StatusBadge status={status} />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">System Status:</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs ${
-              currentStatus === "normal" ? "bg-green-100 text-green-800" : 
-              currentStatus === "warning" ? "bg-amber-100 text-amber-800" : 
-              "bg-red-100 text-red-800"
-            }`}>
-              {currentStatus.toUpperCase()}
-            </span>
+          <Gauge value={currentValue} max={100} size={80} color={gaugeColor} />
+          <div className="space-y-1 ml-4 flex-1">
+            <p className="text-sm text-muted-foreground">
+              {message || `${component} utilization is at ${currentValue}%`}
+            </p>
+            {error && (
+              <p className="text-xs text-red-500">Error: {error}</p>
+            )}
           </div>
-          
-          {isLoading && (
-            <span className="text-xs text-muted-foreground">Refreshing...</span>
+          {autoRefresh ? (
+            <div className="text-xs text-muted-foreground whitespace-nowrap">
+              Auto-refreshes every {refreshInterval}s
+            </div>
+          ) : (
+            <button 
+              onClick={refreshMonitoring} 
+              disabled={isRefreshing}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
           )}
         </div>
-        
-        {currentMessage && <p className="text-sm text-muted-foreground mt-1">{currentMessage}</p>}
-        
-        {component && (
-          <div className="mt-1">
-            <span className="text-xs text-muted-foreground">Component: {component}</span>
-          </div>
-        )}
-        
-        {currentValueState !== undefined && (
-          <div className="mt-2">
-            <div className="flex justify-between text-xs mb-1">
-              <span>Current: {currentValueState}</span>
-              <span>Threshold: {currentThreshold}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${
-                  currentStatus === "normal" ? "bg-green-500" : 
-                  currentStatus === "warning" ? "bg-amber-500" : 
-                  "bg-red-500"
-                }`}
-                style={{ width: `${Math.min(100, (currentValueState / currentThreshold) * 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
-        
-        <div className="mt-2 text-xs text-gray-500">
-          Last updated: {lastUpdated.toLocaleTimeString()}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

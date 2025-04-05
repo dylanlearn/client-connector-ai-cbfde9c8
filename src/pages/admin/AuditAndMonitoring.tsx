@@ -345,7 +345,7 @@ const AuditAndMonitoring = () => {
                 </Card>
               </div>
 
-              {healthCheck && <ServiceHealthSection healthCheck={healthCheck as unknown as SupabaseHealthCheck} />}
+              {healthCheck && <ServiceHealthSection healthCheck={healthCheck as any} />}
             </TabsContent>
 
             <TabsContent value="database" className="space-y-4">

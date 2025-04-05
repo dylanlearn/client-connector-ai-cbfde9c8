@@ -11,6 +11,7 @@ import StatsTab from "@/components/dashboard/tabs/StatsTab";
 import TipsTab from "@/components/dashboard/tabs/TipsTab";
 import UpgradeCard from "@/components/dashboard/tabs/UpgradeCard";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Project {
   id: string;
@@ -35,6 +36,11 @@ const Dashboard = () => {
         ]);
       } catch (error) {
         console.error('Error fetching projects:', error);
+        
+        // Show error toast
+        toast.error("Could not load projects", {
+          description: "There was a problem fetching your projects."
+        });
       }
     };
     
@@ -90,3 +96,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

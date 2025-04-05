@@ -5,3 +5,5 @@
 export * from './monitoring/index';
 export * from './monitoring/system-status';
 export * from './monitoring/types';
+export * from './monitoring/api-usage';
+

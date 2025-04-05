@@ -1,63 +1,54 @@
 
-/**
- * Utility functions for working with status badges and indicators
- */
-
-export type StatusType = 'success' | 'warning' | 'error' | 'info' | 'pending' | 'completed' | 'expired' | 'active';
+export type StatusType = 'normal' | 'warning' | 'critical' | 'unknown' | 'success' | 'error' | 'pending' | 'archived' | 'active' | 'inactive';
 
 interface StatusConfig {
   label: string;
-  variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success';
+  variant: 'default' | 'destructive' | 'outline' | 'secondary' | 'success' | 'warning';
   color: string;
 }
 
-/**
- * Get configuration for a status badge
- * @param status The status to get configuration for
- * @returns Configuration object for the status
- */
-export const getStatusConfig = (status: StatusType): StatusConfig => {
+export function getStatusConfig(status: StatusType): StatusConfig {
   switch (status) {
     case 'success':
-    case 'completed':
+    case 'normal':
     case 'active':
       return {
-        label: status === 'active' ? 'Active' : 'Completed',
+        label: status === 'active' ? 'Active' : status === 'success' ? 'Success' : 'Normal',
         variant: 'success',
-        color: 'text-green-800'
+        color: 'green'
       };
     case 'warning':
     case 'pending':
       return {
-        label: 'Pending',
-        variant: 'secondary',
-        color: 'text-amber-800'
+        label: status === 'pending' ? 'Pending' : 'Warning',
+        variant: 'warning',
+        color: 'amber'
       };
+    case 'critical':
     case 'error':
       return {
-        label: 'Error',
+        label: status === 'error' ? 'Error' : 'Critical',
         variant: 'destructive',
-        color: 'text-red-800'
+        color: 'red'
       };
-    case 'expired':
+    case 'inactive':
       return {
-        label: 'Expired',
+        label: 'Inactive',
+        variant: 'secondary',
+        color: 'gray'
+      };
+    case 'archived':
+      return {
+        label: 'Archived',
         variant: 'outline',
-        color: 'text-gray-500'
+        color: 'gray'
       };
-    case 'info':
-      return {
-        label: 'Info',
-        variant: 'default',
-        color: 'text-blue-800'
-      };
+    case 'unknown':
     default:
-      // For custom status types, create a capitalized label
-      const statusString = String(status || '');
       return {
-        label: statusString.charAt(0).toUpperCase() + statusString.slice(1),
-        variant: 'default',
-        color: 'text-blue-800'
+        label: 'Unknown',
+        variant: 'outline',
+        color: 'gray'
       };
   }
-};
+}
