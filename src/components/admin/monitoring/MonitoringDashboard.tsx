@@ -6,6 +6,7 @@ import { RateLimiterStatus } from "@/components/admin/monitoring/RateLimiterStat
 import { ApiUsageMetrics } from "@/components/admin/monitoring/ApiUsageMetrics";
 import { MonitoringControls } from "@/components/admin/monitoring/MonitoringControls";
 import { ClientErrorMonitoring } from "@/components/admin/monitoring/ClientErrorMonitoring";
+import { DatabaseMaintenancePanel } from "@/components/admin/monitoring/DatabaseMaintenancePanel";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { recordSystemStatus } from "@/utils/monitoring/system-status";
@@ -123,6 +124,7 @@ export function MonitoringDashboard() {
           <TabsTrigger value="api-usage">API Usage</TabsTrigger>
           <TabsTrigger value="errors">Client Errors</TabsTrigger>
           <TabsTrigger value="profiles">Profile Queries</TabsTrigger>
+          <TabsTrigger value="maintenance">DB Maintenance</TabsTrigger>
           <TabsTrigger value="settings">Configuration</TabsTrigger>
         </TabsList>
         
@@ -165,6 +167,10 @@ export function MonitoringDashboard() {
         
         <TabsContent value="profiles">
           <ProfileQueryMonitor />
+        </TabsContent>
+        
+        <TabsContent value="maintenance">
+          <DatabaseMaintenancePanel />
         </TabsContent>
         
         <TabsContent value="settings">
