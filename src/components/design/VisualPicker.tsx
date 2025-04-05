@@ -1,71 +1,67 @@
 
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import CardContainer from "./card/CardContainer";
 import DesignCard from "./card/DesignCard";
 import ControlButtons from "./card/ControlButtons";
 import EmptyState from "./card/EmptyState";
 
-export type DesignOption = {
+export interface DesignOption {
   id: string;
   title: string;
   description: string;
   imageUrl: string;
-  category: "hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction";
-};
+  category: string;
+}
 
 interface VisualPickerProps {
   options: DesignOption[];
-  onSelect: (option: DesignOption) => void;
-  category: DesignOption["category"];
-  className?: string;
+  onSelectOption: (option: DesignOption, liked: boolean) => void;
+  category?: string;
+  onComplete?: () => void;
 }
 
-const VisualPicker = ({ options, onSelect, category, className }: VisualPickerProps) => {
+const VisualPicker: React.FC<VisualPickerProps> = ({
+  options,
+  onSelectOption,
+  category = "design",
+  onComplete,
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<"" | "left" | "right">("");
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
+  const [showRestartButton, setShowRestartButton] = useState(false);
 
-  // Filter options by category
-  const filteredOptions = options.filter(option => option.category === category);
-  
-  // If no options match the category
-  if (filteredOptions.length === 0) {
-    return <EmptyState category={category} />;
-  }
-
-  const currentOption = filteredOptions[currentIndex];
+  useEffect(() => {
+    if (currentIndex >= options.length) {
+      setShowRestartButton(true);
+      if (onComplete) {
+        onComplete();
+      }
+    }
+  }, [currentIndex, options.length, onComplete]);
 
   const handleLike = () => {
-    onSelect(currentOption);
-    
-    if (currentIndex < filteredOptions.length - 1) {
+    if (currentIndex < options.length) {
+      onSelectOption(options[currentIndex], true);
       setDirection("right");
       setTimeout(() => {
-        setCurrentIndex(prev => prev + 1);
+        setCurrentIndex((prev) => prev + 1);
         setDirection("");
-        setOffsetX(0);
       }, 300);
-    } else {
-      // End of options
-      toast.success("You've seen all options!");
     }
   };
 
   const handleDislike = () => {
-    if (currentIndex < filteredOptions.length - 1) {
+    if (currentIndex < options.length) {
+      onSelectOption(options[currentIndex], false);
       setDirection("left");
       setTimeout(() => {
-        setCurrentIndex(prev => prev + 1);
+        setCurrentIndex((prev) => prev + 1);
         setDirection("");
-        setOffsetX(0);
       }, 300);
-    } else {
-      // End of options
-      toast.success("You've seen all options!");
     }
   };
 
@@ -97,58 +93,67 @@ const VisualPicker = ({ options, onSelect, category, className }: VisualPickerPr
     if (!isDragging) return;
     setIsDragging(false);
     
-    // Threshold for swipe action
-    const threshold = 100;
-    
-    if (offsetX > threshold) {
-      // Swiped right
+    // If dragged far enough, trigger like/dislike
+    if (offsetX > 100) {
       handleLike();
-    } else if (offsetX < -threshold) {
-      // Swiped left
+    } else if (offsetX < -100) {
       handleDislike();
-    } else {
-      // Reset position if not swiped enough
-      setOffsetX(0);
     }
+    setOffsetX(0);
   };
 
-  const restartSwiping = () => {
+  const handleRestart = () => {
     setCurrentIndex(0);
+    setShowRestartButton(false);
     setDirection("");
-    setOffsetX(0);
-    toast.info("Starting from the beginning");
   };
+
+  // Show empty state if no options or all options have been swiped
+  if (options.length === 0 || (currentIndex >= options.length && !showRestartButton)) {
+    return <EmptyState category={category} />;
+  }
 
   return (
-    <div className={cn("relative flex flex-col items-center", className)}>
-      <div className="text-center mb-4">
-        <h3 className="text-xl font-semibold capitalize">{category} Selection</h3>
-        <p className="text-sm text-muted-foreground">
-          Swipe right to select, left to skip. {currentIndex + 1} of {filteredOptions.length}
-        </p>
-      </div>
-      
-      <CardContainer onDragEnd={handleDragEnd}>
-        <DesignCard
-          option={currentOption}
-          onLike={handleLike}
-          onDislike={handleDislike}
-          direction={direction}
-          isDragging={isDragging}
-          offsetX={offsetX}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-        />
-      </CardContainer>
-      
-      <ControlButtons 
-        onLike={handleLike}
-        onDislike={handleDislike}
-        showRestartButton={currentIndex === filteredOptions.length - 1}
-        onRestart={restartSwiping}
-      />
+    <div className="flex flex-col items-center justify-center gap-6 py-4">
+      {currentIndex < options.length ? (
+        <>
+          <CardContainer onDragEnd={handleDragEnd}>
+            <DesignCard 
+              option={options[currentIndex]} 
+              onLike={handleLike} 
+              onDislike={handleDislike}
+              direction={direction}
+              isDragging={isDragging}
+              offsetX={offsetX}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+            />
+          </CardContainer>
+          
+          <ControlButtons 
+            onLike={handleLike} 
+            onDislike={handleDislike} 
+            showRestartButton={false}
+            onRestart={handleRestart}
+          />
+          
+          <div className="text-sm text-muted-foreground mt-2">
+            {currentIndex + 1} of {options.length}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-8">
+          <h3 className="text-xl font-medium mb-4">You've seen all {category} options</h3>
+          <ControlButtons 
+            onLike={handleLike} 
+            onDislike={handleDislike} 
+            showRestartButton={showRestartButton}
+            onRestart={handleRestart}
+          />
+        </div>
+      )}
     </div>
   );
 };

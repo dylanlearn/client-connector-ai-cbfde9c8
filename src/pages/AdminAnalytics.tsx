@@ -13,6 +13,7 @@ import { SupabaseAudit } from "@/components/admin/SupabaseAudit";
 import { AuditLogViewer } from "@/components/admin/audit/AuditLogViewer";
 import { SystemHealthDashboard } from "@/components/admin/health/SystemHealthDashboard";
 import { motion } from "framer-motion";
+import VisualPicker from "@/components/design/VisualPicker";
 
 // Custom motion tab trigger component with proper TypeScript typing
 interface MotionTabsTriggerProps {
@@ -41,6 +42,31 @@ const MotionTabsTrigger = ({ value, children, className = "" }: MotionTabsTrigge
     </TabsTrigger>
   );
 };
+
+// Sample design options for the VisualPicker demo
+const sampleDesignOptions = [
+  {
+    id: "1",
+    title: "Modern Minimalist",
+    description: "Clean lines with minimalist aesthetics focused on simplicity and function",
+    imageUrl: "/lovable-uploads/480f7861-cc1e-41e1-9ee1-be7ba9aa52b9.png",
+    category: "design"
+  },
+  {
+    id: "2",
+    title: "Bold & Vibrant",
+    description: "Energetic design with bright colors and dynamic elements",
+    imageUrl: "/lovable-uploads/23ecc16f-a53c-43af-8d71-1034d90498b3.png",
+    category: "design"
+  },
+  {
+    id: "3",
+    title: "Professional Business",
+    description: "Corporate aesthetic with refined elements and professional appeal",
+    imageUrl: "/lovable-uploads/0392ac21-110f-484c-8f3d-5fcbb0dcefc6.png",
+    category: "design"
+  }
+];
 
 const AdminAnalytics = () => {
   const navigate = useNavigate();
@@ -83,6 +109,10 @@ const AdminAnalytics = () => {
     );
   }
 
+  const handleDesignSelect = (option: any, liked: boolean) => {
+    console.log(`${liked ? 'Liked' : 'Disliked'} option:`, option);
+  };
+
   return (
     <DashboardLayout>
       <div className="container py-6">
@@ -123,6 +153,11 @@ const AdminAnalytics = () => {
             <MotionTabsTrigger value="supabase">
               <AlertTriangle className="h-4 w-4" />
               Supabase Audit
+            </MotionTabsTrigger>
+
+            <MotionTabsTrigger value="design-picker">
+              <Activity className="h-4 w-4" />
+              Design Picker
             </MotionTabsTrigger>
           </TabsList>
           
@@ -188,6 +223,26 @@ const AdminAnalytics = () => {
 
           <TabsContent value="supabase" className="pt-4">
             <SupabaseAudit />
+          </TabsContent>
+
+          <TabsContent value="design-picker" className="pt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Design Selection</CardTitle>
+                <CardDescription>
+                  Tinder-style design selection interface for quick visual feedback
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex justify-center">
+                <div className="w-full max-w-md">
+                  <VisualPicker 
+                    options={sampleDesignOptions} 
+                    onSelectOption={handleDesignSelect} 
+                    category="design" 
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
