@@ -12,6 +12,7 @@ import { SupabaseAuditService } from '@/services/ai/supabase-audit-service';
 import { SupabaseHealthCheck } from '@/types/supabase-audit';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client'; // Added this import
 
 export default function AuditAndMonitoring() {
   const [activeTab, setActiveTab] = useState('health');
