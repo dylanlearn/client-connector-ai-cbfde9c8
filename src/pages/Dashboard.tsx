@@ -5,10 +5,10 @@ import AppSidebar from "@/components/layout/sidebar/AppSidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { useDashboardTabs } from "@/hooks/use-dashboard-tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OverviewTab } from "@/components/dashboard/tabs/OverviewTab";
-import { ClientsTab } from "@/components/dashboard/tabs/ClientsTab";
-import { StatsTab } from "@/components/dashboard/tabs/StatsTab";
-import { TipsTab } from "@/components/dashboard/tabs/TipsTab";
+import OverviewTab from "@/components/dashboard/tabs/OverviewTab";
+import ClientsTab from "@/components/dashboard/tabs/ClientsTab";
+import StatsTab from "@/components/dashboard/tabs/StatsTab";
+import TipsTab from "@/components/dashboard/tabs/TipsTab";
 import UpgradeCard from "@/components/dashboard/tabs/UpgradeCard";
 
 const Dashboard = () => {
