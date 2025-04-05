@@ -94,10 +94,10 @@ const WireframeCard = ({ wireframe }: { wireframe: AIWireframe }) => {
 };
 
 const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
-  const { wireframes, isLoading } = useWireframeGeneration();
+  const { wireframes, isGenerating } = useWireframeGeneration();
   const [showGenerator, setShowGenerator] = useState(false);
 
-  if (isLoading) {
+  if (isGenerating) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {[1, 2, 3].map(i => (
