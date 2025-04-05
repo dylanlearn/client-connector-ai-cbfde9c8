@@ -11,12 +11,14 @@ import AdminRoute from './components/auth/AdminRoute';
 import Settings from './pages/Settings';
 import SupabaseAuditDashboard from './pages/admin/SupabaseAuditDashboard';
 import AuditAndMonitoring from './pages/admin/AuditAndMonitoring';
+import Templates from './pages/Templates';
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/templates" element={<Templates />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute><></></ProtectedRoute>}>
