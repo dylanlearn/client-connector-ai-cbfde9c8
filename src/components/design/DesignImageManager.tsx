@@ -6,9 +6,10 @@ import { designOptions } from "@/data/design-options";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Image as ImageIcon, RefreshCw, Loader2 } from "lucide-react";
+import { Image as ImageIcon, RefreshCw, Loader2, FileType } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
 
 export interface UpdatedDesignImage {
   id: string;
@@ -20,7 +21,9 @@ const DesignImageManager = () => {
   const [activeTab, setActiveTab] = useState("hero");
   const [updatedImages, setUpdatedImages] = useState<UpdatedDesignImage[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [generatingCategory, setGeneratingCategory] = useState<string | null>(null);
   const { user } = useAuth();
+  const { isGenerating, generateImage } = useDesignImageGeneration();
   
   // Get unique categories from design options
   const categories = Array.from(new Set(designOptions.map(option => option.category)));
@@ -76,6 +79,55 @@ const DesignImageManager = () => {
     }
   };
 
+  const generateNavbarImages = async () => {
+    if (!user || generatingCategory) return;
+    
+    setGeneratingCategory("navbar");
+    
+    try {
+      // Get all navbar options
+      const navbarOptions = designOptions.filter(option => option.category === "navbar");
+      
+      toast.info(`Starting to generate ${navbarOptions.length} navbar images. This may take a while...`);
+      
+      // Process each navbar option
+      for (const option of navbarOptions) {
+        toast.info(`Generating image for "${option.title}"...`);
+        
+        try {
+          const imageUrl = await generateImage(
+            "navbar",
+            option.description,
+            option.title
+          );
+          
+          if (imageUrl) {
+            setUpdatedImages(prev => [
+              ...prev,
+              {
+                id: option.id,
+                category: "navbar",
+                imageUrl
+              }
+            ]);
+            
+            toast.success(`Successfully generated image for ${option.title}`);
+          }
+        } catch (err) {
+          console.error(`Failed to generate image for ${option.title}:`, err);
+          toast.error(`Failed to generate image for ${option.title}`);
+        }
+      }
+      
+      toast.success("Finished generating navbar images. Review and apply changes.");
+    } catch (error) {
+      console.error("Error in navbar image generation:", error);
+      toast.error("There was a problem generating the navbar images.");
+    } finally {
+      setGeneratingCategory(null);
+    }
+  };
+
   if (!user) {
     return (
       <Card>
@@ -98,7 +150,29 @@ const DesignImageManager = () => {
   return (
     <Card className="mb-8">
       <CardHeader>
-        <CardTitle>Custom Design Images</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Custom Design Images</span>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={generateNavbarImages}
+              disabled={!!generatingCategory || isGenerating}
+            >
+              {generatingCategory === "navbar" ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FileType className="h-4 w-4 mr-2" />
+                  Generate All Navbar Images
+                </>
+              )}
+            </Button>
+          </div>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,6 +57,40 @@ const DesignPicker = () => {
           toast.success(`Generated new ${category} image! In a real app, this would update your design options.`);
         }
       }
+    } finally {
+      setRefreshingCategory(null);
+    }
+  };
+  
+  // New function specifically for generating navbar images
+  const handleRefreshNavbarImages = async () => {
+    if (isGenerating || !user) return;
+    
+    setRefreshingCategory("navbar");
+    try {
+      const navbarOptions = designOptions.filter(option => option.category === "navbar");
+      
+      toast.info(`Refreshing navbar designs with AI-generated images. This may take a moment...`);
+      
+      // Generate images for all navbar options
+      for (const option of navbarOptions) {
+        toast.info(`Generating image for ${option.title}...`);
+        
+        const imageUrl = await generateImage(
+          "navbar",
+          option.description,
+          option.title
+        );
+        
+        if (imageUrl) {
+          toast.success(`Generated image for ${option.title}!`);
+        }
+      }
+      
+      toast.success("All navbar images have been refreshed!");
+    } catch (error) {
+      console.error("Error generating navbar images:", error);
+      toast.error("Failed to generate all navbar images. Please try again.");
     } finally {
       setRefreshingCategory(null);
     }
@@ -125,15 +160,17 @@ const DesignPicker = () => {
               <Card className="p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium">Navigation Bars</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("navbar")}
-                    disabled={isGenerating || refreshingCategory === "navbar" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "navbar" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={handleRefreshNavbarImages}
+                      disabled={isGenerating || refreshingCategory === "navbar" || !user}
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "navbar" ? "animate-spin" : ""}`} />
+                      Generate All Navbar Images
+                    </Button>
+                  </div>
                 </div>
                 <CardContent className="p-0">
                   <VisualPicker 

@@ -108,7 +108,7 @@ export const designOptions: DesignOption[] = [
     category: "hero"
   },
   
-  // Navbar sections
+  // Navbar sections with enhanced descriptions
   {
     id: "navbar-1",
     title: "Transparent Navbar",
@@ -180,7 +180,7 @@ export const designOptions: DesignOption[] = [
     category: "navbar"
   },
   
-  // About sections with updated descriptions
+  // About sections 
   {
     id: "about-1",
     title: "Grid Layout (Images + Text)",
