@@ -11,12 +11,17 @@ import StatsTab from "@/components/dashboard/tabs/StatsTab";
 import TipsTab from "@/components/dashboard/tabs/TipsTab";
 import UpgradeCard from "@/components/dashboard/tabs/UpgradeCard";
 import { useEffect, useState } from "react";
-import { useProjects } from "@/hooks/use-projects";
+
+interface Project {
+  id: string;
+  name: string;
+  status: string;
+}
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
-  const { activeTab, loading: tabsLoading, handleTabChange } = useDashboardTabs();
-  const [projects, setProjects] = useState<any[]>([]);
+  const { activeTab, handleTabChange } = useDashboardTabs();
+  const [projects, setProjects] = useState<Project[]>([]);
   
   // Fetch projects for the Overview tab
   useEffect(() => {

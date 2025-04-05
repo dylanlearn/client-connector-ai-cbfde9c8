@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { SupabaseAuditService } from '@/services/ai/supabase-audit-service';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceHealthSection';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/components/ui/use-toast';
 import { toast } from 'sonner';
 import { 
@@ -54,6 +54,19 @@ interface HealthCheck {
   };
   overall: string;
 }
+
+const adaptHealthCheck = (healthCheckData: SupabaseHealthCheck): HealthCheck => {
+  return {
+    database: healthCheckData.database,
+    functions: {
+      ...healthCheckData.functions,
+      count: healthCheckData.functions.availableFunctions?.length || 0
+    },
+    auth: healthCheckData.auth,
+    storage: healthCheckData.storage,
+    overall: healthCheckData.overall
+  };
+};
 
 const AuditAndMonitoring = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -96,17 +109,7 @@ const AuditAndMonitoring = () => {
     try {
       const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
       if (isMounted.current) {
-        const adaptedHealthCheck: HealthCheck = {
-          database: healthCheckData.database,
-          functions: {
-            ...healthCheckData.functions,
-            count: healthCheckData.functions.availableFunctions?.length || 0
-          },
-          auth: healthCheckData.auth,
-          storage: healthCheckData.storage,
-          overall: healthCheckData.overall
-        };
-        setHealthCheck(adaptedHealthCheck);
+        setHealthCheck(adaptHealthCheck(healthCheckData));
       }
 
       const stats = await refreshDatabaseStatistics(true);
@@ -229,178 +232,207 @@ const AuditAndMonitoring = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="database">Database Performance</TabsTrigger>
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="security">Security Audit</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Database Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">
-                      {healthCheck?.database?.status === 'ok' ? 'Healthy' : 'Issues Detected'}
-                    </div>
-                    <div>
-                      {healthCheck?.database?.status === 'ok' ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {healthCheck?.database?.message}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Edge Functions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">
-                      {healthCheck?.functions?.status === 'ok' ? 'Running' : 'Issues Detected'}
-                    </div>
-                    <div>
-                      {healthCheck?.functions?.status === 'ok' ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center mt-2">
-                    <FunctionSquare className="h-4 w-4 text-blue-500 mr-2" />
-                    <span className="text-sm text-muted-foreground">
-                      {healthCheck?.functions?.availableFunctions?.length || healthCheck?.functions?.count || 0} functions deployed
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">System Health</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">
-                      {healthCheck?.overall === 'healthy' ? 'All Systems Go' : 'Attention Required'}
-                    </div>
-                    <div>
-                      {healthCheck?.overall === 'healthy' ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-500" />
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {healthCheck?.overall === 'healthy' 
-                      ? 'All components operating normally' 
-                      : 'Some services need attention'}
-                  </p>
-                </CardContent>
-              </Card>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[60vh]">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-muted-foreground">Loading system audit data...</p>
             </div>
+          </div>
+        ) : loadError ? (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Data</AlertTitle>
+            <AlertDescription>
+              {loadError}
+              <div className="mt-2">
+                <Button variant="outline" onClick={refreshData} disabled={isRefreshing}>
+                  {isRefreshing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Trying Again...
+                    </>
+                  ) : (
+                    'Try Again'
+                  )}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="database">Database Performance</TabsTrigger>
+              <TabsTrigger value="services">Services</TabsTrigger>
+              <TabsTrigger value="security">Security Audit</TabsTrigger>
+            </TabsList>
 
-            <ServiceHealthSection healthCheck={healthCheck as unknown as SupabaseHealthCheck} />
-          </TabsContent>
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Database Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">
+                        {healthCheck?.database?.status === 'ok' ? 'Healthy' : 'Issues Detected'}
+                      </div>
+                      <div>
+                        {healthCheck?.database?.status === 'ok' ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {healthCheck?.database?.message}
+                    </p>
+                  </CardContent>
+                </Card>
 
-          <TabsContent value="database" className="space-y-4">
-            <DatabaseMaintenancePanel />
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Edge Functions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">
+                        {healthCheck?.functions?.status === 'ok' ? 'Running' : 'Issues Detected'}
+                      </div>
+                      <div>
+                        {healthCheck?.functions?.status === 'ok' ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <FunctionSquare className="h-4 w-4 text-blue-500 mr-2" />
+                      <span className="text-sm text-muted-foreground">
+                        {healthCheck?.functions?.availableFunctions?.length || healthCheck?.functions?.count || 0} functions deployed
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {databasePerformance?.high_vacuum_tables && 
-             databasePerformance.high_vacuum_tables.length > 0 && (
-              <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Database Maintenance Recommended</AlertTitle>
-                <AlertDescription>
-                  {databasePerformance.high_vacuum_tables.length} tables have high dead row ratios and should be vacuumed.
-                </AlertDescription>
-              </Alert>
-            )}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">System Health</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">
+                        {healthCheck?.overall === 'healthy' ? 'All Systems Go' : 'Attention Required'}
+                      </div>
+                      <div>
+                        {healthCheck?.overall === 'healthy' ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {healthCheck?.overall === 'healthy' 
+                        ? 'All components operating normally' 
+                        : 'Some services need attention'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
 
-            <div className="text-xs text-muted-foreground mt-2">
-              Database stats collected: {databasePerformance?.timestamp && 
-                format(new Date(databasePerformance.timestamp), 'PPpp')}
-            </div>
-          </TabsContent>
+              {healthCheck && <ServiceHealthSection healthCheck={healthCheck as unknown as SupabaseHealthCheck} />}
+            </TabsContent>
 
-          <TabsContent value="services">
-            <Card>
-              <CardContent className="pt-6">
-                <Alert className="mb-6">
+            <TabsContent value="database" className="space-y-4">
+              <DatabaseMaintenancePanel />
+
+              {databasePerformance?.high_vacuum_tables && 
+              databasePerformance.high_vacuum_tables.length > 0 && (
+                <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Service monitoring is in preview</AlertTitle>
+                  <AlertTitle>Database Maintenance Recommended</AlertTitle>
                   <AlertDescription>
-                    Detailed service monitoring data will be available in the next update.
+                    {databasePerformance.high_vacuum_tables.length} tables have high dead row ratios and should be vacuumed.
                   </AlertDescription>
                 </Alert>
+              )}
 
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                  <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">Edge Function Status</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      View the status of all deployed edge functions
-                    </p>
-                    <Button>View Functions</Button>
-                  </div>
-                  
-                  <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">Auth Configuration</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Manage authentication providers and settings
-                    </p>
-                    <Button>View Auth Settings</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <div className="text-xs text-muted-foreground mt-2">
+                Database stats collected: {databasePerformance?.timestamp && 
+                  format(new Date(databasePerformance.timestamp), 'PPpp')}
+              </div>
+            </TabsContent>
 
-          <TabsContent value="security">
-            <Card>
-              <CardContent className="pt-6">
-                <Alert className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Security audit is in preview</AlertTitle>
-                  <AlertDescription>
-                    Detailed security audit data will be available in the next update.
-                  </AlertDescription>
-                </Alert>
+            <TabsContent value="services">
+              <Card>
+                <CardContent className="pt-6">
+                  <Alert className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Service monitoring is in preview</AlertTitle>
+                    <AlertDescription>
+                      Detailed service monitoring data will be available in the next update.
+                    </AlertDescription>
+                  </Alert>
 
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-                  <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">Auth Provider Audit</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Review authentication provider security settings
-                    </p>
-                    <Button>Start Audit</Button>
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                    <div className="border rounded-md p-4">
+                      <h3 className="font-medium text-lg mb-2">Edge Function Status</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        View the status of all deployed edge functions
+                      </p>
+                      <Button>View Functions</Button>
+                    </div>
+                    
+                    <div className="border rounded-md p-4">
+                      <h3 className="font-medium text-lg mb-2">Auth Configuration</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Manage authentication providers and settings
+                      </p>
+                      <Button>View Auth Settings</Button>
+                    </div>
                   </div>
-                  
-                  <div className="border rounded-md p-4">
-                    <h3 className="font-medium text-lg mb-2">RLS Policy Check</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Verify Row Level Security policies on tables
-                    </p>
-                    <Button>Check Policies</Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="security">
+              <Card>
+                <CardContent className="pt-6">
+                  <Alert className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Security audit is in preview</AlertTitle>
+                    <AlertDescription>
+                      Detailed security audit data will be available in the next update.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                    <div className="border rounded-md p-4">
+                      <h3 className="font-medium text-lg mb-2">Auth Provider Audit</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Review authentication provider security settings
+                      </p>
+                      <Button>Start Audit</Button>
+                    </div>
+                    
+                    <div className="border rounded-md p-4">
+                      <h3 className="font-medium text-lg mb-2">RLS Policy Check</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Verify Row Level Security policies on tables
+                      </p>
+                      <Button>Check Policies</Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </DashboardLayout>
   );
