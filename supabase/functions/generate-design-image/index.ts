@@ -37,8 +37,8 @@ serve(async (req) => {
         Style: ${style || 'modern, professional'}. Resolution 1024x576. No watermarks. No text overlays unless specified in the description.`;
         break;
       case "navbar":
-        prompt = `Create a professional website navigation bar mockup with: ${description}. 
-        Include typical navigation elements like logo area, menu items, and possibly a sign-in button or search icon. 
+        prompt = `Create a professional website navigation bar mockup for ${description}. 
+        Show a clean layout with appropriate spacing for a modern website navigation. 
         Create a clean, minimalist UI design suitable for a website navigation. 
         Style: ${style || 'clean, functional'}. Resolution 1024x576. No watermarks. No text overlays unless specified in the description.`;
         break;

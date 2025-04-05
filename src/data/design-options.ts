@@ -112,36 +112,71 @@ export const designOptions: DesignOption[] = [
   {
     id: "navbar-1",
     title: "Transparent Navbar",
-    description: "A transparent navbar that overlays the hero section.",
+    description: "A transparent navbar that blends into the background hero. Include placeholder links and logo. Ideal for landing pages or luxury sites.",
     imageUrl: "https://placehold.co/600x400/1abc9c/ffffff?text=Transparent+Navbar",
     category: "navbar"
   },
   {
     id: "navbar-2",
     title: "Sticky Navbar",
-    description: "A navbar that sticks to the top when scrolling.",
+    description: "A fixed navbar at the top of the page that remains visible when scrolling. Simple layout with 4–5 links and a CTA button.",
     imageUrl: "https://placehold.co/600x400/e74c3c/ffffff?text=Sticky+Navbar",
     category: "navbar"
   },
   {
     id: "navbar-3",
     title: "Sidebar Navigation",
-    description: "A vertical sidebar navigation for desktop and mobile.",
+    description: "A vertical left sidebar with nav links stacked top to bottom. Include icons or separators. Best for admin dashboards or multi-page apps.",
     imageUrl: "https://placehold.co/600x400/f39c12/ffffff?text=Sidebar+Nav",
     category: "navbar"
   },
   {
     id: "navbar-4",
-    title: "Centered Logo Navbar",
-    description: "A navbar with the logo centered and menu items on both sides.",
+    title: "Center Logo Navbar",
+    description: "A symmetrical navbar with the logo in the center and links on both sides. Balanced spacing and editorial tone.",
     imageUrl: "https://placehold.co/600x400/3498db/ffffff?text=Centered+Logo+Nav",
     category: "navbar"
   },
   {
     id: "navbar-5",
     title: "Minimal Navbar",
-    description: "Clean, simple navbar with minimal styling.",
+    description: "A clean, minimal navbar with only two or three text links and a small logo. Center or left-aligned. White background.",
     imageUrl: "https://placehold.co/600x400/95a5a6/ffffff?text=Minimal+Navbar",
+    category: "navbar"
+  },
+  {
+    id: "navbar-6",
+    title: "Mega Menu Navbar",
+    description: "A large dropdown-style nav with multiple columns, hover states, and category headers. Clean ecommerce-style layout.",
+    imageUrl: "https://placehold.co/600x400/9b59b6/ffffff?text=Mega+Menu+Nav",
+    category: "navbar"
+  },
+  {
+    id: "navbar-7",
+    title: "Bottom Navigation (Mobile)",
+    description: "A mobile UI with a bottom-fixed nav bar containing 4 icons. Thumb-friendly layout with clean spacing.",
+    imageUrl: "https://placehold.co/600x400/27ae60/ffffff?text=Bottom+Navigation",
+    category: "navbar"
+  },
+  {
+    id: "navbar-8",
+    title: "Hamburger Menu Nav",
+    description: "A compact desktop or mobile header with a hamburger icon on the right and hidden navigation drawer logic.",
+    imageUrl: "https://placehold.co/600x400/e67e22/ffffff?text=Hamburger+Menu",
+    category: "navbar"
+  },
+  {
+    id: "navbar-9",
+    title: "Scrolling Hide/Reveal Nav",
+    description: "A nav bar that hides when scrolling down and reappears when scrolling up. Include motion cues or subtle shadow.",
+    imageUrl: "https://placehold.co/600x400/16a085/ffffff?text=Hide+Reveal+Nav",
+    category: "navbar"
+  },
+  {
+    id: "navbar-10",
+    title: "Icon-Based Navbar",
+    description: "A horizontal navbar made entirely of icons (no labels). Clean layout with strong visual iconography.",
+    imageUrl: "https://placehold.co/600x400/8e44ad/ffffff?text=Icon+Based+Nav",
     category: "navbar"
   },
   
