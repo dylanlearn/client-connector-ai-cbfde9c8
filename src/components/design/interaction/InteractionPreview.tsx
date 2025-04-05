@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { DesignOption } from "../DesignPreview";
+import { DesignOption } from "@/types/design";
 import { Play, Pause, RefreshCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getInteractionConfig } from "./interactionConfigs";
+import { getInteractionConfig } from "./configs";
 import InteractionControls from "./InteractionControls";
 import DemonstrationRenderer from "./DemonstrationRenderer";
 
@@ -91,33 +91,22 @@ const InteractionPreview = ({ interaction }: InteractionPreviewProps) => {
       <p className="text-sm text-gray-600 mb-4">{interaction.description}</p>
       
       <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={triggerInteraction}
-          >
-            {isActive ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-            {isActive ? "Pause" : "Demonstrate"}
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={resetInteraction}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
-        </div>
-        
-        <Button
-          variant="secondary"
+        <Button 
+          variant="outline" 
           size="sm"
           onClick={() => setShowWebsitePreview(!showWebsitePreview)}
         >
           <ExternalLink className="h-4 w-4 mr-2" />
-          {showWebsitePreview ? "Simple View" : "Website Preview"}
+          {showWebsitePreview ? "Hide Preview" : "Website Preview"}
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={resetInteraction}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reset
         </Button>
       </div>
     </div>
