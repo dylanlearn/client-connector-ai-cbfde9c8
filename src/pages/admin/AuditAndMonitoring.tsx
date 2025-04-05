@@ -25,17 +25,35 @@ import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceH
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { toast } from 'sonner';
-import { refreshDatabaseStatistics, subscribeToDbRefresh } from '@/utils/database/maintenance-scheduler';
+import { 
+  // Import from new modular structure
+  refreshDatabaseStatistics, 
+  subscribeToDbRefresh,
+  DatabaseStatistics
+} from '@/utils/database/index';
 import { DatabaseMaintenancePanel } from '@/components/admin/monitoring/DatabaseMaintenancePanel';
+
+// Define appropriate interfaces for better type safety
+interface HealthCheck {
+  database?: {
+    status: string;
+    message: string;
+  };
+  functions?: {
+    status: string;
+    count: number;
+  };
+  overall: string;
+}
 
 const AuditAndMonitoring = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const [healthCheck, setHealthCheck] = useState(null);
-  const [databasePerformance, setDatabasePerformance] = useState(null);
+  const [healthCheck, setHealthCheck] = useState<HealthCheck | null>(null);
+  const [databasePerformance, setDatabasePerformance] = useState<DatabaseStatistics | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [loadError, setLoadError] = useState(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const supabaseAuditService = new SupabaseAuditService();
   const { toast: uiToast } = useToast();
   const isMounted = useRef(true);
@@ -84,7 +102,7 @@ const AuditAndMonitoring = () => {
         }
         setLastRefreshed(new Date());
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error refreshing data:', error);
       if (isMounted.current) {
         setLoadError(error.message || "Failed to load monitoring data");

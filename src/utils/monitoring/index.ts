@@ -1,13 +1,10 @@
 
 /**
- * Central monitoring utilities for enterprise-grade application monitoring
+ * Monitoring utilities index file
+ * This exports all monitoring-related functionality
  */
 
-export * from './client-error-dashboard';
-export * from './error-handling';
-export * from './rate-limiting';
-export * from './system-status';
-export * from './types';
+// Re-export database monitoring utilities
+export * from '../database/index';
 
-// Re-export for backward compatibility
-export * from '../monitoring-utils';
+// Additional monitoring functionality could be added here in the future

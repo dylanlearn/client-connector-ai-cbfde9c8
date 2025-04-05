@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +11,10 @@ import {
   refreshDatabaseStatistics, 
   subscribeToDbRefresh,
   verifyDeadRowPercentages,
-  cleanupFullDatabase
-} from "@/utils/database/maintenance-scheduler";
+  cleanupFullDatabase,
+  DatabaseStatistics,
+  TableStatistics
+} from "@/utils/database/index";
 import {
   Table,
   TableBody,
@@ -22,6 +23,18 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
+
+interface MaintenanceStatus {
+  inProgress: boolean;
+  status?: 'success' | 'error';
+  message?: string;
+}
+
+interface DatabasePerformanceTableProps {
+  tables: TableStatistics[];
+  maintenanceStatus: Record<string, MaintenanceStatus>;
+  onVacuumTable: (tableName: string) => Promise<void>;
+}
 
 export function DatabaseMaintenancePanel() {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,25 +45,19 @@ export function DatabaseMaintenancePanel() {
     timestamp: Date;
     details?: any;
   } | null>(null);
-  const [maintenanceStatus, setMaintenanceStatus] = useState<Record<string, {
-    inProgress: boolean;
-    status?: 'success' | 'error';
-    message?: string;
-  }>>({});
+  const [maintenanceStatus, setMaintenanceStatus] = useState<Record<string, MaintenanceStatus>>({});
   const [autoVacuumEnabled, setAutoVacuumEnabled] = useState<boolean>(false);
   const [autoVacuumInterval, setAutoVacuumInterval] = useState<number | null>(null);
-  const [databaseStats, setDatabaseStats] = useState<any>(null);
+  const [databaseStats, setDatabaseStats] = useState<DatabaseStatistics | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
 
-  // Subscribe to database refresh events
   useEffect(() => {
     const unsubscribe = subscribeToDbRefresh((stats) => {
       console.log("DatabaseMaintenancePanel received new stats:", stats);
       setDatabaseStats(stats);
     });
     
-    // Initial data fetch
     handleRefreshStats();
     
     return () => {
@@ -58,9 +65,8 @@ export function DatabaseMaintenancePanel() {
     };
   }, []);
 
-  // Handle refreshing database statistics
   const handleRefreshStats = async () => {
-    if (refreshing) return; // Prevent multiple simultaneous refreshes
+    if (refreshing) return;
     
     setRefreshing(true);
     try {
@@ -68,13 +74,10 @@ export function DatabaseMaintenancePanel() {
       const refreshedStats = await refreshDatabaseStatistics(true);
       console.log("DatabaseMaintenancePanel: Refreshed statistics:", refreshedStats);
       
-      // This should be redundant because of the subscription,
-      // but we set it directly as a fallback
       if (refreshedStats) {
         setDatabaseStats(refreshedStats);
       }
       
-      // Verify if our displayed stats match actual database stats
       const verificationResult = await verifyDeadRowPercentages();
       console.log("Verification result:", verificationResult);
       
@@ -91,7 +94,6 @@ export function DatabaseMaintenancePanel() {
     }
   };
 
-  // Enhanced database maintenance handler with better error handling and logging
   const handleDatabaseMaintenance = async (action: 'vacuum' | 'analyze' | 'reindex', tables: string[] = ['profiles', 'projects', 'user_memories', 'global_memories', 'intake_forms']) => {
     setIsLoading(true);
     setActionType(action);
@@ -99,7 +101,6 @@ export function DatabaseMaintenancePanel() {
     try {
       console.log(`Running ${action} on tables:`, tables);
       
-      // Call the edge function
       const { data, error } = await supabase.functions.invoke('database-maintenance', {
         body: { action, tables }
       });
@@ -129,7 +130,6 @@ export function DatabaseMaintenancePanel() {
           description: `${action.toUpperCase()} operation finished on ${data.success_tables.length} tables`
         });
         
-        // Refresh database statistics after maintenance operation
         await handleRefreshStats();
       } else {
         throw new Error(`No tables were successfully processed`);
@@ -151,7 +151,6 @@ export function DatabaseMaintenancePanel() {
     }
   };
 
-  // Handle full database cleanup
   const handleCleanupAllTables = async () => {
     setIsLoading(true);
     setActionType('full-vacuum');
@@ -167,7 +166,6 @@ export function DatabaseMaintenancePanel() {
           details: result.details
         });
         
-        // Refresh statistics after the cleanup
         await handleRefreshStats();
       } else {
         throw new Error(result.message);
@@ -194,7 +192,6 @@ export function DatabaseMaintenancePanel() {
   const reindexDatabase = () => handleDatabaseMaintenance('reindex');
 
   const vacuumSingleTable = async (tableName: string) => {
-    // Set the specific table's maintenance status to in progress
     setMaintenanceStatus(prev => ({
       ...prev,
       [tableName]: { inProgress: true }
@@ -208,7 +205,6 @@ export function DatabaseMaintenancePanel() {
           description: `VACUUM completed successfully on table: ${tableName}`
         });
         
-        // Update the maintenance status to success
         setMaintenanceStatus(prev => ({
           ...prev,
           [tableName]: { 
@@ -218,7 +214,6 @@ export function DatabaseMaintenancePanel() {
           }
         }));
         
-        // Refresh statistics to get updated values
         await handleRefreshStats();
       } else {
         throw new Error(result.message);
@@ -229,7 +224,6 @@ export function DatabaseMaintenancePanel() {
         description: error.message || `Failed to vacuum table ${tableName}`
       });
       
-      // Update maintenance status to error
       setMaintenanceStatus(prev => ({
         ...prev,
         [tableName]: { 
@@ -245,7 +239,6 @@ export function DatabaseMaintenancePanel() {
     setIsLoading(true);
     setActionType('cache');
     try {
-      // Call the edge function to clean up expired cache entries
       const { data, error } = await supabase.functions.invoke('cleanup-expired-cache');
 
       console.log('Cache cleanup response:', data, error);
@@ -264,7 +257,6 @@ export function DatabaseMaintenancePanel() {
         description: `Removed ${data?.entriesRemoved || 0} expired cache entries`,
       });
       
-      // Refresh statistics after cache cleanup
       await handleRefreshStats();
     } catch (error: any) {
       console.error('Error cleaning up cache:', error);
@@ -282,9 +274,8 @@ export function DatabaseMaintenancePanel() {
       setActionType(null);
     }
   };
-  
-  // Enhanced database performance display component
-  const DatabasePerformanceTable = ({ tables }: { tables: any[] }) => {
+
+  const DatabasePerformanceTable = ({ tables, maintenanceStatus, onVacuumTable }: DatabasePerformanceTableProps) => {
     if (!tables || tables.length === 0) {
       return (
         <div className="text-center py-8">
@@ -331,7 +322,7 @@ export function DatabaseMaintenancePanel() {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => vacuumSingleTable(table.table)}
+                      onClick={() => onVacuumTable(table.table)}
                       disabled={tableStatus.inProgress}
                       className="flex items-center gap-1"
                     >
@@ -395,7 +386,6 @@ export function DatabaseMaintenancePanel() {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Add prominent "Clean All Tables" button at the top */}
         <div className="flex flex-col gap-3">
           <Button 
             onClick={handleCleanupAllTables}
@@ -503,7 +493,11 @@ export function DatabaseMaintenancePanel() {
                 Last refreshed: {new Date().toLocaleTimeString()}
               </div>
             </div>
-            <DatabasePerformanceTable tables={databaseStats.table_stats} />
+            <DatabasePerformanceTable 
+              tables={databaseStats.table_stats} 
+              maintenanceStatus={maintenanceStatus}
+              onVacuumTable={vacuumSingleTable}
+            />
           </>
         ) : refreshing ? (
           <div className="flex justify-center items-center py-8">
