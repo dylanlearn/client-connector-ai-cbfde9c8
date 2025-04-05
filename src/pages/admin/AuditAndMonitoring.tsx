@@ -11,6 +11,7 @@ import { SystemHealthDashboard } from '@/components/admin/health/SystemHealthDas
 import { SupabaseAuditService } from '@/services/ai/supabase-audit-service';
 import { SupabaseHealthCheck } from '@/types/supabase-audit';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AuditAndMonitoring() {
   const [activeTab, setActiveTab] = useState('health');
@@ -31,21 +32,41 @@ export default function AuditAndMonitoring() {
       setHealthCheck(health);
       
       // Check required tables
-      const requiredTables = ['profiles', 'feedback', 'projects', 'user_memories'];
+      const requiredTables = [
+        'profiles', 
+        'feedback_analysis', 
+        'projects', 
+        'user_memories', 
+        'global_memories', 
+        'project_memories'
+      ];
       const tablesResult = await SupabaseAuditService.checkDatabaseSchema(requiredTables);
       setTablesCheck(tablesResult);
       
       // Check RLS policies
-      const rlsPolicies = await SupabaseAuditService.checkRLSPolicies([
-        ...requiredTables,
-        ...tablesResult.existingTables
-      ]);
+      const rlsPolicies: Record<string, boolean> = {};
+      for (const table of tablesResult.existingTables) {
+        try {
+          const { data, error } = await supabase.rpc('check_table_rls', { table_name: table });
+          if (!error) {
+            rlsPolicies[table] = !!data;
+          }
+        } catch (error) {
+          console.error(`Error checking RLS for ${table}:`, error);
+          rlsPolicies[table] = false;
+        }
+      }
       setRlsCheck(rlsPolicies);
       
       // Simulate cache cleanup
       setCacheCleanup(Math.floor(Math.random() * 50) + 5);
+      
+      toast.success("Audit completed successfully");
     } catch (error) {
       console.error("Error running audit:", error);
+      toast.error("Failed to complete audit", {
+        description: error instanceof Error ? error.message : "Unknown error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -55,13 +76,6 @@ export default function AuditAndMonitoring() {
   useEffect(() => {
     runSupabaseAudit();
   }, []);
-
-  // Ensure functions has the correct type for the audit results
-  const functionsData = healthCheck?.functions as {
-    status: "error" | "degraded" | "ok";
-    message: string;
-    availableFunctions: string[];
-  };
 
   return (
     <DashboardLayout>

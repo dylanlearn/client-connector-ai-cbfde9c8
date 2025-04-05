@@ -1,29 +1,13 @@
 
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Check, 
-  AlertTriangle, 
-  X, 
-  Database, 
-  Shield, 
-  Key, 
-  HardDrive,
-  FunctionSquare,
-  RefreshCw
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SupabaseHealthCheck } from '@/types/supabase-audit';
+import { RefreshCw, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 interface SupabaseAuditResultsProps {
-  healthCheck: any;
+  healthCheck: SupabaseHealthCheck | null;
   tablesCheck: {
     missingTables: string[];
     existingTables: string[];
@@ -42,193 +26,187 @@ export function SupabaseAuditResults({
   onRefresh,
   isLoading
 }: SupabaseAuditResultsProps) {
-  const getStatusIcon = (status: 'ok' | 'error' | boolean) => {
-    if (status === 'ok' || status === true) {
-      return <Check className="h-5 w-5 text-green-500" />;
-    } else if (status === 'error' || status === false) {
-      return <X className="h-5 w-5 text-red-500" />;
+  const getStatusIcon = (status: string) => {
+    if (status === 'ok' || status === 'healthy') {
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    } else if (status === 'degraded') {
+      return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+    } else {
+      return <XCircle className="h-5 w-5 text-red-500" />;
     }
-    return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
   };
-  
-  const getHealthColor = (status: string) => {
-    if (status === 'healthy' || status === 'ok') return 'text-green-600';
-    if (status === 'degraded') return 'text-yellow-600';
-    return 'text-red-600';
+
+  const getStatusClass = (status: string) => {
+    if (status === 'ok' || status === 'healthy') {
+      return 'bg-green-100 text-green-800 border-green-300';
+    } else if (status === 'degraded') {
+      return 'bg-amber-100 text-amber-800 border-amber-300';
+    } else {
+      return 'bg-red-100 text-red-800 border-red-300';
+    }
   };
-  
-  if (!healthCheck) return null;
-  
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Supabase Audit Results</CardTitle>
-            <CardDescription>
-              Comprehensive audit of your Supabase configuration
-            </CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRefresh} 
-            disabled={isLoading}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Run Audit Again
-          </Button>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
-        <div>
-          <h3 className="text-sm font-medium mb-2">Service Health</h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <Key className="h-4 w-4 mr-2 text-gray-500" />
-                <span className="text-sm">Authentication</span>
-              </div>
-              <div className="flex items-center">
-                {getStatusIcon(healthCheck.auth.status)}
-                <span className={`ml-2 text-xs ${getHealthColor(healthCheck.auth.status)}`}>
-                  {healthCheck.auth.status.toUpperCase()}
-                </span>
-              </div>
+    <div className="space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Supabase Audit Results</h2>
+        <Button 
+          variant="outline" 
+          onClick={onRefresh} 
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {healthCheck && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Overall Health</CardTitle>
+              <Badge className={getStatusClass(healthCheck.overall)}>
+                {healthCheck.overall.toUpperCase()}
+              </Badge>
             </div>
-            
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <Database className="h-4 w-4 mr-2 text-gray-500" />
-                <span className="text-sm">Database</span>
-              </div>
-              <div className="flex items-center">
-                {getStatusIcon(healthCheck.database.status)}
-                <span className={`ml-2 text-xs ${getHealthColor(healthCheck.database.status)}`}>
-                  {healthCheck.database.status.toUpperCase()}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <HardDrive className="h-4 w-4 mr-2 text-gray-500" />
-                <span className="text-sm">Storage</span>
-              </div>
-              <div className="flex items-center">
-                {getStatusIcon(healthCheck.storage.status)}
-                <span className={`ml-2 text-xs ${getHealthColor(healthCheck.storage.status)}`}>
-                  {healthCheck.storage.status.toUpperCase()}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-              <div className="flex items-center">
-                <FunctionSquare className="h-4 w-4 mr-2 text-gray-500" />
-                <span className="text-sm">Edge Functions</span>
-              </div>
-              <div className="flex items-center">
-                {getStatusIcon(healthCheck.functions.status)}
-                <span className={`ml-2 text-xs ${getHealthColor(healthCheck.functions.status)}`}>
-                  {healthCheck.functions.status.toUpperCase()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Edge Functions Section */}
-        <div>
-          <h3 className="text-sm font-medium mb-2">Edge Functions</h3>
-          <div className="p-3 border rounded-md bg-gray-50 h-[160px] overflow-y-auto">
-            {healthCheck.functions.availableFunctions && healthCheck.functions.availableFunctions.length > 0 ? (
-              <ul className="space-y-2">
-                {healthCheck.functions.availableFunctions.map((fn: string) => (
-                  <li key={fn} className="flex items-center text-sm">
-                    <FunctionSquare className="h-3 w-3 mr-2 text-blue-500" />
-                    {fn}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-gray-500">No edge functions detected</p>
-            )}
-          </div>
-        </div>
-        
-        {/* Database Tables Section */}
-        {tablesCheck && (
-          <div>
-            <h3 className="text-sm font-medium mb-2">Database Tables</h3>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-gray-500">Required Tables</h4>
-                <div className="p-3 border rounded-md bg-gray-50 max-h-[200px] overflow-y-auto">
-                  <ul className="space-y-2">
-                    {['profiles', 'global_memories', 'user_memories', 'project_memories', 'feedback_analysis', 'projects', 'ai_wireframes', 'wireframe_sections', 'wireframe_versions'].map(table => (
-                      <li key={table} className="flex items-center justify-between text-sm">
-                        <span>{table}</span>
-                        {tablesCheck.missingTables.includes(table) ? (
-                          <X className="h-4 w-4 text-red-500" />
-                        ) : (
-                          <Check className="h-4 w-4 text-green-500" />
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+              <div className="border rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  {getStatusIcon(healthCheck.auth.status)}
+                  <h3 className="ml-2 text-lg font-semibold">Authentication Service</h3>
                 </div>
+                <p className="text-sm text-gray-600">{healthCheck.auth.message}</p>
               </div>
               
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-gray-500">RLS Policies</h4>
-                <div className="p-3 border rounded-md bg-gray-50 max-h-[200px] overflow-y-auto">
-                  {rlsCheck ? (
-                    <ul className="space-y-2">
-                      {Object.entries(rlsCheck).map(([table, hasRLS]) => (
-                        <li key={table} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center">
-                            <Shield className="h-3 w-3 mr-2 text-gray-500" />
-                            {table}
-                          </div>
-                          {hasRLS ? (
-                            <span className="text-xs text-green-600">Protected</span>
-                          ) : (
-                            <span className="text-xs text-red-600">Unprotected</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-500">RLS policy information not available</p>
-                  )}
+              <div className="border rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  {getStatusIcon(healthCheck.database.status)}
+                  <h3 className="ml-2 text-lg font-semibold">Database Service</h3>
                 </div>
+                <p className="text-sm text-gray-600">{healthCheck.database.message}</p>
+                {healthCheck.database.performance && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Query time: {healthCheck.database.performance.queryTime}ms
+                  </p>
+                )}
+              </div>
+              
+              <div className="border rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  {getStatusIcon(healthCheck.storage.status)}
+                  <h3 className="ml-2 text-lg font-semibold">Storage Service</h3>
+                </div>
+                <p className="text-sm text-gray-600">{healthCheck.storage.message}</p>
+              </div>
+              
+              <div className="border rounded-lg p-4">
+                <div className="flex items-center mb-2">
+                  {getStatusIcon(healthCheck.functions.status)}
+                  <h3 className="ml-2 text-lg font-semibold">Functions Service</h3>
+                </div>
+                <p className="text-sm text-gray-600">{healthCheck.functions.message}</p>
+                {healthCheck.functions.availableFunctions && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-1">Available Functions:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {healthCheck.functions.availableFunctions.map((fn, index) => (
+                        <Badge key={index} variant="outline">{fn}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
-        
-        {/* Cache Cleanup */}
-        <div className="p-3 border rounded-md bg-gray-50">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Cache entries cleaned:</span>
-            <Badge variant="outline">{cacheCleanup}</Badge>
-          </div>
-        </div>
-      </CardContent>
+          </CardContent>
+        </Card>
+      )}
+
+      {tablesCheck && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Database Schema</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Existing Tables</h3>
+                {tablesCheck.existingTables.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {tablesCheck.existingTables.map((table, index) => (
+                      <Badge key={index} variant="outline" className="bg-green-50">
+                        {table}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No tables found</p>
+                )}
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Missing Tables</h3>
+                {tablesCheck.missingTables.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {tablesCheck.missingTables.map((table, index) => (
+                      <Badge key={index} variant="outline" className="bg-red-50 text-red-800">
+                        {table}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">All required tables exist</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {rlsCheck && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Row Level Security</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {Object.entries(rlsCheck).map(([table, enabled], index) => (
+                <div key={index} className={`border rounded-lg p-3 ${enabled ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <div className="flex items-center gap-2">
+                    {enabled ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    )}
+                    <span className="font-medium">{table}</span>
+                  </div>
+                  <p className="text-xs mt-1">
+                    RLS {enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
-      <CardFooter className="bg-gray-50 border-t">
-        <div className="flex w-full justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Last checked: {new Date().toLocaleTimeString()}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cache Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="font-medium">Entries cleaned in last run</p>
+              <p className="text-sm text-gray-600">Cache entries removed: {cacheCleanup}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+              Clean Cache
+            </Button>
           </div>
-          
-          <div className={`font-medium ${getHealthColor(healthCheck.overall)}`}>
-            Overall: {healthCheck.overall.toUpperCase()}
-          </div>
-        </div>
-      </CardFooter>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
