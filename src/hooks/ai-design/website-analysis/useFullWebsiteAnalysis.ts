@@ -1,86 +1,84 @@
 
+import { useState } from 'react';
 import { WebsiteAnalysisResult } from './types';
 import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
 
-/**
- * Hook for analyzing full website design
- */
+interface UseFullWebsiteAnalysisProps {
+  isAnalyzing: boolean;
+  analysisResults: WebsiteAnalysisResult[];
+  error: string | null;
+  startAnalysis: () => void;
+  finishAnalysis: (success: boolean, message?: string | null) => void;
+  addResult: (result: WebsiteAnalysisResult) => void;
+  setError: (message: string | null) => void;
+}
+
 export function useFullWebsiteAnalysis(
-  state: ReturnType<any>, 
-  user: any, 
-  showToast: any
+  state: UseFullWebsiteAnalysisProps,
+  user?: any,
+  showToast?: (title: string, description: string, type?: string) => void
 ) {
-  const { startAnalysis, finishAnalysis, addResult, setError } = state;
-  
   const analyzeWebsite = async (url: string): Promise<WebsiteAnalysisResult | null> => {
-    if (!url) {
-      setError("Please provide a valid URL");
-      return null;
-    }
+    if (state.isAnalyzing) return null;
     
     try {
-      startAnalysis();
+      state.startAnalysis();
+
+      // Call the service
+      const data = await WebsiteAnalysisService.analyzeWebsitePattern(url);
       
-      // Extract domain from URL for title
-      const domain = new URL(url).hostname;
+      if (!data) {
+        throw new Error("Failed to analyze website");
+      }
       
-      // Call the analysis service
-      const result = await WebsiteAnalysisService.analyzeWebsitePattern(
-        `Website Analysis - ${domain}`,
-        `Complete design analysis of ${url}`,
-        'website',
-        {
-          layout: '',
-          colorScheme: '',
-          typography: '',
-          imagery: ''
+      // Create result with all required fields
+      const result: WebsiteAnalysisResult = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        visualElements: {
+          layout: data.visualElements.layout,
+          colorScheme: data.visualElements.colorScheme,
+          typography: data.visualElements.typography,
+          spacing: data.visualElements.spacing || '',  // Provide default value
+          imagery: data.visualElements.imagery || ''   // Provide default value
         },
-        {
-          navigation: '',
-          interactivity: '',
-          responsiveness: '',
-          accessibility: ''
-        },
-        {
-          tone: '',
-          messaging: '',
-          callToAction: ''
-        },
-        [],
-        ['website-analysis'],
-        url
-      );
+        userExperience: data.userExperience,
+        contentAnalysis: data.contentAnalysis,
+        targetAudience: data.targetAudience,
+        implementationNotes: data.implementationNotes || '', // Provide default value
+        tags: data.tags,
+        source: url,
+        userId: user?.id
+      };
       
-      // Store the result if user is authenticated
+      // Add to results
+      state.addResult(result);
+      
+      // Store in database if we have a user
       if (user?.id) {
         try {
-          await WebsiteAnalysisService.storeWebsiteAnalysis(result, user.id);
-        } catch (storageError) {
-          console.error('Failed to store analysis result:', storageError);
+          await WebsiteAnalysisService.storeWebsiteAnalysis(result);
+        } catch (storeError) {
+          console.error("Error storing analysis:", storeError);
         }
       }
       
-      addResult(result);
-      finishAnalysis(true);
+      state.finishAnalysis(true);
       
-      showToast({
-        title: 'Analysis complete',
-        description: `Successfully analyzed ${domain}`,
-        variant: 'default'
-      });
+      if (showToast) {
+        showToast("Analysis Complete", "Website analysis successfully completed", "success");
+      }
       
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing website:", error);
-      const message = error instanceof Error ? error.message : "Failed to analyze website";
+      state.setError(error.message || "Error analyzing website");
+      state.finishAnalysis(false, error.message);
       
-      finishAnalysis(false, message);
-      
-      showToast({
-        title: 'Analysis failed',
-        description: message,
-        variant: 'destructive'
-      });
+      if (showToast) {
+        showToast("Analysis Failed", error.message || "Error analyzing website", "error");
+      }
       
       return null;
     }

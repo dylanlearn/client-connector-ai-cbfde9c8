@@ -60,6 +60,21 @@ const SupabaseAuditDashboard = () => {
     );
   }
 
+  // Ensure database has the correct type
+  const databaseData = auditData?.database as {
+    tables?: string[];
+    status: "error" | "ok";
+    message: string;
+    performance?: any;
+  };
+
+  // Ensure functions has the correct type
+  const functionsData = auditData?.functions as {
+    status: "error" | "degraded" | "ok";
+    message: string;
+    availableFunctions: string[];
+  };
+
   return (
     <DashboardLayout>
       <div className="container py-6">
@@ -80,7 +95,7 @@ const SupabaseAuditDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {auditData && <DatabaseTablesSection databaseData={auditData.database} />}
+                {databaseData && <DatabaseTablesSection databaseData={databaseData} />}
               </CardContent>
             </Card>
 
@@ -95,7 +110,7 @@ const SupabaseAuditDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {auditData && <EdgeFunctionsSection functionsData={auditData.functions} />}
+                {functionsData && <EdgeFunctionsSection functionsData={functionsData} />}
               </CardContent>
             </Card>
           </div>

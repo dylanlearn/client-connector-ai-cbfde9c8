@@ -2,65 +2,82 @@
 import { SectionType, WebsiteAnalysisResult } from './types';
 import { WebsiteAnalysisService } from '@/services/ai/design/website-analysis';
 
-/**
- * Hook for analyzing specific website sections
- */
+interface UseWebsiteSectionAnalysisProps {
+  isAnalyzing: boolean;
+  analysisResults: WebsiteAnalysisResult[];
+  error: string | null;
+  startAnalysis: () => void;
+  finishAnalysis: (success: boolean, message?: string | null) => void;
+  addResult: (result: WebsiteAnalysisResult) => void;
+  setError: (message: string | null) => void;
+}
+
 export function useWebsiteSectionAnalysis(
-  state: ReturnType<any>, 
-  user: any, 
-  showToast: any
+  state: UseWebsiteSectionAnalysisProps,
+  user?: any,
+  showToast?: (title: string, description: string, type?: string) => void
 ) {
-  const { startAnalysis, finishAnalysis, addResult, setError } = state;
-  
   const analyzeWebsiteSection = async (section: SectionType, url: string): Promise<WebsiteAnalysisResult | null> => {
-    if (!url) {
-      setError("Please provide a valid URL");
-      return null;
-    }
+    if (state.isAnalyzing) return null;
     
     try {
-      startAnalysis();
+      state.startAnalysis();
       
-      // Call the analysis service
-      const result = await WebsiteAnalysisService.analyzeWebsiteSection(
-        section,
-        `Section analysis from ${url}`,
-        {},
-        {},
-        url,
-        undefined
-      );
+      // Call the service
+      const data = await WebsiteAnalysisService.analyzeWebsiteSection(section, url);
       
-      // Store the result if user is authenticated
+      if (!data) {
+        throw new Error(`Failed to analyze ${section} section`);
+      }
+      
+      // Create result with all required fields
+      const result: WebsiteAnalysisResult = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        visualElements: {
+          layout: data.visualElements.layout,
+          colorScheme: data.visualElements.colorScheme,
+          typography: data.visualElements.typography,
+          spacing: data.visualElements.spacing || '',  // Provide default value
+          imagery: data.visualElements.imagery || ''   // Provide default value
+        },
+        userExperience: data.userExperience,
+        contentAnalysis: data.contentAnalysis,
+        targetAudience: data.targetAudience,
+        implementationNotes: data.implementationNotes || '', // Provide default value
+        tags: data.tags,
+        source: url,
+        userId: user?.id
+      };
+      
+      // Add to results
+      state.addResult(result);
+      
+      // Store in database if we have a user
       if (user?.id) {
         try {
-          await WebsiteAnalysisService.storeWebsiteAnalysis(result, user.id);
-        } catch (storageError) {
-          console.error('Failed to store analysis result:', storageError);
+          await WebsiteAnalysisService.storeWebsiteAnalysis(result);
+        } catch (storeError) {
+          console.error("Error storing analysis:", storeError);
         }
       }
       
-      addResult(result);
-      finishAnalysis(true);
+      state.finishAnalysis(true);
       
-      showToast({
-        title: 'Analysis complete',
-        description: `Successfully analyzed ${section} section`,
-        variant: 'default'
-      });
+      if (showToast) {
+        showToast("Analysis Complete", `Section ${section} analysis successfully completed`, "success");
+      }
       
       return result;
-    } catch (error) {
-      console.error("Error analyzing website section:", error);
-      const message = error instanceof Error ? error.message : "Failed to analyze website section";
+    } catch (error: any) {
+      console.error(`Error analyzing ${section} section:`, error);
+      state.setError(error.message || `Error analyzing ${section} section`);
+      state.finishAnalysis(false, error.message);
       
-      finishAnalysis(false, message);
-      
-      showToast({
-        title: 'Analysis failed',
-        description: message,
-        variant: 'destructive'
-      });
+      if (showToast) {
+        showToast("Analysis Failed", error.message || `Error analyzing ${section} section`, "error");
+      }
       
       return null;
     }
