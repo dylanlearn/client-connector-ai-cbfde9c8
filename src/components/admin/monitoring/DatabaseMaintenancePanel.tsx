@@ -99,6 +99,7 @@ export function DatabaseMaintenancePanel() {
   const cleanupCache = async () => {
     setIsLoading(true);
     try {
+      // Call the edge function to clean up expired cache entries
       const { data, error } = await supabase.functions.invoke('cleanup-expired-cache');
 
       if (error) {
@@ -107,13 +108,13 @@ export function DatabaseMaintenancePanel() {
 
       setLastResult({
         success: true,
-        message: `Removed ${data.entriesRemoved} expired cache entries`,
+        message: `Removed ${data?.entriesRemoved || 0} expired cache entries`,
         timestamp: new Date()
       });
 
       toast({
         title: "Cache cleanup completed",
-        description: `Removed ${data.entriesRemoved} expired cache entries`,
+        description: `Removed ${data?.entriesRemoved || 0} expired cache entries`,
       });
     } catch (error: any) {
       console.error('Error cleaning up cache:', error);

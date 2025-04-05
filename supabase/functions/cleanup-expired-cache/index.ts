@@ -20,46 +20,56 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
     
-    const startTime = Date.now();
+    // Cleanup different cache tables based on their structure
+    // First try wireframe_cache which has expires_at
+    let entriesRemoved = 0;
     
-    // First, get the count of expired cache entries
-    const { count: expiredCount, error: countError } = await supabaseClient
-      .from('ai_content_cache')
-      .select('id', { count: 'exact', head: true })
-      .lt('expires_at', new Date().toISOString());
-    
-    if (countError) {
-      throw new Error(`Error counting expired cache entries: ${countError.message}`);
+    try {
+      // Delete expired entries from wireframe_cache
+      const { data: wireframeCache, error: wireframeCacheError } = await supabaseClient
+        .from('wireframe_cache')
+        .delete()
+        .lt('expires_at', new Date().toISOString())
+        .select('count');
+        
+      if (!wireframeCacheError && wireframeCache) {
+        entriesRemoved += wireframeCache.length;
+      }
+    } catch (err) {
+      console.log('No wireframe_cache table or error accessing it:', err);
     }
     
-    // Delete the expired cache entries
-    const { error: deleteError } = await supabaseClient
-      .from('ai_content_cache')
-      .delete()
-      .lt('expires_at', new Date().toISOString());
-    
-    if (deleteError) {
-      throw new Error(`Error deleting expired cache entries: ${deleteError.message}`);
+    try {
+      // Delete expired entries from ai_content_cache
+      const { data: contentCache, error: contentCacheError } = await supabaseClient
+        .from('ai_content_cache')
+        .delete()
+        .lt('expires_at', new Date().toISOString())
+        .select('count');
+        
+      if (!contentCacheError && contentCache) {
+        entriesRemoved += contentCache.length;
+      }
+    } catch (err) {
+      console.log('No ai_content_cache table or error accessing it:', err);
     }
-    
-    const endTime = Date.now();
-    const duration = endTime - startTime;
     
     // Log the cleanup operation
     await supabaseClient
-      .from('ai_cleanup_metrics')
+      .from('system_monitoring')
       .insert({
-        entries_removed: expiredCount || 0,
-        duration_ms: duration,
-        success: true
+        event_type: 'cache_cleanup',
+        component: 'database',
+        status: 'normal',
+        message: `Removed ${entriesRemoved} expired cache entries`,
+        metadata: { entriesRemoved }
       });
     
     // Return success response
     return new Response(
       JSON.stringify({
         success: true,
-        entriesRemoved: expiredCount,
-        duration: duration
+        entriesRemoved,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -67,7 +77,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error cleaning up expired cache:', error);
+    console.error(`Error during cache cleanup:`, error);
     
     // Try to log the error
     try {
@@ -77,15 +87,15 @@ serve(async (req) => {
       );
       
       await supabaseClient
-        .from('ai_cleanup_metrics')
+        .from('system_monitoring')
         .insert({
-          entries_removed: 0,
-          duration_ms: 0,
-          success: false,
-          error_message: error instanceof Error ? error.message : String(error)
+          event_type: 'cache_cleanup_error',
+          component: 'database',
+          status: 'error',
+          message: error instanceof Error ? error.message : String(error),
         });
     } catch (logError) {
-      console.error('Failed to log cleanup error:', logError);
+      console.error('Failed to log cache cleanup error:', logError);
     }
     
     // Return error response
