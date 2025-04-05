@@ -10,17 +10,22 @@ export class RedisWrapper {
   private static instance: RedisWrapper;
   private client: RedisClientType | null = null;
   private isConnected: boolean = false;
+  private isClient: boolean;
 
   private constructor() {
-    if (!redisUrl) {
-      console.error('Missing Redis URL');
-      return;
-    }
+    this.isClient = typeof window !== 'undefined';
     
-    this.initializeClient();
+    // Only initialize Redis client on the server
+    if (!this.isClient && redisUrl) {
+      this.initializeClient();
+    } else {
+      console.log('Redis client not initialized in browser environment');
+    }
   }
 
   private async initializeClient(): Promise<void> {
+    if (this.isClient) return; // Safety check
+    
     try {
       this.client = createClient({ url: redisUrl });
       
@@ -51,12 +56,12 @@ export class RedisWrapper {
 
   // Check if connected
   public isClientConnected(): boolean {
-    return this.isConnected;
+    return !this.isClient && this.isConnected;
   }
 
   // Basic operations
   async get(key: string): Promise<string | null> {
-    if (!this.client) return null;
+    if (!this.client || this.isClient) return null;
     try {
       return await this.client.get(key);
     } catch (error) {
@@ -66,7 +71,7 @@ export class RedisWrapper {
   }
 
   async set(key: string, value: string, ttlSeconds?: number): Promise<boolean> {
-    if (!this.client) return false;
+    if (!this.client || this.isClient) return false;
     try {
       if (ttlSeconds) {
         await this.client.set(key, value, { EX: ttlSeconds });
@@ -81,7 +86,7 @@ export class RedisWrapper {
   }
 
   async del(key: string): Promise<boolean> {
-    if (!this.client) return false;
+    if (!this.client || this.isClient) return false;
     try {
       await this.client.del(key);
       return true;
@@ -93,7 +98,7 @@ export class RedisWrapper {
 
   // Cache specific methods 
   async cacheData<T>(key: string, data: T, ttlSeconds: number = 3600): Promise<boolean> {
-    if (!this.client) return false;
+    if (!this.client || this.isClient) return false;
     try {
       const serializedData = JSON.stringify(data);
       return await this.set(key, serializedData, ttlSeconds);
@@ -104,7 +109,7 @@ export class RedisWrapper {
   }
 
   async getCachedData<T>(key: string): Promise<T | null> {
-    if (!this.client) return null;
+    if (!this.client || this.isClient) return null;
     try {
       const data = await this.get(key);
       if (!data) return null;
@@ -117,7 +122,7 @@ export class RedisWrapper {
 
   // Analytics specific methods
   async incrementCounter(key: string, increment: number = 1): Promise<number | null> {
-    if (!this.client) return null;
+    if (!this.client || this.isClient) return null;
     try {
       return await this.client.incrBy(key, increment);
     } catch (error) {
@@ -127,7 +132,7 @@ export class RedisWrapper {
   }
 
   async getCounters(pattern: string): Promise<Record<string, number>> {
-    if (!this.client) return {};
+    if (!this.client || this.isClient) return {};
     try {
       const keys = await this.client.keys(pattern);
       const result: Record<string, number> = {};
@@ -148,7 +153,7 @@ export class RedisWrapper {
 
   // AI memory caching
   async cacheEmbedding(key: string, embedding: number[], ttlSeconds: number = 86400): Promise<boolean> {
-    if (!this.client) return false;
+    if (!this.client || this.isClient) return false;
     try {
       const serializedEmbedding = JSON.stringify(embedding);
       return await this.set(`embedding:${key}`, serializedEmbedding, ttlSeconds);
@@ -159,7 +164,7 @@ export class RedisWrapper {
   }
 
   async getCachedEmbedding(key: string): Promise<number[] | null> {
-    if (!this.client) return null;
+    if (!this.client || this.isClient) return null;
     try {
       const data = await this.get(`embedding:${key}`);
       if (!data) return null;
@@ -172,7 +177,7 @@ export class RedisWrapper {
 
   // Close connection
   async disconnect(): Promise<void> {
-    if (this.client) {
+    if (this.client && !this.isClient) {
       await this.client.disconnect();
       this.isConnected = false;
     }

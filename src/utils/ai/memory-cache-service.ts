@@ -1,6 +1,9 @@
 
 import { redisClient } from '../redis/redis-wrapper';
 
+// Check if running in browser
+const isBrowser = typeof window !== 'undefined';
+
 /**
  * Service for caching AI memory and embedding data using Redis
  * This significantly speeds up retrieval of frequently accessed memory patterns
@@ -10,6 +13,7 @@ export const MemoryCacheService = {
    * Cache user memory context
    */
   cacheUserMemoryContext: async (userId: string, context: any): Promise<boolean> => {
+    if (isBrowser) return false; // Skip in browser environment
     return await redisClient.cacheData(
       `memory:user:${userId}:context`, 
       context,
@@ -21,6 +25,7 @@ export const MemoryCacheService = {
    * Get cached user memory context
    */
   getUserMemoryContext: async <T>(userId: string): Promise<T | null> => {
+    if (isBrowser) return null; // Skip in browser environment
     return await redisClient.getCachedData<T>(`memory:user:${userId}:context`);
   },
   
@@ -28,6 +33,7 @@ export const MemoryCacheService = {
    * Cache project memory context
    */
   cacheProjectMemoryContext: async (projectId: string, context: any): Promise<boolean> => {
+    if (isBrowser) return false; // Skip in browser environment
     return await redisClient.cacheData(
       `memory:project:${projectId}:context`,
       context,
@@ -39,6 +45,7 @@ export const MemoryCacheService = {
    * Get cached project memory context
    */
   getProjectMemoryContext: async <T>(projectId: string): Promise<T | null> => {
+    if (isBrowser) return null; // Skip in browser environment
     return await redisClient.getCachedData<T>(`memory:project:${projectId}:context`);
   },
   
@@ -49,6 +56,7 @@ export const MemoryCacheService = {
     contentHash: string, 
     embedding: number[]
   ): Promise<boolean> => {
+    if (isBrowser) return false; // Skip in browser environment
     return await redisClient.cacheEmbedding(
       `embedding:${contentHash}`,
       embedding,
@@ -60,6 +68,7 @@ export const MemoryCacheService = {
    * Get cached embedding vector
    */
   getEmbeddingVector: async (contentHash: string): Promise<number[] | null> => {
+    if (isBrowser) return null; // Skip in browser environment
     return await redisClient.getCachedEmbedding(`embedding:${contentHash}`);
   },
   
@@ -70,6 +79,8 @@ export const MemoryCacheService = {
     query: string, 
     results: any[]
   ): Promise<boolean> => {
+    if (isBrowser) return false; // Skip in browser environment
+    
     // Create a stable hash for the query
     const queryHash = createQueryHash(query);
     
@@ -84,6 +95,8 @@ export const MemoryCacheService = {
    * Get cached semantic search results
    */
   getSemanticSearchResults: async <T>(query: string): Promise<T[] | null> => {
+    if (isBrowser) return null; // Skip in browser environment
+    
     // Create a stable hash for the query
     const queryHash = createQueryHash(query);
     
@@ -94,6 +107,7 @@ export const MemoryCacheService = {
    * Clean up expired caches and stale data
    */
   cleanupStaleMemoryCache: async (): Promise<number> => {
+    if (isBrowser) return 0; // Skip in browser environment
     // This would be managed automatically by Redis TTL
     // This method is a placeholder for more complex cleanup operations
     return 0;
