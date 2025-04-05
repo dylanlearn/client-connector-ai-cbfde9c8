@@ -42,37 +42,37 @@ serve(async (req) => {
     const failedTables = [];
     let tableStats = [];
     
+    // First, get a list of all public tables to check against
+    const { data: allTables, error: tablesError } = await supabaseClient
+      .from('pg_tables')
+      .select('tablename')
+      .eq('schemaname', 'public');
+    
+    if (tablesError) {
+      console.error('Error fetching tables list:', tablesError);
+      throw new Error(`Failed to get tables list: ${tablesError.message}`);
+    }
+    
+    // Create a set of valid table names for quick lookup
+    const validTableNames = new Set(allTables.map(t => t.tablename));
+    console.log('Valid tables in database:', Array.from(validTableNames));
+    
     for (const table of tablesToProcess) {
       console.log(`Processing ${action} on table ${table}`);
-      let query;
       let success = false;
       
-      // First, verify the table exists to prevent SQL injection
-      const { data: tableExists, error: tableCheckError } = await supabaseClient
-        .from('pg_tables')
-        .select('tablename')
-        .eq('schemaname', 'public')
-        .eq('tablename', table)
-        .maybeSingle();
-      
-      if (tableCheckError) {
-        console.error(`Error checking if table ${table} exists:`, tableCheckError);
-        failedTables.push({ table, error: 'Table check failed' });
+      // Check if table exists in the valid tables list
+      if (!validTableNames.has(table)) {
+        console.error(`Table ${table} does not exist in public schema`);
+        failedTables.push({ table, error: 'Table does not exist in public schema' });
         continue;
       }
       
-      if (!tableExists) {
-        console.error(`Table ${table} does not exist`);
-        failedTables.push({ table, error: 'Table does not exist' });
-        continue;
-      }
-      
-      switch (action) {
-        case 'vacuum':
-          try {
-            // Direct SQL execution for VACUUM since it can't run in a transaction
-            // Using DO block for safety with dynamic table names
-            query = `
+      try {
+        switch (action) {
+          case 'vacuum':
+            // Direct SQL execution for VACUUM
+            const vacuumQuery = `
               DO $$
               BEGIN
                 EXECUTE 'VACUUM ANALYZE public."${table}"';
@@ -83,31 +83,25 @@ serve(async (req) => {
               $$;
             `;
             
-            console.log("Executing VACUUM query:", query);
+            console.log("Executing VACUUM query:", vacuumQuery);
             
-            const { error: execError } = await supabaseClient.rpc('exec_sql', { 
-              sql_query: query 
+            const { error: vacuumError } = await supabaseClient.rpc('exec_sql', { 
+              sql_query: vacuumQuery 
             });
             
-            if (execError) {
-              console.error(`Error during VACUUM on table ${table}:`, execError);
-              failedTables.push({ table, error: execError.message });
-              throw new Error(`Error vacuuming table ${table}: ${execError.message}`);
+            if (vacuumError) {
+              console.error(`Error during VACUUM on table ${table}:`, vacuumError);
+              failedTables.push({ table, error: vacuumError.message });
+              continue;
             }
             
             console.log(`VACUUM completed successfully on table ${table}`);
             success = true;
-          } catch (error) {
-            console.error(`Error executing VACUUM on table ${table}:`, error);
-            failedTables.push({ table, error: error.message });
-            // Continue with other tables instead of throwing
-          }
-          break;
-          
-        case 'analyze':
-          try {
+            break;
+            
+          case 'analyze':
             // Direct SQL execution for ANALYZE
-            query = `
+            const analyzeQuery = `
               DO $$
               BEGIN
                 EXECUTE 'ANALYZE public."${table}"';
@@ -118,31 +112,25 @@ serve(async (req) => {
               $$;
             `;
             
-            console.log("Executing ANALYZE query:", query);
+            console.log("Executing ANALYZE query:", analyzeQuery);
             
             const { error: analyzeError } = await supabaseClient.rpc('exec_sql', { 
-              sql_query: query 
+              sql_query: analyzeQuery 
             });
             
             if (analyzeError) {
               console.error(`Error during ANALYZE on table ${table}:`, analyzeError);
               failedTables.push({ table, error: analyzeError.message });
-              throw new Error(`Error analyzing table ${table}: ${analyzeError.message}`);
+              continue;
             }
             
             console.log(`ANALYZE completed successfully on table ${table}`);
             success = true;
-          } catch (error) {
-            console.error(`Error executing ANALYZE on table ${table}:`, error);
-            failedTables.push({ table, error: error.message });
-            // Continue with other tables instead of throwing
-          }
-          break;
-          
-        case 'reindex':
-          try {
+            break;
+            
+          case 'reindex':
             // Direct SQL execution for REINDEX
-            query = `
+            const reindexQuery = `
               DO $$
               BEGIN
                 EXECUTE 'REINDEX TABLE public."${table}"';
@@ -153,29 +141,29 @@ serve(async (req) => {
               $$;
             `;
             
-            console.log("Executing REINDEX query:", query);
+            console.log("Executing REINDEX query:", reindexQuery);
             
             const { error: reindexError } = await supabaseClient.rpc('exec_sql', { 
-              sql_query: query 
+              sql_query: reindexQuery 
             });
             
             if (reindexError) {
               console.error(`Error during REINDEX on table ${table}:`, reindexError);
               failedTables.push({ table, error: reindexError.message });
-              throw new Error(`Error reindexing table ${table}: ${reindexError.message}`);
+              continue;
             }
             
             console.log(`REINDEX completed successfully on table ${table}`);
             success = true;
-          } catch (error) {
-            console.error(`Error executing REINDEX on table ${table}:`, error);
-            failedTables.push({ table, error: error.message });
-            // Continue with other tables instead of throwing
-          }
-          break;
-          
-        default:
-          throw new Error(`Unsupported action: ${action}`);
+            break;
+            
+          default:
+            throw new Error(`Unsupported action: ${action}`);
+        }
+      } catch (error) {
+        console.error(`Error executing ${action} on table ${table}:`, error);
+        failedTables.push({ table, error: error.message });
+        continue;
       }
       
       if (success) {

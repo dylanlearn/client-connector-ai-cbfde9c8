@@ -7,6 +7,7 @@ import { Loader2, Database, RefreshCw, AlertCircle, CheckCircle } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
+import { vacuumTable } from "@/utils/database/maintenance-scheduler";
 import {
   Table,
   TableBody,
@@ -35,7 +36,7 @@ export function DatabaseMaintenancePanel() {
   const { toast: uiToast } = useToast();
 
   // Enhanced database maintenance handler with better error handling and logging
-  const handleDatabaseMaintenance = async (action: 'vacuum' | 'analyze' | 'reindex', tables: string[] = ['profiles', 'projects', 'user_memories', 'global_memories']) => {
+  const handleDatabaseMaintenance = async (action: 'vacuum' | 'analyze' | 'reindex', tables: string[] = ['profiles', 'projects', 'user_memories', 'global_memories', 'intake_forms']) => {
     setIsLoading(true);
     setActionType(action);
     
@@ -103,24 +104,9 @@ export function DatabaseMaintenancePanel() {
     }));
     
     try {
-      console.log(`Running VACUUM on single table: ${tableName}`);
+      const result = await vacuumTable(tableName);
       
-      // Call the edge function for a single table
-      const { data, error } = await supabase.functions.invoke('database-maintenance', {
-        body: { action: 'vacuum', tables: [tableName] }
-      });
-
-      console.log(`VACUUM single table response:`, data, error);
-
-      if (error) {
-        throw error;
-      }
-
-      if (data?.failed_tables && data.failed_tables.length > 0) {
-        throw new Error(`Failed to vacuum table ${tableName}: ${data.failed_tables[0]?.error || 'Unknown error'}`);
-      }
-
-      if (data?.success_tables && data.success_tables.includes(tableName)) {
+      if (result.success) {
         toast.success(`Table maintenance completed`, {
           description: `VACUUM completed successfully on table: ${tableName}`
         });
@@ -135,7 +121,7 @@ export function DatabaseMaintenancePanel() {
           }
         }));
       } else {
-        throw new Error(`Table ${tableName} was not successfully vacuumed`);
+        throw new Error(result.message);
       }
     } catch (error: any) {
       console.error(`Error vacuuming table ${tableName}:`, error);
