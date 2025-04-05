@@ -133,12 +133,27 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
         compareVersions.v2
       );
       
+      // Transform the result into the expected format with tuple values
+      const transformedChanges = [
+        ...result.added.map(item => ({ 
+          type: 'added' as const, 
+          path: item, 
+          values: [null, 'Added'] as [any, any] 
+        })),
+        ...result.removed.map(item => ({ 
+          type: 'removed' as const, 
+          path: item, 
+          values: ['Removed', null] as [any, any] 
+        })),
+        ...result.modified.map(item => ({ 
+          type: 'modified' as const, 
+          path: item, 
+          values: ['Before', 'After'] as [any, any] 
+        }))
+      ];
+      
       setCompareResult({
-        changes: [
-          ...result.added.map(item => ({ type: 'added' as const, path: item, values: [null, 'Added'] })),
-          ...result.removed.map(item => ({ type: 'removed' as const, path: item, values: ['Removed', null] })),
-          ...result.modified.map(item => ({ type: 'modified' as const, path: item, values: ['Before', 'After'] }))
-        ],
+        changes: transformedChanges,
         summary: `Found ${result.added.length} additions, ${result.removed.length} removals, and ${result.modified.length} modifications.`
       });
     } catch (err) {
@@ -248,7 +263,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
           <TabsContent value="versions">
             <ScrollArea className="h-[400px]">
               <div className="px-6 py-2 space-y-4">
-                {history.versions
+                {history?.versions
                   .filter(version => version.branch_name === 'main')
                   .map(version => (
                   <div
@@ -337,14 +352,14 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
               </Button>
               
               <span className="text-xs text-muted-foreground">
-                {history.versions.filter(v => v.branch_name === 'main').length} versions
+                {history?.versions.filter(v => v.branch_name === 'main').length || 0} versions
               </span>
             </CardFooter>
           </TabsContent>
           
           <TabsContent value="branches">
             <CardContent>
-              {history.branches.length <= 1 ? (
+              {!history?.branches || history.branches.length <= 1 ? (
                 <div className="text-center py-6">
                   <GitBranch className="mx-auto h-10 w-10 opacity-30 mb-2" />
                   <p className="text-muted-foreground">
@@ -391,7 +406,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (history.current) {
+                  if (history?.current) {
                     setSelectedVersion(history.current.id);
                   }
                   setBranchDialogOpen(true);
@@ -518,7 +533,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
                       value={compareVersions?.v1 || ''}
                     >
                       <option value="">Select version...</option>
-                      {history.versions.map(v => (
+                      {history?.versions.map(v => (
                         <option key={v.id} value={v.id}>
                           {v.change_description || `V${v.version_number}`} ({new Date(v.created_at).toLocaleDateString()})
                         </option>
@@ -537,7 +552,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
                       value={compareVersions?.v2 || ''}
                     >
                       <option value="">Select version...</option>
-                      {history.versions.map(v => (
+                      {history?.versions.map(v => (
                         <option key={v.id} value={v.id}>
                           {v.change_description || `V${v.version_number}`} ({new Date(v.created_at).toLocaleDateString()})
                         </option>
