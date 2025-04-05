@@ -12,9 +12,16 @@ import {
   MessageSquareText,
   BrainCircuit,
   Globe,
-  ShieldAlert
+  ShieldAlert,
+  Activity,
+  Database,
+  AlertTriangle
 } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-admin-status";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 
 interface SidebarNavigationProps {
   currentPath: string;
@@ -22,8 +29,11 @@ interface SidebarNavigationProps {
 
 export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
   const { isAdmin } = useAdminStatus();
+  const [isAdminExpanded, setIsAdminExpanded] = useState(
+    currentPath.startsWith("/admin") || currentPath.startsWith("/admin-analytics")
+  );
   
-  const navItems = [
+  const mainNavItems = [
     {
       title: "Dashboard",
       href: "/dashboard",
@@ -68,15 +78,33 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
       title: "Website Analyzer",
       href: "/website-analyzer",
       icon: <Globe className="h-5 w-5" />,
+    }
+  ];
+  
+  const adminNavItems = [
+    {
+      title: "Admin Panel",
+      href: "/admin",
+      icon: <ShieldAlert className="h-5 w-5" />,
     },
-    // Show Admin Analytics only to admin users
-    ...(isAdmin ? [
-      {
-        title: "Admin Analytics",
-        href: "/admin-analytics",
-        icon: <ShieldAlert className="h-5 w-5" />,
-      }
-    ] : []),
+    {
+      title: "Analytics & Monitoring",
+      href: "/admin-analytics",
+      icon: <Activity className="h-5 w-5" />,
+    },
+    {
+      title: "Database Audit",
+      href: "/admin-analytics?tab=supabase",
+      icon: <Database className="h-5 w-5" />,
+    },
+    {
+      title: "System Health",
+      href: "/admin-analytics?tab=health",
+      icon: <AlertTriangle className="h-5 w-5" />,
+    }
+  ];
+  
+  const settingsNavItems = [
     {
       title: "Settings",
       href: "/settings",
@@ -87,7 +115,72 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
   return (
     <nav className="mt-4 px-2">
       <ul className="space-y-1">
-        {navItems.map((item) => (
+        {mainNavItems.map((item) => (
+          <li key={item.href}>
+            <NavLink
+              to={item.href}
+              className={({ isActive }) =>
+                `flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`
+              }
+            >
+              {item.icon}
+              <span className="ml-3">{item.title}</span>
+            </NavLink>
+          </li>
+        ))}
+        
+        {/* Admin section */}
+        {isAdmin && (
+          <li>
+            <Collapsible
+              open={isAdminExpanded}
+              onOpenChange={setIsAdminExpanded}
+              className="w-full"
+            >
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+                <div className="flex items-center">
+                  <ShieldAlert className="h-5 w-5" />
+                  <span className="ml-3">Admin</span>
+                </div>
+                <ChevronDown
+                  className={cn("h-4 w-4 transition-transform", {
+                    "transform rotate-180": isAdminExpanded,
+                  })}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="mt-1 space-y-1 pl-8">
+                  {adminNavItems.map((item) => (
+                    <li key={item.href}>
+                      <NavLink
+                        to={item.href}
+                        className={({ isActive }) =>
+                          `flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                            isActive || 
+                            (item.href.includes("?tab=") && 
+                             currentPath === item.href.split("?")[0])
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`
+                        }
+                      >
+                        {item.icon}
+                        <span className="ml-3">{item.title}</span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </li>
+        )}
+        
+        {/* Settings */}
+        {settingsNavItems.map((item) => (
           <li key={item.href}>
             <NavLink
               to={item.href}

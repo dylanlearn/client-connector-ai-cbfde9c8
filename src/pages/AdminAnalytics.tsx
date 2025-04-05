@@ -7,8 +7,11 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { MemoryAnalytics } from "@/components/ai/memory-monitor";
 import { MonitoringDashboard } from "@/components/admin/monitoring";
 import { PromptTestingAnalytics } from "@/components/admin/PromptTestingAnalytics";
-import { Loader2, ShieldAlert, Database, BrainCircuit, LineChart } from "lucide-react";
+import { Loader2, ShieldAlert, Database, BrainCircuit, LineChart, Activity, FileText, AlertTriangle } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-admin-status";
+import { SupabaseAudit } from "@/components/admin/SupabaseAudit";
+import { AuditLogViewer } from "@/components/admin/audit/AuditLogViewer";
+import { SystemHealthDashboard } from "@/components/admin/health/SystemHealthDashboard";
 
 const AdminAnalytics = () => {
   const navigate = useNavigate();
@@ -59,7 +62,7 @@ const AdminAnalytics = () => {
         </div>
         
         <Tabs defaultValue="memory" className="space-y-6">
-          <TabsList>
+          <TabsList className="flex flex-wrap">
             <TabsTrigger value="memory" className="flex items-center gap-2">
               <BrainCircuit className="h-4 w-4" />
               Memory Analytics
@@ -71,6 +74,18 @@ const AdminAnalytics = () => {
             <TabsTrigger value="prompts" className="flex items-center gap-2">
               <LineChart className="h-4 w-4" />
               Prompt Testing
+            </TabsTrigger>
+            <TabsTrigger value="health" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              System Health
+            </TabsTrigger>
+            <TabsTrigger value="audit" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Audit Logs
+            </TabsTrigger>
+            <TabsTrigger value="supabase" className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              Supabase Audit
             </TabsTrigger>
           </TabsList>
           
@@ -104,6 +119,38 @@ const AdminAnalytics = () => {
                 <PromptTestingAnalytics />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="health">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Health Dashboard</CardTitle>
+                <CardDescription>
+                  Enterprise-level monitoring and alerting for all system components
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SystemHealthDashboard />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <Card>
+              <CardHeader>
+                <CardTitle>Audit Log Explorer</CardTitle>
+                <CardDescription>
+                  Comprehensive audit trail of all system actions and user activities
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AuditLogViewer />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="supabase">
+            <SupabaseAudit />
           </TabsContent>
         </Tabs>
       </div>

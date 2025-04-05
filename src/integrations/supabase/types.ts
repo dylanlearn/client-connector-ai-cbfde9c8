@@ -475,6 +475,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       client_access_links: {
         Row: {
           client_email: string
@@ -1510,6 +1543,69 @@ export type Database = {
           },
         ]
       }
+      system_alerts: {
+        Row: {
+          component: string
+          created_at: string
+          id: string
+          is_resolved: boolean | null
+          message: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
+      system_health_checks: {
+        Row: {
+          component: string
+          created_at: string
+          details: Json | null
+          id: string
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          component: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          response_time_ms?: number | null
+          status: string
+        }
+        Update: {
+          component?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          response_time_ms?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       system_monitoring: {
         Row: {
           component: string
@@ -1979,6 +2075,16 @@ export type Database = {
         }
         Relationships: []
       }
+      system_health_status: {
+        Row: {
+          avg_response_time_1h: number | null
+          component: string | null
+          issues_last_24h: number | null
+          last_checked: string | null
+          latest_status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       analyze_wireframe_sections: {
@@ -2006,6 +2112,10 @@ export type Database = {
             }
             Returns: unknown
           }
+      check_database_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       check_wireframe_cache: {
         Args: {
           p_params_hash: string
@@ -2035,6 +2145,15 @@ export type Database = {
         Args: {
           p_task_type: string
           p_input_data: Json
+        }
+        Returns: string
+      }
+      create_system_alert: {
+        Args: {
+          p_severity: string
+          p_message: string
+          p_component: string
+          p_details?: Json
         }
         Returns: string
       }
@@ -2315,6 +2434,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_audit_log: {
+        Args: {
+          p_user_id: string
+          p_action: string
+          p_resource_type: string
+          p_resource_id?: string
+          p_metadata?: Json
+          p_ip_address?: string
+        }
+        Returns: string
+      }
       record_client_error: {
         Args: {
           p_error_message: string
@@ -2332,6 +2462,15 @@ export type Database = {
           p_delivery_type: string
           p_recipient: string
           p_status?: string
+        }
+        Returns: string
+      }
+      record_health_check: {
+        Args: {
+          p_component: string
+          p_status: string
+          p_response_time_ms?: number
+          p_details?: Json
         }
         Returns: string
       }

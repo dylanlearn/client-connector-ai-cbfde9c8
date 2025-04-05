@@ -16,6 +16,8 @@ import { AppProviders } from "@/providers/AppProviders";
 import Index from "@/pages/Index";
 import NewProject from "@/pages/NewProject";
 import AdminAnalytics from "@/pages/AdminAnalytics";
+import AdminPanel from "@/pages/AdminPanel";
+import SupabaseAuditDashboard from "@/pages/admin/SupabaseAuditDashboard";
 
 // Create placeholder auth components since the imports can't be resolved
 const Login = () => (<div>Login Page</div>);
@@ -41,16 +43,17 @@ const App = () => {
         <Route path="/feedback-analysis" element={<FeedbackAnalysisPage />} />
         <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
         <Route path="/settings" element={<Settings />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin-analytics" element={<AdminAnalytics />} />
+        <Route path="/admin/supabase-audit" element={<SupabaseAuditDashboard />} />
         
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        
-        {/* Default route for admin path */}
-        <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
         
         {/* 404 Route */}
         <Route path="*" element={<NotFound />} />

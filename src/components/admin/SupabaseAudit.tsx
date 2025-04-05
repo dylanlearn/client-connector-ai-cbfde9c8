@@ -31,6 +31,7 @@ export function SupabaseAudit() {
     existingTables: string[];
   } | null>(null);
   const [rlsCheck, setRlsCheck] = useState<Record<string, boolean> | null>(null);
+  const [cacheCleanup, setCacheCleanup] = useState(0);
   
   const getStatusIcon = (status: 'ok' | 'error' | boolean) => {
     if (status === 'ok' || status === true) {
@@ -56,7 +57,10 @@ export function SupabaseAudit() {
         'user_memories', 
         'project_memories', 
         'feedback_analysis',
-        'projects'
+        'projects',
+        'audit_logs',
+        'system_health_checks',
+        'system_alerts'
       ];
       
       const health = await checkSupabaseHealth();
@@ -65,11 +69,19 @@ export function SupabaseAudit() {
       const tables = await verifyRequiredTables(requiredTables);
       setTablesCheck(tables);
       
-      const tablesToCheckRLS = ['profiles', 'global_memories', 'user_memories', 'project_memories', 'feedback_analysis'];
+      const tablesToCheckRLS = ['profiles', 'global_memories', 'user_memories', 'project_memories', 'feedback_analysis', 'audit_logs', 'system_health_checks', 'system_alerts'];
       const rls = await checkRLSPolicies(tablesToCheckRLS.filter(table => 
         tables.existingTables.includes(table)
       ));
       setRlsCheck(rls);
+
+      // Clear expired cache entries
+      try {
+        const { data: cacheData } = await supabase.rpc('clear_expired_wireframe_cache');
+        setCacheCleanup(cacheData || 0);
+      } catch (cacheError) {
+        console.error('Error clearing cache:', cacheError);
+      }
       
       toast.success('Supabase audit completed', {
         description: `Overall status: ${health.overall}`

@@ -1,149 +1,171 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { RateLimitCounter } from "./types";
 
 /**
- * Check API rate limits
+ * Check if a specific operation is rate limited
  */
 export const checkRateLimits = async (
   endpoint: string,
-  key: string,
-  limit: number = 10
-): Promise<boolean> => {
+  maxTokens: number = 100,
+  refillRate: number = 10, // tokens per minute
+  refillInterval: number = 60 // seconds
+): Promise<{
+  isLimited: boolean;
+  remainingTokens: number;
+  resetTime: Date;
+}> => {
   try {
-    // First, get the current rate limit counter
-    const { data, error } = await (supabase
-      .from('rate_limit_counters' as any)
+    // Get current user info
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Generate a key based on user ID or IP address
+    const key = user?.id || 'anonymous';
+    
+    // Find or create a rate limit counter
+    const { data: counterData, error: counterError } = await supabase
+      .from('rate_limit_counters')
       .select('*')
-      .eq('endpoint', endpoint)
       .eq('key', key)
-      .maybeSingle()) as any;
+      .eq('endpoint', endpoint)
+      .single();
       
-    if (error) {
-      console.error('Error checking rate limits:', error);
-      return false;
+    if (counterError && counterError.code !== 'PGRST116') {
+      // PGRST116 is "no rows found" error, which we handle below
+      throw counterError;
     }
     
-    const counter = data as RateLimitCounter | null;
-    
-    if (!counter) {
-      // No counter exists, create a new one
-      await createRateLimitCounter(endpoint, key, limit);
-      return true;
-    }
-    
-    // Check if tokens are available
-    if (counter.tokens > 0) {
-      // Use a token and update the counter
-      await decrementRateLimitCounter(counter.id);
-      return true;
-    }
-    
-    // Check if refill time has passed
-    const lastRefill = new Date(counter.last_refill);
     const now = new Date();
-    const hoursSinceRefill = (now.getTime() - lastRefill.getTime()) / (1000 * 60 * 60);
+    let counter;
     
-    if (hoursSinceRefill >= 1) {
-      // Refill tokens and update counter
-      await refillRateLimitCounter(counter.id, limit);
-      return true;
+    if (!counterData) {
+      // Create new counter
+      const { data, error } = await supabase
+        .from('rate_limit_counters')
+        .insert({
+          key,
+          endpoint,
+          tokens: maxTokens,
+          user_id: user?.id,
+          last_refill: now.toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      counter = data;
+    } else {
+      counter = counterData;
+      
+      // Check if tokens need refilling
+      const lastRefill = new Date(counter.last_refill);
+      const secondsSinceRefill = Math.floor((now.getTime() - lastRefill.getTime()) / 1000);
+      
+      if (secondsSinceRefill >= refillInterval) {
+        // Calculate tokens to add
+        const refillCycles = Math.floor(secondsSinceRefill / refillInterval);
+        const tokensToAdd = refillRate * refillCycles;
+        
+        // Update counter
+        const newTokens = Math.min(counter.tokens + tokensToAdd, maxTokens);
+        const { data, error } = await supabase
+          .from('rate_limit_counters')
+          .update({
+            tokens: newTokens,
+            last_refill: now.toISOString()
+          })
+          .eq('id', counter.id)
+          .select()
+          .single();
+          
+        if (error) throw error;
+        counter = data;
+      }
     }
     
-    // Rate limit exceeded
-    return false;
+    // Check if rate limited
+    const isLimited = counter.tokens <= 0;
+    
+    // Calculate reset time (when at least one token will be available again)
+    const resetTime = new Date(counter.last_refill);
+    resetTime.setSeconds(resetTime.getSeconds() + refillInterval);
+    
+    // Consume a token if not limited
+    if (!isLimited) {
+      await supabase
+        .from('rate_limit_counters')
+        .update({
+          tokens: counter.tokens - 1
+        })
+        .eq('id', counter.id);
+    }
+    
+    return {
+      isLimited,
+      remainingTokens: counter.tokens,
+      resetTime
+    };
   } catch (error) {
-    console.error('Error in checkRateLimits:', error);
-    return false;
+    console.error('Error checking rate limits:', error);
+    // Default to not limited on error, to prevent blocking users
+    return {
+      isLimited: false,
+      remainingTokens: 1,
+      resetTime: new Date()
+    };
   }
 };
 
 /**
- * Create a new rate limit counter
+ * Get rate limit status for monitoring
  */
-export const createRateLimitCounter = async (
-  endpoint: string,
-  key: string,
-  tokens: number
-): Promise<boolean> => {
+export const getRateLimitStatus = async (
+  endpoint: string = 'all'
+): Promise<{
+  totalCounters: number;
+  limitedUsers: number;
+  averageRemainingTokens: number;
+  limitedUserIds: string[];
+}> => {
   try {
-    const { error } = await (supabase
-      .from('rate_limit_counters' as any)
-      .insert({
-        endpoint,
-        key,
-        tokens: tokens - 1, // Use one token immediately
-        last_refill: new Date().toISOString()
-      })) as any;
+    // Query rate limit counters
+    let query = supabase
+      .from('rate_limit_counters')
+      .select('*');
       
-    if (error) {
-      console.error('Error creating rate limit counter:', error);
-      return false;
+    if (endpoint !== 'all') {
+      query = query.eq('endpoint', endpoint);
     }
     
-    return true;
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    // Calculate statistics
+    const totalCounters = data.length;
+    const limitedCounters = data.filter(counter => counter.tokens <= 0);
+    const limitedUsers = limitedCounters.length;
+    const limitedUserIds = limitedCounters
+      .filter(counter => counter.user_id)
+      .map(counter => counter.user_id as string);
+      
+    const totalTokens = data.reduce((sum, counter) => sum + counter.tokens, 0);
+    const averageRemainingTokens = totalCounters > 0 
+      ? totalTokens / totalCounters 
+      : 0;
+    
+    return {
+      totalCounters,
+      limitedUsers,
+      averageRemainingTokens,
+      limitedUserIds
+    };
   } catch (error) {
-    console.error('Error in createRateLimitCounter:', error);
-    return false;
-  }
-};
-
-/**
- * Decrement the tokens in a rate limit counter
- */
-export const decrementRateLimitCounter = async (id: string): Promise<boolean> => {
-  try {
-    // First, get the current counter
-    const { data, error: getError } = await (supabase
-      .from('rate_limit_counters' as any)
-      .select('tokens')
-      .eq('id', id)
-      .single()) as any;
-      
-    if (getError) {
-      console.error('Error getting rate limit counter:', getError);
-      return false;
-    }
-    
-    // Then update with decremented value
-    const { error: updateError } = await (supabase
-      .from('rate_limit_counters' as any)
-      .update({ tokens: Math.max(0, data.tokens - 1) })
-      .eq('id', id)) as any;
-      
-    if (updateError) {
-      console.error('Error updating rate limit counter:', updateError);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error in decrementRateLimitCounter:', error);
-    return false;
-  }
-};
-
-/**
- * Refill the tokens in a rate limit counter
- */
-export const refillRateLimitCounter = async (id: string, tokens: number): Promise<boolean> => {
-  try {
-    const { error } = await (supabase
-      .from('rate_limit_counters' as any)
-      .update({
-        tokens: tokens - 1, // Use one token immediately
-        last_refill: new Date().toISOString()
-      })
-      .eq('id', id)) as any;
-      
-    if (error) {
-      console.error('Error refilling rate limit counter:', error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error in refillRateLimitCounter:', error);
-    return false;
+    console.error('Error getting rate limit status:', error);
+    return {
+      totalCounters: 0,
+      limitedUsers: 0,
+      averageRemainingTokens: 0,
+      limitedUserIds: []
+    };
   }
 };

@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Activity, Database } from "lucide-react";
 
 export const UserMenu = () => {
   const { user, signOut, profile } = useAuth();
@@ -46,9 +46,18 @@ export const UserMenu = () => {
               Admin Panel
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/admin-analytics")} className="text-indigo-600">
-              <ShieldCheck className="mr-2 h-4 w-4" />
+              <Activity className="mr-2 h-4 w-4" />
               Admin Analytics
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin-analytics?tab=supabase")} className="text-indigo-600">
+              <Database className="mr-2 h-4 w-4" />
+              System Audit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin-analytics?tab=health")} className="text-indigo-600">
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              System Health
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
           </>
         )}
         
