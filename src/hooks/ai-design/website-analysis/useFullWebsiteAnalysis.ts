@@ -50,6 +50,7 @@ export function useFullWebsiteAnalysis(
         },
         // Fixed: Passing an array of target audience strings instead of a single string
         ['website users', 'general audience'],
+        ['website', 'analysis'], // Fixed: Passing an array of tags instead of a string
         url,
         undefined // Added undefined for the optional imageUrl parameter
       );
