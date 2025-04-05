@@ -3,9 +3,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Database, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, Database, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export function DatabaseMaintenancePanel() {
   const [isLoading, setIsLoading] = useState(false);
@@ -14,44 +15,59 @@ export function DatabaseMaintenancePanel() {
     success: boolean;
     message: string;
     timestamp: Date;
+    details?: any;
   } | null>(null);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
-  const runVacuum = async () => {
+  const handleDatabaseMaintenance = async (action: 'vacuum' | 'analyze' | 'reindex', tables: string[] = ['profiles', 'projects', 'user_memories', 'global_memories']) => {
     setIsLoading(true);
-    setActionType('vacuum');
+    setActionType(action);
+    
     try {
-      // Call the edge function that runs VACUUM on the profiles table
+      console.log(`Running ${action} on tables:`, tables);
+      
+      // Call the edge function
       const { data, error } = await supabase.functions.invoke('database-maintenance', {
-        body: { action: 'vacuum', tables: ['profiles', 'projects', 'user_memories', 'global_memories'] }
+        body: { action, tables }
       });
+
+      console.log(`${action} response:`, data, error);
 
       if (error) {
         throw error;
       }
 
-      setLastResult({
-        success: true,
-        message: `VACUUM completed successfully on ${data?.tables?.length || 0} tables`,
-        timestamp: new Date()
-      });
+      if (data?.failed_tables && data.failed_tables.length > 0) {
+        console.warn(`Some tables failed during ${action}:`, data.failed_tables);
+        toast.warning(`${action.toUpperCase()} completed with warnings`, {
+          description: `Failed on tables: ${data.failed_tables.map((ft: any) => ft.table).join(', ')}`
+        });
+      }
 
-      toast({
-        title: "Database maintenance completed",
-        description: "VACUUM operation finished successfully",
-      });
+      if (data?.success_tables && data.success_tables.length > 0) {
+        setLastResult({
+          success: true,
+          message: `${action.toUpperCase()} completed successfully on ${data.success_tables.length} tables`,
+          timestamp: new Date(),
+          details: data
+        });
+
+        toast.success(`Database maintenance completed`, {
+          description: `${action.toUpperCase()} operation finished on ${data.success_tables.length} tables`
+        });
+      } else {
+        throw new Error(`No tables were successfully processed`);
+      }
     } catch (error: any) {
-      console.error('Error running VACUUM:', error);
+      console.error(`Error running ${action}:`, error);
       setLastResult({
         success: false,
-        message: error.message || "Failed to run VACUUM operation",
+        message: error.message || `Failed to run ${action.toUpperCase()} operation`,
         timestamp: new Date()
       });
       
-      toast({
-        variant: "destructive",
-        title: "Maintenance failed",
-        description: error.message || "Failed to run VACUUM operation",
+      toast.error(`Maintenance failed`, {
+        description: error.message || `Failed to run ${action.toUpperCase()} operation`
       });
     } finally {
       setIsLoading(false);
@@ -59,41 +75,42 @@ export function DatabaseMaintenancePanel() {
     }
   };
 
-  const analyzeDatabase = async () => {
+  const runVacuum = () => handleDatabaseMaintenance('vacuum');
+  const analyzeDatabase = () => handleDatabaseMaintenance('analyze');
+
+  const vacuumSingleTable = async (tableName: string) => {
     setIsLoading(true);
-    setActionType('analyze');
+    setActionType(`vacuum-${tableName}`);
+    
     try {
-      // Call the edge function that runs ANALYZE
+      console.log(`Running VACUUM on single table: ${tableName}`);
+      
+      // Call the edge function for a single table
       const { data, error } = await supabase.functions.invoke('database-maintenance', {
-        body: { action: 'analyze', tables: ['profiles', 'projects', 'user_memories', 'global_memories'] }
+        body: { action: 'vacuum', tables: [tableName] }
       });
+
+      console.log(`VACUUM single table response:`, data, error);
 
       if (error) {
         throw error;
       }
 
-      setLastResult({
-        success: true,
-        message: `ANALYZE completed successfully on ${data?.tables?.length || 0} tables`,
-        timestamp: new Date()
-      });
+      if (data?.failed_tables && data.failed_tables.length > 0) {
+        throw new Error(`Failed to vacuum table ${tableName}: ${data.failed_tables[0]?.error || 'Unknown error'}`);
+      }
 
-      toast({
-        title: "Database analysis completed",
-        description: "ANALYZE operation finished successfully",
-      });
+      if (data?.success_tables && data.success_tables.includes(tableName)) {
+        toast.success(`Table maintenance completed`, {
+          description: `VACUUM completed successfully on table: ${tableName}`
+        });
+      } else {
+        throw new Error(`Table ${tableName} was not successfully vacuumed`);
+      }
     } catch (error: any) {
-      console.error('Error running ANALYZE:', error);
-      setLastResult({
-        success: false,
-        message: error.message || "Failed to run ANALYZE operation",
-        timestamp: new Date()
-      });
-      
-      toast({
-        variant: "destructive",
-        title: "Analysis failed",
-        description: error.message || "Failed to run ANALYZE operation",
+      console.error(`Error vacuuming table ${tableName}:`, error);
+      toast.error(`Table maintenance failed`, {
+        description: error.message || `Failed to vacuum table ${tableName}`
       });
     } finally {
       setIsLoading(false);
@@ -108,6 +125,8 @@ export function DatabaseMaintenancePanel() {
       // Call the edge function to clean up expired cache entries
       const { data, error } = await supabase.functions.invoke('cleanup-expired-cache');
 
+      console.log('Cache cleanup response:', data, error);
+
       if (error) {
         throw error;
       }
@@ -118,8 +137,7 @@ export function DatabaseMaintenancePanel() {
         timestamp: new Date()
       });
 
-      toast({
-        title: "Cache cleanup completed",
+      toast.success("Cache cleanup completed", {
         description: `Removed ${data?.entriesRemoved || 0} expired cache entries`,
       });
     } catch (error: any) {
@@ -130,9 +148,7 @@ export function DatabaseMaintenancePanel() {
         timestamp: new Date()
       });
       
-      toast({
-        variant: "destructive",
-        title: "Cache cleanup failed",
+      toast.error("Cache cleanup failed", {
         description: error.message || "Failed to clean up expired cache entries",
       });
     } finally {
@@ -140,6 +156,15 @@ export function DatabaseMaintenancePanel() {
       setActionType(null);
     }
   };
+  
+  // Expose the vacuumSingleTable function for external use
+  // by attaching it to the window object
+  React.useEffect(() => {
+    (window as any).vacuumSingleTable = vacuumSingleTable;
+    return () => {
+      delete (window as any).vacuumSingleTable;
+    };
+  }, []);
 
   return (
     <Card>
@@ -200,13 +225,18 @@ export function DatabaseMaintenancePanel() {
         {lastResult && (
           <Alert variant={lastResult.success ? "default" : "destructive"}>
             {lastResult.success ? (
-              <Database className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
             ) : (
               <AlertCircle className="h-4 w-4" />
             )}
             <AlertTitle>{lastResult.success ? "Success" : "Error"}</AlertTitle>
             <AlertDescription className="space-y-2">
               <p>{lastResult.message}</p>
+              {lastResult.details && lastResult.details.success_tables && (
+                <p className="text-xs">
+                  Processed tables: {lastResult.details.success_tables.join(', ')}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 {lastResult.timestamp.toLocaleString()}
               </p>

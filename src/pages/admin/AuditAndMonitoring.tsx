@@ -23,6 +23,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceHealthSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 const AuditAndMonitoring = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +34,7 @@ const AuditAndMonitoring = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [processingTableId, setProcessingTableId] = useState(null); // Track which table is being vacuumed
   const supabaseAuditService = new SupabaseAuditService();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
 
   const refreshData = async () => {
     setIsRefreshing(true);
@@ -47,9 +48,7 @@ const AuditAndMonitoring = () => {
       setLastRefreshed(new Date());
     } catch (error) {
       console.error('Error refreshing data:', error);
-      toast({
-        variant: "destructive",
-        title: "Refresh failed",
+      toast.error("Refresh failed", {
         description: "Unable to refresh data",
       });
     } finally {
@@ -60,27 +59,37 @@ const AuditAndMonitoring = () => {
   const vacuumTable = async (tableName) => {
     setProcessingTableId(tableName);
     try {
+      console.log(`Running VACUUM on table: ${tableName}`);
+      
       // Call the edge function to vacuum specific table
       const { data, error } = await supabase.functions.invoke('database-maintenance', {
         body: { action: 'vacuum', tables: [tableName] }
       });
 
       if (error) {
+        console.error('Error vacuuming table:', error);
         throw error;
       }
 
-      toast({
-        title: "Table Maintenance Complete",
-        description: `VACUUM completed successfully on table: ${tableName}`,
-      });
-      
-      // Refresh data after vacuum
-      refreshData();
+      console.log('VACUUM response:', data);
+
+      if (data?.failed_tables && data.failed_tables.length > 0) {
+        throw new Error(`Failed to vacuum table ${tableName}: ${data.failed_tables[0]?.error || 'Unknown error'}`);
+      }
+
+      if (data?.success_tables && data.success_tables.includes(tableName)) {
+        toast.success("Table Maintenance Complete", {
+          description: `VACUUM completed successfully on table: ${tableName}`,
+        });
+        
+        // Refresh data after vacuum to show updated stats
+        refreshData();
+      } else {
+        throw new Error(`Table ${tableName} was not successfully vacuumed`);
+      }
     } catch (error) {
       console.error('Error vacuuming table:', error);
-      toast({
-        variant: "destructive",
-        title: "Maintenance Failed",
+      toast.error("Maintenance Failed", {
         description: error.message || "Failed to vacuum table",
       });
     } finally {
@@ -99,9 +108,7 @@ const AuditAndMonitoring = () => {
         
       } catch (error) {
         console.error('Error fetching audit data:', error);
-        toast({
-          variant: "destructive",
-          title: "Error loading data",
+        toast.error("Error loading data", {
           description: "Failed to load audit data",
         });
       } finally {

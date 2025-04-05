@@ -16,6 +16,8 @@ serve(async (req) => {
   }
   
   try {
+    console.log("Database maintenance function triggered");
+    
     // Create a Supabase client with the Auth context of the function
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,6 +30,8 @@ serve(async (req) => {
       tables?: string[];
     };
     
+    console.log(`Requested action: ${action}, tables:`, tables);
+    
     if (!action) {
       throw new Error('Missing required parameter: action');
     }
@@ -35,6 +39,7 @@ serve(async (req) => {
     // Default to specific tables for safety, never run on all tables automatically
     const tablesToProcess = tables || ['profiles'];
     const results = [];
+    const failedTables = [];
     
     for (const table of tablesToProcess) {
       console.log(`Processing ${action} on table ${table}`);
@@ -45,7 +50,6 @@ serve(async (req) => {
         case 'vacuum':
           try {
             // Direct SQL execution for VACUUM since it can't run in a transaction
-            // Using pg_catalog.pg_stat_get_live_tuples to ensure the table exists
             query = `
               DO $$
               BEGIN
@@ -59,19 +63,24 @@ serve(async (req) => {
               $$;
             `;
             
+            console.log("Executing VACUUM query:", query);
+            
             const { error: execError } = await supabaseClient.rpc('exec_sql', { 
               sql_query: query 
             });
             
             if (execError) {
               console.error(`Error during VACUUM on table ${table}:`, execError);
+              failedTables.push({ table, error: execError.message });
               throw new Error(`Error vacuuming table ${table}: ${execError.message}`);
             }
             
+            console.log(`VACUUM completed successfully on table ${table}`);
             success = true;
           } catch (error) {
             console.error(`Error executing VACUUM on table ${table}:`, error);
-            throw new Error(`Failed to vacuum table ${table}: ${error.message}`);
+            failedTables.push({ table, error: error.message });
+            // Continue with other tables instead of throwing
           }
           break;
           
@@ -91,19 +100,24 @@ serve(async (req) => {
               $$;
             `;
             
+            console.log("Executing ANALYZE query:", query);
+            
             const { error: analyzeError } = await supabaseClient.rpc('exec_sql', { 
               sql_query: query 
             });
             
             if (analyzeError) {
               console.error(`Error during ANALYZE on table ${table}:`, analyzeError);
+              failedTables.push({ table, error: analyzeError.message });
               throw new Error(`Error analyzing table ${table}: ${analyzeError.message}`);
             }
             
+            console.log(`ANALYZE completed successfully on table ${table}`);
             success = true;
           } catch (error) {
             console.error(`Error executing ANALYZE on table ${table}:`, error);
-            throw new Error(`Failed to analyze table ${table}: ${error.message}`);
+            failedTables.push({ table, error: error.message });
+            // Continue with other tables instead of throwing
           }
           break;
           
@@ -123,19 +137,24 @@ serve(async (req) => {
               $$;
             `;
             
+            console.log("Executing REINDEX query:", query);
+            
             const { error: reindexError } = await supabaseClient.rpc('exec_sql', { 
               sql_query: query 
             });
             
             if (reindexError) {
               console.error(`Error during REINDEX on table ${table}:`, reindexError);
+              failedTables.push({ table, error: reindexError.message });
               throw new Error(`Error reindexing table ${table}: ${reindexError.message}`);
             }
             
+            console.log(`REINDEX completed successfully on table ${table}`);
             success = true;
           } catch (error) {
             console.error(`Error executing REINDEX on table ${table}:`, error);
-            throw new Error(`Failed to reindex table ${table}: ${error.message}`);
+            failedTables.push({ table, error: error.message });
+            // Continue with other tables instead of throwing
           }
           break;
           
@@ -149,22 +168,31 @@ serve(async (req) => {
     }
     
     // Log the maintenance operation
-    await supabaseClient
-      .from('system_monitoring')
-      .insert({
-        event_type: 'database_maintenance',
-        component: 'database',
-        status: 'normal',
-        message: `${action.toUpperCase()} completed on tables: ${results.join(', ')}`,
-        metadata: { tables: results, action }
-      });
+    try {
+      await supabaseClient
+        .from('system_monitoring')
+        .insert({
+          event_type: 'database_maintenance',
+          component: 'database',
+          status: failedTables.length > 0 ? 'warning' : 'normal',
+          message: `${action.toUpperCase()} completed on tables: ${results.join(', ')}${failedTables.length > 0 ? '. Failed tables: ' + failedTables.map(ft => ft.table).join(', ') : ''}`,
+          metadata: { 
+            success_tables: results, 
+            failed_tables: failedTables,
+            action 
+          }
+        });
+    } catch (logError) {
+      console.error('Failed to log maintenance operation:', logError);
+    }
     
-    // Return success response
+    // Return full information including any failures
     return new Response(
       JSON.stringify({
-        success: true,
-        message: `${action.toUpperCase()} completed successfully`,
-        tables: results,
+        success: results.length > 0,
+        message: `${action.toUpperCase()} operation results`,
+        success_tables: results,
+        failed_tables: failedTables
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -201,7 +229,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status: 200, // Return 200 even for errors to prevent Supabase function client from throwing
       }
     );
   }
