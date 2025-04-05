@@ -17,6 +17,8 @@ export interface WireframeGenerationParams {
   typography?: string;
   additionalInstructions?: string;
   pages?: number;
+  multiPageLayout?: boolean;
+  pageTypes?: string[];
   moodboardSelections?: {
     layoutPreferences?: string[];
     fonts?: string[];
@@ -42,6 +44,8 @@ export interface WireframeData {
   title?: string;
   description?: string;
   sections: WireframeSection[];
+  pages?: WireframePage[];
+  isMultiPage?: boolean;
   style?: {
     colorScheme?: {
       primary?: string;
@@ -85,7 +89,38 @@ export interface WireframeData {
   accessibilityNotes?: string;
   creativityScore?: number;
   innovationPoints?: string[];
+  navigationStructure?: NavigationStructure;
   [key: string]: any;
+}
+
+export interface NavigationStructure {
+  main: NavigationItem[];
+  footer?: NavigationItem[];
+  secondary?: NavigationItem[];
+  [key: string]: any;
+}
+
+export interface NavigationItem {
+  label: string;
+  path?: string;
+  children?: NavigationItem[];
+  icon?: string;
+  highlighted?: boolean;
+}
+
+export interface WireframePage {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sections: WireframeSection[];
+  meta?: {
+    title?: string;
+    description?: string;
+    keywords?: string[];
+  };
+  layout?: string;
+  pageType?: string;
 }
 
 export interface WireframeSection {

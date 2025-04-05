@@ -22,7 +22,8 @@ export const WireframeCacheService = {
       params.complexity || 'standard',
       params.industry || 'general',
       params.enhancedCreativity ? 'creative' : 'standard',
-      params.creativityLevel?.toString() || '5'
+      params.creativityLevel?.toString() || '5',
+      params.pages?.toString() || '1' // Add pages parameter to cache key
     ];
     
     // Add additional parameters if they exist
@@ -59,7 +60,9 @@ export const WireframeCacheService = {
           cache_key: cacheKey,
           result_data: result,
           created_at: new Date().toISOString(),
-          expiry: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString() // 24hr expiry
+          expiry: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString(), // 24hr expiry
+          is_multi_page: result.wireframe.pages?.length > 1 || false, // Flag multi-page wireframes
+          page_count: result.wireframe.pages?.length || 1
         });
     } catch (error) {
       console.error("Error caching wireframe result:", error);
@@ -90,6 +93,36 @@ export const WireframeCacheService = {
     } catch (error) {
       console.error("Error retrieving cached wireframe:", error);
       return null;
+    }
+  },
+  
+  /**
+   * Get similar wireframe designs from cache
+   */
+  getSimilarCachedWireframes: async (industry: string, style?: string, limit: number = 3): Promise<WireframeGenerationResult[]> => {
+    try {
+      let query = supabase
+        .from('wireframe_cache')
+        .select('result_data')
+        .ilike('cache_key', `%${industry.toLowerCase()}%`)
+        .gt('expiry', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
+      if (style) {
+        query = query.ilike('cache_key', `%${style.toLowerCase()}%`);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error || !data) {
+        return [];
+      }
+      
+      return data.map(item => item.result_data as WireframeGenerationResult);
+    } catch (error) {
+      console.error("Error retrieving similar cached wireframes:", error);
+      return [];
     }
   }
 };
