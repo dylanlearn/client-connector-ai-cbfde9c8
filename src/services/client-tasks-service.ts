@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClientTask, TaskStatus, ClientTaskProgress } from "@/types/client";
@@ -146,7 +145,10 @@ export const getClientTasksProgress = async (linkId: string): Promise<ClientTask
       percentage: percentage,
       intakeForm: data.find(t => t.task_type === 'intakeForm')?.status === 'completed',
       designPicker: data.find(t => t.task_type === 'designPicker')?.status === 'completed',
-      templates: data.find(t => t.task_type === 'templates')?.status === 'completed'
+      templates: data.find(t => t.task_type === 'templates')?.status === 'completed',
+      clientName: "", // Add required fields
+      email: "", // Add required fields
+      linkId: linkId // Add linkId for reference
     };
 
     return progress;

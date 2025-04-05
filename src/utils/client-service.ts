@@ -40,12 +40,12 @@ export {
   deleteProject
 };
 
-// Re-export types
-export type { 
-  ClientAccessLink, 
-  ClientTask, 
-  TaskStatus, 
+// Re-export types from client.ts
+export type {
+  ClientAccessLink,
   ClientTaskProgress,
+  TaskStatus,
+  ClientTask,
   TaskCardProps,
   WhatNextSectionProps,
   LoadingViewProps,

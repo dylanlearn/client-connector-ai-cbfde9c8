@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createClientAccessLink } from "@/services/clients";
@@ -26,7 +25,6 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
   const [isSending, setIsSending] = useState<{[key: string]: boolean}>({});
   const [isCreating, setIsCreating] = useState(false);
 
-  // Prefill client information if a project is selected
   useEffect(() => {
     if (selectedProjectId) {
       const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -76,13 +74,11 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       return;
     }
 
-    // If SMS delivery is selected, validate phone number
     if (deliveryMethods.sms && !clientPhone.trim()) {
       toast.error("Please enter client phone number for SMS delivery");
       return;
     }
 
-    // Simple phone validation if provided
     if (clientPhone) {
       const phoneRegex = /^\+?[0-9\s\-\(\)]+$/;
       if (!phoneRegex.test(clientPhone)) {
@@ -91,13 +87,11 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       }
     }
 
-    // Ensure at least one delivery method is selected
     if (!deliveryMethods.email && !deliveryMethods.sms) {
       toast.error("Please select at least one delivery method");
       return;
     }
 
-    // Validate personal message using centralized validation
     const messageValidation = validatePersonalMessage(personalMessage);
     if (!messageValidation.valid) {
       toast.error(messageValidation.errorMessage || "Invalid personal message");
@@ -117,7 +111,6 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       );
       
       if (link && linkId) {
-        // Create a mock ClientAccessLink object for the UI
         const newLink: ClientAccessLink = {
           id: linkId,
           designerId: userId,
@@ -130,15 +123,14 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
           clientPhone: clientPhone || null,
           personalMessage: personalMessage.trim() || null,
           token: link.split("clientToken=")[1]?.split("&")[0] || "",
-          createdAt: new Date(),
-          expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)),
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
           lastAccessedAt: null,
           status: "active"
         };
         
         onLinkCreated(newLink);
         
-        // Automatically send the link via selected delivery methods
         if (deliveryMethods.email) {
           await sendClientLink(linkId, 'email', clientEmail);
         }
@@ -152,7 +144,6 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       }
     } catch (error: any) {
       console.error("Error creating client link:", error);
-      // More detailed error message
       toast.error(error.message || "Failed to create client link");
     } finally {
       setIsCreating(false);

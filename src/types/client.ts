@@ -11,6 +11,9 @@ export interface ClientAccessLink {
   clientPhone?: string;
   personalMessage?: string;
   projectId?: string;
+  // Add missing properties
+  designerId: string;
+  projectTitle?: string;
 }
 
 export interface ClientProgressItem {
@@ -32,10 +35,51 @@ export interface ClientTaskProgress {
   intakeForm: boolean;
   designPicker: boolean;
   templates: boolean;
+  linkId?: string; // Add linkId property needed by ClientProgressList
 }
 
 export interface ClientOverview {
   totalClients: number;
   activeClients: number;
   completionRate: number;
+}
+
+// Add missing interfaces
+export interface LoadingViewProps {
+  message?: string;
+}
+
+export interface WhatNextSectionProps {
+  isComplete?: boolean;
+}
+
+export interface TaskCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  isCompleted: boolean;
+  btnText: string;
+  designerNotes?: string;
+  onButtonClick: () => void;
+  taskType: string;
+  status: TaskStatus;
+}
+
+export type TaskStatus = 'pending' | 'in_progress' | 'completed';
+
+export interface ClientTask {
+  id: string;
+  linkId: string;
+  taskType: 'intakeForm' | 'designPicker' | 'templates';
+  status: TaskStatus;
+  completedAt: Date | null;
+  designerNotes?: string;
+  clientResponse?: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ClientLinkResult {
+  link: string;
+  linkId: string;
 }

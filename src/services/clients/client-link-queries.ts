@@ -51,10 +51,10 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
       clientEmail: link.client_email,
       clientPhone: link.client_phone,
       token: link.token,
-      createdAt: new Date(link.created_at),
-      expiresAt: new Date(link.expires_at),
-      lastAccessedAt: link.last_accessed_at ? new Date(link.last_accessed_at) : null,
-      status: link.status as "active" | "expired", // Properly type the status value
+      createdAt: link.created_at, // Return as string instead of Date
+      expiresAt: link.expires_at, // Return as string instead of Date
+      lastAccessedAt: link.last_accessed_at || null, // Return as string instead of Date
+      status: link.status as "active" | "expired" | "completed", // Properly type the status value
       personalMessage: link.personal_message
     }));
   } catch (error) {
