@@ -10,7 +10,7 @@ export type DesignOption = {
   title: string;
   description: string;
   imageUrl: string;
-  category: "hero" | "navbar" | "about" | "footer" | "font";
+  category: "hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction";
 };
 
 interface VisualPickerProps {

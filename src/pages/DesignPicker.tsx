@@ -6,59 +6,7 @@ import { Paintbrush, Palette, Layout } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import VisualPicker from "@/components/design/VisualPicker";
 import { toast } from "sonner";
-
-// Sample design options for demonstration
-const sampleDesignOptions = [
-  {
-    id: "hero-1",
-    title: "Split Hero Layout",
-    description: "Modern split layout with image on the right and CTA on the left",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Split+Hero",
-    category: "hero"
-  },
-  {
-    id: "hero-2",
-    title: "Centered Hero",
-    description: "Clean centered layout with clear call-to-action button",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Centered+Hero",
-    category: "hero"
-  },
-  {
-    id: "hero-3",
-    title: "Full-width Hero",
-    description: "Bold full-width layout with background image and overlay text",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Full+Width+Hero",
-    category: "hero"
-  },
-  {
-    id: "navbar-1",
-    title: "Minimal Navigation",
-    description: "Clean and minimal navigation bar with essential links",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Minimal+Nav",
-    category: "navbar"
-  },
-  {
-    id: "navbar-2",
-    title: "Full-featured Navbar",
-    description: "Navigation with dropdown menus and search functionality",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Full+Nav",
-    category: "navbar"
-  },
-  {
-    id: "footer-1",
-    title: "Simple Footer",
-    description: "Clean footer with minimal information and links",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Simple+Footer",
-    category: "footer"
-  },
-  {
-    id: "font-1",
-    title: "Modern Sans-serif",
-    description: "Clean and modern typography using Open Sans and Montserrat",
-    imageUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Modern+Sans",
-    category: "font"
-  }
-];
+import { designOptions } from "@/data/design-options";
 
 const DesignPicker = () => {
   const [activeTab, setActiveTab] = useState("layouts");
@@ -72,6 +20,15 @@ const DesignPicker = () => {
     
     toast.success(`${option.title} added to your selections!`);
   };
+
+  // Filter design options by category
+  const heroOptions = designOptions.filter(option => option.category === "hero");
+  const navbarOptions = designOptions.filter(option => option.category === "navbar");
+  const aboutOptions = designOptions.filter(option => option.category === "about");
+  const footerOptions = designOptions.filter(option => option.category === "footer");
+  const fontOptions = designOptions.filter(option => option.category === "font");
+  const animationOptions = designOptions.filter(option => option.category === "animation");
+  const interactionOptions = designOptions.filter(option => option.category === "interaction");
 
   return (
     <DashboardLayout>
@@ -105,7 +62,7 @@ const DesignPicker = () => {
                 <CardContent className="p-0">
                   <h3 className="text-lg font-medium mb-4">Hero Sections</h3>
                   <VisualPicker 
-                    options={sampleDesignOptions} 
+                    options={heroOptions} 
                     onSelect={handleDesignSelect} 
                     category="hero"
                   />
@@ -116,7 +73,7 @@ const DesignPicker = () => {
                 <CardContent className="p-0">
                   <h3 className="text-lg font-medium mb-4">Navigation Bars</h3>
                   <VisualPicker 
-                    options={sampleDesignOptions} 
+                    options={navbarOptions} 
                     onSelect={handleDesignSelect} 
                     category="navbar"
                   />
@@ -129,9 +86,20 @@ const DesignPicker = () => {
             <div className="grid gap-8 md:grid-cols-2">
               <Card className="p-4">
                 <CardContent className="p-0">
+                  <h3 className="text-lg font-medium mb-4">About Sections</h3>
+                  <VisualPicker 
+                    options={aboutOptions}
+                    onSelect={handleDesignSelect} 
+                    category="about"
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card className="p-4">
+                <CardContent className="p-0">
                   <h3 className="text-lg font-medium mb-4">Footer Designs</h3>
                   <VisualPicker 
-                    options={sampleDesignOptions} 
+                    options={footerOptions}
                     onSelect={handleDesignSelect} 
                     category="footer"
                   />
@@ -146,9 +114,33 @@ const DesignPicker = () => {
                 <CardContent className="p-0">
                   <h3 className="text-lg font-medium mb-4">Typography</h3>
                   <VisualPicker 
-                    options={sampleDesignOptions} 
+                    options={fontOptions}
                     onSelect={handleDesignSelect} 
                     category="font"
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card className="p-4">
+                <CardContent className="p-0">
+                  <h3 className="text-lg font-medium mb-4">Animations</h3>
+                  <VisualPicker 
+                    options={animationOptions}
+                    onSelect={handleDesignSelect} 
+                    category="animation"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid gap-8 mt-8">
+              <Card className="p-4">
+                <CardContent className="p-0">
+                  <h3 className="text-lg font-medium mb-4">Interactions</h3>
+                  <VisualPicker 
+                    options={interactionOptions}
+                    onSelect={handleDesignSelect} 
+                    category="interaction"
                   />
                 </CardContent>
               </Card>
