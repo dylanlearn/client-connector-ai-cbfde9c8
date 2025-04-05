@@ -180,40 +180,75 @@ export const designOptions: DesignOption[] = [
     category: "navbar"
   },
   
-  // About sections
+  // About sections with updated descriptions
   {
     id: "about-1",
-    title: "Grid Layout About",
-    description: "About section with a grid layout of images and text.",
+    title: "Grid Layout (Images + Text)",
+    description: "A modular, visual layout with alternating image and text blocks. Perfect for creative brands, agencies, and startups telling multi-part stories.",
     imageUrl: "https://placehold.co/600x400/d35400/ffffff?text=Grid+About",
     category: "about"
   },
   {
     id: "about-2",
-    title: "Timeline About",
-    description: "About section with a vertical timeline of milestones.",
+    title: "Vertical Timeline",
+    description: "A linear, scrollable format that walks users through your journey step by step. Ideal for founders, startup milestones, and origin stories.",
     imageUrl: "https://placehold.co/600x400/8e44ad/ffffff?text=Timeline+About",
     category: "about"
   },
   {
     id: "about-3",
-    title: "Team Showcase",
-    description: "About section showcasing team members with photos and bios.",
+    title: "Team Milestones",
+    description: "A human-centered layout that blends your team's faces with company highlights. Great for personal brands, creative studios, and mission-driven orgs.",
     imageUrl: "https://placehold.co/600x400/27ae60/ffffff?text=Team+About",
     category: "about"
   },
   {
     id: "about-4",
-    title: "Stats & Numbers",
-    description: "About section highlighting key stats and achievements.",
+    title: "Stats and Numbers",
+    description: "A bold section layout built to showcase scale, traction, and credibility. Great for SaaS, growth-stage companies, or conversion-focused pages.",
     imageUrl: "https://placehold.co/600x400/e67e22/ffffff?text=Stats+About",
     category: "about"
   },
   {
     id: "about-5",
-    title: "Image Carousel About",
-    description: "About section with sliding carousel of images and content.",
+    title: "Image Carousel",
+    description: "A swipeable or scrollable photo-driven layout to show off your culture, team, or journey. Works well for lifestyle brands and team-driven storytelling.",
     imageUrl: "https://placehold.co/600x400/16a085/ffffff?text=Carousel+About",
+    category: "about"
+  },
+  {
+    id: "about-6",
+    title: "Stat Carousel",
+    description: "A rotating number-driven section to feature KPIs, impact, or milestones. Compact and dynamic — great for building trust fast.",
+    imageUrl: "https://placehold.co/600x400/3498db/ffffff?text=Stat+Carousel",
+    category: "about"
+  },
+  {
+    id: "about-7",
+    title: "Split Story + Image",
+    description: "A clean, editorial layout with copy on one side and an image on the other. Perfect for personal intros, about the brand, or spotlight stories.",
+    imageUrl: "https://placehold.co/600x400/9b59b6/ffffff?text=Split+Story",
+    category: "about"
+  },
+  {
+    id: "about-8",
+    title: "Founder's Letter",
+    description: "A longform letter-style section to connect directly with your audience. Ideal for early-stage companies, passion-driven brands, or product visionaries.",
+    imageUrl: "https://placehold.co/600x400/e74c3c/ffffff?text=Founders+Letter",
+    category: "about"
+  },
+  {
+    id: "about-9",
+    title: "Cultural Values Grid",
+    description: "A structured grid to showcase your team's values, beliefs, or operating principles. Great for hiring pages and purpose-led messaging.",
+    imageUrl: "https://placehold.co/600x400/f39c12/ffffff?text=Values+Grid",
+    category: "about"
+  },
+  {
+    id: "about-10",
+    title: "Scrolling Story Section",
+    description: "An animated, immersive section that reveals story beats as users scroll. Ideal for launches, brand journeys, or storytelling-driven campaigns.",
+    imageUrl: "https://placehold.co/600x400/1abc9c/ffffff?text=Scrolling+Story",
     category: "about"
   },
   

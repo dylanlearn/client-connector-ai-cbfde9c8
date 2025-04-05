@@ -43,9 +43,10 @@ serve(async (req) => {
         Style: ${style || 'clean, functional'}. Resolution 1024x576. No watermarks. No text overlays unless specified in the description.`;
         break;
       case "about":
-        prompt = `Create a professional "About Us" section mockup for a website with: ${description}. 
-        Include appropriate imagery, text layout, and possibly team photos or company information areas. 
-        Create a clean, minimalist UI design suitable for a website about section. 
+        prompt = `Create a professional "About Us" section mockup based on this description: ${description}. 
+        Design a visually engaging layout that effectively communicates the company story or team information.
+        Include appropriate imagery, text layout, and visual hierarchy based on the specific about section type described.
+        Create a clean, minimalist UI design suitable for a website about section.
         Style: ${style || 'informative, clean'}. Resolution 1024x576. No watermarks. No text overlays unless specified in the description.`;
         break;
       case "footer":
