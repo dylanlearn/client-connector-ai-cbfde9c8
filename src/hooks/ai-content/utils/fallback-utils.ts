@@ -30,7 +30,7 @@ export function getFallbackContent(type: string, context?: string): string {
   
   // Customize fallback based on context if available
   if (context && fallbackObj.default) {
-    return fallbackObj.default.replace('this field', context);
+    return fallbackObj.default.replace(/this field/g, context);
   }
   
   return fallbackObj.default;

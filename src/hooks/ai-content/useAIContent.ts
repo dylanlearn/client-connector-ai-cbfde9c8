@@ -1,6 +1,6 @@
 
 import { useCallback } from 'react';
-import { UseAIContentOptions, UseAIContentReturn, ContentRequest } from './types';
+import { UseAIContentOptions, UseAIContentReturn, ContentRequest, CacheCleanupResult } from './types';
 import { useGeneration } from './useGeneration';
 import { useCache } from './useCache';
 

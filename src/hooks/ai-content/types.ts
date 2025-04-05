@@ -3,6 +3,15 @@
  * Types for AI content and cache management
  */
 
+export interface ContentRequest {
+  type: string;
+  context?: string;
+  tone?: string;
+  maxLength?: number;
+  cacheKey?: string;
+  testVariantId?: string;
+}
+
 export interface ContentCacheEntry {
   id: string;
   content: string;
@@ -87,7 +96,14 @@ export interface AIContentHookReturn {
   rateLimit: ContentRateLimitInfo | null;
 }
 
-export interface FallbackContentMap {
-  [context: string]: string;
-  default: string;
-}
+// Add these type aliases for backward compatibility
+export type UseAIContentOptions = {
+  autoRetry?: boolean;
+  maxRetries?: number;
+  timeout?: number;
+  showToasts?: boolean;
+  useFallbacks?: boolean;
+  enableABTesting?: boolean;
+};
+
+export type UseAIContentReturn = AIContentHookReturn;
