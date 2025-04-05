@@ -69,7 +69,7 @@ export function useEnhancedMemory() {
     try {
       const results = await EnhancedMemoryService.searchMemories(query, {
         ...options,
-        userId: user?.id,
+        userId: user?.id
       });
       
       setSearchResults(results);

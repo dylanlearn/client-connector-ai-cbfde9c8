@@ -110,23 +110,35 @@ export const EnhancedMemoryService = {
    */
   searchMemories: async (
     query: string,
-    userId: string,
-    options: MemoryQueryOptions = {}
-  ): Promise<VectorSearchResult[]> => {
+    options: MemoryQueryOptions & {
+      userId?: string;
+      useVectorSearch?: boolean;
+      similarityThreshold?: number;
+    } = {}
+  ) => {
     try {
       // Get vector search results
       const vectorResults = await VectorMemoryService.semanticSearch(
         query,
-        options.limit || 10,
-        { userId }
+        {
+          threshold: options.similarityThreshold || 0.7,
+          limit: options.limit || 10,
+          memoryType: options.userId ? 'user' : undefined
+        }
       );
       
       // TODO: In a future iteration, augment with traditional search results
       
-      return vectorResults;
+      return {
+        exactMatches: [], // Traditional search results would go here
+        semanticMatches: vectorResults
+      };
     } catch (error) {
       console.error("Error in enhanced memory search:", error);
-      return [];
+      return {
+        exactMatches: [],
+        semanticMatches: []
+      };
     }
   }
 };
