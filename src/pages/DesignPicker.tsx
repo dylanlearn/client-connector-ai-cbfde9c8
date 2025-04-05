@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { toast } from "sonner";
 import { designOptions } from "@/data/design-options";
 import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
 import { useAuth } from "@/hooks/use-auth";
+import DesignImageManager from "@/components/design/DesignImageManager";
 
 const DesignPicker = () => {
   const [activeTab, setActiveTab] = useState("layouts");
@@ -79,6 +79,8 @@ const DesignPicker = () => {
             Swipe through design options to customize your project
           </p>
         </div>
+        
+        <DesignImageManager />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
