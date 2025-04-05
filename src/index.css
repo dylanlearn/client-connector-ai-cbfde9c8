@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -109,8 +110,16 @@
     @apply bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent;
   }
   
+  .text-gradient-secondary {
+    @apply bg-gradient-to-r from-[#3a8ef6] via-[#7b61ff] to-[#5f9df7] bg-clip-text text-transparent;
+  }
+  
   .button-gradient {
     @apply bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] text-white hover:shadow-lg transition-all duration-300;
+  }
+  
+  .button-gradient-secondary {
+    @apply bg-gradient-to-r from-[#3a8ef6] via-[#7b61ff] to-[#5f9df7] text-white hover:shadow-lg transition-all duration-300;
   }
   
   .border-gradient {
@@ -131,6 +140,10 @@
     mask-composite: exclude;
   }
   
+  .border-gradient-secondary::before {
+    background: linear-gradient(to right, #3a8ef6, #7b61ff, #5f9df7);
+  }
+  
   .futuristic-input {
     @apply bg-transparent border-b-2 border-primary/30 focus:border-primary px-0 py-2 transition-colors;
   }
@@ -138,4 +151,36 @@
   .hover-card-animate {
     @apply transition-all duration-300 hover:translate-y-[-5px] hover:shadow-lg;
   }
+  
+  /* Responsive table utilities */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+  }
+  
+  .table-compact td,
+  .table-compact th {
+    @apply p-2;
+  }
+  
+  @media (max-width: 640px) {
+    .table-stack-sm {
+      @apply block;
+    }
+    
+    .table-stack-sm thead, 
+    .table-stack-sm tbody, 
+    .table-stack-sm tr {
+      @apply block w-full;
+    }
+    
+    .table-stack-sm td {
+      @apply block w-full text-left pl-[50%] relative;
+    }
+    
+    .table-stack-sm td::before {
+      content: attr(data-label);
+      @apply absolute left-4 font-medium text-muted-foreground;
+    }
+  }
 }
+

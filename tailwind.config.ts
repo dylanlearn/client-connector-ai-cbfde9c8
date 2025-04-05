@@ -71,6 +71,9 @@ export default {
 					start: '#ee682b',
 					middle: '#8439e9',
 					end: '#6142e7',
+					'blue-start': '#3a8ef6',
+					'blue-middle': '#7b61ff',
+					'blue-end': '#5f9df7',
 				}
 			},
 			borderRadius: {
@@ -116,6 +119,7 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-primary': 'linear-gradient(90deg, #ee682b, #8439e9, #6142e7)',
+				'gradient-secondary': 'linear-gradient(90deg, #3a8ef6, #7b61ff, #5f9df7)',
 				'gradient-radial': 'radial-gradient(circle at center, #8439e9, #6142e7)',
 				'gradient-shine': 'linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%)',
 			},

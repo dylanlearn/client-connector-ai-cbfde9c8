@@ -10,6 +10,13 @@ export interface Wireframe {
   sections?: any[];
   data?: WireframeData;
   generation_params?: any;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  status?: 'draft' | 'published' | 'archived';
+  tags?: string[];
+  version_count?: number;
+  current_version_id?: string;
 }
 
 export interface WireframeSourceData {
@@ -18,6 +25,9 @@ export interface WireframeSourceData {
   sections?: any[];
   message?: string;
   tags?: string[];
+  layout?: string;
+  style?: string;
+  components?: any[];
   [key: string]: any;
 }
 
@@ -25,6 +35,19 @@ export interface WireframeData {
   title?: string;
   description?: string;
   sections: any[];
+  layoutType?: string;
+  colorScheme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+  };
+  typography?: {
+    headings?: string;
+    body?: string;
+    fontPairings?: string[];
+  };
+  designTokens?: Record<string, any>;
   [key: string]: any;
 }
 
@@ -39,6 +62,7 @@ export interface WireframeVersion {
   change_description?: string;
   created_at: string;
   created_by?: string;
+  sourceData?: WireframeSourceData;
 }
 
 export interface WireframeVersionDiff {
@@ -57,4 +81,30 @@ export interface WireframeBranch {
 export interface WireframeVersionTree {
   branches: Record<string, WireframeBranch>;
   main_branch: string;
+  current?: WireframeVersion;
+}
+
+export interface WireframeVersionControlOptions {
+  projectId: string;
+  wireframeId: string;
+  data?: WireframeData;
+  sourceData?: WireframeSourceData;
+  changeDescription?: string;
+  branchName?: string;
+  createdBy?: string;
+}
+
+export interface WireframeCompareResult {
+  changes: Array<{
+    type: "added" | "removed" | "modified";
+    path: string;
+    values: [any, any];
+  }>;
+  summary: string;
+}
+
+export interface WireframeHistoryState {
+  versions: WireframeVersion[];
+  branches: WireframeBranch[];
+  current?: WireframeVersion;
 }

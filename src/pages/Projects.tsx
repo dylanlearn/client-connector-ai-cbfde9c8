@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { FileText, PlusCircle, Loader2, Info, Database, AlertCircle } from "lucide-react";
+import { FileText, PlusCircle, Loader2, Info, Database, AlertCircle, FolderTree, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/dashboard/EmptyState";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSampleData } from "@/hooks/use-sample-data";
 import { useMemory } from "@/contexts/ai/MemoryContext";
 import { useMemoryInitialization } from "@/hooks/use-memory-initialization";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Projects = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Projects = () => {
   const { generateSampleData, isGenerating } = useSampleData();
   const { refreshMemoryContext } = useMemory();
   const { initializeMemory, isInitialized } = useMemoryInitialization();
+  const [view, setView] = useState<"board" | "list">("board");
   
   // Filter out archived projects for display
   const activeProjects = projects.filter(project => project.status !== 'archived');
@@ -47,16 +49,45 @@ const Projects = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Projects</h1>
-        <Button onClick={handleNewProject}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          <span className={isMobile ? "sr-only" : ""}>New Project</span>
-        </Button>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Projects</h1>
+          <p className="text-muted-foreground">Manage and organize your design projects</p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {!isMobile && activeProjects.length > 0 && (
+            <div className="bg-muted/40 rounded-lg p-1 mr-2">
+              <Button 
+                variant={view === "board" ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setView("board")}
+                className="px-3"
+              >
+                <Layers className="h-4 w-4 mr-1" />
+                Board
+              </Button>
+              <Button 
+                variant={view === "list" ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={() => setView("list")}
+                className="px-3"
+              >
+                <FolderTree className="h-4 w-4 mr-1" />
+                List
+              </Button>
+            </div>
+          )}
+          
+          <Button onClick={handleNewProject} className="bg-gradient-primary hover:opacity-90">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            <span className={isMobile ? "sr-only" : ""}>New Project</span>
+          </Button>
+        </div>
       </div>
 
       {activeProjects.length > 0 && (
-        <Alert className="mb-6 bg-blue-50 border-blue-200">
+        <Alert className="mb-6 border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950/10 text-blue-800 dark:text-blue-300">
           <Info className="h-4 w-4 text-blue-500" />
           <AlertDescription>
             Click on any project card to view detailed information, notes, site map, and wireframes.
@@ -69,7 +100,7 @@ const Projects = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : error ? (
-        <Alert variant="destructive" className="mb-6">
+        <Alert variant="destructive" className="mb-6 border-l-4 border-l-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             <p className="font-semibold">Error loading projects</p>
@@ -77,39 +108,44 @@ const Projects = () => {
           </AlertDescription>
         </Alert>
       ) : activeProjects.length === 0 ? (
-        <EmptyState 
-          title="No projects yet"
-          description="Create your first project to get started with DezignSync."
-          buttonText="Create Project"
-          buttonAction={handleNewProject}
-          secondaryButton={
-            <Button 
-              variant="outline" 
-              onClick={generateSampleData} 
-              disabled={isGenerating}
-              className="w-full sm:w-auto"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Database className="mr-2 h-4 w-4" />
-                  Generate Sample Data
-                </>
-              )}
-            </Button>
-          }
-          icon={FileText}
-        />
+        <div className="mt-8">
+          <EmptyState 
+            title="No projects yet"
+            description="Create your first project to get started with DezignSync."
+            buttonText="Create Project"
+            buttonAction={handleNewProject}
+            secondaryButton={
+              <Button 
+                variant="outline" 
+                onClick={generateSampleData} 
+                disabled={isGenerating}
+                className="w-full sm:w-auto"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Database className="mr-2 h-4 w-4" />
+                    Generate Sample Data
+                  </>
+                )}
+              </Button>
+            }
+            icon={FileText}
+          />
+        </div>
       ) : (
-        <ProjectBoard 
-          projects={activeProjects} 
-          updateProject={updateProject} 
-          onProjectClick={handleProjectClick}
-        />
+        <div className="bg-white dark:bg-card rounded-lg border shadow-sm p-1 md:p-2">
+          <ProjectBoard 
+            projects={activeProjects} 
+            updateProject={updateProject} 
+            onProjectClick={handleProjectClick}
+            view={view}
+          />
+        </div>
       )}
     </DashboardLayout>
   );

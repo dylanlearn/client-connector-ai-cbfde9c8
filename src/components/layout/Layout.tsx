@@ -29,11 +29,11 @@ const Layout = memo(({
 
   return (
     <SidebarProvider>
-      <div className={`min-h-screen w-full ${className}`}>
+      <div className={`min-h-screen w-full flex flex-col md:flex-row ${className}`}>
         {!isIndexPage && <AppSidebar />}
-        <main className={`${!isIndexPage ? "ml-0 md:ml-64" : ""}`}>
+        <main className={`flex-1 transition-all duration-300 ${!isIndexPage ? "ml-0 md:ml-64 pt-16 md:pt-0" : ""}`}>
           {showFormResumeHandler && !isIndexPage && <FormResumeHandler />}
-          {children}
+          <div className="container mx-auto px-4 py-6 md:py-8">{children}</div>
         </main>
       </div>
     </SidebarProvider>

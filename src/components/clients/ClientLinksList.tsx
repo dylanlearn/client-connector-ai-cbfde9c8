@@ -30,29 +30,31 @@ export default function ClientLinksList({ links, isLoading, onRefresh }: ClientL
   }
   
   return (
-    <div className="border rounded-lg overflow-hidden overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Client</TableHead>
-            <TableHead className="hidden sm:table-cell">Project</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden md:table-cell">Created</TableHead>
-            <TableHead className="hidden md:table-cell">Expires</TableHead>
-            <TableHead className="hidden lg:table-cell">Last Access</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {links.map((link) => (
-            <ClientLinkRow 
-              key={link.id} 
-              link={link} 
-              onRefresh={onRefresh}
-            />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="border rounded-lg overflow-hidden overflow-x-auto bg-white dark:bg-card shadow-sm">
+      <div className="table-responsive">
+        <Table>
+          <TableHeader className="bg-muted/30">
+            <TableRow>
+              <TableHead>Client</TableHead>
+              <TableHead className="hidden sm:table-cell">Project</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">Created</TableHead>
+              <TableHead className="hidden md:table-cell">Expires</TableHead>
+              <TableHead className="hidden lg:table-cell">Last Access</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {links.map((link) => (
+              <ClientLinkRow 
+                key={link.id} 
+                link={link} 
+                onRefresh={onRefresh}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
