@@ -1,36 +1,29 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ClientError } from "./types";
-import { toast } from "sonner";
 
 /**
- * Fetch client errors for the error dashboard
+ * Fetch client errors with filtering
  */
-export const fetchClientErrors = async (
-  limit: number = 100,
-  resolved?: boolean,
-  userId?: string
-): Promise<ClientError[]> => {
+export async function fetchClientErrors(
+  limit: number = 50, 
+  resolved?: boolean
+): Promise<ClientError[]> {
   try {
     let query = supabase
       .from('client_errors')
       .select('*')
       .order('timestamp', { ascending: false })
-      .limit(limit) as any;
-    
+      .limit(limit);
+      
     if (resolved !== undefined) {
       query = query.eq('resolved', resolved);
-    }
-    
-    if (userId) {
-      query = query.eq('user_id', userId);
     }
     
     const { data, error } = await query;
     
     if (error) {
       console.error('Error fetching client errors:', error);
-      toast.error("Failed to load error data");
       return [];
     }
     
@@ -39,84 +32,74 @@ export const fetchClientErrors = async (
     console.error('Error in fetchClientErrors:', error);
     return [];
   }
-};
+}
 
 /**
  * Mark a client error as resolved
  */
-export const resolveClientError = async (
+export async function resolveClientError(
   errorId: string,
-  resolutionNotes?: string
-): Promise<boolean> => {
+  resolutionNotes: string
+): Promise<boolean> {
   try {
-    const { error } = await (supabase
+    const { error } = await supabase
       .from('client_errors')
       .update({
         resolved: true,
-        resolution_notes: resolutionNotes || 'Marked as resolved'
+        resolution_notes: resolutionNotes
       })
-      .eq('id', errorId) as any);
+      .eq('id', errorId);
       
     if (error) {
       console.error('Error resolving client error:', error);
-      toast.error("Failed to resolve error");
       return false;
     }
     
-    toast.success("Error marked as resolved");
     return true;
   } catch (error) {
     console.error('Error in resolveClientError:', error);
     return false;
   }
-};
+}
 
 /**
- * Get client error statistics
+ * Get error statistics
  */
-export const getErrorStatistics = async (): Promise<{
-  total: number,
-  resolved: number,
-  unresolved: number,
-  byComponent: Record<string, number>
-}> => {
+export async function getErrorStatistics() {
   try {
-    // Get total count
-    const { count: total, error: totalError } = await (supabase
+    const { data: allErrors, error } = await supabase
       .from('client_errors')
-      .select('*', { count: 'exact', head: true }) as any);
+      .select('id, resolved, component_name');
       
-    // Get resolved count
-    const { count: resolved, error: resolvedError } = await (supabase
-      .from('client_errors')
-      .select('*', { count: 'exact', head: true })
-      .eq('resolved', true) as any);
-      
-    // Get component breakdown
-    const { data: componentData, error: componentError } = await (supabase
-      .from('client_errors')
-      .select('component_name, id') as any);
-      
-    if (totalError || resolvedError || componentError) {
-      console.error('Error fetching error statistics', totalError || resolvedError || componentError);
-      return { total: 0, resolved: 0, unresolved: 0, byComponent: {} };
+    if (error) {
+      throw error;
     }
     
-    // Calculate component breakdown
+    // Calculate basic statistics
+    const total = allErrors.length;
+    const resolved = allErrors.filter(e => e.resolved).length;
+    const unresolved = total - resolved;
+    
+    // Group by component
     const byComponent: Record<string, number> = {};
-    componentData?.forEach((error: any) => {
-      const component = error.component_name || 'Unknown';
+    allErrors.forEach(error => {
+      const component = error.component_name || 'unknown';
       byComponent[component] = (byComponent[component] || 0) + 1;
     });
     
     return {
-      total: total || 0,
-      resolved: resolved || 0,
-      unresolved: (total || 0) - (resolved || 0),
+      total,
+      resolved,
+      unresolved,
       byComponent
     };
   } catch (error) {
-    console.error('Error in getErrorStatistics:', error);
-    return { total: 0, resolved: 0, unresolved: 0, byComponent: {} };
+    console.error('Error getting error statistics:', error);
+    return {
+      total: 0,
+      resolved: 0,
+      unresolved: 0,
+      byComponent: {}
+    };
   }
-};
+}
