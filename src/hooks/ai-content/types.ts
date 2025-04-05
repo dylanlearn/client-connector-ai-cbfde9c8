@@ -1,90 +1,93 @@
 
 /**
- * Interface for content generation requests
+ * Types for AI content and cache management
  */
-export interface ContentRequest {
-  type: 'header' | 'tagline' | 'cta' | 'description';
-  context?: string;
-  tone?: string;
-  keywords?: string[];
-  maxLength?: number;
+
+export interface ContentCacheEntry {
+  id: string;
+  content: string;
+  contentType: string;
+  expiresAt: Date;
+  createdAt: Date;
+  metadata?: Record<string, any>;
 }
 
-/**
- * Options for AI content generation
- */
-export interface UseAIContentOptions {
-  /**
-   * Enable/disable automatic retries on failure
-   * @default true
-   */
-  autoRetry?: boolean;
-  
-  /**
-   * Maximum number of retry attempts
-   * @default 2
-   */
-  maxRetries?: number;
-  
-  /**
-   * Timeout in milliseconds before giving up
-   * @default 10000
-   */
-  timeout?: number;
-  
-  /**
-   * Whether to show toast notifications for errors
-   * @default false
-   */
-  showToasts?: boolean;
-  
-  /**
-   * When true, fallback content will be returned on error
-   * rather than throwing
-   * @default true
-   */
-  useFallbacks?: boolean;
-  
-  /**
-   * Enable/disable A/B testing for prompts
-   * @default true
-   */
-  enableABTesting?: boolean;
+export interface ContentCacheOptions {
+  /** Time in seconds until the content expires */
+  expiresIn?: number;
+  /** User ID associated with the content */
+  userId?: string;
+  /** Additional metadata to store with the content */
+  metadata?: Record<string, any>;
 }
 
-/**
- * Return type for useAIContent hook
- */
-export interface UseAIContentReturn {
-  generate: (request: ContentRequest) => Promise<string>;
-  cancelGeneration: () => void;
+export interface FetchContentOptions {
+  /** Force a fresh generation, ignoring cache */
+  forceFresh?: boolean;
+  /** Include cached entries that are expired */
+  includeExpired?: boolean;
+  /** Maximum age in seconds to consider content fresh */
+  maxAgeSecs?: number;
+  /** Specific user ID to retrieve content for */
+  userId?: string;
+}
+
+export interface GenerateContentOptions extends ContentCacheOptions {
+  /** Whether to cache the result */
+  cache?: boolean;
+  /** Whether to use fallback content if generation fails */
+  useFallback?: boolean;
+  /** Context to use when selecting fallback content */
+  fallbackContext?: string;
+}
+
+export interface ContentRateLimitInfo {
+  /** How many requests the user has made in the current period */
+  count: number;
+  /** The maximum number of requests allowed in the period */
+  limit: number;
+  /** Whether the user is currently rate limited */
+  isLimited: boolean;
+  /** When the rate limit resets */
+  resetsAt: Date;
+}
+
+export interface CacheCleanupResult {
+  success: boolean;
+  message: string;
+  entriesRemoved?: number;
+}
+
+export interface AIContentHookReturn {
+  /** Function to generate content */
+  generateContent: <T = string>(
+    prompt: string, 
+    options?: GenerateContentOptions
+  ) => Promise<T>;
+  
+  /** Function to fetch content from cache */
+  fetchCachedContent: <T = string>(
+    cacheKey: string, 
+    options?: FetchContentOptions
+  ) => Promise<T | null>;
+  
+  /** Function to clean up expired cache entries */
   cleanupCache: () => Promise<CacheCleanupResult>;
+  
+  /** Function to schedule regular cache cleanup */
   scheduleRegularCleanup: (intervalMinutes?: number) => Promise<NodeJS.Timeout>;
+  
+  /** Current generation status */
   isGenerating: boolean;
-  isCleaningUp: boolean;
+  
+  /** Any error that occurred during content generation */
   error: Error | null;
+  
+  /** Rate limit information */
+  rateLimit: ContentRateLimitInfo | null;
 }
 
-/**
- * Interface for test result data
- */
-export interface TestResultData {
-  variantId: string;
-  successRate: number;
-  averageLatency: number;
-  sampleSize: number;
+export interface FallbackContentMap {
+  [context: string]: string;
+  default: string;
 }
-
-/**
- * Type for toast adapter to allow mocking in tests
- */
-export interface ToastAdapter {
-  toast: (props: any) => { id: string; dismiss: () => void; update: (props: any) => void };
-}
-
-// Re-export from generation-types for backwards compatibility
-// Fix: Use 'export type' for type re-exports when isolatedModules is enabled
-export type { UseGenerationOptions, UseGenerationReturn, FallbackContentMap } from './types/generation-types';
-
-// Re-export from cache-types for backwards compatibility
-export type { CacheCleanupResult, UseCacheReturn } from './types/cache-types';
