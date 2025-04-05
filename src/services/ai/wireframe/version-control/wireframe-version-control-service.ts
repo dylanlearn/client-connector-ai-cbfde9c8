@@ -1,8 +1,13 @@
+
 // Import necessary modules and types
-import { Wireframe, WireframeVersion, WireframeSourceData } from "@/types/wireframe";
+import { Wireframe, WireframeVersion, WireframeVersionDiff, WireframeSourceData, WireframeData } from "@/types/wireframe";
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from "@/integrations/supabase/client";
 import { toStringArray } from '@/utils/type-guards';
+import { versionCreationService } from './version-creation-service';
+import { versionComparisonService } from './version-comparison-service';
+import { baseVersionService } from './base-version-service';
+import { branchService } from './branch-service';
 
 /**
  * Service for managing wireframe version control.
@@ -24,18 +29,16 @@ export class WireframeVersionControlService {
     const versionId = uuidv4();
     const now = new Date();
 
-    const newVersion: WireframeVersion = {
+    const newVersion: any = {
       id: versionId,
-      wireframeId: wireframeId,
-      versionNumber: 1, // Initial version number, will be updated later
-      sourceData: sourceData,
-      createdAt: now,
-      createdBy: userId,
-      updatedAt: now,
-      updatedBy: userId,
-      isCurrent: true,
-      message: sourceData.message || 'Initial version',
-      tags: toStringArray(sourceData.tags || []),
+      wireframe_id: wireframeId,
+      version_number: 1, // Initial version number, will be updated later
+      data: sourceData,
+      created_at: now.toISOString(),
+      created_by: userId,
+      is_current: true,
+      branch_name: 'main',
+      change_description: sourceData.message || 'Initial version',
     };
 
     // Insert the new version into the database
@@ -54,6 +57,27 @@ export class WireframeVersionControlService {
     await this.updateVersionMetadata(wireframeId, versionId);
 
     return data as WireframeVersion;
+  }
+
+  /**
+   * Creates a new version of a wireframe.
+   */
+  static async createVersion(
+    wireframeId: string,
+    data: WireframeData,
+    changeDescription: string = "Updated wireframe",
+    userId: string,
+    parentVersionId?: string,
+    branchName: string = "main"
+  ): Promise<WireframeVersion | null> {
+    return versionCreationService.createVersion(
+      wireframeId,
+      data,
+      changeDescription,
+      userId,
+      parentVersionId,
+      branchName
+    );
   }
 
   /**
@@ -85,8 +109,8 @@ export class WireframeVersionControlService {
     const { data, error } = await supabase
       .from('wireframe_versions')
       .select('*')
-      .eq('wireframeId', wireframeId)
-      .order('createdAt', { ascending: false });
+      .eq('wireframe_id', wireframeId)
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error("Error fetching wireframe versions:", error);
@@ -111,11 +135,8 @@ export class WireframeVersionControlService {
     const now = new Date();
 
     const updatedVersion: Partial<WireframeVersion> = {
-      sourceData: sourceData,
-      updatedAt: now,
-      updatedBy: userId,
-      message: sourceData.message || 'Updated version',
-      tags: toStringArray(sourceData.tags || []),
+      data: sourceData,
+      change_description: sourceData.message || 'Updated version',
     };
 
     const { data, error } = await supabase
@@ -152,10 +173,11 @@ export class WireframeVersionControlService {
       return null;
     }
 
-    // Create a new version with the source data of the restored version
-    const restoredVersion = await this.createWireframeVersion(
+    // Create a new version with the data of the restored version
+    const restoredVersion = await this.createVersion(
       wireframeId,
-      versionToRestore.sourceData,
+      versionToRestore.data as WireframeData,
+      `Restored from version ${versionToRestore.version_number}`,
       userId
     );
 
@@ -192,43 +214,134 @@ export class WireframeVersionControlService {
   }
 
   /**
-   * Deeply compares two objects and returns the differences.
-   * @param obj1 The first object.
-   * @param obj2 The second object.
-   * @returns An object containing the differences between the two objects.
+   * Get version history for a wireframe
    */
-  private static deepCompare(obj1: any, obj2: any): any {
-    const diff: any = {};
-
-    for (const key in obj1) {
-      if (!(key in obj2)) {
-        diff[key] = {
-          oldValue: obj1[key],
-          newValue: undefined,
-        };
-      } else if (typeof obj1[key] === 'object' && obj1[key] !== null && obj2[key] !== null) {
-        const nestedDiff = this.deepCompare(obj1[key], obj2[key]);
-        if (Object.keys(nestedDiff).length > 0) {
-          diff[key] = nestedDiff;
+  static async getVersionHistory(wireframeId: string) {
+    try {
+      const versions = await this.getWireframeVersions(wireframeId);
+      
+      // Get unique branch names
+      const branchSet = new Set<string>();
+      versions.forEach(version => {
+        if (version.branch_name) {
+          branchSet.add(version.branch_name);
         }
-      } else if (obj1[key] !== obj2[key]) {
-        diff[key] = {
-          oldValue: obj1[key],
-          newValue: obj2[key],
-        };
-      }
+      });
+      
+      const branches = Array.from(branchSet);
+      
+      // Find the current version
+      const current = versions.find(v => v.is_current) || null;
+      
+      return {
+        versions,
+        current,
+        branches
+      };
+    } catch (error) {
+      console.error('Error getting version history:', error);
+      throw error;
     }
+  }
 
-    for (const key in obj2) {
-      if (!(key in obj1)) {
-        diff[key] = {
-          oldValue: undefined,
-          newValue: obj2[key],
-        };
+  /**
+   * Create a branch from a version
+   */
+  static async createBranch(
+    versionId: string, 
+    branchName: string,
+    userId: string
+  ) {
+    try {
+      const version = await this.getWireframeVersion(versionId);
+      
+      if (!version) {
+        throw new Error('Version not found');
       }
+      
+      // Create a new version with the same data but in a new branch
+      return versionCreationService.createVersion(
+        version.wireframe_id,
+        version.data as WireframeData,
+        `Branch created from version ${version.version_number}`,
+        userId,
+        version.id,
+        branchName
+      );
+    } catch (error) {
+      console.error('Error creating branch:', error);
+      throw error;
     }
+  }
 
-    return diff;
+  /**
+   * Get all branches for a wireframe
+   */
+  static async getBranches(wireframeId: string) {
+    try {
+      return branchService.getAllBranches(wireframeId);
+    } catch (error) {
+      console.error('Error getting branches:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Merge a branch into the main branch
+   */
+  static async mergeBranch(
+    versionId: string,
+    userId: string
+  ) {
+    try {
+      const version = await this.getWireframeVersion(versionId);
+      
+      if (!version) {
+        throw new Error('Version not found');
+      }
+      
+      // Create a new version in the main branch with the data from the branch version
+      return versionCreationService.createVersion(
+        version.wireframe_id,
+        version.data as WireframeData,
+        `Merged from ${version.branch_name} branch`,
+        userId,
+        version.id,
+        'main'
+      );
+    } catch (error) {
+      console.error('Error merging branch:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Revert to a specific version
+   */
+  static async revertToVersion(
+    versionId: string,
+    userId: string
+  ) {
+    try {
+      const version = await this.getWireframeVersion(versionId);
+      
+      if (!version) {
+        throw new Error('Version not found');
+      }
+      
+      // Create a new version with the data from the specified version
+      return versionCreationService.createVersion(
+        version.wireframe_id,
+        version.data as WireframeData,
+        `Reverted to version ${version.version_number}`,
+        userId,
+        version.id,
+        version.branch_name
+      );
+    } catch (error) {
+      console.error('Error reverting to version:', error);
+      throw error;
+    }
   }
 
   /**

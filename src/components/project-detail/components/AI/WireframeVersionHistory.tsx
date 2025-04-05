@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,11 +21,10 @@ import {
   AlertCircle 
 } from 'lucide-react';
 
-import { wireframeVersionControl } from '@/services/ai/wireframe/version-control';
+import { WireframeVersionControlService } from '@/services/ai/wireframe/version-control/wireframe-version-control-service';
 import { 
   WireframeVersion,
-  WireframeRevisionHistory
-} from '@/services/ai/wireframe/wireframe-types';
+} from '@/types/wireframe';
 import { formatDistanceToNow } from 'date-fns';
 
 interface WireframeVersionHistoryProps {
@@ -38,7 +38,11 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
   userId,
   onVersionSelect 
 }) => {
-  const [history, setHistory] = useState<WireframeRevisionHistory | null>(null);
+  const [history, setHistory] = useState<{
+    versions: WireframeVersion[];
+    current: WireframeVersion | null;
+    branches: string[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('versions');
@@ -64,7 +68,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
   const loadVersionHistory = async () => {
     setLoading(true);
     try {
-      const history = await wireframeVersionControl.getVersionHistory(wireframeId);
+      const history = await WireframeVersionControlService.getVersionHistory(wireframeId);
       setHistory(history);
       setError(null);
     } catch (err) {
@@ -79,7 +83,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
     if (!selectedVersion || !newBranchName) return;
     
     try {
-      await wireframeVersionControl.createBranch(
+      await WireframeVersionControlService.createBranch(
         selectedVersion,
         newBranchName,
         userId
@@ -99,14 +103,14 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
     if (!selectedBranch) return;
     
     try {
-      const branches = await wireframeVersionControl.getBranches(wireframeId);
+      const branches = await WireframeVersionControlService.getBranches(wireframeId);
       const branch = branches.find(b => b.name === selectedBranch);
       
       if (!branch) {
         throw new Error("Selected branch not found");
       }
       
-      await wireframeVersionControl.mergeBranch(
+      await WireframeVersionControlService.mergeBranch(
         branch.latest_version_id,
         userId
       );
@@ -124,12 +128,19 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
     if (!compareVersions) return;
     
     try {
-      const result = await wireframeVersionControl.compareVersions(
+      const result = await WireframeVersionControlService.compareVersions(
         compareVersions.v1,
         compareVersions.v2
       );
       
-      setCompareResult(result);
+      setCompareResult({
+        changes: [
+          ...result.added.map(item => ({ type: 'added' as const, path: item, values: [null, 'Added'] })),
+          ...result.removed.map(item => ({ type: 'removed' as const, path: item, values: ['Removed', null] })),
+          ...result.modified.map(item => ({ type: 'modified' as const, path: item, values: ['Before', 'After'] }))
+        ],
+        summary: `Found ${result.added.length} additions, ${result.removed.length} removals, and ${result.modified.length} modifications.`
+      });
     } catch (err) {
       setError("Failed to compare versions");
       console.error(err);
@@ -138,7 +149,7 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
   
   const handleRevertToVersion = async (versionId: string) => {
     try {
-      await wireframeVersionControl.revertToVersion(
+      await WireframeVersionControlService.revertToVersion(
         versionId,
         userId
       );

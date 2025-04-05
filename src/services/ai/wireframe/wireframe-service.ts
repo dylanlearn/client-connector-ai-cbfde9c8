@@ -1,3 +1,4 @@
+
 import { WireframeApiService } from './api';
 import { 
   WireframeGenerationParams, 
@@ -5,7 +6,7 @@ import {
   AIWireframe, 
   WireframeData 
 } from './wireframe-types';
-import { wireframeVersionControl } from './version-control';
+import { WireframeVersionControlService } from './version-control/wireframe-version-control-service';
 import { industryTemplateService } from './industry-templates';
 
 /**
@@ -55,7 +56,7 @@ export const WireframeService = {
           const lastWireframe = await WireframeApiService.getLatestWireframe(params.projectId);
           
           if (lastWireframe) {
-            await wireframeVersionControl.createVersion(
+            await WireframeVersionControlService.createVersion(
               lastWireframe.id,
               result.wireframe,
               "Initial wireframe generation",
@@ -190,7 +191,7 @@ export const WireframeService = {
       );
       
       // Create a new version in version control
-      await wireframeVersionControl.createVersion(
+      await WireframeVersionControlService.createVersion(
         wireframeId,
         updatedData,
         changeDescription,
@@ -286,13 +287,13 @@ export const WireframeService = {
    * Get wireframe version history
    */
   getWireframeVersionHistory: (wireframeId: string) => {
-    return wireframeVersionControl.getVersionHistory(wireframeId);
+    return WireframeVersionControlService.getVersionHistory(wireframeId);
   },
   
   /**
    * Revert to a specific wireframe version
    */
   revertToVersion: (versionId: string, userId: string) => {
-    return wireframeVersionControl.revertToVersion(versionId, userId);
+    return WireframeVersionControlService.revertToVersion(versionId, userId);
   }
 };

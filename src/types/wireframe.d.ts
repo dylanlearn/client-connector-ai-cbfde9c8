@@ -3,6 +3,31 @@
  * Type definitions for wireframe version control
  */
 
+export interface Wireframe {
+  id: string;
+  project_id: string;
+  description?: string;
+  sections?: any[];
+  data?: WireframeData;
+  generation_params?: any;
+}
+
+export interface WireframeSourceData {
+  title?: string;
+  description?: string;
+  sections?: any[];
+  message?: string;
+  tags?: string[];
+  [key: string]: any;
+}
+
+export interface WireframeData {
+  title?: string;
+  description?: string;
+  sections: any[];
+  [key: string]: any;
+}
+
 export interface WireframeVersion {
   id: string;
   wireframe_id: string;
