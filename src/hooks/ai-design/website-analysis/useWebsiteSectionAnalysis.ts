@@ -23,14 +23,32 @@ export function useWebsiteSectionAnalysis(
     try {
       state.startAnalysis();
       
-      // Call the service
-      const data = await WebsiteAnalysisService.analyzeWebsiteSection(section, url);
+      // Call the service with all required parameters
+      const data = await WebsiteAnalysisService.analyzeWebsiteSection(
+        section,
+        `Analysis of ${section} section from ${url}`,
+        {
+          layout: `${section} layout pattern`,
+          colorScheme: `${section} color scheme`,
+          typography: `${section} typography`,
+          spacing: `${section} spacing`,
+          imagery: `${section} imagery`
+        },
+        {
+          headline: `${section} headline`,
+          subheadline: `${section} subheadline`,
+          callToAction: `${section} call to action`,
+          valueProposition: `${section} value proposition`,
+          testimonials: []
+        },
+        url
+      );
       
       if (!data) {
         throw new Error(`Failed to analyze ${section} section`);
       }
       
-      // Create result with all required fields
+      // Convert service result to hook result format
       const result: WebsiteAnalysisResult = {
         title: data.title,
         description: data.description,
@@ -39,13 +57,22 @@ export function useWebsiteSectionAnalysis(
           layout: data.visualElements.layout,
           colorScheme: data.visualElements.colorScheme,
           typography: data.visualElements.typography,
-          spacing: data.visualElements.spacing || '',  // Provide default value
-          imagery: data.visualElements.imagery || ''   // Provide default value
+          spacing: data.visualElements.spacing || '',
+          imagery: data.visualElements.imagery || ''
         },
-        userExperience: data.userExperience,
-        contentAnalysis: data.contentAnalysis,
+        userExperience: {
+          navigation: data.interactionPatterns?.userFlow || data.userExperience?.userFlow || '',
+          interactivity: data.interactionPatterns?.interactions || data.userExperience?.interactions || '',
+          responsiveness: 'Responsive design',
+          accessibility: data.interactionPatterns?.accessibility || data.userExperience?.accessibility || ''
+        },
+        contentAnalysis: {
+          tone: data.contentStructure?.valueProposition || data.contentAnalysis?.valueProposition || '',
+          messaging: data.contentStructure?.headline || data.contentAnalysis?.headline || '',
+          callToAction: data.contentStructure?.callToAction || data.contentAnalysis?.callToAction || ''
+        },
         targetAudience: data.targetAudience,
-        implementationNotes: data.implementationNotes || '', // Provide default value
+        implementationNotes: `Implementation notes for ${section} section`,
         tags: data.tags,
         source: url,
         userId: user?.id
@@ -57,7 +84,44 @@ export function useWebsiteSectionAnalysis(
       // Store in database if we have a user
       if (user?.id) {
         try {
-          await WebsiteAnalysisService.storeWebsiteAnalysis(result);
+          // Pass only the fields expected by the storage service
+          const serviceResult = {
+            title: result.title,
+            description: result.description,
+            category: result.category,
+            subcategory: '',
+            visualElements: result.visualElements,
+            interactionPatterns: {
+              userFlow: result.userExperience.navigation,
+              interactions: result.userExperience.interactivity,
+              accessibility: result.userExperience.accessibility
+            },
+            contentStructure: {
+              headline: result.contentAnalysis.messaging,
+              subheadline: '',
+              callToAction: result.contentAnalysis.callToAction,
+              valueProposition: result.contentAnalysis.tone,
+              testimonials: []
+            },
+            targetAudience: result.targetAudience,
+            effectivenessScore: 0.8,
+            tags: result.tags,
+            source: result.source,
+            userExperience: {
+              userFlow: result.userExperience.navigation,
+              interactions: result.userExperience.interactivity,
+              accessibility: result.userExperience.accessibility
+            },
+            contentAnalysis: {
+              headline: result.contentAnalysis.messaging,
+              subheadline: '',
+              callToAction: result.contentAnalysis.callToAction,
+              valueProposition: result.contentAnalysis.tone,
+              testimonials: []
+            }
+          };
+          
+          await WebsiteAnalysisService.storeWebsiteAnalysis(serviceResult);
         } catch (storeError) {
           console.error("Error storing analysis:", storeError);
         }
