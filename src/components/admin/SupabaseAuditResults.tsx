@@ -16,6 +16,16 @@ interface SupabaseAuditResultsProps {
   cacheCleanup: number;
   onRefresh: () => void;
   isLoading: boolean;
+  redisStatus?: {
+    connected: boolean;
+    cacheStats: {
+      aiGeneration: number;
+      wireframeGeneration: number;
+      memoryContexts: number;
+      embeddingVectors: number;
+      semanticSearches: number;
+    };
+  };
 }
 
 export function SupabaseAuditResults({
@@ -24,7 +34,8 @@ export function SupabaseAuditResults({
   rlsCheck,
   cacheCleanup,
   onRefresh,
-  isLoading
+  isLoading,
+  redisStatus
 }: SupabaseAuditResultsProps) {
   const getStatusIcon = (status: string) => {
     if (status === 'ok' || status === 'healthy') {
@@ -196,14 +207,65 @@ export function SupabaseAuditResults({
           <CardTitle>Cache Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">Entries cleaned in last run</p>
-              <p className="text-sm text-gray-600">Cache entries removed: {cacheCleanup}</p>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="font-medium">Entries cleaned in last run</p>
+                <p className="text-sm text-gray-600">Cache entries removed: {cacheCleanup}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
+                Clean Cache
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={onRefresh} disabled={isLoading}>
-              Clean Cache
-            </Button>
+            
+            {redisStatus && (
+              <div className="mt-4 border-t pt-4">
+                <h3 className="text-lg font-semibold mb-2">Redis Cache Statistics</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="border rounded-lg p-3 bg-blue-50">
+                    <p className="text-sm font-medium">Connection Status</p>
+                    <div className="flex items-center mt-1">
+                      {redisStatus.connected ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 mr-1" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600 mr-1" />
+                      )}
+                      <span>{redisStatus.connected ? 'Connected' : 'Disconnected'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <p className="text-sm font-medium">AI Generation Cache</p>
+                    <p className="text-lg mt-1">{redisStatus.cacheStats.aiGeneration}</p>
+                    <p className="text-xs text-gray-500">Entries</p>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <p className="text-sm font-medium">Wireframe Cache</p>
+                    <p className="text-lg mt-1">{redisStatus.cacheStats.wireframeGeneration}</p>
+                    <p className="text-xs text-gray-500">Entries</p>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <p className="text-sm font-medium">Memory Contexts</p>
+                    <p className="text-lg mt-1">{redisStatus.cacheStats.memoryContexts}</p>
+                    <p className="text-xs text-gray-500">Entries</p>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <p className="text-sm font-medium">Embedding Vectors</p>
+                    <p className="text-lg mt-1">{redisStatus.cacheStats.embeddingVectors}</p>
+                    <p className="text-xs text-gray-500">Entries</p>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3">
+                    <p className="text-sm font-medium">Semantic Searches</p>
+                    <p className="text-lg mt-1">{redisStatus.cacheStats.semanticSearches}</p>
+                    <p className="text-xs text-gray-500">Entries</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
