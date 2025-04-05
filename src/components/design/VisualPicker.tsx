@@ -12,6 +12,8 @@ export interface DesignOption {
   description: string;
   imageUrl: string;
   category: string;
+  icon?: React.ComponentType;
+  preview?: string;
 }
 
 interface VisualPickerProps {

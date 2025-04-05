@@ -62,6 +62,54 @@ const DesignCard = ({
   const showLikeIndicator = isDragging && offsetX > 50;
   const showDislikeIndicator = isDragging && offsetX < -50;
 
+  // Render different content based on category type
+  const renderCardContent = () => {
+    // For animations and interactions, render a demo preview
+    if (option.category === 'animation' || option.category === 'interaction') {
+      return (
+        <div className="flex flex-col h-full">
+          <div 
+            className="w-full h-[70%] bg-cover bg-center flex items-center justify-center bg-gradient-to-r from-blue-50 to-indigo-50"
+          >
+            {/* Demo preview element based on type */}
+            <motion.div
+              className={`w-24 h-24 ${option.category === 'animation' ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-purple-500 to-pink-600'} rounded-lg shadow-lg flex items-center justify-center`}
+              animate={option.category === 'animation' ? {
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, 0],
+                transition: { duration: 2, repeat: Infinity, repeatType: "reverse" }
+              } : {
+                y: [0, -5, 0],
+                transition: { duration: 1.5, repeat: Infinity, repeatType: "reverse" }
+              }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <span className="text-white font-medium">{option.category === 'animation' ? 'Anim' : 'Inter'}</span>
+            </motion.div>
+          </div>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-1">{option.title}</h3>
+            <p className="text-sm text-gray-500">{option.description}</p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Default rendering for other categories
+    return (
+      <>
+        <div 
+          className="w-full h-[70%] bg-cover bg-center"
+          style={{ backgroundImage: `url(${option.imageUrl})` }}
+        />
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-1">{option.title}</h3>
+          <p className="text-sm text-gray-500">{option.description}</p>
+        </div>
+      </>
+    );
+  };
+
   return (
     <motion.div
       className="absolute w-full h-full bg-white rounded-xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing"
@@ -75,17 +123,7 @@ const DesignCard = ({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
     >
-      {/* Card image */}
-      <div 
-        className="w-full h-[70%] bg-cover bg-center"
-        style={{ backgroundImage: `url(${option.imageUrl})` }}
-      />
-
-      {/* Card content */}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-1">{option.title}</h3>
-        <p className="text-sm text-gray-500">{option.description}</p>
-      </div>
+      {renderCardContent()}
 
       {/* Like/Dislike indicators */}
       {showLikeIndicator && (
