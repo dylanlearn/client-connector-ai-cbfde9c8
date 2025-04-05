@@ -1,7 +1,7 @@
-
 import { Json } from "@/integrations/supabase/types";
 import { Database } from "@/integrations/supabase/types";
 import { SupabaseHealthCheck } from "@/types/supabase-audit";
+import { supabase } from "@/integrations/supabase/client";
 
 export class SupabaseAuditService {
   static async runFullHealthCheck(): Promise<SupabaseHealthCheck> {
