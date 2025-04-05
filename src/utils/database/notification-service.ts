@@ -30,7 +30,7 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
   // Check each table for maintenance needs
   for (const table of data.table_stats) {
     const tableName = table.table;
-    const deadRowRatio = table.dead_row_ratio; // Updated to use snake_case property name
+    const deadRowRatio = table.dead_row_ratio; // Using snake_case property name
     
     // Get the maintenance state for this table
     const tableState = tableMaintenanceState[tableName];
