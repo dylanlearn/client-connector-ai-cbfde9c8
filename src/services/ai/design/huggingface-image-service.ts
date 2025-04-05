@@ -78,7 +78,7 @@ export const HuggingFaceImageService = {
       
       const results = await Promise.allSettled(promises);
       
-      // Collect successful variations
+      // Collect successful variations - Fix for TS2532 error
       results.forEach(result => {
         if (result.status === 'fulfilled') {
           variations.push(result.value);
