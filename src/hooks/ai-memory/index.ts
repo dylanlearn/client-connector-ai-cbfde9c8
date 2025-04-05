@@ -4,4 +4,15 @@
  */
 
 export { useEnhancedMemory } from './useEnhancedMemory';
-export type { VectorSearchResult, EnhancedMemorySearchResult } from '@/types/ai-memory';
+export { useMemoryAnalytics } from './useMemoryAnalytics';
+export type { 
+  VectorSearchResult, 
+  EnhancedMemorySearchResult 
+} from '@/types/ai-memory';
+export type {
+  SimilarityCluster,
+  SimilarityTrend,
+  PhraseHeatmapItem,
+  BehavioralPattern,
+  BehavioralFingerprint
+} from './useMemoryAnalytics';

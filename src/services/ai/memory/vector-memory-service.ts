@@ -121,5 +121,99 @@ export const VectorMemoryService = {
       console.error("Error fetching memory system stats:", error);
       return [];
     }
+  },
+
+  /**
+   * Get embedding similarity trends
+   */
+  getEmbeddingSimilarityTrends: async (options: {
+    segmentBy?: 'user' | 'project' | 'category';
+    timeframe?: { from: Date, to?: Date };
+    limit?: number;
+  } = {}) => {
+    try {
+      // Invoke the analyze-memory-patterns edge function with appropriate parameters
+      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+        body: {
+          analysis_type: 'similarity_trends',
+          segment_by: options.segmentBy || 'category',
+          timeframe: options.timeframe ? {
+            from: options.timeframe.from.toISOString(),
+            to: options.timeframe.to?.toISOString()
+          } : undefined,
+          limit: options.limit || 10
+        }
+      });
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error("Error getting embedding similarity trends:", error);
+      return { trends: [] };
+    }
+  },
+
+  /**
+   * Get prompt phrase heatmaps
+   */
+  getPromptHeatmaps: async (options: {
+    outcomeMetric?: string;
+    timeRange?: { from: Date, to?: Date };
+    minSimilarity?: number;
+  } = {}) => {
+    try {
+      // Invoke the analyze-memory-patterns edge function with appropriate parameters
+      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+        body: {
+          analysis_type: 'prompt_heatmaps',
+          outcome_metric: options.outcomeMetric || 'relevance_score',
+          time_range: options.timeRange ? {
+            from: options.timeRange.from.toISOString(),
+            to: options.timeRange.to?.toISOString()
+          } : undefined,
+          min_similarity: options.minSimilarity || 0.5
+        }
+      });
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error("Error getting prompt heatmaps:", error);
+      return { phrases: [] };
+    }
+  },
+
+  /**
+   * Get behavioral fingerprints
+   */
+  getBehavioralFingerprints: async (
+    userId?: string,
+    options: {
+      clusterCount?: number;
+      includeGlobalPatterns?: boolean;
+      minInteractions?: number;
+    } = {}
+  ) => {
+    try {
+      // Invoke the analyze-memory-patterns edge function with appropriate parameters
+      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+        body: {
+          analysis_type: 'behavioral_fingerprints',
+          user_id: userId,
+          cluster_count: options.clusterCount || 5,
+          include_global_patterns: options.includeGlobalPatterns !== false,
+          min_interactions: options.minInteractions || 10
+        }
+      });
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error("Error getting behavioral fingerprints:", error);
+      return { fingerprints: [] };
+    }
   }
 };
