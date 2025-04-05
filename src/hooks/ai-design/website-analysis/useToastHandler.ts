@@ -6,7 +6,7 @@ import { toast } from 'sonner';
  * Hook for handling toast notifications with fallback
  */
 export function useToastHandler() {
-  // Use toast from sonner if useToast hook fails (fallback)
+  // Use toast from useToast hook with fallback to sonner
   let toastHandler;
   try {
     toastHandler = useToast();
