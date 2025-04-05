@@ -1,4 +1,3 @@
-
 import { DesignOption } from "@/components/design/AnimatedVisualPicker";
 
 export const designOptions: DesignOption[] = [
@@ -7,28 +6,28 @@ export const designOptions: DesignOption[] = [
     id: "hero-1",
     title: "Gradient Hero",
     description: "A modern hero with a bold gradient background and centered content. Great for bold first impressions, startup launches, and high-energy brands.",
-    imageUrl: "https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
+    imageUrl: "https://bmkhbqxukiakhafqllux.supabase.co/storage/v1/object/public/design_images//Gradient%20Hero.png",
     category: "hero"
   },
   {
     id: "hero-2",
     title: "Split Content Hero",
     description: "A balanced layout with text on one side and space for product images or illustrations. Ideal for SaaS, product features, and service explainers.",
-    imageUrl: "https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
+    imageUrl: "https://bmkhbqxukiakhafqllux.supabase.co/storage/v1/object/public/design_images//split%20content.png",
     category: "hero"
   },
   {
     id: "hero-3",
     title: "Minimal Hero",
     description: "A clean, typography-first hero that focuses entirely on copy. Perfect for portfolios, creative studios, and high-end branding websites.",
-    imageUrl: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
+    imageUrl: "https://bmkhbqxukiakhafqllux.supabase.co/storage/v1/object/public/design_images//Minimilist%20Portfolio.png",
     category: "hero"
   },
   {
     id: "hero-4",
-    title: "Video Background Hero",
+    title: "Image Focused Hero",
     description: "A full-width hero with a cinematic video background and overlaid text. Designed for storytelling, travel sites, and immersive landing pages.",
-    imageUrl: "https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=1050&q=80",
+    imageUrl: "https://bmkhbqxukiakhafqllux.supabase.co/storage/v1/object/public/design_images//Image%20Focused%20Hero.png",
     category: "hero"
   },
   {

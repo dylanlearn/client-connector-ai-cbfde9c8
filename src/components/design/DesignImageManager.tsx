@@ -6,8 +6,9 @@ import { designOptions } from "@/data/design-options";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Image as ImageIcon, RefreshCw, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface UpdatedDesignImage {
   id: string;
@@ -18,6 +19,7 @@ export interface UpdatedDesignImage {
 const DesignImageManager = () => {
   const [activeTab, setActiveTab] = useState("hero");
   const [updatedImages, setUpdatedImages] = useState<UpdatedDesignImage[]>([]);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { user } = useAuth();
   
   // Get unique categories from design options
@@ -48,14 +50,29 @@ const DesignImageManager = () => {
     }
   };
   
-  const applyChanges = () => {
-    // In a real application, this would update the database
-    // For now, we're just showing a success message
-    toast.success(`${updatedImages.length} images are ready to be applied`);
+  const applyChanges = async () => {
+    if (updatedImages.length === 0) return;
     
-    // Display information about which images would be updated
-    if (updatedImages.length > 0) {
-      console.log("Images to be updated:", updatedImages);
+    setIsUpdating(true);
+    
+    try {
+      // Call the Supabase Edge Function to update the design options
+      const { data, error } = await supabase.functions.invoke('update-design-options', {
+        body: { updatedImages }
+      });
+      
+      if (error) throw error;
+      
+      toast.success(`Successfully updated ${updatedImages.length} design images`);
+      console.log("Updated design options:", data);
+      
+      // Clear the updated images list
+      setUpdatedImages([]);
+    } catch (error) {
+      console.error("Error updating design options:", error);
+      toast.error("Failed to update design images. Please try again.");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -123,9 +140,18 @@ const DesignImageManager = () => {
           
           {updatedImages.length > 0 && (
             <div className="mt-6 flex justify-end">
-              <Button onClick={applyChanges}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Apply Changes
+              <Button onClick={applyChanges} disabled={isUpdating}>
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Apply Changes
+                  </>
+                )}
               </Button>
             </div>
           )}
