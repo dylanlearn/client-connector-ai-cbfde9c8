@@ -3,15 +3,13 @@ import { useCallback, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { EnhancedMemoryService } from '@/services/ai/memory/enhanced-memory-service';
 import { MemoryCategory, MemoryQueryOptions } from '@/services/ai/memory';
+import type { EnhancedMemorySearchResult, VectorSearchResult, StoreMemoryOptions } from '@/types/ai-memory';
 
 export function useEnhancedMemory() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [searchResults, setSearchResults] = useState<{
-    exactMatches: any[];
-    semanticMatches: any[];
-  }>({
+  const [searchResults, setSearchResults] = useState<EnhancedMemorySearchResult>({
     exactMatches: [],
     semanticMatches: []
   });
@@ -23,7 +21,8 @@ export function useEnhancedMemory() {
     content: string,
     category: string,
     projectId?: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, any> = {},
+    options: StoreMemoryOptions = {}
   ) => {
     if (!user?.id) return false;
     
@@ -39,7 +38,8 @@ export function useEnhancedMemory() {
         content,
         memoryCategory,
         projectId,
-        metadata
+        metadata,
+        options.anonymizeForGlobal ?? true
       );
       
       return result;
