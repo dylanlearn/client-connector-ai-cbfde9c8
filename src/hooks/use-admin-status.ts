@@ -1,20 +1,22 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
 import { toast } from "sonner";
 import { logClientError } from "@/utils/monitoring/client-error-logger";
+import { checkAdminStatus } from "@/utils/auth-utils";
 
 export const useAdminStatus = () => {
   const { user, profile: authProfile } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isVerifying, setIsVerifying] = useState<boolean>(true); 
-  const [lastVerified, setLastVerified] = useState<Date | null>(null);
+  const lastVerifiedRef = useRef<Date | null>(null);
+  const verificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Function to verify admin status directly from the database
+  // Function to verify admin status with improved caching
   const verifyAdminStatus = useCallback(async (force = false) => {
-    // Skip if no user or if we've verified recently (within last minute) and not forcing
+    // Skip if no user
     if (!user?.id) {
       setIsAdmin(false);
       setIsVerifying(false);
@@ -22,73 +24,68 @@ export const useAdminStatus = () => {
     }
 
     // Skip verification if we've checked recently (unless forced)
-    if (!force && lastVerified && (new Date().getTime() - lastVerified.getTime() < 60000)) {
+    if (!force && lastVerifiedRef.current && 
+        (new Date().getTime() - lastVerifiedRef.current.getTime() < 60000)) {
       console.log("Skipping admin verification - checked recently");
       return isAdmin;
     }
 
     try {
       setIsVerifying(true);
-      console.log("Profile query starting for user:", user.id);
       
-      // Direct check from auth profile (most reliable)
+      // Direct check from auth profile (most reliable and already cached)
       if (authProfile?.role === 'admin') {
         console.log("Admin status verified from auth profile");
         setIsAdmin(true);
-        setLastVerified(new Date());
+        lastVerifiedRef.current = new Date();
         setIsVerifying(false);
         return true;
       }
       
-      // Double-check with database query
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      // Double-check with cached database query
+      const isUserAdmin = await checkAdminStatus(user.id);
       
-      if (error) {
-        console.error("Error in verifyAdminStatus database query:", error);
-        // Log client error for monitoring
-        logClientError(
-          `Error verifying admin status: ${error.message}`,
-          "useAdminStatus",
-          user.id,
-          { error, userId: user.id }
-        );
-        throw error;
+      if (force || isAdmin !== isUserAdmin) {
+        console.log("Admin status verified from database, updating state:", isUserAdmin);
+        setIsAdmin(isUserAdmin);
       }
       
-      const adminStatus = data?.role === 'admin';
-      console.log("Admin verification result from database:", { role: data?.role, isAdmin: adminStatus });
-      
-      if (force || isAdmin !== adminStatus) {
-        console.log("Admin status verified from database, updating state:", adminStatus);
-        setIsAdmin(adminStatus);
-      }
-      
-      setLastVerified(new Date());
+      lastVerifiedRef.current = new Date();
       setIsVerifying(false);
-      return adminStatus;
+      return isUserAdmin;
     } catch (err) {
       console.error("Error in verifyAdminStatus:", err);
       setIsVerifying(false);
       return false;
     }
-  }, [user?.id, isAdmin, lastVerified, authProfile?.role]);
+  }, [user?.id, isAdmin, authProfile?.role]);
 
+  // Debounced verification to avoid too many calls
+  const debouncedVerifyAdminStatus = useCallback((force = false) => {
+    // Clear any existing timeout
+    if (verificationTimeoutRef.current) {
+      clearTimeout(verificationTimeoutRef.current);
+    }
+    
+    // Set a new timeout
+    verificationTimeoutRef.current = setTimeout(() => {
+      verifyAdminStatus(force);
+    }, 100); // 100ms debounce
+  }, [verifyAdminStatus]);
+
+  // Initial admin status check
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user?.id) {
         setIsVerifying(true);
         
-        // First check: Direct from profile
+        // First check: Direct from profile (already cached)
         if (authProfile?.role === 'admin') {
           console.log("Admin status verified from auth profile");
           setIsAdmin(true);
           setIsLoading(false);
           setIsVerifying(false);
-          setLastVerified(new Date());
+          lastVerifiedRef.current = new Date();
           return;
         }
 
@@ -98,14 +95,13 @@ export const useAdminStatus = () => {
           setIsAdmin(true);
           setIsLoading(false);
           setIsVerifying(false);
-          setLastVerified(new Date());
+          lastVerifiedRef.current = new Date();
           return;
         }
         
-        // Third check: Verify from database
+        // Third check: Verify from database with the cached function
         try {
-          const isUserAdmin = await verifyAdminStatus();
-          setIsAdmin(isUserAdmin);
+          await verifyAdminStatus(true);
         } catch (error) {
           console.error("Error checking admin status:", error);
           setIsAdmin(false);
@@ -119,6 +115,13 @@ export const useAdminStatus = () => {
     };
 
     checkAdminStatus();
+    
+    // Cleanup function
+    return () => {
+      if (verificationTimeoutRef.current) {
+        clearTimeout(verificationTimeoutRef.current);
+      }
+    };
   }, [user?.id, authProfile, verifyAdminStatus]);
 
   // Re-verify when profile changes
@@ -127,10 +130,15 @@ export const useAdminStatus = () => {
       if (authProfile.role === 'admin' && !isAdmin) {
         console.log("Admin role detected in profile, updating admin status");
         setIsAdmin(true);
-        setLastVerified(new Date());
+        lastVerifiedRef.current = new Date();
       }
     }
   }, [authProfile, user, isAdmin]);
 
-  return { isAdmin, isLoading, isVerifying, verifyAdminStatus };
+  return { 
+    isAdmin, 
+    isLoading, 
+    isVerifying, 
+    verifyAdminStatus: debouncedVerifyAdminStatus 
+  };
 };

@@ -1,41 +1,48 @@
-
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { UserProfile } from "@/utils/auth-utils";
+import { UserProfile, invalidateProfileCache } from "@/utils/auth-utils";
 import { toast } from "sonner";
+
+const PROFILE_QUERY_KEY = 'profile';
 
 export function useProfileData(userId: string | undefined) {
   const queryClient = useQueryClient();
   const [updateError, setUpdateError] = useState<Error | null>(null);
   
-  // Profile fetching with React Query for caching
+  const queryKey = useMemo(() => 
+    [PROFILE_QUERY_KEY, userId], 
+    [userId]
+  );
+  
   const { 
     data: profile, 
     isLoading, 
     error,
     refetch: refetchProfile 
   } = useQuery({
-    queryKey: ['profile', userId],
+    queryKey,
     queryFn: async () => {
       if (!userId) return null;
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
-      return data as UserProfile;
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error) throw error;
+        return data as UserProfile;
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
     },
-    // Only fetch when we have a userId
     enabled: !!userId,
-    // Cache profile data for 5 minutes (300000ms)
     staleTime: 300000,
-    // Only retry failed requests twice
+    gcTime: 600000,
     retry: 2,
-    // Using meta for error handling instead of onError
     meta: {
       onError: (error: Error) => {
         console.error('Error fetching profile:', error);
@@ -43,7 +50,13 @@ export function useProfileData(userId: string | undefined) {
     }
   });
 
-  // Profile update mutation
+  const optimizedRefetchProfile = useCallback(async () => {
+    if (userId) {
+      invalidateProfileCache(userId);
+      await refetchProfile();
+    }
+  }, [userId, refetchProfile]);
+
   const { mutateAsync: updateProfile } = useMutation({
     mutationFn: async (updates: Partial<UserProfile>) => {
       if (!userId) throw new Error('User ID is required to update profile');
@@ -61,8 +74,12 @@ export function useProfileData(userId: string | undefined) {
       return data as UserProfile;
     },
     onSuccess: (newProfileData) => {
-      // Update the cached profile data
-      queryClient.setQueryData(['profile', userId], newProfileData);
+      queryClient.setQueryData(queryKey, newProfileData);
+      
+      if (userId) {
+        invalidateProfileCache(userId);
+      }
+      
       toast.success('Profile updated successfully');
     },
     onError: (error: Error) => {
@@ -80,8 +97,6 @@ export function useProfileData(userId: string | undefined) {
     error,
     updateProfile,
     updateError,
-    refetchProfile: async () => {
-      await refetchProfile();
-    }
+    refetchProfile: optimizedRefetchProfile
   };
 }

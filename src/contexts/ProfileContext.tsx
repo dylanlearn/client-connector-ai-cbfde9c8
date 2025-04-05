@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { UserProfile } from "@/utils/auth-utils";
 import { useProfileData } from "@/hooks/use-profile-data";
 import { AuthContext } from './AuthContext';
@@ -33,25 +33,27 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return;
   };
   
+  // Create memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    profile,
+    isLoading,
+    error,
+    updateProfile,
+    refetchProfile,
+  }), [profile, isLoading, error, updateProfile, refetchProfile]);
+  
   // Wrap the original AuthContext to include profile data
-  const enhancedAuthContext = useContext(AuthContext);
+  const authContext = useContext(AuthContext);
+  
+  // Memoize the enhanced auth context to prevent unnecessary re-renders
+  const enhancedAuthContext = useMemo(() => ({
+    ...authContext,
+    profile: profile,
+  }), [authContext, profile]);
   
   return (
-    <ProfileContext.Provider 
-      value={{
-        profile,
-        isLoading,
-        error,
-        updateProfile,
-        refetchProfile,
-      }}
-    >
-      <AuthContext.Provider 
-        value={{
-          ...enhancedAuthContext,
-          profile: profile,
-        }}
-      >
+    <ProfileContext.Provider value={contextValue}>
+      <AuthContext.Provider value={enhancedAuthContext}>
         {children}
       </AuthContext.Provider>
     </ProfileContext.Provider>
