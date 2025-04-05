@@ -10,10 +10,31 @@ import ClientsTab from "@/components/dashboard/tabs/ClientsTab";
 import StatsTab from "@/components/dashboard/tabs/StatsTab";
 import TipsTab from "@/components/dashboard/tabs/TipsTab";
 import UpgradeCard from "@/components/dashboard/tabs/UpgradeCard";
+import { useEffect, useState } from "react";
+import { useProjects } from "@/hooks/use-projects";
 
 const Dashboard = () => {
   const { user, profile } = useAuth();
-  const { activeTab, loading, handleTabChange } = useDashboardTabs();
+  const { activeTab, loading: tabsLoading, handleTabChange } = useDashboardTabs();
+  const [projects, setProjects] = useState<any[]>([]);
+  
+  // Fetch projects for the Overview tab
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        // For demo purposes, we're setting dummy data
+        // In a real app, this would fetch from API/database
+        setProjects([
+          { id: '1', name: 'Website Redesign', status: 'active' },
+          { id: '2', name: 'Mobile App UI', status: 'pending' },
+        ]);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      }
+    };
+    
+    fetchProjects();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -39,16 +60,16 @@ const Dashboard = () => {
                     <TabsTrigger value="tips">Tips</TabsTrigger>
                   </TabsList>
                   <TabsContent value="overview" className="space-y-4">
-                    <OverviewTab isLoading={loading} />
+                    <OverviewTab projects={projects} />
                   </TabsContent>
                   <TabsContent value="clients" className="space-y-4">
-                    <ClientsTab isLoading={loading} />
+                    <ClientsTab />
                   </TabsContent>
                   <TabsContent value="stats" className="space-y-4">
-                    <StatsTab isLoading={loading} />
+                    <StatsTab />
                   </TabsContent>
                   <TabsContent value="tips" className="space-y-4">
-                    <TipsTab isLoading={loading} />
+                    <TipsTab />
                   </TabsContent>
                 </Tabs>
               </div>
