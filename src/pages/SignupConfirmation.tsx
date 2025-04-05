@@ -1,6 +1,5 @@
-
 import { useLocation, Link, Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/use-auth"; // Updated import
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw } from "lucide-react";
@@ -10,7 +9,6 @@ const SignupConfirmation = () => {
   const location = useLocation();
   const email = location.state?.email || "your email";
 
-  // If user is already logged in, redirect to dashboard
   if (user) {
     return <Navigate to="/dashboard" />;
   }

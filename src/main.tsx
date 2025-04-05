@@ -1,23 +1,14 @@
 
-import { createRoot } from 'react-dom/client'
-import { StrictMode } from 'react'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { initializeErrorHandling } from "@/utils/monitoring/error-handling";
-import { AppProviders } from '@/providers/AppProviders';
+import { AppProviders } from './providers/AppProviders'
 
-// Create root once and store it
-const root = createRoot(document.getElementById("root")!);
-
-// Render the app first
-root.render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <AppProviders>
       <App />
     </AppProviders>
-  </StrictMode>
-);
-
-// Initialize error handling after rendering the app
-// This ensures that error monitoring doesn't interfere with the initial render
-initializeErrorHandling();
+  </React.StrictMode>,
+)

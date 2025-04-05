@@ -1,23 +1,23 @@
 
 import { ReactNode } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAdminStatus } from '@/hooks/use-admin-status';
 import { useAuth } from '@/hooks/use-auth';
 
-interface AdminRouteProps {
+export interface AdminRouteProps {
   children?: ReactNode;
 }
 
 const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { user } = useAuth();
-  const { isAdmin } = useAdminStatus();
-
+  const { user, profile } = useAuth();
+  
+  // Check if the user is logged in and has an admin role
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
-  if (!isAdmin) {
-    return <Navigate to="/settings" replace />;
+  
+  // Check if user has admin privileges
+  if (profile?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

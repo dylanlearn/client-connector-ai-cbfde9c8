@@ -40,6 +40,3 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
-// Removing the duplicate useAuth hook definition from here
-// as it's now properly defined in src/hooks/use-auth.ts

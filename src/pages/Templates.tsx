@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import TemplatePurchaseDialog from "@/components/templates/TemplatePurchaseDialog";
-import { useAuth } from "@/hooks/use-auth"; // Fixed import path
+import { useAuth } from "@/hooks/use-auth";
 import PublicTemplateMarketplace from "@/components/templates/PublicTemplateMarketplace";
 import TemplateGrid from "@/components/templates/TemplateGrid";
 import { useTemplatePurchase } from "@/hooks/use-template-purchase";
