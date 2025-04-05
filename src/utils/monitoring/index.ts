@@ -4,14 +4,18 @@
  * This exports all monitoring-related functionality
  */
 
-// Re-export database monitoring utilities
-// Selectively re-export to avoid naming conflicts
-export * from '../database/index';
+// Re-export monitoring types
+export * from './types';
 
 // Re-export system status monitoring
 export * from './system-status';
 
-// Re-export monitoring types
-export * from './types';
+// Export API usage monitoring utilities
+export * from './api-usage';
+
+// Selectively re-export database monitoring utilities to avoid naming conflicts
+// Use namespace export to avoid the DatabaseStatistics conflict
+import * as DatabaseUtils from '../database/index';
+export { DatabaseUtils };
 
 // Additional monitoring functionality could be added here in the future
