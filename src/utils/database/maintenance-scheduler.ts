@@ -18,20 +18,16 @@ interface TableMaintenanceState {
 let tableMaintenanceState: TableMaintenanceState = {};
 
 /**
- * Threshold for auto vacuum recommendation (20% dead rows)
+ * Auto vacuum recommendation threshold (20% dead rows)
+ * Tables with dead rows above this percentage will trigger recommendations
  */
 const AUTO_VACUUM_THRESHOLD = 20;
 
 /**
- * Maximum allowed percentage to display for dead row ratio
- * to prevent unreasonably high percentages on small tables
+ * Minimum time between maintenance recommendations (6 hours)
+ * This prevents spam notifications for the same tables
  */
-const MAX_DISPLAY_PERCENTAGE = 100;
-
-/**
- * Minimum time between auto vacuum recommendations (24 hours)
- */
-const MIN_RECOMMENDATION_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const MIN_RECOMMENDATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 /**
  * Event bus for coordinating database health updates across components
@@ -59,16 +55,6 @@ function notifyDbRefreshListeners(stats: any) {
   for (const listener of databaseRefreshListeners) {
     listener(stats);
   }
-}
-
-/**
- * Normalize dead row ratio to a reasonable percentage
- * Prevents extremely high values in tables with few rows
- */
-function normalizeDeadRowRatio(ratio: number): number {
-  // For tables with few rows, PostgreSQL can report very high dead row ratios
-  // This caps the display value to a reasonable percentage
-  return Math.min(ratio, MAX_DISPLAY_PERCENTAGE);
 }
 
 /**
@@ -108,21 +94,10 @@ export async function refreshDatabaseStatistics(showToast: boolean = false): Pro
       return null;
     }
     
-    // Process and normalize the received statistics 
-    const processedStats = {
-      ...data,
-      table_stats: data.table_stats.map((table: any) => {
-        // Normalize the dead row ratio to a reasonable percentage
-        return {
-          ...table,
-          dead_row_ratio: normalizeDeadRowRatio(table.dead_row_ratio)
-        };
-      })
-    };
-    
-    // Update our in-memory state with fresh data
-    for (const table of processedStats.table_stats) {
+    // Update our in-memory state with fresh data - use actual values
+    for (const table of data.table_stats) {
       const tableName = table.table;
+      // Use the actual dead row ratio from the database, no normalization
       const deadRowRatio = table.dead_row_ratio;
       
       // Get or initialize maintenance state for this table
@@ -138,20 +113,25 @@ export async function refreshDatabaseStatistics(showToast: boolean = false): Pro
       tableMaintenanceState[tableName] = tableState;
     }
     
+    // Store high vacuum tables for better tracking
+    data.high_vacuum_tables = data.table_stats
+      .filter((table: any) => table.dead_row_ratio > AUTO_VACUUM_THRESHOLD)
+      .map((table: any) => table.table);
+    
     // Notify all components that have subscribed to refresh events
-    notifyDbRefreshListeners(processedStats);
+    notifyDbRefreshListeners(data);
     
     // Show success toast if requested
     if (showToast) {
       toast.success("Database statistics refreshed", {
-        description: `Updated stats for ${processedStats.table_stats.length} tables`
+        description: `Updated stats for ${data.table_stats.length} tables`
       });
     }
     
-    // Check for tables needing maintenance
-    checkMaintenanceNeeds(processedStats);
+    // Check for tables needing maintenance - but with reduced notifications
+    checkMaintenanceNeeds(data);
     
-    return processedStats;
+    return data;
   } catch (error) {
     console.error("Error refreshing database statistics:", error);
     if (showToast) {
@@ -165,6 +145,7 @@ export async function refreshDatabaseStatistics(showToast: boolean = false): Pro
 
 /**
  * Private helper to check for tables needing maintenance
+ * Reduces notification frequency to prevent spam
  */
 function checkMaintenanceNeeds(data: any) {
   // If no data provided, do nothing
@@ -184,6 +165,7 @@ function checkMaintenanceNeeds(data: any) {
     // Check if this table exceeds the vacuum threshold
     if (deadRowRatio > AUTO_VACUUM_THRESHOLD) {
       // Only recommend vacuum if it hasn't been vacuumed recently
+      // and we haven't shown a notification recently
       const lastVacuumed = tableState?.lastVacuumed;
       if (!lastVacuumed || (now.getTime() - lastVacuumed.getTime() > MIN_RECOMMENDATION_INTERVAL)) {
         tablesNeedingMaintenance.push({
@@ -194,25 +176,37 @@ function checkMaintenanceNeeds(data: any) {
     }
   }
 
-  // Show toast notification if tables need maintenance
+  // Only show toast notification if there are tables needing maintenance
+  // and we haven't already shown one for these tables recently
   if (tablesNeedingMaintenance.length > 0) {
-    const tableList = tablesNeedingMaintenance
-      .slice(0, 3)
-      .map(t => `${t.name} (${t.deadRowRatio.toFixed(1)}%)`)
+    // Get a count of all tables with elevated dead rows for good context
+    const totalTablesNeeding = data.table_stats.filter((t: any) => t.dead_row_ratio > AUTO_VACUUM_THRESHOLD).length;
+    
+    // Get the 3 tables with the highest dead row ratios to display
+    const topTables = [...tablesNeedingMaintenance]
+      .sort((a, b) => b.deadRowRatio - a.deadRowRatio)
+      .slice(0, 3);
+    
+    const tableList = topTables
+      .map(t => `${t.name} (${Math.round(t.deadRowRatio)}%)`)
       .join(', ');
     
-    const additionalTables = tablesNeedingMaintenance.length > 3 
-      ? `and ${tablesNeedingMaintenance.length - 3} more` 
+    const additionalTables = totalTablesNeeding > 3 
+      ? ` and ${totalTablesNeeding - 3} more` 
       : '';
     
     toast.warning("Database maintenance recommended", {
-      description: `Tables with high dead rows: ${tableList} ${additionalTables}`,
+      description: `Tables with high dead rows: ${tableList}${additionalTables}`,
       duration: 8000,
       action: {
         label: "Clean Now",
         onClick: () => {
-          // Automatically vacuum the tables that need maintenance
-          vacuumRecommendedTables(tablesNeedingMaintenance.map(t => t.name));
+          // Automatically vacuum all tables that need maintenance
+          const allTablesNeedingMaintenance = data.table_stats
+            .filter((t: any) => t.dead_row_ratio > AUTO_VACUUM_THRESHOLD)
+            .map((t: any) => t.table);
+          
+          vacuumRecommendedTables(allTablesNeedingMaintenance);
         }
       }
     });
@@ -277,6 +271,7 @@ async function vacuumRecommendedTables(tableNames: string[]): Promise<void> {
 
 /**
  * Check database performance and recommend maintenance if needed
+ * With reduced notification frequency
  */
 export async function checkDatabaseHealth(showToasts: boolean = true): Promise<boolean> {
   try {
@@ -300,7 +295,6 @@ export async function verifyDeadRowPercentages(): Promise<{
     uiPercentage?: number | null; 
     actualPercentage: number;
     discrepancy?: number;
-    normalizedPercentage: number;
   }>;
 }> {
   try {
@@ -320,7 +314,6 @@ export async function verifyDeadRowPercentages(): Promise<{
       for (const tableStat of pgStats.table_stats) {
         const tableName = tableStat.table;
         const actualPercentage = tableStat.dead_row_ratio;
-        const normalizedPercentage = normalizeDeadRowRatio(actualPercentage);
         const uiPercentage = tableMaintenanceState[tableName]?.deadRowRatio;
         
         // Calculate discrepancy if we have both values
@@ -337,7 +330,6 @@ export async function verifyDeadRowPercentages(): Promise<{
           table: tableName,
           uiPercentage,
           actualPercentage,
-          normalizedPercentage,
           discrepancy
         });
       }
@@ -393,10 +385,10 @@ export function initDatabaseHealthMonitoring(): void {
     }
   }, 5000); // 5 second delay on startup for initial check
   
-  // Then check periodically
+  // Then check periodically, but less frequently to reduce notification spam
   setInterval(() => {
     checkDatabaseHealth();
-  }, 4 * 60 * 60 * 1000); // Every 4 hours
+  }, 6 * 60 * 60 * 1000); // Every 6 hours
 }
 
 /**
@@ -534,5 +526,5 @@ export default {
   verifyDeadRowPercentages,
   refreshDatabaseStatistics,
   subscribeToDbRefresh,
-  cleanupFullDatabase  // Export the new function
+  cleanupFullDatabase
 };
