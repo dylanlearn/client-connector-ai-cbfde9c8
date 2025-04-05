@@ -2,16 +2,22 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Paintbrush, Palette, Layout } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Paintbrush, Palette, Layout, RefreshCw } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import VisualPicker from "@/components/design/VisualPicker";
 import { toast } from "sonner";
 import { designOptions } from "@/data/design-options";
+import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
+import { useAuth } from "@/hooks/use-auth";
 
 const DesignPicker = () => {
   const [activeTab, setActiveTab] = useState("layouts");
   const [selectedDesigns, setSelectedDesigns] = useState<Record<string, any>>({});
-
+  const [refreshingCategory, setRefreshingCategory] = useState<string | null>(null);
+  const { isGenerating, generateImage } = useDesignImageGeneration();
+  const { user } = useAuth();
+  
   const handleDesignSelect = (option: any, liked: boolean) => {
     if (liked) {
       setSelectedDesigns(prev => ({
@@ -22,6 +28,36 @@ const DesignPicker = () => {
       toast.success(`${option.title} added to your selections!`);
     } else {
       toast.info(`${option.title} skipped.`);
+    }
+  };
+  
+  const handleRefreshImages = async (category: string) => {
+    if (isGenerating || !user) return;
+    
+    setRefreshingCategory(category);
+    try {
+      const categoryOptions = designOptions.filter(option => option.category === category);
+      
+      toast.info(`Refreshing ${category} designs with AI-generated images. This may take a moment...`);
+      
+      // We'll only refresh the first design in each category for demo purposes
+      // In a real application, you might want to update all designs or let users pick which to update
+      const option = categoryOptions[0];
+      
+      if (option) {
+        const imageUrl = await generateImage(
+          option.category,
+          option.description,
+          option.title
+        );
+        
+        if (imageUrl) {
+          // In a real app, you would update the designOptions array or save to a database
+          toast.success(`Generated new ${category} image! In a real app, this would update your design options.`);
+        }
+      }
+    } finally {
+      setRefreshingCategory(null);
     }
   };
 
@@ -63,8 +99,19 @@ const DesignPicker = () => {
           <TabsContent value="layouts" className="pt-4">
             <div className="grid gap-8 md:grid-cols-2">
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Hero Sections</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("hero")}
+                    disabled={isGenerating || refreshingCategory === "hero" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "hero" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">Hero Sections</h3>
                   <VisualPicker 
                     options={heroOptions} 
                     onSelectOption={handleDesignSelect} 
@@ -74,8 +121,19 @@ const DesignPicker = () => {
               </Card>
               
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Navigation Bars</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("navbar")}
+                    disabled={isGenerating || refreshingCategory === "navbar" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "navbar" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">Navigation Bars</h3>
                   <VisualPicker 
                     options={navbarOptions} 
                     onSelectOption={handleDesignSelect} 
@@ -89,8 +147,19 @@ const DesignPicker = () => {
           <TabsContent value="components" className="pt-4">
             <div className="grid gap-8 md:grid-cols-2">
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">About Sections</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("about")}
+                    disabled={isGenerating || refreshingCategory === "about" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "about" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">About Sections</h3>
                   <VisualPicker 
                     options={aboutOptions}
                     onSelectOption={handleDesignSelect} 
@@ -100,8 +169,19 @@ const DesignPicker = () => {
               </Card>
               
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Footer Designs</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("footer")}
+                    disabled={isGenerating || refreshingCategory === "footer" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "footer" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">Footer Designs</h3>
                   <VisualPicker 
                     options={footerOptions}
                     onSelectOption={handleDesignSelect} 
@@ -115,8 +195,19 @@ const DesignPicker = () => {
           <TabsContent value="styles" className="pt-4">
             <div className="grid gap-8 md:grid-cols-2">
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Typography</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("font")}
+                    disabled={isGenerating || refreshingCategory === "font" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "font" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">Typography</h3>
                   <VisualPicker 
                     options={fontOptions}
                     onSelectOption={handleDesignSelect} 
@@ -126,8 +217,19 @@ const DesignPicker = () => {
               </Card>
               
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Animations</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("animation")}
+                    disabled={isGenerating || refreshingCategory === "animation" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "animation" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">Animations</h3>
                   <VisualPicker 
                     options={animationOptions}
                     onSelectOption={handleDesignSelect} 
@@ -139,8 +241,19 @@ const DesignPicker = () => {
             
             <div className="grid gap-8 mt-8">
               <Card className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Interactions</h3>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefreshImages("interaction")}
+                    disabled={isGenerating || refreshingCategory === "interaction" || !user}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "interaction" ? "animate-spin" : ""}`} />
+                    Refresh Images
+                  </Button>
+                </div>
                 <CardContent className="p-0">
-                  <h3 className="text-lg font-medium mb-4">Interactions</h3>
                   <VisualPicker 
                     options={interactionOptions}
                     onSelectOption={handleDesignSelect} 
