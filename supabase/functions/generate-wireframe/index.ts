@@ -1,33 +1,29 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+import { addCreativeEnhancements } from "./helpers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface WireframeRequest {
-  prompt: string;
-  projectId: string;
-  style?: string;
-  complexity?: 'simple' | 'medium' | 'complex';
-  pages?: string[];
-  industry?: string;
-  additionalInstructions?: string;
-  moodboardSelections?: {
-    layoutPreferences?: string[];
-    fonts?: string[];
-    colors?: string[];
-    tone?: string[];
-  };
-  intakeResponses?: {
-    businessGoals?: string;
-    targetAudience?: string;
-    siteFeatures?: string[];
-  };
+// Initialize Redis client for caching if available
+import { connect } from "https://deno.land/x/redis@v0.29.0/mod.ts";
+
+const redisUrl = Deno.env.get("REDIS_URL");
+let redis;
+
+try {
+  if (redisUrl) {
+    redis = await connect({
+      hostname: new URL(redisUrl).hostname,
+      port: Number(new URL(redisUrl).port) || 6379,
+      password: new URL(redisUrl).password,
+    });
+    console.log("Connected to Redis for wireframe generation");
+  }
+} catch (error) {
+  console.error("Failed to connect to Redis:", error);
 }
 
 serve(async (req) => {
@@ -37,200 +33,162 @@ serve(async (req) => {
   }
 
   try {
-    // Get OpenAI API key from environment variable
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY is not set in environment variables');
-    }
-
-    // Parse request body
-    const requestData: WireframeRequest = await req.json();
     const { 
-      prompt, 
-      projectId, 
+      description, 
       style, 
-      complexity, 
-      pages = [], 
-      industry, 
-      additionalInstructions,
-      moodboardSelections = {},
-      intakeResponses = {}
-    } = requestData;
+      componentTypes = [], 
+      colorTheme, 
+      complexity = "standard",
+      enhancedCreativity = true,
+      cacheKey
+    } = await req.json();
     
-    if (!prompt || !projectId) {
-      return new Response(
-        JSON.stringify({ error: 'Prompt and projectId are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check cache first if Redis is available and cache key is provided
+    if (redis && cacheKey) {
+      try {
+        const cachedWireframe = await redis.get(`wireframe:${cacheKey}`);
+        if (cachedWireframe) {
+          console.log("Cache hit for wireframe:", cacheKey);
+          return new Response(
+            cachedWireframe,
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        console.log("Cache miss for wireframe:", cacheKey);
+      } catch (redisError) {
+        console.error("Redis error:", redisError);
+      }
     }
 
-    const startTime = performance.now();
-    
-    // Construct a detailed system prompt for advanced wireframe generation
-    const systemPrompt = `You are an expert senior UX designer specializing in creating professional wireframes for website development. 
-    
-You are building a world-class wireframe that offers personalized, context-aware, and stylistically intelligent layout output.
-
-Your task is to create structured, section-by-section wireframes based on:
-- Project type: ${industry || 'Not specified'}
-- Style preferences: ${style || 'Modern and clean'} 
-- Complexity level: ${complexity || 'medium'}
-- Moodboard selections: ${JSON.stringify(moodboardSelections) || '{}'}
-- Client intake responses: ${JSON.stringify(intakeResponses) || '{}'}
-${additionalInstructions ? `- Additional requirements: ${additionalInstructions}` : ''}
-
-For each key section of the website (hero, about, features, testimonials, pricing, contact, footer, etc.), generate:
-1. Section Name (e.g., "Hero Banner", "Core Feature Grid")
-2. Layout Type (e.g., "2-column with text left + image right")
-3. Components Used (e.g., button, card, icon, video)
-4. Suggested Copy Block (H1, H2, CTA line — placeholder content)
-5. Animation Suggestion (specific animation type that would enhance this section)
-6. Reasoning (brief insight on why this section/structure fits this brand or goal)
-7. Mobile Layout Considerations (how the section will stack or transform on mobile)
-8. Dynamic Elements (e.g., "carousel for testimonials", "FAQ accordion")
-9. Style Variants (provide 2-3 layout alternatives when appropriate)
-
-Additional requirements:
-- Ensure all layout suggestions reflect client style preferences
-- Include tone descriptors to align with typography and spacing logic
-- Flag any unclear input with specific recommendations
-- Provide a color scheme recommendation with primary, secondary, and accent colors
-- Suggest typography pairings (headings and body text)
-- Consider accessibility best practices
-
-FORMAT YOUR RESPONSE AS VALID JSON with the following structure:
-{
-  "title": "Brief title for the wireframe",
-  "description": "Detailed description of the overall wireframe design and strategy",
-  "sections": [
-    {
-      "name": "Section name (e.g., Hero, Features, etc.)",
-      "sectionType": "hero|features|about|testimonials|pricing|contact|footer|etc",
-      "description": "Detailed description of this section",
-      "layoutType": "Specific layout structure (e.g., 2-column, z-pattern, etc.)",
-      "components": [
-        {
-          "type": "component type (e.g., heading, paragraph, button, image, etc.)",
-          "content": "Text content or description of the component",
-          "style": "Styling notes for this component",
-          "position": "Positioning information (e.g., top-left, centered, etc.)"
-        }
-      ],
-      "copySuggestions": {
-        "heading": "Suggested heading text",
-        "subheading": "Suggested subheading text",
-        "cta": "Call to action text"
-      },
-      "animationSuggestions": {
-        "type": "fade-in|slide-up|parallax|etc",
-        "element": "Which elements should be animated",
-        "timing": "Animation timing notes"
-      },
-      "designReasoning": "Explanation of why this design works for this purpose",
-      "mobileLayout": {
-        "structure": "How the layout changes for mobile",
-        "stackOrder": ["element1", "element2", "etc"]
-      },
-      "dynamicElements": [
-        {
-          "type": "carousel|accordion|tabs|etc",
-          "purpose": "Why this dynamic element is beneficial",
-          "implementation": "Implementation notes"
-        }
-      ],
-      "styleVariants": [
-        {
-          "name": "Variant name",
-          "description": "Description of this style variant",
-          "keyDifferences": ["difference1", "difference2", "etc"]
-        }
-      ]
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
+      throw new Error("OpenAI API key not configured");
     }
-  ],
-  "designTokens": {
-    "colors": {
-      "primary": "Description of primary color",
-      "secondary": "Description of secondary color",
-      "accent": "Description of accent color",
-      "background": "Description of background color",
-      "text": "Description of text color"
-    },
-    "typography": {
-      "headings": "Heading font recommendation",
-      "body": "Body text font recommendation",
-      "fontPairings": ["font1 + font2", "etc"]
-    },
-    "spacing": {
-      "sectionPadding": "Padding recommendation",
-      "elementGap": "Gap recommendation"
-    }
-  },
-  "qualityFlags": {
-    "unclearInputs": ["input1", "input2", "etc"],
-    "recommendedClarifications": ["clarification1", "clarification2", "etc"]
-  },
-  "mobileConsiderations": "Overall mobile strategy",
-  "accessibilityNotes": "Accessibility considerations and recommendations"
-}`;
 
-    // Call OpenAI API to generate wireframe description
-    console.log(`Generating advanced wireframe for prompt: ${prompt.substring(0, 100)}...`);
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    // Create system prompt with enhanced creativity direction
+    const systemPrompt = `
+      You are an expert UI/UX designer with deep knowledge of web design patterns and creativity.
+      Generate a detailed wireframe based on the user's description.
+      Focus on creating a visually appealing and creative layout that follows modern design principles.
+      ${enhancedCreativity ? 'Push the boundaries of conventional design while maintaining usability.' : ''}
+      ${enhancedCreativity ? 'Incorporate unexpected creative elements, color combinations, or layout arrangements.' : ''}
+      Include the following in the wireframe:
+      - A descriptive title and high-level description
+      - Complete layout details with design tokens for colors, typography, and spacing
+      - Detailed component descriptions with hierarchy and relationships
+      - Design tokens (colors, typography, spacing) that are cohesive and aligned with the style
+      - ${enhancedCreativity ? 'Creative animations and microinteractions' : 'Basic hover states and interactions'}
+      - ${enhancedCreativity ? 'Multiple style variants for key components' : 'Standard component variations'}
+      - ${complexity === 'advanced' ? 'Responsive layouts for mobile and desktop' : 'Desktop-focused layout'}
+      
+      The design style should be: ${style || 'modern and clean'}
+      ${colorTheme ? `Color theme preference: ${colorTheme}` : ''}
+      
+      Return the wireframe as a structured JSON object.
+    `;
+
+    // Format user prompt with detailed requirements
+    const userPrompt = `
+      Generate a wireframe for: ${description}
+      
+      ${componentTypes.length > 0 
+        ? `Include these specific components: ${componentTypes.join(', ')}` 
+        : 'Include appropriate components based on the description'}
+      
+      Design style: ${style || 'modern and clean'}
+      Complexity level: ${complexity}
+      ${colorTheme ? `Color theme: ${colorTheme}` : ''}
+      
+      Make this design ${enhancedCreativity ? 'highly creative and distinctive' : 'clean and professional'}.
+    `;
+
+    // Select appropriate model
+    const model = "gpt-4o";
+
+    const startTime = Date.now();
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${openAIKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini', // Using gpt-4o-mini for a good balance of capabilities and cost
+        model,
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
         ],
-        temperature: 0.7,
+        temperature: enhancedCreativity ? 0.9 : 0.7,
+        max_tokens: 4096,
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const error = await response.json();
+      throw new Error(`OpenAI API error: ${error.error?.message || "Unknown error"}`);
     }
 
     const data = await response.json();
-    let wireframeData;
+    const wireframeText = data.choices[0]?.message?.content;
     
+    // Extract JSON from the response
+    let wireframeData;
     try {
-      // Parse the response to ensure it's valid JSON
-      const content = data.choices[0].message.content;
-      wireframeData = JSON.parse(content);
+      // Find JSON content between triple backticks if present
+      const jsonMatch = wireframeText.match(/```json([\s\S]*?)```/) || 
+                       wireframeText.match(/```([\s\S]*?)```/);
+                       
+      if (jsonMatch && jsonMatch[1]) {
+        wireframeData = JSON.parse(jsonMatch[1].trim());
+      } else {
+        // Try to parse the entire response as JSON
+        wireframeData = JSON.parse(wireframeText);
+      }
+      
+      // Add creative enhancements if requested
+      if (enhancedCreativity) {
+        wireframeData = addCreativeEnhancements(wireframeData);
+      }
+      
     } catch (error) {
-      console.error('Failed to parse wireframe JSON:', error);
-      wireframeData = { 
-        error: 'Failed to generate valid wireframe data',
-        rawContent: data.choices[0].message.content
-      };
+      console.error("Failed to parse wireframe data:", error);
+      throw new Error("Failed to parse wireframe data from AI response");
+    }
+    
+    const responseData = {
+      wireframe: wireframeData,
+      model,
+      generationTime: (Date.now() - startTime) / 1000,
+      enhancedCreativity,
+      usage: data.usage,
+    };
+    
+    // Cache result if Redis is available and cache key is provided
+    if (redis && cacheKey && wireframeData) {
+      try {
+        await redis.set(
+          `wireframe:${cacheKey}`, 
+          JSON.stringify(responseData), 
+          { ex: 3600 } // Cache for 1 hour
+        );
+        console.log("Cached wireframe for:", cacheKey);
+      } catch (redisError) {
+        console.error("Redis caching error:", redisError);
+      }
     }
 
-    const endTime = performance.now();
-    const generationTime = (endTime - startTime) / 1000; // Convert to seconds
-
-    console.log('Successfully generated advanced wireframe data');
-
     return new Response(
-      JSON.stringify({ 
-        wireframe: wireframeData,
-        generationTime,
-        model: data.model,
-        usage: data.usage
-      }),
+      JSON.stringify(responseData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in generate-wireframe function:', error);
+    console.error("Error generating wireframe:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

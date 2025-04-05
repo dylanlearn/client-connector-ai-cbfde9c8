@@ -1,13 +1,31 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Redis client for Deno
+import { connect } from "https://deno.land/x/redis@v0.29.0/mod.ts";
+
+// Initialize Redis client
+const redisUrl = Deno.env.get("REDIS_URL");
+let redis;
+
+try {
+  if (redisUrl) {
+    redis = await connect({
+      hostname: new URL(redisUrl).hostname,
+      port: Number(new URL(redisUrl).port) || 6379,
+      password: new URL(redisUrl).password,
+    });
+    console.log("Connected to Redis");
+  }
+} catch (error) {
+  console.error("Failed to connect to Redis:", error);
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -16,80 +34,100 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, systemPrompt, temperature = 0.7, model = 'gpt-4o-mini' } = await req.json();
-
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(
-        JSON.stringify({ error: 'Messages array is required' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
-
-    if (!openAIApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'OpenAI API key is not configured' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
-    }
-
-    // Prepare the messages array for OpenAI
-    const formattedMessages = [];
+    const { messages, systemPrompt, model, temperature, cacheKey } = await req.json();
     
-    // Add system prompt if provided
-    if (systemPrompt) {
-      formattedMessages.push({
-        role: 'system',
-        content: systemPrompt
-      });
+    // If Redis is connected and cacheKey provided, check cache first
+    if (redis && cacheKey) {
+      try {
+        const cachedResponse = await redis.get(cacheKey);
+        if (cachedResponse) {
+          console.log("Cache hit for:", cacheKey);
+          return new Response(
+            JSON.stringify({ 
+              response: cachedResponse,
+              cached: true,
+              model 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        console.log("Cache miss for:", cacheKey);
+      } catch (redisError) {
+        console.error("Redis error:", redisError);
+      }
     }
-    
-    // Add user and assistant messages
-    messages.forEach(msg => {
-      formattedMessages.push({
-        role: msg.role,
-        content: msg.content
-      });
-    });
 
-    console.log(`Sending to OpenAI with model: ${model}, temp: ${temperature}`);
-    console.log(`System prompt: ${systemPrompt?.substring(0, 50)}...`);
-    console.log(`User message: ${messages[0]?.content?.substring(0, 50)}...`);
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
+      throw new Error("OpenAI API key not configured");
+    }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    // Create chat completion request
+    const payload = {
+      model: model || "gpt-4o-mini",
+      messages: [
+        ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
+        ...messages,
+      ],
+      temperature: temperature || 0.7,
+    };
+
+    const startTime = Date.now();
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${openAIKey}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model,
-        messages: formattedMessages,
-        temperature
-      }),
+      body: JSON.stringify(payload),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-    }
 
     const data = await response.json();
-    const assistantResponse = data.choices[0].message.content;
+    const latencyMs = Date.now() - startTime;
+    
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${data.error?.message || "Unknown error"}`);
+    }
+
+    const completion = data.choices[0]?.message?.content;
+    
+    // Cache the result if Redis is connected and cacheKey provided
+    if (redis && cacheKey && completion) {
+      try {
+        // Cache for 1 hour by default
+        await redis.set(cacheKey, completion, { ex: 3600 });
+        console.log("Cached response for:", cacheKey);
+      } catch (redisError) {
+        console.error("Redis caching error:", redisError);
+      }
+    }
+
+    // Log generation metrics
+    console.log({
+      model: model || "gpt-4o-mini",
+      latencyMs,
+      promptTokens: data.usage?.prompt_tokens,
+      completionTokens: data.usage?.completion_tokens,
+      totalTokens: data.usage?.total_tokens,
+    });
 
     return new Response(
-      JSON.stringify({ 
-        response: assistantResponse,
-        model: data.model,
-        usage: data.usage
+      JSON.stringify({
+        response: completion,
+        model: model || "gpt-4o-mini",
+        usage: data.usage,
+        latencyMs,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in generate-with-openai function:', error);
+    console.error("Error:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });

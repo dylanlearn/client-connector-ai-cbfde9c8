@@ -10,9 +10,10 @@ import { MonitoringControls } from '@/components/admin/monitoring/MonitoringCont
 import { SystemHealthDashboard } from '@/components/admin/health/SystemHealthDashboard';
 import { SupabaseAuditService } from '@/services/ai/supabase-audit-service';
 import { SupabaseHealthCheck } from '@/types/supabase-audit';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BarChart4, Database, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client'; // Added this import
+import { supabase } from '@/integrations/supabase/client';
+import { redisClient } from '@/utils/redis/redis-wrapper';
 
 export default function AuditAndMonitoring() {
   const [activeTab, setActiveTab] = useState('health');
@@ -24,6 +25,25 @@ export default function AuditAndMonitoring() {
   } | null>(null);
   const [rlsCheck, setRlsCheck] = useState<Record<string, boolean> | null>(null);
   const [cacheCleanup, setCacheCleanup] = useState(0);
+  const [redisStatus, setRedisStatus] = useState<{
+    connected: boolean;
+    cacheStats: {
+      aiGeneration: number;
+      wireframeGeneration: number;
+      memoryContexts: number;
+      embeddingVectors: number;
+      semanticSearches: number;
+    };
+  }>({
+    connected: false,
+    cacheStats: {
+      aiGeneration: 0,
+      wireframeGeneration: 0,
+      memoryContexts: 0,
+      embeddingVectors: 0,
+      semanticSearches: 0
+    }
+  });
 
   const runSupabaseAudit = async () => {
     setIsLoading(true);
@@ -59,6 +79,49 @@ export default function AuditAndMonitoring() {
       }
       setRlsCheck(rlsPolicies);
       
+      // Check Redis connection and cache stats
+      const redisConnected = redisClient.isClientConnected();
+      
+      // Get cache statistics if Redis is connected
+      let cacheStats = {
+        aiGeneration: 0,
+        wireframeGeneration: 0,
+        memoryContexts: 0,
+        embeddingVectors: 0,
+        semanticSearches: 0
+      };
+      
+      if (redisConnected) {
+        try {
+          // Count AI generation cache entries
+          const aiGenerationCount = await redisClient.getCounters('*response:*');
+          cacheStats.aiGeneration = Object.keys(aiGenerationCount).length;
+          
+          // Count wireframe cache entries
+          const wireframeCount = await redisClient.getCounters('wireframe:*');
+          cacheStats.wireframeGeneration = Object.keys(wireframeCount).length;
+          
+          // Count memory context cache entries
+          const memoryContextCount = await redisClient.getCounters('memory:*:context');
+          cacheStats.memoryContexts = Object.keys(memoryContextCount).length;
+          
+          // Count embedding vector cache entries
+          const embeddingCount = await redisClient.getCounters('embedding:*');
+          cacheStats.embeddingVectors = Object.keys(embeddingCount).length;
+          
+          // Count semantic search cache entries
+          const searchCount = await redisClient.getCounters('search:*');
+          cacheStats.semanticSearches = Object.keys(searchCount).length;
+        } catch (e) {
+          console.error("Error fetching Redis statistics:", e);
+        }
+      }
+      
+      setRedisStatus({
+        connected: redisConnected,
+        cacheStats
+      });
+      
       // Simulate cache cleanup
       setCacheCleanup(Math.floor(Math.random() * 50) + 5);
       
@@ -85,14 +148,26 @@ export default function AuditAndMonitoring() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
-            <TabsTrigger value="health">System Health</TabsTrigger>
-            <TabsTrigger value="audit">Supabase Audit</TabsTrigger>
-            <TabsTrigger value="errors">Client Errors</TabsTrigger>
-            <TabsTrigger value="config">Monitoring Config</TabsTrigger>
+            <TabsTrigger value="health" className="flex items-center gap-1">
+              <BarChart4 className="h-4 w-4" />
+              <span>System Health</span>
+            </TabsTrigger>
+            <TabsTrigger value="audit" className="flex items-center gap-1">
+              <Database className="h-4 w-4" />
+              <span>Supabase Audit</span>
+            </TabsTrigger>
+            <TabsTrigger value="errors" className="flex items-center gap-1">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Client Errors</span>
+            </TabsTrigger>
+            <TabsTrigger value="config" className="flex items-center gap-1">
+              <RefreshCw className="h-4 w-4" />
+              <span>Monitoring Config</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="health" className="mt-0">
-            <SystemHealthDashboard />
+            <SystemHealthDashboard redisStatus={redisStatus} />
           </TabsContent>
 
           <TabsContent value="audit" className="mt-0">
@@ -115,6 +190,7 @@ export default function AuditAndMonitoring() {
                 cacheCleanup={cacheCleanup}
                 onRefresh={runSupabaseAudit}
                 isLoading={isLoading}
+                redisStatus={redisStatus}
               />
             )}
           </TabsContent>
@@ -124,9 +200,10 @@ export default function AuditAndMonitoring() {
           </TabsContent>
 
           <TabsContent value="config" className="mt-0">
-            <MonitoringControls onConfigUpdate={() => {
-              runSupabaseAudit();
-            }} />
+            <MonitoringControls 
+              onConfigUpdate={runSupabaseAudit}
+              redisConnected={redisStatus.connected} 
+            />
           </TabsContent>
         </Tabs>
       </div>
