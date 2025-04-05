@@ -16,7 +16,7 @@ export function StatusBadge({ status, className, customLabel }: StatusBadgeProps
   
   // Convert variant to a type that Badge accepts
   // This ensures the variant is compatible with the Badge component
-  const badgeVariant = variant === "warning" ? "default" : variant;
+  const badgeVariant = variant as "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
   
   return (
     <Badge 
