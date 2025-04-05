@@ -16,7 +16,7 @@ interface LayoutProps {
 }
 
 /**
- * Base application layout component
+ * Base application layout component with responsive design
  * Memoized to prevent unnecessary re-renders when children update
  */
 const Layout = memo(({ 
@@ -29,11 +29,11 @@ const Layout = memo(({
 
   return (
     <SidebarProvider>
-      <div className={`min-h-screen w-full flex flex-col md:flex-row ${className}`}>
+      <div className={`min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-br from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 ${className}`}>
         {!isIndexPage && <AppSidebar />}
         <main className={`flex-1 transition-all duration-300 ${!isIndexPage ? "ml-0 md:ml-64 pt-16 md:pt-0" : ""}`}>
           {showFormResumeHandler && !isIndexPage && <FormResumeHandler />}
-          <div className="container mx-auto px-4 py-6 md:py-8">{children}</div>
+          <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">{children}</div>
         </main>
       </div>
     </SidebarProvider>

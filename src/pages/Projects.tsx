@@ -21,7 +21,7 @@ const Projects = () => {
   const { generateSampleData, isGenerating } = useSampleData();
   const { refreshMemoryContext } = useMemory();
   const { initializeMemory, isInitialized } = useMemoryInitialization();
-  const [view, setView] = useState<"board" | "list">("board");
+  const [view, setView] = useState<"board" | "list">(isMobile ? "list" : "board");
   
   // Filter out archived projects for display
   const activeProjects = projects.filter(project => project.status !== 'archived');
@@ -39,6 +39,13 @@ const Projects = () => {
     }
   }, [activeProjects, isInitialized, initializeMemory, refreshMemoryContext]);
 
+  // Set view to list on small screens
+  useEffect(() => {
+    if (isMobile && view === "board") {
+      setView("list");
+    }
+  }, [isMobile]);
+
   const handleNewProject = () => {
     navigate("/new-project");
   };
@@ -51,18 +58,18 @@ const Projects = () => {
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Projects</h1>
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent">Projects</h1>
           <p className="text-muted-foreground">Manage and organize your design projects</p>
         </div>
         
         <div className="flex items-center gap-2">
-          {!isMobile && activeProjects.length > 0 && (
+          {activeProjects.length > 0 && (
             <div className="bg-muted/40 rounded-lg p-1 mr-2">
               <Button 
                 variant={view === "board" ? "secondary" : "ghost"} 
                 size="sm" 
                 onClick={() => setView("board")}
-                className="px-3"
+                className={`px-3 ${isMobile ? 'hidden sm:flex' : 'flex'}`}
               >
                 <Layers className="h-4 w-4 mr-1" />
                 Board
@@ -71,7 +78,7 @@ const Projects = () => {
                 variant={view === "list" ? "secondary" : "ghost"} 
                 size="sm" 
                 onClick={() => setView("list")}
-                className="px-3"
+                className="px-3 flex"
               >
                 <FolderTree className="h-4 w-4 mr-1" />
                 List
@@ -79,9 +86,9 @@ const Projects = () => {
             </div>
           )}
           
-          <Button onClick={handleNewProject} className="bg-gradient-primary hover:opacity-90">
+          <Button onClick={handleNewProject} className="bg-gradient-to-r from-[#3a8ef6] via-[#7b61ff] to-[#5f9df7] hover:opacity-90">
             <PlusCircle className="mr-2 h-4 w-4" />
-            <span className={isMobile ? "sr-only" : ""}>New Project</span>
+            <span className={isMobile ? "sr-only sm:not-sr-only" : ""}>New Project</span>
           </Button>
         </div>
       </div>
@@ -138,7 +145,7 @@ const Projects = () => {
           />
         </div>
       ) : (
-        <div className="bg-white dark:bg-card rounded-lg border shadow-sm p-1 md:p-2">
+        <div className="bg-white dark:bg-gray-800/50 rounded-lg border shadow-sm p-1 md:p-2">
           <ProjectBoard 
             projects={activeProjects} 
             updateProject={updateProject} 

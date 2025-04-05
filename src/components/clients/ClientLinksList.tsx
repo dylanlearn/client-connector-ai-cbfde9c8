@@ -5,7 +5,8 @@ import {
   TableBody, 
   TableHead, 
   TableHeader, 
-  TableRow 
+  TableRow, 
+  TableCell
 } from "@/components/ui/table";
 import ClientLinkRow from "./ClientLinkRow";
 import ClientLinksEmptyState from "./ClientLinksEmptyState";
@@ -30,8 +31,8 @@ export default function ClientLinksList({ links, isLoading, onRefresh }: ClientL
   }
   
   return (
-    <div className="border rounded-lg overflow-hidden overflow-x-auto bg-white dark:bg-card shadow-sm">
-      <div className="table-responsive">
+    <div className="border rounded-lg overflow-hidden bg-white dark:bg-card shadow-sm">
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader className="bg-muted/30">
             <TableRow>
