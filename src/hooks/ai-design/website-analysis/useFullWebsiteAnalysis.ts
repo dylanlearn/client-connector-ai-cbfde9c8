@@ -48,7 +48,8 @@ export function useFullWebsiteAnalysis(
           valueProposition: 'Key value proposition',
           testimonials: []
         },
-        ['website', 'analysis'], // Ensure this is an array of strings
+        // Fixed: Passing an array of target audience strings instead of a single string
+        ['website users', 'general audience'],
         url
       );
       
