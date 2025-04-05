@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Database, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, Database, RefreshCw, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
@@ -11,7 +11,8 @@ import {
   vacuumTable, 
   refreshDatabaseStatistics, 
   subscribeToDbRefresh,
-  verifyDeadRowPercentages
+  verifyDeadRowPercentages,
+  cleanupFullDatabase
 } from "@/utils/database/maintenance-scheduler";
 import {
   Table,
@@ -143,6 +144,44 @@ export function DatabaseMaintenancePanel() {
       
       toast.error(`Maintenance failed`, {
         description: error.message || `Failed to run ${action.toUpperCase()} operation`
+      });
+    } finally {
+      setIsLoading(false);
+      setActionType(null);
+    }
+  };
+
+  // Handle full database cleanup
+  const handleCleanupAllTables = async () => {
+    setIsLoading(true);
+    setActionType('full-vacuum');
+    
+    try {
+      const result = await cleanupFullDatabase();
+      
+      if (result.success) {
+        setLastResult({
+          success: true,
+          message: result.message,
+          timestamp: new Date(),
+          details: result.details
+        });
+        
+        // Refresh statistics after the cleanup
+        await handleRefreshStats();
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error during full database cleanup:', error);
+      setLastResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error occurred during cleanup',
+        timestamp: new Date()
+      });
+      
+      toast.error(`Full database cleanup failed`, {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
     } finally {
       setIsLoading(false);
@@ -356,6 +395,27 @@ export function DatabaseMaintenancePanel() {
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* Add prominent "Clean All Tables" button at the top */}
+        <div className="flex flex-col gap-3">
+          <Button 
+            onClick={handleCleanupAllTables}
+            disabled={isLoading}
+            className="flex items-center gap-2 w-full md:w-auto"
+            variant="destructive"
+            size="lg"
+          >
+            {isLoading && actionType === 'full-vacuum' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            Clean All Database Tables
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Run complete database cleanup to fix tables with high dead row percentages
+          </p>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Button 
             onClick={runVacuum}

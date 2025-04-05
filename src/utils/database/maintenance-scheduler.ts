@@ -209,12 +209,68 @@ function checkMaintenanceNeeds(data: any) {
       description: `Tables with high dead rows: ${tableList} ${additionalTables}`,
       duration: 8000,
       action: {
-        label: "View",
+        label: "Clean Now",
         onClick: () => {
-          // Navigate to database tab - we could implement this if we had a router
-          window.location.href = '/admin/audit-and-monitoring?tab=database';
+          // Automatically vacuum the tables that need maintenance
+          vacuumRecommendedTables(tablesNeedingMaintenance.map(t => t.name));
         }
       }
+    });
+  }
+}
+
+/**
+ * Automatically vacuum tables that need maintenance
+ */
+async function vacuumRecommendedTables(tableNames: string[]): Promise<void> {
+  if (!tableNames.length) return;
+  
+  toast.loading(`Cleaning ${tableNames.length} tables with high dead rows...`);
+  
+  try {
+    // Call database-maintenance edge function to vacuum all tables in one go
+    const { data, error } = await supabase.functions.invoke('database-maintenance', {
+      body: { 
+        action: 'vacuum', 
+        tables: tableNames 
+      }
+    });
+    
+    if (error) {
+      console.error("Error vacuuming recommended tables:", error);
+      toast.error("Failed to clean tables", {
+        description: error.message
+      });
+      return;
+    }
+    
+    const successCount = data?.success_tables?.length || 0;
+    const failCount = data?.failed_tables?.length || 0;
+    
+    if (successCount > 0) {
+      // Record each successfully vacuumed table
+      if (data?.success_tables) {
+        data.success_tables.forEach((tableName: string) => {
+          recordTableVacuumed(tableName);
+        });
+      }
+      
+      // Show success message
+      toast.success(`Database cleanup complete`, {
+        description: `Successfully cleaned ${successCount} tables${failCount ? `, ${failCount} failed` : ''}`
+      });
+      
+      // Refresh database statistics to show updated dead row counts
+      await refreshDatabaseStatistics(false);
+    } else {
+      toast.error("Database cleanup failed", {
+        description: "No tables were successfully cleaned"
+      });
+    }
+  } catch (error) {
+    console.error("Error during automatic vacuum:", error);
+    toast.error("Database cleanup failed", {
+      description: error instanceof Error ? error.message : "Unknown error occurred"
     });
   }
 }
@@ -315,12 +371,27 @@ export function recordTableVacuumed(tableName: string): void {
 
 /**
  * Initialize database health monitoring with periodic checks
+ * and run initial cleanup if necessary
  */
 export function initDatabaseHealthMonitoring(): void {
   // Check immediately on app start
-  setTimeout(() => {
-    checkDatabaseHealth();
-  }, 10000); // 10 second delay on startup
+  setTimeout(async () => {
+    // First check database health
+    await checkDatabaseHealth();
+    
+    // Then, automatically vacuum tables that need maintenance
+    const { data } = await supabase.rpc('check_database_performance');
+    if (data && data.table_stats) {
+      const highDeadRowTables = data.table_stats
+        .filter((table: any) => table.dead_row_ratio > AUTO_VACUUM_THRESHOLD)
+        .map((table: any) => table.table);
+      
+      if (highDeadRowTables.length > 0) {
+        console.log(`Found ${highDeadRowTables.length} tables with high dead rows, performing automatic cleanup`);
+        vacuumRecommendedTables(highDeadRowTables);
+      }
+    }
+  }, 5000); // 5 second delay on startup for initial check
   
   // Then check periodically
   setInterval(() => {
@@ -376,6 +447,85 @@ export async function vacuumTable(tableName: string): Promise<{
   }
 }
 
+/**
+ * Run full database cleanup (vacuum all tables)
+ */
+export async function cleanupFullDatabase(): Promise<{
+  success: boolean;
+  message: string;
+  details?: any;
+}> {
+  try {
+    // Get the list of all tables first
+    const { data: tablesData, error: tablesError } = await supabase
+      .from('pg_tables')
+      .select('tablename')
+      .eq('schemaname', 'public');
+      
+    if (tablesError) {
+      console.error('Error fetching tables list:', tablesError);
+      throw tablesError;
+    }
+    
+    if (!tablesData || tablesData.length === 0) {
+      return {
+        success: false,
+        message: 'No tables found in public schema'
+      };
+    }
+    
+    const allTables = tablesData.map(t => t.tablename);
+    console.log(`Running VACUUM on all ${allTables.length} tables:`, allTables);
+    
+    toast.loading(`Cleaning all ${allTables.length} database tables...`);
+    
+    // Call the database-maintenance function to vacuum all tables
+    const { data, error } = await supabase.functions.invoke('database-maintenance', {
+      body: { 
+        action: 'vacuum', 
+        tables: allTables 
+      }
+    });
+
+    if (error) {
+      console.error('Error running full database cleanup:', error);
+      toast.error("Database cleanup failed", {
+        description: error.message
+      });
+      throw error;
+    }
+
+    const successCount = data?.success_tables?.length || 0;
+    const failCount = data?.failed_tables?.length || 0;
+    
+    // Record successfully vacuumed tables
+    if (data?.success_tables) {
+      data.success_tables.forEach((tableName: string) => {
+        recordTableVacuumed(tableName);
+      });
+    }
+    
+    // Refresh database statistics after cleanup
+    await refreshDatabaseStatistics(false);
+    
+    toast.success(`Database cleanup complete`, {
+      description: `Successfully cleaned ${successCount} tables${failCount ? `, ${failCount} failed` : ''}`
+    });
+    
+    return {
+      success: successCount > 0,
+      message: `VACUUM completed on ${successCount} tables, ${failCount} failed`,
+      details: data
+    };
+  } catch (error) {
+    console.error('Error running full database cleanup:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
 export default {
   checkDatabaseHealth,
   recordTableVacuumed,
@@ -383,5 +533,6 @@ export default {
   vacuumTable,
   verifyDeadRowPercentages,
   refreshDatabaseStatistics,
-  subscribeToDbRefresh
+  subscribeToDbRefresh,
+  cleanupFullDatabase  // Export the new function
 };
