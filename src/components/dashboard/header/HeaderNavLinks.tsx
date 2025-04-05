@@ -8,7 +8,7 @@ export const HeaderNavLinks = () => {
   const navLinks = [
     { path: "/dashboard", label: "Dashboard" },
     { path: "/new-project", label: "New Project" },
-    { path: "/ai-design-suggestions", label: "AI Assistant" },
+    { path: "/ai-suggestions", label: "AI Assistant" },
   ];
   
   return (

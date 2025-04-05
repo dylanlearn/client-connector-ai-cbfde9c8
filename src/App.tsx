@@ -15,6 +15,15 @@ import Templates from './pages/Templates';
 import Dashboard from './pages/Dashboard';
 import SignupConfirmation from './pages/SignupConfirmation';
 import NotFound from './pages/NotFound';
+import ClientHub from './pages/ClientHub';
+import IntakeForm from './pages/IntakeForm';
+import Analytics from './pages/Analytics';
+import AIDesignSuggestions from './pages/AIDesignSuggestions';
+import Clients from './pages/Clients';
+import WebsiteAnalyzer from './pages/design-analysis/WebsiteAnalyzer';
+import FeedbackAnalysis from './pages/FeedbackAnalysis';
+import ClientAccess from './pages/ClientAccess';
+import DesignPicker from './pages/DesignPicker';
 
 function App() {
   return (
@@ -23,6 +32,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup/confirmation" element={<SignupConfirmation />} />
       <Route path="/templates" element={<Templates />} />
+      <Route path="/client-access" element={<ClientAccess />} />
+      <Route path="/client-hub" element={<ClientHub />} />
       
       {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
@@ -30,6 +41,14 @@ function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/new-project" element={<NewProject />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/clients" element={<Clients />} />
+        <Route path="/client-hub" element={<ClientHub />} />
+        <Route path="/intake-form" element={<IntakeForm />} />
+        <Route path="/design-picker" element={<DesignPicker />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
+        <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
+        <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
       </Route>
       
       {/* Admin Routes */}

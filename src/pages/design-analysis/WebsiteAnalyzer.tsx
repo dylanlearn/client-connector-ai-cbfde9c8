@@ -1,5 +1,5 @@
 
-import WebsiteAnalyzer from "@/pages/design-analysis/components/WebsiteAnalyzer";
+import WebsiteAnalyzerComponent from "./components/WebsiteAnalyzer";
 
 // Re-export the WebsiteAnalyzer component as the default export
-export default WebsiteAnalyzer;
+export default WebsiteAnalyzerComponent;
