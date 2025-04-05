@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   CheckCircle2, 
@@ -34,8 +35,7 @@ const AuditAndMonitoring = () => {
   const [databasePerformance, setDatabasePerformance] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [processingTableId, setProcessingTableId] = useState(null); // Track which table is being vacuumed
-  const [vacuumResults, setVacuumResults] = useState({});
+  const [loadError, setLoadError] = useState(null);
   const supabaseAuditService = new SupabaseAuditService();
   const { toast: uiToast } = useToast();
   const isMounted = useRef(true);
@@ -50,6 +50,7 @@ const AuditAndMonitoring = () => {
   useEffect(() => {
     const unsubscribe = subscribeToDbRefresh((stats) => {
       if (isMounted.current) {
+        console.log("Database stats updated via subscription:", stats);
         setDatabasePerformance(stats);
         setLastRefreshed(new Date());
       }
@@ -61,58 +62,59 @@ const AuditAndMonitoring = () => {
   }, []);
 
   const refreshData = useCallback(async () => {
+    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+    
     setIsRefreshing(true);
+    setLoadError(null);
+    
     try {
+      // First, get health check data
       const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
       if (isMounted.current) {
         setHealthCheck(healthCheckData);
       }
 
-      // Use the coordinated refresh function for database stats
-      await refreshDatabaseStatistics(false);
+      // Then use coordinated refresh function for database stats
+      // This will automatically notify subscribers
+      const stats = await refreshDatabaseStatistics(true);
       
       if (isMounted.current) {
+        if (!stats) {
+          console.warn("No stats returned from refreshDatabaseStatistics");
+        }
         setLastRefreshed(new Date());
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
+      if (isMounted.current) {
+        setLoadError(error.message || "Failed to load monitoring data");
+      }
       toast.error("Refresh failed", {
-        description: "Unable to refresh data",
+        description: "Unable to refresh data. Please try again.",
       });
     } finally {
       if (isMounted.current) {
         setIsRefreshing(false);
+        setIsLoading(false);
       }
     }
-  }, [supabaseAuditService]);
+  }, [isRefreshing, supabaseAuditService]);
 
   useEffect(() => {
     const fetchAuditData = async () => {
       try {
-        const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
-        if (isMounted.current) {
-          setHealthCheck(healthCheckData);
-        }
-
-        // Get initial database stats
-        const stats = await refreshDatabaseStatistics(false);
-        if (isMounted.current && stats) {
-          setDatabasePerformance(stats);
-        }
+        await refreshData();
       } catch (error) {
-        console.error('Error fetching audit data:', error);
-        toast.error("Error loading data", {
-          description: "Failed to load audit data",
-        });
-      } finally {
+        console.error('Error in initial data fetch:', error);
         if (isMounted.current) {
+          setLoadError(error.message || "Failed to load initial audit data");
           setIsLoading(false);
         }
       }
     };
 
     fetchAuditData();
-  }, []);
+  }, [refreshData]);
 
   if (isLoading) {
     return (
@@ -124,6 +126,35 @@ const AuditAndMonitoring = () => {
               <p className="text-muted-foreground">Loading system audit data...</p>
             </div>
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <DashboardLayout>
+        <div className="container py-6">
+          <h1 className="text-3xl font-bold tracking-tight mb-1">System Audit & Monitoring</h1>
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Data</AlertTitle>
+            <AlertDescription>
+              {loadError}
+              <div className="mt-2">
+                <Button variant="outline" onClick={refreshData} disabled={isRefreshing}>
+                  {isRefreshing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Trying Again...
+                    </>
+                  ) : (
+                    'Try Again'
+                  )}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
         </div>
       </DashboardLayout>
     );

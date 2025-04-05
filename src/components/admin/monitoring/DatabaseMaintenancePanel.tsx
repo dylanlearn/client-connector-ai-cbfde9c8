@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { 
   vacuumTable, 
   refreshDatabaseStatistics, 
-  subscribeToDbRefresh 
+  subscribeToDbRefresh,
+  verifyDeadRowPercentages
 } from "@/utils/database/maintenance-scheduler";
 import {
   Table,
@@ -44,6 +45,7 @@ export function DatabaseMaintenancePanel() {
   // Subscribe to database refresh events
   useEffect(() => {
     const unsubscribe = subscribeToDbRefresh((stats) => {
+      console.log("DatabaseMaintenancePanel received new stats:", stats);
       setDatabaseStats(stats);
     });
     
@@ -57,9 +59,35 @@ export function DatabaseMaintenancePanel() {
 
   // Handle refreshing database statistics
   const handleRefreshStats = async () => {
+    if (refreshing) return; // Prevent multiple simultaneous refreshes
+    
     setRefreshing(true);
-    await refreshDatabaseStatistics(true);
-    setRefreshing(false);
+    try {
+      console.log("DatabaseMaintenancePanel: Refreshing statistics...");
+      const refreshedStats = await refreshDatabaseStatistics(true);
+      console.log("DatabaseMaintenancePanel: Refreshed statistics:", refreshedStats);
+      
+      // This should be redundant because of the subscription,
+      // but we set it directly as a fallback
+      if (refreshedStats) {
+        setDatabaseStats(refreshedStats);
+      }
+      
+      // Verify if our displayed stats match actual database stats
+      const verificationResult = await verifyDeadRowPercentages();
+      console.log("Verification result:", verificationResult);
+      
+      if (!verificationResult.accurate) {
+        console.warn("Some discrepancies detected between UI and actual database statistics");
+      }
+    } catch (error) {
+      console.error("Error refreshing database statistics:", error);
+      toast.error("Failed to refresh statistics", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // Enhanced database maintenance handler with better error handling and logging
@@ -150,6 +178,9 @@ export function DatabaseMaintenancePanel() {
             message: `Vacuumed at ${new Date().toLocaleTimeString()}`
           }
         }));
+        
+        // Refresh statistics to get updated values
+        await handleRefreshStats();
       } else {
         throw new Error(result.message);
       }
@@ -193,6 +224,9 @@ export function DatabaseMaintenancePanel() {
       toast.success("Cache cleanup completed", {
         description: `Removed ${data?.entriesRemoved || 0} expired cache entries`,
       });
+      
+      // Refresh statistics after cache cleanup
+      await handleRefreshStats();
     } catch (error: any) {
       console.error('Error cleaning up cache:', error);
       setLastResult({
@@ -212,6 +246,14 @@ export function DatabaseMaintenancePanel() {
   
   // Enhanced database performance display component
   const DatabasePerformanceTable = ({ tables }: { tables: any[] }) => {
+    if (!tables || tables.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No table statistics available</p>
+        </div>
+      );
+    }
+
     return (
       <Table>
         <TableHeader>
@@ -242,7 +284,7 @@ export function DatabaseMaintenancePanel() {
                 <TableCell>{table.dead_rows.toLocaleString()}</TableCell>
                 <TableCell>
                   <span className={`px-2 py-1 rounded-full text-white text-xs ${badgeColor}`}>
-                    {table.dead_row_ratio.toFixed(1)}%
+                    {deadRowRatio.toFixed(1)}%
                   </span>
                 </TableCell>
                 <TableCell>
@@ -393,7 +435,7 @@ export function DatabaseMaintenancePanel() {
           </Alert>
         )}
 
-        {databaseStats?.table_stats && (
+        {databaseStats?.table_stats && databaseStats.table_stats.length > 0 ? (
           <>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Database Table Statistics</h3>
@@ -403,9 +445,12 @@ export function DatabaseMaintenancePanel() {
             </div>
             <DatabasePerformanceTable tables={databaseStats.table_stats} />
           </>
-        )}
-
-        {!databaseStats && !refreshing && (
+        ) : refreshing ? (
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Loading statistics...</span>
+          </div>
+        ) : (
           <div className="text-center py-8">
             <Database className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
             <p className="text-muted-foreground">No database statistics loaded</p>

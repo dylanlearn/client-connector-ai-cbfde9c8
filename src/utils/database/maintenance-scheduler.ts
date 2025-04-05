@@ -23,6 +23,12 @@ let tableMaintenanceState: TableMaintenanceState = {};
 const AUTO_VACUUM_THRESHOLD = 20;
 
 /**
+ * Maximum allowed percentage to display for dead row ratio
+ * to prevent unreasonably high percentages on small tables
+ */
+const MAX_DISPLAY_PERCENTAGE = 100;
+
+/**
  * Minimum time between auto vacuum recommendations (24 hours)
  */
 const MIN_RECOMMENDATION_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -53,6 +59,16 @@ function notifyDbRefreshListeners(stats: any) {
   for (const listener of databaseRefreshListeners) {
     listener(stats);
   }
+}
+
+/**
+ * Normalize dead row ratio to a reasonable percentage
+ * Prevents extremely high values in tables with few rows
+ */
+function normalizeDeadRowRatio(ratio: number): number {
+  // For tables with few rows, PostgreSQL can report very high dead row ratios
+  // This caps the display value to a reasonable percentage
+  return Math.min(ratio, MAX_DISPLAY_PERCENTAGE);
 }
 
 /**
@@ -92,8 +108,20 @@ export async function refreshDatabaseStatistics(showToast: boolean = false): Pro
       return null;
     }
     
+    // Process and normalize the received statistics 
+    const processedStats = {
+      ...data,
+      table_stats: data.table_stats.map((table: any) => {
+        // Normalize the dead row ratio to a reasonable percentage
+        return {
+          ...table,
+          dead_row_ratio: normalizeDeadRowRatio(table.dead_row_ratio)
+        };
+      })
+    };
+    
     // Update our in-memory state with fresh data
-    for (const table of data.table_stats) {
+    for (const table of processedStats.table_stats) {
       const tableName = table.table;
       const deadRowRatio = table.dead_row_ratio;
       
@@ -111,19 +139,19 @@ export async function refreshDatabaseStatistics(showToast: boolean = false): Pro
     }
     
     // Notify all components that have subscribed to refresh events
-    notifyDbRefreshListeners(data);
+    notifyDbRefreshListeners(processedStats);
     
     // Show success toast if requested
     if (showToast) {
       toast.success("Database statistics refreshed", {
-        description: `Updated stats for ${data.table_stats.length} tables`
+        description: `Updated stats for ${processedStats.table_stats.length} tables`
       });
     }
     
     // Check for tables needing maintenance
-    checkMaintenanceNeeds(data);
+    checkMaintenanceNeeds(processedStats);
     
-    return data;
+    return processedStats;
   } catch (error) {
     console.error("Error refreshing database statistics:", error);
     if (showToast) {
@@ -216,6 +244,7 @@ export async function verifyDeadRowPercentages(): Promise<{
     uiPercentage?: number | null; 
     actualPercentage: number;
     discrepancy?: number;
+    normalizedPercentage: number;
   }>;
 }> {
   try {
@@ -235,6 +264,7 @@ export async function verifyDeadRowPercentages(): Promise<{
       for (const tableStat of pgStats.table_stats) {
         const tableName = tableStat.table;
         const actualPercentage = tableStat.dead_row_ratio;
+        const normalizedPercentage = normalizeDeadRowRatio(actualPercentage);
         const uiPercentage = tableMaintenanceState[tableName]?.deadRowRatio;
         
         // Calculate discrepancy if we have both values
@@ -251,6 +281,7 @@ export async function verifyDeadRowPercentages(): Promise<{
           table: tableName,
           uiPercentage,
           actualPercentage,
+          normalizedPercentage,
           discrepancy
         });
       }
