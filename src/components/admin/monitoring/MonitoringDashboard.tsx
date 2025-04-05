@@ -15,6 +15,7 @@ import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { ProfileQueryMonitor } from "./ProfileQueryMonitor";
+import { initDatabaseHealthMonitoring } from "@/utils/database/maintenance-scheduler";
 
 interface MonitoringComponentConfig {
   component: string;
@@ -86,7 +87,12 @@ export function MonitoringDashboard() {
 
   useEffect(() => {
     fetchMonitoringConfig();
-  }, []);
+    
+    // Initialize database health monitoring
+    if (isAdmin) {
+      initDatabaseHealthMonitoring();
+    }
+  }, [isAdmin]);
 
   if (isVerifying) {
     return (

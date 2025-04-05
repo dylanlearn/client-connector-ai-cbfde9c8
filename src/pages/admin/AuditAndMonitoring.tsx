@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -33,10 +33,11 @@ const AuditAndMonitoring = () => {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [processingTableId, setProcessingTableId] = useState(null); // Track which table is being vacuumed
+  const [vacuumResults, setVacuumResults] = useState({});
   const supabaseAuditService = new SupabaseAuditService();
   const { toast: uiToast } = useToast();
 
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     setIsRefreshing(true);
     try {
       const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
@@ -54,10 +55,15 @@ const AuditAndMonitoring = () => {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [supabaseAuditService]);
 
   const vacuumTable = async (tableName) => {
     setProcessingTableId(tableName);
+    setVacuumResults(prev => ({
+      ...prev,
+      [tableName]: { status: 'processing' }
+    }));
+    
     try {
       console.log(`Running VACUUM on table: ${tableName}`);
       
@@ -82,8 +88,17 @@ const AuditAndMonitoring = () => {
           description: `VACUUM completed successfully on table: ${tableName}`,
         });
         
+        setVacuumResults(prev => ({
+          ...prev,
+          [tableName]: { 
+            status: 'success', 
+            timestamp: new Date(),
+            message: 'VACUUM completed successfully'
+          }
+        }));
+        
         // Refresh data after vacuum to show updated stats
-        refreshData();
+        await refreshData();
       } else {
         throw new Error(`Table ${tableName} was not successfully vacuumed`);
       }
@@ -92,6 +107,15 @@ const AuditAndMonitoring = () => {
       toast.error("Maintenance Failed", {
         description: error.message || "Failed to vacuum table",
       });
+      
+      setVacuumResults(prev => ({
+        ...prev,
+        [tableName]: { 
+          status: 'error', 
+          timestamp: new Date(),
+          message: error.message 
+        }
+      }));
     } finally {
       setProcessingTableId(null);
     }
@@ -257,8 +281,23 @@ const AuditAndMonitoring = () => {
 
           <TabsContent value="database" className="space-y-4">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Database Performance Metrics</CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={refreshData}
+                  disabled={isRefreshing}
+                >
+                  {isRefreshing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>Refresh Metrics</>
+                  )}
+                </Button>
               </CardHeader>
               <CardContent>
                 {databasePerformance?.table_stats ? (
@@ -271,42 +310,64 @@ const AuditAndMonitoring = () => {
                       <div>Action</div>
                     </div>
                     <div className="divide-y">
-                      {databasePerformance.table_stats.map((table, i) => (
-                        <div key={i} className="grid grid-cols-5 gap-2 px-4 py-3">
-                          <div className="font-mono text-sm">{table.table}</div>
-                          <div>{table.live_rows.toLocaleString()}</div>
-                          <div>{table.dead_rows.toLocaleString()}</div>
-                          <div>
-                            <Badge className={
-                              table.dead_row_ratio > 20 
-                                ? "bg-red-500" 
-                                : table.dead_row_ratio > 10 
-                                  ? "bg-yellow-500" 
-                                  : "bg-green-500"
-                            }>
-                              {table.dead_row_ratio.toFixed(1)}%
-                            </Badge>
+                      {databasePerformance.table_stats.map((table, i) => {
+                        const result = vacuumResults[table.table];
+                        return (
+                          <div key={i} className="grid grid-cols-5 gap-2 px-4 py-3">
+                            <div className="font-mono text-sm">{table.table}</div>
+                            <div>{table.live_rows.toLocaleString()}</div>
+                            <div>{table.dead_rows.toLocaleString()}</div>
+                            <div>
+                              <Badge className={
+                                table.dead_row_ratio > 20 
+                                  ? "bg-red-500" 
+                                  : table.dead_row_ratio > 10 
+                                    ? "bg-yellow-500" 
+                                    : "bg-green-500"
+                              }>
+                                {table.dead_row_ratio.toFixed(1)}%
+                              </Badge>
+                            </div>
+                            <div>
+                              <div className="flex flex-col gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => vacuumTable(table.table)}
+                                  disabled={processingTableId === table.table}
+                                  className="flex items-center gap-1"
+                                >
+                                  {processingTableId === table.table ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                      Vacuuming...
+                                    </>
+                                  ) : (
+                                    <>Vacuum</>
+                                  )}
+                                </Button>
+                                {result && (
+                                  <span 
+                                    className={`text-xs ${
+                                      result.status === 'success' 
+                                        ? 'text-green-600' 
+                                        : result.status === 'error' 
+                                          ? 'text-red-600' 
+                                          : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {result.status === 'success' 
+                                      ? `Success at ${result.timestamp.toLocaleTimeString()}`
+                                      : result.status === 'error' 
+                                        ? result.message || 'Failed' 
+                                        : 'Processing...'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => vacuumTable(table.table)}
-                              disabled={processingTableId === table.table}
-                              className="flex items-center gap-1"
-                            >
-                              {processingTableId === table.table ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  Vacuuming...
-                                </>
-                              ) : (
-                                <>Vacuum</>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (

@@ -7,6 +7,14 @@ import { Loader2, Database, RefreshCw, AlertCircle, CheckCircle } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 
 export function DatabaseMaintenancePanel() {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,8 +25,16 @@ export function DatabaseMaintenancePanel() {
     timestamp: Date;
     details?: any;
   } | null>(null);
+  const [maintenanceStatus, setMaintenanceStatus] = useState<Record<string, {
+    inProgress: boolean;
+    status?: 'success' | 'error';
+    message?: string;
+  }>>({});
+  const [autoVacuumEnabled, setAutoVacuumEnabled] = useState<boolean>(false);
+  const [autoVacuumInterval, setAutoVacuumInterval] = useState<number | null>(null);
   const { toast: uiToast } = useToast();
 
+  // Enhanced database maintenance handler with better error handling and logging
   const handleDatabaseMaintenance = async (action: 'vacuum' | 'analyze' | 'reindex', tables: string[] = ['profiles', 'projects', 'user_memories', 'global_memories']) => {
     setIsLoading(true);
     setActionType(action);
@@ -77,10 +93,14 @@ export function DatabaseMaintenancePanel() {
 
   const runVacuum = () => handleDatabaseMaintenance('vacuum');
   const analyzeDatabase = () => handleDatabaseMaintenance('analyze');
+  const reindexDatabase = () => handleDatabaseMaintenance('reindex');
 
   const vacuumSingleTable = async (tableName: string) => {
-    setIsLoading(true);
-    setActionType(`vacuum-${tableName}`);
+    // Set the specific table's maintenance status to in progress
+    setMaintenanceStatus(prev => ({
+      ...prev,
+      [tableName]: { inProgress: true }
+    }));
     
     try {
       console.log(`Running VACUUM on single table: ${tableName}`);
@@ -104,6 +124,16 @@ export function DatabaseMaintenancePanel() {
         toast.success(`Table maintenance completed`, {
           description: `VACUUM completed successfully on table: ${tableName}`
         });
+        
+        // Update the maintenance status to success
+        setMaintenanceStatus(prev => ({
+          ...prev,
+          [tableName]: { 
+            inProgress: false,
+            status: 'success',
+            message: `Vacuumed at ${new Date().toLocaleTimeString()}`
+          }
+        }));
       } else {
         throw new Error(`Table ${tableName} was not successfully vacuumed`);
       }
@@ -112,9 +142,16 @@ export function DatabaseMaintenancePanel() {
       toast.error(`Table maintenance failed`, {
         description: error.message || `Failed to vacuum table ${tableName}`
       });
-    } finally {
-      setIsLoading(false);
-      setActionType(null);
+      
+      // Update maintenance status to error
+      setMaintenanceStatus(prev => ({
+        ...prev,
+        [tableName]: { 
+          inProgress: false,
+          status: 'error',
+          message: error.message
+        }
+      }));
     }
   };
 
@@ -157,14 +194,73 @@ export function DatabaseMaintenancePanel() {
     }
   };
   
-  // Expose the vacuumSingleTable function for external use
-  // by attaching it to the window object
-  React.useEffect(() => {
-    (window as any).vacuumSingleTable = vacuumSingleTable;
-    return () => {
-      delete (window as any).vacuumSingleTable;
-    };
-  }, []);
+  // Enhanced database performance display component
+  const DatabasePerformanceTable = ({ tables }: { tables: any[] }) => {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Table</TableHead>
+            <TableHead>Live Rows</TableHead>
+            <TableHead>Dead Rows</TableHead>
+            <TableHead>Dead Row %</TableHead>
+            <TableHead>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tables.map((table) => {
+            const tableStatus = maintenanceStatus[table.table] || { inProgress: false };
+            const deadRowRatio = table.dead_row_ratio;
+            let badgeColor = "bg-green-500"; 
+            
+            if (deadRowRatio > 20) {
+              badgeColor = "bg-red-500";
+            } else if (deadRowRatio > 10) {
+              badgeColor = "bg-yellow-500";
+            }
+
+            return (
+              <TableRow key={table.table}>
+                <TableCell className="font-mono text-sm">{table.table}</TableCell>
+                <TableCell>{table.live_rows.toLocaleString()}</TableCell>
+                <TableCell>{table.dead_rows.toLocaleString()}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-white text-xs ${badgeColor}`}>
+                    {table.dead_row_ratio.toFixed(1)}%
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => vacuumSingleTable(table.table)}
+                      disabled={tableStatus.inProgress}
+                      className="flex items-center gap-1"
+                    >
+                      {tableStatus.inProgress ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Vacuuming...
+                        </>
+                      ) : (
+                        <>Vacuum</>
+                      )}
+                    </Button>
+                    {tableStatus.status && (
+                      <span className={`text-xs ${tableStatus.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                        {tableStatus.message}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    );
+  };
 
   return (
     <Card>
@@ -179,7 +275,7 @@ export function DatabaseMaintenancePanel() {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Button 
             onClick={runVacuum}
             disabled={isLoading}
@@ -205,6 +301,20 @@ export function DatabaseMaintenancePanel() {
               <Database className="h-4 w-4" />
             )}
             Run ANALYZE
+          </Button>
+          
+          <Button 
+            onClick={reindexDatabase}
+            disabled={isLoading}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isLoading && actionType === 'reindex' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4" />
+            )}
+            Run REINDEX
           </Button>
           
           <Button 
@@ -242,6 +352,10 @@ export function DatabaseMaintenancePanel() {
               </p>
             </AlertDescription>
           </Alert>
+        )}
+
+        {lastResult?.details?.table_stats && (
+          <DatabasePerformanceTable tables={lastResult.details.table_stats} />
         )}
       </CardContent>
     </Card>

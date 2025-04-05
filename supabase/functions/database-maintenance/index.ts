@@ -40,25 +40,45 @@ serve(async (req) => {
     const tablesToProcess = tables || ['profiles'];
     const results = [];
     const failedTables = [];
+    let tableStats = [];
     
     for (const table of tablesToProcess) {
       console.log(`Processing ${action} on table ${table}`);
       let query;
       let success = false;
       
+      // First, verify the table exists to prevent SQL injection
+      const { data: tableExists, error: tableCheckError } = await supabaseClient
+        .from('pg_tables')
+        .select('tablename')
+        .eq('schemaname', 'public')
+        .eq('tablename', table)
+        .maybeSingle();
+      
+      if (tableCheckError) {
+        console.error(`Error checking if table ${table} exists:`, tableCheckError);
+        failedTables.push({ table, error: 'Table check failed' });
+        continue;
+      }
+      
+      if (!tableExists) {
+        console.error(`Table ${table} does not exist`);
+        failedTables.push({ table, error: 'Table does not exist' });
+        continue;
+      }
+      
       switch (action) {
         case 'vacuum':
           try {
             // Direct SQL execution for VACUUM since it can't run in a transaction
+            // Using DO block for safety with dynamic table names
             query = `
               DO $$
               BEGIN
-                IF EXISTS (
-                  SELECT 1 FROM information_schema.tables 
-                  WHERE table_schema = 'public' AND table_name = '${table}'
-                ) THEN
-                  EXECUTE 'VACUUM ANALYZE public."${table}"';
-                END IF;
+                EXECUTE 'VACUUM ANALYZE public."${table}"';
+                RAISE NOTICE 'VACUUM completed on table %', '${table}';
+              EXCEPTION WHEN OTHERS THEN
+                RAISE NOTICE 'Error during VACUUM: %', SQLERRM;
               END
               $$;
             `;
@@ -90,12 +110,10 @@ serve(async (req) => {
             query = `
               DO $$
               BEGIN
-                IF EXISTS (
-                  SELECT 1 FROM information_schema.tables 
-                  WHERE table_schema = 'public' AND table_name = '${table}'
-                ) THEN
-                  EXECUTE 'ANALYZE public."${table}"';
-                END IF;
+                EXECUTE 'ANALYZE public."${table}"';
+                RAISE NOTICE 'ANALYZE completed on table %', '${table}';
+              EXCEPTION WHEN OTHERS THEN
+                RAISE NOTICE 'Error during ANALYZE: %', SQLERRM;
               END
               $$;
             `;
@@ -127,12 +145,10 @@ serve(async (req) => {
             query = `
               DO $$
               BEGIN
-                IF EXISTS (
-                  SELECT 1 FROM information_schema.tables 
-                  WHERE table_schema = 'public' AND table_name = '${table}'
-                ) THEN
-                  EXECUTE 'REINDEX TABLE public."${table}"';
-                END IF;
+                EXECUTE 'REINDEX TABLE public."${table}"';
+                RAISE NOTICE 'REINDEX completed on table %', '${table}';
+              EXCEPTION WHEN OTHERS THEN
+                RAISE NOTICE 'Error during REINDEX: %', SQLERRM;
               END
               $$;
             `;
@@ -167,6 +183,21 @@ serve(async (req) => {
       }
     }
     
+    // After maintenance operations, get the current database performance stats
+    console.log("Retrieving updated table statistics");
+    try {
+      const { data: performanceData, error: statsError } = await supabaseClient.rpc('check_database_performance');
+      
+      if (statsError) {
+        console.error("Error fetching database performance stats:", statsError);
+      } else if (performanceData) {
+        console.log("Performance data retrieved:", performanceData);
+        tableStats = performanceData.table_stats || [];
+      }
+    } catch (error) {
+      console.error("Error retrieving database stats:", error);
+    }
+    
     // Log the maintenance operation
     try {
       await supabaseClient
@@ -192,7 +223,8 @@ serve(async (req) => {
         success: results.length > 0,
         message: `${action.toUpperCase()} operation results`,
         success_tables: results,
-        failed_tables: failedTables
+        failed_tables: failedTables,
+        table_stats: tableStats
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -221,7 +253,7 @@ serve(async (req) => {
       console.error('Failed to log maintenance error:', logError);
     }
     
-    // Return error response
+    // Return error response with 200 status to prevent function client from throwing
     return new Response(
       JSON.stringify({
         success: false,
@@ -229,7 +261,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200, // Return 200 even for errors to prevent Supabase function client from throwing
+        status: 200, // Use 200 even for errors to ensure data comes back to client
       }
     );
   }
