@@ -9,7 +9,7 @@ import SiteTypeFields from "./site-type-fields/SiteTypeFields";
 import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-helpers";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
 import { useAIContent } from "@/hooks/ai-content";
 
@@ -33,7 +33,6 @@ const SpecificQuestionsStep = ({
   const [showTooltips, setShowTooltips] = useState(false);
   const [aiPowered, setAiPowered] = useState(false);
   const [isAiInitializing, setIsAiInitializing] = useState(false);
-  const { toast } = useToast();
   const { isGenerating } = useAIContent({
     showToasts: true,
     autoRetry: true
@@ -68,12 +67,10 @@ const SpecificQuestionsStep = ({
     setAiPowered(true);
     setIsAiInitializing(false);
     
-    toast({
-      title: "AI-powered tooltips enabled",
-      description: "Hover over the info icons to see AI-generated example answers tailored to your project",
-      duration: 4000,
+    toast.info("AI-powered tooltips enabled", {
+      description: "Hover over the info icons to see AI-generated example answers tailored to your project"
     });
-  }, [toast]);
+  }, []);
 
   const handleAIToggle = (enabled: boolean) => {
     if (enabled) {

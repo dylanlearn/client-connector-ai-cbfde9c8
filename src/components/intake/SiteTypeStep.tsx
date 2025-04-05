@@ -4,7 +4,7 @@ import { Building, ShoppingCart, Briefcase, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { IntakeFormData } from "@/types/intake-form";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface SiteTypeStepProps {
   formData: IntakeFormData;
@@ -42,7 +42,6 @@ const siteTypes = [
 
 const SiteTypeStep = ({ formData, updateFormData, onNext, isSaving }: SiteTypeStepProps) => {
   const [selectedType, setSelectedType] = useState<string>(formData.siteType || "");
-  const { toast } = useToast();
 
   useEffect(() => {
     if (selectedType && selectedType !== formData.siteType) {
@@ -73,11 +72,7 @@ const SiteTypeStep = ({ formData, updateFormData, onNext, isSaving }: SiteTypeSt
               }`}
               onClick={() => {
                 setSelectedType(type.id);
-                toast({
-                  title: "Selection Saved",
-                  description: `You selected ${type.name}`,
-                  variant: "default",
-                });
+                toast.success(`You selected ${type.name}`);
               }}
             >
               <div className="flex items-start space-x-4">

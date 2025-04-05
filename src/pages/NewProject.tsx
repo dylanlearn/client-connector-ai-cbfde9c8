@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useProjects } from "@/hooks/use-projects";
 import { CreateProjectData } from "@/types/project";
@@ -25,7 +25,6 @@ const projectTypes = [
 
 const NewProject = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { createProject } = useProjects();
   const { user } = useAuth();
   
@@ -42,20 +41,16 @@ const NewProject = () => {
 
     try {
       if (!projectName || !clientName || !clientEmail || !projectType) {
-        toast({
-          title: "Missing fields",
-          description: "Please fill in all required fields",
-          variant: "destructive",
+        toast.error("Missing fields", {
+          description: "Please fill in all required fields"
         });
         setIsLoading(false);
         return;
       }
 
       if (!user) {
-        toast({
-          title: "Authentication error",
-          description: "You must be logged in to create a project",
-          variant: "destructive",
+        toast.error("Authentication error", {
+          description: "You must be logged in to create a project"
         });
         setIsLoading(false);
         return;

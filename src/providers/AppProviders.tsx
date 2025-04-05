@@ -1,20 +1,25 @@
 
+import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
-import { ReactNode } from 'react';
-import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryProvider } from './QueryProvider';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 
-export interface AppProvidersProps {
-  children: ReactNode;
+interface AppProvidersProps {
+  children: React.ReactNode;
 }
 
-export const AppProviders = ({ children }: AppProvidersProps) => {
+export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        {children}
-        <Toaster />
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider>
+          {children}
+          <Toaster />
+          <SonnerToaster position="top-right" />
+        </AuthProvider>
+      </QueryProvider>
     </BrowserRouter>
   );
 };
