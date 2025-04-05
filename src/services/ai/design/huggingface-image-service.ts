@@ -67,18 +67,24 @@ export const HuggingFaceImageService = {
   ): Promise<string[]> => {
     try {
       const variations: string[] = [];
+      const generateImageFn = HuggingFaceImageService.generateImage; // Store reference to the method
       
-      // Generate multiple variations in parallel
-      const promises = Array(count).fill(0).map((_, index) => 
-        this.generateImage(`${concept} - variation ${index + 1}`, {
-          enhancedCreativity: true,
-          style: 'unique creative interpretation, high quality'
-        })
-      );
+      // Create an array of promises
+      const promises = [];
+      for (let i = 0; i < count; i++) {
+        const prompt = `${concept} - variation ${i + 1}`;
+        promises.push(
+          generateImageFn(prompt, {
+            enhancedCreativity: true,
+            style: 'unique creative interpretation, high quality'
+          })
+        );
+      }
       
+      // Wait for all promises to settle
       const results = await Promise.allSettled(promises);
       
-      // Collect successful variations - Fix for TS2532 error
+      // Collect successful variations
       for (const result of results) {
         if (result.status === 'fulfilled') {
           variations.push(result.value);
