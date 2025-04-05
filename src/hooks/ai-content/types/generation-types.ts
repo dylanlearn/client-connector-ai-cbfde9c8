@@ -20,6 +20,6 @@ export interface UseGenerationReturn {
 export interface FallbackContentMap {
   [type: string]: {
     default: string;
-    [context: string]?: string;
+    [context: string]: string;
   };
 }
