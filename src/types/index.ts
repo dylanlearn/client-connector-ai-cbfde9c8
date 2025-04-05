@@ -15,7 +15,5 @@ import {
   TrackingOptions
 } from './interactions';
 
-export {
-  DeviceInfo,
-  TrackingOptions
-};
+// Use 'export type' for re-exporting types when isolatedModules is enabled
+export type { DeviceInfo, TrackingOptions };

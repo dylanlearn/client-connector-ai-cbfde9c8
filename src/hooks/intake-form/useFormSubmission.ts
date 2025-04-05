@@ -46,7 +46,7 @@ export const useFormSubmission = (
         if (result.projectName) {
           try {
             await ProjectService.createProject({
-              user_id: userId,
+              // user_id is handled internally by the service
               title: result.projectName || "New Website Project",
               client_name: "Self",
               client_email: "",

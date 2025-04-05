@@ -1,41 +1,40 @@
 
 /**
- * Interaction-related types shared across the application
+ * Types related to user interactions and tracking
  */
 
-// Interaction event types
-export type InteractionEventType = 'click' | 'hover' | 'view' | 'scroll' | 'movement';
-
-// Device detection information
 export interface DeviceInfo {
   deviceType: 'mobile' | 'tablet' | 'desktop' | 'unknown';
-  browser?: string;
-  os?: string;
+  browserName: string;
+  osName: string;
+  prefersReducedMotion: boolean;
   isTouchDevice: boolean;
 }
 
-// Interaction tracking event
+export interface TrackingOptions {
+  captureClicks?: boolean;
+  captureHovers?: boolean;
+  captureScroll?: boolean;
+  captureViews?: boolean;
+  sessionId?: string;
+  anonymizeData?: boolean;
+}
+
+export type InteractionEventType = 'click' | 'hover' | 'scroll' | 'view' | 'movement';
+
 export interface InteractionEvent {
   id: string;
   user_id: string;
   event_type: InteractionEventType;
   page_url: string;
+  element_selector: string;
   x_position: number;
   y_position: number;
-  element_selector?: string;
+  timestamp: string;
   session_id: string;
   metadata?: Record<string, any>;
+  device_type?: string;
   viewport_width?: number;
   viewport_height?: number;
-  device_type?: string;
-  scroll_depth?: number | null;
-  timestamp: string;
-}
-
-// Interaction tracking options
-export interface TrackingOptions {
-  throttle?: boolean;
-  throttleDelay?: number;
-  includeMetadata?: boolean;
-  trackPosition?: boolean;
+  scroll_depth?: number;
 }

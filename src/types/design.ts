@@ -11,7 +11,7 @@ export interface DesignOption {
   category?: string;
   icon?: React.ComponentType;
   preview?: string;
-  imageUrl?: string; // Added to match the other interface
+  imageUrl: string; // Changed from optional to required to match preview/types.ts
 }
 
 // Animation preferences used throughout the app
