@@ -28,27 +28,71 @@ const AUTO_VACUUM_THRESHOLD = 20;
 const MIN_RECOMMENDATION_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 /**
- * Check database performance and recommend maintenance if needed
+ * Event bus for coordinating database health updates across components
  */
-export async function checkDatabaseHealth(showToasts: boolean = true): Promise<boolean> {
+type DatabaseRefreshListener = (stats: any) => void;
+const databaseRefreshListeners: DatabaseRefreshListener[] = [];
+
+/**
+ * Subscribe to database refresh events
+ */
+export function subscribeToDbRefresh(callback: DatabaseRefreshListener): () => void {
+  databaseRefreshListeners.push(callback);
+  return () => {
+    const index = databaseRefreshListeners.indexOf(callback);
+    if (index > -1) {
+      databaseRefreshListeners.splice(index, 1);
+    }
+  };
+}
+
+/**
+ * Notify all subscribers of new database statistics
+ */
+function notifyDbRefreshListeners(stats: any) {
+  for (const listener of databaseRefreshListeners) {
+    listener(stats);
+  }
+}
+
+/**
+ * Refresh database statistics and notify all listeners
+ * This is the main entry point for coordinated refresh across the application
+ */
+export async function refreshDatabaseStatistics(showToast: boolean = false): Promise<any> {
   try {
-    // Get current database performance
+    // Show a loading toast if requested
+    const toastId = showToast ? 
+      toast.loading("Refreshing database statistics...") : 
+      undefined;
+    
+    // Get current database performance directly from PostgreSQL
     const { data, error } = await supabase.rpc('check_database_performance');
 
+    // Clear the toast
+    if (toastId) toast.dismiss(toastId);
+    
     if (error) {
-      console.error("Database health check failed:", error);
-      return false;
+      console.error("Database refresh failed:", error);
+      if (showToast) {
+        toast.error("Refresh failed", { 
+          description: error.message || "Could not retrieve database statistics" 
+        });
+      }
+      return null;
     }
 
     if (!data || !data.table_stats) {
-      console.warn("No table statistics returned from database health check");
-      return false;
+      console.warn("No table statistics returned from database refresh");
+      if (showToast) {
+        toast.error("Refresh failed", { 
+          description: "No statistics data received from database" 
+        });
+      }
+      return null;
     }
-
-    const tablesNeedingMaintenance = [];
-    const now = new Date();
-
-    // Check each table for maintenance needs
+    
+    // Update our in-memory state with fresh data
     for (const table of data.table_stats) {
       const tableName = table.table;
       const deadRowRatio = table.dead_row_ratio;
@@ -61,48 +105,100 @@ export async function checkDatabaseHealth(showToasts: boolean = true): Promise<b
         deadRowRatio: null
       };
       
-      // Update tracked state
+      // Update tracked state with accurate values from database
       tableState.deadRowRatio = deadRowRatio;
       tableMaintenanceState[tableName] = tableState;
-      
-      // Check if this table exceeds the vacuum threshold
-      if (deadRowRatio > AUTO_VACUUM_THRESHOLD) {
-        // Only recommend vacuum if it hasn't been vacuumed recently
-        const lastVacuumed = tableState.lastVacuumed;
-        if (!lastVacuumed || (now.getTime() - lastVacuumed.getTime() > MIN_RECOMMENDATION_INTERVAL)) {
-          tablesNeedingMaintenance.push({
-            name: tableName,
-            deadRowRatio: deadRowRatio
-          });
-        }
-      }
     }
-
-    // Show toast notification if tables need maintenance
-    if (showToasts && tablesNeedingMaintenance.length > 0) {
-      const tableList = tablesNeedingMaintenance
-        .slice(0, 3)
-        .map(t => `${t.name} (${t.deadRowRatio.toFixed(1)}%)`)
-        .join(', ');
-      
-      const additionalTables = tablesNeedingMaintenance.length > 3 
-        ? `and ${tablesNeedingMaintenance.length - 3} more` 
-        : '';
-      
-      toast.warning("Database maintenance recommended", {
-        description: `Tables with high dead rows: ${tableList} ${additionalTables}`,
-        duration: 8000,
-        action: {
-          label: "View",
-          onClick: () => {
-            // Navigate to database tab - we could implement this if we had a router
-            window.location.href = '/admin/audit-and-monitoring?tab=database';
-          }
-        }
+    
+    // Notify all components that have subscribed to refresh events
+    notifyDbRefreshListeners(data);
+    
+    // Show success toast if requested
+    if (showToast) {
+      toast.success("Database statistics refreshed", {
+        description: `Updated stats for ${data.table_stats.length} tables`
       });
     }
+    
+    // Check for tables needing maintenance
+    checkMaintenanceNeeds(data);
+    
+    return data;
+  } catch (error) {
+    console.error("Error refreshing database statistics:", error);
+    if (showToast) {
+      toast.error("Refresh failed", { 
+        description: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+    return null;
+  }
+}
 
-    return true;
+/**
+ * Private helper to check for tables needing maintenance
+ */
+function checkMaintenanceNeeds(data: any) {
+  // If no data provided, do nothing
+  if (!data || !data.table_stats) return;
+  
+  const tablesNeedingMaintenance = [];
+  const now = new Date();
+
+  // Check each table for maintenance needs
+  for (const table of data.table_stats) {
+    const tableName = table.table;
+    const deadRowRatio = table.dead_row_ratio;
+    
+    // Get the maintenance state for this table
+    const tableState = tableMaintenanceState[tableName];
+    
+    // Check if this table exceeds the vacuum threshold
+    if (deadRowRatio > AUTO_VACUUM_THRESHOLD) {
+      // Only recommend vacuum if it hasn't been vacuumed recently
+      const lastVacuumed = tableState?.lastVacuumed;
+      if (!lastVacuumed || (now.getTime() - lastVacuumed.getTime() > MIN_RECOMMENDATION_INTERVAL)) {
+        tablesNeedingMaintenance.push({
+          name: tableName,
+          deadRowRatio: deadRowRatio
+        });
+      }
+    }
+  }
+
+  // Show toast notification if tables need maintenance
+  if (tablesNeedingMaintenance.length > 0) {
+    const tableList = tablesNeedingMaintenance
+      .slice(0, 3)
+      .map(t => `${t.name} (${t.deadRowRatio.toFixed(1)}%)`)
+      .join(', ');
+    
+    const additionalTables = tablesNeedingMaintenance.length > 3 
+      ? `and ${tablesNeedingMaintenance.length - 3} more` 
+      : '';
+    
+    toast.warning("Database maintenance recommended", {
+      description: `Tables with high dead rows: ${tableList} ${additionalTables}`,
+      duration: 8000,
+      action: {
+        label: "View",
+        onClick: () => {
+          // Navigate to database tab - we could implement this if we had a router
+          window.location.href = '/admin/audit-and-monitoring?tab=database';
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Check database performance and recommend maintenance if needed
+ */
+export async function checkDatabaseHealth(showToasts: boolean = true): Promise<boolean> {
+  try {
+    // Use our central refresh function to update stats
+    const data = await refreshDatabaseStatistics(false);
+    return !!data;
   } catch (error) {
     console.error("Error checking database health:", error);
     return false;
@@ -229,6 +325,9 @@ export async function vacuumTable(tableName: string): Promise<{
       // Record successful vacuum
       recordTableVacuumed(tableName);
       
+      // Refresh database statistics after vacuum
+      await refreshDatabaseStatistics(false);
+      
       return {
         success: true,
         message: `VACUUM completed successfully on table: ${tableName}`,
@@ -251,5 +350,7 @@ export default {
   recordTableVacuumed,
   initDatabaseHealthMonitoring,
   vacuumTable,
-  verifyDeadRowPercentages
+  verifyDeadRowPercentages,
+  refreshDatabaseStatistics,
+  subscribeToDbRefresh
 };

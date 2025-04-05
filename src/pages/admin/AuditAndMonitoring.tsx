@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   CheckCircle2, 
   XCircle, 
@@ -10,7 +9,8 @@ import {
   Key, 
   HardDrive, 
   FunctionSquare,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceH
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { toast } from 'sonner';
+import { refreshDatabaseStatistics, subscribeToDbRefresh } from '@/utils/database/maintenance-scheduler';
+import { DatabaseMaintenancePanel } from '@/components/admin/monitoring/DatabaseMaintenancePanel';
 
 const AuditAndMonitoring = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,107 +38,76 @@ const AuditAndMonitoring = () => {
   const [vacuumResults, setVacuumResults] = useState({});
   const supabaseAuditService = new SupabaseAuditService();
   const { toast: uiToast } = useToast();
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Subscribe to database refresh events
+  useEffect(() => {
+    const unsubscribe = subscribeToDbRefresh((stats) => {
+      if (isMounted.current) {
+        setDatabasePerformance(stats);
+        setLastRefreshed(new Date());
+      }
+    });
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const refreshData = useCallback(async () => {
     setIsRefreshing(true);
     try {
       const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
-      setHealthCheck(healthCheckData);
+      if (isMounted.current) {
+        setHealthCheck(healthCheckData);
+      }
 
-      const performanceData = await supabaseAuditService.checkDatabasePerformance();
-      setDatabasePerformance(performanceData);
+      // Use the coordinated refresh function for database stats
+      await refreshDatabaseStatistics(false);
       
-      setLastRefreshed(new Date());
+      if (isMounted.current) {
+        setLastRefreshed(new Date());
+      }
     } catch (error) {
       console.error('Error refreshing data:', error);
       toast.error("Refresh failed", {
         description: "Unable to refresh data",
       });
     } finally {
-      setIsRefreshing(false);
+      if (isMounted.current) {
+        setIsRefreshing(false);
+      }
     }
   }, [supabaseAuditService]);
-
-  const vacuumTable = async (tableName) => {
-    setProcessingTableId(tableName);
-    setVacuumResults(prev => ({
-      ...prev,
-      [tableName]: { status: 'processing' }
-    }));
-    
-    try {
-      console.log(`Running VACUUM on table: ${tableName}`);
-      
-      // Call the edge function to vacuum specific table
-      const { data, error } = await supabase.functions.invoke('database-maintenance', {
-        body: { action: 'vacuum', tables: [tableName] }
-      });
-
-      if (error) {
-        console.error('Error vacuuming table:', error);
-        throw error;
-      }
-
-      console.log('VACUUM response:', data);
-
-      if (data?.failed_tables && data.failed_tables.length > 0) {
-        throw new Error(`Failed to vacuum table ${tableName}: ${data.failed_tables[0]?.error || 'Unknown error'}`);
-      }
-
-      if (data?.success_tables && data.success_tables.includes(tableName)) {
-        toast.success("Table Maintenance Complete", {
-          description: `VACUUM completed successfully on table: ${tableName}`,
-        });
-        
-        setVacuumResults(prev => ({
-          ...prev,
-          [tableName]: { 
-            status: 'success', 
-            timestamp: new Date(),
-            message: 'VACUUM completed successfully'
-          }
-        }));
-        
-        // Refresh data after vacuum to show updated stats
-        await refreshData();
-      } else {
-        throw new Error(`Table ${tableName} was not successfully vacuumed`);
-      }
-    } catch (error) {
-      console.error('Error vacuuming table:', error);
-      toast.error("Maintenance Failed", {
-        description: error.message || "Failed to vacuum table",
-      });
-      
-      setVacuumResults(prev => ({
-        ...prev,
-        [tableName]: { 
-          status: 'error', 
-          timestamp: new Date(),
-          message: error.message 
-        }
-      }));
-    } finally {
-      setProcessingTableId(null);
-    }
-  };
 
   useEffect(() => {
     const fetchAuditData = async () => {
       try {
         const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
-        setHealthCheck(healthCheckData);
+        if (isMounted.current) {
+          setHealthCheck(healthCheckData);
+        }
 
-        const performanceData = await supabaseAuditService.checkDatabasePerformance();
-        setDatabasePerformance(performanceData);
-        
+        // Get initial database stats
+        const stats = await refreshDatabaseStatistics(false);
+        if (isMounted.current && stats) {
+          setDatabasePerformance(stats);
+        }
       } catch (error) {
         console.error('Error fetching audit data:', error);
         toast.error("Error loading data", {
           description: "Failed to load audit data",
         });
       } finally {
-        setIsLoading(false);
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -185,7 +156,10 @@ const AuditAndMonitoring = () => {
                   Refreshing...
                 </>
               ) : (
-                <>Refresh</>
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh All
+                </>
               )}
             </Button>
           </div>
@@ -280,104 +254,7 @@ const AuditAndMonitoring = () => {
           </TabsContent>
 
           <TabsContent value="database" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Database Performance Metrics</CardTitle>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={refreshData}
-                  disabled={isRefreshing}
-                >
-                  {isRefreshing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Refreshing...
-                    </>
-                  ) : (
-                    <>Refresh Metrics</>
-                  )}
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {databasePerformance?.table_stats ? (
-                  <div className="border rounded-md">
-                    <div className="grid grid-cols-5 gap-2 px-4 py-3 border-b bg-muted/50 font-medium">
-                      <div>Table</div>
-                      <div>Live Rows</div>
-                      <div>Dead Rows</div>
-                      <div>Dead Row %</div>
-                      <div>Action</div>
-                    </div>
-                    <div className="divide-y">
-                      {databasePerformance.table_stats.map((table, i) => {
-                        const result = vacuumResults[table.table];
-                        return (
-                          <div key={i} className="grid grid-cols-5 gap-2 px-4 py-3">
-                            <div className="font-mono text-sm">{table.table}</div>
-                            <div>{table.live_rows.toLocaleString()}</div>
-                            <div>{table.dead_rows.toLocaleString()}</div>
-                            <div>
-                              <Badge className={
-                                table.dead_row_ratio > 20 
-                                  ? "bg-red-500" 
-                                  : table.dead_row_ratio > 10 
-                                    ? "bg-yellow-500" 
-                                    : "bg-green-500"
-                              }>
-                                {table.dead_row_ratio.toFixed(1)}%
-                              </Badge>
-                            </div>
-                            <div>
-                              <div className="flex flex-col gap-1">
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => vacuumTable(table.table)}
-                                  disabled={processingTableId === table.table}
-                                  className="flex items-center gap-1"
-                                >
-                                  {processingTableId === table.table ? (
-                                    <>
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                      Vacuuming...
-                                    </>
-                                  ) : (
-                                    <>Vacuum</>
-                                  )}
-                                </Button>
-                                {result && (
-                                  <span 
-                                    className={`text-xs ${
-                                      result.status === 'success' 
-                                        ? 'text-green-600' 
-                                        : result.status === 'error' 
-                                          ? 'text-red-600' 
-                                          : 'text-gray-600'
-                                    }`}
-                                  >
-                                    {result.status === 'success' 
-                                      ? `Success at ${result.timestamp.toLocaleTimeString()}`
-                                      : result.status === 'error' 
-                                        ? result.message || 'Failed' 
-                                        : 'Processing...'}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <AlertCircle className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
-                    <p>Could not retrieve database performance data</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <DatabaseMaintenancePanel />
 
             {databasePerformance?.high_vacuum_tables && 
              databasePerformance.high_vacuum_tables.length > 0 && (

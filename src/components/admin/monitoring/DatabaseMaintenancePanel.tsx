@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -7,7 +7,11 @@ import { Loader2, Database, RefreshCw, AlertCircle, CheckCircle } from "lucide-r
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
-import { vacuumTable } from "@/utils/database/maintenance-scheduler";
+import { 
+  vacuumTable, 
+  refreshDatabaseStatistics, 
+  subscribeToDbRefresh 
+} from "@/utils/database/maintenance-scheduler";
 import {
   Table,
   TableBody,
@@ -33,7 +37,30 @@ export function DatabaseMaintenancePanel() {
   }>>({});
   const [autoVacuumEnabled, setAutoVacuumEnabled] = useState<boolean>(false);
   const [autoVacuumInterval, setAutoVacuumInterval] = useState<number | null>(null);
+  const [databaseStats, setDatabaseStats] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const { toast: uiToast } = useToast();
+
+  // Subscribe to database refresh events
+  useEffect(() => {
+    const unsubscribe = subscribeToDbRefresh((stats) => {
+      setDatabaseStats(stats);
+    });
+    
+    // Initial data fetch
+    handleRefreshStats();
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Handle refreshing database statistics
+  const handleRefreshStats = async () => {
+    setRefreshing(true);
+    await refreshDatabaseStatistics(true);
+    setRefreshing(false);
+  };
 
   // Enhanced database maintenance handler with better error handling and logging
   const handleDatabaseMaintenance = async (action: 'vacuum' | 'analyze' | 'reindex', tables: string[] = ['profiles', 'projects', 'user_memories', 'global_memories', 'intake_forms']) => {
@@ -72,6 +99,9 @@ export function DatabaseMaintenancePanel() {
         toast.success(`Database maintenance completed`, {
           description: `${action.toUpperCase()} operation finished on ${data.success_tables.length} tables`
         });
+        
+        // Refresh database statistics after maintenance operation
+        await handleRefreshStats();
       } else {
         throw new Error(`No tables were successfully processed`);
       }
@@ -251,13 +281,36 @@ export function DatabaseMaintenancePanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5 text-primary" />
-          Database Maintenance
-        </CardTitle>
-        <CardDescription>
-          Run database maintenance operations to optimize performance
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              Database Maintenance
+            </CardTitle>
+            <CardDescription>
+              Run database maintenance operations to optimize performance
+            </CardDescription>
+          </div>
+          <Button
+            onClick={handleRefreshStats}
+            disabled={refreshing}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            {refreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Refresh Stats
+              </>
+            )}
+          </Button>
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-4">
@@ -340,8 +393,26 @@ export function DatabaseMaintenancePanel() {
           </Alert>
         )}
 
-        {lastResult?.details?.table_stats && (
-          <DatabasePerformanceTable tables={lastResult.details.table_stats} />
+        {databaseStats?.table_stats && (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Database Table Statistics</h3>
+              <div className="text-sm text-muted-foreground">
+                Last refreshed: {new Date().toLocaleTimeString()}
+              </div>
+            </div>
+            <DatabasePerformanceTable tables={databaseStats.table_stats} />
+          </>
+        )}
+
+        {!databaseStats && !refreshing && (
+          <div className="text-center py-8">
+            <Database className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground">No database statistics loaded</p>
+            <Button onClick={handleRefreshStats} variant="outline" className="mt-4">
+              Load Statistics
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
