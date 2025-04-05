@@ -23,7 +23,8 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     isActive, 
     isAdmin,
     status,
-    refreshSubscription
+    refreshSubscription,
+    isAdminFromProfile
   } = useSubscription();
   const { isAdmin: adminStatusDirect, isVerifying, verifyAdminStatus } = useAdminStatus();
   const { user, isLoading: authLoading, profile } = useAuth();
@@ -34,17 +35,20 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   
   // Enhanced logging for debugging admin status issues
   useEffect(() => {
-    console.log("RequireSubscription - Check details:", { 
-      "profile?.role": profile?.role,
-      "profile?.subscription_status": profile?.subscription_status, 
-      "isAdmin from subscription": isAdmin,
-      "isAdmin from direct check": adminStatusDirect,
-      "subscription status": status,
-      "isActive": isActive,
-      "current path": location.pathname,
-      "retryCount": retryCount
-    });
-  }, [profile, isAdmin, adminStatusDirect, status, isActive, location.pathname, retryCount]);
+    if (user) {
+      console.log("RequireSubscription - Check details:", { 
+        "profile?.role": profile?.role,
+        "profile?.subscription_status": profile?.subscription_status, 
+        "isAdmin from subscription": isAdmin,
+        "isAdminFromProfile": isAdminFromProfile,
+        "isAdmin from direct check": adminStatusDirect,
+        "subscription status": status,
+        "isActive": isActive,
+        "current path": location.pathname,
+        "retryCount": retryCount
+      });
+    }
+  }, [profile, isAdmin, isAdminFromProfile, adminStatusDirect, status, isActive, location.pathname, retryCount, user]);
   
   // Use effect to ensure component is fully mounted before checking auth
   useEffect(() => {
@@ -95,6 +99,7 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
   const hasAdminRole = 
     profile?.role === 'admin' || // Check profile directly
     isAdmin ||                   // Check from subscription hook
+    isAdminFromProfile ||        // Check from additional profile check
     adminStatusDirect;           // Check from admin status hook
     
   // Check for admin-assigned subscription access - enhanced reliability
@@ -111,6 +116,7 @@ const RequireSubscription = memo(({ children }: RequireSubscriptionProps) => {
     "profile role": profile?.role,
     "profile subscription_status": profile?.subscription_status,
     "isAdmin from subscription": isAdmin,
+    "isAdminFromProfile": isAdminFromProfile,
     "adminStatusDirect": adminStatusDirect,
     "final hasAdminRole": hasAdminRole,
     "subscription status": status,

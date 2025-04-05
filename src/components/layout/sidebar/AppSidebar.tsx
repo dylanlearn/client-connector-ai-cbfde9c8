@@ -2,11 +2,24 @@
 import { SidebarNavigation } from "./SidebarNavigation";
 import { useLocation } from "react-router-dom";
 import { X, Menu } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdminStatus } from "@/hooks/use-admin-status";
 
 const AppSidebar = () => {
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { profile } = useAuth();
+  const { isAdmin } = useAdminStatus();
+
+  // Log admin status to help with debugging
+  useEffect(() => {
+    console.log("AppSidebar - Admin status:", {
+      "profile?.role": profile?.role, 
+      "isAdmin from hook": isAdmin,
+      "current path": location.pathname
+    });
+  }, [profile, isAdmin, location.pathname]);
 
   const toggleMobileSidebar = () => {
     setIsMobileOpen(!isMobileOpen);
@@ -16,7 +29,7 @@ const AppSidebar = () => {
     <>
       {/* Mobile sidebar toggle */}
       <button
-        className="fixed top-4 left-4 z-50 md:hidden bg-white p-2 rounded-md shadow-md"
+        className="fixed top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 p-2 rounded-md shadow-md"
         onClick={toggleMobileSidebar}
         aria-label="Toggle sidebar"
       >
@@ -25,7 +38,7 @@ const AppSidebar = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen w-64 bg-white border-r transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-gray-800 border-r transition-transform duration-300 ease-in-out ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -37,7 +50,7 @@ const AppSidebar = () => {
             <span className="font-bold text-xl">DezignSync</span>
           </div>
         </div>
-        <div className="py-4">
+        <div className="py-4 h-[calc(100vh-4rem)] overflow-y-auto">
           <SidebarNavigation currentPath={location.pathname} />
         </div>
       </aside>
