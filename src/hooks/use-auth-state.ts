@@ -2,13 +2,13 @@
 import { useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchUserProfile } from "@/utils/auth-utils";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export const useAuthState = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile, isLoading: isProfileLoading } = useProfile();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -16,34 +16,17 @@ export const useAuthState = () => {
         console.log("Auth state change event:", event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          setTimeout(() => {
-            fetchUserProfile(currentSession.user.id).then(data => {
-              setProfile(data);
-            });
-          }, 0);
-        } else {
-          setProfile(null);
-        }
       }
     );
 
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        fetchUserProfile(currentSession.user.id).then(data => {
-          setProfile(data);
-        });
-      }
-      
       setIsLoading(false);
     });
 
     // Set up real-time subscription for profile changes
-    const setupProfileSubscription = async () => {
+    if (user?.id) {
       const channel = supabase
         .channel('public:profiles')
         .on(
@@ -52,30 +35,23 @@ export const useAuthState = () => {
             event: 'UPDATE',
             schema: 'public',
             table: 'profiles',
-            filter: user ? `id=eq.${user.id}` : undefined,
+            filter: `id=eq.${user.id}`,
           },
           (payload) => {
             console.log('Profile updated in real-time:', payload);
-            setProfile(payload.new);
+            // No need to manually update profile here as React Query will handle it
           }
         )
         .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
+        subscription.unsubscribe();
       };
-    };
-
-    let cleanup: (() => void) | undefined;
-    if (user) {
-      setupProfileSubscription().then(cleanupFn => {
-        cleanup = cleanupFn;
-      });
     }
 
     return () => {
       subscription.unsubscribe();
-      if (cleanup) cleanup();
     };
   }, [user?.id]);
 
@@ -83,7 +59,6 @@ export const useAuthState = () => {
     session,
     user,
     profile,
-    isLoading,
-    setProfile
+    isLoading: isLoading || isProfileLoading,
   };
 };

@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { MonitoringState } from "@/components/admin/prompt-testing/MonitoringState";
@@ -13,6 +12,7 @@ import { MonitoringConfiguration } from "@/utils/monitoring/types";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, ShieldAlert } from "lucide-react";
+import { ProfileQueryMonitor } from "./ProfileQueryMonitor";
 
 interface MonitoringComponentConfig {
   component: string;
@@ -86,7 +86,6 @@ export function MonitoringDashboard() {
     fetchMonitoringConfig();
   }, []);
 
-  // Show loading state while verifying admin status
   if (isVerifying) {
     return (
       <Card className="p-6">
@@ -98,7 +97,6 @@ export function MonitoringDashboard() {
     );
   }
 
-  // Show access denied if not an admin
   if (!isAdmin) {
     return (
       <Card className="p-6">
@@ -123,6 +121,7 @@ export function MonitoringDashboard() {
           <TabsTrigger value="rate-limiting">Rate Limiting</TabsTrigger>
           <TabsTrigger value="api-usage">API Usage</TabsTrigger>
           <TabsTrigger value="errors">Client Errors</TabsTrigger>
+          <TabsTrigger value="profiles">Profile Queries</TabsTrigger>
           <TabsTrigger value="settings">Configuration</TabsTrigger>
         </TabsList>
         
@@ -161,6 +160,10 @@ export function MonitoringDashboard() {
         
         <TabsContent value="errors">
           <ClientErrorMonitoring />
+        </TabsContent>
+        
+        <TabsContent value="profiles">
+          <ProfileQueryMonitor />
         </TabsContent>
         
         <TabsContent value="settings">

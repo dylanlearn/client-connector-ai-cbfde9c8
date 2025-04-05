@@ -1,42 +1,56 @@
 
-import { createContext, useContext } from "react";
+import { createContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { useAuthState } from "@/hooks/use-auth-state";
-import { useAuthActions } from "@/hooks/use-auth-actions";
+import { supabase } from "@/integrations/supabase/client";
+import { ProfileProvider } from "./ProfileContext";
 
-type AuthContextType = {
+interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: any | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signUp: (email: string, password: string, name: string, phoneNumber: string) => Promise<void>;
-  signOut: () => Promise<void>;
-};
+}
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({
+  session: null,
+  user: null,
+  isLoading: true,
+});
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const { session, user, profile, isLoading: stateLoading, setProfile } = useAuthState();
-  const { signIn, signInWithGoogle, signUp, signOut, isLoading: actionLoading } = useAuthActions(setProfile);
-  
-  const isLoading = stateLoading || actionLoading;
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("Auth state change event:", event);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+      }
+    );
+
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        session,
-        user,
-        profile,
-        isLoading,
-        signIn,
-        signInWithGoogle,
-        signUp,
-        signOut
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={{ session, user, isLoading }}>
+      <ProfileProvider>
+        {children}
+      </ProfileProvider>
     </AuthContext.Provider>
   );
-};
+}
