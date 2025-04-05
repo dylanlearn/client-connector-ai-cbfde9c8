@@ -30,7 +30,7 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
   // Check each table for maintenance needs
   for (const table of data.table_stats) {
     const tableName = table.table;
-    const deadRowRatio = table.dead_row_ratio;
+    const deadRowRatio = table.dead_row_ratio; // Updated to use snake_case property name
     
     // Get the maintenance state for this table
     const tableState = tableMaintenanceState[tableName];
@@ -79,7 +79,7 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
         onClick: () => {
           // Automatically vacuum all tables that need maintenance
           const allTablesNeedingMaintenance = data.table_stats
-            .filter(t => t.deadRowRatio > AUTO_VACUUM_THRESHOLD)
+            .filter(t => t.dead_row_ratio > AUTO_VACUUM_THRESHOLD)
             .map(t => t.table);
           
           vacuumRecommendedTables(allTablesNeedingMaintenance);
