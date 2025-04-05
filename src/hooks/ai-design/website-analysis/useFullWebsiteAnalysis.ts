@@ -50,7 +50,8 @@ export function useFullWebsiteAnalysis(
         },
         // Fixed: Passing an array of target audience strings instead of a single string
         ['website users', 'general audience'],
-        url
+        url,
+        undefined // Added undefined for the optional imageUrl parameter
       );
       
       if (!data) {
