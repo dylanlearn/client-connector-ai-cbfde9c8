@@ -3,13 +3,12 @@
  * Options for content generation
  */
 export interface ContentGenerationOptions {
-  type: 'header' | 'tagline' | 'cta' | 'description';
-  context?: string; // Optional context
-  maxLength?: number;
+  type: string;
+  context?: string;
   tone?: string;
-  keywords?: string[];
-  cacheKey?: string; // Added cacheKey property
-  testVariantId?: string; // Added testVariantId property
+  maxLength?: number;
+  cacheKey?: string;
+  testVariantId?: string;
 }
 
 /**

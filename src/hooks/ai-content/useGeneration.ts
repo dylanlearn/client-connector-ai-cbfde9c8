@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AIGeneratorService } from '@/services/ai';
@@ -61,11 +62,17 @@ export function useGeneration({
       
       const startTime = Date.now();
       
-      const content = await AIGeneratorService.generateContent({
-        ...request,
-        cacheKey,
+      // Make sure we're passing the correct type for content generation
+      const generationOptions = {
+        type: request.type,
+        context: request.context,
+        tone: request.tone,
+        maxLength: request.maxLength,
+        cacheKey: cacheKey,
         testVariantId: testInfo?.testVariantId
-      });
+      };
+      
+      const content = await AIGeneratorService.generateContent(generationOptions);
       
       const latencyMs = Date.now() - startTime;
       

@@ -69,31 +69,19 @@ export interface CacheCleanupResult {
 
 export interface AIContentHookReturn {
   /** Function to generate content */
-  generateContent: <T = string>(
-    prompt: string, 
-    options?: GenerateContentOptions
-  ) => Promise<T>;
-  
-  /** Function to fetch content from cache */
-  fetchCachedContent: <T = string>(
-    cacheKey: string, 
-    options?: FetchContentOptions
-  ) => Promise<T | null>;
-  
+  generate: (request: ContentRequest) => Promise<string>;
+  /** Function to cancel generation */
+  cancelGeneration: () => void;
   /** Function to clean up expired cache entries */
   cleanupCache: () => Promise<CacheCleanupResult>;
-  
   /** Function to schedule regular cache cleanup */
   scheduleRegularCleanup: (intervalMinutes?: number) => Promise<NodeJS.Timeout>;
-  
   /** Current generation status */
   isGenerating: boolean;
-  
+  /** Current cleanup status */
+  isCleaningUp: boolean;
   /** Any error that occurred during content generation */
   error: Error | null;
-  
-  /** Rate limit information */
-  rateLimit: ContentRateLimitInfo | null;
 }
 
 // Add these type aliases for backward compatibility

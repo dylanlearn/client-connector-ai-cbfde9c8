@@ -168,18 +168,27 @@ export class WireframeVersionControlService {
    * @param versionId2 The ID of the second wireframe version.
    * @returns An object containing the differences between the two versions.
    */
-  static async compareWireframeVersions(versionId1: string, versionId2: string): Promise<any> {
-    const version1 = await this.getWireframeVersion(versionId1);
-    const version2 = await this.getWireframeVersion(versionId2);
-
-    if (!version1 || !version2) {
-      console.error("One or both versions not found");
-      return null;
+  static async compareVersions(versionId1: string, versionId2: string): Promise<WireframeVersionDiff> {
+    try {
+      const { data, error } = await supabase.functions.invoke('compare-wireframe-versions', {
+        body: { version_id_1: versionId1, version_id_2: versionId2 }
+      });
+      
+      if (error) {
+        console.error('Error comparing versions:', error);
+        throw new Error(`Failed to compare versions: ${error.message}`);
+      }
+      
+      // Use toStringArray to ensure we get string arrays
+      return {
+        added: toStringArray(data.added || []),
+        removed: toStringArray(data.removed || []),
+        modified: toStringArray(data.modified || [])
+      };
+    } catch (error) {
+      console.error('Error in compareVersions:', error);
+      throw error;
     }
-
-    // Implement the comparison logic here
-    const diff = this.deepCompare(version1.sourceData, version2.sourceData);
-    return diff;
   }
 
   /**
@@ -287,3 +296,5 @@ export class WireframeVersionControlService {
     return true;
   }
 }
+
+export const wireframeVersionControl = new WireframeVersionControlService();
