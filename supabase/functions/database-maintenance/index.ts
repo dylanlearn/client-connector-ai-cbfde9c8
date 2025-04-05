@@ -36,8 +36,13 @@ serve(async (req) => {
       throw new Error('Missing required parameter: action');
     }
     
+    // Validate input
+    if (!tables || tables.length === 0) {
+      throw new Error('No tables specified for maintenance operation');
+    }
+    
     // Default to specific tables for safety, never run on all tables automatically
-    const tablesToProcess = tables || ['profiles'];
+    const tablesToProcess = tables;
     const results = [];
     const failedTables = [];
     let tableStats = [];
@@ -57,16 +62,21 @@ serve(async (req) => {
     const validTableNames = new Set(allTables.map(t => t.tablename));
     console.log('Valid tables in database:', Array.from(validTableNames));
     
-    for (const table of tablesToProcess) {
+    // Log the actual tables we're going to process against valid tables
+    console.log('Tables to process:', tablesToProcess);
+    console.log('Tables that exist in the database:', tablesToProcess.filter(t => validTableNames.has(t)));
+    console.log('Tables that do not exist:', tablesToProcess.filter(t => !validTableNames.has(t)));
+    
+    // Filter to only process valid tables
+    const validTablesToProcess = tablesToProcess.filter(t => validTableNames.has(t));
+    
+    if (validTablesToProcess.length === 0) {
+      throw new Error(`None of the specified tables exist in the public schema: ${tablesToProcess.join(', ')}`);
+    }
+    
+    for (const table of validTablesToProcess) {
       console.log(`Processing ${action} on table ${table}`);
       let success = false;
-      
-      // Check if table exists in the valid tables list
-      if (!validTableNames.has(table)) {
-        console.error(`Table ${table} does not exist in public schema`);
-        failedTables.push({ table, error: 'Table does not exist in public schema' });
-        continue;
-      }
       
       try {
         switch (action) {
@@ -79,6 +89,7 @@ serve(async (req) => {
                 RAISE NOTICE 'VACUUM completed on table %', '${table}';
               EXCEPTION WHEN OTHERS THEN
                 RAISE NOTICE 'Error during VACUUM: %', SQLERRM;
+                RAISE;
               END
               $$;
             `;
@@ -162,7 +173,7 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error(`Error executing ${action} on table ${table}:`, error);
-        failedTables.push({ table, error: error.message });
+        failedTables.push({ table, error: error instanceof Error ? error.message : String(error) });
         continue;
       }
       
@@ -198,7 +209,8 @@ serve(async (req) => {
           metadata: { 
             success_tables: results, 
             failed_tables: failedTables,
-            action 
+            action,
+            requested_tables: tablesToProcess
           }
         });
     } catch (logError) {
@@ -212,7 +224,9 @@ serve(async (req) => {
         message: `${action.toUpperCase()} operation results`,
         success_tables: results,
         failed_tables: failedTables,
-        table_stats: tableStats
+        table_stats: tableStats,
+        requested_tables: tablesToProcess,
+        valid_tables_found: validTablesToProcess
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

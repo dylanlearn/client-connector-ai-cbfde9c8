@@ -12,10 +12,10 @@ import { refreshDatabaseStatistics } from "./statistics-service";
 export const AUTO_VACUUM_THRESHOLD = 20;
 
 /**
- * Minimum time between maintenance recommendations (6 hours)
+ * Minimum time between maintenance recommendations (10 minutes)
  * This prevents spam notifications for the same tables
  */
-export const MIN_RECOMMENDATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+export const MIN_RECOMMENDATION_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
 
 /**
  * Run vacuum on a specific table
@@ -140,16 +140,57 @@ export async function cleanupFullDatabase(): Promise<MaintenanceResult> {
  * Automatically vacuum tables that need maintenance
  */
 export async function vacuumRecommendedTables(tableNames: string[]): Promise<void> {
-  if (!tableNames.length) return;
+  if (!tableNames || !tableNames.length) {
+    console.log("No tables provided for vacuum");
+    toast.error("No tables to clean", {
+      description: "No tables were provided for cleaning"
+    });
+    return;
+  }
   
+  console.log(`Attempting to clean ${tableNames.length} tables:`, tableNames);
   toast.loading(`Cleaning ${tableNames.length} tables with high dead rows...`);
   
   try {
-    // Call database-maintenance edge function to vacuum all tables in one go
+    // Validate that tables exist before attempting vacuum
+    const { data: tablesData, error: tablesError } = await supabase
+      .from('pg_tables')
+      .select('tablename')
+      .eq('schemaname', 'public')
+      .in('tablename', tableNames);
+    
+    if (tablesError) {
+      console.error("Error verifying tables existence:", tablesError);
+      toast.error("Failed to verify tables", {
+        description: tablesError.message
+      });
+      return;
+    }
+    
+    if (!tablesData || tablesData.length === 0) {
+      console.error("No matching tables found in public schema:", tableNames);
+      toast.error("Tables not found", {
+        description: "The specified tables do not exist in the database"
+      });
+      return;
+    }
+    
+    // Get the list of valid table names
+    const validTableNames = tablesData.map(t => t.tablename);
+    console.log("Valid tables found:", validTableNames);
+    
+    if (validTableNames.length === 0) {
+      toast.error("No valid tables to clean", {
+        description: "None of the specified tables were found in the database"
+      });
+      return;
+    }
+    
+    // Proceed with vacuum operation using only validated table names
     const { data, error } = await supabase.functions.invoke('database-maintenance', {
       body: { 
         action: 'vacuum', 
-        tables: tableNames 
+        tables: validTableNames
       }
     });
     
@@ -181,7 +222,9 @@ export async function vacuumRecommendedTables(tableNames: string[]): Promise<voi
       await refreshDatabaseStatistics(false);
     } else {
       toast.error("Database cleanup failed", {
-        description: "No tables were successfully cleaned"
+        description: data?.failed_tables?.length > 0 
+          ? `Failed tables: ${data.failed_tables.map((ft: any) => ft.table).join(', ')}` 
+          : "No tables were successfully cleaned"
       });
     }
   } catch (error) {

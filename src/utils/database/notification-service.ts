@@ -4,6 +4,10 @@ import { AUTO_VACUUM_THRESHOLD, MIN_RECOMMENDATION_INTERVAL, vacuumRecommendedTa
 import { getTableMaintenanceState } from "./maintenance-tracker";
 import { DatabaseStatistics } from "./types";
 
+// Track when the last global notification was shown
+let lastGlobalNotificationTime = 0;
+const GLOBAL_NOTIFICATION_COOLDOWN = 10 * 60 * 1000; // 10 minutes in milliseconds
+
 /**
  * Check for tables needing maintenance and notify user when necessary
  * Uses reduced notification frequency to prevent spam
@@ -12,9 +16,16 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
   // If no data provided, do nothing
   if (!data || !data.table_stats) return;
   
+  const now = new Date().getTime();
+  
+  // Enforce global notification cooldown
+  if (now - lastGlobalNotificationTime < GLOBAL_NOTIFICATION_COOLDOWN) {
+    console.log("Skipping maintenance notification due to global cooldown");
+    return;
+  }
+  
   const tableMaintenanceState = getTableMaintenanceState();
   const tablesNeedingMaintenance = [];
-  const now = new Date();
 
   // Check each table for maintenance needs
   for (const table of data.table_stats) {
@@ -29,7 +40,7 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
       // Only recommend vacuum if it hasn't been vacuumed recently
       // and we haven't shown a notification recently
       const lastVacuumed = tableState?.lastVacuumed;
-      if (!lastVacuumed || (now.getTime() - lastVacuumed.getTime() > MIN_RECOMMENDATION_INTERVAL)) {
+      if (!lastVacuumed || (now - lastVacuumed.getTime() > MIN_RECOMMENDATION_INTERVAL)) {
         tablesNeedingMaintenance.push({
           name: tableName,
           deadRowRatio: deadRowRatio
@@ -41,6 +52,9 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
   // Only show toast notification if there are tables needing maintenance
   // and we haven't already shown one for these tables recently
   if (tablesNeedingMaintenance.length > 0) {
+    // Update the global notification timestamp to prevent spam
+    lastGlobalNotificationTime = now;
+    
     // Get a count of all tables with elevated dead rows for good context
     const totalTablesNeeding = data.table_stats.filter(t => t.dead_row_ratio > AUTO_VACUUM_THRESHOLD).length;
     
@@ -65,7 +79,7 @@ export function checkMaintenanceNeeds(data: DatabaseStatistics | null) {
         onClick: () => {
           // Automatically vacuum all tables that need maintenance
           const allTablesNeedingMaintenance = data.table_stats
-            .filter(t => t.dead_row_ratio > AUTO_VACUUM_THRESHOLD)
+            .filter(t => t.deadRowRatio > AUTO_VACUUM_THRESHOLD)
             .map(t => t.table);
           
           vacuumRecommendedTables(allTablesNeedingMaintenance);
