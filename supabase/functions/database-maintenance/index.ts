@@ -37,47 +37,106 @@ serve(async (req) => {
     const results = [];
     
     for (const table of tablesToProcess) {
-      // Instead of using exec_sql function, use direct database queries
-      // through the Supabase client's rpc capabilities for each maintenance
-      // operation type
+      console.log(`Processing ${action} on table ${table}`);
       let query;
       let success = false;
       
       switch (action) {
         case 'vacuum':
-          // For VACUUM, we'll use the check_database_performance function
-          // as VACUUM can't run inside transactions
-          const { data: vacuumData, error: vacuumError } = await supabaseClient
-            .rpc('check_database_performance');
+          try {
+            // Direct SQL execution for VACUUM since it can't run in a transaction
+            // Using pg_catalog.pg_stat_get_live_tuples to ensure the table exists
+            query = `
+              DO $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.tables 
+                  WHERE table_schema = 'public' AND table_name = '${table}'
+                ) THEN
+                  EXECUTE 'VACUUM ANALYZE public."${table}"';
+                END IF;
+              END
+              $$;
+            `;
             
-          if (vacuumError) {
-            console.error(`Error during VACUUM on table ${table}:`, vacuumError);
-            throw new Error(`Error processing table ${table}: ${vacuumError.message}`);
+            const { error: execError } = await supabaseClient.rpc('exec_sql', { 
+              sql_query: query 
+            });
+            
+            if (execError) {
+              console.error(`Error during VACUUM on table ${table}:`, execError);
+              throw new Error(`Error vacuuming table ${table}: ${execError.message}`);
+            }
+            
+            success = true;
+          } catch (error) {
+            console.error(`Error executing VACUUM on table ${table}:`, error);
+            throw new Error(`Failed to vacuum table ${table}: ${error.message}`);
           }
-          
-          success = true;
           break;
           
         case 'analyze':
-          // For ANALYZE, we'll use the analyze_profile_queries function
-          // which provides statistics about profile queries
-          const { data: analyzeData, error: analyzeError } = await supabaseClient
-            .rpc('analyze_profile_queries');
+          try {
+            // Direct SQL execution for ANALYZE
+            query = `
+              DO $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.tables 
+                  WHERE table_schema = 'public' AND table_name = '${table}'
+                ) THEN
+                  EXECUTE 'ANALYZE public."${table}"';
+                END IF;
+              END
+              $$;
+            `;
             
-          if (analyzeError) {
-            console.error(`Error during ANALYZE on table ${table}:`, analyzeError);
-            throw new Error(`Error processing table ${table}: ${analyzeError.message}`);
+            const { error: analyzeError } = await supabaseClient.rpc('exec_sql', { 
+              sql_query: query 
+            });
+            
+            if (analyzeError) {
+              console.error(`Error during ANALYZE on table ${table}:`, analyzeError);
+              throw new Error(`Error analyzing table ${table}: ${analyzeError.message}`);
+            }
+            
+            success = true;
+          } catch (error) {
+            console.error(`Error executing ANALYZE on table ${table}:`, error);
+            throw new Error(`Failed to analyze table ${table}: ${error.message}`);
           }
-          
-          success = true;
           break;
           
         case 'reindex':
-          // Since reindexing is a more specialized operation and may not
-          // be directly available through RPCs, we'll simulate success
-          // for the UI to reflect the attempt
-          console.log(`REINDEX requested for table ${table} (simulated)`);
-          success = true;
+          try {
+            // Direct SQL execution for REINDEX
+            query = `
+              DO $$
+              BEGIN
+                IF EXISTS (
+                  SELECT 1 FROM information_schema.tables 
+                  WHERE table_schema = 'public' AND table_name = '${table}'
+                ) THEN
+                  EXECUTE 'REINDEX TABLE public."${table}"';
+                END IF;
+              END
+              $$;
+            `;
+            
+            const { error: reindexError } = await supabaseClient.rpc('exec_sql', { 
+              sql_query: query 
+            });
+            
+            if (reindexError) {
+              console.error(`Error during REINDEX on table ${table}:`, reindexError);
+              throw new Error(`Error reindexing table ${table}: ${reindexError.message}`);
+            }
+            
+            success = true;
+          } catch (error) {
+            console.error(`Error executing REINDEX on table ${table}:`, error);
+            throw new Error(`Failed to reindex table ${table}: ${error.message}`);
+          }
           break;
           
         default:

@@ -21,6 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { SupabaseAuditService } from '@/services/ai/supabase-audit-service';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceHealthSection';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 const AuditAndMonitoring = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -29,7 +31,9 @@ const AuditAndMonitoring = () => {
   const [databasePerformance, setDatabasePerformance] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [processingTableId, setProcessingTableId] = useState(null); // Track which table is being vacuumed
   const supabaseAuditService = new SupabaseAuditService();
+  const { toast } = useToast();
 
   const refreshData = async () => {
     setIsRefreshing(true);
@@ -43,8 +47,44 @@ const AuditAndMonitoring = () => {
       setLastRefreshed(new Date());
     } catch (error) {
       console.error('Error refreshing data:', error);
+      toast({
+        variant: "destructive",
+        title: "Refresh failed",
+        description: "Unable to refresh data",
+      });
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const vacuumTable = async (tableName) => {
+    setProcessingTableId(tableName);
+    try {
+      // Call the edge function to vacuum specific table
+      const { data, error } = await supabase.functions.invoke('database-maintenance', {
+        body: { action: 'vacuum', tables: [tableName] }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Table Maintenance Complete",
+        description: `VACUUM completed successfully on table: ${tableName}`,
+      });
+      
+      // Refresh data after vacuum
+      refreshData();
+    } catch (error) {
+      console.error('Error vacuuming table:', error);
+      toast({
+        variant: "destructive",
+        title: "Maintenance Failed",
+        description: error.message || "Failed to vacuum table",
+      });
+    } finally {
+      setProcessingTableId(null);
     }
   };
 
@@ -59,6 +99,11 @@ const AuditAndMonitoring = () => {
         
       } catch (error) {
         console.error('Error fetching audit data:', error);
+        toast({
+          variant: "destructive",
+          title: "Error loading data",
+          description: "Failed to load audit data",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -236,11 +281,22 @@ const AuditAndMonitoring = () => {
                             </Badge>
                           </div>
                           <div>
-                            {table.dead_row_ratio > 10 && (
-                              <Button size="sm" variant="outline">
-                                Vacuum
-                              </Button>
-                            )}
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => vacuumTable(table.table)}
+                              disabled={processingTableId === table.table}
+                              className="flex items-center gap-1"
+                            >
+                              {processingTableId === table.table ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Vacuuming...
+                                </>
+                              ) : (
+                                <>Vacuum</>
+                              )}
+                            </Button>
                           </div>
                         </div>
                       ))}

@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export function DatabaseMaintenancePanel() {
   const [isLoading, setIsLoading] = useState(false);
+  const [actionType, setActionType] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<{
     success: boolean;
     message: string;
@@ -18,10 +19,11 @@ export function DatabaseMaintenancePanel() {
 
   const runVacuum = async () => {
     setIsLoading(true);
+    setActionType('vacuum');
     try {
-      // Call the edge function that runs VACUUM
+      // Call the edge function that runs VACUUM on the profiles table
       const { data, error } = await supabase.functions.invoke('database-maintenance', {
-        body: { action: 'vacuum', tables: ['profiles'] }
+        body: { action: 'vacuum', tables: ['profiles', 'projects', 'user_memories', 'global_memories'] }
       });
 
       if (error) {
@@ -53,15 +55,17 @@ export function DatabaseMaintenancePanel() {
       });
     } finally {
       setIsLoading(false);
+      setActionType(null);
     }
   };
 
   const analyzeDatabase = async () => {
     setIsLoading(true);
+    setActionType('analyze');
     try {
       // Call the edge function that runs ANALYZE
       const { data, error } = await supabase.functions.invoke('database-maintenance', {
-        body: { action: 'analyze', tables: ['profiles'] }
+        body: { action: 'analyze', tables: ['profiles', 'projects', 'user_memories', 'global_memories'] }
       });
 
       if (error) {
@@ -93,11 +97,13 @@ export function DatabaseMaintenancePanel() {
       });
     } finally {
       setIsLoading(false);
+      setActionType(null);
     }
   };
 
   const cleanupCache = async () => {
     setIsLoading(true);
+    setActionType('cache');
     try {
       // Call the edge function to clean up expired cache entries
       const { data, error } = await supabase.functions.invoke('cleanup-expired-cache');
@@ -131,6 +137,7 @@ export function DatabaseMaintenancePanel() {
       });
     } finally {
       setIsLoading(false);
+      setActionType(null);
     }
   };
 
@@ -153,7 +160,11 @@ export function DatabaseMaintenancePanel() {
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {isLoading && actionType === 'vacuum' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Run VACUUM
           </Button>
           
@@ -163,7 +174,11 @@ export function DatabaseMaintenancePanel() {
             variant="outline"
             className="flex items-center gap-2"
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+            {isLoading && actionType === 'analyze' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4" />
+            )}
             Run ANALYZE
           </Button>
           
@@ -173,7 +188,11 @@ export function DatabaseMaintenancePanel() {
             variant="outline"
             className="flex items-center gap-2"
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {isLoading && actionType === 'cache' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Clean Cache
           </Button>
         </div>
