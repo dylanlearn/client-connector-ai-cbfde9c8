@@ -41,10 +41,5 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+// Removing the duplicate useAuth hook definition from here
+// as it's now properly defined in src/hooks/use-auth.ts
