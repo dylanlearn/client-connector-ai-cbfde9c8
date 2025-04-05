@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,7 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { 
   Loader2, 
   ShieldAlert, 
-  DatabaseCog, 
+  Database, 
   ArrowRight, 
   HeartPulse, 
   ActivitySquare 
@@ -101,7 +100,7 @@ const AdminPanel = () => {
             onClick={() => navigate('/admin/supabase-audit')}
           >
             <div className="flex items-center">
-              <DatabaseCog className="h-5 w-5 text-purple-500 mr-2" />
+              <Database className="h-5 w-5 text-purple-500 mr-2" />
               <div className="text-left">
                 <p className="font-medium">Supabase Audit</p>
                 <p className="text-sm text-muted-foreground">Database and API health</p>

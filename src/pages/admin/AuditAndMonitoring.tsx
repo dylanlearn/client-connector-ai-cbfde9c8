@@ -1,109 +1,81 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect } from 'react';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  AlertCircle, 
+  Loader2, 
+  ActivitySquare, 
+  Database, 
+  Key, 
+  HardDrive, 
+  FunctionSquare,
+  Clock
+} from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useAdminStatus } from '@/hooks/use-admin-status';
-import { useToast } from '@/components/ui/use-toast';
-import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceHealthSection';
-import { DatabaseTablesSection } from '@/components/admin/supabase-audit/DatabaseTablesSection';
-import { EdgeFunctionsSection } from '@/components/admin/supabase-audit/EdgeFunctionsSection';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { SupabaseAuditService } from '@/services/ai/supabase-audit-service';
-import { SupabaseHealthCheck } from '@/types/supabase-audit';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { ServiceHealthSection } from '@/components/admin/supabase-audit/ServiceHealthSection';
 
-export default function AuditAndMonitoring() {
-  const { isAdmin, isVerifying } = useAdminStatus();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [healthCheck, setHealthCheck] = useState<SupabaseHealthCheck | null>(null);
-  const [typesCheck, setTypesCheck] = useState<any | null>(null);
-  const [functionsCheck, setFunctionsCheck] = useState<any | null>(null);
-  const [requiredTables] = useState([
-    'profiles',
-    'projects',
-    'user_memories',
-    'project_memories',
-    'global_memories',
-    'memory_embeddings',
-    'wireframe_system_events',
-    'client_errors',
-    'audit_logs',
-    'system_alerts',
-    'system_health_checks',
-    'system_monitoring'
-  ]);
-  const [schemaCheck, setSchemaCheck] = useState<{ 
-    missingTables: string[];
-    existingTables: string[];
-  } | null>(null);
+const AuditAndMonitoring = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [healthCheck, setHealthCheck] = useState(null);
+  const [databasePerformance, setDatabasePerformance] = useState(null);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const supabaseAuditService = new SupabaseAuditService();
 
-  const runFullAudit = async () => {
-    setLoading(true);
+  const refreshData = async () => {
+    setIsRefreshing(true);
     try {
-      // Run all audit checks in parallel
-      const [
-        healthCheckResult,
-        schemaCheckResult,
-        typesCheckResult,
-        functionsCheckResult
-      ] = await Promise.all([
-        SupabaseAuditService.runFullHealthCheck(),
-        SupabaseAuditService.checkDatabaseSchema(requiredTables),
-        SupabaseAuditService.checkTypeConsistency(),
-        SupabaseAuditService.checkDatabaseFunctions()
-      ]);
+      const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
+      setHealthCheck(healthCheckData);
 
-      setHealthCheck(healthCheckResult);
-      setSchemaCheck(schemaCheckResult);
-      setTypesCheck(typesCheckResult);
-      setFunctionsCheck(functionsCheckResult);
-
-      // Show aggregate status
-      if (
-        healthCheckResult.overall === 'healthy' && 
-        schemaCheckResult.missingTables.length === 0 &&
-        typesCheckResult.status === 'ok' &&
-        functionsCheckResult.status === 'ok'
-      ) {
-        toast({
-          title: "System Healthy",
-          description: "All systems and connections are working properly.",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "System Issues Detected",
-          description: "There are some issues that require attention.",
-          variant: "destructive",
-        });
-      }
+      const performanceData = await supabaseAuditService.checkDatabasePerformance();
+      setDatabasePerformance(performanceData);
+      
+      setLastRefreshed(new Date());
     } catch (error) {
-      console.error('Audit failed:', error);
-      toast({
-        title: "Audit Failed",
-        description: "Could not complete the system audit.",
-        variant: "destructive",
-      });
+      console.error('Error refreshing data:', error);
     } finally {
-      setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    if (isAdmin && !isVerifying) {
-      runFullAudit();
-    }
-  }, [isAdmin, isVerifying]);
+    const fetchAuditData = async () => {
+      try {
+        const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
+        setHealthCheck(healthCheckData);
 
-  if (isVerifying) {
+        const performanceData = await supabaseAuditService.checkDatabasePerformance();
+        setDatabasePerformance(performanceData);
+        
+      } catch (error) {
+        console.error('Error fetching audit data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAuditData();
+  }, []);
+
+  if (isLoading) {
     return (
       <DashboardLayout>
         <div className="container py-6">
-          <div className="flex items-center justify-center h-[50vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-            <p>Verifying admin access...</p>
+          <div className="flex justify-center items-center h-[60vh]">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-muted-foreground">Loading system audit data...</p>
+            </div>
           </div>
         </div>
       </DashboardLayout>
@@ -113,207 +85,253 @@ export default function AuditAndMonitoring() {
   return (
     <DashboardLayout>
       <div className="container py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">System Audit & Monitoring</h1>
-          <Button 
-            onClick={runFullAudit} 
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {loading ? 'Running Audit...' : 'Run Full Audit'}
-          </Button>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-1">System Audit & Monitoring</h1>
+            <p className="text-muted-foreground">
+              Monitor system health, performance, and security
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-muted-foreground flex items-center">
+              <Clock className="h-4 w-4 mr-1" />
+              Last updated: {formatDistanceToNow(lastRefreshed)} ago
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={refreshData} 
+              disabled={isRefreshing}
+              className="gap-2"
+            >
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>Refresh</>
+              )}
+            </Button>
+          </div>
         </div>
 
-        <Tabs defaultValue="health">
-          <TabsList className="mb-4">
-            <TabsTrigger value="health">Service Health</TabsTrigger>
-            <TabsTrigger value="schema">Database Schema</TabsTrigger>
-            <TabsTrigger value="functions">Functions</TabsTrigger>
-            <TabsTrigger value="types">Type Consistency</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="database">Database Performance</TabsTrigger>
+            <TabsTrigger value="services">Services</TabsTrigger>
+            <TabsTrigger value="security">Security Audit</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="health">
-            <Card>
-              <CardHeader>
-                <CardTitle>Supabase Service Health</CardTitle>
-                <CardDescription>
-                  Status of essential Supabase services
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : healthCheck ? (
-                  <ServiceHealthSection healthCheck={healthCheck} />
-                ) : (
-                  <p className="text-center text-gray-500">No health data available</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="schema">
-            <Card>
-              <CardHeader>
-                <CardTitle>Database Schema Check</CardTitle>
-                <CardDescription>
-                  Verify essential tables exist in the database
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : schemaCheck ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium mb-2">Existing Tables ({schemaCheck.existingTables.length})</h3>
-                        <div className="border rounded-md p-3 bg-gray-50 max-h-[200px] overflow-y-auto">
-                          {schemaCheck.existingTables.length > 0 ? (
-                            <ul className="space-y-1">
-                              {schemaCheck.existingTables.map(table => (
-                                <li key={table} className="flex items-center">
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500 mr-2" />
-                                  {table}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-gray-500">No matching tables found</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium mb-2">Missing Tables ({schemaCheck.missingTables.length})</h3>
-                        <div className="border rounded-md p-3 bg-gray-50 max-h-[200px] overflow-y-auto">
-                          {schemaCheck.missingTables.length > 0 ? (
-                            <ul className="space-y-1">
-                              {schemaCheck.missingTables.map(table => (
-                                <li key={table} className="flex items-center">
-                                  <XCircle className="h-3.5 w-3.5 text-red-500 mr-2" />
-                                  {table}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-gray-500">All required tables exist</p>
-                          )}
-                        </div>
-                      </div>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium">Database Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">
+                      {healthCheck?.database?.status === 'ok' ? 'Healthy' : 'Issues Detected'}
                     </div>
-                    
-                    {healthCheck?.database.tables && (
-                      <DatabaseTablesSection databaseData={healthCheck.database} />
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500">No schema data available</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="functions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Functions Check</CardTitle>
-                <CardDescription>
-                  Verify database functions and edge functions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-medium">Database Functions</h3>
-                      <div className={`p-3 border rounded-md ${functionsCheck?.status === 'ok' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                        <div className="flex items-center mb-2">
-                          {functionsCheck?.status === 'ok' ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-                          ) : (
-                            <XCircle className="h-5 w-5 text-red-500 mr-2" />
-                          )}
-                          <span className={functionsCheck?.status === 'ok' ? "text-green-700" : "text-red-700"}>
-                            {functionsCheck?.message}
-                          </span>
-                        </div>
-                        
-                        <div className="mt-2 max-h-[150px] overflow-y-auto">
-                          <ul className="space-y-1">
-                            {functionsCheck?.functions.map((fn: string) => (
-                              <li key={fn} className="text-sm flex items-center">
-                                <FunctionSquare className="h-3 w-3 mr-2 text-blue-500" />
-                                {fn}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-medium">Edge Functions</h3>
-                      {healthCheck?.functions && (
-                        <EdgeFunctionsSection functionsData={healthCheck.functions} />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="types">
-            <Card>
-              <CardHeader>
-                <CardTitle>Type Consistency</CardTitle>
-                <CardDescription>
-                  Verify TypeScript type definitions match database schema
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center h-64">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : typesCheck ? (
-                  <div className={`p-4 border rounded-md ${typesCheck.status === 'ok' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                    <div className="flex items-center">
-                      {typesCheck.status === 'ok' ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
+                    <div>
+                      {healthCheck?.database?.status === 'ok' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-red-500 mr-2" />
+                        <XCircle className="h-5 w-5 text-red-500" />
                       )}
-                      <h3 className="font-medium">
-                        {typesCheck.message}
-                      </h3>
                     </div>
-                    
-                    {typesCheck.issues.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <h4 className="text-sm font-medium">Issues Found:</h4>
-                        <ul className="space-y-1">
-                          {typesCheck.issues.map((issue: string, index: number) => (
-                            <li key={index} className="text-sm ml-4 list-disc">
-                              {issue}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {healthCheck?.database?.message}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium">Edge Functions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">
+                      {healthCheck?.functions?.status === 'ok' ? 'Running' : 'Issues Detected'}
+                    </div>
+                    <div>
+                      {healthCheck?.functions?.status === 'ok' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <FunctionSquare className="h-4 w-4 text-blue-500 mr-2" />
+                    <span className="text-sm text-muted-foreground">
+                      {healthCheck?.functions?.count || 0} functions deployed
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-medium">System Health</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">
+                      {healthCheck?.overall === 'healthy' ? 'All Systems Go' : 'Attention Required'}
+                    </div>
+                    <div>
+                      {healthCheck?.overall === 'healthy' ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {healthCheck?.overall === 'healthy' 
+                      ? 'All components operating normally' 
+                      : 'Some services need attention'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <ServiceHealthSection healthCheck={healthCheck} />
+          </TabsContent>
+
+          <TabsContent value="database" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Database Performance Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {databasePerformance?.table_stats ? (
+                  <div className="border rounded-md">
+                    <div className="grid grid-cols-5 gap-2 px-4 py-3 border-b bg-muted/50 font-medium">
+                      <div>Table</div>
+                      <div>Live Rows</div>
+                      <div>Dead Rows</div>
+                      <div>Dead Row %</div>
+                      <div>Action</div>
+                    </div>
+                    <div className="divide-y">
+                      {databasePerformance.table_stats.map((table, i) => (
+                        <div key={i} className="grid grid-cols-5 gap-2 px-4 py-3">
+                          <div className="font-mono text-sm">{table.table}</div>
+                          <div>{table.live_rows.toLocaleString()}</div>
+                          <div>{table.dead_rows.toLocaleString()}</div>
+                          <div>
+                            <Badge className={
+                              table.dead_row_ratio > 20 
+                                ? "bg-red-500" 
+                                : table.dead_row_ratio > 10 
+                                  ? "bg-yellow-500" 
+                                  : "bg-green-500"
+                            }>
+                              {table.dead_row_ratio.toFixed(1)}%
+                            </Badge>
+                          </div>
+                          <div>
+                            {table.dead_row_ratio > 10 && (
+                              <Button size="sm" variant="outline">
+                                Vacuum
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-center text-gray-500">No type check data available</p>
+                  <div className="text-center py-4">
+                    <AlertCircle className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
+                    <p>Could not retrieve database performance data</p>
+                  </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {databasePerformance?.high_vacuum_tables && 
+             databasePerformance.high_vacuum_tables.length > 0 && (
+              <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Database Maintenance Recommended</AlertTitle>
+                <AlertDescription>
+                  {databasePerformance.high_vacuum_tables.length} tables have high dead row ratios and should be vacuumed.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="text-xs text-muted-foreground mt-2">
+              Database stats collected: {databasePerformance?.timestamp && 
+                format(new Date(databasePerformance.timestamp), 'PPpp')}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="services">
+            <Card>
+              <CardContent className="pt-6">
+                <Alert className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Service monitoring is in preview</AlertTitle>
+                  <AlertDescription>
+                    Detailed service monitoring data will be available in the next update.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium text-lg mb-2">Edge Function Status</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      View the status of all deployed edge functions
+                    </p>
+                    <Button>View Functions</Button>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium text-lg mb-2">Auth Configuration</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Manage authentication providers and settings
+                    </p>
+                    <Button>View Auth Settings</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security">
+            <Card>
+              <CardContent className="pt-6">
+                <Alert className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Security audit is in preview</AlertTitle>
+                  <AlertDescription>
+                    Detailed security audit data will be available in the next update.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium text-lg mb-2">Auth Provider Audit</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Review authentication provider security settings
+                    </p>
+                    <Button>Start Audit</Button>
+                  </div>
+                  
+                  <div className="border rounded-md p-4">
+                    <h3 className="font-medium text-lg mb-2">RLS Policy Check</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Verify Row Level Security policies on tables
+                    </p>
+                    <Button>Check Policies</Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -321,4 +339,6 @@ export default function AuditAndMonitoring() {
       </div>
     </DashboardLayout>
   );
-}
+};
+
+export default AuditAndMonitoring;
