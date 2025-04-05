@@ -14,10 +14,16 @@ import { AuditLogViewer } from "@/components/admin/audit/AuditLogViewer";
 import { SystemHealthDashboard } from "@/components/admin/health/SystemHealthDashboard";
 import { motion } from "framer-motion";
 
-// Custom motion tab trigger component
-const MotionTabsTrigger = ({ value, children, className, ...props }) => {
+// Custom motion tab trigger component with proper TypeScript typing
+interface MotionTabsTriggerProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const MotionTabsTrigger = ({ value, children, className = "" }: MotionTabsTriggerProps) => {
   return (
-    <TabsTrigger value={value} className={className} asChild {...props}>
+    <TabsTrigger value={value} className={className} asChild>
       <motion.div
         whileHover={{ 
           scale: 1.05,
