@@ -86,7 +86,7 @@ const AdminAnalytics = () => {
   return (
     <DashboardLayout>
       <div className="container py-6">
-        <div className="mb-8">
+        <div className="mb-11">
           <h1 className="text-3xl font-bold tracking-tight">Admin Analytics</h1>
           <p className="text-muted-foreground">
             Comprehensive system monitoring and analytical insights for administrators
