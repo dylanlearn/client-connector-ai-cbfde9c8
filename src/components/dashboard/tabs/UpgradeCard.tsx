@@ -4,20 +4,26 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
 import { AdminAccessCard } from "./subscription/AdminAccessCard";
 import { SubscriptionCard } from "./subscription/SubscriptionCard";
+import { useEffect } from "react";
 
 const UpgradeCard = () => {
   const isMobile = useIsMobile();
-  const { status, inTrial, isAdmin } = useSubscription();
+  const { status, inTrial, isAdmin, isAdminFromProfile } = useSubscription();
   const { profile } = useAuth();
   
-  // Direct check for admin status from profile
-  const isAdminUser = profile?.role === 'admin' || isAdmin;
+  // Multiple redundant checks for admin status to ensure reliability
+  const isAdminUser = profile?.role === 'admin' || isAdmin || isAdminFromProfile;
   
-  console.log("UpgradeCard - Admin status:", { 
-    "profile?.role": profile?.role, 
-    "isAdmin from subscription": isAdmin,
-    "combined isAdminUser": isAdminUser 
-  });
+  // Enhanced logging for debugging admin status issues
+  useEffect(() => {
+    console.log("UpgradeCard - Admin status details:", { 
+      "profile?.role": profile?.role, 
+      "isAdmin from subscription": isAdmin,
+      "isAdminFromProfile": isAdminFromProfile,
+      "combined isAdminUser": isAdminUser,
+      "profile data": profile
+    });
+  }, [profile, isAdmin, isAdminFromProfile, isAdminUser]);
   
   // Early return for admin users
   if (isAdminUser) {

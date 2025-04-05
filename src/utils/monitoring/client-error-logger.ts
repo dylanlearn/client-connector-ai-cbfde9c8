@@ -9,10 +9,11 @@ interface ClientErrorData {
   userId?: string;
   browserInfo?: string;
   url?: string;
+  metadata?: Record<string, any>; // Added metadata field for additional context
 }
 
 /**
- * Enhanced client error logger with database persistence
+ * Enhanced client error logger with database persistence and advanced debugging
  */
 export class ClientErrorLogger {
   private static errorQueue: ClientErrorData[] = [];
@@ -43,20 +44,26 @@ export class ClientErrorLogger {
   }
   
   /**
-   * Log a client error
+   * Log a client error with enhanced metadata
    */
-  static async logError(error: Error | string, componentName?: string, userId?: string) {
+  static async logError(
+    error: Error | string, 
+    componentName?: string, 
+    userId?: string,
+    metadata?: Record<string, any>
+  ) {
     const errorMessage = typeof error === 'string' ? error : error.message;
     const errorStack = typeof error === 'string' ? null : error.stack;
     
-    // Add to queue
+    // Add to queue with enhanced metadata
     this.errorQueue.push({
       message: errorMessage,
       stack: errorStack,
       componentName,
       userId,
       browserInfo: navigator.userAgent,
-      url: window.location.href
+      url: window.location.href,
+      metadata
     });
     
     // If queue gets too large, flush immediately
@@ -64,8 +71,30 @@ export class ClientErrorLogger {
       this.flush();
     }
     
-    // Also log to console
-    console.error(`[CLIENT ERROR] ${componentName || 'Unknown'}: ${errorMessage}`);
+    // Also log to console with enhanced details
+    console.error(
+      `[CLIENT ERROR] ${componentName || 'Unknown'}: ${errorMessage}`, 
+      metadata ? { metadata } : ''
+    );
+  }
+  
+  /**
+   * Log authentication or authorization-related errors specifically
+   */
+  static logAuthError(
+    error: Error | string,
+    userId?: string,
+    context?: Record<string, any>
+  ) {
+    this.logError(
+      error,
+      'AuthenticationSystem',
+      userId,
+      {
+        errorType: 'auth',
+        context
+      }
+    );
   }
   
   /**
@@ -120,8 +149,13 @@ ClientErrorLogger.initialize();
 /**
  * Convenience function for logging errors
  */
-export function logClientError(error: Error | string, componentName?: string, userId?: string) {
-  ClientErrorLogger.logError(error, componentName, userId);
+export function logClientError(
+  error: Error | string, 
+  componentName?: string, 
+  userId?: string,
+  metadata?: Record<string, any>
+) {
+  ClientErrorLogger.logError(error, componentName, userId, metadata);
   
   // Show toast for critical errors to improve UX
   if (typeof error === 'object' && error.message.includes('critical')) {
@@ -129,4 +163,20 @@ export function logClientError(error: Error | string, componentName?: string, us
       description: "Our team has been notified"
     });
   }
+}
+
+/**
+ * Convenience function for logging auth errors
+ */
+export function logAuthError(
+  error: Error | string,
+  userId?: string,
+  context?: Record<string, any>
+) {
+  ClientErrorLogger.logAuthError(error, userId, context);
+  
+  // Show toast for auth errors
+  toast.error("Authentication error", {
+    description: typeof error === 'string' ? error : error.message
+  });
 }

@@ -1,25 +1,40 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSubscription } from "@/hooks/use-subscription"; 
 import { ShieldCheck, ShieldAlert, Activity, Database } from "lucide-react";
 
 export const UserMenu = () => {
   const { user, signOut, profile } = useAuth();
+  const { isAdmin } = useSubscription(); // Use the isAdmin state from subscription hook
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Direct check for admin status from profile for reliability
+  const adminFromProfile = profile?.role === 'admin';
+  
+  // Combined admin status check for maximum reliability
+  const isAdminUser = adminFromProfile || isAdmin;
+  
+  useEffect(() => {
+    // Log admin status for debugging
+    console.log("UserMenu - Admin status check:", { 
+      "profile?.role": profile?.role, 
+      "isAdmin from subscription": isAdmin,
+      "combined isAdminUser": isAdminUser,
+      "profile data": profile
+    });
+  }, [profile, isAdmin, isAdminUser]);
+
   const handleSignOut = async () => {
     await signOut();
   };
-
-  // Check if user has admin role
-  const isAdmin = profile?.role === "admin";
 
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -39,7 +54,7 @@ export const UserMenu = () => {
         <DropdownMenuLabel>{profile?.name || user?.user_metadata?.name || user?.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {isAdmin && (
+        {isAdminUser && (
           <>
             <DropdownMenuItem onClick={() => navigate("/admin")} className="text-indigo-600">
               <ShieldCheck className="mr-2 h-4 w-4" />

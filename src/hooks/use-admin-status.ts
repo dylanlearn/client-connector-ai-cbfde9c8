@@ -22,12 +22,23 @@ export const useAdminStatus = () => {
       setIsVerifying(true);
       console.log("Profile query starting for user:", user.id);
       
-      // Mock verification for now since we don't have a working Supabase client
-      // In a real implementation, this would query the database
-      const adminStatus = user.email?.includes('admin') || false;
+      // Directly query the database for the user's role
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
       
-      if (force) {
-        console.log("Admin status verified from database");
+      if (error) {
+        console.error("Error in verifyAdminStatus database query:", error);
+        throw error;
+      }
+      
+      const adminStatus = data?.role === 'admin';
+      console.log("Admin verification result from database:", { role: data?.role, isAdmin: adminStatus });
+      
+      if (force || isAdmin !== adminStatus) {
+        console.log("Admin status verified from database, updating state:", adminStatus);
         setIsAdmin(adminStatus);
       }
       

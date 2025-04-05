@@ -54,7 +54,7 @@ export const useSubscription = () => {
     profile?.subscription_status === 'sync' || 
     subscriptionInfo.adminAssignedStatus === 'sync';
   
-  // Log detailed information for admin role and subscription status
+  // Enhanced debugging for subscription and admin status issues
   useEffect(() => {
     if (user) {
       console.log("Subscription hook state:", {
@@ -88,6 +88,7 @@ export const useSubscription = () => {
     
     try {
       setIsRefreshing(true);
+      console.log("Manual subscription refresh started");
       const data = await fetchSubscriptionStatus();
       console.log("Manual subscription refresh data:", data);
       
@@ -100,19 +101,19 @@ export const useSubscription = () => {
     }
   };
   
-  // Enhanced determination if user has active access
+  // Enhanced determination if user has active access - prioritize profile role check
   const isActive = 
+    (profile?.role === 'admin') ||  // First priority: direct profile role check
     hasAdminRole || 
     subscriptionInfo.isActive || 
     hasAssignedSyncProAccess || 
     hasAssignedSyncAccess;
   
-  // Determine effective subscription status based on all sources
-  const effectiveStatus = hasAssignedSyncProAccess 
-    ? "sync-pro" 
-    : (hasAssignedSyncAccess 
-        ? "sync" 
-        : subscriptionInfo.status);
+  // Determine effective subscription status based on all sources with priority to profile role
+  const effectiveStatus = 
+    (profile?.role === 'admin') ? "sync-pro" :
+    hasAssignedSyncProAccess ? "sync-pro" : 
+    (hasAssignedSyncAccess ? "sync" : subscriptionInfo.status);
   
   return {
     // Subscription status info with enhanced status determination
@@ -123,7 +124,7 @@ export const useSubscription = () => {
     willCancel: subscriptionInfo.willCancel,
     
     // Administrative status (explicit detection through multiple paths)
-    isAdmin: hasAdminRole,
+    isAdmin: hasAdminRole || profile?.role === 'admin',
     isAdminFromAPI: subscriptionInfo.isAdmin,
     isAdminFromProfile: profile?.role === 'admin',
     
