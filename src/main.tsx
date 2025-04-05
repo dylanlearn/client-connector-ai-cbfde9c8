@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import App from './App.tsx'
 import './index.css'
 import { initializeErrorHandling } from "@/utils/monitoring/error-handling";
+import { AppProviders } from '@/providers/AppProviders';
 
 // Create root once and store it
 const root = createRoot(document.getElementById("root")!);
@@ -11,7 +12,9 @@ const root = createRoot(document.getElementById("root")!);
 // Render the app first
 root.render(
   <StrictMode>
-    <App />
+    <AppProviders>
+      <App />
+    </AppProviders>
   </StrictMode>
 );
 
