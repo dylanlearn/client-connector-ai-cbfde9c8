@@ -8,9 +8,16 @@ export interface AdminRouteProps {
 }
 
 const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { user, profile } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   
-  // Check if the user is logged in and has an admin role
+  // Show loading state if auth is still being checked
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+    </div>;
+  }
+  
+  // Check if the user is logged in
   if (!user) {
     return <Navigate to="/login" replace />;
   }
