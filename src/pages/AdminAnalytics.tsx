@@ -86,15 +86,15 @@ const AdminAnalytics = () => {
   return (
     <DashboardLayout>
       <div className="container py-6">
-        <div className="mb-6">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Admin Analytics</h1>
           <p className="text-muted-foreground">
             Comprehensive system monitoring and analytical insights for administrators
           </p>
         </div>
         
-        <Tabs defaultValue="memory" className="space-y-6">
-          <TabsList className="flex flex-wrap gap-2 p-1">
+        <Tabs defaultValue="memory" className="space-y-8">
+          <TabsList className="flex flex-wrap gap-2 p-1 mb-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 pb-3 pt-3 rounded-lg shadow-sm">
             <MotionTabsTrigger value="memory">
               <BrainCircuit className="h-4 w-4" />
               Memory Analytics
@@ -126,7 +126,7 @@ const AdminAnalytics = () => {
             </MotionTabsTrigger>
           </TabsList>
           
-          <TabsContent value="memory" className="space-y-6">
+          <TabsContent value="memory" className="space-y-6 pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>AI Memory System Analytics</CardTitle>
@@ -140,11 +140,11 @@ const AdminAnalytics = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="system">
+          <TabsContent value="system" className="pt-4">
             <MonitoringDashboard />
           </TabsContent>
           
-          <TabsContent value="prompts">
+          <TabsContent value="prompts" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Prompt Testing Analytics</CardTitle>
@@ -158,7 +158,7 @@ const AdminAnalytics = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="health">
+          <TabsContent value="health" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>System Health Dashboard</CardTitle>
@@ -172,7 +172,7 @@ const AdminAnalytics = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="audit">
+          <TabsContent value="audit" className="pt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Audit Log Explorer</CardTitle>
@@ -186,7 +186,7 @@ const AdminAnalytics = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="supabase">
+          <TabsContent value="supabase" className="pt-4">
             <SupabaseAudit />
           </TabsContent>
         </Tabs>
