@@ -30,7 +30,7 @@ interface SidebarNavigationProps {
 export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
   const { isAdmin } = useAdminStatus();
   const [isAdminExpanded, setIsAdminExpanded] = useState(
-    currentPath.startsWith("/admin") || currentPath.startsWith("/admin-analytics")
+    currentPath.startsWith("/admin")
   );
   
   const mainNavItems = [
@@ -81,6 +81,7 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
     }
   ];
   
+  // Updated admin routes to match App.tsx
   const adminNavItems = [
     {
       title: "Admin Panel",
@@ -89,17 +90,17 @@ export const SidebarNavigation = ({ currentPath }: SidebarNavigationProps) => {
     },
     {
       title: "Analytics & Monitoring",
-      href: "/admin-analytics",
+      href: "/admin/analytics",
       icon: <Activity className="h-5 w-5" />,
     },
     {
       title: "Database Audit",
-      href: "/admin-analytics?tab=supabase",
+      href: "/admin/supabase-audit",
       icon: <Database className="h-5 w-5" />,
     },
     {
       title: "System Health",
-      href: "/admin-analytics?tab=health",
+      href: "/admin/audit-and-monitoring",
       icon: <AlertTriangle className="h-5 w-5" />,
     }
   ];

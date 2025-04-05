@@ -23,7 +23,8 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   }
   
   // Check if user has admin privileges
-  if (profile?.role !== 'admin') {
+  const isAdmin = profile?.role === 'admin';
+  if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 

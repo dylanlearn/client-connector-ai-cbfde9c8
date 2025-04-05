@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,10 +16,13 @@ import { SystemHealthDashboard } from "@/components/admin/health/SystemHealthDas
 const AdminAnalytics = () => {
   const navigate = useNavigate();
   const { isAdmin, isVerifying } = useAdminStatus();
+  // Track if we've already redirected to prevent infinite loop
+  const hasRedirected = useRef(false);
   
   useEffect(() => {
-    // Redirect non-admin users
-    if (!isVerifying && !isAdmin) {
+    // Redirect non-admin users - only if not already redirected and not still verifying
+    if (!isVerifying && !isAdmin && !hasRedirected.current) {
+      hasRedirected.current = true; // Mark as redirected
       navigate("/dashboard");
     }
   }, [isAdmin, isVerifying, navigate]);

@@ -38,7 +38,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 hidden md:block">
         <div className="h-full flex flex-col">
           {/* Logo */}
@@ -105,10 +105,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </div>
       </div>
       
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Using fixed positioning with transparent overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-gray-800 bg-opacity-50 z-20">
-          <div className="fixed top-0 right-0 w-64 h-full bg-white shadow-lg transform transition-transform ease-in-out duration-300">
+        <div className="md:hidden fixed inset-0 bg-gray-800 bg-opacity-50 z-20" onClick={toggleMobileMenu}>
+          <div 
+            className="fixed top-0 right-0 w-64 h-full bg-white shadow-lg transform transition-transform ease-in-out duration-300"
+            onClick={(e) => e.stopPropagation()} // Prevent clicks inside the menu from closing it
+          >
             <div className="p-4 border-b flex justify-between items-center">
               <span className="font-bold">Menu</span>
               <button 
