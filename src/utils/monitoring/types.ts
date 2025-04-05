@@ -24,6 +24,7 @@ export interface MonitoringConfiguration {
   critical_threshold: number;
   check_interval: number;
   enabled: boolean;
+  notification_enabled?: boolean;
   created_at?: string;
   updated_at?: string;
 }

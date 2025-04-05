@@ -45,3 +45,36 @@ export interface InteractionEvent {
 }
 
 export type InteractionEventType = 'click' | 'hover' | 'scroll' | 'view' | 'movement';
+
+// Add missing types that are being imported in other files
+export interface HeatmapDataPoint {
+  x: number;
+  y: number;
+  value: number;
+  element?: string;
+  timestamp?: string;
+}
+
+export interface UserPreference {
+  id: string;
+  user_id: string;
+  design_option_id: string;
+  title: string;
+  category: string;
+  rank?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DesignAnalytics {
+  id: string;
+  design_option_id: string;
+  title: string;
+  category: string;
+  selection_count: number;
+  average_rank: number;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+}
