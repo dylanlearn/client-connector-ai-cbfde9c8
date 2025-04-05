@@ -19,7 +19,8 @@ export async function triggerCacheCleanup(showToasts: boolean = false): Promise<
       }
       return { 
         success: false, 
-        message: `Failed to clean up cache: ${error.message}`
+        message: `Failed to clean up cache: ${error.message}`,
+        entriesRemoved: 0
       };
     }
     
@@ -39,7 +40,8 @@ export async function triggerCacheCleanup(showToasts: boolean = false): Promise<
     }
     return { 
       success: false, 
-      message: `Error cleaning up cache: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: `Error cleaning up cache: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      entriesRemoved: 0
     };
   }
 }
@@ -58,8 +60,10 @@ export async function scheduleCleanup(
   await cleanupFunction();
   
   // Then schedule recurring cleanup
-  return setInterval(async () => {
+  const timer = setInterval(async () => {
     console.log(`Running scheduled cache cleanup (every ${intervalMinutes} minutes)`);
     await cleanupFunction();
   }, intervalMinutes * 60 * 1000);
+  
+  return timer;
 }

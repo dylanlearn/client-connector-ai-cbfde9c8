@@ -58,7 +58,7 @@ export interface UseAIContentOptions {
 export interface UseAIContentReturn {
   generate: (request: ContentRequest) => Promise<string>;
   cancelGeneration: () => void;
-  cleanupCache: () => Promise<{success: boolean, message: string, entriesRemoved?: number}>;
+  cleanupCache: () => Promise<CacheCleanupResult>;
   scheduleRegularCleanup: (intervalMinutes?: number) => Promise<NodeJS.Timeout>;
   isGenerating: boolean;
   isCleaningUp: boolean;

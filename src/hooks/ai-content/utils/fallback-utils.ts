@@ -5,10 +5,18 @@ import { FallbackContentMap } from '../types/generation-types';
  * Default fallback content for different content types
  */
 export const DEFAULT_FALLBACKS: FallbackContentMap = {
-  header: "Example header",
-  tagline: "Brief, compelling tagline example",
-  cta: "Sign up for free",
-  description: "Sample description for this field"
+  header: {
+    default: "Example header"
+  },
+  tagline: {
+    default: "Brief, compelling tagline example"
+  },
+  cta: {
+    default: "Sign up for free"
+  },
+  description: {
+    default: "Sample description for this field"
+  }
 };
 
 /**
@@ -18,12 +26,12 @@ export const DEFAULT_FALLBACKS: FallbackContentMap = {
  * @returns Appropriate fallback content
  */
 export function getFallbackContent(type: string, context?: string): string {
-  const fallback = DEFAULT_FALLBACKS[type] || `Example ${type}`;
+  const fallbackObj = DEFAULT_FALLBACKS[type] || { default: `Example ${type}` };
   
   // Customize fallback based on context if available
-  if (context) {
-    return fallback.replace('this field', context);
+  if (context && fallbackObj.default) {
+    return fallbackObj.default.replace('this field', context);
   }
   
-  return fallback;
+  return fallbackObj.default;
 }
