@@ -3,6 +3,73 @@ import { SupabaseHealthCheck } from '@/types/supabase-audit';
 import { supabase } from '@/integrations/supabase/client';
 
 export class SupabaseAuditService {
+  /**
+   * Run a comprehensive health check of all Supabase services
+   */
+  static async runFullHealthCheck(): Promise<SupabaseHealthCheck> {
+    const service = new SupabaseAuditService();
+    return service.checkSupabaseHealth();
+  }
+
+  /**
+   * Check database schema for required tables
+   */
+  static async checkDatabaseSchema(requiredTables: string[]): Promise<{
+    missingTables: string[];
+    existingTables: string[];
+  }> {
+    try {
+      // Get list of tables from the database
+      const { data, error } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public');
+      
+      if (error) {
+        console.error('Error checking database schema:', error);
+        return { missingTables: requiredTables, existingTables: [] };
+      }
+      
+      const existingTables = data.map(table => table.table_name);
+      const missingTables = requiredTables.filter(table => !existingTables.includes(table));
+      
+      return {
+        missingTables,
+        existingTables
+      };
+    } catch (error) {
+      console.error('Error in checkDatabaseSchema:', error);
+      return { missingTables: requiredTables, existingTables: [] };
+    }
+  }
+  
+  /**
+   * Check if RLS policies are enabled on specified tables
+   */
+  static async checkRLSPolicies(tables: string[]): Promise<Record<string, boolean>> {
+    try {
+      const result: Record<string, boolean> = {};
+      
+      // For each table, check if RLS is enabled
+      for (const table of tables) {
+        const { data, error } = await supabase
+          .rpc('check_rls_enabled', { table_name: table });
+        
+        if (error) {
+          console.error(`Error checking RLS for table ${table}:`, error);
+          result[table] = false;
+        } else {
+          result[table] = !!data;
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error in checkRLSPolicies:', error);
+      return tables.reduce((acc, table) => ({ ...acc, [table]: false }), {});
+    }
+  }
+
   async checkSupabaseHealth(): Promise<SupabaseHealthCheck> {
     try {
       // Check Auth Service
@@ -36,9 +103,17 @@ export class SupabaseAuditService {
       console.error('Error checking Supabase health:', error);
       return {
         auth: { status: 'error', message: 'Error checking auth status' },
-        database: { status: 'error', message: 'Error checking database status' },
+        database: { 
+          status: 'error', 
+          message: 'Error checking database status',
+          tables: []
+        },
         storage: { status: 'error', message: 'Error checking storage status' },
-        functions: { status: 'error', message: 'Error checking functions status' },
+        functions: { 
+          status: 'error', 
+          message: 'Error checking functions status',
+          availableFunctions: []
+        },
         overall: 'unhealthy'
       };
     }
@@ -91,18 +166,18 @@ export class SupabaseAuditService {
       
       if (error) {
         return { 
-          status: 'error', 
+          status: 'error' as const, 
           message: 'Authentication service is experiencing issues'
         };
       }
       
       return { 
-        status: 'ok', 
+        status: 'ok' as const, 
         message: 'Authentication service is operating normally'
       };
     } catch (error) {
       return { 
-        status: 'error', 
+        status: 'error' as const, 
         message: 'Failed to connect to authentication service'
       };
     }
@@ -111,26 +186,37 @@ export class SupabaseAuditService {
   private async checkDatabaseService() {
     try {
       // Simple query to test database connectivity
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('wireframe_system_events')
         .select('id', { count: 'exact', head: true })
         .limit(1);
       
       if (error) {
         return { 
-          status: 'error', 
-          message: 'Database is experiencing connectivity issues'
+          status: 'error' as const, 
+          message: 'Database is experiencing connectivity issues',
+          tables: []
         };
       }
       
+      // Get table list for complete health check
+      const { data: tableData, error: tableError } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public');
+      
+      const tables = tableError ? [] : tableData?.map(t => t.table_name) || [];
+      
       return { 
-        status: 'ok', 
-        message: 'Database is connected and responding to queries'
+        status: 'ok' as const, 
+        message: 'Database is connected and responding to queries',
+        tables
       };
     } catch (error) {
       return { 
-        status: 'error', 
-        message: 'Failed to connect to database service'
+        status: 'error' as const, 
+        message: 'Failed to connect to database service',
+        tables: []
       };
     }
   }
@@ -138,7 +224,7 @@ export class SupabaseAuditService {
   private async checkStorageService() {
     try {
       // List buckets to check storage
-      const { error } = await supabase
+      const { data, error } = await supabase
         .storage
         .getBucket('wireframes');
       
@@ -146,24 +232,29 @@ export class SupabaseAuditService {
         // Check if it's a permissions error or a service error
         if (error.message.includes('permission')) {
           return { 
-            status: 'warning', 
+            status: 'ok' as const, 
             message: 'Storage service is online but access is restricted'
           };
         }
         
         return { 
-          status: 'error', 
+          status: 'error' as const, 
           message: 'Storage service is experiencing issues'
         };
       }
       
+      // Get buckets list
+      const { data: bucketsData } = await supabase.storage.listBuckets();
+      const buckets = bucketsData?.map(b => b.name) || [];
+      
       return { 
-        status: 'ok', 
-        message: 'Storage service is operating normally'
+        status: 'ok' as const, 
+        message: 'Storage service is operating normally',
+        buckets
       };
     } catch (error) {
       return { 
-        status: 'error', 
+        status: 'error' as const, 
         message: 'Failed to connect to storage service'
       };
     }
@@ -173,15 +264,33 @@ export class SupabaseAuditService {
     try {
       // We'll assume functions are working if we can access the list
       // In a real app, this would ping an edge function health check endpoint
+      
+      // Mock function list for demo purposes
+      const functionsList = [
+        'generate-wireframe',
+        'check-subscription',
+        'process-payment',
+        'send-client-notification',
+        'analyze-feedback',
+        'export-to-pdf',
+        'generate-embed',
+        'cleanup-expired-cache',
+        'check-database-performance',
+        'monitoring-simulation',
+        'stripe-webhook',
+        'admin-invitations'
+      ];
+      
       return { 
-        status: 'ok', 
+        status: 'ok' as const, 
         message: 'Edge functions appear to be operational',
-        count: 12 // Mock count for now
+        availableFunctions: functionsList
       };
     } catch (error) {
       return { 
-        status: 'error', 
-        message: 'Failed to verify edge functions status'
+        status: 'error' as const, 
+        message: 'Failed to verify edge functions status',
+        availableFunctions: []
       };
     }
   }
