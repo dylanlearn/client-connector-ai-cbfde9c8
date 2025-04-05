@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Project } from '@/types/projects';
+import { CreateProjectData } from '@/types/project';
 import { ProjectService } from '@/services/project-service';
 import { toast } from 'sonner';
 
@@ -17,8 +18,26 @@ export const useProjects = () => {
     queryFn: ProjectService.getProjects,
   });
   
+  // Create project mutation
+  const createProject = useMutation({
+    mutationFn: (projectData: CreateProjectData) => {
+      return ProjectService.createProject(projectData);
+    },
+    onSuccess: (newProject) => {
+      queryClient.setQueryData(['projects'], (oldData: Project[] | undefined) => {
+        if (!oldData) return [newProject];
+        return [...oldData, newProject];
+      });
+      toast.success('Project created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create project');
+      console.error('Error creating project:', error);
+    }
+  });
+  
   // Update project mutation
-  const { mutate: updateProject } = useMutation({
+  const updateProject = useMutation({
     mutationFn: (project: Partial<Project>) => {
       if (!project.id) {
         throw new Error('Project ID is required for updates');
@@ -39,7 +58,7 @@ export const useProjects = () => {
   });
   
   // Archive project mutation
-  const { mutate: archiveProject } = useMutation({
+  const archiveProject = useMutation({
     mutationFn: ProjectService.archiveProject,
     onSuccess: (_, projectId) => {
       queryClient.setQueryData(['projects'], (oldData: Project[] | undefined) => {
@@ -55,7 +74,7 @@ export const useProjects = () => {
   });
   
   // Delete project mutation
-  const { mutate: deleteProject } = useMutation({
+  const deleteProject = useMutation({
     mutationFn: ProjectService.deleteProject,
     onSuccess: (_, projectId) => {
       queryClient.setQueryData(['projects'], (oldData: Project[] | undefined) => {
@@ -74,6 +93,7 @@ export const useProjects = () => {
     projects,
     isLoading,
     error,
+    createProject,
     updateProject,
     archiveProject,
     deleteProject

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { useProjects } from "@/hooks/use-projects";
+import { ProjectService } from "@/services/project-service";
 import { CreateProjectData } from "@/types/project";
 import { useAuth } from '@/hooks/use-auth';
 
@@ -25,7 +24,6 @@ const projectTypes = [
 
 const NewProject = () => {
   const navigate = useNavigate();
-  const { createProject } = useProjects();
   const { user } = useAuth();
   
   const [projectName, setProjectName] = useState("");
@@ -66,12 +64,14 @@ const NewProject = () => {
         status: 'draft'
       };
 
-      await createProject.mutateAsync(projectData);
-      
+      await ProjectService.createProject(projectData);
+      toast.success("Project created successfully");
       navigate("/project-questionnaire");
     } catch (error) {
       console.error("Error creating project:", error);
-      // Error is already handled by the mutation
+      toast.error("Failed to create project", {
+        description: "An error occurred while creating your project. Please try again."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -161,8 +161,8 @@ const NewProject = () => {
               <Button type="button" variant="outline" onClick={() => navigate("/dashboard")}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading || createProject.isPending}>
-                {isLoading || createProject.isPending ? "Creating..." : "Continue to Questionnaire Setup"}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Continue to Questionnaire Setup"}
               </Button>
             </CardFooter>
           </form>

@@ -49,7 +49,7 @@ export default function ClientLinkDialog({
     resetForm
   } = useClientLink({
     userId: user?.id || '',
-    projects,
+    projects: projects as any,
     onLinkCreated
   });
 
@@ -71,7 +71,7 @@ export default function ClientLinkDialog({
           <ProjectSelector
             selectedProjectId={selectedProjectId}
             setSelectedProjectId={setSelectedProjectId}
-            projects={projects}
+            projects={projects as any}
             isLoading={isLoadingProjects}
           />
           

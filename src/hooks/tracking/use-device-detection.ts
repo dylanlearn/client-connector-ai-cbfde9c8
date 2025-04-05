@@ -6,6 +6,7 @@ export interface DeviceInfo {
   browserName: string;
   osName: string;
   prefersReducedMotion: boolean;
+  isTouchDevice: boolean;  // Added this property to match the interface in interactions.ts
 }
 
 export function useDeviceDetection(): DeviceInfo {
@@ -13,7 +14,8 @@ export function useDeviceDetection(): DeviceInfo {
     deviceType: 'unknown',
     browserName: 'unknown',
     osName: 'unknown',
-    prefersReducedMotion: false
+    prefersReducedMotion: false,
+    isTouchDevice: false
   });
 
   useEffect(() => {
@@ -63,12 +65,19 @@ export function useDeviceDetection(): DeviceInfo {
 
       // Check for reduced motion preference
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      // Check for touch support
+      const isTouchDevice = 'ontouchstart' in window || 
+        navigator.maxTouchPoints > 0 ||
+        // @ts-ignore
+        (navigator.msMaxTouchPoints !== undefined && navigator.msMaxTouchPoints > 0);
 
       setDeviceInfo({
         deviceType,
         browserName,
         osName,
-        prefersReducedMotion
+        prefersReducedMotion,
+        isTouchDevice
       });
     };
 

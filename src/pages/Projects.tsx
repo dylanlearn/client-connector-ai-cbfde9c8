@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { FileText, PlusCircle, Loader2, Info, Database, AlertCircle, FolderTree, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -147,8 +146,8 @@ const Projects = () => {
       ) : (
         <div className="bg-white dark:bg-gray-800/50 rounded-lg border shadow-sm p-1 md:p-2">
           <ProjectBoard 
-            projects={activeProjects} 
-            updateProject={updateProject} 
+            projects={activeProjects as any} 
+            updateProject={updateProject as any} 
             onProjectClick={handleProjectClick}
             view={view}
           />

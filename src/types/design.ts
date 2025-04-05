@@ -11,6 +11,7 @@ export interface DesignOption {
   category?: string;
   icon?: React.ComponentType;
   preview?: string;
+  imageUrl?: string; // Added to match the other interface
 }
 
 // Animation preferences used throughout the app

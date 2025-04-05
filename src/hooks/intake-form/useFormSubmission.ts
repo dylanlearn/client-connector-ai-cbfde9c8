@@ -1,10 +1,11 @@
 
 import { useCallback } from "react";
 import { submitCompleteForm } from "./supabase-integration";
-import { useProjects } from "@/hooks/use-projects";
 import { useParams } from "react-router-dom";
 import { TaskStatus } from "@/types/client";
 import { IntakeFormData } from "@/types/intake-form";
+import { ProjectService } from "@/services/project-service";
+import { toast } from "sonner";
 
 /**
  * Hook for handling form submission with enhanced error handling and retry logic
@@ -18,7 +19,6 @@ export const useFormSubmission = (
   updateTaskStatus: (taskId: string, status: TaskStatus, data: any) => Promise<void>
 ) => {
   const { taskId } = useParams();
-  const { createProject } = useProjects();
 
   const submitForm = useCallback(async () => {
     if (!userId) {
@@ -44,17 +44,23 @@ export const useFormSubmission = (
 
         // Create a new project based on the form data
         if (result.projectName) {
-          await createProject.mutateAsync({
-            user_id: userId,
-            title: result.projectName || "New Website Project",
-            client_name: "Self",
-            client_email: "",
-            project_type: result.siteType || "website",
-            description: result.projectDescription || "",
-            status: "active",
-            // Save the form ID in the metadata to link back to the intake form
-            intake_form_id: formId
-          });
+          try {
+            await ProjectService.createProject({
+              user_id: userId,
+              title: result.projectName || "New Website Project",
+              client_name: "Self",
+              client_email: "",
+              project_type: result.siteType || "website",
+              description: result.projectDescription || null,
+              status: "active",
+              // Save the form ID in the metadata to link back to the intake form
+              intake_form_id: formId
+            });
+            toast.success("Project created successfully");
+          } catch (error) {
+            console.error("Error creating project:", error);
+            toast.error("Failed to create project");
+          }
         }
 
         return result;
@@ -82,8 +88,7 @@ export const useFormSubmission = (
     taskId,
     updateTaskStatus,
     setIsLoading,
-    toastAdapter,
-    createProject
+    toastAdapter
   ]);
 
   return {

@@ -3,31 +3,23 @@
  * Project-related types shared across the application
  */
 
+// Import the Project type from project.ts to ensure consistency
+import { Project as BaseProject } from './project';
+
+export type { BaseProject as Project };
+
 export type ProjectStatus = 'draft' | 'in-progress' | 'review' | 'completed' | 'archived';
 
-export interface Project {
-  id: string;
-  title: string;
-  description?: string;
-  status: ProjectStatus;
-  client_name: string;
-  client_email: string;
-  project_type: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
-
 export interface ProjectBoardProps {
-  projects: Project[];
-  updateProject: (project: Partial<Project>) => void;
+  projects: BaseProject[];
+  updateProject: (project: Partial<BaseProject>) => void;
   onProjectClick: (projectId: string) => void;
   view: 'board' | 'list';
 }
 
 export interface ProjectCardProps {
-  project: Project;
-  updateProject: (project: Partial<Project>) => void;
+  project: BaseProject;
+  updateProject: (project: Partial<BaseProject>) => void;
   onClick: () => void;
   isDragging?: boolean;
 }
