@@ -35,14 +35,15 @@ export function ImageGenerationDialog({
 }: ImageGenerationDialogProps) {
   const [description, setDescription] = useState(designDescription);
   const [style, setStyle] = useState("");
+  const [activeTab, setActiveTab] = useState("generate");
   
   const { isGenerating, generatedImageUrl, error, generateImage, retryCount } = useDesignImageGeneration();
   
   const handleGenerate = async () => {
     const result = await generateImage(designType, description, style);
     if (result) {
-      // Auto-switch to preview tab when generation is successful
-      document.querySelector('[data-state="inactive"][value="preview"]')?.click();
+      // Switch to preview tab when generation is successful
+      setActiveTab("preview");
     }
   };
   
@@ -63,7 +64,7 @@ export function ImageGenerationDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="generate">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="generate">Generate</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
