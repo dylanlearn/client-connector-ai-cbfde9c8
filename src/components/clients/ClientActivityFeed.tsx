@@ -60,8 +60,9 @@ export default function ClientActivityFeed() {
         
         const formattedActivities: ClientActivity[] = data.map(item => ({
           id: item.id,
-          clientName: (item.client_access_links as ClientLinkData).client_name || 'Unknown Client',
-          clientEmail: (item.client_access_links as ClientLinkData).client_email || 'unknown@example.com',
+          // Fix: Access client_name and client_email correctly from the nested object
+          clientName: item.client_access_links.client_name || 'Unknown Client',
+          clientEmail: item.client_access_links.client_email || 'unknown@example.com',
           taskType: item.task_type,
           taskTitle: getTaskTitle(item.task_type),
           status: item.status as 'in_progress' | 'completed',

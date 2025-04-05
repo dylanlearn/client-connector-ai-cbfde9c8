@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -359,7 +360,7 @@ export async function getAllVersionsForProject(projectId: string): Promise<Wiref
       throw error || new Error("Failed to fetch all versions for project");
     }
     
-    // Fix the type error by using our utility function
+    // Fix: Use toStringArray utility function to ensure string array
     const versionIds = toStringArray(versionsData.map(v => v.id));
     
     // Convert the returned data to WireframeVersion type
