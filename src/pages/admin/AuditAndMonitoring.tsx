@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   CheckCircle2, 
@@ -26,22 +25,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { toast } from 'sonner';
 import { 
-  // Import from new modular structure
   refreshDatabaseStatistics, 
   subscribeToDbRefresh,
   DatabaseStatistics
 } from '@/utils/database/index';
 import { DatabaseMaintenancePanel } from '@/components/admin/monitoring/DatabaseMaintenancePanel';
+import { SupabaseHealthCheck } from '@/types/supabase-audit';
 
-// Define appropriate interfaces for better type safety
 interface HealthCheck {
   database?: {
     status: string;
     message: string;
+    tables?: string[];
   };
   functions?: {
     status: string;
-    count: number;
+    count?: number;
+    availableFunctions?: string[];
+  };
+  auth?: {
+    status: string;
+    message: string;
+  };
+  storage?: {
+    status: string;
+    message: string;
+    buckets?: string[];
   };
   overall: string;
 }
@@ -64,7 +73,6 @@ const AuditAndMonitoring = () => {
     };
   }, []);
 
-  // Subscribe to database refresh events
   useEffect(() => {
     const unsubscribe = subscribeToDbRefresh((stats) => {
       if (isMounted.current) {
@@ -86,14 +94,21 @@ const AuditAndMonitoring = () => {
     setLoadError(null);
     
     try {
-      // First, get health check data
       const healthCheckData = await supabaseAuditService.checkSupabaseHealth();
       if (isMounted.current) {
-        setHealthCheck(healthCheckData);
+        const adaptedHealthCheck: HealthCheck = {
+          database: healthCheckData.database,
+          functions: {
+            ...healthCheckData.functions,
+            count: healthCheckData.functions.availableFunctions?.length || 0
+          },
+          auth: healthCheckData.auth,
+          storage: healthCheckData.storage,
+          overall: healthCheckData.overall
+        };
+        setHealthCheck(adaptedHealthCheck);
       }
 
-      // Then use coordinated refresh function for database stats
-      // This will automatically notify subscribers
       const stats = await refreshDatabaseStatistics(true);
       
       if (isMounted.current) {
@@ -267,7 +282,7 @@ const AuditAndMonitoring = () => {
                   <div className="flex items-center mt-2">
                     <FunctionSquare className="h-4 w-4 text-blue-500 mr-2" />
                     <span className="text-sm text-muted-foreground">
-                      {healthCheck?.functions?.count || 0} functions deployed
+                      {healthCheck?.functions?.availableFunctions?.length || healthCheck?.functions?.count || 0} functions deployed
                     </span>
                   </div>
                 </CardContent>
@@ -299,7 +314,7 @@ const AuditAndMonitoring = () => {
               </Card>
             </div>
 
-            <ServiceHealthSection healthCheck={healthCheck} />
+            <ServiceHealthSection healthCheck={healthCheck as unknown as SupabaseHealthCheck} />
           </TabsContent>
 
           <TabsContent value="database" className="space-y-4">

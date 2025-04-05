@@ -1,9 +1,9 @@
-
 import { AlertTriangle, Info, AlertCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getMonitoringConfiguration, recordSystemStatus, SystemStatus } from "@/utils/monitoring-utils";
+import { getMonitoringConfiguration, recordSystemStatus } from "@/utils/monitoring/system-status";
+import { SystemStatus } from "@/utils/monitoring/types";
 
 interface MonitoringStateProps {
   threshold?: number;
@@ -40,7 +40,6 @@ export function MonitoringState({
   refreshInterval = 30, // seconds
   persistToDb = false
 }: MonitoringStateProps) {
-  // State for dynamic values
   const [currentStatus, setCurrentStatus] = useState<SystemStatus>(status);
   const [currentThreshold, setCurrentThreshold] = useState<number>(threshold);
   const [currentValueState, setCurrentValueState] = useState<number>(currentValue);
@@ -48,7 +47,6 @@ export function MonitoringState({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Fetch configuration and latest status from database
   useEffect(() => {
     if (!component || !autoRefresh) return;
 
@@ -56,15 +54,12 @@ export function MonitoringState({
       setIsLoading(true);
       
       try {
-        // Get configuration for this component
         const config = await getMonitoringConfiguration(component);
         
         if (config) {
           setCurrentThreshold(config.critical_threshold);
           
-          // Only update thresholds from config if available
           if (config.warning_threshold && config.critical_threshold) {
-            // Determine status based on current value and thresholds
             let newStatus: SystemStatus = "normal";
             if (currentValueState >= config.critical_threshold) {
               newStatus = "critical";
@@ -74,7 +69,6 @@ export function MonitoringState({
             
             if (newStatus !== currentStatus) {
               setCurrentStatus(newStatus);
-              // Only show toast for status changes to warning or critical
               if (newStatus !== "normal") {
                 toast[newStatus === "critical" ? "error" : "warning"](
                   `${component} status changed to ${newStatus.toUpperCase()}`,
@@ -85,7 +79,6 @@ export function MonitoringState({
           }
         }
         
-        // Get latest monitoring data for this component with type assertion
         const { data, error } = await (supabase
           .from('system_monitoring' as any)
           .select('*')
@@ -109,17 +102,14 @@ export function MonitoringState({
       }
     };
 
-    // Initial fetch
     fetchMonitoringData();
     
-    // Set up interval for auto-refresh
     if (autoRefresh) {
       const intervalId = setInterval(fetchMonitoringData, refreshInterval * 1000);
       return () => clearInterval(intervalId);
     }
   }, [component, autoRefresh, refreshInterval, currentValueState, currentStatus]);
 
-  // Persist status to database if requested
   useEffect(() => {
     if (persistToDb && component) {
       recordSystemStatus(
@@ -132,7 +122,6 @@ export function MonitoringState({
     }
   }, [persistToDb, component, currentStatus, currentValueState, currentThreshold, currentMessage]);
 
-  // Get status icon based on current status
   const StatusIcon = () => {
     switch (currentStatus) {
       case "warning":
