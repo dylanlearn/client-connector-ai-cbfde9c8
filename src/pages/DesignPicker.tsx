@@ -12,13 +12,17 @@ const DesignPicker = () => {
   const [activeTab, setActiveTab] = useState("layouts");
   const [selectedDesigns, setSelectedDesigns] = useState<Record<string, any>>({});
 
-  const handleDesignSelect = (option: any) => {
-    setSelectedDesigns(prev => ({
-      ...prev,
-      [option.category]: [...(prev[option.category] || []), option]
-    }));
-    
-    toast.success(`${option.title} added to your selections!`);
+  const handleDesignSelect = (option: any, liked: boolean) => {
+    if (liked) {
+      setSelectedDesigns(prev => ({
+        ...prev,
+        [option.category]: [...(prev[option.category] || []), option]
+      }));
+      
+      toast.success(`${option.title} added to your selections!`);
+    } else {
+      toast.info(`${option.title} skipped.`);
+    }
   };
 
   // Filter design options by category
@@ -63,7 +67,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">Hero Sections</h3>
                   <VisualPicker 
                     options={heroOptions} 
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="hero"
                   />
                 </CardContent>
@@ -74,7 +78,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">Navigation Bars</h3>
                   <VisualPicker 
                     options={navbarOptions} 
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="navbar"
                   />
                 </CardContent>
@@ -89,7 +93,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">About Sections</h3>
                   <VisualPicker 
                     options={aboutOptions}
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="about"
                   />
                 </CardContent>
@@ -100,7 +104,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">Footer Designs</h3>
                   <VisualPicker 
                     options={footerOptions}
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="footer"
                   />
                 </CardContent>
@@ -115,7 +119,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">Typography</h3>
                   <VisualPicker 
                     options={fontOptions}
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="font"
                   />
                 </CardContent>
@@ -126,7 +130,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">Animations</h3>
                   <VisualPicker 
                     options={animationOptions}
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="animation"
                   />
                 </CardContent>
@@ -139,7 +143,7 @@ const DesignPicker = () => {
                   <h3 className="text-lg font-medium mb-4">Interactions</h3>
                   <VisualPicker 
                     options={interactionOptions}
-                    onSelect={handleDesignSelect} 
+                    onSelectOption={handleDesignSelect} 
                     category="interaction"
                   />
                 </CardContent>
