@@ -18,7 +18,7 @@ import {
  */
 export const useIntakeForm = () => {
   const { user } = useAuth();
-  const toast = useToast();
+  const { toast } = useToast(); // This returns an object with a toast method
   const [isLoading, setIsLoading] = useState(false);
   
   const {
@@ -39,7 +39,7 @@ export const useIntakeForm = () => {
     formDataCache,
     setFormData,
     setIsSaving,
-    toast
+    { toast } // Pass the toast method as an object to match ToastAdapter interface
   );
 
   // Watch for formData changes and schedule save operations
