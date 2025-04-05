@@ -5,13 +5,15 @@
 import { TaskStatus } from "@/types/client";
 export type { TaskStatus };
 
-// Create and export the useIntakeForm hook that's missing but used in multiple components
-export * from './useFormSubmission';
-export * from './useIntakeFormState';
-export * from './useFormSync';
-
 // Export the actual useIntakeForm hook
 export { useIntakeForm } from './useIntakeForm';
+
+// Export the other intake form related hooks
+export * from './useFormSync';
+export * from './useIntakeFormState';
+export * from './storage-utils';
+export * from './types';
+export * from './supabase-integration';
 
 // Export any constants or utilities specific to intake forms
 export const INTAKE_FORM_SECTIONS = [

@@ -64,25 +64,19 @@ export const EnhancedMemoryService = {
         }
       }
       
-      // Store in global memory only for certain categories that benefit platform-wide learning
-      // and only if anonymization is enabled
-      if (anonymizeForGlobal && [
-        MemoryCategory.SuccessfulOutput,
-        MemoryCategory.InteractionPattern,
-        MemoryCategory.ClientFeedback
-      ].includes(category)) {
+      // Store in global memory if anonymization is enabled
+      if (anonymizeForGlobal) {
         // Remove any personally identifiable information
         const anonymizedContent = content;
         const anonymizedMetadata = { 
           ...metadata,
-          // Remove or mask sensitive fields
           userId: undefined,
           userEmail: undefined,
           clientName: undefined,
           projectName: undefined
         };
         
-        // Calculate an initial relevance score
+        // Calculate initial relevance score
         const relevanceScore = 0.5; // Start with neutral relevance
         
         const globalMemory = await GlobalMemoryService.storeAnonymizedMemory(
@@ -92,74 +86,47 @@ export const EnhancedMemoryService = {
           anonymizedMetadata
         );
         
-        // Generate embedding for the global memory
+        // Generate embedding for global memory
         if (globalMemory?.id) {
           await VectorMemoryService.storeEmbedding(
             globalMemory.id,
             'global',
             anonymizedContent,
             [],
-            { ...anonymizedMetadata, category, relevanceScore }
+            { category }
           );
         }
       }
       
       return true;
     } catch (error) {
-      console.error("Error in storeMemoryWithEmbedding:", error);
+      console.error("Error storing memory with embedding:", error);
       return false;
     }
   },
   
   /**
-   * Search for memories using both traditional queries and vector similarity
+   * Enhanced search function that combines traditional and vector search
    */
   searchMemories: async (
     query: string,
-    options: MemoryQueryOptions & {
-      userId?: string;
-      projectId?: string;
-      useVectorSearch?: boolean;
-      similarityThreshold?: number;
-    } = {}
-  ) => {
-    const results = {
-      exactMatches: [] as any[],
-      semanticMatches: [] as VectorSearchResult[],
-    };
-    
-    // Traditional database query
-    if (options.userId) {
-      results.exactMatches = [
-        ...results.exactMatches,
-        ...await UserMemoryService.getMemories(options.userId, options)
-      ];
-    }
-    
-    if (options.projectId) {
-      results.exactMatches = [
-        ...results.exactMatches,
-        ...await ProjectMemoryService.getMemories(options.projectId, options)
-      ];
-    }
-    
-    // Add global memories
-    results.exactMatches = [
-      ...results.exactMatches,
-      ...await GlobalMemoryService.getMemories(options)
-    ];
-    
-    // Vector similarity search if enabled
-    if (options.useVectorSearch !== false) {
-      const vectorResults = await VectorMemoryService.semanticSearch(query, {
-        threshold: options.similarityThreshold || 0.7,
-        limit: options.limit,
-        memoryType: options.userId ? 'user' : (options.projectId ? 'project' : undefined)
-      });
+    userId: string,
+    options: MemoryQueryOptions = {}
+  ): Promise<VectorSearchResult[]> => {
+    try {
+      // Get vector search results
+      const vectorResults = await VectorMemoryService.semanticSearch(
+        query,
+        options.limit || 10,
+        { userId }
+      );
       
-      results.semanticMatches = vectorResults as VectorSearchResult[];
+      // TODO: In a future iteration, augment with traditional search results
+      
+      return vectorResults;
+    } catch (error) {
+      console.error("Error in enhanced memory search:", error);
+      return [];
     }
-    
-    return results;
   }
 };
