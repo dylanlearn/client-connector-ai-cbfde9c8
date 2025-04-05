@@ -1,82 +1,169 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import {
+  AlertCircle,
+  DatabaseIcon,
+  RefreshCw
+} from "lucide-react";
+
+type ProfileQueryStat = {
+  query: string;
+  calls: number;
+  total_time: number;
+  mean_time: number;
+};
+
+type ProfileQueryStats = {
+  timestamp: string;
+  queries: ProfileQueryStat[];
+};
 
 export function ProfileQueryMonitor() {
-  const [queryStats, setQueryStats] = useState<any>(null);
+  const [queryStats, setQueryStats] = useState<ProfileQueryStats | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchQueryStats = async () => {
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProfileQueryStats = async () => {
+    try {
       setLoading(true);
-      try {
-        // Call the RPC function to analyze profile queries
-        const { data, error } = await supabase.rpc('analyze_profile_queries');
-        
-        if (error) {
-          throw error;
-        }
-        
-        setQueryStats(data);
-      } catch (error) {
-        console.error('Error fetching profile query stats:', error);
-      } finally {
-        setLoading(false);
+      setError(null);
+      
+      const { data, error } = await supabase.rpc('analyze_profile_queries');
+      
+      if (error) {
+        throw error;
       }
+      
+      setQueryStats(data);
+    } catch (err: any) {
+      console.error('Error fetching profile query stats:', err);
+      setError(err.message || 'Failed to fetch profile query statistics');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfileQueryStats();
+    
+    // Set up a refresh interval for 60 seconds
+    const interval = setInterval(fetchProfileQueryStats, 60000);
+    
+    return () => {
+      clearInterval(interval);
     };
-    
-    fetchQueryStats();
-    
-    // Set up a refresh interval
-    const intervalId = setInterval(fetchQueryStats, 60000); // Refresh every minute
-    
-    return () => clearInterval(intervalId);
   }, []);
-  
+
+  const formatTime = (ms: number) => {
+    if (ms < 1) {
+      return `${(ms * 1000).toFixed(2)} µs`;
+    }
+    return `${ms.toFixed(2)} ms`;
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Query Monitor</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-4">Loading query statistics...</div>
-        ) : queryStats?.queries ? (
-          <div className="space-y-4">
-            <div className="text-sm">Last updated: {new Date(queryStats.timestamp).toLocaleString()}</div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left p-2">Query</th>
-                    <th className="text-right p-2">Calls</th>
-                    <th className="text-right p-2">Total Time (ms)</th>
-                    <th className="text-right p-2">Avg Time (ms)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {queryStats.queries.map((query: any, idx: number) => (
-                    <tr key={idx} className="border-t">
-                      <td className="p-2">
-                        <div className="max-w-md overflow-hidden text-ellipsis whitespace-nowrap">
-                          {query.query}
-                        </div>
-                      </td>
-                      <td className="text-right p-2">{query.calls}</td>
-                      <td className="text-right p-2">{(query.total_time).toFixed(2)}</td>
-                      <td className="text-right p-2">{(query.mean_time).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-4">No query data available</div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Profile Query Monitor</h3>
+          <p className="text-sm text-muted-foreground">
+            Track queries hitting the profiles table to identify performance issues
+          </p>
+        </div>
+        <Button 
+          onClick={fetchProfileQueryStats} 
+          size="sm"
+          variant="outline"
+          className="flex gap-2 items-center"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {loading && <p className="text-center py-4">Loading query statistics...</p>}
+
+      {!loading && !error && queryStats && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-md flex items-center gap-2">
+                <DatabaseIcon className="h-5 w-5" />
+                Profile Queries Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground mb-4">
+                Last updated: {new Date(queryStats.timestamp).toLocaleString()}
+              </div>
+
+              {queryStats.queries && queryStats.queries.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Query</TableHead>
+                        <TableHead className="w-[100px]">Calls</TableHead>
+                        <TableHead className="w-[140px]">Total Time</TableHead>
+                        <TableHead className="w-[140px]">Mean Time</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {queryStats.queries.map((stat, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-mono text-xs">
+                            <div className="max-w-md overflow-auto">
+                              {stat.query}
+                            </div>
+                          </TableCell>
+                          <TableCell>{stat.calls.toLocaleString()}</TableCell>
+                          <TableCell>{formatTime(stat.total_time)}</TableCell>
+                          <TableCell>{formatTime(stat.mean_time)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p>No profile queries found in the monitoring period.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Optimization Tips</AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc ml-5 mt-2 space-y-1">
+                <li>Look for queries with high call counts that could be batched or cached</li>
+                <li>Check for missing WHERE clauses causing full table scans</li>
+                <li>Consider adding additional indexes for frequently filtered columns</li>
+                <li>Use React Query's caching to reduce redundant profile queries</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+    </div>
   );
 }

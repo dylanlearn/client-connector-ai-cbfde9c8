@@ -1,184 +1,66 @@
-
-import React, { useState, useEffect } from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { useProfile } from "@/contexts/ProfileContext";
 import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
-import { UseFormReturn } from "react-hook-form";
-import BaseFields from "./BaseFields";
-import { useAuth } from "@/hooks/use-auth";
-import TooltipHelper from "../TooltipHelper";
+import { CardContent } from "@/components/ui/card";
+import { useIntakeForm } from "@/hooks/intake/use-intake-form";
+import { ProFeatureMessage } from "@/components/shared/ProFeatureMessage";
 
-interface EcommerceFieldsProps {
-  form: UseFormReturn<any>;
-  showTooltips?: boolean;
-  aiPowered?: boolean;
-}
-
-const EcommerceFields = ({ form, showTooltips = false, aiPowered = false }: EcommerceFieldsProps) => {
-  const { profile } = useAuth();
-  const isPro = profile?.role === 'pro';
-  const [customQuestions, setCustomQuestions] = useState<string[]>([]);
-  const [newQuestion, setNewQuestion] = useState('');
-
-  const exampleAnswers = {
-    estimatedProducts: "50-100 products with variations for size and color",
-    paymentProcessors: "Stripe for credit cards, PayPal for alternative payments, and considering Apple Pay for mobile checkout"
-  };
-
-  // Restore custom questions from form data when component mounts
-  useEffect(() => {
-    const savedCustomQuestions = form.getValues('customQuestions');
-    if (savedCustomQuestions && Array.isArray(savedCustomQuestions)) {
-      setCustomQuestions(savedCustomQuestions);
-    }
-  }, [form]);
-
-  const addCustomQuestion = () => {
-    if (newQuestion.trim()) {
-      setCustomQuestions([...customQuestions, newQuestion.trim()]);
-      setNewQuestion('');
-      
-      // Update the form with the custom questions
-      const currentCustomQuestions = form.getValues('customQuestions') || [];
-      form.setValue('customQuestions', [...currentCustomQuestions, newQuestion.trim()]);
-    }
-  };
-
-  const removeCustomQuestion = (index: number) => {
-    const updatedQuestions = customQuestions.filter((_, i) => i !== index);
-    setCustomQuestions(updatedQuestions);
-    
-    // Update the form with the updated list
-    form.setValue('customQuestions', updatedQuestions);
-  };
-
+export function EcommerceFields() {
+  const { profile } = useProfile();
+  const { form } = useIntakeForm();
+  
+  // Fix TypeScript error by comparing with proper type
+  // (assuming the role field is defined as a string in the UserRole type)
+  const isPro = profile?.role === "pro" || profile?.role === "admin";
+  
   return (
-    <>
-      <BaseFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />
-      
+    <CardContent className="space-y-4">
       <FormField
         control={form.control}
-        name="estimatedProducts"
+        name="ecommerce.productCount"
+        label="How many products do you plan to sell?"
         render={({ field }) => (
-          <FormItem>
-            <div className="flex items-center">
-              <FormLabel>Estimated Products</FormLabel>
-              {showTooltips && (
-                <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.estimatedProducts}</div>}
-                  field="Estimated Products"
-                  aiPowered={aiPowered}
-                />
-              )}
-            </div>
-            <FormControl>
-              <Input placeholder="How many products will you sell?" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
+          <Input
+            {...field}
+            type="number"
+            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+          />
         )}
       />
       
       <FormField
         control={form.control}
-        name="paymentProcessors"
+        name="ecommerce.targetAudience"
+        label="Who is your target audience?"
         render={({ field }) => (
-          <FormItem>
-            <div className="flex items-center">
-              <FormLabel>Payment Processors</FormLabel>
-              {showTooltips && (
-                <TooltipHelper 
-                  content={<div className="font-normal italic text-xs">Example: {exampleAnswers.paymentProcessors}</div>}
-                  field="Payment Processors"
-                  aiPowered={aiPowered}
-                />
-              )}
-            </div>
-            <FormControl>
-              <Input placeholder="e.g., Stripe, PayPal, Square" {...field} />
-            </FormControl>
-            <FormDescription>
-              Which payment processors would you like to use?
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
+          <Textarea
+            {...field}
+            placeholder="Describe your ideal customer"
+          />
         )}
       />
       
       <FormField
         control={form.control}
-        name="shippingIntegration"
+        name="ecommerce.emailMarketing"
+        label="Do you plan to use email marketing?"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <FormLabel className="text-base">Shipping Integration</FormLabel>
-              <FormDescription>
-                Do you need real-time shipping calculations?
-              </FormDescription>
-            </div>
-            <FormControl>
-              <Switch
-                checked={!!field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-      
-      {isPro && (
-        <div className="mt-8 border-t pt-6">
-          <h3 className="text-base font-medium mb-4">Pro Feature: Custom Questions</h3>
-          <FormDescription className="mb-4">
-            Add your own custom questions to the questionnaire. These will be asked in addition to the AI-generated questions.
-          </FormDescription>
-          
-          <div className="space-y-4">
-            {customQuestions.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Your Custom Questions:</p>
-                <ul className="space-y-2">
-                  {customQuestions.map((question, index) => (
-                    <li key={index} className="flex items-center justify-between rounded-md border p-3">
-                      <span>{question}</span>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => removeCustomQuestion(index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-gray-500" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            <div className="flex space-x-2">
-              <Input
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-                placeholder="Enter a custom question here..."
-                className="flex-1"
-              />
-              <Button 
-                type="button" 
-                onClick={addCustomQuestion}
-                disabled={!newQuestion.trim()}
-                size="sm"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              disabled={!isPro}
+            />
+            <Label htmlFor="emailMarketing" className="cursor-pointer">
+              {field.value ? "Yes" : "No"}
+            </Label>
+            {!isPro && <ProFeatureMessage />}
           </div>
-        </div>
-      )}
-    </>
+        )}
+      />
+    </CardContent>
   );
-};
-
-export default EcommerceFields;
+}

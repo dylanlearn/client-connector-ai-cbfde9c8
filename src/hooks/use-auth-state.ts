@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -9,6 +9,13 @@ export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { profile, isLoading: isProfileLoading, refetchProfile } = useProfile();
+
+  // Memoized profile refetch function to prevent unnecessary rerenders
+  const handleProfileChange = useCallback(() => {
+    if (user?.id) {
+      refetchProfile();
+    }
+  }, [user?.id, refetchProfile]);
 
   useEffect(() => {
     let profileChannel: any = null;
@@ -42,7 +49,7 @@ export const useAuthState = () => {
           (payload) => {
             console.log('Profile updated in real-time:', payload);
             // Refetch profile when changes are detected
-            refetchProfile();
+            handleProfileChange();
           }
         )
         .subscribe();
@@ -54,7 +61,7 @@ export const useAuthState = () => {
       }
       subscription.unsubscribe();
     };
-  }, [user?.id, refetchProfile]);
+  }, [user?.id, handleProfileChange]);
 
   return {
     session,

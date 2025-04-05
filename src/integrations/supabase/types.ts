@@ -2087,6 +2087,10 @@ export type Database = {
       }
     }
     Functions: {
+      analyze_profile_queries: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       analyze_wireframe_sections: {
         Args: {
           p_start_date: string
