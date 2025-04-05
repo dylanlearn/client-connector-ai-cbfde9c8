@@ -1,29 +1,36 @@
 
-import { DatabaseRefreshListener, DatabaseStatistics } from './types';
+import { DatabaseStatistics } from "./types";
 
-/**
- * Event bus for coordinating database health updates across components
- */
-const databaseRefreshListeners: DatabaseRefreshListener[] = [];
+type RefreshListener = (stats: DatabaseStatistics) => void;
+
+// Array to store all listener functions
+const refreshListeners: RefreshListener[] = [];
 
 /**
  * Subscribe to database refresh events
+ * This allows components to be notified when database stats are refreshed
  */
-export function subscribeToDbRefresh(callback: DatabaseRefreshListener): () => void {
-  databaseRefreshListeners.push(callback);
+export function subscribeToDbRefresh(callback: RefreshListener): () => void {
+  refreshListeners.push(callback);
+  
+  // Return an unsubscribe function
   return () => {
-    const index = databaseRefreshListeners.indexOf(callback);
-    if (index > -1) {
-      databaseRefreshListeners.splice(index, 1);
+    const index = refreshListeners.indexOf(callback);
+    if (index !== -1) {
+      refreshListeners.splice(index, 1);
     }
   };
 }
 
 /**
- * Notify all subscribers of new database statistics
+ * Notify all listeners when database statistics are refreshed
  */
 export function notifyDbRefreshListeners(stats: DatabaseStatistics): void {
-  for (const listener of databaseRefreshListeners) {
-    listener(stats);
-  }
+  refreshListeners.forEach(listener => {
+    try {
+      listener(stats);
+    } catch (error) {
+      console.error("Error in database refresh listener:", error);
+    }
+  });
 }

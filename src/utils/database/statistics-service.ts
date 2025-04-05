@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { DatabaseStatistics, DeadRowVerificationResult, MaintenanceOptions } from "./types";
+import { DatabaseStatistics, DeadRowVerificationResult } from "./types";
 import { notifyDbRefreshListeners } from "./event-bus";
 import { getTableMaintenanceState, updateTableDeadRowRatio } from "./maintenance-tracker";
 

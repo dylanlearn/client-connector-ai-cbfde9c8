@@ -1,6 +1,5 @@
 
 import { refreshDatabaseStatistics } from "./statistics-service";
-import { checkMaintenanceNeeds } from "./notification-service";
 import { vacuumRecommendedTables } from "./vacuum-service";
 
 /**
