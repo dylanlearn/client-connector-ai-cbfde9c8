@@ -19,6 +19,12 @@ export interface ClientActivity {
   timestamp: Date;
 }
 
+interface ClientLinkData {
+  client_name: string;
+  client_email: string;
+  designer_id: string;
+}
+
 export default function ClientActivityFeed() {
   const { user } = useAuth();
   const [activities, setActivities] = useState<ClientActivity[]>([]);
@@ -54,8 +60,8 @@ export default function ClientActivityFeed() {
         
         const formattedActivities: ClientActivity[] = data.map(item => ({
           id: item.id,
-          clientName: item.client_access_links.client_name,
-          clientEmail: item.client_access_links.client_email,
+          clientName: item.client_access_links?.client_name || 'Unknown Client',
+          clientEmail: item.client_access_links?.client_email || 'unknown@example.com',
           taskType: item.task_type,
           taskTitle: getTaskTitle(item.task_type),
           status: item.status as 'in_progress' | 'completed',
@@ -96,12 +102,15 @@ export default function ClientActivityFeed() {
                   
                 if (error) throw error;
                 
+                // Type-safe handling of data
+                const linkData = data as ClientLinkData;
+                
                 // Only update if this task belongs to the current designer
-                if (data.designer_id === user.id) {
+                if (linkData.designer_id === user.id) {
                   const newActivity: ClientActivity = {
                     id: (payload.new as any).id,
-                    clientName: data.client_name,
-                    clientEmail: data.client_email,
+                    clientName: linkData.client_name,
+                    clientEmail: linkData.client_email,
                     taskType: (payload.new as any).task_type,
                     taskTitle: getTaskTitle((payload.new as any).task_type),
                     status: (payload.new as any).status as 'in_progress' | 'completed',
@@ -149,7 +158,6 @@ export default function ClientActivityFeed() {
   
   // Helper function to get status badge variant
   const getStatusBadgeVariant = (status: 'in_progress' | 'completed') => {
-    // Fix: Use only allowed badge variants ('default', 'secondary', 'destructive', 'outline')
     return status === 'completed' ? 'default' : 'secondary';
   };
   

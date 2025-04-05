@@ -1,34 +1,35 @@
 
 import { type ToastProps, type ToastActionElement } from "@/components/ui/toast";
-import { useToast as useToastOriginal } from "@radix-ui/react-toast";
+import React from "react";
 import { toast as sonnerToast } from "sonner";
 
 // Define the Toast type
-type ToastType = {
+export type Toast = {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: ToastActionElement;
   variant?: "default" | "destructive";
-} & Omit<ToastProps, "children">;
+  duration?: number;
+};
 
 // Define the return type for useToast
-interface UseToastReturnType {
+export interface UseToastReturnType {
   toast: (props: {
     title?: React.ReactNode;
     description?: React.ReactNode;
     action?: ToastActionElement;
     variant?: "default" | "destructive";
     duration?: number;
-  }) => void;
-  toasts: ToastType[];
+  }) => string;
+  toasts: Toast[];
   dismiss: (toastId?: string) => void;
 }
 
 export function useToast(): UseToastReturnType {
   // Store toasts in memory for rendering in the Toaster component
-  const toastsRef = React.useRef<ToastType[]>([]);
-  const [toasts, setToasts] = React.useState<ToastType[]>([]);
+  const toastsRef = React.useRef<Toast[]>([]);
+  const [toasts, setToasts] = React.useState<Toast[]>([]);
 
   const dismiss = React.useCallback((toastId?: string) => {
     setToasts((prevToasts) => {
@@ -50,12 +51,13 @@ export function useToast(): UseToastReturnType {
       duration?: number;
     }) => {
       const id = Math.random().toString(36).substring(2, 9);
-      const newToast = {
+      const newToast: Toast = {
         id,
         title: props.title,
         description: props.description,
         action: props.action,
         variant: props.variant,
+        duration: props.duration
       };
 
       // Add toast to the state
@@ -85,7 +87,3 @@ export function useToast(): UseToastReturnType {
 
 // Export the sonner toast function for direct usage
 export const toast = sonnerToast;
-
-// Add imports
-import React from "react";
-

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeData, 
@@ -6,6 +5,7 @@ import {
   WireframeRevisionHistory,
   BranchInfo
 } from "../wireframe-types";
+import { toStringArray } from '@/utils/type-guards';
 
 /**
  * Service for wireframe version control operations
@@ -347,3 +347,36 @@ export const wireframeVersionControl = {
     }
   },
 };
+
+export async function getAllVersionsForProject(projectId: string): Promise<WireframeVersion[]> {
+  try {
+    // Get all versions for this project
+    const { data: versionsData, error } = await supabase
+      .rpc('get_wireframe_versions_for_project', { p_project_id: projectId });
+    
+    if (error || !versionsData) {
+      console.error("Error fetching all versions for project:", error);
+      throw error || new Error("Failed to fetch all versions for project");
+    }
+    
+    // Fix the type error by using our utility function
+    const versionIds = toStringArray(versionsData.map(v => v.id));
+    
+    // Convert the returned data to WireframeVersion type
+    const versions = versionIds.map(id => {
+      const version = versionsData.find(v => v.id === id);
+      if (!version) return null;
+      return {
+        ...version,
+        data: typeof version.data === 'string' 
+          ? JSON.parse(version.data) 
+          : version.data
+      };
+    }).filter(v => v !== null) as WireframeVersion[];
+    
+    return versions;
+  } catch (error) {
+    console.error("Error fetching all versions for project:", error);
+    return [];
+  }
+}
