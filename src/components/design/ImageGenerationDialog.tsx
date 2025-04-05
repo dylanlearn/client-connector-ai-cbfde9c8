@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Save } from "lucide-react";
+import { AlertTriangle, RefreshCw, Save } from "lucide-react";
 import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
 
 interface ImageGenerationDialogProps {
@@ -36,10 +36,14 @@ export function ImageGenerationDialog({
   const [description, setDescription] = useState(designDescription);
   const [style, setStyle] = useState("");
   
-  const { isGenerating, generatedImageUrl, generateImage } = useDesignImageGeneration();
+  const { isGenerating, generatedImageUrl, error, generateImage, retryCount } = useDesignImageGeneration();
   
   const handleGenerate = async () => {
-    await generateImage(designType, description, style);
+    const result = await generateImage(designType, description, style);
+    if (result) {
+      // Auto-switch to preview tab when generation is successful
+      document.querySelector('[data-state="inactive"][value="preview"]')?.click();
+    }
   };
   
   const handleSave = () => {
@@ -106,6 +110,19 @@ export function ImageGenerationDialog({
                 />
               </div>
             </div>
+            
+            {error && (
+              <div className="bg-destructive/10 text-destructive p-3 rounded-md flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium">Error generating image</p>
+                  <p>{error}</p>
+                  {retryCount > 0 && (
+                    <p className="mt-1">Retry attempt {retryCount}</p>
+                  )}
+                </div>
+              </div>
+            )}
             
             <DialogFooter>
               <Button 
