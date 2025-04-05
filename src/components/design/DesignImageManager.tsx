@@ -129,8 +129,8 @@ const DesignImageManager = () => {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Tabs>
+        </Tabs>
+      </CardContent>
     </Card>
   );
 };
