@@ -8,7 +8,7 @@ import { initializeErrorHandling } from "@/utils/monitoring/error-handling";
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-// Render the app first
+// Render the app first 
 root.render(
   <React.StrictMode>
     <AppProviders>

@@ -1,7 +1,7 @@
 
 import { UseFormReturn } from "react-hook-form";
 import SaasFields from "../site-types/SaasFields";
-import EcommerceFields from "../site-types/EcommerceFields";
+import { EcommerceFields } from "../site-types/EcommerceFields";
 import BusinessFields from "../site-types/BusinessFields";
 import PortfolioFields from "../site-types/PortfolioFields";
 import BaseFields from "../site-types/BaseFields";
@@ -25,7 +25,7 @@ const SiteTypeFields = ({ siteType, form, showTooltips = false, aiPowered = fals
     case "saas":
       return <SaasFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />;
     case "ecommerce":
-      return <EcommerceFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />;
+      return <EcommerceFields showTooltips={showTooltips} aiPowered={aiPowered} />;
     case "business":
       return <BusinessFields form={form} showTooltips={showTooltips} aiPowered={aiPowered} />;
     case "portfolio":

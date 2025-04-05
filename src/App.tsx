@@ -1,20 +1,6 @@
-import { BrowserRouter as Router } from "react-router-dom";
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from "./contexts/AuthContext";
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: (count, error) => {
-        // Limit retries to prevent excessive database calls
-        return count < 2;
-      }
-    },
-  },
-});
-
 import { Route, Routes } from 'react-router-dom';
 import Index from './pages/Index';
 import Login from './pages/Login';
@@ -41,47 +27,58 @@ import FeedbackAnalysis from './pages/FeedbackAnalysis';
 import ClientAccess from './pages/ClientAccess';
 import DesignPicker from './pages/DesignPicker';
 
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: (count, error) => {
+        // Limit retries to prevent excessive database calls
+        return count < 2;
+      }
+    },
+  },
+});
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup/confirmation" element={<SignupConfirmation />} />
-            <Route path="/templates" element={<Templates />} />
-            <Route path="/client-access" element={<ClientAccess />} />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup/confirmation" element={<SignupConfirmation />} />
+          <Route path="/templates" element={<Templates />} />
+          <Route path="/client-access" element={<ClientAccess />} />
+          <Route path="/client-hub" element={<ClientHub />} />
+          
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/new-project" element={<NewProject />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/clients" element={<Clients />} />
             <Route path="/client-hub" element={<ClientHub />} />
-            
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/new-project" element={<NewProject />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/client-hub" element={<ClientHub />} />
-              <Route path="/intake-form" element={<IntakeForm />} />
-              <Route path="/design-picker" element={<DesignPicker />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
-              <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
-              <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
-            </Route>
-            
-            {/* Admin Routes */}
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminPanel />} />
-              <Route path="/admin/analytics" element={<AdminAnalytics />} />
-              <Route path="/admin/supabase-audit" element={<SupabaseAuditDashboard />} />
-              <Route path="/admin/audit-and-monitoring" element={<AuditAndMonitoring />} />
-            </Route>
-            
-            {/* Not Found route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
+            <Route path="/intake-form" element={<IntakeForm />} />
+            <Route path="/design-picker" element={<DesignPicker />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
+            <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
+            <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+          </Route>
+          
+          {/* Admin Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            <Route path="/admin/supabase-audit" element={<SupabaseAuditDashboard />} />
+            <Route path="/admin/audit-and-monitoring" element={<AuditAndMonitoring />} />
+          </Route>
+          
+          {/* Not Found route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </AuthProvider>
     </QueryClientProvider>
   );

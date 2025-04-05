@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { UserProfile } from "@/utils/auth-utils";
 import { useProfileData } from "@/hooks/use-profile-data";
 import { AuthContext } from './AuthContext';
@@ -22,9 +22,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     profile,
     isLoading,
     error,
-    updateProfile,
+    updateProfile: updateProfileData,
     refetchProfile
   } = useProfileData(user?.id);
+  
+  // Wrap the updateProfile function to return void
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    await updateProfileData(updates);
+    // Return void explicitly
+    return;
+  };
   
   // Wrap the original AuthContext to include profile data
   const enhancedAuthContext = useContext(AuthContext);

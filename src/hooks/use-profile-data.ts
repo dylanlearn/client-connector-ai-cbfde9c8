@@ -35,9 +35,11 @@ export function useProfileData(userId: string | undefined) {
     staleTime: 300000,
     // Only retry failed requests twice
     retry: 2,
-    // Only show error toast on final retry failure
-    onError: (error) => {
-      console.error('Error fetching profile:', error);
+    // Using meta for error handling instead of onError
+    meta: {
+      onError: (error: Error) => {
+        console.error('Error fetching profile:', error);
+      }
     }
   });
 

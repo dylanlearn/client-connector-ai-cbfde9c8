@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryProvider } from './QueryProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
+import { ProfileProvider } from '@/contexts/ProfileContext';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -15,7 +16,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
     <BrowserRouter>
       <QueryProvider>
         <AuthProvider>
-          {children}
+          <ProfileProvider>
+            {children}
+          </ProfileProvider>
           <Toaster />
           <SonnerToaster position="top-right" />
         </AuthProvider>
