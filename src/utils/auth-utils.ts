@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SubscriptionStatus } from "@/types/subscription";
@@ -110,8 +109,8 @@ export const enableRealtimeForTable = async (tableName: string): Promise<boolean
         console.log('Change received!', payload);
         
         // If it's a profile update, invalidate the cache for that user
-        if (tableName === 'profiles' && payload.new && payload.new.id) {
-          invalidateProfileCache(payload.new.id);
+        if (tableName === 'profiles' && payload.new && typeof payload.new === 'object' && 'id' in payload.new) {
+          invalidateProfileCache(payload.new.id as string);
         }
       })
       .subscribe();

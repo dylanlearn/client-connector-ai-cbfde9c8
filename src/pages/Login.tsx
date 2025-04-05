@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -56,15 +57,16 @@ const Login = () => {
   useEffect(() => {
     if (user && !profile && !waitingForProfile) {
       setWaitingForProfile(true);
-      verifyAdminStatus(true).then(isAdmin => {
-        console.log("Admin check after login:", isAdmin);
-        if (!isAdmin) {
-          setTimeout(() => {
-            console.log("Retrying admin check...");
-            verifyAdminStatus(true);
-          }, 2000);
+      // Fixed: Remove the .then() from a void-returning function
+      verifyAdminStatus(true);
+      
+      // Instead use a timeout to perform the retry if needed
+      setTimeout(() => {
+        if (user && !profile) {
+          console.log("Retrying admin check...");
+          verifyAdminStatus(true);
         }
-      });
+      }, 2000);
     }
   }, [user, profile, waitingForProfile, verifyAdminStatus]);
 
@@ -259,3 +261,4 @@ const Login = () => {
 };
 
 export default Login;
+
