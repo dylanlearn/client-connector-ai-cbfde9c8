@@ -33,7 +33,7 @@ export function useFullWebsiteAnalysis(
           layout: 'Standard website layout',
           colorScheme: 'Site color scheme',
           typography: 'Site typography',
-          spacing: 'Standard spacing',
+          spacing: 'Standard spacing', // Ensure spacing is provided as required
           imagery: 'Site imagery'
         },
         {
@@ -48,7 +48,7 @@ export function useFullWebsiteAnalysis(
           valueProposition: 'Key value proposition',
           testimonials: []
         },
-        ['website', 'analysis'],
+        ['website', 'analysis'], // Ensure this is an array of strings
         url
       );
       
@@ -65,8 +65,8 @@ export function useFullWebsiteAnalysis(
           layout: data.visualElements.layout,
           colorScheme: data.visualElements.colorScheme,
           typography: data.visualElements.typography,
-          spacing: data.visualElements.spacing || '',
-          imagery: data.visualElements.imagery || ''
+          spacing: data.visualElements.spacing || 'Standard spacing', // Ensure spacing is always defined
+          imagery: data.visualElements.imagery || 'Standard imagery' // Ensure imagery is always defined
         },
         userExperience: {
           navigation: data.interactionPatterns?.userFlow || data.userExperience?.userFlow || '',
@@ -98,7 +98,13 @@ export function useFullWebsiteAnalysis(
             description: result.description,
             category: result.category,
             subcategory: '',
-            visualElements: result.visualElements,
+            visualElements: {
+              layout: result.visualElements.layout,
+              colorScheme: result.visualElements.colorScheme,
+              typography: result.visualElements.typography,
+              spacing: result.visualElements.spacing,
+              imagery: result.visualElements.imagery
+            },
             interactionPatterns: {
               userFlow: result.userExperience.navigation,
               interactions: result.userExperience.interactivity,

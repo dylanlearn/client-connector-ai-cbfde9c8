@@ -57,8 +57,8 @@ export function useWebsiteSectionAnalysis(
           layout: data.visualElements.layout,
           colorScheme: data.visualElements.colorScheme,
           typography: data.visualElements.typography,
-          spacing: data.visualElements.spacing || '',
-          imagery: data.visualElements.imagery || ''
+          spacing: data.visualElements.spacing || `${section} spacing`, // Ensure spacing is always defined
+          imagery: data.visualElements.imagery || `${section} imagery` // Ensure imagery is always defined
         },
         userExperience: {
           navigation: data.interactionPatterns?.userFlow || data.userExperience?.userFlow || '',
@@ -90,7 +90,13 @@ export function useWebsiteSectionAnalysis(
             description: result.description,
             category: result.category,
             subcategory: '',
-            visualElements: result.visualElements,
+            visualElements: {
+              layout: result.visualElements.layout,
+              colorScheme: result.visualElements.colorScheme,
+              typography: result.visualElements.typography,
+              spacing: result.visualElements.spacing,
+              imagery: result.visualElements.imagery
+            },
             interactionPatterns: {
               userFlow: result.userExperience.navigation,
               interactions: result.userExperience.interactivity,
