@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -104,10 +103,20 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                     <div className="text-sm">{String(section.animationSuggestions.timing)}</div>
                   </div>
                 )}
+                {section.animationSuggestions.effect && Array.isArray(section.animationSuggestions.effect) && (
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-500">Effects:</div>
+                    <div className="text-sm flex flex-wrap gap-1">
+                      {section.animationSuggestions.effect.map((effect, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">{effect}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
-
+          
           {section.mobileLayout && (
             <div>
               <h4 className="text-sm font-medium mb-2 flex items-center">
@@ -149,258 +158,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
 
   return (
     <div className="space-y-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="sections">Sections</TabsTrigger>
-          <TabsTrigger value="styles">Design Tokens</TabsTrigger>
-          <TabsTrigger value="mobile">Mobile View</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{wireframe.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700">{wireframe.description}</p>
-              
-              {wireframe.accessibilityNotes && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">Accessibility Notes</h3>
-                  <p className="text-sm text-gray-600">{wireframe.accessibilityNotes}</p>
-                </div>
-              )}
-              
-              {wireframe.qualityFlags && wireframe.qualityFlags.unclearInputs && wireframe.qualityFlags.unclearInputs.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">Input Clarifications Needed</h3>
-                  <ul className="list-disc pl-5 text-sm text-amber-700">
-                    {wireframe.qualityFlags.unclearInputs.map((flag, index) => (
-                      <li key={index}>{flag}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center">
-                  <Layout className="h-4 w-4 mr-2 text-blue-500" />
-                  Layout Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-sm">
-                  <p className="mb-2">Sections: {wireframe.sections.length}</p>
-                  <p>Layout Types:</p>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {Array.from(new Set(wireframe.sections.map(s => s.layoutType))).map((type, i) => (
-                      <Badge key={i} variant="outline">{type}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center">
-                  <Smartphone className="h-4 w-4 mr-2 text-green-500" />
-                  Mobile Considerations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-sm">
-                  {wireframe.mobileConsiderations ? (
-                    <p>{wireframe.mobileConsiderations}</p>
-                  ) : (
-                    <p>Mobile-responsive layout with appropriate stacking order for all sections.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center">
-                  <Zap className="h-4 w-4 mr-2 text-yellow-500" />
-                  Animation Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-sm">
-                  {wireframe.sections.filter(s => s.animationSuggestions).length > 0 ? (
-                    <div>
-                      <p>Animation types:</p>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {Array.from(new Set(wireframe.sections
-                          .filter(s => s.animationSuggestions?.type)
-                          .map(s => s.animationSuggestions?.type)))
-                          .map((type, i) => (
-                            <Badge key={i} variant="outline">{String(type || '')}</Badge>
-                          ))
-                        }
-                      </div>
-                    </div>
-                  ) : (
-                    <p>No specific animations defined.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="sections" className="space-y-4 mt-4">
-          <div className="space-y-6">
-            {wireframe.sections.map((section, index) => renderSection(section, index))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="styles" className="mt-4">
-          {wireframe.designTokens ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center">
-                    <Palette className="h-4 w-4 mr-2 text-purple-500" />
-                    Color Scheme
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {wireframe.designTokens.colors && (
-                    <div className="space-y-2">
-                      {Object.entries(wireframe.designTokens.colors).map(([key, value]) => (
-                        <div key={key} className="grid grid-cols-3 gap-2 items-center">
-                          <div className="text-sm font-medium capitalize">{key}:</div>
-                          <div className="col-span-2 text-sm">{String(value)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center">
-                    <Type className="h-4 w-4 mr-2 text-blue-500" />
-                    Typography
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  {wireframe.designTokens.typography && (
-                    <div className="space-y-2">
-                      {wireframe.designTokens.typography.headings && (
-                        <div className="grid grid-cols-3 gap-2 items-center">
-                          <div className="text-sm font-medium">Headings:</div>
-                          <div className="col-span-2 text-sm">{String(wireframe.designTokens.typography.headings)}</div>
-                        </div>
-                      )}
-                      {wireframe.designTokens.typography.body && (
-                        <div className="grid grid-cols-3 gap-2 items-center">
-                          <div className="text-sm font-medium">Body:</div>
-                          <div className="col-span-2 text-sm">{String(wireframe.designTokens.typography.body)}</div>
-                        </div>
-                      )}
-                      {wireframe.designTokens.typography.fontPairings && wireframe.designTokens.typography.fontPairings.length > 0 && (
-                        <div className="mt-2">
-                          <div className="text-sm font-medium mb-1">Font Pairings:</div>
-                          <div className="flex flex-wrap gap-1">
-                            {wireframe.designTokens.typography.fontPairings.map((pair, index) => (
-                              <Badge key={index} variant="outline">{String(pair)}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No design token information available</p>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="mobile" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Smartphone className="h-5 w-5 mr-2" />
-                Mobile Considerations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {wireframe.mobileConsiderations ? (
-                <p className="text-gray-700">{wireframe.mobileConsiderations}</p>
-              ) : (
-                <p className="text-gray-500">No specific mobile considerations documented.</p>
-              )}
-              
-              <div className="mt-6">
-                <h3 className="text-lg font-medium mb-4">Mobile Layouts by Section</h3>
-                <div className="space-y-4">
-                  {wireframe.sections.filter(s => s.mobileLayout).map((section, index) => (
-                    <Card key={index} className="bg-gray-50">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-md">{section.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="text-sm">
-                          {section.mobileLayout && section.mobileLayout.structure && (
-                            <div className="mb-3">
-                              <div className="font-medium">Structure:</div>
-                              <p>{section.mobileLayout.structure}</p>
-                            </div>
-                          )}
-                          
-                          {section.mobileLayout && section.mobileLayout.stackOrder && (
-                            <div>
-                              <div className="font-medium mb-1">Stack Order:</div>
-                              <div className="flex flex-col gap-1 pl-4">
-                                {section.mobileLayout.stackOrder.map((item, i) => (
-                                  <div key={i} className="flex items-center">
-                                    <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs mr-2">{i+1}</span>
-                                    <span>{String(item)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  
-                  {wireframe.sections.filter(s => s.mobileLayout).length === 0 && (
-                    <p className="text-gray-500">No specific mobile layouts defined for sections.</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {onFeedback && (
-        <div className="flex justify-end gap-3 mt-4">
-          <Button variant="outline" onClick={() => onFeedback(false)} className="flex items-center gap-2">
-            <ThumbsDown className="h-4 w-4" />
-            Not helpful
-          </Button>
-          <Button onClick={() => onFeedback(true)} className="flex items-center gap-2">
-            <ThumbsUp className="h-4 w-4" />
-            This is helpful
-          </Button>
-        </div>
-      )}
+      {wireframe.sections.map(renderSection)}
     </div>
   );
 };

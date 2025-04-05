@@ -14,6 +14,15 @@ export interface WireframeGenerationParams {
   cacheKey?: string;
   detailedComponents?: boolean;
   animationStyle?: "subtle" | "moderate" | "bold";
+  typography?: string;
+  additionalInstructions?: string;
+  pages?: number;
+  moodboardSelections?: {
+    layoutPreferences?: string[];
+    fonts?: string[];
+    colors?: string[];
+    tone?: string[];
+  };
 }
 
 export interface WireframeGenerationResult {
@@ -102,6 +111,12 @@ export interface WireframeSection {
     description: string;
     colors?: Record<string, string>;
   }[];
+  animationSuggestions?: {
+    type?: string;
+    element?: string;
+    timing?: string;
+    effect?: string[];
+  };
   [key: string]: any;
 }
 
@@ -146,4 +161,36 @@ export interface AIWireframe {
   status?: 'draft' | 'published' | 'archived';
   tags?: string[];
   [key: string]: any;
+}
+
+// Add missing type definitions for version control
+export interface WireframeVersion {
+  id: string;
+  wireframe_id: string;
+  version_number: number;
+  branch_name: string;
+  data: any;
+  parent_version_id?: string;
+  is_current: boolean;
+  change_description?: string;
+  created_at: string;
+  created_by?: string;
+  sourceData?: any;
+}
+
+export interface BranchInfo {
+  name: string;
+  version_count: number;
+  created_at: string;
+  latest_version_id: string;
+}
+
+export interface VersionComparisonResult {
+  changes: Array<{
+    path: string;
+    old_value: any;
+    new_value: any;
+    type: 'added' | 'removed' | 'modified';
+  }>;
+  summary: string;
 }

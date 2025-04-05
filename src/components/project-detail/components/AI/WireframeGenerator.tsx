@@ -23,18 +23,11 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
   const { toast } = useToast();
   const { generateWireframe, isGenerating } = useWireframeGeneration();
   
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<WireframeGenerationParams & {
-    moodboardSelections?: {
-      layoutPreferences?: string[];
-      fonts?: string[];
-      colors?: string[];
-      tone?: string[];
-    };
-  }>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<WireframeGenerationParams>({
     defaultValues: {
       projectId,
       prompt: '',
-      complexity: 'medium',
+      complexity: 'standard',
       style: 'modern',
       moodboardSelections: {
         layoutPreferences: [],
@@ -45,15 +38,8 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
     }
   });
   
-  const onSubmit = async (data: WireframeGenerationParams & {
-    moodboardSelections?: {
-      layoutPreferences?: string[];
-      fonts?: string[];
-      colors?: string[];
-      tone?: string[];
-    };
-  }) => {
-    if (data.prompt.trim() === '') {
+  const onSubmit = async (data: WireframeGenerationParams) => {
+    if (data.prompt?.trim() === '') {
       toast({
         title: "Prompt Required",
         description: "Please enter a prompt for your wireframe",
@@ -120,16 +106,16 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
             <div>
               <Label htmlFor="complexity">Complexity</Label>
               <Select
-                onValueChange={(value: 'simple' | 'medium' | 'complex') => setValue('complexity', value)}
-                defaultValue="medium"
+                onValueChange={(value: "simple" | "standard" | "advanced") => setValue('complexity', value)}
+                defaultValue="standard"
               >
                 <SelectTrigger id="complexity">
                   <SelectValue placeholder="Select complexity" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="simple">Simple (3-4 sections)</SelectItem>
-                  <SelectItem value="medium">Medium (5-7 sections)</SelectItem>
-                  <SelectItem value="complex">Complex (8+ sections)</SelectItem>
+                  <SelectItem value="standard">Standard (5-7 sections)</SelectItem>
+                  <SelectItem value="advanced">Advanced (8+ sections)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

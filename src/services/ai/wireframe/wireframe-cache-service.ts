@@ -1,138 +1,95 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeData, WireframeGenerationParams } from "./wireframe-types";
-
-interface CachedWireframe {
-  id: string;
-  params_hash: string;
-  wireframe_data: WireframeData;
-  created_at: string;
-  expires_at: string;
-  hit_count: number;
-}
+import { WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
 
 /**
- * Service for caching wireframes to reduce duplicate generations and improve performance
+ * Service for caching wireframe generation results
  */
 export const WireframeCacheService = {
   /**
-   * Generate a unique hash for wireframe generation parameters
+   * Generate a cache key for wireframe params
    */
-  generateParamsHash: (params: WireframeGenerationParams): string => {
-    // Create a deterministic string from the params
-    const paramsString = JSON.stringify({
-      prompt: params.prompt,
-      style: params.style || '',
-      complexity: params.complexity || 'medium',
-      industry: params.industry || '',
-      pages: params.pages?.sort() || [],
-      moodboardSelections: params.moodboardSelections || {}
-    });
+  generateCacheKey: (params: WireframeGenerationParams): string | undefined => {
+    if (!params.description && !params.prompt) {
+      return undefined;
+    }
     
-    // Simple hash function
-    let hash = 0;
-    for (let i = 0; i < paramsString.length; i++) {
-      const char = paramsString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+    // Create a deterministic cache key based on significant parameters
+    const keyParts = [
+      params.description || params.prompt || '',
+      params.style || 'default',
+      params.colorTheme || 'default',
+      params.complexity || 'standard',
+      params.industry || 'general',
+      params.enhancedCreativity ? 'creative' : 'standard',
+      params.creativityLevel?.toString() || '5'
+    ];
+    
+    // Add additional parameters if they exist
+    if (params.componentTypes?.length) {
+      keyParts.push(params.componentTypes.join('-'));
     }
-    return Math.abs(hash).toString(16);
+    
+    // Handle extra parameters that might be present
+    if (params.moodboardSelections) {
+      const { layoutPreferences, fonts, colors, tone } = params.moodboardSelections;
+      if (layoutPreferences?.length) keyParts.push(`layout:${layoutPreferences.join('|')}`);
+      if (fonts?.length) keyParts.push(`fonts:${fonts.join('|')}`);
+      if (colors?.length) keyParts.push(`colors:${colors.join('|')}`);
+      if (tone?.length) keyParts.push(`tone:${tone.join('|')}`);
+    }
+    
+    // Create a hash of the key parts
+    const keyString = keyParts.join('_').toLowerCase();
+    return `wireframe:${keyString.substring(0, 100)}`;
   },
   
   /**
-   * Check if a wireframe with similar parameters exists in cache
+   * Store a generation result in the cache
    */
-  checkCache: async (paramsHash: string): Promise<{
-    hit: boolean;
-    cacheId?: string;
-    wireframeData?: any;
-  }> => {
+  cacheResult: async (cacheKey: string, result: WireframeGenerationResult): Promise<void> => {
     try {
-      const { data, error } = await supabase.rpc('check_wireframe_cache', {
-        p_params_hash: paramsHash
-      });
-      
-      if (error) {
-        console.error('Cache check error:', error);
-        return { hit: false };
+      if (!cacheKey) {
+        return;
       }
       
-      if (!data) {
-        return { hit: false };
-      }
-      
-      // Type guard to check if data has the expected structure
-      const typedData = data as any;
-      
-      // Increment the hit counter for the found cache
-      if (typedData && typedData.id) {
-        await supabase.rpc('increment_cache_hit', {
-          p_cache_id: typedData.id
+      await supabase
+        .from('wireframe_cache')
+        .upsert({
+          cache_key: cacheKey,
+          result_data: result,
+          created_at: new Date().toISOString(),
+          expiry: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString() // 24hr expiry
         });
-      }
-      
-      return {
-        hit: !!typedData,
-        cacheId: typedData?.id,
-        wireframeData: typedData?.wireframe_data
-      };
     } catch (error) {
-      console.error('Error checking wireframe cache:', error);
-      return { hit: false };
+      console.error("Error caching wireframe result:", error);
     }
   },
   
   /**
-   * Store a wireframe in cache
+   * Retrieve a cached generation result
    */
-  storeInCache: async (params: WireframeGenerationParams, wireframeData: WireframeData, expiryHours: number = 24): Promise<void> => {
+  getCachedResult: async (cacheKey: string): Promise<WireframeGenerationResult | null> => {
     try {
-      const paramsHash = WireframeCacheService.generateParamsHash(params);
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + expiryHours * 60 * 60 * 1000);
-      
-      // Use edge function to store in cache
-      await supabase.functions.invoke("process-wireframe-tasks", {
-        body: {
-          operation: "store_in_cache",
-          params_hash: paramsHash,
-          wireframe_data: wireframeData,
-          expires_at: expiresAt.toISOString(),
-          generation_params: params
-        }
-      });
-        
-      console.log(`Stored wireframe in cache with hash: ${paramsHash}`);
-    } catch (error) {
-      console.error("Error storing wireframe in cache:", error);
-    }
-  },
-  
-  /**
-   * Clear expired cache entries
-   */
-  clearExpiredCache: async (): Promise<number> => {
-    try {
-      // Use edge function to clear expired entries
-      const { data, error } = await supabase.functions.invoke("process-wireframe-tasks", {
-        body: {
-          operation: "clear_expired_cache"
-        }
-      });
-      
-      if (error) {
-        console.error("Error clearing expired wireframe cache:", error);
-        return 0;
+      if (!cacheKey) {
+        return null;
       }
       
-      // Type guard for the response data
-      const typedData = data as any;
-      const removedCount = typedData?.removed || 0;
-      console.log(`Cleared ${removedCount} expired wireframe cache entries`);
-      return removedCount;
+      const { data, error } = await supabase
+        .from('wireframe_cache')
+        .select('result_data')
+        .eq('cache_key', cacheKey)
+        .gt('expiry', new Date().toISOString())
+        .single();
+      
+      if (error || !data) {
+        return null;
+      }
+      
+      return data.result_data as WireframeGenerationResult;
     } catch (error) {
-      console.error("Exception clearing expired wireframe cache:", error);
-      return 0;
+      console.error("Error retrieving cached wireframe:", error);
+      return null;
     }
   }
 };
