@@ -11,7 +11,6 @@ export interface ClientAccessLink {
   clientPhone?: string;
   personalMessage?: string;
   projectId?: string;
-  // Add missing properties
   designerId: string;
   projectTitle?: string;
 }
@@ -35,7 +34,7 @@ export interface ClientTaskProgress {
   intakeForm: boolean;
   designPicker: boolean;
   templates: boolean;
-  linkId?: string; // Add linkId property needed by ClientProgressList
+  linkId?: string; // Added linkId property needed by ClientProgressList
 }
 
 export interface ClientOverview {

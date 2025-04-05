@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ClientTask, TaskStatus, ClientTaskProgress } from "@/types/client";
@@ -125,6 +126,19 @@ export const updateTaskStatus = async (
 // Get client tasks progress for a specific link
 export const getClientTasksProgress = async (linkId: string): Promise<ClientTaskProgress | null> => {
   try {
+    // First get client information from the link
+    const { data: linkData, error: linkError } = await supabase
+      .from('client_access_links')
+      .select('client_name, client_email')
+      .eq('id', linkId)
+      .maybeSingle();
+
+    if (linkError || !linkData) {
+      console.error('Error getting client information:', linkError);
+      return null;
+    }
+
+    // Then get task information
     const { data, error } = await supabase
       .from('client_tasks')
       .select('task_type, status')
@@ -146,9 +160,9 @@ export const getClientTasksProgress = async (linkId: string): Promise<ClientTask
       intakeForm: data.find(t => t.task_type === 'intakeForm')?.status === 'completed',
       designPicker: data.find(t => t.task_type === 'designPicker')?.status === 'completed',
       templates: data.find(t => t.task_type === 'templates')?.status === 'completed',
-      clientName: "", // Add required fields
-      email: "", // Add required fields
-      linkId: linkId // Add linkId for reference
+      clientName: linkData.client_name,
+      email: linkData.client_email,
+      linkId: linkId
     };
 
     return progress;

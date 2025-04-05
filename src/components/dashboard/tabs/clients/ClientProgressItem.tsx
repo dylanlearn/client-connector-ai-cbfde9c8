@@ -8,8 +8,8 @@ export interface ClientProgressItemProps {
   clientName: string;
   completed: number;
   total: number;
-  percentage?: number;  // Add this to match ClientTaskProgress
-  lastActive?: Date | null;
+  percentage?: number;
+  lastActive?: string | null; // Changed from Date to string | null
   email?: string;
   onClick?: () => void;
 }
@@ -46,7 +46,7 @@ export default function ClientProgressItem({
       {lastActive && (
         <div className="flex items-center text-xs text-muted-foreground">
           <Clock className="h-3 w-3 mr-1" />
-          <span>Active {formatDistanceToNow(lastActive, { addSuffix: true })}</span>
+          <span>Active {formatDistanceToNow(new Date(lastActive), { addSuffix: true })}</span>
         </div>
       )}
     </div>

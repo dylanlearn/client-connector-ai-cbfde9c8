@@ -1,13 +1,17 @@
+
 // This file would typically have imports and exports related to intake forms
-// We need to adjust the import of TaskStatus
 
+// Import and re-export TaskStatus using 'export type' for isolatedModules compatibility
 import { TaskStatus } from "@/types/client";
-export { TaskStatus };
+export type { TaskStatus };
 
-// Export hooks related to intake forms
+// Create and export the useIntakeForm hook that's missing but used in multiple components
 export * from './useFormSubmission';
-export * from './useFormValidation';
-export * from './useFormData';
+export * from './useIntakeFormState';
+export * from './useFormSync';
+
+// Export the actual useIntakeForm hook
+export { useIntakeForm } from './useIntakeForm';
 
 // Export any constants or utilities specific to intake forms
 export const INTAKE_FORM_SECTIONS = [

@@ -27,8 +27,8 @@ export default function ClientProgressList({
           email={progress.email}
           completed={progress.completed}
           total={progress.total}
-          lastActive={progress.lastActive}
-          onClick={progress?.linkId && onClientClick ? () => onClientClick(progress.linkId!) : undefined}
+          lastActive={progress.lastActive} // Now accepts string
+          onClick={progress.linkId && onClientClick ? () => onClientClick(progress.linkId!) : undefined}
         />
       ))}
     </div>
