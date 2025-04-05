@@ -5,7 +5,7 @@ import { SubscriptionStatus } from "@/types/subscription";
 /**
  * Type definition for user profile role
  */
-export type UserRole = 'free' | 'sync-pro' | 'admin' | 'template-buyer' | 'sync';
+export type UserRole = 'free' | 'sync-pro' | 'admin' | 'template-buyer' | 'sync' | 'pro';
 
 /**
  * User profile type with subscription status and role

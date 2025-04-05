@@ -17,8 +17,9 @@ export function EcommerceFields({ showTooltips = false, aiPowered = false }) {
   const { profile } = useProfile();
   const form = useFormContext();
   
-  // Fix TypeScript error by using type safety for role comparison
-  const isPro = profile?.role === "pro" || profile?.role === "admin";
+  // Fix TypeScript error by ensuring that the string comparison is type-compatible
+  // We need to ensure that the role is treated as string for this comparison
+  const isPro = profile?.role === "pro" || profile?.role === "admin" || profile?.role === "sync-pro";
   
   return (
     <CardContent className="space-y-4">
