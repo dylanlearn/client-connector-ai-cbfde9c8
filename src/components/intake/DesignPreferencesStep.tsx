@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { IntakeFormData } from "@/types/intake-form";
@@ -10,6 +11,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { StyleGuideImageGenerator } from "@/components/design/StyleGuideImageGenerator";
 
 interface DesignPreferencesStepProps {
   formData: IntakeFormData;
@@ -60,6 +62,11 @@ const DesignPreferencesStep = ({ formData, updateFormData, onNext, onPrevious, i
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium">Design Preferences</h2>
+          <StyleGuideImageGenerator />
+        </div>
+
         <FormField
           control={form.control}
           name="designStyle"

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { StyleGuideImageGenerator } from "@/components/design/StyleGuideImageGenerator";
 import SuggestionForm from "./SuggestionForm";
 import SuggestionResult from "./SuggestionResult";
 import { FormValues, SuggestionsResponse } from "./types";
@@ -65,11 +66,14 @@ const DesignSuggestions = () => {
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>AI Design Suggestions</CardTitle>
-        <CardDescription>
-          Get intelligent design recommendations for your project by describing what you need.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>AI Design Suggestions</CardTitle>
+          <CardDescription>
+            Get intelligent design recommendations for your project by describing what you need.
+          </CardDescription>
+        </div>
+        <StyleGuideImageGenerator />
       </CardHeader>
       <CardContent>
         <SuggestionForm onSubmit={handleSubmit} isLoading={isLoading} />
