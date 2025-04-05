@@ -13,6 +13,7 @@ export function useWireframeGeneration() {
   const [wireframes, setWireframes] = useState<AIWireframe[]>([]);
   const [currentWireframe, setCurrentWireframe] = useState<WireframeGenerationResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const [creativityLevel, setCreativityLevel] = useState<number>(8); // Default high creativity
   const { toast } = useToast();
 
   const generateWireframe = async (params: WireframeGenerationParams) => {
@@ -22,15 +23,23 @@ export function useWireframeGeneration() {
     try {
       toast({
         title: "Generating wireframe",
-        description: "This might take a moment...",
+        description: "Creating a highly creative design, this might take a moment...",
       });
       
-      const result = await WireframeService.generateWireframe(params);
+      // Add creativity parameters
+      const enhancedParams = {
+        ...params,
+        enhancedCreativity: true,
+        creativityLevel: creativityLevel,
+      };
+      
+      const result = await WireframeService.generateWireframe(enhancedParams);
       
       setCurrentWireframe(result);
+      setCreativityLevel(result.creativityLevel || creativityLevel); // Update creativity level if returned
       
       toast({
-        title: "Wireframe generated",
+        title: "Creative wireframe generated",
         description: `Generated "${result.wireframe.title}" in ${result.generationTime.toFixed(2)}s`,
       });
       
@@ -51,6 +60,36 @@ export function useWireframeGeneration() {
     }
   };
 
+  const generateCreativeVariation = async (baseWireframe: WireframeData, projectId?: string) => {
+    if (!baseWireframe) return null;
+    
+    try {
+      toast({
+        title: "Generating creative variation",
+        description: "Creating an alternative design concept...",
+      });
+      
+      // Create a new variation with increased creativity
+      const params: WireframeGenerationParams = {
+        description: `Creative variation of: ${baseWireframe.title || 'Existing wireframe'}`,
+        enhancedCreativity: true,
+        creativityLevel: Math.min(creativityLevel + 2, 10), // Increase creativity but cap at 10
+        baseWireframe,
+        projectId
+      };
+      
+      return await generateWireframe(params);
+    } catch (error) {
+      console.error("Error generating variation:", error);
+      toast({
+        title: "Variation generation failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+  
   const loadProjectWireframes = async (projectId: string) => {
     try {
       const results = await WireframeService.getProjectWireframes(projectId);
@@ -141,10 +180,90 @@ export function useWireframeGeneration() {
     wireframes,
     currentWireframe,
     error,
+    creativityLevel,
     generateWireframe,
-    loadProjectWireframes,
-    getWireframe,
-    provideFeedback,
-    deleteWireframe,
+    generateCreativeVariation,
+    setCreativityLevel,
+    loadProjectWireframes: async (projectId: string) => {
+      try {
+        const results = await WireframeService.getProjectWireframes(projectId);
+        setWireframes(results);
+        return results;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to load wireframes";
+        setError(err instanceof Error ? err : new Error(errorMessage));
+        
+        toast({
+          title: "Failed to load wireframes",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        return [];
+      }
+    },
+    getWireframe: async (wireframeId: string) => {
+      try {
+        return await WireframeService.getWireframe(wireframeId);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to get wireframe";
+        setError(err instanceof Error ? err : new Error(errorMessage));
+        
+        toast({
+          title: "Failed to load wireframe",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        
+        return null;
+      }
+    },
+    provideFeedback: async (wireframeId: string, feedback: string, rating?: number) => {
+      try {
+        await WireframeService.updateWireframeFeedback(wireframeId, feedback, rating);
+        
+        toast({
+          title: "Feedback submitted",
+          description: "Thank you for your feedback",
+        });
+        
+        // Refresh the wireframes list if we have them loaded
+        if (wireframes.length > 0) {
+          const projectId = wireframes[0].project_id;
+          await loadProjectWireframes(projectId);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to submit feedback";
+        
+        toast({
+          title: "Failed to submit feedback",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    },
+    deleteWireframe: async (wireframeId: string) => {
+      try {
+        await WireframeService.deleteWireframe(wireframeId);
+        
+        // Update the local state by removing the deleted wireframe
+        setWireframes(prevWireframes => 
+          prevWireframes.filter(wireframe => wireframe.id !== wireframeId)
+        );
+        
+        toast({
+          title: "Wireframe deleted",
+          description: "The wireframe has been removed",
+        });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete wireframe";
+        
+        toast({
+          title: "Failed to delete wireframe",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    },
   };
 }

@@ -5,19 +5,39 @@ import {
   WireframeGenerationResult,
   WireframeData
 } from "../wireframe-types";
+import { CreativePromptService } from "../../creative-prompt-service";
 
 /**
- * Service for generating wireframes through edge functions
+ * Service for generating wireframes through edge functions with enhanced creativity
  */
 export const wireframeGenerator = {
   /**
-   * Generate wireframe by calling the Edge Function
+   * Generate wireframe by calling the Edge Function with creative enhancements
    */
   generateWireframe: async (
     params: WireframeGenerationParams
   ): Promise<WireframeGenerationResult> => {
     try {
       const startTime = performance.now();
+      
+      // Add creative enhancements to the params
+      const enhancedParams = {
+        ...params,
+        enhancedCreativity: params.enhancedCreativity ?? true, // Enable by default
+        creativityLevel: params.creativityLevel ?? 8, // Default high creativity
+        // Create a cache key based on params to enable caching
+        cacheKey: params.description ? 
+          `${params.description.substring(0, 50)}_${params.style || 'default'}_${params.colorTheme || 'default'}` : 
+          undefined
+      };
+      
+      // Enhance the description with creativity if specified
+      if (enhancedParams.enhancedCreativity && enhancedParams.description) {
+        enhancedParams.description = CreativePromptService.enhancePrompt(
+          enhancedParams.description,
+          enhancedParams.creativityLevel || 8
+        );
+      }
       
       const { data, error } = await supabase.functions.invoke<{
         wireframe: WireframeData;
@@ -27,8 +47,9 @@ export const wireframeGenerator = {
           completion_tokens: number;
           prompt_tokens: number;
         };
+        creativityLevel?: number;
       }>('generate-wireframe', {
-        body: params
+        body: enhancedParams
       });
       
       if (error) {
@@ -47,7 +68,8 @@ export const wireframeGenerator = {
         model: data.model,
         usage: data.usage,
         generationTime,
-        success: true
+        success: true,
+        creativityLevel: data.creativityLevel || enhancedParams.creativityLevel
       };
     } catch (error) {
       console.error("Error generating wireframe:", error);

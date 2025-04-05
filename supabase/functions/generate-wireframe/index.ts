@@ -26,6 +26,38 @@ try {
   console.error("Failed to connect to Redis:", error);
 }
 
+// Add new function for advanced creativity enhancements
+function enhancePromptCreativity(basePrompt: string, enhancedCreativity: boolean, style?: string): string {
+  if (!enhancedCreativity) return basePrompt;
+  
+  // Creative prefixes to choose from
+  const creativeIntros = [
+    "Create a bold, innovative design that breaks convention with",
+    "Design a visually striking and highly memorable layout featuring",
+    "Craft an avant-garde and boundary-pushing interface with",
+    "Generate a visually distinctive and artistically innovative layout with",
+    "Develop a groundbreaking and visually impressive design incorporating"
+  ];
+  
+  // Creative details to add
+  const creativeDetails = [
+    "unexpected color juxtapositions and asymmetric balance",
+    "creative use of negative space and dynamic visual hierarchy",
+    "unconventional typography pairings and striking contrast",
+    "distinctive micro-interactions and subtle animation cues",
+    "experimental layout structures and novel navigation patterns"
+  ];
+  
+  // Randomly select a creative intro and detail
+  const intro = creativeIntros[Math.floor(Math.random() * creativeIntros.length)];
+  const detail = creativeDetails[Math.floor(Math.random() * creativeDetails.length)];
+  
+  // Combine with style if provided
+  const stylePhrase = style ? `in a ${style} style, with` : "featuring";
+  
+  return `${intro} ${basePrompt} ${stylePhrase} ${detail}`;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -40,7 +72,10 @@ serve(async (req) => {
       colorTheme, 
       complexity = "standard",
       enhancedCreativity = true,
-      cacheKey
+      cacheKey,
+      creativityLevel = 8, // New parameter for controlling creativity level
+      detailedComponents = true, // New parameter for more detailed components
+      animationStyle = "subtle" // New parameter for animation style
     } = await req.json();
     
     // Check cache first if Redis is available and cache key is provided
@@ -65,44 +100,44 @@ serve(async (req) => {
       throw new Error("OpenAI API key not configured");
     }
 
-    // Create system prompt with enhanced creativity direction
+    // Enhanced system prompt with more creative direction
     const systemPrompt = `
-      You are an expert UI/UX designer with deep knowledge of web design patterns and creativity.
-      Generate a detailed wireframe based on the user's description.
-      Focus on creating a visually appealing and creative layout that follows modern design principles.
-      ${enhancedCreativity ? 'Push the boundaries of conventional design while maintaining usability.' : ''}
-      ${enhancedCreativity ? 'Incorporate unexpected creative elements, color combinations, or layout arrangements.' : ''}
+      You are an elite UI/UX designer with unmatched creativity and technical expertise.
+      Generate an extraordinary wireframe based on the user's description.
+      Focus on creating a visually stunning and innovative layout that breaks new ground in design.
+      ${enhancedCreativity ? 'Push far beyond conventional design patterns while maintaining usability.' : ''}
+      ${enhancedCreativity ? 'Incorporate unexpected, original creative elements that will make this design truly stand out.' : ''}
       Include the following in the wireframe:
-      - A descriptive title and high-level description
-      - Complete layout details with design tokens for colors, typography, and spacing
-      - Detailed component descriptions with hierarchy and relationships
-      - Design tokens (colors, typography, spacing) that are cohesive and aligned with the style
-      - ${enhancedCreativity ? 'Creative animations and microinteractions' : 'Basic hover states and interactions'}
-      - ${enhancedCreativity ? 'Multiple style variants for key components' : 'Standard component variations'}
-      - ${complexity === 'advanced' ? 'Responsive layouts for mobile and desktop' : 'Desktop-focused layout'}
+      - A compelling title and evocative high-level description
+      - Complete layout details with innovative design tokens for colors, typography, and spacing
+      - ${detailedComponents ? 'Detailed component descriptions with rich visual elements and thoughtful interactions' : 'Component descriptions with clear hierarchy'}
+      - Design tokens (colors, typography, spacing) that create a distinctive visual language
+      - ${animationStyle === 'bold' ? 'Bold animations and attention-grabbing microinteractions' : 'Subtle yet effective animations and microinteractions'}
+      - ${enhancedCreativity ? 'Multiple creative style variants for key components' : 'Standard component variations'}
+      - ${complexity === 'advanced' ? 'Responsive layouts with innovative adaptations for different devices' : 'Desktop-focused layout with basic responsiveness'}
       
-      The design style should be: ${style || 'modern and clean'}
-      ${colorTheme ? `Color theme preference: ${colorTheme}` : ''}
+      The design style should be: ${style || 'modern and distinctive'}
+      ${colorTheme ? `Color theme preference: ${colorTheme}, but feel free to suggest creative adaptations` : 'Create a distinctive color palette that stands out'}
       
-      Return the wireframe as a structured JSON object.
+      Return the wireframe as a structured JSON object with rich details.
     `;
 
-    // Format user prompt with detailed requirements
-    const userPrompt = `
-      Generate a wireframe for: ${description}
+    // Format user prompt with creativity enhancements
+    const userPrompt = enhancePromptCreativity(
+      `Generate a wireframe for: ${description}
       
       ${componentTypes.length > 0 
         ? `Include these specific components: ${componentTypes.join(', ')}` 
         : 'Include appropriate components based on the description'}
       
-      Design style: ${style || 'modern and clean'}
+      Design style: ${style || 'modern and creative'}
       Complexity level: ${complexity}
-      ${colorTheme ? `Color theme: ${colorTheme}` : ''}
-      
-      Make this design ${enhancedCreativity ? 'highly creative and distinctive' : 'clean and professional'}.
-    `;
+      ${colorTheme ? `Color theme: ${colorTheme}` : ''}`,
+      enhancedCreativity,
+      style
+    );
 
-    // Select appropriate model
+    // Use GPT-4o for highest creativity
     const model = "gpt-4o";
 
     const startTime = Date.now();
@@ -118,7 +153,7 @@ serve(async (req) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
         ],
-        temperature: enhancedCreativity ? 0.9 : 0.7,
+        temperature: 0.7 + (creativityLevel * 0.02), // Dynamic temperature based on creativity level
         max_tokens: 4096,
       }),
     });
@@ -145,9 +180,9 @@ serve(async (req) => {
         wireframeData = JSON.parse(wireframeText);
       }
       
-      // Add creative enhancements if requested
+      // Add enhanced creative enhancements with higher creativity level
       if (enhancedCreativity) {
-        wireframeData = addCreativeEnhancements(wireframeData);
+        wireframeData = addCreativeEnhancements(wireframeData, creativityLevel);
       }
       
     } catch (error) {
@@ -160,6 +195,7 @@ serve(async (req) => {
       model,
       generationTime: (Date.now() - startTime) / 1000,
       enhancedCreativity,
+      creativityLevel,
       usage: data.usage,
     };
     
