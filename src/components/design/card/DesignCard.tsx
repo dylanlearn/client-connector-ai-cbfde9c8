@@ -1,8 +1,8 @@
 
-import { useRef, useState } from "react";
+import React from "react";
+import { motion } from "framer-motion";
+import { DesignOption } from "../../design/VisualPicker";
 import { Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { DesignOption } from "../VisualPicker";
 
 interface DesignCardProps {
   option: DesignOption;
@@ -29,61 +29,76 @@ const DesignCard = ({
   onTouchStart,
   onTouchMove,
 }: DesignCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null);
+  // Calculate card rotation and position based on drag
+  const rotate = isDragging ? offsetX * 0.1 : 0;
+  const x = isDragging ? offsetX : 0;
 
-  const getCardStyle = () => {
+  // Different animations based on swipe direction
+  const getCardAnimation = () => {
     if (direction === "left") {
-      return "translate-x-[-150%] rotate-[-30deg] opacity-0";
-    } else if (direction === "right") {
-      return "translate-x-[150%] rotate-[30deg] opacity-0";
-    } else if (isDragging) {
-      return `translate-x-[${offsetX}px] rotate-[${offsetX * 0.1}deg]`;
+      return {
+        x: -500,
+        rotate: -30,
+        opacity: 0,
+        transition: { duration: 0.3 }
+      };
     }
-    return "";
+    if (direction === "right") {
+      return {
+        x: 500,
+        rotate: 30,
+        opacity: 0,
+        transition: { duration: 0.3 }
+      };
+    }
+    return {
+      x,
+      rotate,
+      transition: { type: "spring", stiffness: 300, damping: 20 }
+    };
   };
 
+  // Determine action indicators (like/dislike) based on drag amount
+  const showLikeIndicator = isDragging && offsetX > 50;
+  const showDislikeIndicator = isDragging && offsetX < -50;
+
   return (
-    <div
-      ref={cardRef}
-      className={cn(
-        "absolute inset-0 bg-white rounded-xl overflow-hidden shadow-lg transition-all duration-300 cursor-grab active:cursor-grabbing",
-        getCardStyle()
-      )}
-      style={{ transform: `translateX(${offsetX}px) rotate(${offsetX * 0.1}deg)` }}
+    <motion.div
+      className="absolute w-full h-full bg-white rounded-xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing"
+      style={{ 
+        perspective: 1000,
+        transformStyle: "preserve-3d"
+      }}
+      animate={getCardAnimation()}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
     >
-      <div className="h-[65%] overflow-hidden bg-muted">
-        <img 
-          src={option.imageUrl} 
-          alt={option.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      
+      {/* Card image */}
+      <div 
+        className="w-full h-[70%] bg-cover bg-center"
+        style={{ backgroundImage: `url(${option.imageUrl})` }}
+      />
+
+      {/* Card content */}
       <div className="p-4">
-        <h4 className="text-lg font-semibold">{option.title}</h4>
-        <p className="text-sm text-muted-foreground line-clamp-2">{option.description}</p>
+        <h3 className="text-lg font-semibold mb-1">{option.title}</h3>
+        <p className="text-sm text-gray-500">{option.description}</p>
       </div>
-      
-      {isDragging && (
-        <div className={cn("absolute inset-0 flex items-center justify-center", 
-          offsetX > 50 ? "bg-green-500/20" : offsetX < -50 ? "bg-red-500/20" : "")}>
-          {offsetX > 50 && (
-            <div className="bg-green-500 text-white p-2 rounded-full">
-              <Check size={32} />
-            </div>
-          )}
-          {offsetX < -50 && (
-            <div className="bg-red-500 text-white p-2 rounded-full">
-              <X size={32} />
-            </div>
-          )}
+
+      {/* Like/Dislike indicators */}
+      {showLikeIndicator && (
+        <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded-full">
+          <Check className="h-5 w-5" />
         </div>
       )}
-    </div>
+      {showDislikeIndicator && (
+        <div className="absolute top-4 left-4 bg-red-500 text-white p-2 rounded-full">
+          <X className="h-5 w-5" />
+        </div>
+      )}
+    </motion.div>
   );
 };
 
