@@ -8,7 +8,8 @@ import {
   Loader2, ArrowRight, Download, Copy, Code, 
   Layout, RefreshCw, Share2, Layers, Monitor, 
   Smartphone, PanelLeft, Eye, Grid, LayoutGrid,
-  Tablet, Palette, SlidersHorizontal, ScissorsSquare
+  Tablet, Palette, SlidersHorizontal, ScissorsSquare,
+  Wand2
 } from "lucide-react";
 import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
 import { Badge } from "@/components/ui/badge";
@@ -514,7 +515,7 @@ Use a clean, professional design suitable for finance applications.`;
                   <div className="relative">
                     <div className="h-32 w-32 rounded-full border-4 border-t-blue-500 border-b-blue-700 border-l-blue-600 border-r-blue-400 animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Sparkles className="h-12 w-12 text-blue-500 animate-pulse" />
+                      <Wand2 className="h-12 w-12 text-blue-500 animate-pulse" />
                     </div>
                   </div>
                   <div className="text-center">

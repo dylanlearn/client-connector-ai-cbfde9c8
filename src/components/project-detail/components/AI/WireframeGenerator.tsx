@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Loader2, Wand2, Copy, Sparkles } from 'lucide-react';
+import { Loader2, Wand2, Copy } from 'lucide-react';
 import { WireframeGenerationParams } from '@/services/ai/wireframe/wireframe-types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
@@ -63,7 +62,6 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
     }
     
     try {
-      // If multi-page is enabled, ensure pageTypes are set if not already
       if (data.multiPageLayout && (!data.pageTypes || data.pageTypes.length === 0)) {
         const defaultPageTypes = ['home', 'about', 'services', 'contact'];
         data.pageTypes = defaultPageTypes.slice(0, data.pages || 1);
@@ -317,7 +315,7 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Wand2 className="mr-2 h-4 w-4" />
                 Generate {multiPageLayout && pages > 1 ? `${pages}-Page ` : ''}Wireframe
               </>
             )}
