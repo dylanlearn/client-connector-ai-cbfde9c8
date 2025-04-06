@@ -1,6 +1,6 @@
 
 import { AuthProvider } from "./contexts/AuthContext";
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
