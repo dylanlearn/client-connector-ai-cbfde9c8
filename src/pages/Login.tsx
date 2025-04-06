@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/hooks/use-auth';
-import { useAdminStatus } from '@/hooks/use-admin-status';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,7 +17,6 @@ export default function Login() {
   const { toast } = useToast();
 
   const { signIn, signInWithGoogle } = useAuth();
-  const { isAdmin, verifyAdminStatus } = useAdminStatus();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -35,6 +34,7 @@ export default function Login() {
       setErrorMessage('');
       setIsLoading(true);
       
+      // Fix: Pass only email and password
       await signIn(email, password);
       
       // Log success
@@ -55,6 +55,7 @@ export default function Login() {
       setErrorMessage('');
       setIsLoading(true);
       
+      // Fix: Call with no arguments
       await signInWithGoogle();
       
     } catch (error: any) {

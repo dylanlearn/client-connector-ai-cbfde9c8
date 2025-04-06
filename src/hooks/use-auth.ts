@@ -20,10 +20,28 @@ export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
 
-  // Fetch user profile data
+  // Memoize fetch profile for performance
   const fetchProfile = useCallback(async (userId: string) => {
     try {
+      setIsProfileLoading(true);
+      
+      // Check local storage cache first
+      const cachedProfile = localStorage.getItem(`profile-${userId}`);
+      const cachedTime = localStorage.getItem(`profile-${userId}-time`);
+      
+      // Use cache if it's less than 5 minutes old
+      if (cachedProfile && cachedTime) {
+        const parsedTime = parseInt(cachedTime, 10);
+        if (Date.now() - parsedTime < 5 * 60 * 1000) {
+          setProfile(JSON.parse(cachedProfile));
+          setIsProfileLoading(false);
+          return;
+        }
+      }
+      
+      // Fetch from API if no valid cache
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -37,9 +55,15 @@ export function useAuth() {
 
       if (data) {
         setProfile(data as UserProfile);
+        
+        // Update cache
+        localStorage.setItem(`profile-${userId}`, JSON.stringify(data));
+        localStorage.setItem(`profile-${userId}-time`, Date.now().toString());
       }
     } catch (error) {
       console.error('Error in fetchProfile:', error);
+    } finally {
+      setIsProfileLoading(false);
     }
   }, []);
 
@@ -58,12 +82,21 @@ export function useAuth() {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    
+    // Clear cached profile on logout
+    if (user?.id) {
+      localStorage.removeItem(`profile-${user.id}`);
+      localStorage.removeItem(`profile-${user.id}-time`);
+    }
   };
 
   // Sign in with Google
   const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/dashboard'
+      }
     });
     
     if (error) throw error;
@@ -74,26 +107,19 @@ export function useAuth() {
   useEffect(() => {
     setIsLoading(true);
     
-    // Get current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      
-      setIsLoading(false);
-    });
-
-    // Listen for auth changes
+    // Set up auth changes listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (event, currentSession) => {
+        console.log('Auth state change:', event);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         
-        if (session?.user) {
-          await fetchProfile(session.user.id);
+        // Do NOT fetch profile in the listener directly to avoid potential deadlocks
+        // Instead, use setTimeout to defer it
+        if (currentSession?.user) {
+          setTimeout(() => {
+            fetchProfile(currentSession.user.id);
+          }, 0);
         } else {
           setProfile(null);
         }
@@ -101,6 +127,18 @@ export function useAuth() {
         setIsLoading(false);
       }
     );
+    
+    // Then check current session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id);
+      }
+      
+      setIsLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -111,7 +149,7 @@ export function useAuth() {
     user,
     session,
     profile,
-    isLoading,
+    isLoading: isLoading || isProfileLoading,
     signIn,
     signOut,
     signInWithGoogle
