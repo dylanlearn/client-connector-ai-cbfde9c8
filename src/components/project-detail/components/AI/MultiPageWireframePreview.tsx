@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import WireframeVisualizer from '@/components/wireframe/WireframeVisualizer';
+import { WireframeDataVisualizer } from '@/components/wireframe';
 import { Monitor, Smartphone } from 'lucide-react';
 
 interface MultiPageWireframePreviewProps {
@@ -42,7 +42,7 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
                 
                 <TabsContent value="desktop">
                   <div className="border rounded-lg p-4 bg-white overflow-hidden">
-                    <WireframeVisualizer 
+                    <WireframeDataVisualizer 
                       wireframeData={{
                         ...wireframe,
                         sections: page.sections || []
@@ -55,7 +55,7 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
                 
                 <TabsContent value="mobile">
                   <div className="max-w-[320px] mx-auto border rounded-lg p-4 bg-white overflow-hidden">
-                    <WireframeVisualizer 
+                    <WireframeDataVisualizer 
                       wireframeData={{
                         ...wireframe,
                         sections: page.sections || []
@@ -85,7 +85,7 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
             
             <TabsContent value="desktop">
               <div className="border rounded-lg p-4 bg-white overflow-hidden">
-                <WireframeVisualizer 
+                <WireframeDataVisualizer 
                   wireframeData={wireframe}
                   viewMode="preview"
                   deviceType="desktop"
@@ -95,7 +95,7 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
             
             <TabsContent value="mobile">
               <div className="max-w-[320px] mx-auto border rounded-lg p-4 bg-white overflow-hidden">
-                <WireframeVisualizer 
+                <WireframeDataVisualizer 
                   wireframeData={wireframe}
                   viewMode="preview"
                   deviceType="mobile"

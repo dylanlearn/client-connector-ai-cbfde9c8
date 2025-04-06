@@ -11,7 +11,7 @@ import {
   Tablet, Palette, SlidersHorizontal, ScissorsSquare,
   Wand2
 } from "lucide-react";
-import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
+import WireframeDataVisualizer from "@/components/wireframe/WireframeDataVisualizer";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -527,7 +527,7 @@ Use a clean, professional design suitable for finance applications.`;
                 </div>
               ) : currentWireframe && currentWireframe.wireframe ? (
                 <div className="border rounded-lg p-4 relative min-h-80">
-                  <WireframeVisualizer 
+                  <WireframeDataVisualizer 
                     wireframeData={currentWireframe.wireframe} 
                     viewMode={viewMode}
                     deviceType={deviceType}

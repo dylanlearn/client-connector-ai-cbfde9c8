@@ -1,12 +1,14 @@
 
 import WireframeVisualizer, { WireframeDataVisualizer } from "./WireframeVisualizer";
 import WireframeFlow from "./WireframeFlow";
+import AdvancedWireframeGenerator from "./AdvancedWireframeGenerator";
 
 // Re-export the components
 export {
   WireframeVisualizer,
   WireframeDataVisualizer,
-  WireframeFlow
+  WireframeFlow,
+  AdvancedWireframeGenerator
 };
 
 // Type exports

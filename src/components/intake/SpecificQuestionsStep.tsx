@@ -15,7 +15,7 @@ import { useAIContent } from "@/hooks/ai-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DesignPreferencesFields from "./site-types/DesignPreferencesFields";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import WireframeVisualizer, { WireframeDataVisualizer } from "@/components/wireframe/WireframeVisualizer";
+import { WireframeVisualizer } from "@/components/wireframe";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -106,10 +106,11 @@ const SpecificQuestionsStep = ({
   const onSubmit = (values: any) => {
     // If a wireframe was selected, include it in the form data
     if (selectedWireframeId) {
-      values.wireframeSelection = selectedWireframeId;
+      const updatedValues = {...values, wireframeSelection: selectedWireframeId};
+      updateFormData(updatedValues);
+    } else {
+      updateFormData(values);
     }
-    
-    updateFormData(values);
     onNext();
   };
 
@@ -137,7 +138,6 @@ const SpecificQuestionsStep = ({
 
   const handleSelectWireframe = (id: string) => {
     setSelectedWireframeId(id);
-    form.setValue("wireframeSelection", id);
     toast({
       title: "Wireframe selected",
       description: "You can preview this design in the wireframe tab"
