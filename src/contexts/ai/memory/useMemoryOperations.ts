@@ -1,12 +1,13 @@
 
 import { useCallback } from 'react';
 import { AIMemoryService, MemoryCategory } from '@/services/ai';
+import { AIMemoryContext } from './types';
 
 export const useMemoryOperations = (userId: string | undefined) => {
   /**
    * Refresh the memory context, pulling in latest memories across layers
    */
-  const refreshMemoryContext = useCallback(async (projectId?: string) => {
+  const refreshMemoryContext = useCallback(async (projectId?: string): Promise<AIMemoryContext | null> => {
     if (!userId) return null;
     
     try {
@@ -40,7 +41,11 @@ export const useMemoryOperations = (userId: string | undefined) => {
           category: m.category,
           relevanceScore: m.relevanceScore,
           frequency: m.frequency
-        }))
+        })),
+        // Add these required fields
+        recentInteractions: [],
+        userPreferences: [],
+        projectDetails: []
       };
     } catch (error) {
       console.error("Error refreshing memory context:", error);
