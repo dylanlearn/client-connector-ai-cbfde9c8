@@ -13,6 +13,63 @@ export interface ImageGenerationResponse {
   error?: string;
 }
 
+/**
+ * Service for generating design images using AI
+ */
+export const DesignImageService = {
+  /**
+   * Generate a design image based on description and style
+   */
+  generateDesignImage: async (
+    designType: string,
+    description: string,
+    style?: string
+  ): Promise<string> => {
+    try {
+      const prompt = `${designType} design: ${description}${style ? `. Style: ${style}` : ''}`;
+      
+      // Call the Supabase Edge Function to generate image
+      const { data, error } = await supabase.functions.invoke('generate-images', {
+        body: { 
+          prompt, 
+          style: style || 'digital-art', 
+          size: '1024x1024', 
+          numberOfImages: 1 
+        }
+      });
+
+      if (error) {
+        console.error('Error generating design image:', error);
+        throw new Error(`Failed to generate design image: ${error.message}`);
+      }
+      
+      if (!data?.imageUrls || data.imageUrls.length === 0) {
+        throw new Error('No image URLs returned from API');
+      }
+      
+      return data.imageUrls[0];
+    } catch (error) {
+      console.error('Exception in generateDesignImage:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Get a fallback image URL when generation fails
+   */
+  getFallbackImage: (designType: string): string => {
+    const fallbackImages: Record<string, string> = {
+      'website': 'https://placehold.co/600x400/e9ecef/495057?text=Website+Design',
+      'logo': 'https://placehold.co/400x400/e9ecef/495057?text=Logo+Design',
+      'banner': 'https://placehold.co/800x200/e9ecef/495057?text=Banner+Design',
+      'icon': 'https://placehold.co/200x200/e9ecef/495057?text=Icon+Design',
+      'default': 'https://placehold.co/600x400/e9ecef/495057?text=Design+Image'
+    };
+    
+    return fallbackImages[designType.toLowerCase()] || fallbackImages.default;
+  }
+};
+
 // Function to generate images based on prompt and design parameters
 export const generateDesignImages = async (
   request: ImageGenerationRequest

@@ -55,7 +55,7 @@ const ClientHubPage = () => {
           onTaskButtonClick={handleTaskButtonClick}
         />
 
-        <WhatNextSection />
+        <WhatNextSection tasks={tasks || []} />
       </div>
     </div>
   );

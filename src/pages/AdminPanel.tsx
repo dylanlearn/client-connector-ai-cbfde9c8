@@ -36,7 +36,7 @@ const AdminPanel = () => {
       }
       
       // Verify admin status - the hook will handle the rest
-      await verifyAdminStatus(true); // Force check to ensure fresh status
+      await verifyAdminStatus();
     };
     
     checkAccess();

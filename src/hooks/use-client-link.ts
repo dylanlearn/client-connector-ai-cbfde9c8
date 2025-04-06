@@ -123,8 +123,11 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
           clientPhone: clientPhone || null,
           personalMessage: personalMessage.trim() || null,
           token: link.split("clientToken=")[1]?.split("&")[0] || "",
+          created_at: new Date().toISOString(),
           createdAt: new Date().toISOString(),
+          expires_at: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
           expiresAt: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString(),
+          last_accessed_at: null,
           lastAccessedAt: null,
           status: "active"
         };

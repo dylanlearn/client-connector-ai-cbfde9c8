@@ -24,6 +24,9 @@ export interface UserPreference {
   design_option_id?: string;
   averageRank?: number;
   count?: number;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export function useAnalytics() {
@@ -75,7 +78,10 @@ export function useAnalytics() {
               category: 'style',
               notes: 'Great design',
               averageRank: 1.8,
-              count: 42
+              count: 42,
+              user_id: 'user1',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             },
             {
               id: '2',
@@ -86,7 +92,10 @@ export function useAnalytics() {
               category: 'style',
               notes: 'Clean and simple',
               averageRank: 2.3,
-              count: 35
+              count: 35,
+              user_id: 'user2',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }
           ]);
           

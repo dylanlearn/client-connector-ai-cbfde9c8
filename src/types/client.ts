@@ -48,6 +48,7 @@ export interface ClientAccessLink {
   createdAt?: string;
   expiresAt?: string;
   lastAccessedAt?: string | null;
+  last_accessed_at?: string | null;
   personalMessage?: string | null;
 }
 
@@ -83,7 +84,7 @@ export interface TaskCardProps {
 }
 
 export interface WhatNextSectionProps {
-  tasks: ClientTask[];
+  tasks?: ClientTask[];
   isComplete?: boolean;
 }
 
