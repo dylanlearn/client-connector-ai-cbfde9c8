@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -9,7 +9,8 @@ import ReactFlow, {
   NodeTypes,
   NodeProps,
   Handle,
-  Position
+  Position,
+  useReactFlow
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -24,7 +25,11 @@ import {
   PanelRight, 
   BarChart3, 
   PieChart,
-  Table
+  Table,
+  ExternalLink,
+  Maximize2,
+  MinusCircle,
+  Plus
 } from 'lucide-react';
 
 // Node types for the flowchart
@@ -41,20 +46,102 @@ const SectionNode = ({ data }: NodeProps) => (
   </div>
 );
 
+const InteractiveSectionNode = ({ data }: NodeProps) => {
+  const reactFlow = useReactFlow();
+  
+  const onExpand = () => {
+    if (data.onExpand) {
+      data.onExpand(data.id);
+    }
+  };
+
+  const onCollapse = () => {
+    if (data.onCollapse) {
+      data.onCollapse(data.id);
+    }
+  };
+
+  const onAddSection = () => {
+    if (data.onAddSection) {
+      data.onAddSection(data.id);
+    }
+  };
+
+  return (
+    <div className={`p-3 rounded-md border ${data.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50/50 border-blue-100'}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center">
+          {data.icon}
+          <span className={`ml-2 font-medium ${data.darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+            {data.label}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          {data.canExpand && (
+            <button 
+              onClick={onExpand} 
+              className={`p-1 rounded hover:bg-blue-100 ${data.darkMode ? 'hover:bg-gray-700' : ''}`}
+              title="Expand section details"
+            >
+              <Maximize2 className="h-3 w-3" />
+            </button>
+          )}
+          {data.canCollapse && (
+            <button 
+              onClick={onCollapse} 
+              className={`p-1 rounded hover:bg-blue-100 ${data.darkMode ? 'hover:bg-gray-700' : ''}`}
+              title="Collapse section"
+            >
+              <MinusCircle className="h-3 w-3" />
+            </button>
+          )}
+          {data.canAddSection && (
+            <button 
+              onClick={onAddSection} 
+              className={`p-1 rounded hover:bg-blue-100 ${data.darkMode ? 'hover:bg-gray-700' : ''}`}
+              title="Add new section"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </div>
+      {data.details && (
+        <div className={`mt-1 text-xs p-1 rounded ${data.darkMode ? 'bg-gray-700 text-gray-300' : 'bg-blue-50 text-gray-600'}`}>
+          {data.details}
+        </div>
+      )}
+      <Handle type="target" position={Position.Top} className="!bg-blue-400" />
+      <Handle type="source" position={Position.Bottom} className="!bg-blue-400" />
+    </div>
+  );
+};
+
 const nodeTypes: NodeTypes = {
-  sectionNode: SectionNode
+  sectionNode: SectionNode,
+  interactiveNode: InteractiveSectionNode
 };
 
 interface FlowchartViewProps {
   pages: any[];
   showDetails?: boolean;
   darkMode?: boolean;
+  interactive?: boolean;
+  onNodeClick?: (nodeId: string, nodeData: any) => void;
+  onNodeExpand?: (nodeId: string) => void;
+  onNodeCollapse?: (nodeId: string) => void;
+  onAddSection?: (parentId: string) => void;
 }
 
 export const FlowchartView: React.FC<FlowchartViewProps> = ({ 
   pages = [], 
   showDetails = false,
-  darkMode = false 
+  darkMode = false,
+  interactive = false,
+  onNodeClick,
+  onNodeExpand,
+  onNodeCollapse,
+  onAddSection
 }) => {
   // Get icon based on section type
   const getSectionIcon = (sectionType: string) => {
@@ -93,14 +180,23 @@ export const FlowchartView: React.FC<FlowchartViewProps> = ({
       const pageId = `page-${pageIndex}`;
       nodes.push({
         id: pageId,
-        type: 'sectionNode',
+        type: interactive ? 'interactiveNode' : 'sectionNode',
         data: { 
+          id: pageId,
           label: page.name || `Page ${pageIndex + 1}`, 
           icon: <ListTree className={`h-4 w-4 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`} />,
-          darkMode
+          darkMode,
+          details: showDetails ? `Type: ${page.pageType || 'Standard'}` : undefined,
+          canExpand: interactive && !showDetails,
+          canCollapse: interactive && showDetails,
+          canAddSection: interactive,
+          onExpand: onNodeExpand,
+          onCollapse: onNodeCollapse,
+          onAddSection: onAddSection,
+          pageData: page
         },
         position: { x: 250, y: yOffset },
-        style: { width: 180 }
+        style: { width: 200 }
       });
       
       yOffset += 100;
@@ -109,16 +205,25 @@ export const FlowchartView: React.FC<FlowchartViewProps> = ({
       if (page.sections?.length > 0) {
         page.sections.forEach((section: any, sectionIndex: number) => {
           const sectionId = `section-${pageIndex}-${sectionIndex}`;
+          const sectionDetails = showDetails ? 
+            `Type: ${section.sectionType || 'Generic'}${section.componentVariant ? `, Variant: ${section.componentVariant}` : ''}` : 
+            undefined;
+            
           nodes.push({
             id: sectionId,
-            type: 'sectionNode',
+            type: interactive ? 'interactiveNode' : 'sectionNode',
             data: { 
+              id: sectionId,
               label: section.name || section.sectionType || `Section ${sectionIndex + 1}`,
               icon: getSectionIcon(section.sectionType),
-              darkMode
+              darkMode,
+              details: sectionDetails,
+              canExpand: interactive && !showDetails,
+              canCollapse: interactive && showDetails,
+              sectionData: section
             },
             position: { x: 250, y: yOffset },
-            style: { width: 180 }
+            style: { width: 200 }
           });
           
           // Add edge from page to first section
@@ -126,7 +231,8 @@ export const FlowchartView: React.FC<FlowchartViewProps> = ({
             edges.push({
               id: `edge-page-${pageIndex}-section-${sectionIndex}`,
               source: pageId,
-              target: sectionId
+              target: sectionId,
+              animated: interactive
             });
           }
           
@@ -160,6 +266,12 @@ export const FlowchartView: React.FC<FlowchartViewProps> = ({
       </div>
     );
   }
+
+  const handleNodeClick = (event: React.MouseEvent, node: Node) => {
+    if (onNodeClick) {
+      onNodeClick(node.id, node.data);
+    }
+  };
   
   return (
     <div className={`h-[500px] ${darkMode ? 'bg-gray-900' : 'bg-blue-50'} rounded-lg`}>
@@ -170,7 +282,8 @@ export const FlowchartView: React.FC<FlowchartViewProps> = ({
         fitView
         minZoom={0.5}
         maxZoom={1.5}
-        defaultEdgeOptions={{ animated: true }}
+        defaultEdgeOptions={{ animated: false }}
+        onNodeClick={interactive ? handleNodeClick : undefined}
       >
         <Controls />
         <MiniMap 

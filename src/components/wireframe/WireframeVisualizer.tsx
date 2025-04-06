@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { HeroSection } from "./sections/HeroSection";
 import { FeaturesSection } from "./sections/FeaturesSection";
@@ -9,7 +10,21 @@ import { FooterSection } from "./sections/FooterSection";
 import { GenericSection } from "./sections/GenericSection";
 import { DashboardSection } from "./sections/DashboardSection";
 import { FlowchartView } from "./FlowchartView";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import {
+  Maximize2,
+  Minimize2,
+  Smartphone,
+  Monitor,
+  Tablet,
+  Grid3x3,
+  Eye,
+  Share2,
+  ListTree,
+  Download
+} from "lucide-react";
 
 interface WireframeVisualizerProps {
   wireframeData: WireframeData;
@@ -18,17 +33,26 @@ interface WireframeVisualizerProps {
   darkMode?: boolean;
   showGrid?: boolean;
   highlightSections?: boolean;
+  onSectionClick?: (section: any) => void;
+  interactive?: boolean;
 }
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({ 
   wireframeData,
-  viewMode = "preview",
-  deviceType = "desktop",
+  viewMode: initialViewMode = "preview",
+  deviceType: initialDeviceType = "desktop",
   darkMode = false,
   showGrid = false,
-  highlightSections = false
+  highlightSections = false,
+  onSectionClick,
+  interactive = false
 }) => {
   const [isRendered, setIsRendered] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useState<"flowchart" | "preview">(initialViewMode);
+  const [deviceType, setDeviceType] = useState<"desktop" | "mobile" | "tablet">(initialDeviceType);
+  const [activeTab, setActiveTab] = useState("preview");
+  const [selectedSection, setSelectedSection] = useState<any>(null);
   
   useEffect(() => {
     console.log("WireframeVisualizer received wireframeData:", wireframeData);
@@ -64,8 +88,114 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     }
   ];
 
+  // Handle entering and exiting fullscreen mode
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Handle node expansion in flowchart view
+  const handleNodeExpand = useCallback((nodeId: string) => {
+    console.log("Expanding node:", nodeId);
+    // In a real implementation, you might update state to show more details
+    // about this particular node
+  }, []);
+
+  // Handle node collapsing in flowchart view
+  const handleNodeCollapse = useCallback((nodeId: string) => {
+    console.log("Collapsing node:", nodeId);
+    // In a real implementation, you might update state to hide details
+    // about this particular node
+  }, []);
+
+  // Handle node click in flowchart view
+  const handleNodeClick = useCallback((nodeId: string, nodeData: any) => {
+    console.log("Node clicked:", nodeId, nodeData);
+    
+    // If the node represents a section, find and select that section
+    if (nodeId.startsWith('section-')) {
+      const sectionData = nodeData.sectionData;
+      setSelectedSection(sectionData);
+      // If we're in flowchart view and interactive mode is on, switch to preview
+      if (viewMode === "flowchart" && interactive) {
+        setViewMode("preview");
+      }
+    }
+    
+    // If the node represents a page, deselect any section
+    if (nodeId.startsWith('page-')) {
+      setSelectedSection(null);
+    }
+  }, [viewMode, interactive]);
+
+  // Handle section click in preview mode
+  const handleSectionClick = useCallback((section: any) => {
+    console.log("Section clicked:", section);
+    setSelectedSection(section);
+    
+    // Call external handler if provided
+    if (onSectionClick) {
+      onSectionClick(section);
+    }
+  }, [onSectionClick]);
+
+  const handleDownloadJSON = useCallback(() => {
+    const dataStr = JSON.stringify(wireframeData, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    
+    const downloadLink = document.createElement('a');
+    downloadLink.setAttribute('href', dataUri);
+    downloadLink.setAttribute('download', `wireframe-${wireframeData.title || 'export'}.json`);
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  }, [wireframeData]);
+
+  // Switch to flowchart view
   if (viewMode === "flowchart") {
-    return <FlowchartView pages={pages} showDetails={true} darkMode={darkMode} />;
+    return (
+      <div className={cn(
+        "wireframe-preview relative", 
+        darkMode ? "bg-gray-900" : "bg-white",
+        isFullscreen ? "fixed inset-0 z-50 p-4" : "rounded-lg",
+        isRendered ? "opacity-100" : "opacity-0",
+      )}>
+        {interactive && (
+          <div className="absolute top-2 right-2 z-10 flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setViewMode("preview")}
+              className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Preview
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={toggleFullscreen}
+              className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        )}
+        
+        <FlowchartView 
+          pages={pages} 
+          showDetails={true} 
+          darkMode={darkMode} 
+          interactive={interactive}
+          onNodeClick={handleNodeClick}
+          onNodeExpand={handleNodeExpand}
+          onNodeCollapse={handleNodeCollapse}
+        />
+      </div>
+    );
   }
 
   const styleToken = validatedData.styleToken || validatedData.style || 'modern';
@@ -189,6 +319,273 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     );
   }
 
+  if (interactive) {
+    return (
+      <div className={cn(
+        "wireframe-interactive-preview",
+        isFullscreen ? "fixed inset-0 z-50" : "rounded-lg border",
+        darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+      )}>
+        <div className={cn(
+          "flex items-center justify-between p-2 border-b",
+          darkMode ? "border-gray-700" : "border-gray-200"
+        )}>
+          <div className="flex items-center gap-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+              <TabsList>
+                <TabsTrigger value="preview" onClick={() => setViewMode("preview")}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </TabsTrigger>
+                <TabsTrigger value="structure" onClick={() => setViewMode("flowchart")}>
+                  <ListTree className="h-4 w-4 mr-2" />
+                  Structure
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {viewMode === "preview" && (
+              <>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setDeviceType("desktop")} 
+                  className={cn(
+                    deviceType === "desktop" ? "bg-primary text-primary-foreground" : "",
+                    darkMode && deviceType !== "desktop" ? "bg-gray-800 border-gray-700" : ""
+                  )}
+                >
+                  <Monitor className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setDeviceType("tablet")} 
+                  className={cn(
+                    deviceType === "tablet" ? "bg-primary text-primary-foreground" : "",
+                    darkMode && deviceType !== "tablet" ? "bg-gray-800 border-gray-700" : ""
+                  )}
+                >
+                  <Tablet className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setDeviceType("mobile")} 
+                  className={cn(
+                    deviceType === "mobile" ? "bg-primary text-primary-foreground" : "",
+                    darkMode && deviceType !== "mobile" ? "bg-gray-800 border-gray-700" : ""
+                  )}
+                >
+                  <Smartphone className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setShowGrid(!showGrid)}
+                  className={cn(
+                    showGrid ? "bg-primary text-primary-foreground" : "",
+                    darkMode && !showGrid ? "bg-gray-800 border-gray-700" : ""
+                  )}
+                >
+                  <Grid3x3 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button size="sm" variant="outline" onClick={handleDownloadJSON}>
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={toggleFullscreen}
+              className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+
+        <div className={cn(
+          "wireframe-content overflow-auto transition-all duration-300",
+          isFullscreen ? "h-[calc(100%-56px)]" : "h-[600px]",
+        )}>
+          {activeTab === "preview" && viewMode === "preview" && (
+            <div 
+              className={cn(
+                "wireframe-preview relative transition-all duration-300 p-4",
+                getDeviceClasses(),
+                getStyleClasses(),
+                isRendered ? "opacity-100" : "opacity-0",
+                showGrid ? "overflow-visible" : "overflow-auto"
+              )}
+              style={{
+                '--primary-color': colorScheme.primary,
+                '--secondary-color': colorScheme.secondary,
+                '--accent-color': colorScheme.accent,
+                '--background-color': colorScheme.background,
+              } as React.CSSProperties}
+            >
+              {gridOverlay}
+              
+              {pages.map((page, pageIndex) => (
+                <div key={`page-${pageIndex}`} className="mb-8 transition-all">
+                  {pages.length > 1 && (
+                    <h3 className={cn(
+                      "text-lg font-medium mb-3 pb-2",
+                      darkMode ? 'border-gray-700' : 'border-b'
+                    )}>
+                      {page.name || `Page ${pageIndex + 1}`}
+                    </h3>
+                  )}
+                  
+                  <div className="space-y-6">
+                    {(page.sections || []).map((section, sectionIndex) => {
+                      const styleProps = section.styleProperties || {};
+                      const isSelected = selectedSection && 
+                        (selectedSection.id === section.id || 
+                        (section.name && selectedSection.name === section.name));
+                      
+                      const SectionWrapper = ({ children }: { children: React.ReactNode }) => (
+                        <div 
+                          className={cn(
+                            "transition-all duration-300",
+                            highlightSections || interactive ? "hover:outline hover:outline-blue-500/50 relative" : "",
+                            isSelected ? "outline outline-2 outline-blue-500" : ""
+                          )}
+                          onClick={() => interactive && handleSectionClick(section)}
+                        >
+                          {(highlightSections || interactive) && (
+                            <div className={cn(
+                              "absolute top-0 right-0 text-white text-xs px-2 py-1 rounded-bl z-10",
+                              isSelected ? "bg-blue-500" : "bg-blue-500/70"
+                            )}>
+                              {section.sectionType || "Section"} {sectionIndex + 1}
+                            </div>
+                          )}
+                          {children}
+                        </div>
+                      );
+                      
+                      const sectionContent = (() => {
+                        switch (section.sectionType?.toLowerCase()) {
+                          case "hero":
+                            return <HeroSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              {...styleProps}
+                            />;
+                          
+                          case "features":
+                            return <FeaturesSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              layout={section.layout}
+                              {...styleProps}
+                            />;
+                
+                          case "testimonials":
+                            return <TestimonialsSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              {...styleProps}
+                            />;
+                          
+                          case "pricing":
+                            return <PricingSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              {...styleProps}
+                            />;
+                          
+                          case "contact":
+                            return <ContactSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              {...styleProps}
+                            />;
+                          
+                          case "footer":
+                            return <FooterSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              {...styleProps}
+                            />;
+                          
+                          case "dashboard":
+                            return <DashboardSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              variant={section.componentVariant}
+                              layout={section.layout}
+                              darkMode={darkMode}
+                              {...styleProps}
+                            />;
+                          
+                          default:
+                            return <GenericSection 
+                              key={sectionIndex} 
+                              sectionIndex={sectionIndex} 
+                              name={section.name}
+                              layout={section.layout}
+                              components={section.components}
+                              {...styleProps}
+                            />;
+                        }
+                      })();
+                      
+                      return (
+                        <SectionWrapper key={sectionIndex}>
+                          {sectionContent}
+                        </SectionWrapper>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "structure" && viewMode === "flowchart" && (
+            <FlowchartView 
+              pages={pages} 
+              showDetails={true} 
+              darkMode={darkMode} 
+              interactive={interactive}
+              onNodeClick={handleNodeClick}
+              onNodeExpand={handleNodeExpand}
+              onNodeCollapse={handleNodeCollapse}
+            />
+          )}
+        </div>
+
+        <style>
+          {`
+          .wireframe-preview {
+            font-family: ${typography.body || "system-ui"}, sans-serif;
+          }
+          .wireframe-preview h1, .wireframe-preview h2, .wireframe-preview h3, 
+          .wireframe-preview h4, .wireframe-preview h5, .wireframe-preview h6 {
+            font-family: ${typography.headings || "system-ui"}, sans-serif;
+          }
+          .wireframe-preview-mobile {
+            max-width: 100%;
+            font-size: 0.85em;
+          }
+          `}
+        </style>
+      </div>
+    );
+  }
+
   return (
     <div 
       className={cn(
@@ -256,7 +653,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
                       layout={section.layout}
                       {...styleProps}
                     />;
-    
+        
                   case "testimonials":
                     return <TestimonialsSection 
                       key={sectionIndex} 
