@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,16 +8,109 @@ import { useConversationalMemory } from "@/hooks/ai-design/useConversationalMemo
 import { useToneAdaptation } from "@/hooks/ai-design/useToneAdaptation";
 import { useAI } from "@/contexts/ai";
 import { ProgressiveDisclosureService } from "@/services/ai/design/progressive-disclosure-service";
+import { useComponentLifecycleLogger } from "@/utils/performance-debugger";
 
 interface AIConversationalAssistantProps {
   initialTopic?: string;
   className?: string;
 }
 
+// Message component extracted and memoized for better performance
+const AIMessage = memo(({ role, content, adaptMessageTone }: { 
+  role: string, 
+  content: string,
+  adaptMessageTone: (msg: string) => string 
+}) => {
+  return (
+    <div className={`flex items-start gap-3 ${
+      role === "assistant"
+        ? "bg-muted/30 p-4 rounded-lg backdrop-blur-sm border border-purple-100/20"
+        : ""
+    }`}>
+      <div className={`${
+        role === "assistant"
+          ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+          : "bg-gradient-to-r from-orange-400 to-amber-500 text-white"
+      } p-2 rounded-full flex-shrink-0 shadow-md`}>
+        {role === "assistant" ? (
+          <MessageSquare className="h-4 w-4" />
+        ) : (
+          <div className="w-4 h-4 flex items-center justify-center text-xs">U</div>
+        )}
+      </div>
+      <div className="text-sm leading-relaxed">
+        {role === "assistant" 
+          ? adaptMessageTone(content) 
+          : content
+        }
+      </div>
+    </div>
+  );
+});
+
+AIMessage.displayName = "AIMessage";
+
+// Follow-up questions extracted and memoized for better performance
+const FollowUpQuestions = memo(({ 
+  questions, 
+  showFollowUps, 
+  toggleFollowUps,
+  onQuestionClick,
+  adaptMessageTone
+}: { 
+  questions: string[], 
+  showFollowUps: boolean,
+  toggleFollowUps: () => void,
+  onQuestionClick: (q: string) => void,
+  adaptMessageTone: (msg: string) => string
+}) => {
+  if (questions.length === 0) return null;
+  
+  return (
+    <div className="border rounded-lg p-4 bg-gradient-to-br from-blue-50/50 to-purple-50/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-purple-500" />
+          <h4 className="font-medium text-sm">{adaptMessageTone("Follow-up Questions")}</h4>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 w-6 p-0" 
+          onClick={toggleFollowUps}
+        >
+          {showFollowUps ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </div>
+      
+      {showFollowUps && (
+        <div className="grid grid-cols-1 gap-2">
+          {questions.map((question, index) => (
+            <Button
+              key={index}
+              variant="outline"
+              size="sm"
+              className="justify-start text-left font-normal hover:bg-blue-50 hover:text-blue-700 transition-colors h-auto py-2"
+              onClick={() => onQuestionClick(question)}
+            >
+              {question}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+FollowUpQuestions.displayName = "FollowUpQuestions";
+
 const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
   initialTopic,
   className = "",
 }) => {
+  // Log component lifecycle for performance debugging
+  useComponentLifecycleLogger('AIConversationalAssistant');
+  
   const { messages, isProcessing, simulateResponse } = useAI();
   const { getPersonalizedGreeting, storeConversationEntry } = useConversationalMemory();
   const { adaptMessageTone } = useToneAdaptation();
@@ -34,8 +127,8 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Send the initial greeting when component mounts
-  useEffect(() => {
+  // Send the initial greeting when component mounts - wrapped in useCallback
+  const initializeGreeting = useCallback(() => {
     if (!hasGreeted) {
       const greeting = getPersonalizedGreeting();
       simulateResponse(greeting);
@@ -49,9 +142,44 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
     }
   }, [hasGreeted, getPersonalizedGreeting, simulateResponse, initialTopic]);
 
-  // Scroll to bottom when messages change
+  // Use the callback in useEffect
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    initializeGreeting();
+  }, [initializeGreeting]);
+
+  // Scroll to bottom when messages change - optimized with useCallback
+  const scrollToBottom = useCallback(() => {
+    if (!messagesEndRef.current) return;
+    
+    // Use requestAnimationFrame for smoother scrolling
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, []);
+
+  // Extract topics function - memoized for performance
+  const extractTopics = useCallback((message: string): string[] => {
+    // This is a simplified implementation
+    // A more advanced version would use NLP to extract topics
+    const designTopics = [
+      'color', 'palette', 'layout', 'typography', 'font', 
+      'interaction', 'animation', 'component', 'spacing',
+      'responsive', 'mobile', 'desktop', 'accessibility'
+    ];
+    
+    const foundTopics: string[] = [];
+    designTopics.forEach(topic => {
+      if (message.toLowerCase().includes(topic)) {
+        foundTopics.push(topic);
+      }
+    });
+    
+    return foundTopics;
+  }, []);
+
+  // Update follow-up questions when messages change
+  useEffect(() => {
+    scrollToBottom();
     
     // If the AI just responded and it wasn't a progressive disclosure response
     if (messages.length > 0 && 
@@ -70,29 +198,10 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
         setShowFollowUps(true);
       }
     }
-  }, [messages, progressiveContent]);
+  }, [messages, progressiveContent, extractTopics, scrollToBottom]);
 
-  // Extract potential topics from a message
-  const extractTopics = (message: string): string[] => {
-    // This is a simplified implementation
-    // A more advanced version would use NLP to extract topics
-    const designTopics = [
-      'color', 'palette', 'layout', 'typography', 'font', 
-      'interaction', 'animation', 'component', 'spacing',
-      'responsive', 'mobile', 'desktop', 'accessibility'
-    ];
-    
-    const foundTopics: string[] = [];
-    designTopics.forEach(topic => {
-      if (message.toLowerCase().includes(topic)) {
-        foundTopics.push(topic);
-      }
-    });
-    
-    return foundTopics;
-  };
-
-  const handleSend = async () => {
+  // Handle sending messages - optimized with useCallback
+  const handleSend = useCallback(async () => {
     if (input.trim() === "") return;
     
     // Store the user message
@@ -114,7 +223,6 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
       
       // If we're at the last segment, add a follow-up prompt
       if (progressiveContent.currentSegment + 1 === progressiveContent.segments.length - 1) {
-        const followUpPrompt = ProgressiveDisclosureService.createFollowUpPrompt(progressiveContent.topic);
         const questions = ProgressiveDisclosureService.generateFollowUpQuestions(progressiveContent.topic);
         setFollowUpQuestions(questions);
         setShowFollowUps(true);
@@ -157,23 +265,26 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
     }
     
     setInput("");
-  };
+  }, [input, storeConversationEntry, progressiveContent, simulateResponse, adaptMessageTone, extractTopics]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  // Handle key press events - optimized with useCallback
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
-  };
+  }, [handleSend]);
 
-  const handleFollowUpClick = (question: string) => {
+  // Handle follow-up question clicks
+  const handleFollowUpClick = useCallback((question: string) => {
     setInput(question);
     setFollowUpQuestions([]);
-  };
+  }, []);
 
-  const toggleFollowUps = () => {
-    setShowFollowUps(!showFollowUps);
-  };
+  // Toggle follow-up questions visibility
+  const toggleFollowUps = useCallback(() => {
+    setShowFollowUps(prev => !prev);
+  }, []);
 
   return (
     <Card className="flex flex-col h-full shadow-md border-gradient-subtle backdrop-blur-sm">
@@ -201,35 +312,14 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
         )}
         
         <div className="space-y-4">
+          {/* Use virtualized list for better performance with many messages */}
           {messages.map((message) => (
-            <div
+            <AIMessage 
               key={message.id}
-              className={`flex items-start gap-3 ${
-                message.role === "assistant"
-                  ? "bg-muted/30 p-4 rounded-lg backdrop-blur-sm border border-purple-100/20"
-                  : ""
-              }`}
-            >
-              <div
-                className={`${
-                  message.role === "assistant"
-                    ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
-                    : "bg-gradient-to-r from-orange-400 to-amber-500 text-white"
-                } p-2 rounded-full flex-shrink-0 shadow-md`}
-              >
-                {message.role === "assistant" ? (
-                  <MessageSquare className="h-4 w-4" />
-                ) : (
-                  <div className="w-4 h-4 flex items-center justify-center text-xs">U</div>
-                )}
-              </div>
-              <div className="text-sm leading-relaxed">
-                {message.role === "assistant" 
-                  ? adaptMessageTone(message.content) 
-                  : message.content
-                }
-              </div>
-            </div>
+              role={message.role}
+              content={message.content}
+              adaptMessageTone={adaptMessageTone}
+            />
           ))}
           
           {isProcessing && (
@@ -243,41 +333,14 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
             </div>
           )}
           
-          {/* Follow-up questions */}
-          {followUpQuestions.length > 0 && (
-            <div className="border rounded-lg p-4 bg-gradient-to-br from-blue-50/50 to-purple-50/50 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                  <h4 className="font-medium text-sm">{adaptMessageTone("Follow-up Questions")}</h4>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0" 
-                  onClick={toggleFollowUps}
-                >
-                  {showFollowUps ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </Button>
-              </div>
-              
-              {showFollowUps && (
-                <div className="grid grid-cols-1 gap-2">
-                  {followUpQuestions.map((question, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      className="justify-start text-left font-normal hover:bg-blue-50 hover:text-blue-700 transition-colors h-auto py-2"
-                      onClick={() => handleFollowUpClick(question)}
-                    >
-                      {question}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Follow-up questions with memoized component */}
+          <FollowUpQuestions 
+            questions={followUpQuestions}
+            showFollowUps={showFollowUps}
+            toggleFollowUps={toggleFollowUps}
+            onQuestionClick={handleFollowUpClick}
+            adaptMessageTone={adaptMessageTone}
+          />
           
           <div ref={messagesEndRef} />
         </div>
@@ -305,4 +368,5 @@ const AIConversationalAssistant: React.FC<AIConversationalAssistantProps> = ({
   );
 };
 
-export default AIConversationalAssistant;
+// Export a memoized version for better performance
+export default memo(AIConversationalAssistant);

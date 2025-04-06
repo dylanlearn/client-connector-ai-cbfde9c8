@@ -3,34 +3,22 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AIGeneratorService } from '@/services/ai';
 import { ContentRequest } from './types';
-import { 
-  UseGenerationOptions, 
-  UseGenerationReturn 
-} from './types/generation-types';
-import { 
-  createTimeoutController,
-  calculateBackoffDelay 
-} from './utils/retry-utils';
-import { 
-  getFallbackContent 
-} from './utils/fallback-utils';
-import { 
-  getTestVariant,
-  recordTestSuccess,
-  recordTestFailure 
-} from './utils/test-variant-utils';
+import { UseGenerationOptions, UseGenerationReturn } from './types/generation-types';
+import { createTimeoutController, calculateBackoffDelay } from './utils/retry-utils';
+import { getFallbackContent } from './utils/fallback-utils';
+import { getTestVariant, recordTestSuccess, recordTestFailure } from './utils/test-variant-utils';
 import { useAuth } from '@/hooks/use-auth';
 
 /**
- * Hook for managing AI content generation with retries and timeout handling
+ * Optimized hook for managing AI content generation with improved performance
  */
 export function useGeneration({
   autoRetry = true,
-  maxRetries = 2,
-  timeout = 10000,
+  maxRetries = 1, // Reduced from 2 to 1 for faster response
+  timeout = 8000, // Reduced from 10000 to 8000ms
   showToasts = false,
   useFallbacks = true,
-  enableABTesting = true
+  enableABTesting = false // Disabled by default for better performance
 }: UseGenerationOptions = {}): UseGenerationReturn {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
@@ -38,6 +26,9 @@ export function useGeneration({
   const retryCountRef = useRef(0);
   const requestTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
+
+  // Memoized cache for previous requests to avoid redundant API calls
+  const requestCacheRef = useRef<Map<string, string>>(new Map());
 
   // Cleanup function for abort controller and timeout
   useEffect(() => {
@@ -58,7 +49,14 @@ export function useGeneration({
     testInfo?: { activeTestId?: string; testVariantId?: string }
   ): Promise<string> => {
     try {
-      const cacheKey = `ai-content-${request.type}-${request.context || ''}-${request.tone || ''}-${testInfo?.testVariantId || 'default'}-${retryCount}`;
+      const cacheKey = `ai-content-${request.type}-${request.context || ''}-${request.tone || ''}`;
+      
+      // Check cache first for instant response
+      const cachedContent = requestCacheRef.current.get(cacheKey);
+      if (cachedContent) {
+        console.log('Using cached AI content');
+        return cachedContent;
+      }
       
       const startTime = Date.now();
       
@@ -77,7 +75,7 @@ export function useGeneration({
       const latencyMs = Date.now() - startTime;
       
       // Record test success if A/B testing is enabled
-      if (testInfo?.activeTestId && testInfo?.testVariantId && user) {
+      if (enableABTesting && testInfo?.activeTestId && testInfo?.testVariantId && user) {
         await recordTestSuccess(
           testInfo.activeTestId,
           testInfo.testVariantId,
@@ -92,10 +90,13 @@ export function useGeneration({
         requestTimeoutRef.current = null;
       }
       
+      // Cache the successful result
+      requestCacheRef.current.set(cacheKey, content);
+      
       return content;
     } catch (error) {
       // Record test failure if A/B testing is enabled
-      if (testInfo?.activeTestId && testInfo?.testVariantId && user) {
+      if (enableABTesting && testInfo?.activeTestId && testInfo?.testVariantId && user) {
         await recordTestFailure(
           testInfo.activeTestId,
           testInfo.testVariantId,
@@ -117,7 +118,7 @@ export function useGeneration({
       
       throw error;
     }
-  }, [autoRetry, maxRetries, user]);
+  }, [autoRetry, maxRetries, user, enableABTesting]);
 
   const generate = useCallback(async (request: ContentRequest): Promise<string> => {
     setIsGenerating(true);
@@ -148,7 +149,7 @@ export function useGeneration({
     }
     
     // Get test variant information if A/B testing is enabled
-    const testInfo = user?.id && enableABTesting 
+    const testInfo = enableABTesting && user?.id 
       ? await getTestVariant(request.type, user.id, enableABTesting)
       : undefined;
     
@@ -175,7 +176,7 @@ export function useGeneration({
     } finally {
       setIsGenerating(false);
     }
-  }, [attemptGeneration, enableABTesting, showToasts, timeout, useFallbacks, user]);
+  }, [attemptGeneration, timeout, showToasts, useFallbacks, user, enableABTesting]);
 
   const cancelGeneration = useCallback(() => {
     if (abortControllerRef.current) {
@@ -191,9 +192,28 @@ export function useGeneration({
     setIsGenerating(false);
   }, []);
 
+  // Add a function to clear cache for specific types
+  const clearCache = useCallback((type?: string) => {
+    if (type) {
+      // Clear only specific type entries
+      const keysToDelete: string[] = [];
+      requestCacheRef.current.forEach((_, key) => {
+        if (key.includes(`ai-content-${type}`)) {
+          keysToDelete.push(key);
+        }
+      });
+      
+      keysToDelete.forEach(key => requestCacheRef.current.delete(key));
+    } else {
+      // Clear the entire cache
+      requestCacheRef.current.clear();
+    }
+  }, []);
+
   return {
     generate,
     cancelGeneration,
+    clearCache,
     isGenerating,
     error: lastError
   };
