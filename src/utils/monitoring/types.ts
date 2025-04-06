@@ -3,7 +3,7 @@
  * Types for system monitoring functionality
  */
 
-export type SystemStatus = 'normal' | 'warning' | 'critical' | 'unknown';
+export type SystemStatus = 'normal' | 'warning' | 'critical' | 'error' | 'unknown';
 
 export interface SystemMonitoringRecord {
   component: string;
@@ -23,7 +23,6 @@ export interface MonitoringConfiguration {
   enabled: boolean;
   check_interval_seconds?: number;
   notification_channels?: string[];
-  // Add missing fields
   check_interval?: number;
   notification_enabled?: boolean;
   created_at?: string;
@@ -37,7 +36,19 @@ export interface SystemHealthCheck {
   last_checked: Date;
 }
 
-// Add missing ClientError interface
+export interface ApiUsageRecord {
+  id: string;
+  endpoint: string;
+  response_time_ms: number;
+  status_code: number;
+  user_id?: string;
+  request_timestamp: string;
+  method: string;
+  ip_address?: string;
+  error_message?: string;
+  request_payload?: Record<string, any>;
+}
+
 export interface ClientError {
   id?: string;
   error_message: string;
@@ -50,4 +61,13 @@ export interface ClientError {
   resolved?: boolean;
   resolution_notes?: string;
   metadata?: Record<string, any>;
+}
+
+export interface ApiUsageMetrics {
+  total_requests: number;
+  average_response_time: number;
+  error_rate: number;
+  success_rate: number;
+  requests_by_endpoint: Record<string, number>;
+  errors_by_type: Record<string, number>;
 }

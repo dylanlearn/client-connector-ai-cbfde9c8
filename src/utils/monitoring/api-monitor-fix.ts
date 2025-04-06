@@ -15,9 +15,9 @@ export const diagnoseAndFixApiIssues = async (): Promise<{
     const fixedIssues: string[] = [];
     
     // Step 1: Check for error rate spikes
-    const { data: errorData, error: errorQueryError } = await supabase
+    const { data: errorRateData, error: errorQueryError } = await supabase
       .from('api_usage')
-      .select('count')
+      .select('*', { count: 'exact', head: false })
       .gte('status_code', 400)
       .gte('created_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()); // Last 15 minutes
       
@@ -26,7 +26,7 @@ export const diagnoseAndFixApiIssues = async (): Promise<{
       throw new Error('Failed to fetch API error data');
     }
     
-    const errorCount = errorData?.[0]?.count || 0;
+    const errorCount = errorRateData?.length || 0;
     
     if (errorCount > 10) {
       // Clear error logs if there's a spike
@@ -40,9 +40,9 @@ export const diagnoseAndFixApiIssues = async (): Promise<{
     }
     
     // Step 2: Check for abnormal response times
-    const { data: slowResponses, error: slowQueryError } = await supabase
+    const { data: slowResponsesData, error: slowQueryError } = await supabase
       .from('api_usage')
-      .select('count')
+      .select('*', { count: 'exact', head: false })
       .gt('response_time_ms', 1000) // Responses over 1 second
       .gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()); // Last 30 minutes
       
@@ -51,7 +51,7 @@ export const diagnoseAndFixApiIssues = async (): Promise<{
       throw new Error('Failed to fetch API response time data');
     }
     
-    const slowCount = slowResponses?.[0]?.count || 0;
+    const slowCount = slowResponsesData?.length || 0;
     
     if (slowCount > 5) {
       // Record this issue for analysis
