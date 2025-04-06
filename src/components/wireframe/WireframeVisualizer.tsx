@@ -5,7 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Code, LayoutGrid, DeviceDesktop, DeviceMobile, DeviceTablet } from 'lucide-react';
+import { Eye, Code, LayoutGrid, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { WireframeData } from '@/types/wireframe';
+
+interface WireframeSection {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+}
 
 interface WireframeProps {
   wireframe: {
@@ -13,26 +21,44 @@ interface WireframeProps {
     title: string;
     description?: string;
     imageUrl?: string;
-    sections?: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      imageUrl?: string;
-    }>;
+    sections?: WireframeSection[];
     version: string;
     lastUpdated: string;
   };
   onSelect?: (wireframeId: string) => void;
   onEdit?: (wireframeId: string) => void;
+  viewMode?: "preview" | "flowchart";
+  deviceType?: "desktop" | "mobile" | "tablet";
+  darkMode?: boolean;
+  interactive?: boolean;
+  highlightSections?: boolean;
+  showGrid?: boolean;
+}
+
+// Alternative interface for the component when passing wireframe data directly
+export interface WireframeDataProps {
+  wireframeData: WireframeData;
+  viewMode?: "preview" | "flowchart";
+  deviceType?: "desktop" | "mobile" | "tablet";
+  darkMode?: boolean;
+  interactive?: boolean;
+  highlightSections?: boolean;
+  showGrid?: boolean;
 }
 
 export const WireframeVisualizer: React.FC<WireframeProps> = ({ 
   wireframe,
   onSelect,
-  onEdit
+  onEdit,
+  viewMode = "preview",
+  deviceType = "desktop",
+  darkMode = false,
+  interactive = false,
+  highlightSections = false,
+  showGrid = false
 }) => {
   const [activeTab, setActiveTab] = useState<string>("preview");
-  const [activeDevice, setActiveDevice] = useState<string>("desktop");
+  const [activeDevice, setActiveDevice] = useState<string>(deviceType);
   
   return (
     <Card className="w-full overflow-hidden">
@@ -74,7 +100,7 @@ export const WireframeVisualizer: React.FC<WireframeProps> = ({
               className="rounded-none rounded-l-md h-8" 
               onClick={() => setActiveDevice("desktop")}
             >
-              <DeviceDesktop className="h-4 w-4" />
+              <Monitor className="h-4 w-4" />
             </Button>
             <Button 
               variant={activeDevice === "tablet" ? "secondary" : "ghost"} 
@@ -82,7 +108,7 @@ export const WireframeVisualizer: React.FC<WireframeProps> = ({
               className="rounded-none border-x h-8" 
               onClick={() => setActiveDevice("tablet")}
             >
-              <DeviceTablet className="h-4 w-4" />
+              <Tablet className="h-4 w-4" />
             </Button>
             <Button 
               variant={activeDevice === "mobile" ? "secondary" : "ghost"} 
@@ -90,7 +116,7 @@ export const WireframeVisualizer: React.FC<WireframeProps> = ({
               className="rounded-none rounded-r-md h-8" 
               onClick={() => setActiveDevice("mobile")}
             >
-              <DeviceMobile className="h-4 w-4" />
+              <Smartphone className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -98,11 +124,11 @@ export const WireframeVisualizer: React.FC<WireframeProps> = ({
 
       <CardContent className="p-0">
         <TabsContent value="preview" className="m-0">
-          <div className={`flex items-center justify-center p-4 bg-muted/30 ${
+          <div className={`flex items-center justify-center p-4 ${darkMode ? 'bg-gray-900/90' : 'bg-muted/30'} ${
             activeDevice === "mobile" ? "min-h-[500px]" : "min-h-[400px]"
           }`}>
             {wireframe.imageUrl ? (
-              <div className={`transition-all duration-300 bg-background shadow-md overflow-hidden ${
+              <div className={`transition-all duration-300 ${darkMode ? 'bg-gray-800' : 'bg-background'} shadow-md overflow-hidden ${
                 activeDevice === "desktop" ? "w-full aspect-video" :
                 activeDevice === "tablet" ? "w-3/4 aspect-[4/3]" :
                 "w-1/3 min-w-[320px] aspect-[9/16]"
@@ -213,6 +239,45 @@ export default ${wireframe.title.replace(/\s+/g, '')};
         </div>
       </CardFooter>
     </Card>
+  );
+};
+
+// Create a new adapter component that accepts wireframeData directly
+export const WireframeDataVisualizer: React.FC<WireframeDataProps> = ({ 
+  wireframeData, 
+  viewMode = "preview",
+  deviceType = "desktop",
+  darkMode = false,
+  interactive = false,
+  highlightSections = false,
+  showGrid = false
+}) => {
+  // Convert wireframeData to the format expected by WireframeVisualizer
+  const adaptedWireframe = {
+    id: wireframeData.id || "default-id",
+    title: wireframeData.title || "Wireframe Preview",
+    description: wireframeData.description || "Generated wireframe based on your requirements",
+    imageUrl: wireframeData.imageUrl || "/wireframes/default.jpg",
+    sections: wireframeData.sections?.map((section, index) => ({
+      id: section.id || `section-${index}`,
+      name: section.name || `Section ${index + 1}`,
+      description: section.description || "",
+      imageUrl: section.imageUrl || ""
+    })) || [],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  };
+
+  return (
+    <WireframeVisualizer 
+      wireframe={adaptedWireframe}
+      viewMode={viewMode}
+      deviceType={deviceType}
+      darkMode={darkMode}
+      interactive={interactive}
+      highlightSections={highlightSections}
+      showGrid={showGrid}
+    />
   );
 };
 

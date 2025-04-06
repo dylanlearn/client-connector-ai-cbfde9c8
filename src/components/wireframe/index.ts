@@ -1,20 +1,16 @@
 
-import { FlowchartView } from './FlowchartView';
-import WireframeVisualizer from './WireframeVisualizer';
-import AdvancedWireframeGenerator from './AdvancedWireframeGenerator';
-import EnhancedWireframeStudio from './EnhancedWireframeStudio';
-import DesignMemoryPanel from './DesignMemoryPanel';
-import FlowProvider from './FlowProvider';
+import WireframeVisualizer, { WireframeDataVisualizer } from "./WireframeVisualizer";
+import WireframeFlow from "./WireframeFlow";
 
-// Re-export all wireframe components
-export { 
-  FlowchartView,
+// Re-export the components
+export {
   WireframeVisualizer,
-  AdvancedWireframeGenerator,
-  EnhancedWireframeStudio,
-  DesignMemoryPanel,
-  FlowProvider
+  WireframeDataVisualizer,
+  WireframeFlow
 };
 
-// Types
-export type { WireframeVisualizerProps } from './WireframeVisualizer';
+// Type exports
+export type { 
+  WireframeProps, 
+  WireframeDataProps 
+} from "./WireframeVisualizer";

@@ -47,6 +47,7 @@ export interface IntakeFormData {
   additionalNotes?: string;
   designNotes?: string;
   conversionPriority?: string;
+  logoUpload?: boolean; // Adding missing property
   
   // New wireframe preferences
   wireframeSelection?: string;

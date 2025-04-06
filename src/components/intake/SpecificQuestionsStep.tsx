@@ -14,6 +14,8 @@ import LoadingIndicator from "@/components/ui/LoadingIndicator";
 import { useAIContent } from "@/hooks/ai-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DesignPreferencesFields from "./site-types/DesignPreferencesFields";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import WireframeVisualizer, { WireframeDataVisualizer } from "@/components/wireframe/WireframeVisualizer";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -22,6 +24,47 @@ interface SpecificQuestionsStepProps {
   onPrevious: () => void;
   isSaving?: boolean;
 }
+
+// Sample wireframe data for preview
+const sampleWireframes = [
+  {
+    id: "wire-1",
+    title: "Modern Business Website",
+    description: "Clean, professional design with clear CTAs",
+    imageUrl: "/wireframes/business-modern.jpg",
+    sections: [
+      { id: "hero-1", name: "Hero Section", description: "Bold, minimal hero with single CTA", imageUrl: "/wireframes/sections/hero-1.jpg" },
+      { id: "features-1", name: "Feature Grid", description: "3-column feature highlights with icons", imageUrl: "/wireframes/sections/features-1.jpg" },
+      { id: "testimonial-1", name: "Testimonials", description: "Customer quotes with avatars", imageUrl: "/wireframes/sections/testimonials-1.jpg" }
+    ],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  },
+  {
+    id: "wire-2",
+    title: "Bold E-commerce Store",
+    description: "Vibrant, image-focused product showcase",
+    imageUrl: "/wireframes/ecommerce-bold.jpg",
+    sections: [
+      { id: "product-grid", name: "Product Grid", description: "Dynamic product listing with filters", imageUrl: "/wireframes/sections/products-1.jpg" },
+      { id: "product-detail", name: "Product Detail", description: "Comprehensive product information", imageUrl: "/wireframes/sections/product-detail-1.jpg" }
+    ],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  },
+  {
+    id: "wire-3",
+    title: "Minimal SaaS Platform",
+    description: "Clean, functional interface for SaaS products",
+    imageUrl: "/wireframes/saas-minimal.jpg",
+    sections: [
+      { id: "dashboard", name: "Dashboard", description: "User dashboard with key metrics", imageUrl: "/wireframes/sections/dashboard-1.jpg" },
+      { id: "features", name: "Features Overview", description: "Visual feature breakdown", imageUrl: "/wireframes/sections/features-2.jpg" }
+    ],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  }
+];
 
 const SpecificQuestionsStep = ({ 
   formData, 
@@ -36,6 +79,9 @@ const SpecificQuestionsStep = ({
   const [aiPowered, setAiPowered] = useState(false);
   const [isAiInitializing, setIsAiInitializing] = useState(false);
   const [activeTab, setActiveTab] = useState("requirements");
+  const [selectedWireframeId, setSelectedWireframeId] = useState<string | null>(null);
+  const [showWireframePreview, setShowWireframePreview] = useState(false);
+  const [wireframeTab, setWireframeTab] = useState("wireframe-1");
   const { isGenerating } = useAIContent({
     showToasts: true,
     autoRetry: true
@@ -58,6 +104,11 @@ const SpecificQuestionsStep = ({
   }, [form, updateFormData]);
 
   const onSubmit = (values: any) => {
+    // If a wireframe was selected, include it in the form data
+    if (selectedWireframeId) {
+      values.wireframeSelection = selectedWireframeId;
+    }
+    
     updateFormData(values);
     onNext();
   };
@@ -70,7 +121,8 @@ const SpecificQuestionsStep = ({
     setAiPowered(true);
     setIsAiInitializing(false);
     
-    toast.info("AI-powered tooltips enabled", {
+    toast({
+      title: "AI-powered tooltips enabled",
       description: "Hover over the info icons to see AI-generated example answers tailored to your project"
     });
   }, []);
@@ -82,6 +134,17 @@ const SpecificQuestionsStep = ({
       setAiPowered(false);
     }
   };
+
+  const handleSelectWireframe = (id: string) => {
+    setSelectedWireframeId(id);
+    form.setValue("wireframeSelection", id);
+    toast({
+      title: "Wireframe selected",
+      description: "You can preview this design in the wireframe tab"
+    });
+  };
+
+  const selectedWireframe = sampleWireframes.find(w => w.id === selectedWireframeId);
 
   return (
     <Form {...form}>
@@ -127,9 +190,10 @@ const SpecificQuestionsStep = ({
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="requirements">Project Requirements</TabsTrigger>
             <TabsTrigger value="design">Design Preferences</TabsTrigger>
+            <TabsTrigger value="wireframes">Wireframe Selection</TabsTrigger>
           </TabsList>
           
           <TabsContent value="requirements">
@@ -147,6 +211,87 @@ const SpecificQuestionsStep = ({
               showTooltips={showTooltips}
               aiPowered={aiPowered && showTooltips}
             />
+          </TabsContent>
+          
+          <TabsContent value="wireframes" className="space-y-6">
+            <div className="bg-muted/50 p-4 rounded-lg mb-4">
+              <h3 className="font-medium mb-2">Select a Starting Wireframe</h3>
+              <p className="text-sm text-muted-foreground">
+                Choose a wireframe that best matches your vision. This will serve as a starting point for your design.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {sampleWireframes.map((wireframe) => (
+                <Card 
+                  key={wireframe.id} 
+                  className={`overflow-hidden cursor-pointer transition-all hover:shadow-md ${
+                    selectedWireframeId === wireframe.id ? 'ring-2 ring-primary' : ''
+                  }`}
+                  onClick={() => handleSelectWireframe(wireframe.id)}
+                >
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-lg">{wireframe.title}</CardTitle>
+                    <CardDescription className="line-clamp-2">{wireframe.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="aspect-video bg-muted/60 overflow-hidden">
+                      {wireframe.imageUrl ? (
+                        <img 
+                          src={wireframe.imageUrl} 
+                          alt={wireframe.title} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">No preview</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {selectedWireframeId && (
+              <div className="pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowWireframePreview(!showWireframePreview)}
+                >
+                  {showWireframePreview ? "Hide Preview" : "Show Full Preview"}
+                </Button>
+                
+                {showWireframePreview && selectedWireframe && (
+                  <div className="mt-6">
+                    <Tabs value={wireframeTab} onValueChange={setWireframeTab}>
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="wireframe-1">Desktop View</TabsTrigger>
+                        <TabsTrigger value="wireframe-2">Mobile View</TabsTrigger>
+                        <TabsTrigger value="wireframe-3">Sections</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="wireframe-1">
+                        <WireframeVisualizer 
+                          wireframe={selectedWireframe} 
+                          deviceType="desktop" 
+                        />
+                      </TabsContent>
+                      <TabsContent value="wireframe-2">
+                        <WireframeVisualizer 
+                          wireframe={selectedWireframe}
+                          deviceType="mobile" 
+                        />
+                      </TabsContent>
+                      <TabsContent value="wireframe-3">
+                        <WireframeVisualizer 
+                          wireframe={selectedWireframe}
+                          deviceType="desktop"
+                        />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
