@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
@@ -192,7 +191,6 @@ Use a clean, professional design suitable for finance applications.`;
     { name: "Arc Browser", category: "Software", url: "https://arc.net" },
   ];
 
-  // Debug console logs to trace the wireframe data
   useEffect(() => {
     if (currentWireframe) {
       console.log("Current wireframe data:", currentWireframe);

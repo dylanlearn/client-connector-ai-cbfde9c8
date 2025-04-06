@@ -39,23 +39,43 @@ export function useWireframeGeneration() {
       const result = await WireframeService.generateWireframe(enhancedParams);
       console.log("Generated wireframe result:", result);
       
-      // Make sure the wireframe property exists and has sections
+      // Make sure the wireframe property exists and has proper structure
       if (result && result.wireframe) {
+        // Ensure wireframe has proper structure with sections/pages
         if (!result.wireframe.sections && !result.wireframe.pages) {
-          // Create default empty sections array if none exists
+          console.log("Adding default empty sections array to wireframe");
           result.wireframe.sections = [];
         }
         
-        // Ensure wireframe data is properly structured for visualization
+        // Process pages if they exist
         if (Array.isArray(result.wireframe.pages) && result.wireframe.pages.length > 0) {
+          console.log("Processing wireframe pages:", result.wireframe.pages.length);
           // Make sure each page has a sections array
-          result.wireframe.pages = result.wireframe.pages.map(page => ({
-            ...page,
-            sections: Array.isArray(page.sections) ? page.sections : []
-          }));
+          result.wireframe.pages = result.wireframe.pages.map(page => {
+            console.log("Processing page:", page.name || "Unnamed page");
+            return {
+              ...page,
+              sections: Array.isArray(page.sections) ? page.sections : []
+            };
+          });
+        } else if (!result.wireframe.pages) {
+          // If no pages defined but sections exist, create a default page
+          if (Array.isArray(result.wireframe.sections) && result.wireframe.sections.length > 0) {
+            console.log("Creating default page structure with existing sections");
+            result.wireframe.pages = [{
+              id: "default-page",
+              name: result.wireframe.title || "Home",
+              sections: result.wireframe.sections,
+              pageType: "home"
+            }];
+          }
         }
+      } else {
+        console.error("Invalid wireframe data structure received");
+        throw new Error("Invalid wireframe data structure received");
       }
       
+      console.log("Final processed wireframe:", result);
       setCurrentWireframe(result);
       setCreativityLevel(result.creativityLevel || creativityLevel); // Update creativity level if returned
       
