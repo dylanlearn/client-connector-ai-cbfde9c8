@@ -188,13 +188,6 @@ export function MonitoringState({
                 ? "bg-yellow-200" 
                 : "bg-gray-200"
             }`}
-            indicatorClassName={
-              status === "critical" || status === "error" 
-                ? "bg-red-500" 
-                : status === "warning" 
-                ? "bg-yellow-500" 
-                : "bg-green-500"
-            }
           />
         </div>
         
