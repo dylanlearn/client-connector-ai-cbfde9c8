@@ -13,6 +13,8 @@ export interface WireframeData {
   animations?: any;
   imageUrl?: string;
   style?: any; // Make style accept any type to handle both string and object
+  mobileConsiderations?: string;
+  accessibilityNotes?: string;
 }
 
 export interface WireframePage {

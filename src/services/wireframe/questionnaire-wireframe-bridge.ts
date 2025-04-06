@@ -117,7 +117,7 @@ export const questionnaireWireframeBridge = {
           body: bodyFont
         }
       },
-      // Fix style property to use an object instead of a string
+      // Using styleObject for style to match WireframeData interface
       style: {
         colorScheme: {
           primary: primaryColor,

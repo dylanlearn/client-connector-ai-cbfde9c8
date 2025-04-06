@@ -1,3 +1,4 @@
+
 import { WireframeApiService } from './api';
 import { 
   WireframeGenerationParams, 
@@ -55,8 +56,8 @@ export const WireframeService = {
           const lastWireframe = await WireframeApiService.getLatestWireframe(params.projectId);
           
           if (lastWireframe) {
-            // Convert WireframeData to any to avoid type conflicts
-            const wireframeDataForVersion: any = result.wireframe;
+            // Use type assertion to avoid type conflicts
+            const wireframeDataForVersion = result.wireframe as any;
             await WireframeVersionControlService.createVersion(
               lastWireframe.id,
               wireframeDataForVersion,
@@ -88,7 +89,7 @@ export const WireframeService = {
     
     // Extract from generation_params if available
     if (wireframe.generation_params && typeof wireframe.generation_params === 'object') {
-      if (wireframe.generation_params.result_data) {
+      if ('result_data' in wireframe.generation_params) {
         return wireframe.generation_params.result_data as WireframeData;
       }
     }
