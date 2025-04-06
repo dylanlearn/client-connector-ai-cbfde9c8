@@ -13,8 +13,10 @@ export interface DesignOption {
 
 interface VisualPickerProps {
   options: DesignOption[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  selectedId?: string | null;
+  onSelect?: (id: string) => void;
+  onSelectOption?: (option: any, liked: boolean) => void;
+  category?: string;
   fullWidth?: boolean;
   className?: string;
 }
@@ -23,9 +25,20 @@ export const VisualPicker: React.FC<VisualPickerProps> = ({
   options,
   selectedId,
   onSelect,
+  onSelectOption,
+  category,
   fullWidth = false,
   className,
 }) => {
+  const handleOptionSelect = (option: DesignOption) => {
+    if (onSelect) {
+      onSelect(option.id);
+    }
+    if (onSelectOption) {
+      onSelectOption(option, true);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -46,7 +59,7 @@ export const VisualPicker: React.FC<VisualPickerProps> = ({
                 ? "border-primary shadow-sm ring-2 ring-primary ring-opacity-50"
                 : "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600"
             )}
-            onClick={() => onSelect(option.id)}
+            onClick={() => handleOptionSelect(option)}
           >
             {/* Selection indicator */}
             {isSelected && (
