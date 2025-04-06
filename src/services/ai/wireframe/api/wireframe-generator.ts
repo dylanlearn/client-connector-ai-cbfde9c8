@@ -6,6 +6,7 @@ import {
   WireframeData
 } from "../wireframe-types";
 import { CreativePromptService } from "../../creative-prompt-service";
+import { CreativeEnhancementService } from "../../creative-enhancement-service";
 
 /**
  * Service for generating wireframes through edge functions with enhanced creativity
@@ -31,12 +32,19 @@ export const wireframeGenerator = {
           undefined
       };
       
-      // Enhance the description with creativity if specified
+      // Apply advanced creative enhancement with the new service
       if (enhancedParams.enhancedCreativity && enhancedParams.description) {
-        enhancedParams.description = CreativePromptService.enhancePrompt(
+        // Use the wireframing creative profile for optimal results
+        enhancedParams.description = CreativeEnhancementService.enhancePrompt(
           enhancedParams.description,
-          enhancedParams.creativityLevel || 8
+          "wireframing",
+          {
+            industry: params.industry || undefined,
+            style: params.style || undefined
+          }
         );
+        
+        console.log("Enhanced prompt:", enhancedParams.description);
       }
       
       const { data, error } = await supabase.functions.invoke<{

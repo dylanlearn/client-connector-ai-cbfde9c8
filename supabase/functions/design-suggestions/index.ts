@@ -12,6 +12,8 @@ interface DesignPromptRequest {
   prompt: string;
   industry?: string;
   style?: string;
+  enhancedCreativity?: boolean;
+  creativeProfile?: string;
 }
 
 serve(async (req) => {
@@ -28,7 +30,13 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { prompt, industry, style }: DesignPromptRequest = await req.json();
+    const { 
+      prompt, 
+      industry, 
+      style, 
+      enhancedCreativity = true,
+      creativeProfile = 'designSuggestions' 
+    }: DesignPromptRequest = await req.json();
     
     if (!prompt) {
       return new Response(
@@ -37,7 +45,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generating design suggestions for prompt: ${prompt}, industry: ${industry || 'not specified'}, style: ${style || 'not specified'}`);
+    console.log(`Generating design suggestions for prompt: ${prompt}, industry: ${industry || 'not specified'}, style: ${style || 'not specified'}, creative profile: ${creativeProfile}`);
 
     // Construct system message with specific instructions for visual information
     let systemMessage = `You are an expert design consultant who provides specific, actionable design suggestions with visual elements. 
@@ -70,6 +78,32 @@ For layouts, describe them in detail with explicit components and measurements.`
     if (style && style !== 'any') {
       systemMessage += ` You favor a ${style} design style and will ensure all recommendations align with ${style} design principles and aesthetics.`;
     }
+    
+    // Add enhanced creative guidance for more articulate, decisive recommendations
+    if (enhancedCreativity) {
+      systemMessage += `
+
+Be highly specific and decisive in your recommendations. Don't use phrases like "you might consider" or "perhaps"; instead, state recommendations with confidence: "Use this color palette" or "Implement this layout structure."
+
+Provide a clear design vision with rationale for each recommendation. Explain WHY certain colors, fonts, or layouts work well for this specific project.
+
+Use precise, vivid language to articulate design concepts. Don't just say "modern typography"; instead, say "A geometric sans-serif like Gilroy that conveys contemporary precision with its consistent stroke weights and ample x-height."
+
+Think beyond generic design patterns. Recommend distinctive approaches that will make this design stand out while still serving business objectives.`;
+    }
+
+    // Apply temperature adjustment based on creative profile
+    let temperature = 0.7; // default
+    if (creativeProfile === 'wireframing') {
+      temperature = 0.8; // more creative
+      systemMessage += "\nFocus on innovative layout structures and distinctive visual hierarchies.";
+    } else if (creativeProfile === 'designSuggestions') {
+      temperature = 0.75; // balanced creativity with precision
+      systemMessage += "\nFocus on precise, articulate design language with specific visual references.";
+    } else if (creativeProfile === 'contentCreation') {
+      temperature = 0.7; // more controlled
+      systemMessage += "\nFocus on compelling design narrative with clear value propositions.";
+    }
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -84,7 +118,7 @@ For layouts, describe them in detail with explicit components and measurements.`
           { role: 'system', content: systemMessage },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature,
       }),
     });
 
