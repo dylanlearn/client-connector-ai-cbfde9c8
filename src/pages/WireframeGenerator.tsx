@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { 
   Loader2, ArrowRight, Download, Copy, Code, 
   Layout, RefreshCw, Share2, Layers, Monitor, 
-  Smartphone, PanelLeft, Eye
+  Smartphone, PanelLeft, Eye, Wand2
 } from "lucide-react";
 import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
 import { Badge } from "@/components/ui/badge";
@@ -135,7 +134,6 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
     setViewMode(viewMode === "flowchart" ? "preview" : "flowchart");
   };
 
-  // Sample components for the component picker
   const sampleComponents = [
     { name: "Hero Section", type: "hero", preview: "/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png" },
     { name: "Feature Grid", type: "features", preview: "/placeholder.svg" },
@@ -145,7 +143,6 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
     { name: "Footer", type: "footer", preview: "/placeholder.svg" },
   ];
 
-  // Sample website references
   const websiteReferences = [
     { name: "Linear.app", category: "SaaS", url: "https://linear.app" },
     { name: "Stripe", category: "Payments", url: "https://stripe.com" },
@@ -417,7 +414,6 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                       <div className="relative bg-blue-50/70 rounded-lg p-6 overflow-auto min-h-[500px]">
                         {currentWireframe.wireframe.pages ? (
                           <div className="flex flex-col items-center space-y-6">
-                            {/* Flowchart connection lines */}
                             <div className="absolute inset-0 pointer-events-none">
                               <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                                 <path 
@@ -435,7 +431,6 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                               </svg>
                             </div>
                             
-                            {/* Home page representation */}
                             <div className="relative z-10 p-4 bg-white rounded-lg shadow-md w-[560px] transform transition-all hover:scale-[1.02]">
                               <div className="flex items-center gap-2 text-lg font-medium mb-2">
                                 <div className="p-1 rounded-md bg-primary/10">
@@ -454,7 +449,6 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                               </div>
                             </div>
                             
-                            {/* Secondary pages */}
                             <div className="grid grid-cols-2 gap-8 mt-16 w-full">
                               {Array.from({ length: 2 }).map((_, idx) => (
                                 <div key={idx} className="p-4 bg-white rounded-lg shadow-md transform transition-all hover:scale-[1.02] w-full">

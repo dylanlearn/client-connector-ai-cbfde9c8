@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { AdvancedWireframeGenerator } from '@/components/wireframe';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles, BookOpen, History, PanelTop, Palette, Moon, Smartphone } from 'lucide-react';
+import { Wand2, BookOpen, History, PanelTop, Palette, Moon, Smartphone } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { HelpText } from '@/components/ui/help-text';
 import { AdvancedWireframeService } from '@/services/ai/wireframe/advanced-wireframe-service';
@@ -17,7 +17,6 @@ const AdvancedWireframeGeneratorPage = () => {
   const [activeTab, setActiveTab] = useState('generator');
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   
-  // Fetch style modifiers and component variants on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,7 +36,6 @@ const AdvancedWireframeGeneratorPage = () => {
   }, []);
   
   const refreshWireframes = () => {
-    // This would typically fetch updated wireframe data
     console.log("Refreshing wireframes");
   };
 
@@ -63,7 +61,7 @@ const AdvancedWireframeGeneratorPage = () => {
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="generator" className="flex items-center gap-1">
-            <Sparkles className="h-4 w-4" />
+            <Wand2 className="h-4 w-4" />
             Generator
           </TabsTrigger>
           <TabsTrigger value="guide" className="flex items-center gap-1">
@@ -303,7 +301,6 @@ const AdvancedWireframeGeneratorPage = () => {
               Your previously generated wireframes will appear here.
             </p>
             
-            {/* This would typically fetch and display wireframe history from the database */}
             <div className={`mt-4 text-center py-8 ${darkModeEnabled ? 'text-gray-500 border-gray-700' : 'text-gray-400'} border-2 border-dashed rounded-lg`}>
               {projectId ? (
                 "No wireframe history available for this project yet"
