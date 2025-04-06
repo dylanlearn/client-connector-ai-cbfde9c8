@@ -21,7 +21,7 @@ export interface UserPreference {
   rank: number;
   category: string;
   notes?: string;
-  design_option_id: string; // Making this required to match the type in analytics.ts
+  design_option_id: string; // Required to match the type in analytics.ts
   averageRank?: number;
   count?: number;
   user_id: string;

@@ -43,7 +43,7 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
     }
 
     // Map to our ClientAccessLink interface format with camelCase properties
-    return data.map(link => ({
+    const clientLinks: ClientAccessLink[] = data.map(link => ({
       id: link.id,
       token: link.token,
       status: link.status as 'active' | 'expired' | 'used' | 'completed',
@@ -61,8 +61,16 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
       createdAt: link.created_at,
       expiresAt: link.expires_at,
       lastAccessedAt: link.last_accessed_at || null,
-      personalMessage: link.personal_message
+      last_accessed_at: link.last_accessed_at || null,
+      personalMessage: link.personal_message,
+      
+      // Add required properties from the interface that might be missing
+      linkId: link.id,
+      name: link.client_name,
+      email: link.client_email
     }));
+    
+    return clientLinks;
   } catch (error) {
     console.error('Error in getClientLinks:', error);
     return null;

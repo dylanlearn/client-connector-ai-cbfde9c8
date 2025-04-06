@@ -32,9 +32,9 @@ const PreferenceOverview = () => {
       )}
 
       {preferences.map((pref) => (
-        <div key={pref.category} className="space-y-1">
+        <div key={pref.id} className="space-y-1">
           <div className="flex justify-between items-center text-sm">
-            <span>{pref.category}</span>
+            <span>{pref.category || pref.title || 'Unknown'}</span>
             <span className="text-muted-foreground">{pref.percentage}%</span>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
