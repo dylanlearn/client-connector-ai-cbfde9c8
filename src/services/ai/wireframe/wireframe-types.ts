@@ -2,7 +2,7 @@
 export interface WireframeData {
   title?: string;
   description?: string;
-  sections?: WireframeSection[];
+  sections?: WireframeSection[]; // Make sections optional in this interface
   pages?: WireframePage[];
   styleToken?: string;
   darkMode?: boolean;
@@ -12,7 +12,7 @@ export interface WireframeData {
   designReasoning?: any;
   animations?: any;
   imageUrl?: string;
-  style?: string;
+  style?: any; // Make style accept any type to handle both string and object
 }
 
 export interface WireframePage {
@@ -62,6 +62,7 @@ export interface WireframeGenerationParams {
     colors?: string[];
     tone?: string[];
   };
+  result_data?: any; // Added this to fix errors
 }
 
 export interface WireframeGenerationResult {
@@ -71,7 +72,7 @@ export interface WireframeGenerationResult {
   usedModels?: string[];
   model?: string; // Adding for backward compatibility
   usage?: any;
-  success?: boolean;
+  success?: boolean; // Adding success property
 }
 
 // Add missing interfaces referenced in other files

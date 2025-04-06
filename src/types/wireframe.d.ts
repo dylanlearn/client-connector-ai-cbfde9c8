@@ -1,4 +1,3 @@
-
 /**
  * Type definitions for wireframe version control
  */
@@ -34,7 +33,7 @@ export interface WireframeSourceData {
 export interface WireframeData {
   title?: string;
   description?: string;
-  sections: any[];
+  sections?: any[]; // Make sections optional here too
   layoutType?: string;
   colorScheme?: {
     primary?: string;
@@ -48,7 +47,7 @@ export interface WireframeData {
     fontPairings?: string[];
   };
   designTokens?: Record<string, any>;
-  [key: string]: any;
+  [key: string]: any; // Allow any other properties
 }
 
 export interface WireframeVersion {

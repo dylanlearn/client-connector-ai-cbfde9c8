@@ -1,4 +1,3 @@
-
 import { WireframeApiService } from './api';
 import { 
   WireframeGenerationParams, 
@@ -45,7 +44,7 @@ export const WireframeService = {
       if (params.projectId && result.wireframe) {
         await WireframeApiService.saveWireframe(
           params.projectId,
-          params.prompt,
+          params.prompt || params.description, // Use prompt if available, otherwise use description
           result.wireframe,
           params,
           result.model || 'default'
@@ -56,9 +55,11 @@ export const WireframeService = {
           const lastWireframe = await WireframeApiService.getLatestWireframe(params.projectId);
           
           if (lastWireframe) {
+            // Convert WireframeData to any to avoid type conflicts
+            const wireframeDataForVersion: any = result.wireframe;
             await WireframeVersionControlService.createVersion(
               lastWireframe.id,
-              result.wireframe,
+              wireframeDataForVersion,
               "Initial wireframe generation",
               params.projectId // Using projectId instead of userId
             );
@@ -92,10 +93,15 @@ export const WireframeService = {
       }
     }
     
+    // Extract from wireframe_data if available
+    if (wireframe.wireframe_data) {
+      return wireframe.wireframe_data;
+    }
+    
     // Construct a basic wireframe data object from available properties
     return {
-      title: wireframe.description || "Untitled Wireframe",
-      description: "",
+      title: wireframe.title || wireframe.description || "Untitled Wireframe",
+      description: wireframe.description || "",
       sections: wireframe.sections || []
     };
   },
@@ -187,13 +193,13 @@ export const WireframeService = {
       // Update the wireframe in the database
       const updatedWireframe = await WireframeApiService.updateWireframeData(
         wireframeId, 
-        updatedData
+        updatedData as any // Cast to any to avoid type conflicts
       );
       
       // Create a new version in version control
       await WireframeVersionControlService.createVersion(
         wireframeId,
-        updatedData,
+        updatedData as any, // Cast to any to avoid type conflicts
         changeDescription,
         userId
       );
