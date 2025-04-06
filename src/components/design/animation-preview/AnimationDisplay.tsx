@@ -1,20 +1,12 @@
 
 import { memo } from "react";
 import { motion, Target, Transition, Variant, Variants } from "framer-motion";
-import { AnimationConfigType } from "../animations/config/types";
+import { AnimationConfigType, SecondaryElementType } from "../animations/config/types";
 
 interface AnimationDisplayProps {
   isPlaying: boolean;
   animationKey: number;
   animationConfig: AnimationConfigType;
-}
-
-interface SecondaryElement {
-  className: string;
-  style?: React.CSSProperties;
-  initial: Target;
-  animate: Target;
-  transition: Transition;
 }
 
 export const AnimationDisplay = memo(({ 
@@ -61,7 +53,7 @@ export const AnimationDisplay = memo(({
       </motion.div>
       
       {/* Secondary elements for complex animations */}
-      {animationConfig.secondaryElements?.map((element: SecondaryElement, index: number) => (
+      {animationConfig.secondaryElements?.map((element: SecondaryElementType, index: number) => (
         <motion.div
           key={`secondary-${index}`}
           className={element.className}
