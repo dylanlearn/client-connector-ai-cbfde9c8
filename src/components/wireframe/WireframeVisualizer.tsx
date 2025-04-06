@@ -8,37 +8,7 @@ import { PricingSection } from "./sections/PricingSection";
 import { ContactSection } from "./sections/ContactSection";
 import { FooterSection } from "./sections/FooterSection";
 import { GenericSection } from "./sections/GenericSection";
-
-// Let's create a simple FlowchartView component directly in this file
-// since it seems to be missing or causing import issues
-const FlowchartView: React.FC<{ pages: any[] }> = ({ pages }) => {
-  return (
-    <div className="flowchart-view p-4 bg-blue-50/70 rounded-lg overflow-auto min-h-[500px]">
-      {pages.map((page, pageIndex) => (
-        <div key={`page-${pageIndex}`} className="mb-6">
-          <h3 className="text-lg font-medium mb-2">
-            {page.name || `Page ${pageIndex + 1}`}
-          </h3>
-          <div className="border rounded-lg p-4 bg-white">
-            <div className="space-y-2">
-              {(page.sections || []).map((section: any, sectionIndex: number) => (
-                <div
-                  key={`section-${sectionIndex}`}
-                  className="p-2 border rounded bg-gray-50 flex items-center"
-                >
-                  <div className="mr-2 p-1 rounded bg-blue-100">
-                    <span className="text-xs">{section.sectionType || "Generic"}</span>
-                  </div>
-                  <div className="text-sm">{section.name || `Section ${sectionIndex + 1}`}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
+import { FlowchartView } from "./FlowchartView";
 
 interface WireframeVisualizerProps {
   wireframeData: WireframeData;
@@ -64,12 +34,37 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
 
   // Flowchart mode renders a simplified view showing page and section structure
   if (viewMode === "flowchart") {
-    return <FlowchartView pages={pages} />;
+    return <FlowchartView pages={pages} showDetails={true} />;
   }
+
+  // Apply style tokens if available
+  const styleToken = wireframeData.styleToken || 'modern';
+  
+  // Get style classes based on style token
+  const getStyleClasses = () => {
+    switch (styleToken?.toLowerCase()) {
+      case 'brutalist':
+        return 'font-mono bg-white text-black [&_button]:rounded-none [&_div]:rounded-none';
+      case 'glassy':
+        return 'font-sans bg-gradient-to-br from-blue-50 to-purple-50 [&_div]:backdrop-blur-sm';
+      case 'minimalist':
+        return 'font-sans bg-white text-gray-800 [&_h1]:font-light [&_h2]:font-light [&_h3]:font-light';
+      case 'corporate':
+        return 'font-serif bg-white text-gray-900 [&_section]:border-b [&_section]:border-gray-100';
+      case 'playful':
+        return 'font-sans bg-blue-50 [&_button]:rounded-full [&_div]:rounded-lg';
+      case 'editorial':
+        return 'font-serif text-gray-900 [&_p]:text-lg [&_h1]:tracking-tight [&_h2]:tracking-tight';
+      case 'tech-forward':
+        return 'font-mono bg-gray-900 text-gray-100 [&_div]:rounded-md';
+      default: // modern
+        return 'font-sans bg-white';
+    }
+  };
 
   // Preview mode renders a visual representation of the wireframe
   return (
-    <div className={`wireframe-preview ${deviceType === "mobile" ? "wireframe-preview-mobile" : ""}`}>
+    <div className={`wireframe-preview ${deviceType === "mobile" ? "wireframe-preview-mobile" : ""} ${getStyleClasses()}`}>
       {pages.map((page, pageIndex) => (
         <div key={`page-${pageIndex}`} className="mb-8">
           {pages.length > 1 && (
@@ -80,28 +75,69 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
           
           <div className="space-y-6">
             {(page.sections || []).map((section, sectionIndex) => {
+              // Get any style-specific props
+              const styleProps = section.styleProperties || {};
+              
               // Render the appropriate section component based on section type
               switch (section.sectionType?.toLowerCase()) {
                 case "hero":
-                  return <HeroSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <HeroSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    {...styleProps}
+                  />;
                 
                 case "features":
-                  return <FeaturesSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <FeaturesSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    layout={section.layout}
+                    {...styleProps}
+                  />;
 
                 case "testimonials":
-                  return <TestimonialsSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <TestimonialsSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    {...styleProps}
+                  />;
                 
                 case "pricing":
-                  return <PricingSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <PricingSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    {...styleProps}
+                  />;
                 
                 case "contact":
-                  return <ContactSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <ContactSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    {...styleProps}
+                  />;
                 
                 case "footer":
-                  return <FooterSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <FooterSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    {...styleProps}
+                  />;
                 
                 default:
-                  return <GenericSection key={sectionIndex} sectionIndex={sectionIndex} />;
+                  return <GenericSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    name={section.name}
+                    layout={section.layout}
+                    components={section.components}
+                    {...styleProps}
+                  />;
               }
             })}
           </div>

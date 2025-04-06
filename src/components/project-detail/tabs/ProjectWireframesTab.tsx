@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Project } from '@/types/project';
-import { Sparkles, Grid3X3, PanelLeft, Rocket, Lightbulb } from 'lucide-react';
+import { Sparkles, Grid3X3, PanelLeft, Rocket, Lightbulb, Wand2 } from 'lucide-react';
 import WireframeList from '../components/AI/WireframeList';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -101,6 +102,20 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
         </TabsList>
         
         <TabsContent value="wireframes">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Wireframes</h3>
+            <div className="space-x-2">
+              <Button 
+                variant="secondary"
+                onClick={() => navigate(`/project/${project.id}/advanced-wireframe`)}
+                disabled={!project.id}
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Advanced Generator
+              </Button>
+            </div>
+          </div>
+        
           {!hasInProgressForm() && intakeCompletionPercentage < 25 && (
             <Alert className="mb-6 border-blue-200 bg-blue-50">
               <Rocket className="h-5 w-5 text-blue-500" />

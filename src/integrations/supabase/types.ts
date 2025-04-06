@@ -1851,6 +1851,41 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_blueprints: {
+        Row: {
+          blueprint_data: Json
+          created_at: string | null
+          id: string
+          prompt_id: string
+          style_token: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          blueprint_data: Json
+          created_at?: string | null
+          id?: string
+          prompt_id: string
+          style_token?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          blueprint_data?: Json
+          created_at?: string | null
+          id?: string
+          prompt_id?: string
+          style_token?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_blueprints_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wireframe_cache: {
         Row: {
           created_at: string
@@ -1880,6 +1915,77 @@ export type Database = {
           wireframe_data?: Json
         }
         Relationships: []
+      }
+      wireframe_component_variants: {
+        Row: {
+          component_type: string
+          created_at: string | null
+          id: string
+          preview_image_url: string | null
+          properties: Json
+          variant_name: string
+        }
+        Insert: {
+          component_type: string
+          created_at?: string | null
+          id?: string
+          preview_image_url?: string | null
+          properties: Json
+          variant_name: string
+        }
+        Update: {
+          component_type?: string
+          created_at?: string | null
+          id?: string
+          preview_image_url?: string | null
+          properties?: Json
+          variant_name?: string
+        }
+        Relationships: []
+      }
+      wireframe_design_memory: {
+        Row: {
+          blueprint_id: string | null
+          component_preferences: Json | null
+          created_at: string | null
+          id: string
+          layout_patterns: Json | null
+          project_id: string | null
+          style_preferences: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          blueprint_id?: string | null
+          component_preferences?: Json | null
+          created_at?: string | null
+          id?: string
+          layout_patterns?: Json | null
+          project_id?: string | null
+          style_preferences?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          blueprint_id?: string | null
+          component_preferences?: Json | null
+          created_at?: string | null
+          id?: string
+          layout_patterns?: Json | null
+          project_id?: string | null
+          style_preferences?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_design_memory_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wireframe_elements: {
         Row: {
@@ -1928,6 +2034,47 @@ export type Database = {
           },
         ]
       }
+      wireframe_generated: {
+        Row: {
+          blueprint_id: string
+          created_at: string | null
+          feedback: string | null
+          id: string
+          rendered_data: Json
+          updated_at: string | null
+          user_id: string
+          version: number | null
+        }
+        Insert: {
+          blueprint_id: string
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          rendered_data: Json
+          updated_at?: string | null
+          user_id: string
+          version?: number | null
+        }
+        Update: {
+          blueprint_id?: string
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          rendered_data?: Json
+          updated_at?: string | null
+          user_id?: string
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_generated_blueprint_id_fkey"
+            columns: ["blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wireframe_generation_metrics: {
         Row: {
           created_at: string | null
@@ -1968,6 +2115,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wireframe_multi_page_layouts: {
+        Row: {
+          app_description: string | null
+          created_at: string | null
+          id: string
+          navigation_structure: Json | null
+          page_layouts: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          app_description?: string | null
+          created_at?: string | null
+          id?: string
+          navigation_structure?: Json | null
+          page_layouts: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          app_description?: string | null
+          created_at?: string | null
+          id?: string
+          navigation_structure?: Json | null
+          page_layouts?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wireframe_prompts: {
+        Row: {
+          created_at: string | null
+          id: string
+          raw_input: string
+          structured_intent: Json | null
+          updated_at: string | null
+          user_id: string | null
+          visual_tone: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          raw_input: string
+          structured_intent?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          visual_tone?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          raw_input?: string
+          structured_intent?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          visual_tone?: string | null
+        }
+        Relationships: []
       }
       wireframe_sections: {
         Row: {
@@ -2033,6 +2240,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wireframe_style_modifiers: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          properties: Json
+          style_token: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          properties: Json
+          style_token: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          properties?: Json
+          style_token?: string
+        }
+        Relationships: []
       }
       wireframe_system_events: {
         Row: {

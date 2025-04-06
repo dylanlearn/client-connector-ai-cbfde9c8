@@ -1,7 +1,276 @@
 
-[functions]
-  [functions.generate-advanced-image]
-  verify_jwt = true
+# A string used to distinguish different Supabase projects on the same host. Defaults to the project ID.
+project_id = "bmkhbqxukiakhafqllux"
 
-  [functions.generate-wireframe]
-  verify_jwt = true
+[api]
+enabled = true
+# Port to use for the API URL.
+port = 54321
+# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+# endpoints. public and storage are always included.
+schemas = ["public", "storage"]
+# Extra schemas to add to the search_path of every request. public is always included.
+extra_search_path = ["public", "extensions"]
+# Maximum rows returns from a view, table, or stored procedure. Limits payload size for accidental
+# or malicious requests.
+max_rows = 1000
+
+[db]
+# Enable realtime functionality
+realtime = true
+# Run migrations on the database when the server starts
+migrations = true
+# Port to use for the database URL.
+port = 54320
+
+[studio]
+enabled = true
+# Port to use for Supabase Studio.
+port = 54323
+# API URL used by Supabase Studio.
+api_url = "http://localhost"
+
+[storage]
+enabled = true
+# The maximum file size allowed (e.g. "5MB", "500KB").
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
+site_url = "http://localhost:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
+additional_redirect_urls = ["https://localhost:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
+jwt_expiry = 3600
+# Allow/disallow new user signups to your project.
+enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old, and new email
+# addresses. If disabled, only the new email is required to confirm.
+double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
+enable_confirmations = false
+
+[auth.email]
+# Allow/disallow new user signups via email to your project.
+enable_signup = true
+# If enabled, users need to confirm their email address before signing in.
+enable_confirmations = false
+# Template for the email verification link.
+template_create_user = ""
+template_confirmation = ""
+
+[auth.sms]
+# Allow/disallow new user signups via SMS to your project.
+enable_signup = false
+# If enabled, users need to confirm their phone number before signing in.
+enable_confirmations = false
+
+# Configure one of the supported SMS providers: "twilio", "messagebird", "textlocal", "vonage"
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+# DO NOT COMMIT CREDENTIALS
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+# Configure one of the supported backends: "postgres", "clickhouse"
+backend = "postgres"
+
+# Configure Email service
+[email]
+enabled = false
+
+# Configure one of the supported email service providers: "smtp", "resend", "sendgrid", "postmark", "mailgun"
+[email.smtp]
+enabled = false
+sender = ""
+host = ""
+port = 25
+# DO NOT COMMIT CREDENTIALS
+username = "env(SUPABASE_EMAIL_SMTP_USERNAME)"
+password = "env(SUPABASE_EMAIL_SMTP_PASSWORD)"
+
+[functions]
+enabled = true
+# Port to use for the Functions API URL.
+port = 54324
+
+[functions.generate-advanced-wireframe]
+verify_jwt = true
+
+[functions.wireframe-design-memory]
+verify_jwt = true
+
+# Configure AI
+[ai]
+enabled = false
+vector_port = 54328
+
+# Configure External OAuth providers
+[auth.external.apple]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# For apple oauth on mobile only, overrides the default return URL.
+# Must be a deeplink that matches your apps associated domain.
+return_url = ""
+
+[auth.external.azure]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_AZURE_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.bitbucket]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_BITBUCKET_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.discord]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_DISCORD_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.facebook]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_FACEBOOK_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.figma]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_FIGMA_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.github]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.gitlab]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_GITLAB_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.keycloak]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_KEYCLOAK_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Whether to use pkce with a client secret to authenticate.
+# By default keycloak uses only client_secret flow.
+use_pkce = true
+# Overrides the base URL of the Keycloak OAuth provider.
+auth_url = ""
+# Overrides the realm of the Keycloak OAuth provider.
+realm = ""
+
+[auth.external.kakao]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_KAKAO_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.linkedin]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_LINKEDIN_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.notion]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_NOTION_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.spotify]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_SPOTIFY_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.slack]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_SLACK_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.twitch]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_TWITCH_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.twitter]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_TWITTER_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.workos]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_WORKOS_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[auth.external.zoom]
+enabled = false
+client_id = ""
+# DO NOT COMMIT CREDENTIALS
+secret = "env(SUPABASE_AUTH_EXTERNAL_ZOOM_SECRET)"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
