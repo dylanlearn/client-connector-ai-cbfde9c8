@@ -1,5 +1,18 @@
 
 import React from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  Controls,
+  Background,
+  MiniMap,
+  NodeTypes,
+  NodeProps,
+  Handle,
+  Position
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
 import { 
   LayoutDashboard, 
   LayoutGrid, 
@@ -13,6 +26,24 @@ import {
   PieChart,
   Table
 } from 'lucide-react';
+
+// Node types for the flowchart
+const SectionNode = ({ data }: NodeProps) => (
+  <div className={`p-3 rounded-md border ${data.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50/50 border-blue-100'}`}>
+    <div className="flex items-center">
+      {data.icon}
+      <span className={`ml-2 font-medium ${data.darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+        {data.label}
+      </span>
+    </div>
+    <Handle type="target" position={Position.Top} className="!bg-blue-400" />
+    <Handle type="source" position={Position.Bottom} className="!bg-blue-400" />
+  </div>
+);
+
+const nodeTypes: NodeTypes = {
+  sectionNode: SectionNode
+};
 
 interface FlowchartViewProps {
   pages: any[];
@@ -50,77 +81,105 @@ export const FlowchartView: React.FC<FlowchartViewProps> = ({
         return <Type className="h-4 w-4" />;
     }
   };
+
+  // Convert page data to nodes and edges for ReactFlow
+  const generateFlowElements = () => {
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    let yOffset = 0;
+
+    pages.forEach((page, pageIndex) => {
+      // Add page node
+      const pageId = `page-${pageIndex}`;
+      nodes.push({
+        id: pageId,
+        type: 'sectionNode',
+        data: { 
+          label: page.name || `Page ${pageIndex + 1}`, 
+          icon: <ListTree className={`h-4 w-4 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`} />,
+          darkMode
+        },
+        position: { x: 250, y: yOffset },
+        style: { width: 180 }
+      });
+      
+      yOffset += 100;
+      
+      // Add section nodes
+      if (page.sections?.length > 0) {
+        page.sections.forEach((section: any, sectionIndex: number) => {
+          const sectionId = `section-${pageIndex}-${sectionIndex}`;
+          nodes.push({
+            id: sectionId,
+            type: 'sectionNode',
+            data: { 
+              label: section.name || section.sectionType || `Section ${sectionIndex + 1}`,
+              icon: getSectionIcon(section.sectionType),
+              darkMode
+            },
+            position: { x: 250, y: yOffset },
+            style: { width: 180 }
+          });
+          
+          // Add edge from page to first section
+          if (sectionIndex === 0) {
+            edges.push({
+              id: `edge-page-${pageIndex}-section-${sectionIndex}`,
+              source: pageId,
+              target: sectionId
+            });
+          }
+          
+          // Add edge from previous section to this one
+          if (sectionIndex > 0) {
+            edges.push({
+              id: `edge-${pageIndex}-${sectionIndex-1}-${sectionIndex}`,
+              source: `section-${pageIndex}-${sectionIndex-1}`,
+              target: sectionId
+            });
+          }
+          
+          yOffset += 100;
+        });
+      }
+      
+      // Add spacing between pages
+      yOffset += 50;
+    });
+    
+    return { nodes, edges };
+  };
   
-  const bgClass = darkMode ? 'bg-gray-900' : 'bg-blue-50';
-  const borderClass = darkMode ? 'border-gray-700' : 'border-blue-200';
-  const textClass = darkMode ? 'text-gray-200' : 'text-blue-800';
-  const sectionBgClass = darkMode ? 'bg-gray-800' : 'bg-blue-50/50';
-  const sectionBorderClass = darkMode ? 'border-gray-700' : 'border-blue-100';
+  const { nodes, edges } = generateFlowElements();
+  
+  if (pages.length === 0) {
+    return (
+      <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <ListTree className={`h-12 w-12 mx-auto ${darkMode ? 'text-gray-500' : 'text-gray-400'} mb-2`} />
+        <p>No page structure available</p>
+      </div>
+    );
+  }
   
   return (
-    <div className={`p-4 ${bgClass} rounded-lg`}>
-      <div className="space-y-6">
-        {pages.map((page, pageIndex) => (
-          <div key={`page-${pageIndex}`} className={`bg-white ${darkMode ? 'bg-gray-800' : 'bg-white'} border ${borderClass} rounded-lg overflow-hidden`}>
-            <div className={`${darkMode ? 'bg-gray-700' : 'bg-blue-100'} p-3 border-b ${borderClass}`}>
-              <div className="flex items-center space-x-2">
-                <ListTree className={`h-5 w-5 ${darkMode ? 'text-blue-300' : 'text-blue-600'}`} />
-                <span className={`font-medium ${textClass}`}>
-                  {page.name || `Page ${pageIndex + 1}`}
-                  {page.pageType && <span className={`${darkMode ? 'text-blue-300' : 'text-blue-600'} text-sm ml-2`}>({page.pageType})</span>}
-                </span>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              {(page.sections || []).length > 0 ? (
-                <div className="space-y-3">
-                  {page.sections.map((section: any, sectionIndex: number) => (
-                    <div 
-                      key={`section-${pageIndex}-${sectionIndex}`} 
-                      className={`border ${sectionBorderClass} rounded p-3 ${sectionBgClass}`}
-                    >
-                      <div className="flex items-center">
-                        <div className={`h-6 w-6 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-blue-100'} flex items-center justify-center mr-2`}>
-                          {getSectionIcon(section.sectionType)}
-                        </div>
-                        <span className={`font-medium ${darkMode ? 'text-gray-200' : ''}`}>
-                          {section.name || section.sectionType || `Section ${sectionIndex + 1}`}
-                        </span>
-                        {section.componentVariant && (
-                          <span className={`text-xs ${darkMode ? 'text-blue-300 bg-gray-700' : 'text-blue-600 bg-blue-100'} rounded-full px-2 py-0.5 ml-2`}>
-                            {section.componentVariant}
-                          </span>
-                        )}
-                      </div>
-                      
-                      {showDetails && section.components && section.components.length > 0 && (
-                        <div className={`mt-2 pl-8 border-l ${darkMode ? 'border-gray-700' : 'border-blue-100'} ml-3 space-y-1`}>
-                          {section.components.map((component: any, compIndex: number) => (
-                            <div key={`comp-${compIndex}`} className={`flex items-center text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                              <div className={`w-2 h-2 ${darkMode ? 'bg-blue-500' : 'bg-blue-300'} rounded-full mr-2`}></div>
-                              {component.type || `Component ${compIndex + 1}`}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className={`text-center py-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>No sections defined</div>
-              )}
-            </div>
-          </div>
-        ))}
-        
-        {pages.length === 0 && (
-          <div className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <ListTree className={`h-12 w-12 mx-auto ${darkMode ? 'text-gray-500' : 'text-gray-400'} mb-2`} />
-            <p>No page structure available</p>
-          </div>
-        )}
-      </div>
+    <div className={`h-[500px] ${darkMode ? 'bg-gray-900' : 'bg-blue-50'} rounded-lg`}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        fitView
+        minZoom={0.5}
+        maxZoom={1.5}
+        defaultEdgeOptions={{ animated: true }}
+      >
+        <Controls />
+        <MiniMap 
+          nodeStrokeColor={darkMode ? '#374151' : '#dbeafe'}
+          nodeColor={darkMode ? '#1f2937' : '#eff6ff'}
+          maskColor={darkMode ? 'rgba(17, 24, 39, 0.5)' : 'rgba(239, 246, 255, 0.5)'}
+        />
+        <Background color={darkMode ? '#4b5563' : '#bfdbfe'} gap={16} />
+      </ReactFlow>
     </div>
   );
 };

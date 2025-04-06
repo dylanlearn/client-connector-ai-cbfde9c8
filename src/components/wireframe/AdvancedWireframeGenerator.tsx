@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,7 +57,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       projectId,
       styleToken,
       includeDesignMemory: useDesignMemory,
-      // Pass darkMode as a custom parameter
       customParams: {
         darkMode: darkMode
       }
@@ -70,7 +68,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       onWireframeGenerated();
     }
     
-    // Switch to the preview tab after generation
     if (result) {
       setActiveTab('preview');
     }
@@ -86,7 +83,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     }
   };
   
-  // Example prompts to help users get started
   const examplePrompts = [
     "Create a modern SaaS homepage with hero, feature grid, pricing, and testimonials using a dark theme",
     "Design a minimalist portfolio for a photographer with fullscreen image galleries and a side navigation",
@@ -105,7 +101,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     { value: 'tech-forward', label: 'Tech-Forward' }
   ];
   
-  // Apply dark mode class if enabled
   const darkModeClass = darkMode ? 'bg-gray-900 text-gray-100' : '';
   
   return (
@@ -278,7 +273,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                   </div>
                 </div>
                 
-                {/* Style information */}
                 {intentData && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {intentData.visualTone && intentData.visualTone.split(',').map((tone: string, idx: number) => (
@@ -295,6 +289,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                       <FlowchartView 
                         pages={currentWireframe.pages || [{ sections: currentWireframe.sections || [] }]} 
                         showDetails={true}
+                        darkMode={darkMode}
                       />
                     </div>
                   ) : (

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { HeroSection } from "./sections/HeroSection";
@@ -31,7 +30,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
 }) => {
   const [isRendered, setIsRendered] = useState(false);
   
-  // Debug logging for wireframe data
   useEffect(() => {
     console.log("WireframeVisualizer received wireframeData:", wireframeData);
     console.log("Pages:", wireframeData.pages);
@@ -39,7 +37,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   }, [wireframeData]);
   
   useEffect(() => {
-    // Add a small delay for transition effects
     const timer = setTimeout(() => {
       setIsRendered(true);
     }, 100);
@@ -47,11 +44,9 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     return () => clearTimeout(timer);
   }, [wireframeData]);
 
-  // Ensure we have workable data
   const validatedData = React.useMemo(() => {
     const data = {...wireframeData};
     
-    // Ensure we have pages or sections array
     if (!data.pages && !data.sections) {
       data.sections = [];
     }
@@ -59,7 +54,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     return data;
   }, [wireframeData]);
 
-  // Get pages from wireframe if they exist, otherwise create a single page with sections
   const pages = validatedData.pages || [
     {
       id: "page-1",
@@ -70,15 +64,12 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     }
   ];
 
-  // Flowchart mode renders a simplified view showing page and section structure
   if (viewMode === "flowchart") {
-    return <FlowchartView pages={pages} showDetails={true} />;
+    return <FlowchartView pages={pages} showDetails={true} darkMode={darkMode} />;
   }
 
-  // Apply style tokens if available
   const styleToken = validatedData.styleToken || validatedData.style || 'modern';
   
-  // Get color scheme from wireframe data or use defaults
   const colorScheme = validatedData.colorScheme || {
     primary: "#4F46E5",
     secondary: "#A855F7", 
@@ -86,19 +77,15 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     background: darkMode ? "#111827" : "#ffffff"
   };
   
-  // Get typography from wireframe data or use defaults
   const typography = validatedData.typography || {
     headings: "font-raleway",
     body: "font-sans",
     fontPairings: ["Raleway", "Inter"]
   };
   
-  // Get style classes based on style token
   const getStyleClasses = () => {
-    // Apply dark mode classes if enabled
     const darkModeClass = darkMode ? 'bg-gray-900 text-gray-100' : '';
     
-    // Apply tailwind classes based on style token string or object
     if (typeof styleToken === 'string') {
       switch (styleToken.toLowerCase()) {
         case 'brutalist':
@@ -167,15 +154,13 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
           );
       }
     } else {
-      // Handle object style definition
       return cn(
         darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white',
         "transition-all duration-300"
       );
     }
   };
-  
-  // Device type specific classes
+
   const getDeviceClasses = () => {
     switch (deviceType) {
       case "mobile":
@@ -187,7 +172,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     }
   };
 
-  // Apply grid overlay for design guidance
   const gridOverlay = showGrid ? (
     <div className="pointer-events-none fixed inset-0 z-50 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4 p-4 opacity-10">
       {Array.from({ length: 12 }).map((_, i) => (
@@ -196,7 +180,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     </div>
   ) : null;
 
-  // If no pages or sections are provided, show a placeholder
   if (pages.length === 0 || (pages.length === 1 && pages[0].sections.length === 0)) {
     return (
       <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
@@ -206,7 +189,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     );
   }
 
-  // Preview mode renders a visual representation of the wireframe
   return (
     <div 
       className={cn(
@@ -238,10 +220,8 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
           
           <div className="space-y-6">
             {(page.sections || []).map((section, sectionIndex) => {
-              // Get any style-specific props
               const styleProps = section.styleProperties || {};
               
-              // Create section wrapper with highlight option
               const SectionWrapper = ({ children }: { children: React.ReactNode }) => (
                 <div 
                   className={cn(
@@ -258,7 +238,6 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
                 </div>
               );
               
-              // Render the appropriate section component based on section type
               const sectionContent = (() => {
                 switch (section.sectionType?.toLowerCase()) {
                   case "hero":
