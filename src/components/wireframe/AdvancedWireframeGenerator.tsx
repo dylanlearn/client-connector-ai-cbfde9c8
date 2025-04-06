@@ -1,17 +1,23 @@
+
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { WireframeDataVisualizer } from './index';
 import { WireframeData } from '@/types/wireframe';
 
-// This is a stub component to resolve the import error
-// It should be properly implemented later
-
 interface AdvancedWireframeGeneratorProps {
   initialData?: WireframeData;
+  projectId?: string;
+  onWireframeGenerated?: () => void;
+  onWireframeSaved?: () => void;
+  darkMode?: boolean;
 }
 
 const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
-  initialData
+  initialData,
+  projectId,
+  onWireframeGenerated,
+  onWireframeSaved,
+  darkMode = false
 }) => {
   return (
     <Card>
@@ -25,7 +31,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
             wireframeData={initialData}
             viewMode="preview"
             deviceType="desktop"
-            darkMode={false}
+            darkMode={darkMode}
           />
         )}
       </CardContent>

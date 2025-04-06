@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -123,10 +122,9 @@ const SpecificQuestionsStep = ({
     setIsAiInitializing(false);
     
     toast({
-      title: "AI-powered tooltips enabled",
       description: "Hover over the info icons to see AI-generated example answers tailored to your project"
     });
-  }, []);
+  }, [toast]);
 
   const handleAIToggle = (enabled: boolean) => {
     if (enabled) {
@@ -139,7 +137,6 @@ const SpecificQuestionsStep = ({
   const handleSelectWireframe = (id: string) => {
     setSelectedWireframeId(id);
     toast({
-      title: "Wireframe selected",
       description: "You can preview this design in the wireframe tab"
     });
   };

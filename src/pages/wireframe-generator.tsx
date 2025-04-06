@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
@@ -11,7 +12,7 @@ import {
   Tablet, Palette, SlidersHorizontal, ScissorsSquare,
   Wand2
 } from "lucide-react";
-import WireframeDataVisualizer from "@/components/wireframe/WireframeDataVisualizer";
+import { WireframeDataVisualizer } from "@/components/wireframe";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

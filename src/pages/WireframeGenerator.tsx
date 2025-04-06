@@ -9,7 +9,7 @@ import {
   Layout, RefreshCw, Share2, Layers, Monitor, 
   Smartphone, PanelLeft, Eye, Wand2
 } from "lucide-react";
-import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
+import { WireframeDataVisualizer } from "@/components/wireframe";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -413,77 +413,21 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                     {viewMode === "flowchart" ? (
                       <div className="relative bg-blue-50/70 rounded-lg p-6 overflow-auto min-h-[500px]">
                         {currentWireframe.wireframe.pages ? (
-                          <div className="flex flex-col items-center space-y-6">
-                            <div className="absolute inset-0 pointer-events-none">
-                              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                <path 
-                                  d="M 500,200 C 500,300 300,450 500,550" 
-                                  stroke="rgba(224, 231, 255, 0.8)" 
-                                  strokeWidth="6" 
-                                  fill="none"
-                                />
-                                <path 
-                                  d="M 500,200 C 500,300 700,450 500,550" 
-                                  stroke="rgba(224, 231, 255, 0.8)" 
-                                  strokeWidth="6" 
-                                  fill="none"
-                                />
-                              </svg>
-                            </div>
-                            
-                            <div className="relative z-10 p-4 bg-white rounded-lg shadow-md w-[560px] transform transition-all hover:scale-[1.02]">
-                              <div className="flex items-center gap-2 text-lg font-medium mb-2">
-                                <div className="p-1 rounded-md bg-primary/10">
-                                  <Layout className="h-5 w-5 text-primary" />
-                                </div>
-                                <Badge variant="secondary">Home</Badge>
-                              </div>
-                              <div className="border rounded-lg p-2 bg-gray-50">
-                                <div className="bg-white border border-dashed rounded h-32 flex justify-center items-center">
-                                  <img 
-                                    src="/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png"
-                                    alt="Homepage wireframe" 
-                                    className="max-h-full"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-8 mt-16 w-full">
-                              {Array.from({ length: 2 }).map((_, idx) => (
-                                <div key={idx} className="p-4 bg-white rounded-lg shadow-md transform transition-all hover:scale-[1.02] w-full">
-                                  <div className="flex items-center gap-2 text-lg font-medium mb-2">
-                                    <div className="p-1 rounded-md bg-primary/10">
-                                      <Layout className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <Badge variant="secondary">
-                                      {idx === 0 ? "About Us" : "Blog"}
-                                    </Badge>
-                                  </div>
-                                  <div className="border rounded-lg p-2 bg-gray-50">
-                                    <div className="bg-white border border-dashed rounded h-24 flex justify-center items-center">
-                                      <img 
-                                        src="/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png"
-                                        alt={`Page ${idx + 2} wireframe`} 
-                                        className="max-h-full opacity-80"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <WireframeVisualizer 
-                            wireframeData={currentWireframe.wireframe} 
+                          <WireframeDataVisualizer 
+                            wireframeData={currentWireframe.wireframe}
                             viewMode="flowchart"
+                          />
+                        ) : (
+                          <WireframeDataVisualizer 
+                            wireframeData={currentWireframe.wireframe}
+                            viewMode="preview"
                           />
                         )}
                       </div>
                     ) : (
                       <div className="p-4">
                         <Tabs defaultValue="desktop">
-                          <TabsList className="mb-4">
+                          <TabsList>
                             <TabsTrigger value="desktop" className="flex items-center gap-1">
                               <Monitor className="h-4 w-4" />
                               Desktop
@@ -494,22 +438,18 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                             </TabsTrigger>
                           </TabsList>
                           <TabsContent value="desktop">
-                            <div className="border rounded-lg p-4 bg-white">
-                              <WireframeVisualizer 
-                                wireframeData={currentWireframe.wireframe} 
-                                viewMode="preview"
-                                deviceType="desktop"
-                              />
-                            </div>
+                            <WireframeDataVisualizer 
+                              wireframeData={currentWireframe.wireframe}
+                              viewMode="preview"
+                              deviceType="desktop"
+                            />
                           </TabsContent>
                           <TabsContent value="mobile">
-                            <div className="border rounded-lg p-4 bg-white max-w-[320px] mx-auto">
-                              <WireframeVisualizer 
-                                wireframeData={currentWireframe.wireframe} 
-                                viewMode="preview"
-                                deviceType="mobile"
-                              />
-                            </div>
+                            <WireframeDataVisualizer 
+                              wireframeData={currentWireframe.wireframe}
+                              viewMode="preview"
+                              deviceType="mobile"
+                            />
                           </TabsContent>
                         </Tabs>
                       </div>

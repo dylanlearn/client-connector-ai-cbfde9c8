@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData } from '@/types/wireframe';
 import { WireframeDataVisualizer } from '@/components/wireframe';
 import { Monitor, Smartphone } from 'lucide-react';
 

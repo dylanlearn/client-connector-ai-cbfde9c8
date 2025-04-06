@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
@@ -22,7 +23,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   
   const handleGenerateWireframes = async () => {
     if (!intakeData.projectName || !intakeData.projectDescription) {
-      toast.error("Project information is incomplete", {
+      toast("Project information is incomplete", {
         description: "Please complete the intake form with at least project name and description"
       });
       return;
@@ -37,13 +38,13 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       setIsGenerating(false);
       setShowWireframeFlow(true);
       
-      toast.success("Wireframe recommendations generated", {
+      toast("Wireframe recommendations generated", {
         description: "Based on your project requirements and design preferences"
       });
       
     } catch (error) {
       setIsGenerating(false);
-      toast.error("Failed to generate wireframes");
+      toast("Failed to generate wireframes");
       console.error(error);
     }
   };
