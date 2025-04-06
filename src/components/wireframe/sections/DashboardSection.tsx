@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { BarChart3, PieChart, TrendingUp, DollarSign } from 'lucide-react';

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "./use-toast";
 import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
@@ -35,6 +36,7 @@ export function useAdvancedWireframe() {
       
       const result = await AdvancedWireframeService.generateWireframe(params);
       
+      // Ensure the wireframe has the correct type structure
       setCurrentWireframe(result.wireframe);
       setIntentData(result.intentData);
       setBlueprint(result.blueprint);
