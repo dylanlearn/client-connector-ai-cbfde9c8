@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
@@ -72,6 +73,10 @@ const WireframeGenerator = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
+
+    console.log("Generating wireframe with options:", { 
+      prompt, style, multiPage, pagesCount, colorScheme 
+    });
 
     await generateWireframe({
       description: prompt,
@@ -186,6 +191,15 @@ Use a clean, professional design suitable for finance applications.`;
     { name: "Notion", category: "Productivity", url: "https://www.notion.so" },
     { name: "Arc Browser", category: "Software", url: "https://arc.net" },
   ];
+
+  // Debug console logs to trace the wireframe data
+  useEffect(() => {
+    if (currentWireframe) {
+      console.log("Current wireframe data:", currentWireframe);
+      console.log("Wireframe sections:", currentWireframe.wireframe?.sections);
+      console.log("Wireframe pages:", currentWireframe.wireframe?.pages);
+    }
+  }, [currentWireframe]);
 
   return (
     <DashboardLayout>
@@ -342,10 +356,10 @@ Use a clean, professional design suitable for finance applications.`;
             <CardHeader className="flex flex-row justify-between items-start space-y-0">
               <div>
                 <CardTitle>
-                  {currentWireframe?.wireframe.title || "Generated Wireframe"}
+                  {currentWireframe?.wireframe?.title || "Generated Wireframe"}
                 </CardTitle>
                 <CardDescription>
-                  {currentWireframe?.wireframe.description || "Your wireframe will appear here after generation."}
+                  {currentWireframe?.wireframe?.description || "Your wireframe will appear here after generation."}
                 </CardDescription>
               </div>
               {currentWireframe && (
@@ -500,85 +514,84 @@ Use a clean, professional design suitable for finance applications.`;
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center h-80 space-y-4">
                   <div className="relative">
+                    <div className="h-32 w-32 rounded-full border-4 border-t-blue-500 border-b-blue-700 border-l-blue-600 border-r-blue-400 animate-spin"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-primary/10 rounded-full w-40 h-40 flex items-center justify-center">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                      </div>
+                      <Sparkles className="h-12 w-12 text-blue-500 animate-pulse" />
                     </div>
-                    <div className="bg-primary/5 rounded-lg p-12 backdrop-blur-sm">
-                      <div className="space-y-4">
-                        <p className="font-medium text-xl text-center">Generating Wireframe</p>
-                        <p className="text-sm text-muted-foreground text-center max-w-xs">
-                          Creating a detailed wireframe based on your description. This may take a moment...
-                        </p>
-                      </div>
-                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-lg font-medium mb-1">Generating Wireframe</h3>
+                    <p className="text-muted-foreground">
+                      Creating your design based on your description...
+                    </p>
                   </div>
                 </div>
-              ) : currentWireframe ? (
-                <div className="space-y-4">
-                  <div className="bg-muted rounded-lg overflow-hidden border min-h-[500px]">
-                    <WireframeVisualizer 
-                      wireframeData={currentWireframe.wireframe}
-                      viewMode={viewMode}
-                      deviceType={deviceType}
-                      darkMode={darkMode}
-                      showGrid={showGrid}
-                      highlightSections={highlightSections}
-                    />
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                        <Code className="h-4 w-4 mr-2" />
-                        Copy JSON
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleDownload}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleCopyImage}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy Image
-                      </Button>
-                    </div>
-                    <Button variant="secondary" size="sm" onClick={handleGenerateVariation}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Generate Variation
-                    </Button>
-                  </div>
+              ) : currentWireframe && currentWireframe.wireframe ? (
+                <div className="border rounded-lg p-4 relative min-h-80">
+                  <WireframeVisualizer 
+                    wireframeData={currentWireframe.wireframe} 
+                    viewMode={viewMode}
+                    deviceType={deviceType}
+                    darkMode={darkMode}
+                    showGrid={showGrid}
+                    highlightSections={highlightSections}
+                  />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-80 space-y-4 text-center">
-                  <Layout className="h-12 w-12 text-muted-foreground opacity-20" />
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-medium">Start by describing your wireframe</h3>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Enter a detailed description of what you need, or use one of our examples to get started quickly.
+                <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
+                  <Layout className="h-16 w-16 text-gray-300" />
+                  <div>
+                    <h3 className="text-lg font-medium mb-1">No Wireframe Generated Yet</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      Provide a description and click "Generate Wireframe" to create your design.
                     </p>
                   </div>
                 </div>
               )}
             </CardContent>
-            {currentWireframe && (
-              <CardFooter className="flex justify-between border-t pt-4">
-                <div className="text-sm text-muted-foreground">
-                  Generated in {currentWireframe.generationTime.toFixed(1)}s
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span className="text-sm text-muted-foreground mr-1">Creativity:</span>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span
-                      key={i}
-                      className={`h-2 w-2 rounded-full ${
-                        i < ((currentWireframe.creativityLevel || 5) / 2)
-                          ? "bg-primary"
-                          : "bg-muted"
-                      }`}
-                    />
-                  ))}
-                </div>
+            {currentWireframe && currentWireframe.wireframe && (
+              <CardFooter className="flex flex-wrap gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleGenerateVariation}
+                  disabled={isGenerating}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Generate Variation
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCopyJSON}
+                >
+                  <Code className="mr-2 h-4 w-4" />
+                  Copy JSON
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDownload}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCopyImage}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy as Image
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={true}
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
+                </Button>
               </CardFooter>
             )}
           </Card>

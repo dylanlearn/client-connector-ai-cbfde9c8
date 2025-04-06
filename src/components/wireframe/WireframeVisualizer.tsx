@@ -31,6 +31,13 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
 }) => {
   const [isRendered, setIsRendered] = useState(false);
   
+  // Debug logging for wireframe data
+  useEffect(() => {
+    console.log("WireframeVisualizer received wireframeData:", wireframeData);
+    console.log("Pages:", wireframeData.pages);
+    console.log("Sections:", wireframeData.sections);
+  }, [wireframeData]);
+  
   useEffect(() => {
     // Add a small delay for transition effects
     const timer = setTimeout(() => {
@@ -40,13 +47,25 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     return () => clearTimeout(timer);
   }, [wireframeData]);
 
+  // Ensure we have workable data
+  const validatedData = React.useMemo(() => {
+    const data = {...wireframeData};
+    
+    // Ensure we have pages or sections array
+    if (!data.pages && !data.sections) {
+      data.sections = [];
+    }
+    
+    return data;
+  }, [wireframeData]);
+
   // Get pages from wireframe if they exist, otherwise create a single page with sections
-  const pages = wireframeData.pages || [
+  const pages = validatedData.pages || [
     {
       id: "page-1",
-      name: wireframeData.title || "Home",
+      name: validatedData.title || "Home",
       slug: "home",
-      sections: wireframeData.sections || [],
+      sections: validatedData.sections || [],
       pageType: "home"
     }
   ];
@@ -57,10 +76,10 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   }
 
   // Apply style tokens if available
-  const styleToken = wireframeData.styleToken || wireframeData.style || 'modern';
+  const styleToken = validatedData.styleToken || validatedData.style || 'modern';
   
   // Get color scheme from wireframe data or use defaults
-  const colorScheme = wireframeData.colorScheme || {
+  const colorScheme = validatedData.colorScheme || {
     primary: "#4F46E5",
     secondary: "#A855F7", 
     accent: "#F59E0B",
@@ -68,7 +87,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   };
   
   // Get typography from wireframe data or use defaults
-  const typography = wireframeData.typography || {
+  const typography = validatedData.typography || {
     headings: "font-raleway",
     body: "font-sans",
     fontPairings: ["Raleway", "Inter"]
@@ -176,6 +195,16 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
       ))}
     </div>
   ) : null;
+
+  // If no pages or sections are provided, show a placeholder
+  if (pages.length === 0 || (pages.length === 1 && pages[0].sections.length === 0)) {
+    return (
+      <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <p className="mb-2 font-medium">No sections defined</p>
+        <p className="text-sm">This wireframe doesn't contain any sections or pages yet.</p>
+      </div>
+    );
+  }
 
   // Preview mode renders a visual representation of the wireframe
   return (
