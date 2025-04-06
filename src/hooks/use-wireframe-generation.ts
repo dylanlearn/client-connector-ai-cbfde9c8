@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { WireframeService } from "@/services/ai/wireframe/wireframe-service";
 import { 
@@ -17,6 +17,21 @@ export function useWireframeGeneration() {
   const [creativityLevel, setCreativityLevel] = useState<number>(8); // Default high creativity
   const { toast } = useToast();
 
+  // Function to enhance a prompt with more specific design guidance
+  const enhancePrompt = (prompt: string): string => {
+    // Only enhance if the prompt doesn't already have detailed design instructions
+    if (prompt.length < 100 && 
+        !prompt.toLowerCase().includes('layout') && 
+        !prompt.toLowerCase().includes('section')) {
+      return `${prompt} 
+Include clear content sections with appropriate hierarchy. 
+Design with responsive layouts in mind. 
+Use consistent spacing and alignment throughout.
+Include intuitive navigation and clear call-to-action elements.`;
+    }
+    return prompt;
+  };
+
   const generateWireframe = async (params: WireframeGenerationParams) => {
     setIsGenerating(true);
     setError(null);
@@ -27,19 +42,20 @@ export function useWireframeGeneration() {
         description: "Creating a highly creative design, this might take a moment...",
       });
       
-      // Add creativity parameters
+      // Enhance the prompt for better results
       const enhancedParams = {
         ...params,
         enhancedCreativity: true,
-        creativityLevel: creativityLevel,
+        creativityLevel: params.creativityLevel || creativityLevel,
+        description: enhancePrompt(params.description || '')
       };
       
       // Call the wireframe generation service
-      console.log("Calling wireframe service with params:", enhancedParams);
+      console.log("Calling wireframe service with enhanced params:", enhancedParams);
       const result = await WireframeService.generateWireframe(enhancedParams);
       console.log("Generated wireframe result:", result);
       
-      // Make sure the wireframe property exists and has proper structure
+      // Process and validate the wireframe data
       if (result && result.wireframe) {
         // Ensure wireframe has proper structure with sections/pages
         if (!result.wireframe.sections && !result.wireframe.pages) {
@@ -69,6 +85,34 @@ export function useWireframeGeneration() {
               pageType: "home"
             }];
           }
+        }
+        
+        // Set a fallback style if none provided
+        if (!result.wireframe.style) {
+          result.wireframe.style = params.style || "modern";
+        }
+        
+        // Add design tokens if missing
+        if (!result.wireframe.designTokens) {
+          result.wireframe.designTokens = {
+            colors: {
+              primary: "#4361ee",
+              secondary: "#3f37c9",
+              accent: "#4cc9f0",
+              background: "#ffffff",
+              text: "#1a1a1a"
+            },
+            typography: {
+              headingFont: "Inter, sans-serif",
+              bodyFont: "Inter, sans-serif",
+              baseFontSize: "16px",
+              scaleRatio: 1.2
+            },
+            spacing: {
+              unit: "1rem",
+              sectionPadding: "2rem 0"
+            }
+          };
         }
       } else {
         console.error("Invalid wireframe data structure received");
@@ -132,7 +176,7 @@ export function useWireframeGeneration() {
     }
   };
   
-  const loadProjectWireframes = async (projectId: string) => {
+  const loadProjectWireframes = useCallback(async (projectId: string) => {
     try {
       const results = await WireframeService.getProjectWireframes(projectId);
       setWireframes(results);
@@ -149,7 +193,7 @@ export function useWireframeGeneration() {
       
       return [];
     }
-  };
+  }, [toast]);
 
   const getWireframe = async (wireframeId: string) => {
     try {
@@ -206,6 +250,8 @@ export function useWireframeGeneration() {
         title: "Wireframe deleted",
         description: "The wireframe has been removed",
       });
+      
+      return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to delete wireframe";
       
@@ -214,6 +260,8 @@ export function useWireframeGeneration() {
         description: errorMessage,
         variant: "destructive",
       });
+      
+      return false;
     }
   };
 
