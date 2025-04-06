@@ -147,10 +147,11 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
   };
   
   return (
-    <Card as={motion.div} 
+    <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border shadow-sm hover:shadow-md transition-all duration-300">
+      className="border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 bg-card text-card-foreground"
+    >
       <CardHeader>
         <CardTitle className="flex items-center">
           <Sparkles className="mr-2 h-5 w-5 text-purple-500" />
@@ -485,7 +486,7 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
           </Button>
         </CardFooter>
       </form>
-    </Card>
+    </motion.div>
   );
 };
 
