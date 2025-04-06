@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,11 +12,22 @@ import { Slider } from '@/components/ui/slider';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { useDesignReferences } from '@/hooks/use-design-references';
 import { Loader2, Wand2, ScrollText, LayoutPanelTop, Save, Sparkles } from 'lucide-react';
-import WireframeVisualizer from './WireframeVisualizer';
+import { WireframeVisualizer, WireframeDataVisualizer } from '@/components/wireframe';
 import DesignMemoryPanel from './DesignMemoryPanel';
 import { DesignReference } from '@/services/ai/design/design-memory-reference-service';
 import { WireframeGenerationParams, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
+
+// Define AIWireframe interface here to fix the missing type error
+interface AIWireframe {
+  id: string;
+  title: string;
+  description: string;
+  wireframe_data?: WireframeData;
+  image_url?: string;
+  sections?: any[];
+  created_at?: string;
+}
 
 interface EnhancedWireframeStudioProps {
   projectId: string;
@@ -154,7 +166,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     description: currentWireframe.wireframe.description || "",
     sections: Array.isArray(currentWireframe.wireframe.sections) ? currentWireframe.wireframe.sections.map(section => ({
       id: section.id || `section-${Math.random().toString(36).substring(7)}`,
-      name: section.name,
+      name: section.name || section.sectionType,
       description: section.description || "",
       imageUrl: section.imageUrl || ""
     })) : [],
@@ -170,9 +182,9 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       imageUrl: wireframe.image_url || "",
       sections: Array.isArray(wireframe.sections) ? wireframe.sections.map(section => ({
         id: section.id || `section-${Math.random().toString(36).substring(7)}`,
-        name: section.name,
+        name: section.name || section.sectionType,
         description: section.description || "",
-        imageUrl: section.imageUrl || ""
+        imageUrl: ""  // Using empty string as fallback since imageUrl might not exist
       })) : [],
       version: "1.0",
       lastUpdated: new Date(wireframe.created_at || Date.now()).toLocaleDateString()
@@ -384,14 +396,16 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 </div>
                 
                 <div className="p-4">
-                  <WireframeVisualizer
-                    wireframe={displayWireframe}
-                    viewMode="preview"
-                    deviceType="desktop"
-                    darkMode={darkMode}
-                    interactive={true}
-                    highlightSections={true}
-                  />
+                  {displayWireframe && (
+                    <WireframeVisualizer
+                      wireframe={displayWireframe}
+                      viewMode="preview"
+                      deviceType="desktop"
+                      darkMode={darkMode}
+                      interactive={true}
+                      highlightSections={true}
+                    />
+                  )}
                 </div>
               </div>
             )}
