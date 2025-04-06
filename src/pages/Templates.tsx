@@ -1,4 +1,3 @@
-
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +10,8 @@ import { useTemplatePurchase } from "@/hooks/use-template-purchase";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { ABTestHeader } from "@/components/templates/ABTestHeader";
 
-// Mock template data - would be fetched from Supabase in production
 const mockTemplates = [
   {
     id: "1",
@@ -53,7 +52,6 @@ const Templates = () => {
     setIsPurchaseDialogOpen
   } = useTemplatePurchase();
 
-  // Handle checkout redirect results
   useEffect(() => {
     if (checkoutStatus === 'success') {
       toast({
@@ -69,10 +67,10 @@ const Templates = () => {
     }
   }, [checkoutStatus, templateId, toast]);
 
-  // Render different layouts based on authentication status
   if (!user) {
     return (
       <>
+        <ABTestHeader />
         <PublicTemplateMarketplace 
           templates={mockTemplates}
           onPurchaseClick={handlePurchaseClick}
@@ -90,11 +88,10 @@ const Templates = () => {
     );
   }
 
-  // For authenticated users, show the Dashboard layout
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Template Marketplace</h1>
+        <ABTestHeader />
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
           Create Template
