@@ -29,9 +29,9 @@ export interface ClientTask {
 // Client access link interface
 export interface ClientAccessLink {
   id: string;
-  linkId?: string;
-  name?: string;
-  email?: string;
+  linkId: string;
+  name: string;
+  email: string;
   token: string;
   created_at: string;
   expires_at?: string;

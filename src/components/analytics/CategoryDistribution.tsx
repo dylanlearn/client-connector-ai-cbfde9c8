@@ -49,7 +49,7 @@ const CategoryDistribution = () => {
             labelLine={false}
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+              <Cell key={`cell-${index}`} fill={entry.color || '#8439e9'} />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />

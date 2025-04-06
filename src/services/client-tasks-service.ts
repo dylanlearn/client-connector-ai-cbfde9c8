@@ -70,7 +70,7 @@ export const getClientTasks = async (
     }
 
     // Map the data to ClientTask format
-    return data.map(task => {
+    const clientTasks: ClientTask[] = data.map(task => {
       const mappedTask: ClientTask = {
         id: task.id,
         title: getTaskTitle(task.task_type),
@@ -92,6 +92,8 @@ export const getClientTasks = async (
       
       return mappedTask;
     });
+    
+    return clientTasks;
   } catch (error) {
     console.error('Error in getClientTasks:', error);
     return null;
