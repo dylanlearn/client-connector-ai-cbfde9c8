@@ -1,146 +1,121 @@
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useAdminStatus } from "@/hooks/use-admin-status";
-import { useSubscriptionStatus } from "@/hooks/subscription/use-subscription-status";
-import { useSubscriptionActions } from "@/hooks/subscription/use-subscription-actions";
-import { fetchSubscriptionStatus } from "@/utils/subscription-utils";
-import { SubscriptionInfo, BillingCycle, SubscriptionStatus } from "@/types/subscription";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './use-auth';
+import { useAdminStatus } from './use-admin-status';
 
-// Re-export the types
-export type { BillingCycle, SubscriptionStatus } from "@/types/subscription";
+export type SubscriptionStatus = 'free' | 'sync' | 'sync-pro' | 'enterprise';
 
-export const useSubscription = () => {
-  // Get auth context
-  const { user, session, profile } = useAuth();
-  
-  // Use admin status hook for reliable admin detection
-  const { isAdmin: isAdminRole, isVerifying: isVerifyingAdmin } = useAdminStatus();
-  
-  // Initialize with default subscription status
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // Get subscription status from the hook
-  const { subscriptionInfo, checkSubscription } = useSubscriptionStatus(
-    user, 
-    session,
-    isAdminRole // Pass admin status to subscription hook
-  );
-  
-  // Get subscription actions (like starting a new subscription)
-  const { startSubscription, isStarting } = useSubscriptionActions();
-  
-  // Combined loading state
-  const isLoading = subscriptionInfo.isLoading || isVerifyingAdmin || isRefreshing || isStarting;
-  
-  // Refresh subscription info when user or admin status changes
+export function useSubscription() {
+  const { user, profile } = useAuth();
+  const { isAdmin } = useAdminStatus();
+  const [status, setStatus] = useState<SubscriptionStatus>('free');
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [willCancel, setWillCancel] = useState<boolean>(false);
+
   useEffect(() => {
-    if (user && session) {
-      checkSubscription();
-    }
-  }, [user?.id, session?.access_token, isAdminRole, checkSubscription]);
-  
-  // Explicit check for admin access from profile for redundancy
-  const hasAdminRole = profile?.role === 'admin' || isAdminRole;
-  
-  // Enhanced check for admin-assigned subscription status in profile
-  const hasAssignedSyncProAccess = 
-    profile?.role === 'sync-pro' || 
-    profile?.subscription_status === 'sync-pro' || 
-    subscriptionInfo.adminAssignedStatus === 'sync-pro';
-    
-  const hasAssignedSyncAccess = 
-    profile?.role === 'sync' || 
-    profile?.subscription_status === 'sync' || 
-    subscriptionInfo.adminAssignedStatus === 'sync';
-  
-  // Enhanced debugging for subscription and admin status issues
+    const checkSubscription = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      console.info("[Subscription] check_started", {
+        timestamp: new Date().toISOString(),
+        userId: user.id
+      });
+
+      // If user is admin, they automatically get access to all features
+      if (isAdmin) {
+        console.info("[Subscription] admin_detected", {
+          timestamp: new Date().toISOString(),
+          userId: user.id
+        });
+        
+        setStatus('sync-pro');
+        setIsActive(true);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch subscription info from API or database
+        // This is a mock implementation - replace with actual API call
+        const { data, error } = await supabase.from('subscriptions').select('*').eq('user_id', user.id).single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is expected for new users
+          console.error('Error fetching subscription:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        // Mock subscription data for development
+        const subscription = data || {
+          status: profile?.subscription_status || 'free',
+          is_active: true,
+          expires_at: null,
+          will_cancel: false
+        };
+
+        console.info("[Subscription] status_received", {
+          timestamp: new Date().toISOString(),
+          userId: user.id,
+          status: subscription.status,
+          isActive: subscription.is_active,
+          adminAssigned: false
+        });
+
+        setStatus(subscription.status as SubscriptionStatus);
+        setIsActive(subscription.is_active);
+        setExpiresAt(subscription.expires_at);
+        setWillCancel(subscription.will_cancel);
+      } catch (error) {
+        console.error('Subscription check error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSubscription();
+  }, [user, profile, isAdmin]);
+
+  // Debug logging for subscription state
   useEffect(() => {
-    if (user) {
-      console.log("Subscription hook state:", {
-        "profile.role": profile?.role,
-        "profile.subscription_status": profile?.subscription_status,
-        "isAdminRole from useAdminStatus": isAdminRole,
-        "admin from subscriptionInfo": subscriptionInfo.isAdmin,
-        "adminAssigned from subscriptionInfo": subscriptionInfo.adminAssigned,
-        "adminAssignedStatus from subscriptionInfo": subscriptionInfo.adminAssignedStatus,
-        "hasAdminRole": hasAdminRole,
-        "hasAssignedSyncProAccess": hasAssignedSyncProAccess,
-        "hasAssignedSyncAccess": hasAssignedSyncAccess,
-        "subscription status": subscriptionInfo.status,
-        "is subscription active": subscriptionInfo.isActive
+    console.info("Subscription hook state:", {
+      "profile.role": profile?.role,
+      "profile.subscription_status": profile?.subscription_status,
+      "isAdminRole from useAdminStatus": isAdmin,
+      "admin from subscriptionInfo": isAdmin,
+      "adminAssigned from subscriptionInfo": false,
+      "adminAssignedStatus from subscriptionInfo": null,
+      "hasAdminRole": profile?.role === 'admin',
+      "hasAssignedSyncProAccess": profile?.role === 'admin',
+      "hasAssignedSyncAccess": false,
+      "subscription status": status,
+      "is subscription active": isActive
+    });
+
+    // Log subscriber status to console
+    if (!isLoading) {
+      console.info("Subscription status response:", {
+        subscription: status,
+        isActive,
+        inTrial: false,
+        expiresAt,
+        willCancel,
+        isAdmin,
+        role: profile?.role
       });
     }
-  }, [
-    user, 
-    profile?.role, 
-    profile?.subscription_status, 
-    isAdminRole, 
-    subscriptionInfo, 
-    hasAdminRole, 
-    hasAssignedSyncProAccess, 
-    hasAssignedSyncAccess
-  ]);
-  
-  // Manual refresh function for debugging and recovery
-  const refreshSubscription = async () => {
-    if (!user || !session) return;
-    
-    try {
-      setIsRefreshing(true);
-      console.log("Manual subscription refresh started");
-      const data = await fetchSubscriptionStatus();
-      console.log("Manual subscription refresh data:", data);
-      
-      // Force re-check of subscription status
-      await checkSubscription();
-    } catch (error) {
-      console.error("Error refreshing subscription:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-  
-  // Enhanced determination if user has active access - prioritize profile role check
-  const isActive = 
-    (profile?.role === 'admin') ||  // First priority: direct profile role check
-    hasAdminRole || 
-    subscriptionInfo.isActive || 
-    hasAssignedSyncProAccess || 
-    hasAssignedSyncAccess;
-  
-  // Determine effective subscription status based on all sources with priority to profile role
-  const effectiveStatus = 
-    (profile?.role === 'admin') ? "sync-pro" :
-    hasAssignedSyncProAccess ? "sync-pro" : 
-    (hasAssignedSyncAccess ? "sync" : subscriptionInfo.status);
-  
+  }, [status, isActive, isLoading, expiresAt, willCancel, profile, isAdmin]);
+
   return {
-    // Subscription status info with enhanced status determination
-    status: effectiveStatus,
+    status,
     isActive,
-    inTrial: subscriptionInfo.inTrial,
-    expiresAt: subscriptionInfo.expiresAt,
-    willCancel: subscriptionInfo.willCancel,
-    
-    // Administrative status (explicit detection through multiple paths)
-    isAdmin: hasAdminRole || profile?.role === 'admin',
-    isAdminFromAPI: subscriptionInfo.isAdmin,
-    isAdminFromProfile: profile?.role === 'admin',
-    
-    // Admin-assigned subscription info
-    adminAssigned: subscriptionInfo.adminAssigned,
-    adminAssignedStatus: subscriptionInfo.adminAssignedStatus,
-    
-    // Loading states
     isLoading,
-    isRefreshing,
-    
-    // Actions
-    refreshSubscription,
-    startSubscription,
-    
-    // Error state
-    error: subscriptionInfo.error
+    expiresAt,
+    willCancel
   };
-};
+}

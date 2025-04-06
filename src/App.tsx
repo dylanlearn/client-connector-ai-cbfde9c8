@@ -20,7 +20,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const SupabaseAuditDashboard = lazy(() => import('./pages/admin/SupabaseAuditDashboard'));
 const AuditAndMonitoring = lazy(() => import('./pages/admin/AuditAndMonitoring'));
 const Templates = lazy(() => import('./pages/Templates'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Dashboard = lazy(() => import('./pages/Dashboard')); // Using the correct import path
 const SignupConfirmation = lazy(() => import('./pages/SignupConfirmation'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ClientHub = lazy(() => import('./pages/ClientHub'));

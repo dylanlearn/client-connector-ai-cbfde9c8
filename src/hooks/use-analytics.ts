@@ -1,102 +1,50 @@
 
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { DesignAnalytics, UserPreference } from "@/types/analytics";
-import { useAnalyticsCalculations } from "./analytics/use-analytics-calculations";
-import { 
-  fetchAnalyticsData, 
-  fetchUserPreferences, 
-  getUserDesignOptionIds,
-  subscribeToUserPreferences
-} from "./analytics/use-analytics-api";
-import { useSubscription } from "./use-subscription";
+import { useState, useEffect } from 'react';
 
-export type { DesignAnalytics, UserPreference };
+interface AnalyticsData {
+  id: string;
+  type: string;
+  value: number;
+  label: string;
+  date: string;
+}
 
-export const useAnalytics = () => {
-  const { user } = useAuth();
-  const { status, isAdmin } = useSubscription();
-  const [isRealtime, setIsRealtime] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+export function useAnalytics() {
+  const [analytics, setAnalytics] = useState<AnalyticsData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user has Pro subscription
-  const hasPro = status === "sync-pro" || isAdmin || (user?.role === 'admin');
-
-  // Fetch analytics data with caching and proper keys
-  const {
-    data: analytics,
-    isLoading: isLoadingAnalytics,
-    error: analyticsError,
-    refetch: refetchAnalytics
-  } = useQuery({
-    queryKey: ['design-analytics', user?.id, lastUpdated],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      // Only fetch analytics for this user's design preferences
-      const designOptionIds = await getUserDesignOptionIds(user.id);
-      
-      if (designOptionIds.length === 0) return [];
-      
-      return fetchAnalyticsData(user.id, designOptionIds);
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  // Fetch user preferences with caching
-  const {
-    data: userPreferences,
-    isLoading: isLoadingPreferences,
-    error: preferencesError,
-    refetch: refetchPreferences
-  } = useQuery({
-    queryKey: ['user-preferences', user?.id, lastUpdated],
-    queryFn: async () => {
-      if (!user) return [];
-      return fetchUserPreferences(user.id);
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  // Setup optimized realtime subscription - ONLY for user's own data
   useEffect(() => {
-    if (!user) return;
+    const fetchAnalytics = async () => {
+      try {
+        // Simulating API call with setTimeout
+        setTimeout(() => {
+          // Mock data
+          setAnalytics([
+            {
+              id: '1',
+              type: 'preference',
+              value: 65,
+              label: 'Modern design',
+              date: new Date().toISOString()
+            },
+            {
+              id: '2',
+              type: 'preference',
+              value: 42,
+              label: 'Minimalist',
+              date: new Date().toISOString()
+            }
+          ]);
+          setIsLoading(false);
+        }, 800);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+        setIsLoading(false);
+      }
+    };
 
-    const unsubscribe = subscribeToUserPreferences(user.id, () => {
-      setLastUpdated(new Date()); // Trigger refetch via key change
-      setIsRealtime(true);
-    });
+    fetchAnalytics();
+  }, []);
 
-    return unsubscribe;
-  }, [user]);
-
-  // Get the calculation functions
-  const {
-    getTopRankedDesigns,
-    getCategoryDistribution,
-    getPreferenceOverview,
-    getPreferenceTimeline,
-    getHeatmapData,
-    getConversionFunnelData
-  } = useAnalyticsCalculations(analytics);
-
-  return {
-    analytics,
-    userPreferences,
-    isLoading: isLoadingAnalytics || isLoadingPreferences,
-    error: analyticsError || preferencesError,
-    isRealtime,
-    isPro: hasPro,
-    getTopRankedDesigns,
-    getCategoryDistribution,
-    getPreferenceOverview,
-    getPreferenceTimeline,
-    getHeatmapData,
-    getConversionFunnelData
-  };
-};
+  return { analytics, isLoading };
+}

@@ -1,23 +1,19 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { SystemStatus, SystemMonitoringRecord, MonitoringConfiguration } from "./types";
-
-// Re-export SystemStatus from types using export type syntax
-export type { SystemStatus };
+import type { SystemMonitoringRecord, SystemStatus } from "./types";
 
 /**
- * Record a system status event in the database
+ * Records a system status update to the monitoring database
  */
-export const recordSystemStatus = async (
+export async function recordSystemStatus(
   component: string,
   status: SystemStatus,
   value?: number,
   threshold?: number,
   message?: string,
   metadata?: Record<string, any>
-): Promise<boolean> => {
+): Promise<void> {
   try {
-    // Prepare the record
     const record: SystemMonitoringRecord = {
       component,
       status,
@@ -25,45 +21,102 @@ export const recordSystemStatus = async (
       threshold,
       message,
       metadata,
-      event_type: 'status_update',
+      event_type: 'status_update'
     };
-    
-    // Insert into the database using type assertion
-    const { error } = await (supabase
-      .from('system_monitoring' as any)
-      .insert(record as any));
-      
+
+    const { error } = await supabase
+      .from('system_monitoring')
+      .insert(record);
+
     if (error) {
       console.error('Error recording system status:', error);
-      return false;
     }
-    
-    return true;
-  } catch (error) {
-    console.error('Error in recordSystemStatus:', error);
-    return false;
+  } catch (err) {
+    console.error('Failed to record system status:', err);
   }
-};
+}
 
 /**
- * Get configuration for a monitoring component
+ * Fetches the latest system status for a specific component
  */
-export const getMonitoringConfiguration = async (component: string): Promise<MonitoringConfiguration | null> => {
+export async function getLatestComponentStatus(
+  component: string
+): Promise<SystemMonitoringRecord | null> {
   try {
-    const { data, error } = await (supabase
-      .from('monitoring_configuration' as any)
+    const { data, error } = await supabase
+      .from('system_monitoring')
       .select('*')
       .eq('component', component)
-      .maybeSingle()) as any;
-      
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
     if (error) {
-      console.error('Error fetching monitoring configuration:', error);
+      console.error('Error fetching component status:', error);
       return null;
     }
-    
-    return data as MonitoringConfiguration;
-  } catch (error) {
-    console.error('Error in getMonitoringConfiguration:', error);
+
+    return data as SystemMonitoringRecord;
+  } catch (err) {
+    console.error('Failed to get component status:', err);
     return null;
   }
-};
+}
+
+/**
+ * Gets overall system health across all monitored components
+ */
+export async function getSystemHealth(): Promise<Record<string, SystemStatus>> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_latest_component_statuses');
+
+    if (error) {
+      console.error('Error fetching system health:', error);
+      return {};
+    }
+
+    const health: Record<string, SystemStatus> = {};
+    
+    if (Array.isArray(data)) {
+      data.forEach((item: any) => {
+        health[item.component] = item.status as SystemStatus;
+      });
+    }
+
+    return health;
+  } catch (err) {
+    console.error('Failed to get system health:', err);
+    return {};
+  }
+}
+
+/**
+ * Triggers an alert for critical system status
+ */
+export async function triggerSystemAlert(
+  component: string,
+  status: SystemStatus,
+  message: string
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('system_monitoring')
+      .insert({
+        component,
+        status,
+        message,
+        event_type: 'alert'
+      });
+
+    if (error) {
+      console.error('Error triggering system alert:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Failed to trigger system alert:', err);
+    return false;
+  }
+}

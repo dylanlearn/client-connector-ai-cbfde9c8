@@ -3,7 +3,7 @@ import { createBrowserRouter } from "react-router-dom";
 import DesignProcessProvider from "./contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
 import App from "./App";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard"; // Using the main Dashboard component
 import { Settings } from "./pages/settings";
 import { ProjectDetailPage } from "./pages/project-detail/ProjectDetailPage";
 import AdvancedWireframeGeneratorPage from "./pages/project-detail/AdvancedWireframeGeneratorPage";
@@ -25,6 +25,10 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
+        element: <Dashboard />,
+      },
+      {
+        path: '/dashboard',
         element: <Dashboard />,
       },
       {

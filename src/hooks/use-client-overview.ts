@@ -1,45 +1,68 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { ClientOverview } from '@/types/client';
+
+interface ClientOverview {
+  totalClients: number;
+  activeClients: number;
+  pendingTasks: number;
+  completedTasks: number;
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    clientName: string;
+    timestamp: string;
+    details: string;
+  }>;
+}
 
 export function useClientOverview() {
-  const { user } = useAuth();
-  const [clientOverview, setClientOverview] = useState<ClientOverview | null>(null);
+  const [clientOverview, setClientOverview] = useState<ClientOverview>({
+    totalClients: 0,
+    activeClients: 0,
+    pendingTasks: 0,
+    completedTasks: 0,
+    recentActivity: []
+  });
   const [isLoadingOverview, setIsLoadingOverview] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchClientOverview = async () => {
-      if (!user) return;
-      
-      setIsLoadingOverview(true);
-      setError(null);
-      
       try {
-        // In a real app, this would be an API call
-        // For now, return mock data after a short delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setClientOverview({
-          totalClients: 12,
-          activeClients: 8,
-          completionRate: 75
-        });
-      } catch (err) {
-        console.error("Error fetching client overview:", err);
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-      } finally {
+        // Simulating API call with setTimeout
+        setTimeout(() => {
+          // Mock data
+          setClientOverview({
+            totalClients: 5,
+            activeClients: 3,
+            pendingTasks: 8,
+            completedTasks: 15,
+            recentActivity: [
+              {
+                id: '1',
+                type: 'task_completed',
+                clientName: 'Acme Corp',
+                timestamp: new Date().toISOString(),
+                details: 'Completed wireframe selection'
+              },
+              {
+                id: '2',
+                type: 'client_added',
+                clientName: 'XYZ Industries',
+                timestamp: new Date(Date.now() - 86400000).toISOString(),
+                details: 'Added new client to the system'
+              }
+            ]
+          });
+          setIsLoadingOverview(false);
+        }, 800);
+      } catch (error) {
+        console.error('Error fetching client overview:', error);
         setIsLoadingOverview(false);
       }
     };
-    
+
     fetchClientOverview();
-  }, [user]);
-  
-  return {
-    clientOverview,
-    isLoadingOverview,
-    error
-  };
+  }, []);
+
+  return { clientOverview, isLoadingOverview };
 }
