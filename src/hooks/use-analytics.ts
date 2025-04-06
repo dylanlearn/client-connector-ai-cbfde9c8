@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 export interface AnalyticsData {
@@ -20,7 +21,7 @@ export interface UserPreference {
   rank: number;
   category: string;
   notes?: string;
-  design_option_id: string;
+  design_option_id: string; // Making this required to match the type in analytics.ts
   averageRank?: number;
   count?: number;
   user_id: string;
@@ -71,7 +72,7 @@ export function useAnalytics() {
             {
               id: '1',
               designId: 'design1',
-              design_option_id: 'design1',
+              design_option_id: 'design1', // Ensuring this is set in the mock data
               title: 'Modern design',
               rank: 1,
               category: 'style',
@@ -85,7 +86,7 @@ export function useAnalytics() {
             {
               id: '2',
               designId: 'design2',
-              design_option_id: 'design2',
+              design_option_id: 'design2', // Ensuring this is set in the mock data
               title: 'Minimalist',
               rank: 2,
               category: 'style',
