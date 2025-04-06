@@ -20,4 +20,7 @@ export interface AIMemoryContext {
   userMemories: Record<string, any>[];
   projectMemories: Record<string, any>[];
   globalInsights: Record<string, any>[];
+  recentInteractions: string[];
+  userPreferences: string[];
+  projectDetails: string[];
 }

@@ -18,7 +18,14 @@ const MemoryContext = createContext<MemoryContextType>({
 
 export const MemoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [memoryContext, setMemoryContext] = useState<AIMemoryContext | undefined>(undefined);
+  const [memoryContext, setMemoryContext] = useState<AIMemoryContext | undefined>({
+    userMemories: [],
+    projectMemories: [],
+    globalInsights: [],
+    recentInteractions: [],
+    userPreferences: [],
+    projectDetails: []
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRealtime, setIsRealtime] = useState(false);
   

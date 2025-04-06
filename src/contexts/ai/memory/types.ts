@@ -32,4 +32,7 @@ export interface AIMemoryContext {
     relevanceScore: number;
     frequency: number;
   }[];
+  recentInteractions: string[];
+  userPreferences: string[];
+  projectDetails: string[];
 }
