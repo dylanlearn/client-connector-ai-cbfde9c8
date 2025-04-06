@@ -1,104 +1,70 @@
 
-import { vi } from 'vitest';
-import { renderHook } from '@testing-library/react-hooks';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
+import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 /**
- * Creates a wrapped test query client for testing hooks that use react-query
- * @returns The query client and wrapper function
+ * Create a new QueryClient for testing purposes
  */
-export function createTestQueryClient() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        cacheTime: 0,
-        staleTime: 0,
-      },
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      gcTime: 0,
     },
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {}, // Silent in tests to avoid noise
-    },
-  });
+  },
+});
 
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+/**
+ * Set up providers for testing components that require context
+ * @param children React component to render with providers
+ */
+export function renderWithProviders(children: React.ReactNode) {
+  const testQueryClient = createTestQueryClient();
+
+  return render(
+    <QueryClientProvider client={testQueryClient}>
+      <MemoryRouter>
+        {children}
+      </MemoryRouter>
+    </QueryClientProvider>
   );
-
-  return { queryClient, wrapper };
 }
 
 /**
- * Create mock for Supabase client with common operations
+ * Mock the useAuth hook for testing
+ * @returns Mocked useAuth values
  */
-export function createMockSupabaseClient() {
+export function mockUseAuth() {
+  // Return a mock implementation of useAuth
+  // This can be expanded as needed for different test scenarios
   return {
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      single: vi.fn().mockReturnThis(),
-      then: vi.fn().mockImplementation(callback => {
-        return Promise.resolve(callback({ data: [], error: null }));
-      }),
-    }),
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      onAuthStateChange: vi.fn(),
+    user: { id: 'test-user-id' },
+    profile: { 
+      id: 'test-user-id',
+      role: 'user',
+      subscription_status: 'free'
     },
-    functions: {
-      invoke: vi.fn().mockResolvedValue({ data: {}, error: null }),
-    },
-    storage: {
-      from: vi.fn().mockReturnValue({
-        upload: vi.fn(),
-        getPublicUrl: vi.fn(),
-      }),
-    },
+    isLoading: false,
+    isAuthenticated: true,
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    signUp: jest.fn()
   };
 }
 
 /**
- * Mock timing functions with controllable time advancement
+ * Mock the useAuthorization hook for testing
+ * @returns Mocked useAuthorization values
  */
-export function setupMockTimer() {
-  vi.useFakeTimers();
-  
-  const advanceTimersByTime = (ms: number) => {
-    vi.advanceTimersByTime(ms);
+export function mockUseAuthorization() {
+  return {
+    can: jest.fn().mockReturnValue(true),
+    canAny: jest.fn().mockReturnValue(true),
+    canAll: jest.fn().mockReturnValue(true),
+    isAdmin: jest.fn().mockReturnValue(false),
+    hasPaidSubscription: jest.fn().mockReturnValue(false),
+    permissions: []
   };
-  
-  const advanceTimersToNextTimer = () => {
-    vi.runOnlyPendingTimers();
-  };
-  
-  const resetTimer = () => {
-    vi.useRealTimers();
-  };
-  
-  return { advanceTimersByTime, advanceTimersToNextTimer, resetTimer };
-}
-
-/**
- * Create a mock for window.fetch that returns customizable responses
- */
-export function mockFetch(responseData: any = {}, status = 200) {
-  return vi.spyOn(global, 'fetch').mockImplementation(
-    () =>
-      Promise.resolve({
-        ok: status >= 200 && status < 300,
-        status,
-        json: () => Promise.resolve(responseData),
-        text: () => Promise.resolve(JSON.stringify(responseData)),
-      }) as Promise<Response>
-  );
 }

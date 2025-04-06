@@ -1,144 +1,133 @@
 
-import { User } from "@supabase/supabase-js";
-import { UserProfile, UserRole } from "@/utils/auth-utils";
-
-// Define all permissions in the system
+/**
+ * Enum for application permissions
+ */
 export enum Permission {
-  // Content access permissions
-  VIEW_DASHBOARD = "view_dashboard",
-  VIEW_PROJECTS = "view_projects",
-  VIEW_ADMIN_PANEL = "view_admin_panel",
-  VIEW_ANALYTICS = "view_analytics",
-  
-  // Action permissions
-  CREATE_PROJECT = "create_project",
-  EDIT_PROJECT = "edit_project",
-  DELETE_PROJECT = "delete_project",
-  MANAGE_USERS = "manage_users",
-  ACCESS_API = "access_api",
-  USE_AI_FEATURES = "use_ai_features",
+  VIEW_DASHBOARD = 'VIEW_DASHBOARD',
+  MANAGE_PROJECTS = 'MANAGE_PROJECTS',
+  EDIT_PROFILE = 'EDIT_PROFILE',
+  VIEW_ANALYTICS = 'VIEW_ANALYTICS',
+  MANAGE_USERS = 'MANAGE_USERS',
+  VIEW_ADMIN_PANEL = 'VIEW_ADMIN_PANEL',
+  ACCESS_PREMIUM_FEATURES = 'ACCESS_PREMIUM_FEATURES'
 }
 
-// Define permission sets for each role
-const rolePermissions: Record<UserRole, Permission[]> = {
-  'admin': [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_PROJECTS,
-    Permission.VIEW_ADMIN_PANEL,
-    Permission.VIEW_ANALYTICS,
-    Permission.CREATE_PROJECT,
-    Permission.EDIT_PROJECT,
-    Permission.DELETE_PROJECT,
-    Permission.MANAGE_USERS,
-    Permission.ACCESS_API,
-    Permission.USE_AI_FEATURES,
-  ],
-  'sync-pro': [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_PROJECTS,
-    Permission.VIEW_ANALYTICS,
-    Permission.CREATE_PROJECT,
-    Permission.EDIT_PROJECT,
-    Permission.DELETE_PROJECT,
-    Permission.ACCESS_API,
-    Permission.USE_AI_FEATURES,
-  ],
-  'sync': [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_PROJECTS,
-    Permission.CREATE_PROJECT,
-    Permission.EDIT_PROJECT,
-    Permission.DELETE_PROJECT,
-    Permission.ACCESS_API,
-  ],
-  'trial': [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_PROJECTS,
-    Permission.CREATE_PROJECT,
-    Permission.EDIT_PROJECT,
-  ],
-  'template-buyer': [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_PROJECTS,
-  ],
-  'free': [
-    Permission.VIEW_DASHBOARD,
-  ],
-  'pro': [
-    Permission.VIEW_DASHBOARD,
-    Permission.VIEW_PROJECTS,
-    Permission.VIEW_ANALYTICS,
-    Permission.CREATE_PROJECT,
-    Permission.EDIT_PROJECT,
-    Permission.DELETE_PROJECT,
-    Permission.ACCESS_API,
-  ],
-};
+/**
+ * Types of users in the application
+ */
+export type UserRole = 'admin' | 'sync-pro' | 'sync' | 'trial' | 'free' | 'template-buyer';
 
 /**
- * Authorization service for checking user permissions
+ * Service for authorization-related operations
  */
-export class AuthorizationService {
+export const AuthorizationService = {
   /**
-   * Check if a user has a specific permission
+   * Check if user has a specific permission
    */
-  static hasPermission(permission: Permission, user: User | null, profile: UserProfile | null): boolean {
-    // No user or profile means no permissions
-    if (!user || !profile) {
-      return false;
-    }
-
-    // Get user role
-    const role = profile.role || 'free';
+  hasPermission: (permission: Permission, user: any | null, profile: any | null): boolean => {
+    if (!user || !profile) return false;
     
-    // Special case: Admins have all permissions
-    if (role === 'admin') {
-      return true;
+    // Check if user is admin (admins have all permissions)
+    if (profile.role === 'admin') return true;
+
+    // For specific roles, we have hardcoded permissions until we implement
+    // a database-backed permission system
+    switch (permission) {
+      case Permission.VIEW_DASHBOARD:
+        return true; // All authenticated users can view dashboard
+        
+      case Permission.MANAGE_PROJECTS:
+        return ['sync-pro', 'sync', 'trial'].includes(profile.role);
+        
+      case Permission.EDIT_PROFILE:
+        return true; // All authenticated users can edit their profile
+        
+      case Permission.VIEW_ANALYTICS:
+        return ['sync-pro', 'sync'].includes(profile.role);
+        
+      case Permission.MANAGE_USERS:
+        return profile.role === 'admin';
+        
+      case Permission.VIEW_ADMIN_PANEL:
+        return profile.role === 'admin';
+        
+      case Permission.ACCESS_PREMIUM_FEATURES:
+        return ['sync-pro', 'admin'].includes(profile.role);
+        
+      default:
+        return false;
     }
-
-    // Check if the role has the specific permission
-    return rolePermissions[role]?.includes(permission) || false;
-  }
-
+  },
+  
   /**
    * Check if user has any of the given permissions
    */
-  static hasAnyPermission(permissions: Permission[], user: User | null, profile: UserProfile | null): boolean {
-    return permissions.some(permission => this.hasPermission(permission, user, profile));
-  }
-
+  hasAnyPermission: (permissions: Permission[], user: any | null, profile: any | null): boolean => {
+    if (!permissions.length) return false;
+    return permissions.some(permission => 
+      AuthorizationService.hasPermission(permission, user, profile)
+    );
+  },
+  
   /**
    * Check if user has all of the given permissions
    */
-  static hasAllPermissions(permissions: Permission[], user: User | null, profile: UserProfile | null): boolean {
-    return permissions.every(permission => this.hasPermission(permission, user, profile));
-  }
-
+  hasAllPermissions: (permissions: Permission[], user: any | null, profile: any | null): boolean => {
+    if (!permissions.length) return false;
+    return permissions.every(permission => 
+      AuthorizationService.hasPermission(permission, user, profile)
+    );
+  },
+  
   /**
-   * Get all permissions for a user based on their role
+   * Check if user is admin
    */
-  static getUserPermissions(user: User | null, profile: UserProfile | null): Permission[] {
-    if (!user || !profile || !profile.role) {
-      return [];
+  isAdmin: (user: any | null, profile: any | null): boolean => {
+    return !!profile && profile.role === 'admin';
+  },
+  
+  /**
+   * Check if user has an active paid subscription
+   */
+  hasPaidSubscription: (user: any | null, profile: any | null): boolean => {
+    return !!profile && (
+      profile.role === 'admin' || 
+      profile.role === 'sync-pro' || 
+      profile.role === 'sync'
+    );
+  },
+  
+  /**
+   * Get all permissions for a user
+   */
+  getUserPermissions: (user: any | null, profile: any | null): Permission[] => {
+    if (!user || !profile) return [];
+    
+    const permissions: Permission[] = [];
+    
+    // Add permissions based on user role
+    if (profile.role === 'admin') {
+      // Admins have all permissions
+      return Object.values(Permission);
     }
-
-    const role = profile.role;
-    return rolePermissions[role] || [];
+    
+    // Add basic permissions for all authenticated users
+    permissions.push(Permission.VIEW_DASHBOARD);
+    permissions.push(Permission.EDIT_PROFILE);
+    
+    // Add role-specific permissions
+    if (['sync-pro', 'sync', 'trial'].includes(profile.role)) {
+      permissions.push(Permission.MANAGE_PROJECTS);
+    }
+    
+    if (['sync-pro', 'sync'].includes(profile.role)) {
+      permissions.push(Permission.VIEW_ANALYTICS);
+    }
+    
+    if (['sync-pro', 'admin'].includes(profile.role)) {
+      permissions.push(Permission.ACCESS_PREMIUM_FEATURES);
+    }
+    
+    return permissions;
   }
-
-  /**
-   * Check if a user is an admin
-   */
-  static isAdmin(user: User | null, profile: UserProfile | null): boolean {
-    if (!profile) return false;
-    return profile.role === 'admin';
-  }
-
-  /**
-   * Check if a user has an active paid subscription
-   */
-  static hasPaidSubscription(user: User | null, profile: UserProfile | null): boolean {
-    if (!profile) return false;
-    return profile.role === 'sync' || profile.role === 'sync-pro' || profile.role === 'admin';
-  }
-}
+};
