@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
 import { Button } from "@/components/ui/button";
@@ -7,24 +8,50 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { 
   Loader2, ArrowRight, Download, Copy, Code, 
   Layout, RefreshCw, Share2, Layers, Monitor, 
-  Smartphone, PanelLeft, Eye
+  Smartphone, PanelLeft, Eye, Grid, LayoutGrid,
+  Tablet, Palette, SlidersHorizontal, ScissorsSquare
 } from "lucide-react";
 import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import StylePreviewCard from "@/components/wireframe/StylePreviewCard";
+import ColorSchemeSelector from "@/components/wireframe/ColorSchemeSelector";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+// Define all available styles
+const availableStyles = [
+  { id: "modern", name: "Modern", description: "Clean and contemporary design with balanced proportions" },
+  { id: "minimalist", name: "Minimalist", description: "Simple and elegant with lots of whitespace" },
+  { id: "brutalist", name: "Brutalist", description: "Raw, bold, and unconventional design" },
+  { id: "corporate", name: "Corporate", description: "Professional and business-oriented layout" },
+  { id: "playful", name: "Playful", description: "Fun and engaging with vibrant elements" },
+  { id: "glassy", name: "Glassy", description: "Modern, transparent elements with subtle blur effects" },
+  { id: "editorial", name: "Editorial", description: "Clean typography and layout inspired by print media" },
+  { id: "tech-forward", name: "Tech Forward", description: "Modern tech aesthetic with sleek UI elements" },
+  { id: "bold", name: "Bold", description: "Strong visual impact with prominent typography" }
+];
 
 const WireframeGenerator = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [style, setStyle] = useState<string>("modern");
-  const [viewMode, setViewMode] = useState<"flowchart" | "preview">("flowchart");
+  const [viewMode, setViewMode] = useState<"flowchart" | "preview">("preview");
   const [multiPage, setMultiPage] = useState<boolean>(false);
   const [pagesCount, setPagesCount] = useState<number>(3);
-  const [showComponentDrawer, setShowComponentDrawer] = useState<boolean>(false);
+  const [deviceType, setDeviceType] = useState<"desktop" | "mobile" | "tablet">("desktop");
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [showGrid, setShowGrid] = useState<boolean>(false);
+  const [highlightSections, setHighlightSections] = useState<boolean>(false);
+  const [colorScheme, setColorScheme] = useState({
+    primary: "#4F46E5",
+    secondary: "#A855F7",
+    accent: "#F59E0B",
+    background: "#FFFFFF"
+  });
   const { toast } = useToast();
   
   const {
@@ -33,24 +60,38 @@ const WireframeGenerator = () => {
     generateWireframe,
   } = useWireframeGeneration();
 
+  // Update color scheme background when dark mode changes
+  useEffect(() => {
+    setColorScheme(prev => ({
+      ...prev,
+      background: darkMode ? "#111827" : "#FFFFFF"
+    }));
+  }, [darkMode]);
+
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
-  };
-
-  const handleStyleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStyle(e.target.value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
+    // Enhanced parameters with style information
     await generateWireframe({
       description: prompt,
       style,
       enhancedCreativity: true,
       multiPageLayout: multiPage,
-      pages: pagesCount
+      pages: pagesCount,
+      colorScheme,
+      // Add additional params to improve generation
+      designTokens: {
+        colors: colorScheme,
+        typography: {
+          headings: "Raleway, sans-serif",
+          body: "Inter, sans-serif"
+        }
+      }
     });
   };
 
@@ -68,8 +109,13 @@ const WireframeGenerator = () => {
       enhancedCreativity: true,
       baseWireframe: currentWireframe.wireframe,
       multiPageLayout: multiPage,
-      pages: pagesCount
+      pages: pagesCount,
+      colorScheme
     });
+  };
+
+  const handleStyleSelect = (styleId: string) => {
+    setStyle(styleId);
   };
 
   const examplePrompt = `Generate a financial dashboard wireframe with:
@@ -170,148 +216,143 @@ Use a clean, professional design suitable for finance applications.`;
                 Provide a detailed description of the wireframe you need.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium">
-                      Style
-                    </label>
-                    <div className="flex items-center">
-                      <Switch 
-                        id="multiPage" 
-                        checked={multiPage}
-                        onCheckedChange={setMultiPage}
-                      />
-                      <Label htmlFor="multiPage" className="ml-2">
-                        Multi-page
-                      </Label>
+            <Tabs defaultValue="prompt">
+              <TabsList className="grid grid-cols-3 mx-6">
+                <TabsTrigger value="prompt">Prompt</TabsTrigger>
+                <TabsTrigger value="style">Style</TabsTrigger>
+                <TabsTrigger value="color">Colors</TabsTrigger>
+              </TabsList>
+              <CardContent>
+                <TabsContent value="prompt">
+                  <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium mb-2">
+                          Wireframe Description
+                        </label>
+                        <Textarea
+                          value={prompt}
+                          onChange={handlePromptChange}
+                          rows={10}
+                          placeholder="Describe your wireframe in detail..."
+                          className="w-full resize-none"
+                        />
+                      </div>
                       
-                      {multiPage && (
-                        <select 
-                          value={pagesCount}
-                          onChange={(e) => setPagesCount(Number(e.target.value))}
-                          className="ml-2 p-1 text-sm border rounded"
+                      <div className="flex items-center space-x-4 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch 
+                            id="multiPage" 
+                            checked={multiPage}
+                            onCheckedChange={setMultiPage}
+                          />
+                          <Label htmlFor="multiPage" className="text-sm">
+                            Multi-page
+                          </Label>
+                        </div>
+                        
+                        {multiPage && (
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor="pagesCount" className="text-sm">Pages:</Label>
+                            <select 
+                              id="pagesCount"
+                              value={pagesCount}
+                              onChange={(e) => setPagesCount(Number(e.target.value))}
+                              className="p-1 text-sm border rounded"
+                            >
+                              {[2, 3, 4, 5].map(num => (
+                                <option key={num} value={num}>{num}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleUseExample}
                         >
-                          {[2, 3, 4, 5].map(num => (
-                            <option key={num} value={num}>{num} pages</option>
-                          ))}
-                        </select>
-                      )}
+                          Use Example
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={isGenerating || !prompt.trim()}
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              Generate Wireframe
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="style">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium">Design Style</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Choose a design style for your wireframe. This will influence the layout, typography, and overall aesthetic.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {availableStyles.map((styleOption) => (
+                        <StylePreviewCard
+                          key={styleOption.id}
+                          styleName={styleOption.name}
+                          description={styleOption.description}
+                          selected={style === styleOption.id}
+                          onClick={() => handleStyleSelect(styleOption.id)}
+                          darkMode={darkMode}
+                        />
+                      ))}
+                    </div>
+                    
+                    <div className="pt-4 flex items-center space-x-2">
+                      <Switch 
+                        id="darkMode" 
+                        checked={darkMode}
+                        onCheckedChange={setDarkMode}
+                      />
+                      <Label htmlFor="darkMode" className="text-sm">
+                        Dark Mode
+                      </Label>
                     </div>
                   </div>
-
-                  <RadioGroup 
-                    defaultValue="modern" 
-                    value={style}
-                    onValueChange={setStyle}
-                    className="grid grid-cols-3 gap-2 mb-4"
-                  >
-                    <div>
-                      <RadioGroupItem value="modern" id="modern" className="peer sr-only" />
-                      <Label
-                        htmlFor="modern"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        <span>Modern</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="minimal" id="minimal" className="peer sr-only" />
-                      <Label
-                        htmlFor="minimal"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        <span>Minimal</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="bold" id="bold" className="peer sr-only" />
-                      <Label
-                        htmlFor="bold"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        <span>Bold</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="classic" id="classic" className="peer sr-only" />
-                      <Label
-                        htmlFor="classic"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        <span>Classic</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="tech" id="tech" className="peer sr-only" />
-                      <Label
-                        htmlFor="tech"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        <span>Tech</span>
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="creative" id="creative" className="peer sr-only" />
-                      <Label
-                        htmlFor="creative"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                      >
-                        <span>Creative</span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">
-                      Wireframe Description
-                    </label>
-                    <Textarea
-                      value={prompt}
-                      onChange={handlePromptChange}
-                      rows={8}
-                      placeholder="Describe your wireframe in detail..."
-                      className="w-full resize-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleUseExample}
-                    >
-                      Use Example
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isGenerating || !prompt.trim()}
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          Generate Wireframe
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </CardContent>
+                </TabsContent>
+                
+                <TabsContent value="color">
+                  <h3 className="text-sm font-medium mb-2">Color Scheme</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Choose colors for your wireframe. These will be used for buttons, accents, and other elements.
+                  </p>
+                  
+                  <ColorSchemeSelector 
+                    colorScheme={colorScheme}
+                    onChange={setColorScheme}
+                  />
+                </TabsContent>
+              </CardContent>
+            </Tabs>
           </Card>
 
           <Card className="lg:col-span-8">
             <CardHeader className="flex flex-row justify-between items-start space-y-0">
               <div>
-                <CardTitle>Generated Wireframe</CardTitle>
+                <CardTitle>
+                  {currentWireframe?.wireframe.title || "Generated Wireframe"}
+                </CardTitle>
                 <CardDescription>
-                  {currentWireframe?.wireframe.title || "Your wireframe will appear here after generation."}
+                  {currentWireframe?.wireframe.description || "Your wireframe will appear here after generation."}
                 </CardDescription>
               </div>
               {currentWireframe && (
@@ -334,6 +375,55 @@ Use a clean, professional design suitable for finance applications.`;
                       </>
                     )}
                   </Button>
+                  
+                  <div className="flex border rounded-md">
+                    <Button 
+                      variant={deviceType === "desktop" ? "secondary" : "ghost"}
+                      size="sm" 
+                      onClick={() => setDeviceType("desktop")}
+                      className="rounded-r-none px-2"
+                    >
+                      <Monitor className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={deviceType === "tablet" ? "secondary" : "ghost"}
+                      size="sm" 
+                      onClick={() => setDeviceType("tablet")}
+                      className="rounded-none px-2 border-x"
+                    >
+                      <Tablet className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={deviceType === "mobile" ? "secondary" : "ghost"}
+                      size="sm" 
+                      onClick={() => setDeviceType("mobile")}
+                      className="rounded-l-none px-2"
+                    >
+                      <Smartphone className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex border rounded-md overflow-hidden">
+                    <Button 
+                      variant={showGrid ? "secondary" : "ghost"}
+                      size="sm" 
+                      onClick={() => setShowGrid(!showGrid)}
+                      className="rounded-r-none px-2"
+                      title="Show Grid"
+                    >
+                      <Grid className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={highlightSections ? "secondary" : "ghost"}
+                      size="sm" 
+                      onClick={() => setHighlightSections(!highlightSections)}
+                      className="rounded-l-none px-2 border-l"
+                      title="Highlight Sections"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
                   <Sheet>
                     <SheetTrigger asChild>
                       <Button 
@@ -347,46 +437,73 @@ Use a clean, professional design suitable for finance applications.`;
                     </SheetTrigger>
                     <SheetContent side="left" className="w-[350px] sm:w-[450px]">
                       <SheetHeader>
-                        <SheetTitle>Component Picker</SheetTitle>
+                        <SheetTitle>Component Library</SheetTitle>
                         <SheetDescription>
-                          Browse and select components to add to your wireframe
+                          Drag and drop components to customize your wireframe
                         </SheetDescription>
                       </SheetHeader>
-                      <div className="grid grid-cols-2 gap-4 py-4">
-                        {sampleComponents.map((component, index) => (
-                          <Card key={index} className="overflow-hidden">
-                            <CardContent className="p-0">
-                              <div className="relative aspect-video bg-muted">
-                                <img
-                                  src={component.preview}
-                                  alt={component.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            </CardContent>
-                            <CardFooter className="p-2 text-xs">
-                              {component.name}
-                            </CardFooter>
-                          </Card>
-                        ))}
-                      </div>
-                      <div className="mt-6">
-                        <h3 className="font-medium mb-2">Top Designs</h3>
-                        <div className="space-y-2">
-                          {websiteReferences.map((site, index) => (
-                            <div key={index} className="flex justify-between items-center p-2 border rounded">
-                              <span>{site.name}</span>
-                              <Badge variant="outline">{site.category}</Badge>
+                      <ScrollArea className="h-[calc(100vh-120px)] pr-4">
+                        <Tabs defaultValue="sections">
+                          <TabsList className="grid grid-cols-2 mb-4">
+                            <TabsTrigger value="sections">
+                              <Layout className="h-4 w-4 mr-2" />
+                              Sections
+                            </TabsTrigger>
+                            <TabsTrigger value="reference">
+                              <Palette className="h-4 w-4 mr-2" />
+                              References
+                            </TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="sections">
+                            <div className="grid grid-cols-2 gap-4 py-4">
+                              {sampleComponents.map((component, index) => (
+                                <Card key={index} className="overflow-hidden">
+                                  <CardContent className="p-0">
+                                    <div className="relative aspect-video bg-muted">
+                                      <img
+                                        src={component.preview}
+                                        alt={component.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 hover:bg-black/20 transition-opacity">
+                                        <Button variant="secondary" size="sm">
+                                          <ScissorsSquare className="h-4 w-4 mr-2" />
+                                          Add
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                  <div className="p-2 text-xs font-medium">
+                                    {component.name}
+                                  </div>
+                                </Card>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
+                          </TabsContent>
+                          <TabsContent value="reference">
+                            <div className="mt-6">
+                              <h3 className="font-medium mb-2">Design Inspiration</h3>
+                              <div className="space-y-2">
+                                {websiteReferences.map((site, index) => (
+                                  <div key={index} className="flex justify-between items-center p-3 border rounded hover:bg-accent/10 transition-colors">
+                                    <div>
+                                      <p className="font-medium">{site.name}</p>
+                                      <p className="text-xs text-muted-foreground">{site.url}</p>
+                                    </div>
+                                    <Badge variant="outline">{site.category}</Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </ScrollArea>
                     </SheetContent>
                   </Sheet>
                 </div>
               )}
             </CardHeader>
-            <CardContent className="min-h-[500px] relative">
+            <CardContent className="relative">
               {isGenerating ? (
                 <div className="flex flex-col items-center justify-center h-80 space-y-4">
                   <div className="relative">
@@ -407,157 +524,67 @@ Use a clean, professional design suitable for finance applications.`;
                 </div>
               ) : currentWireframe ? (
                 <div className="space-y-4">
-                  <div className="bg-muted rounded-lg overflow-hidden">
-                    {viewMode === "flowchart" ? (
-                      <div className="relative bg-blue-50/70 rounded-lg p-6 overflow-auto min-h-[500px]">
-                        {currentWireframe.wireframe.pages ? (
-                          <div className="flex flex-col items-center space-y-6">
-                            {/* Flowchart connection lines */}
-                            <div className="absolute inset-0 pointer-events-none">
-                              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                <path 
-                                  d="M 500,200 C 500,300 300,450 500,550" 
-                                  stroke="rgba(224, 231, 255, 0.8)" 
-                                  strokeWidth="6" 
-                                  fill="none"
-                                />
-                                <path 
-                                  d="M 500,200 C 500,300 700,450 500,550" 
-                                  stroke="rgba(224, 231, 255, 0.8)" 
-                                  strokeWidth="6" 
-                                  fill="none"
-                                />
-                              </svg>
-                            </div>
-                            
-                            {/* Home page representation */}
-                            <div className="relative z-10 p-4 bg-white rounded-lg shadow-md w-[560px] transform transition-all hover:scale-[1.02]">
-                              <div className="flex items-center gap-2 text-lg font-medium mb-2">
-                                <div className="p-1 rounded-md bg-primary/10">
-                                  <Layout className="h-5 w-5 text-primary" />
-                                </div>
-                                <Badge variant="secondary">Home</Badge>
-                              </div>
-                              <div className="border rounded-lg p-2 bg-gray-50">
-                                <div className="bg-white border border-dashed rounded h-32 flex justify-center items-center">
-                                  <img 
-                                    src="/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png"
-                                    alt="Homepage wireframe" 
-                                    className="max-h-full"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Secondary pages */}
-                            <div className="grid grid-cols-2 gap-8 mt-16 w-full">
-                              {Array.from({ length: 2 }).map((_, idx) => (
-                                <div key={idx} className="p-4 bg-white rounded-lg shadow-md transform transition-all hover:scale-[1.02] w-full">
-                                  <div className="flex items-center gap-2 text-lg font-medium mb-2">
-                                    <div className="p-1 rounded-md bg-primary/10">
-                                      <Layout className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <Badge variant="secondary">
-                                      {idx === 0 ? "About Us" : "Blog"}
-                                    </Badge>
-                                  </div>
-                                  <div className="border rounded-lg p-2 bg-gray-50">
-                                    <div className="bg-white border border-dashed rounded h-24 flex justify-center items-center">
-                                      <img 
-                                        src="/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png"
-                                        alt={`Page ${idx + 2} wireframe`} 
-                                        className="max-h-full opacity-80"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <WireframeVisualizer 
-                            wireframeData={currentWireframe.wireframe} 
-                            viewMode="flowchart"
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="p-4">
-                        <Tabs defaultValue="desktop">
-                          <TabsList className="mb-4">
-                            <TabsTrigger value="desktop" className="flex items-center gap-1">
-                              <Monitor className="h-4 w-4" />
-                              Desktop
-                            </TabsTrigger>
-                            <TabsTrigger value="mobile" className="flex items-center gap-1">
-                              <Smartphone className="h-4 w-4" />
-                              Mobile
-                            </TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="desktop">
-                            <div className="border rounded-lg p-4 bg-white">
-                              <WireframeVisualizer 
-                                wireframeData={currentWireframe.wireframe} 
-                                viewMode="preview"
-                                deviceType="desktop"
-                              />
-                            </div>
-                          </TabsContent>
-                          <TabsContent value="mobile">
-                            <div className="border rounded-lg p-4 bg-white max-w-[320px] mx-auto">
-                              <WireframeVisualizer 
-                                wireframeData={currentWireframe.wireframe} 
-                                viewMode="preview"
-                                deviceType="mobile"
-                              />
-                            </div>
-                          </TabsContent>
-                        </Tabs>
-                      </div>
-                    )}
+                  <div className="bg-muted rounded-lg overflow-hidden border min-h-[500px]">
+                    <WireframeVisualizer 
+                      wireframeData={currentWireframe.wireframe}
+                      viewMode={viewMode}
+                      deviceType={deviceType}
+                      darkMode={darkMode}
+                      showGrid={showGrid}
+                      highlightSections={highlightSections}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                        <Code className="h-4 w-4 mr-2" />
+                        Copy JSON
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleDownload}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCopyImage}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Image
+                      </Button>
+                    </div>
+                    <Button variant="secondary" size="sm" onClick={handleGenerateVariation}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Generate Variation
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-80 text-center text-muted-foreground">
-                  <Layout className="h-12 w-12 mb-4 text-muted-foreground/50" />
-                  <p>No wireframe generated yet</p>
-                  <p className="text-sm mt-1">
-                    Fill out the form and click Generate
-                  </p>
+                <div className="flex flex-col items-center justify-center h-80 space-y-4 text-center">
+                  <Layout className="h-12 w-12 text-muted-foreground opacity-20" />
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-medium">Start by describing your wireframe</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Enter a detailed description of what you need, or use one of our examples to get started quickly.
+                    </p>
+                  </div>
                 </div>
               )}
             </CardContent>
             {currentWireframe && (
-              <CardFooter className="flex flex-wrap justify-between gap-2">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleGenerateVariation}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Generate Variation
-                  </Button>
-                  {multiPage && (
-                    <Button variant="outline" size="sm">
-                      <Layers className="mr-2 h-4 w-4" />
-                      Edit Pages
-                    </Button>
-                  )}
+              <CardFooter className="flex justify-between border-t pt-4">
+                <div className="text-sm text-muted-foreground">
+                  Generated in {currentWireframe.generationTime.toFixed(1)}s
                 </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                    <Code className="mr-2 h-4 w-4" />
-                    Copy JSON
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleCopyImage}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Image
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
-                  </Button>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm text-muted-foreground mr-1">Creativity:</span>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-2 w-2 rounded-full ${
+                        i < ((currentWireframe.creativityLevel || 5) / 2)
+                          ? "bg-primary"
+                          : "bg-muted"
+                      }`}
+                    />
+                  ))}
                 </div>
               </CardFooter>
             )}
