@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
@@ -132,7 +131,7 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
               onClick={() => setShowGenerator(true)}
               className="flex items-center"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Wand2 className="mr-2 h-4 w-4" />
               Generate Wireframe
             </Button>
           </CardContent>
@@ -157,7 +156,7 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
         
         <Card className="border-dashed border-2 bg-muted/50 flex flex-col items-center justify-center">
           <CardContent className="pt-6 flex flex-col items-center justify-center h-full">
-            <Sparkles className="h-10 w-10 mb-4 text-muted-foreground" />
+            <Wand2 className="h-10 w-10 mb-4 text-muted-foreground" />
             <h3 className="text-lg font-medium text-center mb-2">Generate New Wireframe</h3>
             <p className="text-sm text-muted-foreground text-center mb-4">
               Create another wireframe design variant
