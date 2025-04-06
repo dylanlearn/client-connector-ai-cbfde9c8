@@ -73,7 +73,10 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       style: styleToken,
       enhancedCreativity: true, 
       creativityLevel: creativityLevel,
-      darkMode: darkMode
+      // Pass darkMode through customParams which is defined in the WireframeGenerationParams interface
+      customParams: {
+        darkMode: darkMode
+      }
     };
     
     // Add reference inspiration if selected
@@ -93,7 +96,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   };
   
   const handleGenerateVariation = async () => {
-    if (!currentWireframe) return;
+    if (!currentWireframe?.wireframe) return;
     
     const result = await generateCreativeVariation(currentWireframe.wireframe, projectId);
     
@@ -103,7 +106,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   };
   
   const handleSaveToMemory = async () => {
-    if (!currentWireframe) return null;
+    if (!currentWireframe?.wireframe) return null;
     
     // Extract tags from the description and title
     const extractTags = (text: string) => {
