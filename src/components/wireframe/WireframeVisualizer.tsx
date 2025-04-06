@@ -8,6 +8,7 @@ import { PricingSection } from "./sections/PricingSection";
 import { ContactSection } from "./sections/ContactSection";
 import { FooterSection } from "./sections/FooterSection";
 import { GenericSection } from "./sections/GenericSection";
+import { DashboardSection } from "./sections/DashboardSection";
 import { FlowchartView } from "./FlowchartView";
 
 interface WireframeVisualizerProps {
@@ -131,6 +132,16 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
                     key={sectionIndex} 
                     sectionIndex={sectionIndex} 
                     variant={section.componentVariant}
+                    {...styleProps}
+                  />;
+                
+                case "dashboard":
+                  return <DashboardSection 
+                    key={sectionIndex} 
+                    sectionIndex={sectionIndex} 
+                    variant={section.componentVariant}
+                    layout={section.layout}
+                    darkMode={darkMode}
                     {...styleProps}
                   />;
                 

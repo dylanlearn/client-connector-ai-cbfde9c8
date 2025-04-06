@@ -1,146 +1,115 @@
 
-import React from "react";
-import { Node, Edge } from "@xyflow/react";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import React from 'react';
 import { 
+  LayoutDashboard, 
   LayoutGrid, 
-  Columns, 
-  Rows, 
-  Layers, 
-  GripVertical, 
-  ChevronDown, 
-  ChevronRight
-} from "lucide-react";
+  Image as ImageIcon, 
+  Type, 
+  ListTree, 
+  ShoppingCart, 
+  MessageCircle, 
+  PanelRight, 
+  BarChart3, 
+  PieChart,
+  Table
+} from 'lucide-react';
 
 interface FlowchartViewProps {
   pages: any[];
   showDetails?: boolean;
-  onSectionClick?: (section: any, pageIndex: number, sectionIndex: number) => void;
 }
 
-export const FlowchartView: React.FC<FlowchartViewProps> = ({ 
-  pages, 
-  showDetails = false,
-  onSectionClick 
-}) => {
-  const [expandedPages, setExpandedPages] = React.useState<Record<number, boolean>>(
-    pages.reduce((acc, _, index) => ({ ...acc, [index]: true }), {})
-  );
-  
-  const togglePageExpansion = (pageIndex: number) => {
-    setExpandedPages(prev => ({
-      ...prev,
-      [pageIndex]: !prev[pageIndex]
-    }));
-  };
-  
-  const getLayoutIcon = (layoutType?: string) => {
-    switch (layoutType?.toLowerCase()) {
-      case 'grid':
-        return <LayoutGrid className="h-3 w-3" />;
-      case 'columns':
-      case 'column':
-      case 'two-column':
-      case 'three-column':
-        return <Columns className="h-3 w-3" />;
-      case 'rows':
-      case 'row':
-        return <Rows className="h-3 w-3" />;
-      case 'overlay':
-      case 'overlapping':
-        return <Layers className="h-3 w-3" />;
+export const FlowchartView: React.FC<FlowchartViewProps> = ({ pages = [], showDetails = false }) => {
+  // Get icon based on section type
+  const getSectionIcon = (sectionType: string) => {
+    switch (sectionType?.toLowerCase()) {
+      case 'hero':
+        return <ImageIcon className="h-4 w-4" />;
+      case 'features':
+        return <LayoutGrid className="h-4 w-4" />;
+      case 'testimonials':
+        return <MessageCircle className="h-4 w-4" />;
+      case 'pricing':
+        return <ShoppingCart className="h-4 w-4" />;
+      case 'dashboard':
+        return <LayoutDashboard className="h-4 w-4" />;
+      case 'chart':
+        return <BarChart3 className="h-4 w-4" />;
+      case 'pie-chart':
+        return <PieChart className="h-4 w-4" />;
+      case 'table':
+        return <Table className="h-4 w-4" />;
+      case 'sidebar':
+        return <PanelRight className="h-4 w-4" />;
       default:
-        return <GripVertical className="h-3 w-3" />;
+        return <Type className="h-4 w-4" />;
     }
   };
-
+  
   return (
-    <div className="flowchart-view p-4 bg-blue-50/70 rounded-lg overflow-auto min-h-[500px]">
-      {pages.map((page, pageIndex) => (
-        <div key={`page-${pageIndex}`} className="mb-6">
-          <div 
-            className="flex items-center gap-2 cursor-pointer mb-2"
-            onClick={() => togglePageExpansion(pageIndex)}
-          >
-            {expandedPages[pageIndex] ? (
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-gray-500" />
-            )}
-            <h3 className="text-lg font-medium">
-              {page.name || `Page ${pageIndex + 1}`}
-            </h3>
-          </div>
-          
-          {expandedPages[pageIndex] && (
-            <div className="border rounded-lg p-4 bg-white">
-              <div className="space-y-3">
-                {(page.sections || []).map((section: any, sectionIndex: number) => (
-                  <div
-                    key={`section-${sectionIndex}`}
-                    className={`p-3 border rounded ${
-                      onSectionClick ? 'cursor-pointer hover:bg-gray-50' : ''
-                    }`}
-                    onClick={onSectionClick ? () => onSectionClick(section, pageIndex, sectionIndex) : undefined}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded bg-blue-100 flex items-center justify-center">
-                          {getLayoutIcon(section.layout)}
-                        </div>
-                        <div className="font-medium">{section.name || section.sectionType || `Section ${sectionIndex + 1}`}</div>
-                      </div>
-                      <Badge variant="outline" className="text-xs capitalize">
-                        {section.sectionType || "Generic"}
-                      </Badge>
-                    </div>
-                    
-                    {showDetails && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        <div className="grid grid-cols-2 gap-2">
-                          {section.layout && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">Layout:</span>
-                              <span className="capitalize">{section.layout}</span>
-                            </div>
-                          )}
-                          {section.componentVariant && (
-                            <div className="flex items-center gap-1">
-                              <span className="font-medium">Variant:</span>
-                              <span className="capitalize">{section.componentVariant}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {section.components && Array.isArray(section.components) && section.components.length > 0 && (
-                          <div className="mt-2">
-                            <div className="font-medium mb-1">Components:</div>
-                            <div className="flex flex-wrap gap-1">
-                              {section.components.map((comp: any, compIdx: number) => (
-                                <Badge key={compIdx} variant="secondary" className="text-xs">
-                                  {typeof comp === 'string' ? comp : comp.type || 'Component'}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {section.styleToken && (
-                          <div className="mt-2 flex items-center gap-1">
-                            <span className="font-medium">Style:</span>
-                            <Badge variant="outline" className="text-xs">{section.styleToken}</Badge>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+    <div className="p-4 bg-blue-50 rounded-lg">
+      <div className="space-y-6">
+        {pages.map((page, pageIndex) => (
+          <div key={`page-${pageIndex}`} className="bg-white border border-blue-200 rounded-lg overflow-hidden">
+            <div className="bg-blue-100 p-3 border-b border-blue-200">
+              <div className="flex items-center space-x-2">
+                <ListTree className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-blue-800">
+                  {page.name || `Page ${pageIndex + 1}`}
+                  {page.pageType && <span className="text-blue-600 text-sm ml-2">({page.pageType})</span>}
+                </span>
               </div>
             </div>
-          )}
-        </div>
-      ))}
+            
+            <div className="p-4">
+              {(page.sections || []).length > 0 ? (
+                <div className="space-y-3">
+                  {page.sections.map((section: any, sectionIndex: number) => (
+                    <div 
+                      key={`section-${pageIndex}-${sectionIndex}`} 
+                      className="border border-blue-100 rounded p-3 bg-blue-50/50"
+                    >
+                      <div className="flex items-center">
+                        <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                          {getSectionIcon(section.sectionType)}
+                        </div>
+                        <span className="font-medium">
+                          {section.name || section.sectionType || `Section ${sectionIndex + 1}`}
+                        </span>
+                        {section.componentVariant && (
+                          <span className="text-xs text-blue-600 bg-blue-100 rounded-full px-2 py-0.5 ml-2">
+                            {section.componentVariant}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {showDetails && section.components && section.components.length > 0 && (
+                        <div className="mt-2 pl-8 border-l border-blue-100 ml-3 space-y-1">
+                          {section.components.map((component: any, compIndex: number) => (
+                            <div key={`comp-${compIndex}`} className="flex items-center text-sm text-blue-700">
+                              <div className="w-2 h-2 bg-blue-300 rounded-full mr-2"></div>
+                              {component.type || `Component ${compIndex + 1}`}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">No sections defined</div>
+              )}
+            </div>
+          </div>
+        ))}
+        
+        {pages.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <ListTree className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+            <p>No page structure available</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
