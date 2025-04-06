@@ -1,17 +1,19 @@
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gauge } from '@/components/ui/gauge';
-import { toast } from 'sonner';
-import { recordSystemStatus, SystemStatus, getMonitoringConfiguration } from '@/utils/monitoring/system-status';
-import { Loader2, RefreshCw, AlertCircle, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { recordSystemStatus } from '@/utils/monitoring/system-status';
+import { AlertTriangle, CheckCircle, XCircle, ActivitySquare, RefreshCcw } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { diagnoseAndFixApiIssues } from '@/utils/monitoring/api-monitor-fix';
 
 interface MonitoringStateProps {
   component: string;
-  threshold: number;
-  status: SystemStatus;
+  status: "normal" | "warning" | "critical" | "error";
   currentValue?: number;
+  threshold?: number;
   message?: string;
   autoRefresh?: boolean;
   refreshInterval?: number; // in seconds
@@ -20,142 +22,203 @@ interface MonitoringStateProps {
 
 export function MonitoringState({
   component,
-  threshold,
   status: initialStatus,
   currentValue: initialValue = 0,
-  message,
+  threshold = 100,
+  message = '',
   autoRefresh = false,
   refreshInterval = 60,
-  persistToDb = false,
+  persistToDb = false
 }: MonitoringStateProps) {
-  const [status, setStatus] = useState<SystemStatus>(initialStatus);
+  const [status, setStatus] = useState<"normal" | "warning" | "critical" | "error">(initialStatus);
   const [currentValue, setCurrentValue] = useState<number>(initialValue);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [warningThreshold, setWarningThreshold] = useState<number>(threshold * 0.8);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<number | null>(null);
-  
-  // Simulate a monitoring refresh
-  const refreshMonitoring = useCallback(async () => {
-    setIsRefreshing(true);
-    setError(null);
+  const [isFixing, setIsFixing] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!autoRefresh) return;
     
-    try {
-      // Get monitoring configuration if available
-      const config = persistToDb ? await getMonitoringConfiguration(component) : null;
+    const interval = setInterval(() => {
+      // Simulate status change in development environment
+      const newValue = Math.floor(Math.random() * 100);
+      let newStatus: "normal" | "warning" | "critical" | "error" = "normal";
       
-      // If we have a config, use those thresholds
-      if (config) {
-        setWarningThreshold(config.warning_threshold);
+      if (newValue > threshold) {
+        newStatus = "critical";
+      } else if (newValue > threshold * 0.7) {
+        newStatus = "warning";
       }
       
-      // Generate a simulated value (in real app, this would be fetching real metrics)
-      const value = Math.floor(Math.random() * 100);
-      let newStatus: SystemStatus;
-      
-      if (value >= threshold) {
-        newStatus = 'critical';
-      } else if (value >= warningThreshold) {
-        newStatus = 'warning';
-      } else {
-        newStatus = 'normal';
-      }
-      
-      // Update state
-      setCurrentValue(value);
       setStatus(newStatus);
+      setCurrentValue(newValue);
       
-      // Persist to database if needed
+      // Persist to database if requested
       if (persistToDb) {
-        await recordSystemStatus(
+        recordSystemStatus(
           component,
           newStatus,
-          value,
+          newValue,
           threshold,
-          `${component} monitoring status: ${newStatus}`
-        );
+          `Auto-generated monitoring data for ${component}`
+        ).catch(console.error);
       }
-    } catch (error: any) {
-      console.error('Error refreshing monitoring:', error);
-      setError(error.message || 'Failed to refresh monitoring data');
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [component, threshold, persistToDb, warningThreshold]);
-
-  // Set up automatic refresh
-  useEffect(() => {
-    if (autoRefresh) {
-      refreshMonitoring();
       
-      const interval = window.setInterval(() => {
-        refreshMonitoring();
-      }, refreshInterval * 1000);
-      
-      intervalRef.current = interval;
-      
-      return () => {
-        if (intervalRef.current) {
-          window.clearInterval(intervalRef.current);
-        }
-      };
-    }
-  }, [autoRefresh, refreshInterval, refreshMonitoring]);
-
-  // Get status icon
+    }, refreshInterval * 1000);
+    
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, component, threshold, persistToDb]);
+  
   const getStatusIcon = () => {
     switch (status) {
-      case 'critical':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-      case 'normal':
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case "normal":
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case "warning":
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+      case "critical":
+      case "error":
+        return <XCircle className="h-5 w-5 text-red-500" />;
       default:
-        return <Info className="h-5 w-5 text-blue-500" />;
+        return <ActivitySquare className="h-5 w-5 text-gray-500" />;
+    }
+  };
+  
+  const getStatusColor = () => {
+    switch (status) {
+      case "normal":
+        return "bg-green-100 border-green-200";
+      case "warning":
+        return "bg-yellow-100 border-yellow-200";
+      case "critical":
+      case "error":
+        return "bg-red-100 border-red-200";
+      default:
+        return "bg-gray-100 border-gray-200";
     }
   };
 
-  // Calculate gauge color
-  const gaugeColor = status === 'critical' ? '#ef4444' : status === 'warning' ? '#f59e0b' : '#10b981';
-
+  const handleFix = async () => {
+    if (component !== 'api') {
+      toast({
+        title: "Auto-fix unavailable",
+        description: `Automatic repair is only available for API components currently.`,
+        variant: "default"
+      });
+      return;
+    }
+    
+    setIsFixing(true);
+    
+    try {
+      const result = await diagnoseAndFixApiIssues();
+      
+      if (result.success) {
+        toast({
+          title: "Monitoring issues fixed",
+          description: result.message,
+          variant: "default"
+        });
+        
+        // Update the local state to show the fix
+        setStatus("normal");
+        setCurrentValue(50); // Set to a "healthy" value
+        
+        // Show detailed fixes
+        if (result.fixedIssues.length > 0) {
+          setTimeout(() => {
+            toast({
+              title: "Applied fixes",
+              description: (
+                <ul className="list-disc pl-4 mt-2 space-y-1">
+                  {result.fixedIssues.map((issue, i) => (
+                    <li key={i}>{issue}</li>
+                  ))}
+                </ul>
+              ),
+              variant: "default"
+            });
+          }, 500);
+        }
+      } else {
+        toast({
+          title: "Fix failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error fixing issues:", error);
+      toast({
+        title: "Error",
+        description: "Failed to apply automatic fixes",
+        variant: "destructive"
+      });
+    } finally {
+      setIsFixing(false);
+    }
+  };
+  
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium flex items-center justify-between">
-          <span>{component.charAt(0).toUpperCase() + component.slice(1)} Status</span>
-          <StatusBadge status={status} />
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <Gauge value={currentValue} max={100} size={80} color={gaugeColor} />
-          <div className="space-y-1 ml-4 flex-1">
-            <p className="text-sm text-muted-foreground">
-              {message || `${component} utilization is at ${currentValue}%`}
-            </p>
-            {error && (
-              <p className="text-xs text-red-500">Error: {error}</p>
-            )}
+    <Card className={`${getStatusColor()} border`}>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-2">
+            {getStatusIcon()}
+            <h3 className="text-sm font-medium capitalize">{component} System</h3>
           </div>
-          {autoRefresh ? (
-            <div className="text-xs text-muted-foreground whitespace-nowrap">
-              Auto-refreshes every {refreshInterval}s
-            </div>
-          ) : (
-            <button 
-              onClick={refreshMonitoring} 
-              disabled={isRefreshing}
-              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              {isRefreshing ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <RefreshCw className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          )}
+          <Badge 
+            variant={status === "normal" ? "outline" : "destructive"}
+            className="uppercase"
+          >
+            {status}
+          </Badge>
         </div>
+        
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span>Current Load</span>
+            <span className="font-medium">{currentValue}%</span>
+          </div>
+          <Progress 
+            value={currentValue} 
+            max={threshold} 
+            className={`h-2 ${
+              status === "critical" || status === "error" 
+                ? "bg-red-200" 
+                : status === "warning" 
+                ? "bg-yellow-200" 
+                : "bg-gray-200"
+            }`}
+            indicatorClassName={
+              status === "critical" || status === "error" 
+                ? "bg-red-500" 
+                : status === "warning" 
+                ? "bg-yellow-500" 
+                : "bg-green-500"
+            }
+          />
+        </div>
+        
+        {message && (
+          <p className="mt-3 text-xs text-gray-600">{message}</p>
+        )}
+        
+        {(status === "warning" || status === "critical") && (
+          <div className="mt-4 flex justify-end">
+            <Button 
+              size="sm" 
+              disabled={isFixing} 
+              onClick={handleFix}
+              className="flex items-center gap-1"
+            >
+              {isFixing ? "Fixing..." : (
+                <>
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  Quick Fix
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
