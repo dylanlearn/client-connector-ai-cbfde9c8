@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Nodes, Edge, Node } from "reactflow";
+import { Node, Edge } from "@xyflow/react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { 
