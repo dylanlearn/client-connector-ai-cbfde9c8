@@ -1,745 +1,218 @@
 
-import React, { useState, useEffect, useCallback } from "react";
-import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
-import { HeroSection } from "./sections/HeroSection";
-import { FeaturesSection } from "./sections/FeaturesSection";
-import { TestimonialsSection } from "./sections/TestimonialsSection";
-import { PricingSection } from "./sections/PricingSection";
-import { ContactSection } from "./sections/ContactSection";
-import { FooterSection } from "./sections/FooterSection";
-import { GenericSection } from "./sections/GenericSection";
-import { DashboardSection } from "./sections/DashboardSection";
-import { FlowchartView } from "./FlowchartView";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import {
-  Maximize2,
-  Minimize2,
-  Smartphone,
-  Monitor,
-  Tablet,
-  Grid3x3,
-  Eye,
-  Share2,
-  ListTree,
-  Download
-} from "lucide-react";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Code, LayoutGrid, DeviceDesktop, DeviceMobile, DeviceTablet } from 'lucide-react';
 
-export interface WireframeVisualizerProps {
-  wireframeData: WireframeData;
-  viewMode?: "flowchart" | "preview";
-  deviceType?: "desktop" | "mobile" | "tablet";
-  darkMode?: boolean;
-  showGrid?: boolean;
-  highlightSections?: boolean;
-  onSectionClick?: (section: any) => void;
-  interactive?: boolean;
+interface WireframeProps {
+  wireframe: {
+    id: string;
+    title: string;
+    description?: string;
+    imageUrl?: string;
+    sections?: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      imageUrl?: string;
+    }>;
+    version: string;
+    lastUpdated: string;
+  };
+  onSelect?: (wireframeId: string) => void;
+  onEdit?: (wireframeId: string) => void;
 }
 
-const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({ 
-  wireframeData,
-  viewMode: initialViewMode = "preview",
-  deviceType: initialDeviceType = "desktop",
-  darkMode = false,
-  showGrid = false,
-  highlightSections = false,
-  onSectionClick,
-  interactive = false
+export const WireframeVisualizer: React.FC<WireframeProps> = ({ 
+  wireframe,
+  onSelect,
+  onEdit
 }) => {
-  const [isRendered, setIsRendered] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [viewMode, setViewMode] = useState<"flowchart" | "preview">(initialViewMode);
-  const [deviceType, setDeviceType] = useState<"desktop" | "mobile" | "tablet">(initialDeviceType);
-  const [activeTab, setActiveTab] = useState("preview");
-  const [selectedSection, setSelectedSection] = useState<any>(null);
-  const [localShowGrid, setLocalShowGrid] = useState(showGrid);
+  const [activeTab, setActiveTab] = useState<string>("preview");
+  const [activeDevice, setActiveDevice] = useState<string>("desktop");
   
-  useEffect(() => {
-    console.log("WireframeVisualizer received wireframeData:", wireframeData);
-    console.log("Pages:", wireframeData.pages);
-    console.log("Sections:", wireframeData.sections);
-  }, [wireframeData]);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsRendered(true);
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [wireframeData]);
-
-  // Update local state when prop changes
-  useEffect(() => {
-    setLocalShowGrid(showGrid);
-  }, [showGrid]);
-
-  const validatedData = React.useMemo(() => {
-    const data = {...wireframeData};
-    
-    if (!data.pages && !data.sections) {
-      data.sections = [];
-    }
-    
-    return data;
-  }, [wireframeData]);
-
-  const pages = validatedData.pages || [
-    {
-      id: "page-1",
-      name: validatedData.title || "Home",
-      slug: "home",
-      sections: validatedData.sections || [],
-      pageType: "home"
-    }
-  ];
-
-  // Handle entering and exiting fullscreen mode
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  // Handle node expansion in flowchart view
-  const handleNodeExpand = useCallback((nodeId: string) => {
-    console.log("Expanding node:", nodeId);
-    // In a real implementation, you might update state to show more details
-    // about this particular node
-  }, []);
-
-  // Handle node collapsing in flowchart view
-  const handleNodeCollapse = useCallback((nodeId: string) => {
-    console.log("Collapsing node:", nodeId);
-    // In a real implementation, you might update state to hide details
-    // about this particular node
-  }, []);
-
-  // Handle node click in flowchart view
-  const handleNodeClick = useCallback((nodeId: string, nodeData: any) => {
-    console.log("Node clicked:", nodeId, nodeData);
-    
-    // If the node represents a section, find and select that section
-    if (nodeId.startsWith('section-')) {
-      const sectionData = nodeData.sectionData;
-      setSelectedSection(sectionData);
-      // If we're in flowchart view and interactive mode is on, switch to preview
-      if (viewMode === "flowchart" && interactive) {
-        setViewMode("preview");
-      }
-    }
-    
-    // If the node represents a page, deselect any section
-    if (nodeId.startsWith('page-')) {
-      setSelectedSection(null);
-    }
-  }, [viewMode, interactive]);
-
-  // Handle section click in preview mode
-  const handleSectionClick = useCallback((section: any) => {
-    console.log("Section clicked:", section);
-    setSelectedSection(section);
-    
-    // Call external handler if provided
-    if (onSectionClick) {
-      onSectionClick(section);
-    }
-  }, [onSectionClick]);
-
-  const handleDownloadJSON = useCallback(() => {
-    const dataStr = JSON.stringify(wireframeData, null, 2);
-    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-    
-    const downloadLink = document.createElement('a');
-    downloadLink.setAttribute('href', dataUri);
-    downloadLink.setAttribute('download', `wireframe-${wireframeData.title || 'export'}.json`);
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-  }, [wireframeData]);
-
-  // Switch to flowchart view
-  if (viewMode === "flowchart") {
-    return (
-      <div className={cn(
-        "wireframe-preview relative", 
-        darkMode ? "bg-gray-900" : "bg-white",
-        isFullscreen ? "fixed inset-0 z-50 p-4" : "rounded-lg",
-        isRendered ? "opacity-100" : "opacity-0",
-      )}>
-        {interactive && (
-          <div className="absolute top-2 right-2 z-10 flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setViewMode("preview")}
-              className={darkMode ? "bg-gray-800 border-gray-700" : ""}
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              Preview
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={toggleFullscreen}
-              className={darkMode ? "bg-gray-800 border-gray-700" : ""}
-            >
-              {isFullscreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </Button>
+  return (
+    <Card className="w-full overflow-hidden">
+      <CardHeader className="bg-muted/40">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl">{wireframe.title}</CardTitle>
+            <CardDescription className="mt-1">{wireframe.description}</CardDescription>
           </div>
-        )}
-        
-        <FlowchartView 
-          pages={pages} 
-          showDetails={true} 
-          darkMode={darkMode} 
-          interactive={interactive}
-          onNodeClick={handleNodeClick}
-          onNodeExpand={handleNodeExpand}
-          onNodeCollapse={handleNodeCollapse}
-        />
-      </div>
-    );
-  }
-
-  const styleToken = validatedData.styleToken || validatedData.style || 'modern';
-  
-  const colorScheme = validatedData.colorScheme || {
-    primary: "#4F46E5",
-    secondary: "#A855F7", 
-    accent: "#F59E0B",
-    background: darkMode ? "#111827" : "#ffffff"
-  };
-  
-  const typography = validatedData.typography || {
-    headings: "font-raleway",
-    body: "font-sans",
-    fontPairings: ["Raleway", "Inter"]
-  };
-  
-  const getStyleClasses = () => {
-    const darkModeClass = darkMode ? 'bg-gray-900 text-gray-100' : '';
-    
-    if (typeof styleToken === 'string') {
-      switch (styleToken.toLowerCase()) {
-        case 'brutalist':
-          return cn(
-            "font-mono",
-            darkMode ? 'bg-gray-900 text-white' : 'bg-white text-black',
-            "[&_button]:rounded-none [&_div]:rounded-none",
-            "border-4 border-black dark:border-white [&_section]:mb-0 [&_section]:border-b-4"
-          );
-        case 'glassy':
-          return cn(
-            "font-sans",
-            darkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-blue-50 to-purple-50',
-            "[&_div]:backdrop-blur-sm [&_section]:mb-4 [&_section]:rounded-xl",
-            "[&_button]:bg-white/20 [&_button]:backdrop-blur-md"
-          );
-        case 'minimalist':
-          return cn(
-            "font-sans",
-            darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800',
-            "[&_h1]:font-light [&_h2]:font-light [&_h3]:font-light",
-            "tracking-wide [&_p]:leading-relaxed [&_section]:py-16"
-          );
-        case 'corporate':
-          return cn(
-            "font-serif",
-            darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900',
-            "[&_section]:border-b",
-            `[&_section]:${darkMode ? 'border-gray-700' : 'border-gray-200'}`,
-            "[&_h1]:font-bold [&_h2]:font-semibold"
-          );
-        case 'playful':
-          return cn(
-            "font-sans",
-            darkMode ? 'bg-gray-800' : 'bg-blue-50',
-            "[&_button]:rounded-full [&_div]:rounded-lg",
-            "[&_section]:p-8 [&_section]:rounded-3xl [&_section]:m-4"
-          );
-        case 'editorial':
-          return cn(
-            "font-serif",
-            darkMode ? 'text-gray-100' : 'text-gray-900',
-            "[&_p]:text-lg [&_h1]:tracking-tight [&_h2]:tracking-tight",
-            "[&_section]:max-w-3xl [&_section]:mx-auto"
-          );
-        case 'tech-forward':
-          return cn(
-            "font-mono",
-            darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900',
-            "[&_div]:rounded-md",
-            "[&_section]:border-l-4 [&_section]:pl-4",
-            `[&_section]:border-${darkMode ? 'blue-500' : 'blue-600'}`
-          );
-        case 'bold':
-          return cn(
-            "font-sans",
-            darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900',
-            "[&_h1]:text-4xl [&_h1]:font-black [&_h2]:font-extrabold",
-            "[&_section]:mb-8"
-          );
-        default: // modern
-          return cn(
-            "font-sans",
-            darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white',
-            "transition-all duration-300"
-          );
-      }
-    } else {
-      return cn(
-        darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white',
-        "transition-all duration-300"
-      );
-    }
-  };
-
-  const getDeviceClasses = () => {
-    switch (deviceType) {
-      case "mobile":
-        return "max-w-[375px] mx-auto text-sm";
-      case "tablet":
-        return "max-w-[768px] mx-auto";
-      default:
-        return "";
-    }
-  };
-
-  const gridOverlay = showGrid ? (
-    <div className="pointer-events-none fixed inset-0 z-50 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4 p-4 opacity-10">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="h-full bg-blue-500"></div>
-      ))}
-    </div>
-  ) : null;
-
-  if (pages.length === 0 || (pages.length === 1 && pages[0].sections.length === 0)) {
-    return (
-      <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-        <p className="mb-2 font-medium">No sections defined</p>
-        <p className="text-sm">This wireframe doesn't contain any sections or pages yet.</p>
-      </div>
-    );
-  }
-
-  if (interactive) {
-    return (
-      <div className={cn(
-        "wireframe-interactive-preview",
-        isFullscreen ? "fixed inset-0 z-50" : "rounded-lg border",
-        darkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
-      )}>
-        <div className={cn(
-          "flex items-center justify-between p-2 border-b",
-          darkMode ? "border-gray-700" : "border-gray-200"
-        )}>
-          <div className="flex items-center gap-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
-              <TabsList>
-                <TabsTrigger value="preview" onClick={() => setViewMode("preview")}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview
-                </TabsTrigger>
-                <TabsTrigger value="structure" onClick={() => setViewMode("flowchart")}>
-                  <ListTree className="h-4 w-4 mr-2" />
-                  Structure
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div>
+            <Badge variant="outline" className="whitespace-nowrap">v{wireframe.version}</Badge>
           </div>
+        </div>
+      </CardHeader>
+      
+      <div className="border-b border-muted">
+        <div className="flex justify-between px-6 py-2">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+            <TabsList>
+              <TabsTrigger value="preview" className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                <span>Preview</span>
+              </TabsTrigger>
+              <TabsTrigger value="sections" className="flex items-center gap-1">
+                <LayoutGrid className="h-4 w-4" />
+                <span>Sections</span>
+              </TabsTrigger>
+              <TabsTrigger value="code" className="flex items-center gap-1">
+                <Code className="h-4 w-4" />
+                <span>Code</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           
-          <div className="flex items-center gap-2">
-            {viewMode === "preview" && (
-              <>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => setDeviceType("desktop")} 
-                  className={cn(
-                    deviceType === "desktop" ? "bg-primary text-primary-foreground" : "",
-                    darkMode && deviceType !== "desktop" ? "bg-gray-800 border-gray-700" : ""
-                  )}
-                >
-                  <Monitor className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => setDeviceType("tablet")} 
-                  className={cn(
-                    deviceType === "tablet" ? "bg-primary text-primary-foreground" : "",
-                    darkMode && deviceType !== "tablet" ? "bg-gray-800 border-gray-700" : ""
-                  )}
-                >
-                  <Tablet className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => setDeviceType("mobile")} 
-                  className={cn(
-                    deviceType === "mobile" ? "bg-primary text-primary-foreground" : "",
-                    darkMode && deviceType !== "mobile" ? "bg-gray-800 border-gray-700" : ""
-                  )}
-                >
-                  <Smartphone className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => setLocalShowGrid(!localShowGrid)}
-                  className={cn(
-                    localShowGrid ? "bg-primary text-primary-foreground" : "",
-                    darkMode && !localShowGrid ? "bg-gray-800 border-gray-700" : ""
-                  )}
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            <Button size="sm" variant="outline" onClick={handleDownloadJSON}>
-              <Download className="h-4 w-4" />
+          <div className="flex items-center gap-1 border rounded-md">
+            <Button 
+              variant={activeDevice === "desktop" ? "secondary" : "ghost"} 
+              size="sm" 
+              className="rounded-none rounded-l-md h-8" 
+              onClick={() => setActiveDevice("desktop")}
+            >
+              <DeviceDesktop className="h-4 w-4" />
             </Button>
             <Button 
+              variant={activeDevice === "tablet" ? "secondary" : "ghost"} 
               size="sm" 
-              variant="outline" 
-              onClick={toggleFullscreen}
-              className={darkMode ? "bg-gray-800 border-gray-700" : ""}
+              className="rounded-none border-x h-8" 
+              onClick={() => setActiveDevice("tablet")}
             >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              <DeviceTablet className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={activeDevice === "mobile" ? "secondary" : "ghost"} 
+              size="sm" 
+              className="rounded-none rounded-r-md h-8" 
+              onClick={() => setActiveDevice("mobile")}
+            >
+              <DeviceMobile className="h-4 w-4" />
             </Button>
           </div>
         </div>
+      </div>
 
-        <div className={cn(
-          "wireframe-content overflow-auto transition-all duration-300",
-          isFullscreen ? "h-[calc(100%-56px)]" : "h-[600px]",
-        )}>
-          {activeTab === "preview" && viewMode === "preview" && (
-            <div 
-              className={cn(
-                "wireframe-preview relative transition-all duration-300 p-4",
-                getDeviceClasses(),
-                getStyleClasses(),
-                isRendered ? "opacity-100" : "opacity-0",
-                showGrid ? "overflow-visible" : "overflow-auto"
-              )}
-              style={{
-                '--primary-color': colorScheme.primary,
-                '--secondary-color': colorScheme.secondary,
-                '--accent-color': colorScheme.accent,
-                '--background-color': colorScheme.background,
-              } as React.CSSProperties}
-            >
-              {gridOverlay}
-              
-              {pages.map((page, pageIndex) => (
-                <div key={`page-${pageIndex}`} className="mb-8 transition-all">
-                  {pages.length > 1 && (
-                    <h3 className={cn(
-                      "text-lg font-medium mb-3 pb-2",
-                      darkMode ? 'border-gray-700' : 'border-b'
-                    )}>
-                      {page.name || `Page ${pageIndex + 1}`}
-                    </h3>
-                  )}
-                  
-                  <div className="space-y-6">
-                    {(page.sections || []).map((section, sectionIndex) => {
-                      const styleProps = section.styleProperties || {};
-                      const isSelected = selectedSection && 
-                        (selectedSection.id === section.id || 
-                        (section.name && selectedSection.name === section.name));
-                      
-                      const SectionWrapper = ({ children }: { children: React.ReactNode }) => (
-                        <div 
-                          className={cn(
-                            "transition-all duration-300",
-                            highlightSections || interactive ? "hover:outline hover:outline-blue-500/50 relative" : "",
-                            isSelected ? "outline outline-2 outline-blue-500" : ""
+      <CardContent className="p-0">
+        <TabsContent value="preview" className="m-0">
+          <div className={`flex items-center justify-center p-4 bg-muted/30 ${
+            activeDevice === "mobile" ? "min-h-[500px]" : "min-h-[400px]"
+          }`}>
+            {wireframe.imageUrl ? (
+              <div className={`transition-all duration-300 bg-background shadow-md overflow-hidden ${
+                activeDevice === "desktop" ? "w-full aspect-video" :
+                activeDevice === "tablet" ? "w-3/4 aspect-[4/3]" :
+                "w-1/3 min-w-[320px] aspect-[9/16]"
+              }`}>
+                <img 
+                  src={wireframe.imageUrl} 
+                  alt={wireframe.title} 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+            ) : (
+              <div className="text-muted-foreground">No preview available</div>
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="sections" className="m-0">
+          {wireframe.sections && wireframe.sections.length > 0 ? (
+            <div className="p-4">
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {wireframe.sections.map(section => (
+                    <CarouselItem key={section.id} className="md:basis-1/2">
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="aspect-video bg-muted rounded-md overflow-hidden mb-3">
+                            {section.imageUrl ? (
+                              <img 
+                                src={section.imageUrl} 
+                                alt={section.name} 
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                No image
+                              </div>
+                            )}
+                          </div>
+                          <h4 className="font-medium">{section.name}</h4>
+                          {section.description && (
+                            <p className="text-sm text-muted-foreground">{section.description}</p>
                           )}
-                          onClick={() => interactive && handleSectionClick(section)}
-                        >
-                          {(highlightSections || interactive) && (
-                            <div className={cn(
-                              "absolute top-0 right-0 text-white text-xs px-2 py-1 rounded-bl z-10",
-                              isSelected ? "bg-blue-500" : "bg-blue-500/70"
-                            )}>
-                              {section.sectionType || "Section"} {sectionIndex + 1}
-                            </div>
-                          )}
-                          {children}
-                        </div>
-                      );
-                      
-                      const sectionContent = (() => {
-                        switch (section.sectionType?.toLowerCase()) {
-                          case "hero":
-                            return <HeroSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              {...styleProps}
-                            />;
-                          
-                          case "features":
-                            return <FeaturesSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              layout={section.layout}
-                              {...styleProps}
-                            />;
-                
-                          case "testimonials":
-                            return <TestimonialsSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              {...styleProps}
-                            />;
-                          
-                          case "pricing":
-                            return <PricingSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              {...styleProps}
-                            />;
-                          
-                          case "contact":
-                            return <ContactSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              {...styleProps}
-                            />;
-                          
-                          case "footer":
-                            return <FooterSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              {...styleProps}
-                            />;
-                          
-                          case "dashboard":
-                            return <DashboardSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              variant={section.componentVariant}
-                              layout={section.layout}
-                              darkMode={darkMode}
-                              {...styleProps}
-                            />;
-                          
-                          default:
-                            return <GenericSection 
-                              key={sectionIndex} 
-                              sectionIndex={sectionIndex} 
-                              name={section.name}
-                              layout={section.layout}
-                              components={section.components}
-                              {...styleProps}
-                            />;
-                        }
-                      })();
-                      
-                      return (
-                        <SectionWrapper key={sectionIndex}>
-                          {sectionContent}
-                        </SectionWrapper>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                        </CardContent>
+                      </Card>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="left-2" />
+                <CarouselNext className="right-2" />
+              </Carousel>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-muted-foreground">
+              No sections defined for this wireframe
             </div>
           )}
-
-          {activeTab === "structure" && (
-            <FlowchartView 
-              pages={pages} 
-              showDetails={true} 
-              darkMode={darkMode} 
-              interactive={interactive}
-              onNodeClick={handleNodeClick}
-              onNodeExpand={handleNodeExpand}
-              onNodeCollapse={handleNodeCollapse}
-            />
-          )}
-        </div>
-
-        <style>
-          {`
-          .wireframe-preview {
-            font-family: ${typography.body || "system-ui"}, sans-serif;
-          }
-          .wireframe-preview h1, .wireframe-preview h2, .wireframe-preview h3, 
-          .wireframe-preview h4, .wireframe-preview h5, .wireframe-preview h6 {
-            font-family: ${typography.headings || "system-ui"}, sans-serif;
-          }
-          .wireframe-preview-mobile {
-            max-width: 100%;
-            font-size: 0.85em;
-          }
-          `}
-        </style>
-      </div>
-    );
-  }
-
-  return (
-    <div 
-      className={cn(
-        "wireframe-preview relative transition-all duration-300",
-        getDeviceClasses(),
-        getStyleClasses(),
-        isRendered ? "opacity-100" : "opacity-0",
-        showGrid ? "overflow-visible" : "overflow-auto"
-      )}
-      style={{
-        '--primary-color': colorScheme.primary,
-        '--secondary-color': colorScheme.secondary,
-        '--accent-color': colorScheme.accent,
-        '--background-color': colorScheme.background,
-      } as React.CSSProperties}
-    >
-      {gridOverlay}
-      
-      {pages.map((page, pageIndex) => (
-        <div key={`page-${pageIndex}`} className="mb-8 transition-all">
-          {pages.length > 1 && (
-            <h3 className={cn(
-              "text-lg font-medium mb-3 pb-2",
-              darkMode ? 'border-gray-700' : 'border-b'
-            )}>
-              {page.name || `Page ${pageIndex + 1}`}
-            </h3>
-          )}
-          
-          <div className="space-y-6">
-            {(page.sections || []).map((section, sectionIndex) => {
-              const styleProps = section.styleProperties || {};
-              
-              const SectionWrapper = ({ children }: { children: React.ReactNode }) => (
-                <div 
-                  className={cn(
-                    "transition-all duration-300",
-                    highlightSections ? "hover:outline hover:outline-blue-500/50 relative" : ""
-                  )}
-                >
-                  {highlightSections && (
-                    <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-bl opacity-75">
-                      {section.sectionType || "Section"} {sectionIndex + 1}
-                    </div>
-                  )}
-                  {children}
-                </div>
-              );
-              
-              const sectionContent = (() => {
-                switch (section.sectionType?.toLowerCase()) {
-                  case "hero":
-                    return <HeroSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      {...styleProps}
-                    />;
-                  
-                  case "features":
-                    return <FeaturesSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      layout={section.layout}
-                      {...styleProps}
-                    />;
+        </TabsContent>
         
-                  case "testimonials":
-                    return <TestimonialsSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      {...styleProps}
-                    />;
-                  
-                  case "pricing":
-                    return <PricingSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      {...styleProps}
-                    />;
-                  
-                  case "contact":
-                    return <ContactSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      {...styleProps}
-                    />;
-                  
-                  case "footer":
-                    return <FooterSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      {...styleProps}
-                    />;
-                  
-                  case "dashboard":
-                    return <DashboardSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      variant={section.componentVariant}
-                      layout={section.layout}
-                      darkMode={darkMode}
-                      {...styleProps}
-                    />;
-                  
-                  default:
-                    return <GenericSection 
-                      key={sectionIndex} 
-                      sectionIndex={sectionIndex} 
-                      name={section.name}
-                      layout={section.layout}
-                      components={section.components}
-                      {...styleProps}
-                    />;
-                }
-              })();
-              
-              return (
-                <SectionWrapper key={sectionIndex}>
-                  {sectionContent}
-                </SectionWrapper>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+        <TabsContent value="code" className="m-0">
+          <div className="p-4 bg-muted font-mono text-sm overflow-x-auto max-h-[400px]">
+            <pre>
+              {`// Generated React component for ${wireframe.title}
+import React from 'react';
 
-      <style>
-        {`
-        .wireframe-preview {
-          font-family: ${typography.body || "system-ui"}, sans-serif;
-        }
-        .wireframe-preview h1, .wireframe-preview h2, .wireframe-preview h3, 
-        .wireframe-preview h4, .wireframe-preview h5, .wireframe-preview h6 {
-          font-family: ${typography.headings || "system-ui"}, sans-serif;
-        }
-        .wireframe-preview-mobile {
-          max-width: 100%;
-          font-size: 0.85em;
-        }
-        `}
-      </style>
+const ${wireframe.title.replace(/\s+/g, '')} = () => {
+  return (
+    <div className="container mx-auto">
+      <header className="py-6">
+        <h1 className="text-2xl font-bold">${wireframe.title}</h1>
+        <p>${wireframe.description || 'No description'}</p>
+      </header>
+      
+      {/* Main content sections */}
+      <main>
+        ${wireframe.sections?.map(section => 
+          `<section id="${section.id}">
+          <h2>${section.name}</h2>
+          <div>${section.description || 'Section content'}</div>
+        </section>`
+        ).join('\n        ') || '// No sections defined'}
+      </main>
     </div>
+  );
+};
+
+export default ${wireframe.title.replace(/\s+/g, '')};
+`}
+            </pre>
+          </div>
+        </TabsContent>
+      </CardContent>
+      
+      <CardFooter className="flex justify-between p-4 bg-muted/20">
+        <div className="text-xs text-muted-foreground">
+          Last updated: {wireframe.lastUpdated}
+        </div>
+        <div className="flex gap-2">
+          {onSelect && (
+            <Button variant="outline" size="sm" onClick={() => onSelect(wireframe.id)}>
+              Use This Design
+            </Button>
+          )}
+          {onEdit && (
+            <Button size="sm" onClick={() => onEdit(wireframe.id)}>
+              Customize
+            </Button>
+          )}
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

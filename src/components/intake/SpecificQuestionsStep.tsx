@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
 import { useAIContent } from "@/hooks/ai-content";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DesignPreferencesFields from "./site-types/DesignPreferencesFields";
 
 interface SpecificQuestionsStepProps {
   formData: IntakeFormData;
@@ -33,6 +35,7 @@ const SpecificQuestionsStep = ({
   const [showTooltips, setShowTooltips] = useState(false);
   const [aiPowered, setAiPowered] = useState(false);
   const [isAiInitializing, setIsAiInitializing] = useState(false);
+  const [activeTab, setActiveTab] = useState("requirements");
   const { isGenerating } = useAIContent({
     showToasts: true,
     autoRetry: true
@@ -123,12 +126,29 @@ const SpecificQuestionsStep = ({
           )}
         </div>
         
-        <SiteTypeFields 
-          siteType={siteType} 
-          form={form} 
-          showTooltips={showTooltips}
-          aiPowered={aiPowered && showTooltips}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="requirements">Project Requirements</TabsTrigger>
+            <TabsTrigger value="design">Design Preferences</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="requirements">
+            <SiteTypeFields 
+              siteType={siteType} 
+              form={form} 
+              showTooltips={showTooltips}
+              aiPowered={aiPowered && showTooltips}
+            />
+          </TabsContent>
+          
+          <TabsContent value="design">
+            <DesignPreferencesFields 
+              form={form}
+              showTooltips={showTooltips}
+              aiPowered={aiPowered && showTooltips}
+            />
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-between pt-4">
           <Button type="button" variant="outline" onClick={onPrevious}>

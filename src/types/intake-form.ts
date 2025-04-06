@@ -37,10 +37,23 @@ export interface IntakeFormData {
   // Step 4: Design Preferences
   designStyle?: string;
   colorPreferences?: string;
-  logoUpload?: boolean;
+  colorScheme?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  fontStyle?: string;
+  typographyScale?: string;
   existingBranding?: boolean;
   inspiration?: string;
   additionalNotes?: string;
+  designNotes?: string;
+  conversionPriority?: string;
+  
+  // New wireframe preferences
+  wireframeSelection?: string;
+  wireframeFeedback?: string;
+  layoutPreference?: string;
+  conversionElements?: string[];
+  interactionPreference?: string;
   
   // Timestamps for real-time syncing
   lastUpdated?: string;
