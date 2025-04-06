@@ -1,111 +1,151 @@
 
-import { v4 as uuidv4 } from "uuid";
 import { PromptDBService } from "../db-service";
-import { PromptTestResult } from "./types";
+import { mapDbVariantToPromptVariant } from "../utils/type-mappers";
+import { StatisticalAnalysis } from "./statistical-analysis";
+import type { PromptTestResult, PromptVariant } from "./types";
 
 /**
- * Functions for retrieving and analyzing test results
+ * Enhanced test results module with improved statistical analysis
  */
 export const PromptTestResults = {
   /**
-   * Get test results with statistical significance calculation
+   * Get test results with sophisticated statistical analysis
    */
-  getTestResults: async (testId: string): Promise<PromptTestResult[] | null> => {
+  getTestResults: async (testId: string): Promise<PromptTestResult[]> => {
     try {
-      // Get the test data
-      const testData = await PromptDBService.getTest(testId);
-      if (!testData) return null;
+      // Get test details including min_sample_size and confidence_threshold
+      const test = await PromptDBService.getTest(testId);
+      if (!test) return [];
       
-      // Get impressions count by variant
+      // Get all impressions for this test
       const impressions = await PromptDBService.getImpressions(testId);
       
-      // Process impressions to count them by variant
-      const impressionCounts: Record<string, number> = {};
-      impressions.forEach((imp: any) => {
-        const variantId = imp.variant_id;
-        impressionCounts[variantId] = (impressionCounts[variantId] || 0) + 1;
-      });
-      
-      // Get all results
+      // Get all results (successes and failures) for this test
       const results = await PromptDBService.getResults(testId);
       
-      // Process the results
-      const variantMap = new Map<string, PromptTestResult>();
+      // Group impressions and results by variant
+      const variantStats: Record<string, {
+        impressions: number;
+        successes: number;
+        failures: number;
+        latencyMs: number[];
+        totalLatency: number;
+        tokenUsage: number;
+      }> = {};
       
-      // Initialize map with impressions
-      Object.entries(impressionCounts).forEach(([variantId, count]) => {
-        variantMap.set(variantId, {
-          id: uuidv4(),
-          testId,
-          variantId,
-          impressions: count,
+      // Initialize stats for each variant
+      test.variants.forEach(variant => {
+        variantStats[variant.id] = {
+          impressions: 0,
           successes: 0,
           failures: 0,
-          averageLatencyMs: 0,
-          averageTokenUsage: 0
-        });
+          latencyMs: [],
+          totalLatency: 0,
+          tokenUsage: 0
+        };
+      });
+      
+      // Count impressions
+      impressions.forEach(impression => {
+        if (variantStats[impression.variant_id]) {
+          variantStats[impression.variant_id].impressions++;
+        }
       });
       
       // Process results
-      let latencySums = new Map<string, number>();
-      let tokenSums = new Map<string, number>();
-      let successCounts = new Map<string, number>();
-      
-      results.forEach((result: any) => {
-        const variantId = result.variant_id;
-        const successful = result.successful;
-        
-        // Initialize if not exists
-        if (!variantMap.has(variantId)) {
-          variantMap.set(variantId, {
-            id: uuidv4(),
-            testId,
-            variantId,
-            impressions: impressionCounts[variantId] || 0,
-            successes: 0,
-            failures: 0,
-            averageLatencyMs: 0,
-            averageTokenUsage: 0
-          });
+      results.forEach(result => {
+        if (variantStats[result.variant_id]) {
+          if (result.successful) {
+            variantStats[result.variant_id].successes++;
+            
+            // Track latency if available
+            if (result.latency_ms) {
+              variantStats[result.variant_id].latencyMs.push(result.latency_ms);
+              variantStats[result.variant_id].totalLatency += result.latency_ms;
+            }
+            
+            // Track token usage if available
+            if (result.token_usage) {
+              variantStats[result.variant_id].tokenUsage += result.token_usage;
+            }
+          } else {
+            variantStats[result.variant_id].failures++;
+          }
         }
-        
-        const currentResult = variantMap.get(variantId)!;
-        
-        if (successful) {
-          currentResult.successes++;
-          
-          // Track latency
-          const currentLatencySum = latencySums.get(variantId) || 0;
-          latencySums.set(variantId, currentLatencySum + (result.latency_ms || 0));
-          
-          // Track token usage
-          const currentTokenSum = tokenSums.get(variantId) || 0;
-          tokenSums.set(variantId, currentTokenSum + (result.token_usage || 0));
-          
-          // Track success count for averaging
-          const currentSuccessCount = successCounts.get(variantId) || 0;
-          successCounts.set(variantId, currentSuccessCount + 1);
-        } else {
-          currentResult.failures++;
-        }
-        
-        variantMap.set(variantId, currentResult);
       });
       
-      // Calculate averages
-      variantMap.forEach((result, variantId) => {
-        const successCount = successCounts.get(variantId) || 0;
-        if (successCount > 0) {
-          result.averageLatencyMs = Math.round(latencySums.get(variantId)! / successCount);
-          result.averageTokenUsage = Math.round(tokenSums.get(variantId)! / successCount);
+      // Format the variants for statistical analysis
+      const variantsForAnalysis = test.variants.map(variant => ({
+        id: variant.id,
+        name: variant.name,
+        impressions: variantStats[variant.id].impressions,
+        successes: variantStats[variant.id].successes
+      }));
+      
+      // Run statistical analysis
+      const significanceResult = StatisticalAnalysis.testSignificance(
+        variantsForAnalysis,
+        test.confidence_threshold
+      );
+      
+      // Build complete result objects
+      const testResults: PromptTestResult[] = test.variants.map(variant => {
+        const stats = variantStats[variant.id];
+        const impressionCount = stats.impressions;
+        const successCount = stats.successes;
+        const failureCount = stats.failures;
+        
+        // Calculate metrics
+        const conversionRate = impressionCount > 0
+          ? (successCount / impressionCount) * 100
+          : 0;
+          
+        const avgLatency = stats.latencyMs.length > 0
+          ? stats.totalLatency / stats.latencyMs.length
+          : 0;
+          
+        const avgTokens = successCount > 0
+          ? stats.tokenUsage / successCount
+          : 0;
+        
+        // Calculate lift compared to control
+        const controlVariant = test.variants.find(v => v.is_control);
+        let lift = 0;
+        
+        if (controlVariant && controlVariant.id !== variant.id) {
+          const controlStats = variantStats[controlVariant.id];
+          lift = StatisticalAnalysis.calculateLift(
+            controlStats.successes,
+            controlStats.impressions,
+            successCount,
+            impressionCount
+          );
         }
-        variantMap.set(variantId, result);
+        
+        // Determine if this is statistically the winner
+        const isWinner = significanceResult.isSignificant &&
+                        significanceResult.winningVariantId === variant.id;
+        
+        return {
+          variant: mapDbVariantToPromptVariant(variant),
+          impressionCount,
+          successCount,
+          failureCount,
+          conversionRate,
+          avgLatency,
+          avgTokensPerRequest: avgTokens,
+          isStatisticallySignificant: isWinner,
+          confidenceLevel: isWinner ? significanceResult.confidenceLevel : null,
+          lift,
+          pValue: isWinner ? significanceResult.pValue : null
+        };
       });
       
-      return Array.from(variantMap.values());
+      return testResults;
+      
     } catch (error) {
       console.error("Error getting test results:", error);
-      return null;
+      return [];
     }
   }
 };
