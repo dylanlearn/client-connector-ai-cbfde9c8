@@ -1,3 +1,4 @@
+
 export interface WireframeData {
   title?: string;
   description?: string;
@@ -69,6 +70,12 @@ export interface WireframeGenerationParams {
   typography?: string;
   complexity?: string;
   colorTheme?: string;
+  colorScheme?: { // Adding colorScheme to support the new color selector
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+  };
   componentTypes?: string[];
   moodboardSelections?: {
     layoutPreferences?: string[];

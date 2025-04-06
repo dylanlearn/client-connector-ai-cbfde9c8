@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
@@ -23,7 +22,6 @@ import StylePreviewCard from "@/components/wireframe/StylePreviewCard";
 import ColorSchemeSelector from "@/components/wireframe/ColorSchemeSelector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Define all available styles
 const availableStyles = [
   { id: "modern", name: "Modern", description: "Clean and contemporary design with balanced proportions" },
   { id: "minimalist", name: "Minimalist", description: "Simple and elegant with lots of whitespace" },
@@ -60,7 +58,6 @@ const WireframeGenerator = () => {
     generateWireframe,
   } = useWireframeGeneration();
 
-  // Update color scheme background when dark mode changes
   useEffect(() => {
     setColorScheme(prev => ({
       ...prev,
@@ -76,15 +73,13 @@ const WireframeGenerator = () => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    // Enhanced parameters with style information
     await generateWireframe({
       description: prompt,
       style,
       enhancedCreativity: true,
       multiPageLayout: multiPage,
       pages: pagesCount,
-      colorScheme,
-      // Add additional params to improve generation
+      colorTheme: `${colorScheme.primary},${colorScheme.secondary},${colorScheme.accent},${colorScheme.background}`,
       designTokens: {
         colors: colorScheme,
         typography: {
@@ -110,7 +105,7 @@ const WireframeGenerator = () => {
       baseWireframe: currentWireframe.wireframe,
       multiPageLayout: multiPage,
       pages: pagesCount,
-      colorScheme
+      colorTheme: `${colorScheme.primary},${colorScheme.secondary},${colorScheme.accent},${colorScheme.background}`
     });
   };
 
@@ -176,7 +171,6 @@ Use a clean, professional design suitable for finance applications.`;
     setViewMode(viewMode === "flowchart" ? "preview" : "flowchart");
   };
 
-  // Sample components for the component picker
   const sampleComponents = [
     { name: "Hero Section", type: "hero", preview: "/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png" },
     { name: "Feature Grid", type: "features", preview: "/placeholder.svg" },
@@ -186,7 +180,6 @@ Use a clean, professional design suitable for finance applications.`;
     { name: "Footer", type: "footer", preview: "/placeholder.svg" },
   ];
 
-  // Sample website references
   const websiteReferences = [
     { name: "Linear.app", category: "SaaS", url: "https://linear.app" },
     { name: "Stripe", category: "Payments", url: "https://stripe.com" },

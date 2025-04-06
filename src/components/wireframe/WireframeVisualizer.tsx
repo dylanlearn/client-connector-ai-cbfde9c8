@@ -313,7 +313,8 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
         </div>
       ))}
 
-      <style jsx global>{`
+      <style>
+        {`
         .wireframe-preview {
           font-family: ${typography.body || "system-ui"}, sans-serif;
         }
@@ -325,7 +326,8 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
           max-width: 100%;
           font-size: 0.85em;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
