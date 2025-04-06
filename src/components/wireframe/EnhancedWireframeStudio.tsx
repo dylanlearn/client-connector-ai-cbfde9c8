@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,10 +72,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       style: styleToken,
       enhancedCreativity: true, 
       creativityLevel: creativityLevel,
-      // Pass darkMode through customParams which is defined in the WireframeGenerationParams interface
-      customParams: {
-        darkMode: darkMode
-      }
+      darkMode: darkMode
     };
     
     // Add reference inspiration if selected

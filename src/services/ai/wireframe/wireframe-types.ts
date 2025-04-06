@@ -1,4 +1,3 @@
-
 export interface WireframeData {
   title?: string;
   description?: string;
@@ -94,6 +93,8 @@ export interface WireframeGenerationParams {
     tone?: string[];
   };
   result_data?: any; // Added this to fix errors
+  darkMode?: boolean; // Added darkMode parameter
+  [key: string]: any; // Allow any additional properties for flexibility
 }
 
 export interface WireframeGenerationResult {
