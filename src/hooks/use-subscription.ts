@@ -1,121 +1,143 @@
-
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchSubscriptionStatus, getCheckoutStatusFromUrl, cleanupCheckoutParams } from '@/utils/subscription-utils';
+import { SubscriptionStatus, BillingCycle } from '@/types/subscription';
 import { useAuth } from './use-auth';
-import { useAdminStatus } from './use-admin-status';
-
-export type SubscriptionStatus = 'free' | 'sync' | 'sync-pro' | 'enterprise';
+import { createSubscriptionCheckout, cancelSubscription } from '@/utils/subscription-utils';
+import { toast } from 'sonner';
 
 export function useSubscription() {
-  const { user, profile } = useAuth();
-  const { isAdmin } = useAdminStatus();
+  const { profile } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>('free');
-  const [isActive, setIsActive] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [willCancel, setWillCancel] = useState<boolean>(false);
+  const [isActive, setIsActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [expiresAt, setExpiresAt] = useState('');
+  const [willCancel, setWillCancel] = useState(false);
+  const [inTrial, setInTrial] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminFromProfile, setIsAdminFromProfile] = useState(false);
+  const [adminAssignedStatus, setAdminAssignedStatus] = useState<SubscriptionStatus | null>(null);
 
+  // Check subscription status on mount and when profile changes
   useEffect(() => {
-    const checkSubscription = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
+    // Check URL for checkout status
+    const checkoutStatus = getCheckoutStatusFromUrl();
+    if (checkoutStatus) {
+      // Clean up URL parameters
+      cleanupCheckoutParams();
+      
+      if (checkoutStatus === 'success') {
+        toast.success('Subscription activated successfully!');
+        // Refresh subscription status after successful checkout
+        refreshSubscription();
+      } else if (checkoutStatus === 'canceled') {
+        toast.info('Subscription checkout was canceled');
       }
+    }
+    
+    // Set admin status based on profile
+    if (profile) {
+      setIsAdminFromProfile(profile.role === 'admin');
+      setIsAdmin(profile.role === 'admin');
 
-      console.info("[Subscription] check_started", {
-        timestamp: new Date().toISOString(),
-        userId: user.id
-      });
+      // If user is not logged in or profile not loaded yet, keep loading
+      refreshSubscription();
+    }
+  }, [profile]);
 
-      // If user is admin, they automatically get access to all features
-      if (isAdmin) {
-        console.info("[Subscription] admin_detected", {
-          timestamp: new Date().toISOString(),
-          userId: user.id
-        });
-        
+  // Function to refresh subscription status from API
+  const refreshSubscription = async () => {
+    if (!profile) return;
+    
+    setIsLoading(true);
+    try {
+      // If admin, use admin-assigned status or set to 'sync-pro'
+      if (profile.role === 'admin') {
         setStatus('sync-pro');
         setIsActive(true);
+        setExpiresAt('');
+        setWillCancel(false);
+        setInTrial(false);
         setIsLoading(false);
         return;
       }
-
-      try {
-        // Fetch subscription info from API or database
-        // This is a mock implementation - replace with actual API call
-        const { data, error } = await supabase.from('subscriptions').select('*').eq('user_id', user.id).single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is expected for new users
-          console.error('Error fetching subscription:', error);
-          setIsLoading(false);
-          return;
-        }
-
-        // Mock subscription data for development
-        const subscription = data || {
-          status: profile?.subscription_status || 'free',
-          is_active: true,
-          expires_at: null,
-          will_cancel: false
-        };
-
-        console.info("[Subscription] status_received", {
-          timestamp: new Date().toISOString(),
-          userId: user.id,
-          status: subscription.status,
-          isActive: subscription.is_active,
-          adminAssigned: false
-        });
-
-        setStatus(subscription.status as SubscriptionStatus);
-        setIsActive(subscription.is_active);
-        setExpiresAt(subscription.expires_at);
-        setWillCancel(subscription.will_cancel);
-      } catch (error) {
-        console.error('Subscription check error:', error);
-      } finally {
-        setIsLoading(false);
+      
+      // For regular users, fetch from API
+      const subscriptionData = await fetchSubscriptionStatus();
+      
+      if (subscriptionData) {
+        setStatus(subscriptionData.status || 'free');
+        setIsActive(subscriptionData.status !== 'free');
+        setExpiresAt(subscriptionData.expires_at || '');
+        setWillCancel(subscriptionData.cancel_at_period_end || false);
+        setInTrial(subscriptionData.trial_end ? new Date(subscriptionData.trial_end) > new Date() : false);
+      } else {
+        // Fallback to profile data if API call fails
+        setStatus((profile.subscription_status as SubscriptionStatus) || 'free');
+        setIsActive(profile.subscription_status !== 'free');
       }
-    };
-
-    checkSubscription();
-  }, [user, profile, isAdmin]);
-
-  // Debug logging for subscription state
-  useEffect(() => {
-    console.info("Subscription hook state:", {
-      "profile.role": profile?.role,
-      "profile.subscription_status": profile?.subscription_status,
-      "isAdminRole from useAdminStatus": isAdmin,
-      "admin from subscriptionInfo": isAdmin,
-      "adminAssigned from subscriptionInfo": false,
-      "adminAssignedStatus from subscriptionInfo": null,
-      "hasAdminRole": profile?.role === 'admin',
-      "hasAssignedSyncProAccess": profile?.role === 'admin',
-      "hasAssignedSyncAccess": false,
-      "subscription status": status,
-      "is subscription active": isActive
-    });
-
-    // Log subscriber status to console
-    if (!isLoading) {
-      console.info("Subscription status response:", {
-        subscription: status,
-        isActive,
-        inTrial: false,
-        expiresAt,
-        willCancel,
-        isAdmin,
-        role: profile?.role
-      });
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+      toast.error('Could not fetch subscription status');
+      
+      // Fallback to profile data
+      setStatus((profile.subscription_status as SubscriptionStatus) || 'free');
+      setIsActive(profile.subscription_status !== 'free');
+    } finally {
+      setIsLoading(false);
     }
-  }, [status, isActive, isLoading, expiresAt, willCancel, profile, isAdmin]);
+  };
+
+  // Function to start subscription
+  const startSubscription = async (plan: 'sync' | 'sync-pro', billingCycle: BillingCycle = 'monthly') => {
+    setIsLoading(true);
+    try {
+      const data = await createSubscriptionCheckout(plan, billingCycle, window.location.href);
+      
+      if (data && data.url) {
+        // Redirect to checkout page
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error starting subscription:', error);
+      toast.error('Could not start subscription');
+      setIsLoading(false);
+    }
+  };
+
+  // Function to cancel subscription
+  const cancelCurrentSubscription = async () => {
+    setIsLoading(true);
+    try {
+      const data = await cancelSubscription();
+      
+      if (data && data.success) {
+        toast.success('Subscription will be canceled at the end of your billing period');
+        await refreshSubscription();
+      } else {
+        throw new Error('Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      toast.error('Could not cancel subscription');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     status,
     isActive,
     isLoading,
     expiresAt,
-    willCancel
+    willCancel,
+    refreshSubscription,
+    startSubscription,
+    cancelSubscription: cancelCurrentSubscription,
+    inTrial,
+    isAdmin,
+    isAdminFromProfile,
+    adminAssignedStatus
   };
 }
