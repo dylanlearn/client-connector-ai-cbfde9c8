@@ -53,7 +53,7 @@ export const getAnimationConfig = (
     const animationNumber = parseInt(animationType.split('-')[1]);
     
     if (animationNumber <= 5) {
-      config = getBasicAnimationConfig(animationType);
+      config = getBasicAnimationConfig(animationType, isPlaying);
     } else if (animationNumber <= 10) {
       config = getAdvancedAnimationConfig(animationType, options);
     } else {

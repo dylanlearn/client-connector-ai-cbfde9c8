@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { designOptions } from "@/data/design-options";
 import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
 import { useAuth } from "@/hooks/use-auth";
 import DesignImageManager from "@/components/design/DesignImageManager";
-import AnimatedVisualPicker from "@/components/design/AnimatedVisualPicker";
+import { AnimatedVisualPicker } from "@/components/design/AnimatedVisualPicker";
 
 const DesignPicker = () => {
   const [activeTab, setActiveTab] = useState("layouts");
