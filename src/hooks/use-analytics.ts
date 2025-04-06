@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 export interface AnalyticsData {
@@ -21,7 +20,7 @@ export interface UserPreference {
   rank: number;
   category: string;
   notes?: string;
-  design_option_id?: string;
+  design_option_id: string;
   averageRank?: number;
   count?: number;
   user_id: string;
