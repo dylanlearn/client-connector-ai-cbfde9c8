@@ -25,12 +25,12 @@ export interface PromptTest {
 }
 
 export interface PromptTestResult {
-  id: string;
+  id?: string;
   testId: string;
   variantId: string;
   impressions: number;
   successes: number;
-  failures: number;
+  failures?: number;
   averageLatencyMs: number;
   averageTokenUsage: number;
 }

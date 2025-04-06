@@ -17,9 +17,7 @@ export function initializeErrorHandling(): void {
     // Record the client error with appropriate metadata
     recordClientError(
       error.message || 'Unhandled Promise Rejection',
-      error.stack,
-      'UnhandledRejection',
-      config ? { severity: config.severity, configuredAction: config.action } : undefined
+      error.stack
     ).catch(console.error);
   });
   
@@ -34,9 +32,7 @@ export function initializeErrorHandling(): void {
       
       recordClientError(
         event.error.message || 'Uncaught Error',
-        event.error.stack,
-        'GlobalErrorHandler',
-        config ? { severity: config.severity, configuredAction: config.action } : undefined
+        event.error.stack
       ).catch(console.error);
     }
   });
@@ -71,9 +67,7 @@ export function initializeErrorHandling(): void {
       
       recordClientError(
         `Network request failed: ${(error as Error).message}`,
-        (error as Error).stack,
-        'FetchError',
-        config ? { severity: config.severity, configuredAction: config.action } : undefined
+        (error as Error).stack
       ).catch(console.error);
       
       throw error;

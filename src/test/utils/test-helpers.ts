@@ -46,3 +46,40 @@ export function generateMockData(type: string, count: number = 1): any[] {
     createdAt: new Date().toISOString()
   }));
 }
+
+/**
+ * Creates a mock fetch function for testing API calls
+ */
+export function mockFetch(response: any, status = 200): jest.Mock {
+  return jest.fn().mockImplementation(() =>
+    Promise.resolve({
+      ok: status >= 200 && status < 300,
+      status,
+      json: () => Promise.resolve(response),
+      text: () => Promise.resolve(JSON.stringify(response))
+    })
+  );
+}
+
+/**
+ * Creates a mock Supabase client for testing
+ */
+export function createMockSupabaseClient() {
+  return {
+    auth: {
+      signIn: jest.fn(),
+      signOut: jest.fn(),
+      user: jest.fn(),
+      session: jest.fn()
+    },
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      then: jest.fn()
+    })
+  };
+}

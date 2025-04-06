@@ -1,3 +1,4 @@
+
 import { AuthProvider } from "./contexts/AuthContext";
 import { Route, Routes } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
@@ -48,11 +49,19 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               
-              <Route element={<RequirePermission permission={Permission.MANAGE_PROJECTS} redirectTo="/dashboard" />}>
+              <Route element={
+                <RequirePermission permission={Permission.MANAGE_PROJECTS} redirectTo="/dashboard">
+                  <Outlet />
+                </RequirePermission>
+              }>
                 <Route path="/projects" element={<Projects />} />
               </Route>
               
-              <Route element={<RequirePermission permission={Permission.MANAGE_PROJECTS} redirectTo="/dashboard" />}>
+              <Route element={
+                <RequirePermission permission={Permission.MANAGE_PROJECTS} redirectTo="/dashboard">
+                  <Outlet />
+                </RequirePermission>
+              }>
                 <Route path="/new-project" element={<NewProject />} />
               </Route>
               
@@ -62,11 +71,19 @@ function App() {
               <Route path="/intake-form" element={<IntakeForm />} />
               <Route path="/design-picker" element={<DesignPicker />} />
               
-              <Route element={<RequirePermission permission={Permission.VIEW_ANALYTICS} redirectTo="/dashboard" />}>
+              <Route element={
+                <RequirePermission permission={Permission.VIEW_ANALYTICS} redirectTo="/dashboard">
+                  <Outlet />
+                </RequirePermission>
+              }>
                 <Route path="/analytics" element={<Analytics />} />
               </Route>
               
-              <Route element={<RequirePermission permission={Permission.ACCESS_PREMIUM_FEATURES} redirectTo="/dashboard" />}>
+              <Route element={
+                <RequirePermission permission={Permission.ACCESS_PREMIUM_FEATURES} redirectTo="/dashboard">
+                  <Outlet />
+                </RequirePermission>
+              }>
                 <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
                 <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
                 <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />

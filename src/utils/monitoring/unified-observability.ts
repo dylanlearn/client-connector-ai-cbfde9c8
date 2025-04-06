@@ -1,256 +1,252 @@
+/**
+ * Unified observability module for tracking application performance and errors
+ */
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { ClientErrorLogger } from "./client-error-logger";
-import { recordApiUsage } from "./api-usage";
-import { recordSystemStatus, SystemStatus } from "./system-status";
-import { v4 as uuidv4 } from 'uuid';
-
-// Service names for consistent reporting
-export enum ServiceName {
-  WIREFRAME = 'wireframe',
-  CREATIVE_AI = 'creative_ai',
-  SUBSCRIPTION = 'subscription',
-  AUTH = 'auth',
-  DESIGN_SUGGESTIONS = 'design_suggestions',
-  A_B_TESTING = 'ab_testing',
-  DATABASE = 'database',
-  MEMORY = 'memory',
-  API = 'api',
-  INTEGRATION = 'integration'
+// Performance data interface
+interface PerformanceData {
+  route: string;
+  duration: number;
+  success: boolean;
+  timestamp: number;
+  metadata?: Record<string, any>;
 }
 
-// Severity levels for events
-export enum Severity {
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-  CRITICAL = 'critical'
-}
-
-// Structured event data
-export interface ObservabilityEvent {
-  eventId: string;
-  timestamp: string;
-  service: ServiceName;
-  operation: string;
-  severity: Severity;
-  userId?: string;
+// Error data interface
+interface ErrorData {
   message: string;
-  duration?: number;
+  stack?: string;
+  type: string;
   metadata?: Record<string, any>;
-  correlationId?: string;
-  sessionId?: string;
+  timestamp: number;
 }
 
-// Performance data structure
-export interface PerformanceData {
-  operation: string;
-  service: ServiceName;
-  startTime: number;
+// Request data interface
+interface RequestData {
+  url: string;
+  method: string;
+  duration: number;
+  status?: number;
+  success: boolean;
+  timestamp: number;
   metadata?: Record<string, any>;
 }
 
-// Cache for active performance measurements
-const activePerformanceTracking = new Map<string, PerformanceData>();
+// Resource data interface
+interface ResourceData {
+  name: string;
+  type: string;
+  duration: number;
+  size?: number;
+  timestamp: number;
+}
 
-// Get a session ID that persists for the current browser session
-const getSessionId = (): string => {
-  if (!window.sessionStorage.getItem('observability_session_id')) {
-    window.sessionStorage.setItem('observability_session_id', uuidv4());
-  }
-  return window.sessionStorage.getItem('observability_session_id') as string;
+// Configuration interface
+interface ObservabilityConfig {
+  endpoint?: string;
+  sampleRate?: number;
+  flushInterval?: number;
+  maxQueueSize?: number;
+  debug?: boolean;
+}
+
+// Default configuration
+const DEFAULT_CONFIG: ObservabilityConfig = {
+  endpoint: '/api/telemetry',
+  sampleRate: 0.1, // 10% of events
+  flushInterval: 30000, // 30 seconds
+  maxQueueSize: 100,
+  debug: false
 };
+
+// Internal state
+let config = { ...DEFAULT_CONFIG };
+let queue: Array<PerformanceData | ErrorData | RequestData | ResourceData> = [];
+let flushTimerId: number | null = null;
+let isInitialized = false;
 
 /**
- * Unified observability service for enterprise-level monitoring
+ * Initialize the observability system with custom configuration
  */
-export const UnifiedObservability = {
-  /**
-   * Log an event to the observability system
-   */
-  logEvent: async (
-    service: ServiceName,
-    operation: string,
-    severity: Severity,
-    message: string,
-    metadata?: Record<string, any>,
-    userId?: string,
-    correlationId?: string
-  ): Promise<string> => {
-    const eventId = uuidv4();
-    const timestamp = new Date().toISOString();
-    const sessionId = getSessionId();
-
-    // Create structured event object
-    const event: ObservabilityEvent = {
-      eventId,
-      timestamp,
-      service,
-      operation,
-      severity,
-      message,
-      userId,
-      metadata,
-      correlationId,
-      sessionId
-    };
-
-    // Log to console with appropriate styling
-    const consoleStyles = {
-      [Severity.DEBUG]: 'color: gray',
-      [Severity.INFO]: 'color: blue',
-      [Severity.WARNING]: 'color: orange',
-      [Severity.ERROR]: 'color: red',
-      [Severity.CRITICAL]: 'color: red; font-weight: bold',
-    };
-    
-    console.log(
-      `%c[${service}] ${operation}: ${message}`, 
-      consoleStyles[severity] || '',
-      metadata || ''
-    );
-
-    try {
-      // Store in database for analysis
-      await supabase
-        .from('system_events')
-        .insert([{
-          event_id: eventId,
-          service,
-          operation,
-          severity,
-          message,
-          user_id: userId,
-          metadata,
-          correlation_id: correlationId,
-          session_id: sessionId
-        }]);
-      
-      // Record system status for critical and error events
-      if (severity === Severity.CRITICAL || severity === Severity.ERROR) {
-        let status: SystemStatus = 'warning';
-        if (severity === Severity.CRITICAL) status = 'critical';
-        
-        await recordSystemStatus(
-          service,
-          status,
-          undefined,
-          undefined,
-          message,
-          metadata
-        );
-        
-        // Also log critical client errors
-        if (severity === Severity.CRITICAL) {
-          ClientErrorLogger.logError(
-            new Error(`${service}/${operation}: ${message}`),
-            `${service}-${operation}`,
-            userId,
-            metadata
-          );
-        }
-      }
-      
-      // Show toast for critical events visible to the user
-      if (severity === Severity.CRITICAL && 
-          metadata?.showToast !== false) {
-        toast.error(`System error in ${service}`, {
-          description: message
-        });
-      }
-      
-    } catch (error) {
-      // Don't fail the application if logging fails
-      console.error('Failed to record observability event:', error);
-    }
-    
-    return eventId;
-  },
+export function initializeObservability(customConfig: Partial<ObservabilityConfig> = {}): void {
+  if (isInitialized) {
+    console.warn('Observability system already initialized');
+    return;
+  }
   
-  /**
-   * Start tracking performance for an operation
-   */
-  startPerformanceTracking: (
-    service: ServiceName,
-    operation: string,
-    metadata?: Record<string, any>
-  ): string => {
-    const trackingId = uuidv4();
-    activePerformanceTracking.set(trackingId, {
-      service,
-      operation,
-      startTime: performance.now(),
-      metadata
+  // Merge custom config with defaults
+  config = {
+    ...DEFAULT_CONFIG,
+    ...customConfig
+  };
+  
+  // Start automatic flushing
+  startFlushing();
+  
+  // Listen for page visibility changes to flush before unloading
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      flush();
+    }
+  });
+  
+  // Set as initialized
+  isInitialized = true;
+  
+  if (config.debug) {
+    console.log('Observability system initialized', config);
+  }
+}
+
+/**
+ * Track a route change or page load
+ */
+export function trackPageView(route: string, duration?: number): void {
+  if (!shouldSample()) return;
+  
+  addToQueue({
+    route,
+    duration: duration ?? 0,
+    success: true,
+    timestamp: Date.now()
+  } as PerformanceData);
+}
+
+/**
+ * Track an error that occurred
+ */
+export function trackError(error: Error, type: string = 'unknown', metadata?: Record<string, any>): void {
+  // Always track errors, regardless of sampling
+  addToQueue({
+    message: error.message,
+    stack: error.stack,
+    type,
+    metadata,
+    timestamp: Date.now()
+  } as ErrorData);
+  
+  // Flush immediately for errors to ensure they're sent
+  flush();
+}
+
+/**
+ * Track an API or fetch request
+ */
+export function trackRequest(
+  url: string, 
+  method: string = 'GET',
+  duration: number,
+  status?: number,
+  success: boolean = true,
+  metadata?: Record<string, any>
+): void {
+  if (!shouldSample()) return;
+  
+  addToQueue({
+    url,
+    method,
+    duration,
+    status,
+    success,
+    timestamp: Date.now(),
+    metadata
+  } as RequestData);
+}
+
+/**
+ * Track a resource load
+ */
+export function trackResource(name: string, type: string, duration: number, size?: number): void {
+  if (!shouldSample()) return;
+  
+  addToQueue({
+    name,
+    type,
+    duration,
+    size,
+    timestamp: Date.now()
+  } as ResourceData);
+}
+
+/**
+ * Add an item to the queue and check if we should flush
+ */
+function addToQueue(item: PerformanceData | ErrorData | RequestData | ResourceData): void {
+  queue.push(item);
+  
+  if (queue.length >= (config.maxQueueSize || DEFAULT_CONFIG.maxQueueSize!)) {
+    flush();
+  }
+}
+
+/**
+ * Flush the queue to the server
+ */
+function flush(): void {
+  if (queue.length === 0) return;
+  
+  const dataToSend = [...queue];
+  queue = [];
+  
+  // Add user ID if available
+  const enhancedData = dataToSend.map(item => ({
+    ...item,
+    sessionId: getSessionId()
+  }));
+  
+  if (config.debug) {
+    console.log('Flushing observability data', enhancedData);
+  }
+  
+  // Don't actually send in development environment
+  if (process.env.NODE_ENV !== 'development') {
+    fetch(config.endpoint!, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(enhancedData),
+      // Use keepalive to ensure the request completes even if the page is unloading
+      keepalive: true
+    }).catch(error => {
+      console.error('Failed to send observability data', error);
     });
-    return trackingId;
-  },
-  
-  /**
-   * End tracking performance and log the result
-   */
-  endPerformanceTracking: async (
-    trackingId: string,
-    success: boolean = true,
-    additionalMetadata?: Record<string, any>
-  ): Promise<number> => {
-    const performanceData = activePerformanceTracking.get(trackingId);
-    if (!performanceData) {
-      console.warn(`No performance tracking found for ID: ${trackingId}`);
-      return 0;
-    }
-    
-    const { service, operation, startTime, metadata } = performanceData;
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-    
-    // Combine metadata
-    const combinedMetadata = {
-      ...metadata,
-      ...additionalMetadata,
-      duration,
-      success
-    };
-    
-    // Log event
-    await UnifiedObservability.logEvent(
-      service,
-      operation,
-      success ? Severity.INFO : Severity.WARNING,
-      `${operation} ${success ? 'completed' : 'failed'} in ${duration.toFixed(2)}ms`,
-      combinedMetadata
-    );
-    
-    // If this is an API call, record it in the API usage metrics
-    if (service === ServiceName.API) {
-      await recordApiUsage(
-        operation,
-        duration,
-        success ? 200 : 500,
-        combinedMetadata?.userId,
-        combinedMetadata
-      );
-    }
-    
-    // Clean up
-    activePerformanceTracking.delete(trackingId);
-    
-    return duration;
-  },
-  
-  /**
-   * Create a correlation ID for tracking related events
-   */
-  createCorrelationId: (): string => {
-    return uuidv4();
-  },
-  
-  /**
-   * Get the current session ID
-   */
-  getSessionId
-};
+  }
+}
 
-// Export types
-export type { PerformanceData };
+/**
+ * Start the automatic flushing interval
+ */
+function startFlushing(): void {
+  if (flushTimerId !== null) {
+    clearInterval(flushTimerId);
+  }
+  
+  flushTimerId = window.setInterval(flush, config.flushInterval);
+}
+
+/**
+ * Determine if we should sample this event based on the configured sample rate
+ */
+function shouldSample(): boolean {
+  return Math.random() < (config.sampleRate || DEFAULT_CONFIG.sampleRate!);
+}
+
+/**
+ * Get a unique session ID for grouping events
+ */
+function getSessionId(): string {
+  let sessionId = sessionStorage.getItem('observability_session_id');
+  
+  if (!sessionId) {
+    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    sessionStorage.setItem('observability_session_id', sessionId);
+  }
+  
+  return sessionId;
+}
+
+// Export the PerformanceData type with a namespace to avoid conflicts
+export type { PerformanceData, ErrorData, RequestData, ResourceData, ObservabilityConfig };
+
+// Export a PerfDataType alias to avoid conflict
+export type PerfDataType = PerformanceData;

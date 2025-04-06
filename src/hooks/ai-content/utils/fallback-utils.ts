@@ -1,37 +1,42 @@
 
-import { FallbackContentMap } from '../types/generation-types';
+import { FallbackContentMap } from "../types/generation-types";
 
 /**
  * Default fallback content for different content types
  */
 export const DEFAULT_FALLBACKS: FallbackContentMap = {
-  header: {
-    default: "Example header"
+  header: (context?: string) => {
+    return context ? `${context} Solution` : "Professional Solutions for Your Business";
   },
-  tagline: {
-    default: "Brief, compelling tagline example"
+  tagline: (context?: string) => {
+    return context ? `Transforming ${context} for success` : "Transforming ideas into realities";
   },
-  cta: {
-    default: "Sign up for free"
+  description: (context?: string) => {
+    return context ? `Our specialized ${context} services help businesses achieve their goals with innovative solutions.` : 
+      "Our specialized services help businesses achieve their goals with innovative solutions.";
   },
-  description: {
-    default: "Sample description for this field"
+  cta: (context?: string) => {
+    return context ? `Get started with ${context}` : "Get Started Today";
   }
 };
 
 /**
- * Get fallback content for a given content type and context
- * @param type Content type
- * @param context Optional context information
+ * Get appropriate fallback content for a content type
+ * 
+ * @param contentType The type of content to generate fallback for
+ * @param context Optional context to customize the fallback
  * @returns Appropriate fallback content
  */
-export function getFallbackContent(type: string, context?: string): string {
-  const fallbackObj = DEFAULT_FALLBACKS[type] || { default: `Example ${type}` };
+export function getFallbackContent(contentType: string, context?: string): string {
+  const fallback = DEFAULT_FALLBACKS[contentType as keyof typeof DEFAULT_FALLBACKS];
   
-  // Customize fallback based on context if available
-  if (context && fallbackObj.default) {
-    return fallbackObj.default.replace(/this field/g, context);
+  if (!fallback) {
+    return "Content not available. Please try again later.";
   }
   
-  return fallbackObj.default;
+  if (typeof fallback === "function") {
+    return fallback(context);
+  }
+  
+  return typeof fallback === "string" ? fallback : fallback.toString();
 }
