@@ -68,3 +68,41 @@ export function mockUseAuthorization() {
     permissions: []
   };
 }
+
+/**
+ * Create a mock fetch function for testing
+ */
+export function mockFetch(responseData: any, status = 200) {
+  return jest.fn().mockImplementation(() => 
+    Promise.resolve({
+      status,
+      ok: status >= 200 && status < 300,
+      json: () => Promise.resolve(responseData)
+    })
+  );
+}
+
+/**
+ * Create a mock Supabase client for testing
+ */
+export function createMockSupabaseClient() {
+  return {
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
+      signOut: jest.fn().mockResolvedValue({ error: null })
+    },
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockReturnThis(),
+      then: jest.fn().mockImplementation(callback => Promise.resolve(callback({ data: [], error: null })))
+    }),
+    functions: {
+      invoke: jest.fn().mockResolvedValue({ data: {}, error: null })
+    },
+    rpc: jest.fn().mockResolvedValue({ data: {}, error: null })
+  };
+}
