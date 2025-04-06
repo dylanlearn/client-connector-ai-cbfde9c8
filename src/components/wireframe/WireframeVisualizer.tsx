@@ -1,7 +1,7 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { cn } from "@/lib/utils";
+import { ChevronRight, ExternalLink, Maximize2, Minimize2, MoreHorizontal } from "lucide-react";
 
 interface WireframeVisualizerProps {
   wireframeData: WireframeData;
@@ -211,13 +211,129 @@ const WireframeSection: React.FC<{ section: any; isEven: boolean }> = ({ section
   );
 };
 
+const PagePreview: React.FC<{ page: any; isActive: boolean }> = ({ page, isActive }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <div className={cn(
+      "border rounded-lg overflow-hidden transition-all duration-300 mb-4",
+      isActive ? "border-primary" : "border-gray-200",
+      isExpanded ? "col-span-2" : "col-span-1"
+    )}>
+      <div className={cn(
+        "bg-gray-50 p-3 flex items-center justify-between border-b",
+        isActive ? "bg-primary/10" : ""
+      )}>
+        <div className="flex items-center space-x-2">
+          <div className={cn(
+            "w-2 h-2 rounded-full",
+            isActive ? "bg-primary" : "bg-gray-300"
+          )}></div>
+          <span className="font-medium text-sm">{page.name || "Unnamed Page"}</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1 hover:bg-gray-200 rounded"
+          >
+            {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+          <button className="p-1 hover:bg-gray-200 rounded">
+            <MoreHorizontal size={14} />
+          </button>
+        </div>
+      </div>
+      
+      <div className={cn(
+        "p-4 bg-white",
+        isExpanded ? "max-h-[600px]" : "max-h-[300px]"
+      )}>
+        {page.sections && page.sections.length > 0 ? (
+          <div className={cn(
+            "border rounded overflow-hidden transform scale-90 origin-top-left shadow-sm",
+            isExpanded ? "scale-[0.95]" : "scale-[0.85]"
+          )}>
+            {/* Navigation if present */}
+            {page.sections.find(s => 
+              ["navbar", "navigation"].includes(s.sectionType?.toLowerCase())) && (
+              <div className="bg-white p-2 border-b flex justify-between items-center">
+                <div className="w-16 h-6 bg-gray-200 rounded"></div>
+                <div className="flex space-x-2">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="w-12 h-4 bg-gray-100 rounded"></div>
+                  ))}
+                </div>
+                <div className="w-20 h-6 bg-gray-200 rounded"></div>
+              </div>
+            )}
+            
+            {/* Page preview content */}
+            <div className="space-y-2 p-2">
+              {page.sections.filter(s => 
+                !["navbar", "navigation"].includes(s.sectionType?.toLowerCase())).map((section, idx) => (
+                <div 
+                  key={idx} 
+                  className={`p-2 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b last:border-b-0`}
+                >
+                  {section.sectionType?.toLowerCase() === 'hero' ? (
+                    <div className="flex space-x-2">
+                      <div className="space-y-1 flex-1">
+                        <div className="h-4 bg-gray-200 w-4/5 rounded"></div>
+                        <div className="h-2 bg-gray-100 w-full rounded"></div>
+                        <div className="h-2 bg-gray-100 w-3/4 rounded"></div>
+                        <div className="h-6 w-20 bg-gray-300 mt-1 rounded"></div>
+                      </div>
+                      <div className="w-24 h-16 bg-gray-200 rounded"></div>
+                    </div>
+                  ) : section.sectionType?.toLowerCase() === 'features' ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="space-y-1">
+                          <div className="mx-auto w-6 h-6 bg-gray-200 rounded-full"></div>
+                          <div className="h-2 bg-gray-200 w-3/4 mx-auto rounded"></div>
+                          <div className="h-2 bg-gray-100 w-full rounded"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="h-3 bg-gray-200 w-1/3 rounded"></div>
+                      <div className="h-2 bg-gray-100 w-full rounded"></div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-32 text-gray-400">
+            No content defined
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({ wireframeData }) => {
+  const [activePageIndex, setActivePageIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<"preview" | "flowchart">("flowchart");
+  
   // Extract sections from wireframe data
   const sections = wireframeData.sections || [];
   
   // Check if it's a multi-page wireframe
   const isMultiPage = wireframeData.pages && wireframeData.pages.length > 0;
   const pages = wireframeData.pages || [];
+  
+  // If there are no pages but we have sections, create a default page
+  const displayPages = isMultiPage ? pages : [
+    {
+      id: "default-page",
+      name: wireframeData.title || "Home Page",
+      sections: sections
+    }
+  ];
 
   // If there are no sections or pages, show placeholder
   if ((sections.length === 0 && !isMultiPage) || (isMultiPage && pages.length === 0)) {
@@ -228,57 +344,140 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({ wireframeData
     );
   }
 
-  if (isMultiPage) {
-    // Show multi-page wireframe with tabs for each page
-    return (
-      <div className="border rounded-md overflow-hidden">
-        <div className="flex border-b bg-gray-50">
-          {pages.map((page, index) => (
-            <div 
-              key={index} 
-              className={`px-4 py-2 text-sm font-medium cursor-pointer ${index === 0 ? 'bg-white border-b-2 border-blue-500' : ''}`}
-            >
-              {page.name || `Page ${index + 1}`}
-            </div>
-          ))}
-        </div>
-        
-        <div className="p-4">
-          {/* Display first page sections by default */}
-          {pages[0]?.sections?.map((section: any, index: number) => (
-            <WireframeSection 
-              key={index} 
-              section={section} 
-              isEven={index % 2 === 0} 
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Show single-page wireframe
   return (
-    <div className="border rounded-md p-4 bg-white">
-      {/* First check if there's a navbar/navigation section and show it first */}
-      {sections.find(section => ["navbar", "navigation"].includes(section.sectionType?.toLowerCase())) && (
-        <WireframeSection 
-          section={sections.find(section => ["navbar", "navigation"].includes(section.sectionType?.toLowerCase()))} 
-          isEven={false}
-        />
+    <div className="border rounded-lg overflow-hidden bg-gray-50 shadow-sm">
+      {/* Tabs for switching between preview/flowchart */}
+      <div className="flex border-b bg-white">
+        <button
+          onClick={() => setViewMode("preview")}
+          className={cn(
+            "px-4 py-2 text-sm font-medium border-b-2",
+            viewMode === "preview" ? "border-primary text-primary" : "border-transparent text-gray-500"
+          )}
+        >
+          Preview
+        </button>
+        <button
+          onClick={() => setViewMode("flowchart")}
+          className={cn(
+            "px-4 py-2 text-sm font-medium border-b-2",
+            viewMode === "flowchart" ? "border-primary text-primary" : "border-transparent text-gray-500"
+          )}
+        >
+          Flowchart
+        </button>
+      </div>
+      
+      {/* Preview mode */}
+      {viewMode === "preview" && (
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Pages tabs */}
+            <div className="col-span-full flex border-b bg-gray-50 mb-4 overflow-x-auto no-scrollbar">
+              {displayPages.map((page, index) => (
+                <button
+                  key={page.id || index}
+                  onClick={() => setActivePageIndex(index)}
+                  className={cn(
+                    "px-4 py-2 text-sm font-medium whitespace-nowrap",
+                    activePageIndex === index 
+                      ? "bg-white border-t border-l border-r rounded-t-md text-primary" 
+                      : "text-gray-500 hover:bg-gray-100"
+                  )}
+                >
+                  {page.name || `Page ${index + 1}`}
+                </button>
+              ))}
+            </div>
+          
+            {/* Active page content */}
+            <div className="col-span-full border rounded-md bg-white p-6">
+              {/* Display navigation first if exists */}
+              {displayPages[activePageIndex]?.sections?.find(section => 
+                ["navbar", "navigation"].includes(section.sectionType?.toLowerCase())) && (
+                <WireframeSection 
+                  section={displayPages[activePageIndex].sections.find(section => 
+                    ["navbar", "navigation"].includes(section.sectionType?.toLowerCase()))}
+                  isEven={false}
+                />
+              )}
+              
+              {/* Display remaining sections */}
+              {displayPages[activePageIndex]?.sections
+                ?.filter(section => !["navbar", "navigation"].includes(section.sectionType?.toLowerCase()))
+                .map((section, index) => (
+                  <WireframeSection 
+                    key={index} 
+                    section={section}
+                    isEven={index % 2 === 0}
+                  />
+                ))}
+            </div>
+          </div>
+        </div>
       )}
       
-      {/* Show remaining sections in order */}
-      {sections
-        .filter(section => !["navbar", "navigation"].includes(section.sectionType?.toLowerCase()))
-        .map((section, index) => (
-          <WireframeSection 
-            key={index} 
-            section={section}
-            isEven={index % 2 === 0}
-          />
-        ))
-      }
+      {/* Flowchart mode */}
+      {viewMode === "flowchart" && (
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+            {/* Pages grid */}
+            {displayPages.map((page, index) => (
+              <PagePreview 
+                key={page.id || index} 
+                page={page} 
+                isActive={activePageIndex === index}
+              />
+            ))}
+            
+            {/* Connection lines */}
+            {displayPages.length > 1 && (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* This would ideally be SVG lines connecting the pages */}
+                {/* For simplicity, we're just showing visual connections with CSS */}
+                <div className="absolute left-1/2 top-1/4 transform -translate-x-1/2 -translate-y-1/2 text-primary">
+                  <ChevronRight className="w-6 h-6" />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Wireframe info */}
+          <div className="mt-6 border-t pt-4">
+            <h3 className="font-medium mb-2">{wireframeData.title || "Untitled Wireframe"}</h3>
+            <p className="text-sm text-gray-600">{wireframeData.description || "No description provided"}</p>
+            
+            {/* Metadata */}
+            {wireframeData.designTokens && (
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 mb-2">COLOR PALETTE</h4>
+                  <div className="flex space-x-2">
+                    {Object.entries(wireframeData.designTokens.colors || {})
+                      .slice(0, 5)
+                      .map(([key, color], i) => (
+                        <div 
+                          key={key} 
+                          className="w-6 h-6 rounded-full border shadow-sm" 
+                          style={{backgroundColor: color as string}}
+                          title={`${key}: ${color}`}
+                        ></div>
+                      ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 mb-2">TYPOGRAPHY</h4>
+                  <p className="text-xs text-gray-600">
+                    {wireframeData.designTokens.typography?.headings || "Default"} / 
+                    {wireframeData.designTokens.typography?.body || "Default"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

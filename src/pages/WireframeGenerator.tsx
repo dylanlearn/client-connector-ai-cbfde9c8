@@ -5,12 +5,19 @@ import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowRight, Download, Copy, Code } from "lucide-react";
+import { Loader2, ArrowRight, Download, Copy, Code, Layout, RefreshCw, Share2 } from "lucide-react";
 import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WireframeGenerator = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [style, setStyle] = useState<string>("modern");
+  const [multiPage, setMultiPage] = useState<boolean>(false);
+  const [pagesCount, setPagesCount] = useState<number>(1);
+  const { toast } = useToast();
+  
   const {
     isGenerating,
     currentWireframe,
@@ -33,6 +40,26 @@ const WireframeGenerator = () => {
       description: prompt,
       style,
       enhancedCreativity: true,
+      multiPageLayout: multiPage,
+      pages: pagesCount
+    });
+  };
+
+  const handleGenerateVariation = async () => {
+    if (!currentWireframe?.wireframe) return;
+    
+    toast({
+      title: "Generating variation",
+      description: "Creating a new variation based on your wireframe...",
+    });
+    
+    await generateWireframe({
+      description: `Create a variation of: ${prompt}`,
+      style,
+      enhancedCreativity: true,
+      baseWireframe: currentWireframe.wireframe,
+      multiPageLayout: multiPage,
+      pages: pagesCount
     });
   };
 
@@ -61,7 +88,37 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
   const handleCopyJSON = () => {
     if (currentWireframe) {
       navigator.clipboard.writeText(JSON.stringify(currentWireframe.wireframe, null, 2));
+      toast({
+        title: "Copied to clipboard",
+        description: "Wireframe JSON has been copied to your clipboard."
+      });
     }
+  };
+  
+  const handleCopyImage = () => {
+    toast({
+      title: "Feature coming soon",
+      description: "Image export functionality will be available soon."
+    });
+  };
+  
+  const handleDownload = () => {
+    if (!currentWireframe) return;
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+      JSON.stringify(currentWireframe.wireframe, null, 2)
+    );
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `wireframe-${Date.now()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    
+    toast({
+      title: "Download started",
+      description: "Your wireframe JSON file is being downloaded."
+    });
   };
 
   return (
@@ -75,10 +132,13 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-5">
             <CardHeader>
-              <CardTitle>Generate Wireframe</CardTitle>
+              <CardTitle className="flex items-center">
+                <Layout className="mr-2 h-5 w-5" />
+                Generate Wireframe
+              </CardTitle>
               <CardDescription>
                 Provide a detailed description of the wireframe you need.
               </CardDescription>
@@ -86,9 +146,33 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
             <CardContent>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">
-                    Style
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium">
+                      Style
+                    </label>
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        id="multiPage"
+                        checked={multiPage}
+                        onChange={(e) => setMultiPage(e.target.checked)}
+                        className="mr-2"
+                      />
+                      <label htmlFor="multiPage" className="text-sm">Multi-page</label>
+                      
+                      {multiPage && (
+                        <select 
+                          value={pagesCount}
+                          onChange={(e) => setPagesCount(Number(e.target.value))}
+                          className="ml-2 p-1 text-sm border rounded"
+                        >
+                          {[1, 2, 3, 4, 5].map(num => (
+                            <option key={num} value={num}>{num} page{num > 1 ? 's' : ''}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
                   <select
                     value={style}
                     onChange={handleStyleChange}
@@ -145,32 +229,48 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Generated Wireframe</CardTitle>
-              <CardDescription>
-                Your wireframe will appear here after generation.
-              </CardDescription>
+          <Card className="lg:col-span-7">
+            <CardHeader className="flex-row justify-between items-start space-y-0">
+              <div>
+                <CardTitle>Generated Wireframe</CardTitle>
+                <CardDescription>
+                  Your wireframe will appear here after generation.
+                </CardDescription>
+              </div>
+              {currentWireframe && (
+                <Badge variant="outline" className="ml-auto">
+                  {currentWireframe.wireframe.pages?.length 
+                    ? `${currentWireframe.wireframe.pages.length} pages` 
+                    : `${currentWireframe.wireframe.sections?.length || 0} sections`}
+                </Badge>
+              )}
             </CardHeader>
             <CardContent className="min-h-[300px]">
               {isGenerating ? (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center justify-center h-64 space-y-4">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <div className="text-center">
+                    <p className="font-medium">Generating Wireframe</p>
+                    <p className="text-sm text-muted-foreground mt-1">This may take a moment...</p>
+                  </div>
                 </div>
               ) : currentWireframe ? (
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">
-                    {currentWireframe.wireframe.title || "Wireframe"}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {currentWireframe.wireframe.description || ""}
-                  </p>
+                  <div>
+                    <h3 className="text-xl font-semibold">
+                      {currentWireframe.wireframe.title || "Wireframe"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {currentWireframe.wireframe.description || ""}
+                    </p>
+                  </div>
 
                   {/* Visual Wireframe Representation */}
                   <WireframeVisualizer wireframeData={currentWireframe.wireframe} />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
+                  <Layout className="h-12 w-12 mb-4 text-muted-foreground/50" />
                   <p>No wireframe generated yet</p>
                   <p className="text-sm mt-1">
                     Fill out the form and click Generate
@@ -179,19 +279,25 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
               )}
             </CardContent>
             {currentWireframe && (
-              <CardFooter className="flex justify-end space-x-2">
-                <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                  <Code className="mr-2 h-4 w-4" />
-                  Copy JSON
+              <CardFooter className="flex flex-wrap justify-between gap-2">
+                <Button variant="outline" size="sm" onClick={handleGenerateVariation}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Generate Variation
                 </Button>
-                <Button variant="outline" size="sm">
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Image
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                    <Code className="mr-2 h-4 w-4" />
+                    Copy JSON
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleCopyImage}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy Image
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                </div>
               </CardFooter>
             )}
           </Card>
