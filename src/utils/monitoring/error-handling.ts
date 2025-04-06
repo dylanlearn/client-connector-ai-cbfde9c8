@@ -1,32 +1,42 @@
 
 import { recordClientError } from "./api-usage";
+import { getErrorHandlingConfig } from "./error-config";
 
 /**
  * Initialize global error handling
  */
 export function initializeErrorHandling(): void {
   // Handle unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener('unhandledrejection', async (event) => {
     const error = event.reason;
     console.error('Unhandled Promise Rejection:', error);
     
+    // Check if we have custom handling config for this error type
+    const config = await getErrorHandlingConfig('Global', 'UnhandledRejection');
+    
+    // Record the client error with appropriate metadata
     recordClientError(
       error.message || 'Unhandled Promise Rejection',
       error.stack,
-      'UnhandledRejection'
+      'UnhandledRejection',
+      config ? { severity: config.severity, configuredAction: config.action } : undefined
     ).catch(console.error);
   });
   
   // Handle uncaught errors
-  window.addEventListener('error', (event) => {
+  window.addEventListener('error', async (event) => {
     // Prevent logging of the same error twice
     if (event.error) {
       console.error('Uncaught Error:', event.error);
       
+      // Check if we have custom handling config for this error type
+      const config = await getErrorHandlingConfig('Global', 'UncaughtError');
+      
       recordClientError(
         event.error.message || 'Uncaught Error',
         event.error.stack,
-        'GlobalErrorHandler'
+        'GlobalErrorHandler',
+        config ? { severity: config.severity, configuredAction: config.action } : undefined
       ).catch(console.error);
     }
   });
@@ -44,6 +54,10 @@ export function initializeErrorHandling(): void {
           : args[0] instanceof URL 
             ? args[0].href 
             : (args[0] as Request).url;
+            
+        // Check if we have custom handling config for network errors
+        const config = await getErrorHandlingConfig('API', 'network');
+        
         console.warn(`Failed fetch request to ${requestUrl}, status: ${response.status}`);
       }
       
@@ -51,15 +65,20 @@ export function initializeErrorHandling(): void {
     } catch (error) {
       // Log network errors
       console.error('Fetch error:', error);
+      
+      // Check if we have custom handling config for network errors
+      const config = await getErrorHandlingConfig('API', 'network');
+      
       recordClientError(
         `Network request failed: ${(error as Error).message}`,
         (error as Error).stack,
-        'FetchError'
+        'FetchError',
+        config ? { severity: config.severity, configuredAction: config.action } : undefined
       ).catch(console.error);
       
       throw error;
     }
   };
   
-  console.log('Global error handling initialized');
+  console.log('Global error handling initialized with dynamic configuration');
 }

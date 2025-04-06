@@ -948,6 +948,45 @@ export type Database = {
         }
         Relationships: []
       }
+      error_handling_config: {
+        Row: {
+          action: string
+          component: string
+          created_at: string
+          error_type: string
+          id: string
+          max_retries: number | null
+          notification_endpoint: string | null
+          retry_delay_ms: number | null
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          component: string
+          created_at?: string
+          error_type: string
+          id?: string
+          max_retries?: number | null
+          notification_endpoint?: string | null
+          retry_delay_ms?: number | null
+          severity: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          component?: string
+          created_at?: string
+          error_type?: string
+          id?: string
+          max_retries?: number | null
+          notification_endpoint?: string | null
+          retry_delay_ms?: number | null
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feedback_analysis: {
         Row: {
           action_items: Json
@@ -2184,6 +2223,24 @@ export type Database = {
           version_number: number
           wireframe_id: string
         }
+      }
+      get_error_handling_config: {
+        Args: {
+          p_component: string
+          p_error_type: string
+        }
+        Returns: {
+          action: string
+          component: string
+          created_at: string
+          error_type: string
+          id: string
+          max_retries: number | null
+          notification_endpoint: string | null
+          retry_delay_ms: number | null
+          severity: string
+          updated_at: string
+        }[]
       }
       get_interaction_events: {
         Args: {
