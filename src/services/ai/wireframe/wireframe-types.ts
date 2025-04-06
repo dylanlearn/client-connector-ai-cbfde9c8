@@ -76,6 +76,16 @@ export interface WireframeGenerationParams {
     accent?: string;
     background?: string;
   };
+  designTokens?: {  // Adding designTokens property to the interface
+    colors?: any;
+    typography?: {
+      headings?: string;
+      body?: string;
+      fontPairings?: string[];
+    };
+    spacing?: any;
+    [key: string]: any;
+  };
   componentTypes?: string[];
   moodboardSelections?: {
     layoutPreferences?: string[];
