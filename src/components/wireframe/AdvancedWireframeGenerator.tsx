@@ -18,14 +18,14 @@ interface AdvancedWireframeGeneratorProps {
   projectId: string;
   onWireframeGenerated?: () => void;
   onWireframeSaved?: () => void;
-  darkMode?: boolean; // Added darkMode prop
+  darkMode?: boolean;
 }
 
 const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({ 
   projectId, 
   onWireframeGenerated,
   onWireframeSaved,
-  darkMode = false // Default to false
+  darkMode = false
 }) => {
   const [activeTab, setActiveTab] = useState('prompt');
   const [userInput, setUserInput] = useState('');
@@ -59,7 +59,10 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       projectId,
       styleToken,
       includeDesignMemory: useDesignMemory,
-      darkMode // Pass the darkMode value to the generator
+      // We'll pass darkMode as a custom parameter
+      customParams: {
+        darkMode: darkMode
+      }
     });
     
     if (result && onWireframeGenerated) {

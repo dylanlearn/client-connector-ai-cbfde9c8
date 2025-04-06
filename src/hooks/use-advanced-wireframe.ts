@@ -4,6 +4,18 @@ import { useToast } from "./use-toast";
 import { AdvancedWireframeService, AdvancedWireframeParams, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 
+// Update the AdvancedWireframeParams to include customParams
+export interface AdvancedWireframeParams {
+  userInput: string;
+  projectId: string;
+  styleToken: string;
+  includeDesignMemory: boolean;
+  customParams?: {
+    darkMode?: boolean;
+    [key: string]: any;
+  };
+}
+
 export function useAdvancedWireframe() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(null);

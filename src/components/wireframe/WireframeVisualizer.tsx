@@ -14,12 +14,14 @@ interface WireframeVisualizerProps {
   wireframeData: WireframeData;
   viewMode?: "flowchart" | "preview";
   deviceType?: "desktop" | "mobile";
+  darkMode?: boolean;
 }
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({ 
   wireframeData,
   viewMode = "preview",
-  deviceType = "desktop" 
+  deviceType = "desktop",
+  darkMode = false
 }) => {
   // Get pages from wireframe if they exist, otherwise create a single page with sections
   const pages = wireframeData.pages || [
@@ -42,23 +44,26 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   
   // Get style classes based on style token
   const getStyleClasses = () => {
+    // Apply dark mode classes if enabled
+    const darkModeClass = darkMode ? 'bg-gray-900 text-gray-100' : '';
+    
     switch (styleToken?.toLowerCase()) {
       case 'brutalist':
-        return 'font-mono bg-white text-black [&_button]:rounded-none [&_div]:rounded-none';
+        return `font-mono ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-black'} [&_button]:rounded-none [&_div]:rounded-none`;
       case 'glassy':
-        return 'font-sans bg-gradient-to-br from-blue-50 to-purple-50 [&_div]:backdrop-blur-sm';
+        return `font-sans ${darkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-blue-50 to-purple-50'} [&_div]:backdrop-blur-sm`;
       case 'minimalist':
-        return 'font-sans bg-white text-gray-800 [&_h1]:font-light [&_h2]:font-light [&_h3]:font-light';
+        return `font-sans ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} [&_h1]:font-light [&_h2]:font-light [&_h3]:font-light`;
       case 'corporate':
-        return 'font-serif bg-white text-gray-900 [&_section]:border-b [&_section]:border-gray-100';
+        return `font-serif ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'} [&_section]:border-b [&_section]:${darkMode ? 'border-gray-700' : 'border-gray-100'}`;
       case 'playful':
-        return 'font-sans bg-blue-50 [&_button]:rounded-full [&_div]:rounded-lg';
+        return `font-sans ${darkMode ? 'bg-gray-800' : 'bg-blue-50'} [&_button]:rounded-full [&_div]:rounded-lg`;
       case 'editorial':
-        return 'font-serif text-gray-900 [&_p]:text-lg [&_h1]:tracking-tight [&_h2]:tracking-tight';
+        return `font-serif ${darkMode ? 'text-gray-100' : 'text-gray-900'} [&_p]:text-lg [&_h1]:tracking-tight [&_h2]:tracking-tight`;
       case 'tech-forward':
-        return 'font-mono bg-gray-900 text-gray-100 [&_div]:rounded-md';
+        return `font-mono ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'} [&_div]:rounded-md`;
       default: // modern
-        return 'font-sans bg-white';
+        return `font-sans ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white'}`;
     }
   };
 
@@ -68,7 +73,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
       {pages.map((page, pageIndex) => (
         <div key={`page-${pageIndex}`} className="mb-8">
           {pages.length > 1 && (
-            <h3 className="text-lg font-medium mb-3 pb-2 border-b">
+            <h3 className={`text-lg font-medium mb-3 pb-2 ${darkMode ? 'border-gray-700' : 'border-b'}`}>
               {page.name || `Page ${pageIndex + 1}`}
             </h3>
           )}
