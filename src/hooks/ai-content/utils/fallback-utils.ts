@@ -38,5 +38,5 @@ export function getFallbackContent(contentType: string, context?: string): strin
     return fallback(context);
   }
   
-  return typeof fallback === "string" ? fallback : fallback.toString();
+  return typeof fallback === "string" ? fallback : String(fallback);
 }

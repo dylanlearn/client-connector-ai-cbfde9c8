@@ -33,4 +33,16 @@ export interface PromptTestResult {
   failures?: number;
   averageLatencyMs: number;
   averageTokenUsage: number;
+  // Additional properties used in EnhancedTestResults
+  variant?: PromptVariant;
+  conversionRate?: number;
+  successCount?: number;
+  failureCount?: number;
+  impressionCount?: number;
+  isStatisticallySignificant?: boolean;
+  confidenceLevel?: number;
+  avgLatency?: number;
+  avgTokensPerRequest?: number;
+  lift?: number;
+  pValue?: number;
 }

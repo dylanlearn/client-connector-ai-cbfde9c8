@@ -26,23 +26,47 @@ export interface AIMessage {
   role: "user" | "assistant";
   content: string;
   timestamp: string;
+  id?: string;
+  createdAt?: Date;
 }
 
 /**
  * AI Analysis result interface
  */
 export interface AIAnalysis {
-  sentiment: string;
-  entities: string[];
-  summary: string;
+  sentiment?: string;
+  entities?: string[];
+  summary?: string;
+  keyInsights?: string[];
+  toneAnalysis?: {
+    formal: number;
+    casual: number;
+    professional: number;
+    friendly: number;
+  };
+  clarity?: number;
+  suggestionCount?: number;
+  contradictions?: string[];
 }
 
 /**
  * Design recommendation interface
  */
 export interface DesignRecommendation {
-  category: string;
-  suggestions: string[];
+  category?: string;
+  suggestions?: string[];
+  colorPalette?: Array<{name: string; hex: string; usage: string}>;
+  typography?: {
+    headings: string;
+    body: string;
+    accents: string;
+  };
+  layouts?: string[];
+  components?: Array<{
+    name: string;
+    description: string;
+    inspiration?: string;
+  }>;
 }
 
 /**

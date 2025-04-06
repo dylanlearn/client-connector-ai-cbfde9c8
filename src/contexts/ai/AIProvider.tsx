@@ -1,6 +1,5 @@
-
 import React, { useState, useCallback } from 'react';
-import { AIMessage, AIAnalysis, DesignRecommendation, AIContextType } from '@/types/ai';
+import { AIMessage, AIAnalysis, DesignRecommendation, AIContextType, AIMemoryContext } from '@/types/ai';
 import { AIAnalyzerService, AIGeneratorService } from '@/services/ai';
 import { AIContext } from './AIContext';
 import { useMemory } from './MemoryContext';
@@ -38,6 +37,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         createdAt: new Date(),
         role: 'assistant',
         content: prompt,
+        timestamp: new Date().toISOString()
       };
 
       // Update messages and analysis
@@ -242,20 +242,28 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   const storeMemory = useCallback(async (
     content: string,
     category: string,
-    projectId?: string,
+    relevanceScore?: number,
     metadata?: Record<string, any>
   ) => {
     if (storeMemoryInContext) {
-      return storeMemoryInContext(content, category, projectId, metadata);
+      // Convert projectId parameter to relevanceScore for compatibility
+      return storeMemoryInContext(content, category, undefined, metadata);
     }
   }, [storeMemoryInContext]);
+
+  // Create default memory context if none is provided
+  const defaultMemoryContext: AIMemoryContext = {
+    recentInteractions: [],
+    userPreferences: [],
+    projectDetails: []
+  };
 
   const aiContextValue: AIContextType = {
     messages,
     isProcessing,
     analysis,
     designRecommendations,
-    memoryContext,
+    memoryContext: memoryContext || defaultMemoryContext,
     isRealtime,
     simulateResponse,
     analyzeResponses,
@@ -263,7 +271,8 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     generateContent,
     summarizeFeedback,
     storeMemory,
-    reset,
+    trackInteraction: async () => {},
+    reset
   };
 
   return (

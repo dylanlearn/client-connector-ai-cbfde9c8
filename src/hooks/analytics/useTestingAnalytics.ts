@@ -1,8 +1,7 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { PromptABTestingService, PromptVariant, PromptTest } from '@/services/ai/content/prompt-testing/ab-testing-service';
-import { UnifiedObservability, ServiceName, Severity } from '@/utils/monitoring/unified-observability';
+import { Severity, ServiceName, UnifiedObservability } from '@/utils/monitoring/unified-observability';
 
 interface UseTestingAnalyticsOptions {
   contentType: string;
@@ -35,17 +34,14 @@ export function useTestingAnalytics({
   const [correlationId, setCorrelationId] = useState<string>('');
   const { user } = useAuth();
 
-  // Fetch the appropriate prompt variant on mount
   useEffect(() => {
     const fetchPromptVariant = async () => {
       setIsLoading(true);
       
-      // Create correlation ID for tracking this test session
       const newCorrelationId = UnifiedObservability.createCorrelationId();
       setCorrelationId(newCorrelationId);
       
       try {
-        // Log the start of variant selection
         if (trackingEnabled) {
           await UnifiedObservability.logEvent(
             ServiceName.A_B_TESTING,
@@ -58,13 +54,11 @@ export function useTestingAnalytics({
           );
         }
         
-        // Get the active test for this content type
         const test = await PromptABTestingService.getActiveTest(contentType);
         
         if (test) {
           setActiveTest(test);
           
-          // Select a variant for this user
           const variant = await PromptABTestingService.selectVariant(contentType, user?.id);
           
           if (variant) {
@@ -88,7 +82,6 @@ export function useTestingAnalytics({
               );
             }
           } else {
-            // Use default if no variant is available
             setPromptVariant(createDefaultVariant(defaultPrompt, defaultSystemPrompt));
             
             if (trackingEnabled) {
@@ -104,7 +97,6 @@ export function useTestingAnalytics({
             }
           }
         } else {
-          // Use default if no test is available
           setPromptVariant(createDefaultVariant(defaultPrompt, defaultSystemPrompt));
           
           if (trackingEnabled) {
@@ -122,7 +114,6 @@ export function useTestingAnalytics({
       } catch (error) {
         console.error('Error fetching prompt variant:', error);
         
-        // Log the error
         if (trackingEnabled) {
           await UnifiedObservability.logEvent(
             ServiceName.A_B_TESTING,
@@ -135,7 +126,6 @@ export function useTestingAnalytics({
           );
         }
         
-        // Fallback to default
         setPromptVariant(createDefaultVariant(defaultPrompt, defaultSystemPrompt));
       } finally {
         setIsLoading(false);
@@ -145,13 +135,11 @@ export function useTestingAnalytics({
     if (trackingEnabled) {
       fetchPromptVariant();
     } else {
-      // If tracking is disabled, just use the default variant
       setPromptVariant(createDefaultVariant(defaultPrompt, defaultSystemPrompt));
       setIsLoading(false);
     }
   }, [contentType, defaultPrompt, defaultSystemPrompt, user?.id, trackingEnabled]);
 
-  // Record a successful generation
   const recordSuccess = useCallback(async (latencyMs: number, tokenUsage?: number) => {
     if (!trackingEnabled || !activeTest || !promptVariant || promptVariant.id === 'default' || !user?.id) return;
     
@@ -193,7 +181,6 @@ export function useTestingAnalytics({
     }
   }, [activeTest, promptVariant, user?.id, correlationId, trackingEnabled]);
 
-  // Record a failed generation
   const recordFailure = useCallback(async (errorType?: string) => {
     if (!trackingEnabled || !activeTest || !promptVariant || promptVariant.id === 'default' || !user?.id) return;
     
@@ -233,7 +220,6 @@ export function useTestingAnalytics({
     }
   }, [activeTest, promptVariant, user?.id, correlationId, trackingEnabled]);
   
-  // Record a custom metric
   const recordMetric = useCallback(async (metricName: string, value: number) => {
     if (!trackingEnabled || !activeTest || !promptVariant || promptVariant.id === 'default' || !user?.id) return;
     
@@ -267,7 +253,6 @@ export function useTestingAnalytics({
   };
 }
 
-// Helper function to create a default variant
 function createDefaultVariant(promptText: string, systemPrompt?: string): PromptVariant {
   return {
     id: 'default',
