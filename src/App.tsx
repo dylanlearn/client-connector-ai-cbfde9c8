@@ -59,12 +59,12 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             
             {/* Routes requiring VIEW_PROJECTS permission */}
-            <Route element={<RequirePermission permission={Permission.VIEW_PROJECTS} redirectTo="/dashboard" />}>
+            <Route element={<RequirePermission permission={Permission.MANAGE_PROJECTS} redirectTo="/dashboard" />}>
               <Route path="/projects" element={<Projects />} />
             </Route>
             
             {/* Routes requiring CREATE_PROJECT permission */}
-            <Route element={<RequirePermission permission={Permission.CREATE_PROJECT} redirectTo="/dashboard" />}>
+            <Route element={<RequirePermission permission={Permission.MANAGE_PROJECTS} redirectTo="/dashboard" />}>
               <Route path="/new-project" element={<NewProject />} />
             </Route>
             
@@ -80,7 +80,7 @@ function App() {
             </Route>
             
             {/* Routes requiring USE_AI_FEATURES permission */}
-            <Route element={<RequirePermission permission={Permission.USE_AI_FEATURES} redirectTo="/dashboard" />}>
+            <Route element={<RequirePermission permission={Permission.ACCESS_PREMIUM_FEATURES} redirectTo="/dashboard" />}>
               <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
               <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
               <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />

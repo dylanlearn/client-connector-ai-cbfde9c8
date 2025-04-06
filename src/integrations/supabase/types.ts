@@ -1309,6 +1309,27 @@ export type Database = {
         }
         Relationships: []
       }
+      permissions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: Database["public"]["Enums"]["auth_permission"]
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: Database["public"]["Enums"]["auth_permission"]
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: Database["public"]["Enums"]["auth_permission"]
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1532,6 +1553,27 @@ export type Database = {
           tokens?: number
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission: Database["public"]["Enums"]["auth_permission"]
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission: Database["public"]["Enums"]["auth_permission"]
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["auth_permission"]
+          role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
       }
@@ -2277,6 +2319,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_user_permissions: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Database["public"]["Enums"]["auth_permission"][]
+      }
       get_user_role: {
         Args: {
           user_id: string
@@ -2704,6 +2752,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_has_permission: {
+        Args: {
+          p_user_id: string
+          p_permission: Database["public"]["Enums"]["auth_permission"]
+        }
+        Returns: boolean
+      }
       vector_avg: {
         Args: {
           "": number[]
@@ -2762,6 +2817,14 @@ export type Database = {
         | "magnetic_element"
         | "color_shift"
         | "parallax_tilt"
+      auth_permission:
+        | "VIEW_DASHBOARD"
+        | "MANAGE_PROJECTS"
+        | "EDIT_PROFILE"
+        | "VIEW_ANALYTICS"
+        | "MANAGE_USERS"
+        | "VIEW_ADMIN_PANEL"
+        | "ACCESS_PREMIUM_FEATURES"
       subscription_status:
         | "free"
         | "basic"
