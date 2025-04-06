@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Paintbrush, Palette, Layout, RefreshCw } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import VisualPicker from "@/components/design/VisualPicker";
+import { VisualPicker } from "@/components/design/VisualPicker";
 import { toast } from "sonner";
 import { designOptions } from "@/data/design-options";
 import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";

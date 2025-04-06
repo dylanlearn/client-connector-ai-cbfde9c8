@@ -1,6 +1,13 @@
+
 import { createBrowserRouter } from "react-router-dom";
 import DesignProcessProvider from "./contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
+import App from "./App";
+import Dashboard from "./pages/Dashboard";
+import { Settings } from "./pages/settings";
+import { ProjectDetailPage } from "./pages/project-detail/ProjectDetailPage";
+import AdvancedWireframeGeneratorPage from "./pages/project-detail/AdvancedWireframeGeneratorPage";
+import NotFound from "./pages/NotFound";
 
 const router = createBrowserRouter([
   {

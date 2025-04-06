@@ -11,4 +11,4 @@ export interface DesignOption {
 }
 
 // Re-export VisualPicker from the new location
-export { default } from './VisualPicker';
+export { VisualPicker } from './VisualPicker';
