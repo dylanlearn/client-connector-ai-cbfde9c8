@@ -340,7 +340,8 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
         </div>
       ))}
 
-      <style jsx>{`
+      {/* Fix: Remove jsx prop from style tag */}
+      <style>{`
         .wireframe-preview {
           font-family: system-ui, sans-serif;
         }
