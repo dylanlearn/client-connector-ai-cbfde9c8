@@ -10,5 +10,6 @@ export interface DesignOption {
   preview?: string;
 }
 
-// Re-export VisualPicker from the new location
+// Re-export components from the new locations
+export { AnimatedVisualPicker } from './visual-picker/AnimatedVisualPicker';
 export { VisualPicker } from './VisualPicker';

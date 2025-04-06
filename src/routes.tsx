@@ -8,6 +8,7 @@ import { Settings } from "./pages/settings";
 import { ProjectDetailPage } from "./pages/project-detail/ProjectDetailPage";
 import AdvancedWireframeGeneratorPage from "./pages/project-detail/AdvancedWireframeGeneratorPage";
 import NotFound from "./pages/NotFound";
+import DesignPicker from "./pages/DesignPicker";
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
       {
         path: '/project/:projectId/advanced-wireframe',
         element: <AdvancedWireframeGeneratorPage />,
+      },
+      {
+        path: '/design-picker',
+        element: <DesignPicker />,
       },
       {
         path: '*',

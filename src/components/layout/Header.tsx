@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FileText, Wand2 } from 'lucide-react';
+import { FileText, Wand2, Palette } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
@@ -29,6 +29,13 @@ const Header: React.FC = () => {
             >
               <Wand2 className="h-3 w-3" />
               Client Design Process
+            </Link>
+            <Link 
+              to="/design-picker" 
+              className="text-sm font-medium text-purple-600 hover:text-purple-800 flex items-center gap-1"
+            >
+              <Palette className="h-3 w-3" />
+              Design Picker
             </Link>
           </nav>
         </div>
