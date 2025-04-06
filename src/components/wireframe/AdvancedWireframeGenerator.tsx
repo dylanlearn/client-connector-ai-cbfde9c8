@@ -18,12 +18,14 @@ interface AdvancedWireframeGeneratorProps {
   projectId: string;
   onWireframeGenerated?: () => void;
   onWireframeSaved?: () => void;
+  darkMode?: boolean; // Added darkMode prop
 }
 
 const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({ 
   projectId, 
   onWireframeGenerated,
-  onWireframeSaved
+  onWireframeSaved,
+  darkMode = false // Default to false
 }) => {
   const [activeTab, setActiveTab] = useState('prompt');
   const [userInput, setUserInput] = useState('');
@@ -56,7 +58,8 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       userInput: userInput,
       projectId,
       styleToken,
-      includeDesignMemory: useDesignMemory
+      includeDesignMemory: useDesignMemory,
+      darkMode // Pass the darkMode value to the generator
     });
     
     if (result && onWireframeGenerated) {
@@ -98,14 +101,17 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     { value: 'tech-forward', label: 'Tech-Forward' }
   ];
   
+  // Apply dark mode class if enabled
+  const darkModeClass = darkMode ? 'bg-gray-900 text-gray-100' : '';
+  
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className={`w-full ${darkMode ? 'bg-gray-800 border-gray-700' : ''}`}>
+      <CardHeader className={darkMode ? 'border-gray-700' : ''}>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+          <Sparkles className={`h-5 w-5 ${darkMode ? 'text-blue-400' : 'text-primary'}`} />
           Advanced Wireframe Generator
         </CardTitle>
-        <CardDescription>
+        <CardDescription className={darkMode ? 'text-gray-400' : ''}>
           Create detailed wireframes using natural language descriptions
         </CardDescription>
       </CardHeader>
@@ -130,26 +136,28 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
         <TabsContent value="prompt">
           <CardContent className="space-y-4 pt-4">
             <div>
-              <Label htmlFor="user-input">Design Description</Label>
+              <Label htmlFor="user-input" className={darkMode ? 'text-gray-200' : ''}>Design Description</Label>
               <Textarea
                 id="user-input"
                 placeholder="Describe the website design you want to create..."
                 rows={5}
-                className="resize-none mt-1"
+                className={`resize-none mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}`}
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
               />
               
               {userInput.length === 0 && (
                 <div className="mt-3">
-                  <p className="text-sm text-muted-foreground mb-2">Try one of these examples:</p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-muted-foreground'} mb-2`}>
+                    Try one of these examples:
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {examplePrompts.map((prompt, idx) => (
                       <Button
                         key={idx}
                         variant="outline"
                         size="sm"
-                        className="text-xs"
+                        className={`text-xs ${darkMode ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' : ''}`}
                         onClick={() => setUserInput(prompt)}
                       >
                         {prompt.length > 40 ? `${prompt.substring(0, 40)}...` : prompt}
@@ -162,12 +170,12 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="style-select">Visual Style</Label>
+                <Label htmlFor="style-select" className={darkMode ? 'text-gray-200' : ''}>Visual Style</Label>
                 <Select value={styleToken} onValueChange={setStyleToken}>
-                  <SelectTrigger id="style-select" className="mt-1">
+                  <SelectTrigger id="style-select" className={`mt-1 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}`}>
                     <SelectValue placeholder="Select style" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}>
                     {styleOptions.map((style) => (
                       <SelectItem key={style.value} value={style.value}>
                         {style.label}
@@ -184,7 +192,12 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                   onCheckedChange={setUseDesignMemory}
                   disabled={!designMemory}
                 />
-                <Label htmlFor="use-memory" className={!designMemory ? 'text-gray-400' : ''}>
+                <Label 
+                  htmlFor="use-memory" 
+                  className={!designMemory 
+                    ? 'text-gray-400' 
+                    : darkMode ? 'text-gray-200' : ''}
+                >
                   Use design memory
                   {!designMemory && " (No design memory available)"}
                 </Label>
@@ -195,7 +208,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
           <CardFooter className="flex justify-between pt-2">
             <div className="text-sm text-muted-foreground">
               {designMemory && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className={`text-xs ${darkMode ? 'border-gray-600 text-gray-300' : ''}`}>
                   Design Memory Available
                 </Badge>
               )}
@@ -203,6 +216,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
             <Button 
               onClick={handleGenerate} 
               disabled={isGenerating || !userInput.trim()}
+              className={darkMode ? 'hover:bg-blue-600' : ''}
             >
               {isGenerating ? (
                 <>
@@ -225,18 +239,22 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
               <>
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <h3 className="text-lg font-medium">{currentWireframe.title || 'Untitled Wireframe'}</h3>
+                    <h3 className={`text-lg font-medium ${darkMode ? 'text-gray-200' : ''}`}>
+                      {currentWireframe.title || 'Untitled Wireframe'}
+                    </h3>
                     {currentWireframe.description && (
-                      <p className="text-sm text-gray-500">{currentWireframe.description}</p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {currentWireframe.description}
+                      </p>
                     )}
                   </div>
                   
                   <div className="flex items-center gap-2">
                     <Select value={viewMode} onValueChange={(value) => setViewMode(value as 'flowchart' | 'preview')}>
-                      <SelectTrigger className="w-36">
+                      <SelectTrigger className={`w-36 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}`}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className={darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}>
                         <SelectItem value="preview">Visual Preview</SelectItem>
                         <SelectItem value="flowchart">Structure View</SelectItem>
                       </SelectContent>
@@ -244,10 +262,10 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                     
                     {viewMode === 'preview' && (
                       <Select value={deviceType} onValueChange={(value) => setDeviceType(value as 'desktop' | 'mobile')}>
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className={`w-32 ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}`}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className={darkMode ? 'bg-gray-700 border-gray-600 text-gray-200' : ''}>
                           <SelectItem value="desktop">Desktop</SelectItem>
                           <SelectItem value="mobile">Mobile</SelectItem>
                         </SelectContent>
@@ -260,27 +278,28 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                 {intentData && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {intentData.visualTone && intentData.visualTone.split(',').map((tone: string, idx: number) => (
-                      <Badge key={idx} variant="secondary">{tone.trim()}</Badge>
+                      <Badge key={idx} variant="secondary" className={darkMode ? 'bg-gray-600 text-gray-200' : ''}>{tone.trim()}</Badge>
                     ))}
-                    {intentData.pageType && <Badge variant="outline">{intentData.pageType}</Badge>}
-                    {intentData.complexity && <Badge variant="outline">{intentData.complexity}</Badge>}
+                    {intentData.pageType && <Badge variant="outline" className={darkMode ? 'border-gray-600 text-gray-300' : ''}>{intentData.pageType}</Badge>}
+                    {intentData.complexity && <Badge variant="outline" className={darkMode ? 'border-gray-600 text-gray-300' : ''}>{intentData.complexity}</Badge>}
                   </div>
                 )}
                 
-                <div className="border rounded-lg overflow-hidden">
+                <div className={`border rounded-lg overflow-hidden ${darkMode ? 'border-gray-700' : ''}`}>
                   {viewMode === 'flowchart' ? (
-                    <div className="p-4">
+                    <div className={`p-4 ${darkMode ? 'bg-gray-800' : ''}`}>
                       <FlowchartView 
                         pages={currentWireframe.pages || [{ sections: currentWireframe.sections || [] }]} 
                         showDetails={true}
                       />
                     </div>
                   ) : (
-                    <div className={`p-4 ${deviceType === 'mobile' ? 'max-w-sm mx-auto' : ''}`}>
+                    <div className={`p-4 ${deviceType === 'mobile' ? 'max-w-sm mx-auto' : ''} ${darkMode ? 'bg-gray-800' : ''}`}>
                       <WireframeVisualizer
                         wireframeData={currentWireframe}
                         viewMode="preview"
                         deviceType={deviceType}
+                        darkMode={darkMode}
                       />
                     </div>
                   )}
@@ -290,7 +309,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
           </CardContent>
           
           <CardFooter>
-            <Button onClick={handleSave} disabled={!currentWireframe}>
+            <Button onClick={handleSave} disabled={!currentWireframe} className={darkMode ? 'hover:bg-blue-600' : ''}>
               Save Wireframe
             </Button>
           </CardFooter>
@@ -299,7 +318,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
         <TabsContent value="code">
           <CardContent className="pt-4">
             {currentWireframe && (
-              <div className="border rounded-lg p-4 bg-gray-50 overflow-auto max-h-[500px]">
+              <div className={`border rounded-lg p-4 overflow-auto max-h-[500px] ${darkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-gray-50'}`}>
                 <pre className="text-xs">
                   {JSON.stringify(currentWireframe, null, 2)}
                 </pre>
