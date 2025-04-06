@@ -5,7 +5,8 @@ import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowRight, Download, Copy } from "lucide-react";
+import { Loader2, ArrowRight, Download, Copy, Code } from "lucide-react";
+import WireframeVisualizer from "@/components/wireframe/WireframeVisualizer";
 
 const WireframeGenerator = () => {
   const [prompt, setPrompt] = useState<string>("");
@@ -55,6 +56,12 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
 
   const handleUseExample = () => {
     setPrompt(examplePrompt);
+  };
+
+  const handleCopyJSON = () => {
+    if (currentWireframe) {
+      navigator.clipboard.writeText(JSON.stringify(currentWireframe.wireframe, null, 2));
+    }
   };
 
   return (
@@ -155,26 +162,12 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                   <h3 className="text-xl font-semibold">
                     {currentWireframe.wireframe.title || "Wireframe"}
                   </h3>
-                  <p>{currentWireframe.wireframe.description || ""}</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {currentWireframe.wireframe.description || ""}
+                  </p>
 
-                  <div className="mt-4 border rounded-md p-4 bg-muted/30">
-                    <h4 className="font-medium mb-2">Sections:</h4>
-                    <ul className="space-y-2">
-                      {currentWireframe.wireframe.sections?.map(
-                        (section, index) => (
-                          <li
-                            key={index}
-                            className="p-3 bg-background rounded-md border"
-                          >
-                            <div className="font-medium">{section.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {section.description || section.sectionType}
-                            </div>
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
+                  {/* Visual Wireframe Representation */}
+                  <WireframeVisualizer wireframeData={currentWireframe.wireframe} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -187,9 +180,13 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
             </CardContent>
             {currentWireframe && (
               <CardFooter className="flex justify-end space-x-2">
+                <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                  <Code className="mr-2 h-4 w-4" />
+                  Copy JSON
+                </Button>
                 <Button variant="outline" size="sm">
                   <Copy className="mr-2 h-4 w-4" />
-                  Copy
+                  Copy Image
                 </Button>
                 <Button variant="outline" size="sm">
                   <Download className="mr-2 h-4 w-4" />
