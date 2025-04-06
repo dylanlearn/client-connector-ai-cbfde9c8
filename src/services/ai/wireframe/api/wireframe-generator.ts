@@ -72,11 +72,12 @@ export const wireframeGenerator = {
       
       return {
         wireframe: data.wireframe,
+        generationTime,
+        usedModels: data.model ? [data.model] : undefined,
         model: data.model,
         usage: data.usage,
-        generationTime,
-        success: true,
-        creativityLevel: data.creativityLevel || enhancedParams.creativityLevel
+        creativityLevel: data.creativityLevel || enhancedParams.creativityLevel,
+        success: true
       };
     } catch (error) {
       console.error("Error generating wireframe:", error);

@@ -37,13 +37,15 @@ export function useAdvancedWireframe() {
       const result = await AdvancedWireframeService.generateWireframe(params);
       
       // Ensure the wireframe has the correct type structure
-      setCurrentWireframe(result.wireframe);
+      if (result.wireframe) {
+        setCurrentWireframe(result.wireframe);
+      }
       setIntentData(result.intentData);
       setBlueprint(result.blueprint);
       
       toast({
         title: "Wireframe generated",
-        description: `Generated "${result.wireframe.title || 'New wireframe'}" successfully`,
+        description: `Generated "${result.wireframe?.title || 'New wireframe'}" successfully`,
       });
       
       return result;

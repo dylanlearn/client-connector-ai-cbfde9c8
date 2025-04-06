@@ -20,7 +20,7 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
   wireframe,
   onApplyRecommendation
 }) => {
-  const wireframeData = wireframe.data;
+  const wireframeData = wireframe.wireframe_data || wireframe.data;
   
   if (!wireframeData) {
     return (

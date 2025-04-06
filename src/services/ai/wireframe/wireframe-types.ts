@@ -2,10 +2,25 @@
 export interface WireframeData {
   title?: string;
   description?: string;
-  sections?: any[];
-  pages?: any[];
+  sections?: WireframeSection[];
+  pages?: WireframePage[];
   styleToken?: string;
   darkMode?: boolean;
+  designTokens?: any;
+  mobileLayouts?: any;
+  styleVariants?: any;
+  designReasoning?: any;
+  animations?: any;
+  imageUrl?: string;
+  style?: string;
+}
+
+export interface WireframePage {
+  id: string;
+  name: string;
+  slug?: string;
+  pageType: string;
+  sections: WireframeSection[];
 }
 
 export interface AIWireframe {
@@ -14,13 +29,19 @@ export interface AIWireframe {
   title: string;
   description: string;
   wireframe_data: WireframeData;
+  data?: WireframeData; // Adding this for backward compatibility
   feedback?: string;
   rating?: number;
   created_at: string;
+  generation_params?: WireframeGenerationParams;
+  sections?: WireframeSection[];
+  latest_version_id?: string;
+  current_version_id?: string;
 }
 
 export interface WireframeGenerationParams {
   description: string;
+  prompt?: string; // Adding this for backward compatibility
   style?: string;
   projectId?: string;
   enhancedCreativity?: boolean;
@@ -28,6 +49,19 @@ export interface WireframeGenerationParams {
   baseWireframe?: WireframeData;
   multiPageLayout?: boolean;
   pages?: number;
+  pageTypes?: string[];
+  additionalInstructions?: string;
+  industry?: string;
+  typography?: string;
+  complexity?: string;
+  colorTheme?: string;
+  componentTypes?: string[];
+  moodboardSelections?: {
+    layoutPreferences?: string[];
+    fonts?: string[];
+    colors?: string[];
+    tone?: string[];
+  };
 }
 
 export interface WireframeGenerationResult {
@@ -35,6 +69,9 @@ export interface WireframeGenerationResult {
   generationTime: number;
   creativityLevel?: number;
   usedModels?: string[];
+  model?: string; // Adding for backward compatibility
+  usage?: any;
+  success?: boolean;
 }
 
 // Add missing interfaces referenced in other files
@@ -53,6 +90,8 @@ export interface WireframeSection {
   styleVariants?: any;
   positionOrder?: number;
   description?: string;
+  componentVariant?: string;
+  styleProperties?: any;
 }
 
 export interface WireframeComponent {
@@ -101,6 +140,7 @@ export interface BranchInfo {
   name: string;
   versions: WireframeVersion[];
   current_version_id?: string;
+  latest_version_id?: string;
   created_at: string;
 }
 

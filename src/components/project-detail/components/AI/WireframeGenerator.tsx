@@ -31,13 +31,14 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
   const { register, handleSubmit, formState: { errors }, watch, setValue, getValues } = useForm<WireframeGenerationParams>({
     defaultValues: {
       projectId,
-      prompt: '',
+      description: '',
       complexity: 'standard',
       style: 'modern',
       enhancedCreativity: true,
       creativityLevel: 7,
       pages: 1,
       multiPageLayout: false,
+      pageTypes: [],
       moodboardSelections: {
         layoutPreferences: [],
         fonts: [],
@@ -52,10 +53,10 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
   const creativityLevel = watch('creativityLevel');
   
   const onSubmit = async (data: WireframeGenerationParams) => {
-    if (data.prompt?.trim() === '') {
+    if (data.description?.trim() === '') {
       toast({
-        title: "Prompt Required",
-        description: "Please enter a prompt for your wireframe",
+        title: "Description Required",
+        description: "Please enter a description for your wireframe",
         variant: "destructive",
       });
       return;
@@ -84,7 +85,7 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
   };
   
   const handleGenerateFromExample = async (example: string) => {
-    setValue('prompt', example);
+    setValue('description', example);
     await handleSubmit(onSubmit)();
   };
   
@@ -112,16 +113,16 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
             
             <TabsContent value="basic">
               <div>
-                <Label htmlFor="prompt">Design Prompt</Label>
+                <Label htmlFor="description">Design Description</Label>
                 <Textarea
-                  id="prompt"
+                  id="description"
                   placeholder="Describe the website you want to create..."
                   rows={4}
                   className="resize-none mt-1"
-                  {...register('prompt', { required: true })}
+                  {...register('description', { required: true })}
                 />
-                {errors.prompt && (
-                  <p className="text-red-500 text-sm mt-1">Prompt is required</p>
+                {errors.description && (
+                  <p className="text-red-500 text-sm mt-1">Description is required</p>
                 )}
               </div>
               
@@ -148,7 +149,7 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
                 <div>
                   <Label htmlFor="complexity">Complexity</Label>
                   <Select
-                    onValueChange={(value: "simple" | "standard" | "advanced") => setValue('complexity', value)}
+                    onValueChange={(value) => setValue('complexity', value)}
                     defaultValue="standard"
                   >
                     <SelectTrigger id="complexity">
