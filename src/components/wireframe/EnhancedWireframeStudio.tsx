@@ -166,7 +166,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       id: section.id || `section-${Math.random().toString(36).substring(7)}`,
       name: section.name || section.sectionType,
       description: section.description || "",
-      imageUrl: section.imageUrl || ""
+      imageUrl: section.styleProperties?.imageUrl || section.layout?.imageUrl || ""
     })) : [],
     version: "1.0",
     lastUpdated: new Date().toLocaleDateString()
@@ -182,7 +182,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         id: section.id || `section-${Math.random().toString(36).substring(7)}`,
         name: section.name || section.sectionType,
         description: section.description || "",
-        imageUrl: section.imageUrl || "" 
+        imageUrl: section.styleProperties?.imageUrl || section.layout?.imageUrl || ""
       })) : [],
       version: "1.0",
       lastUpdated: new Date(wireframe.created_at || Date.now()).toLocaleDateString()
