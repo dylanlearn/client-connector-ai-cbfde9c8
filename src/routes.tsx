@@ -1,13 +1,16 @@
+import { createBrowserRouter } from "react-router-dom";
+import DesignProcessProvider from "./contexts/design-process/DesignProcessProvider";
+import DesignProcessPage from "./pages/DesignProcessPage";
 
-import { createBrowserRouter } from 'react-router-dom';
-import App from './App';
-import Dashboard from './pages/dashboard';
-import { Settings } from './pages/settings';
-import { NotFound } from './pages/not-found';
-import { ProjectDetailPage } from './pages/project-detail/ProjectDetailPage';
-import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
-
-export const router = createBrowserRouter([
+const router = createBrowserRouter([
+  {
+    path: "/design-process",
+    element: (
+      <DesignProcessProvider>
+        <DesignProcessPage />
+      </DesignProcessProvider>
+    ),
+  },
   {
     path: '/',
     element: <App />,
@@ -35,3 +38,5 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+export default router;

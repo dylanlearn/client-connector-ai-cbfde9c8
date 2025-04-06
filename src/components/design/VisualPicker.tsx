@@ -1,163 +1,85 @@
 
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import CardContainer from "./card/CardContainer";
-import DesignCard from "./card/DesignCard";
-import ControlButtons from "./card/ControlButtons";
-import EmptyState from "./card/EmptyState";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
 
 export interface DesignOption {
   id: string;
   title: string;
   description: string;
   imageUrl: string;
-  category: string;
-  icon?: React.ComponentType;
-  preview?: string;
+  category?: string;
 }
 
 interface VisualPickerProps {
   options: DesignOption[];
-  onSelectOption: (option: DesignOption, liked: boolean) => void;
-  category?: string;
-  onComplete?: () => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  fullWidth?: boolean;
+  className?: string;
 }
 
-const VisualPicker: React.FC<VisualPickerProps> = ({
+export const VisualPicker: React.FC<VisualPickerProps> = ({
   options,
-  onSelectOption,
-  category = "design",
-  onComplete,
+  selectedId,
+  onSelect,
+  fullWidth = false,
+  className,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState<"" | "left" | "right">("");
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [offsetX, setOffsetX] = useState(0);
-  const [showRestartButton, setShowRestartButton] = useState(false);
-
-  useEffect(() => {
-    if (currentIndex >= options.length) {
-      setShowRestartButton(true);
-      if (onComplete) {
-        onComplete();
-      }
-    }
-  }, [currentIndex, options.length, onComplete]);
-
-  const handleLike = () => {
-    if (currentIndex < options.length) {
-      onSelectOption(options[currentIndex], true);
-      setDirection("right");
-      setTimeout(() => {
-        setCurrentIndex((prev) => prev + 1);
-        setDirection("");
-      }, 300);
-    }
-  };
-
-  const handleDislike = () => {
-    if (currentIndex < options.length) {
-      onSelectOption(options[currentIndex], false);
-      setDirection("left");
-      setTimeout(() => {
-        setCurrentIndex((prev) => prev + 1);
-        setDirection("");
-      }, 300);
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setStartX(e.clientX);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const currentX = e.clientX;
-    const diff = currentX - startX;
-    setOffsetX(diff);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const currentX = e.touches[0].clientX;
-    const diff = currentX - startX;
-    setOffsetX(diff);
-  };
-
-  const handleDragEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    
-    // If dragged far enough, trigger like/dislike
-    if (offsetX > 100) {
-      handleLike();
-    } else if (offsetX < -100) {
-      handleDislike();
-    }
-    setOffsetX(0);
-  };
-
-  const handleRestart = () => {
-    setCurrentIndex(0);
-    setShowRestartButton(false);
-    setDirection("");
-  };
-
-  // Show empty state if no options or all options have been swiped
-  if (options.length === 0 || (currentIndex >= options.length && !showRestartButton)) {
-    return <EmptyState category={category} />;
-  }
-
   return (
-    <div className="flex flex-col items-center justify-center gap-6 py-4">
-      {currentIndex < options.length ? (
-        <>
-          <CardContainer onDragEnd={handleDragEnd}>
-            <DesignCard 
-              option={options[currentIndex]} 
-              onLike={handleLike} 
-              onDislike={handleDislike}
-              direction={direction}
-              isDragging={isDragging}
-              offsetX={offsetX}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-            />
-          </CardContainer>
-          
-          <ControlButtons 
-            onLike={handleLike} 
-            onDislike={handleDislike} 
-            showRestartButton={false}
-            onRestart={handleRestart}
-          />
-          
-          <div className="text-sm text-muted-foreground mt-2">
-            {currentIndex + 1} of {options.length}
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-8">
-          <h3 className="text-xl font-medium mb-4">You've seen all {category} options</h3>
-          <ControlButtons 
-            onLike={handleLike} 
-            onDislike={handleDislike} 
-            showRestartButton={showRestartButton}
-            onRestart={handleRestart}
-          />
-        </div>
+    <div
+      className={cn(
+        "grid gap-4",
+        fullWidth ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3" : "grid-cols-1 sm:grid-cols-2",
+        className
       )}
+    >
+      {options.map((option) => {
+        const isSelected = selectedId === option.id;
+        
+        return (
+          <div
+            key={option.id}
+            className={cn(
+              "relative overflow-hidden border rounded-lg transition-all cursor-pointer",
+              isSelected
+                ? "border-primary shadow-sm ring-2 ring-primary ring-opacity-50"
+                : "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600"
+            )}
+            onClick={() => onSelect(option.id)}
+          >
+            {/* Selection indicator */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1 shadow-sm">
+                <Check className="h-4 w-4" />
+              </div>
+            )}
+            
+            {/* Image preview */}
+            <div className="aspect-video w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+              {option.imageUrl ? (
+                <img
+                  src={option.imageUrl}
+                  alt={option.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                  No image
+                </div>
+              )}
+            </div>
+            
+            {/* Option details */}
+            <div className="p-4">
+              <h3 className="font-medium">{option.title}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {option.description}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
-
-export default VisualPicker;
