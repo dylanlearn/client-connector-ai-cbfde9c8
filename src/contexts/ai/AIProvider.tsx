@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback } from 'react';
-import { AIMessage, AIAnalysis, DesignRecommendation, AIContextType, AIMemoryContext } from '@/types/ai';
+import { AIMessage, AIAnalysis, DesignRecommendation, AIContextType } from '@/types/ai';
 import { AIAnalyzerService, AIGeneratorService } from '@/services/ai';
 import { AIContext } from './AIContext';
 import { useMemory } from './MemoryContext';
@@ -252,7 +253,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
   }, [storeMemoryInContext]);
 
   // Create default memory context if none is provided
-  const defaultMemoryContext: AIMemoryContext = {
+  const defaultMemoryContext = {
     recentInteractions: [],
     userPreferences: [],
     projectDetails: []

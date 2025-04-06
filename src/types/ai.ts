@@ -101,20 +101,16 @@ export interface AIContextType {
   analyzeResponses: (responses: Record<string, string>) => Promise<void>;
   generateDesignRecommendations: (prompt: string) => Promise<void>;
   generateContent: (
-    type: 'header' | 'tagline' | 'cta' | 'description',
-    tone: string,
-    context: string,
-    keywords: string[],
-    maxLength: number
+    prompt: string, 
+    contentType: string
   ) => Promise<string>;
-  summarizeFeedback: (feedback: string[]) => Promise<string>;
+  summarizeFeedback: (feedback: string | string[]) => Promise<string>;
   storeMemory: (content: string, category: string, relevanceScore?: number, metadata?: any) => Promise<void>;
   trackInteraction: (
     eventType: 'click' | 'hover' | 'scroll' | 'view',
     elementSelector: string,
     position: { x: number, y: number }
   ) => Promise<void>;
-  analyzeFeedback?: (feedbackText: string) => Promise<FeedbackAnalysisResult | null>;
   reset: () => void;
 }
 
