@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
+import { useAdvancedWireframe, UseAdvancedWireframeParams } from '@/hooks/use-advanced-wireframe';
 import { Loader2, Sparkles, ScrollText, LayoutPanelTop } from 'lucide-react';
 import { FlowchartView } from './FlowchartView';
 import WireframeVisualizer from './WireframeVisualizer';
@@ -54,16 +53,18 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   const handleGenerate = async () => {
     if (!userInput.trim()) return;
     
-    const result = await generateWireframe({
+    const params: UseAdvancedWireframeParams = {
       userInput: userInput,
       projectId,
       styleToken,
       includeDesignMemory: useDesignMemory,
-      // We'll pass darkMode as a custom parameter
+      // Pass darkMode as a custom parameter
       customParams: {
         darkMode: darkMode
       }
-    });
+    };
+    
+    const result = await generateWireframe(params);
     
     if (result && onWireframeGenerated) {
       onWireframeGenerated();

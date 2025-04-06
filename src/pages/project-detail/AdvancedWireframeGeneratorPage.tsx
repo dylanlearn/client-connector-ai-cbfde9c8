@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdvancedWireframeGenerator } from '@/components/wireframe';
@@ -8,7 +7,6 @@ import { Sparkles, BookOpen, History, PanelTop, Palette, Moon, Smartphone } from
 import { Card } from '@/components/ui/card';
 import { HelpText } from '@/components/ui/help-text';
 import { AdvancedWireframeService } from '@/services/ai/wireframe/advanced-wireframe-service';
-import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 

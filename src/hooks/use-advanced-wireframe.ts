@@ -1,11 +1,9 @@
-
 import { useState } from "react";
 import { useToast } from "./use-toast";
-import { AdvancedWireframeService, AdvancedWireframeParams, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
+import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 
-// Update the AdvancedWireframeParams to include customParams
-export interface AdvancedWireframeParams {
+export interface UseAdvancedWireframeParams {
   userInput: string;
   projectId: string;
   styleToken: string;
@@ -25,7 +23,7 @@ export function useAdvancedWireframe() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
-  const generateWireframe = async (params: AdvancedWireframeParams) => {
+  const generateWireframe = async (params: UseAdvancedWireframeParams) => {
     setIsGenerating(true);
     setError(null);
     
@@ -81,10 +79,7 @@ export function useAdvancedWireframe() {
       
       const result = await AdvancedWireframeService.saveWireframe(
         projectId,
-        prompt,
-        currentWireframe,
-        intentData,
-        blueprint
+        prompt
       );
       
       toast({
