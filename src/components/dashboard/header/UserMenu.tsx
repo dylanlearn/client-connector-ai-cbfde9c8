@@ -1,48 +1,23 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSubscription } from "@/hooks/use-subscription"; 
-import { ShieldCheck, ShieldAlert, Activity, Database, Settings, LogOut, User, FileText } from "lucide-react";
+import { ShieldCheck, Activity, Database, Settings, LogOut, User, FileText } from "lucide-react";
 import { logClientError } from "@/utils/monitoring/client-error-logger";
+import { useAuthorization } from "@/hooks/use-authorization";
+import { Permission } from "@/utils/authorization/auth-service";
+import PermissionGate from "@/components/auth/PermissionGate";
 
 export const UserMenu = () => {
   const { user, signOut, profile } = useAuth();
-  const { isAdmin, isAdminFromProfile } = useSubscription(); // Use the isAdmin state from subscription hook
+  const { isAdmin } = useAuthorization();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // Direct check for admin status from profile for reliability
-  const adminFromProfile = profile?.role === 'admin';
-  
-  // Combined admin status check for maximum reliability
-  const isAdminUser = adminFromProfile || isAdmin || isAdminFromProfile;
-  
-  useEffect(() => {
-    // Enhanced logging for better debugging
-    console.log("UserMenu - Admin status check:", { 
-      "profile?.role": profile?.role, 
-      "isAdmin from subscription": isAdmin,
-      "isAdminFromProfile": isAdminFromProfile,
-      "combined isAdminUser": isAdminUser,
-      "profile data": profile
-    });
-    
-    // Log any potential issues with admin status detection
-    if (profile?.role === 'admin' && !isAdminUser) {
-      logClientError(
-        "Admin status detection inconsistency", 
-        "UserMenu", 
-        user?.id, 
-        { profile, isAdmin, isAdminFromProfile }
-      );
-    }
-  }, [profile, isAdmin, isAdminFromProfile, isAdminUser, user?.id]);
 
   const handleSignOut = async () => {
     try {
@@ -88,7 +63,8 @@ export const UserMenu = () => {
           Templates
         </DropdownMenuItem>
         
-        {isAdminUser && (
+        {/* Admin menu items - only shown to admins */}
+        <PermissionGate permission={Permission.VIEW_ADMIN_PANEL}>
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
@@ -107,19 +83,14 @@ export const UserMenu = () => {
             
             <DropdownMenuItem onClick={() => navigate("/admin-analytics?tab=supabase")} className="text-indigo-600 cursor-pointer">
               <Database className="mr-2 h-4 w-4" />
-              System Audit
-            </DropdownMenuItem>
-            
-            <DropdownMenuItem onClick={() => navigate("/admin-analytics?tab=health")} className="text-indigo-600 cursor-pointer">
-              <ShieldAlert className="mr-2 h-4 w-4" />
-              System Health
+              Supabase Audit
             </DropdownMenuItem>
           </>
-        )}
+        </PermissionGate>
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-500 focus:text-red-500">
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
         </DropdownMenuItem>

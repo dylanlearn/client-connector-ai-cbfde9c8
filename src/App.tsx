@@ -26,6 +26,8 @@ import WebsiteAnalyzer from './pages/design-analysis/WebsiteAnalyzer';
 import FeedbackAnalysis from './pages/FeedbackAnalysis';
 import ClientAccess from './pages/ClientAccess';
 import DesignPicker from './pages/DesignPicker';
+import RequirePermission from './components/auth/RequirePermission';
+import { Permission } from './utils/authorization/auth-service';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -55,17 +57,34 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/new-project" element={<NewProject />} />
+            
+            {/* Routes requiring VIEW_PROJECTS permission */}
+            <Route element={<RequirePermission permission={Permission.VIEW_PROJECTS} redirectTo="/dashboard" />}>
+              <Route path="/projects" element={<Projects />} />
+            </Route>
+            
+            {/* Routes requiring CREATE_PROJECT permission */}
+            <Route element={<RequirePermission permission={Permission.CREATE_PROJECT} redirectTo="/dashboard" />}>
+              <Route path="/new-project" element={<NewProject />} />
+            </Route>
+            
             <Route path="/settings" element={<Settings />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/client-hub" element={<ClientHub />} />
             <Route path="/intake-form" element={<IntakeForm />} />
             <Route path="/design-picker" element={<DesignPicker />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
-            <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
-            <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+            
+            {/* Routes requiring VIEW_ANALYTICS permission */}
+            <Route element={<RequirePermission permission={Permission.VIEW_ANALYTICS} redirectTo="/dashboard" />}>
+              <Route path="/analytics" element={<Analytics />} />
+            </Route>
+            
+            {/* Routes requiring USE_AI_FEATURES permission */}
+            <Route element={<RequirePermission permission={Permission.USE_AI_FEATURES} redirectTo="/dashboard" />}>
+              <Route path="/ai-suggestions" element={<AIDesignSuggestions />} />
+              <Route path="/feedback-analysis" element={<FeedbackAnalysis />} />
+              <Route path="/website-analyzer" element={<WebsiteAnalyzer />} />
+            </Route>
           </Route>
           
           {/* Admin Routes */}

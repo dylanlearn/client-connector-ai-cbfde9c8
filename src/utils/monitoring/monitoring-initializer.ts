@@ -36,5 +36,18 @@ export async function initializeMonitoringSystem(): Promise<void> {
     }
   ).catch(console.error);
   
+  // Register specific error handlers for authorization-related issues
+  ClientErrorLogger.registerHandler('authorization', (error, metadata) => {
+    UnifiedObservability.logEvent(
+      ServiceName.AUTH,
+      'authorization_error',
+      Severity.WARNING,
+      `Authorization error: ${error.message}`,
+      metadata
+    ).catch(console.error);
+    
+    return true; // Mark as handled
+  });
+  
   console.log('🔍 Enterprise monitoring system initialized with error handling configuration');
 }

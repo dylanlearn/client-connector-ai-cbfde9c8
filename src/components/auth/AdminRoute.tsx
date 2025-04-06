@@ -1,34 +1,22 @@
 
 import { ReactNode } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
+import { Permission } from "@/utils/authorization/auth-service";
+import RequirePermission from './RequirePermission';
 
 export interface AdminRouteProps {
   children?: ReactNode;
 }
 
+/**
+ * Route component that ensures only admin users can access
+ */
 const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { user, profile, isLoading } = useAuth();
-  
-  // Show loading state if auth is still being checked
-  if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-    </div>;
-  }
-  
-  // Check if the user is logged in
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  // Check if user has admin privileges
-  const isAdmin = profile?.role === 'admin';
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children ? <>{children}</> : <Outlet />;
+  return (
+    <RequirePermission permission={Permission.VIEW_ADMIN_PANEL} redirectTo="/dashboard">
+      {children ? children : <Outlet />}
+    </RequirePermission>
+  );
 };
 
 export default AdminRoute;
