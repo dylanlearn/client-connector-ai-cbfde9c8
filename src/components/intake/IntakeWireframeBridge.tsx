@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -86,7 +85,6 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   const handleSelectWireframe = (id: string) => {
     setSelectedWireframeId(id);
     toast({
-      title: "Wireframe selected",
       description: "You can now provide feedback or continue to the next step"
     });
   };
@@ -94,9 +92,8 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   const handleNext = () => {
     if (!selectedWireframe) {
       toast({
-        title: "Please select a wireframe",
-        description: "You need to select a wireframe before proceeding",
-        variant: "destructive"
+        variant: "destructive",
+        description: "You need to select a wireframe before proceeding"
       });
       return;
     }
@@ -109,7 +106,6 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   const handleSubmitFeedback = () => {
     if (feedback.trim()) {
       toast({
-        title: "Feedback submitted",
         description: "Your feedback will help us refine the wireframe design"
       });
     }
@@ -120,9 +116,8 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   const handleComplete = () => {
     if (!selectedWireframe) {
       toast({
-        title: "Please select a wireframe",
-        description: "You need to select a wireframe before proceeding",
-        variant: "destructive"
+        variant: "destructive",
+        description: "You need to select a wireframe before proceeding"
       });
       return;
     }

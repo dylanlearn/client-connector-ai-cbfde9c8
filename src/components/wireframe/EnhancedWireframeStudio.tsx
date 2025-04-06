@@ -148,6 +148,37 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     { value: 'tech-forward', label: 'Tech-Forward' }
   ];
   
+  const displayWireframe = currentWireframe?.wireframe ? {
+    id: currentWireframe.wireframe.id || "generated-wireframe",
+    title: currentWireframe.wireframe.title || "Generated Wireframe",
+    description: currentWireframe.wireframe.description || "",
+    sections: Array.isArray(currentWireframe.wireframe.sections) ? currentWireframe.wireframe.sections.map(section => ({
+      id: section.id || `section-${Math.random().toString(36).substring(7)}`,
+      name: section.name,
+      description: section.description || "",
+      imageUrl: section.imageUrl || ""
+    })) : [],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  } : null;
+
+  const convertAIWireframeToVisualizer = (wireframe: AIWireframe) => {
+    return {
+      id: wireframe.id || "default-id",
+      title: wireframe.title || wireframe.wireframe_data?.title || "Wireframe",
+      description: wireframe.description || wireframe.wireframe_data?.description || "",
+      imageUrl: wireframe.image_url || "",
+      sections: Array.isArray(wireframe.sections) ? wireframe.sections.map(section => ({
+        id: section.id || `section-${Math.random().toString(36).substring(7)}`,
+        name: section.name,
+        description: section.description || "",
+        imageUrl: section.imageUrl || ""
+      })) : [],
+      version: "1.0",
+      lastUpdated: new Date(wireframe.created_at || Date.now()).toLocaleDateString()
+    };
+  };
+
   return (
     <div className={cn(
       "enhanced-wireframe-studio grid",
@@ -354,20 +385,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 
                 <div className="p-4">
                   <WireframeVisualizer
-                    wireframe={{
-                      id: currentWireframe.id || "current-wireframe", 
-                      title: currentWireframe.wireframe.title || "Untitled Wireframe",
-                      description: currentWireframe.wireframe.description || "",
-                      imageUrl: currentWireframe.wireframe.imageUrl || "",
-                      sections: currentWireframe.wireframe.sections?.map((section: any, index: number) => ({
-                        id: section.id || `section-${index}`,
-                        name: section.name || section.type || `Section ${index + 1}`,
-                        description: section.description || section.content || "",
-                        imageUrl: section.imageUrl || ""
-                      })) || [],
-                      version: "1.0",
-                      lastUpdated: new Date().toLocaleDateString()
-                    }}
+                    wireframe={displayWireframe}
                     viewMode="preview"
                     deviceType="desktop"
                     darkMode={darkMode}
@@ -411,15 +429,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                         <CardContent className="p-0">
                           <div className="h-[300px] overflow-hidden">
                             <WireframeVisualizer
-                              wireframe={{
-                                id: wireframe.id || `variation-${index}`,
-                                title: wireframe.title || `Variation ${index + 1}`,
-                                description: wireframe.description || "",
-                                imageUrl: wireframe.imageUrl || "",
-                                sections: wireframe.data?.sections || wireframe.sections || [],
-                                version: "1.0",
-                                lastUpdated: new Date().toLocaleDateString()
-                              }}
+                              wireframe={convertAIWireframeToVisualizer(wireframe)}
                               viewMode="preview"
                               deviceType="desktop"
                               darkMode={darkMode}

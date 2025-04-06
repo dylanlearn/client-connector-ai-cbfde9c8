@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -242,7 +241,7 @@ export default ${wireframe.title.replace(/\s+/g, '')};
   );
 };
 
-// Create a new adapter component that accepts wireframeData directly
+// Adapter component that accepts wireframeData directly
 export const WireframeDataVisualizer: React.FC<WireframeDataProps> = ({ 
   wireframeData, 
   viewMode = "preview",
@@ -252,7 +251,6 @@ export const WireframeDataVisualizer: React.FC<WireframeDataProps> = ({
   highlightSections = false,
   showGrid = false
 }) => {
-  // Convert wireframeData to the format expected by WireframeVisualizer
   const adaptedWireframe = {
     id: wireframeData.id || "default-id",
     title: wireframeData.title || "Wireframe Preview",

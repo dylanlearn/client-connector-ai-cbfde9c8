@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -25,7 +24,6 @@ interface SpecificQuestionsStepProps {
   isSaving?: boolean;
 }
 
-// Sample wireframe data for preview
 const sampleWireframes = [
   {
     id: "wire-1",
@@ -104,7 +102,6 @@ const SpecificQuestionsStep = ({
   }, [form, updateFormData]);
 
   const onSubmit = (values: any) => {
-    // If a wireframe was selected, include it in the form data
     if (selectedWireframeId) {
       const updatedValues = {...values, wireframeSelection: selectedWireframeId};
       updateFormData(updatedValues);
