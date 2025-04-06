@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { ChartBarIcon, PieChartIcon, ArrowTrendingUpIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { BarChart3, PieChart, TrendingUp, DollarSign } from 'lucide-react';
 
 interface DashboardSectionProps {
   sectionIndex: number;
@@ -34,10 +34,10 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
   
   // Mock data for charts
   const metrics = [
-    { label: 'Total Revenue', value: '$24,345', change: '+12.5%', icon: CurrencyDollarIcon },
-    { label: 'Active Users', value: '1,234', change: '+7.2%', icon: ArrowTrendingUpIcon },
-    { label: 'Conversion Rate', value: '3.4%', change: '+0.8%', icon: PieChartIcon },
-    { label: 'Avg. Transaction', value: '$94.50', change: '+2.3%', icon: ChartBarIcon },
+    { label: 'Total Revenue', value: '$24,345', change: '+12.5%', icon: DollarSign },
+    { label: 'Active Users', value: '1,234', change: '+7.2%', icon: TrendingUp },
+    { label: 'Conversion Rate', value: '3.4%', change: '+0.8%', icon: PieChart },
+    { label: 'Avg. Transaction', value: '$94.50', change: '+2.3%', icon: BarChart3 },
   ];
   
   // Chart placeholder component
@@ -45,9 +45,9 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
     <div className={`relative rounded-md border ${height} overflow-hidden ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center">
-          {type === 'bar' && <ChartBarIcon className={`h-10 w-10 mx-auto ${darkMode ? 'text-gray-700' : 'text-gray-400'}`} />}
-          {type === 'pie' && <PieChartIcon className={`h-10 w-10 mx-auto ${darkMode ? 'text-gray-700' : 'text-gray-400'}`} />}
-          {type === 'line' && <ArrowTrendingUpIcon className={`h-10 w-10 mx-auto ${darkMode ? 'text-gray-700' : 'text-gray-400'}`} />}
+          {type === 'bar' && <BarChart3 className={`h-10 w-10 mx-auto ${darkMode ? 'text-gray-700' : 'text-gray-400'}`} />}
+          {type === 'pie' && <PieChart className={`h-10 w-10 mx-auto ${darkMode ? 'text-gray-700' : 'text-gray-400'}`} />}
+          {type === 'line' && <TrendingUp className={`h-10 w-10 mx-auto ${darkMode ? 'text-gray-700' : 'text-gray-400'}`} />}
           <p className={`mt-2 text-sm ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{type.charAt(0).toUpperCase() + type.slice(1)} Chart</p>
         </div>
       </div>
