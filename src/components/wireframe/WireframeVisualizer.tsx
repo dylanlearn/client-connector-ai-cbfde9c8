@@ -26,7 +26,7 @@ import {
   Download
 } from "lucide-react";
 
-interface WireframeVisualizerProps {
+export interface WireframeVisualizerProps {
   wireframeData: WireframeData;
   viewMode?: "flowchart" | "preview";
   deviceType?: "desktop" | "mobile" | "tablet";
@@ -53,6 +53,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   const [deviceType, setDeviceType] = useState<"desktop" | "mobile" | "tablet">(initialDeviceType);
   const [activeTab, setActiveTab] = useState("preview");
   const [selectedSection, setSelectedSection] = useState<any>(null);
+  const [localShowGrid, setLocalShowGrid] = useState(showGrid);
   
   useEffect(() => {
     console.log("WireframeVisualizer received wireframeData:", wireframeData);
@@ -67,6 +68,11 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     
     return () => clearTimeout(timer);
   }, [wireframeData]);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setLocalShowGrid(showGrid);
+  }, [showGrid]);
 
   const validatedData = React.useMemo(() => {
     const data = {...wireframeData};
@@ -384,10 +390,10 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => setShowGrid(!showGrid)}
+                  onClick={() => setLocalShowGrid(!localShowGrid)}
                   className={cn(
-                    showGrid ? "bg-primary text-primary-foreground" : "",
-                    darkMode && !showGrid ? "bg-gray-800 border-gray-700" : ""
+                    localShowGrid ? "bg-primary text-primary-foreground" : "",
+                    darkMode && !localShowGrid ? "bg-gray-800 border-gray-700" : ""
                   )}
                 >
                   <Grid3x3 className="h-4 w-4" />
@@ -554,7 +560,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
             </div>
           )}
 
-          {activeTab === "structure" && viewMode === "flowchart" && (
+          {activeTab === "structure" && (
             <FlowchartView 
               pages={pages} 
               showDetails={true} 

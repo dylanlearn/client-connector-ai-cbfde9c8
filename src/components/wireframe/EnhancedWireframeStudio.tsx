@@ -15,7 +15,7 @@ import { Loader2, Wand2, ScrollText, LayoutPanelTop, Save, Sparkles } from 'luci
 import WireframeVisualizer from './WireframeVisualizer';
 import DesignMemoryPanel from './DesignMemoryPanel';
 import { DesignReference } from '@/services/ai/design/design-memory-reference-service';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeGenerationParams, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
 
 interface EnhancedWireframeStudioProps {
@@ -67,7 +67,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const handleGenerate = async () => {
     if (!userInput.trim()) return;
     
-    const params = {
+    const params: WireframeGenerationParams = {
       description: userInput,
       projectId: projectId,
       style: styleToken,
@@ -78,7 +78,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     
     // Add reference inspiration if selected
     if (useDesignMemory && selectedReference) {
-      params.referenceInspiration = selectedReference.metadata;
+      params.baseWireframe = selectedReference.metadata;
     }
     
     const result = await generateWireframe(params);
@@ -95,7 +95,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const handleGenerateVariation = async () => {
     if (!currentWireframe) return;
     
-    const result = await generateCreativeVariation(currentWireframe, projectId);
+    const result = await generateCreativeVariation(currentWireframe.wireframe, projectId);
     
     if (result && onWireframeGenerated) {
       onWireframeGenerated();
@@ -106,7 +106,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     if (!currentWireframe) return null;
     
     // Extract tags from the description and title
-    const extractTags = (text) => {
+    const extractTags = (text: string) => {
       const words = text.toLowerCase().split(/\s+/);
       const commonTags = ['modern', 'minimal', 'dashboard', 'ecommerce', 'landing', 'dark', 'light', 
                           'corporate', 'creative', 'portfolio', 'mobile', 'responsive', 'clean'];
@@ -114,12 +114,12 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       return commonTags.filter(tag => words.includes(tag));
     };
     
-    const title = currentWireframe.title || 'Untitled Wireframe';
-    const description = currentWireframe.description || userInput;
+    const wireframeTitle = currentWireframe.wireframe.title || 'Untitled Wireframe';
+    const wireframeDescription = currentWireframe.wireframe.description || userInput;
     
     // Combine tags from title and description
-    const titleTags = extractTags(title);
-    const descriptionTags = extractTags(description);
+    const titleTags = extractTags(wireframeTitle);
+    const descriptionTags = extractTags(wireframeDescription);
     const tags = Array.from(new Set([...titleTags, ...descriptionTags]));
     
     // Add style as a tag
@@ -128,11 +128,11 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     }
     
     const reference = await storeReference(
-      title,
+      wireframeTitle,
       'wireframe',
-      currentWireframe,
+      currentWireframe.wireframe,
       tags,
-      description
+      wireframeDescription
     );
     
     return reference;
@@ -339,7 +339,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 )}>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-lg">
-                      {currentWireframe.title || 'Untitled Wireframe'}
+                      {currentWireframe.wireframe.title || 'Untitled Wireframe'}
                     </h3>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={handleSaveToMemory}>
@@ -348,19 +348,19 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                       </Button>
                     </div>
                   </div>
-                  {currentWireframe.description && (
+                  {currentWireframe.wireframe.description && (
                     <p className={cn(
                       "text-sm",
                       darkMode ? "text-gray-400" : "text-gray-500"
                     )}>
-                      {currentWireframe.description}
+                      {currentWireframe.wireframe.description}
                     </p>
                   )}
                 </div>
                 
                 <div className="p-4">
                   <WireframeVisualizer
-                    wireframeData={currentWireframe}
+                    wireframeData={currentWireframe.wireframe}
                     viewMode="preview"
                     deviceType="desktop"
                     darkMode={darkMode}
@@ -404,7 +404,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                         <CardContent className="p-0">
                           <div className="h-[300px] overflow-hidden">
                             <WireframeVisualizer
-                              wireframeData={wireframe as WireframeData}
+                              wireframeData={wireframe.data || wireframe as unknown as WireframeData}
                               viewMode="preview"
                               deviceType="desktop"
                               darkMode={darkMode}
