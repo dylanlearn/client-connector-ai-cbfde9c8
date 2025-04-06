@@ -1,4 +1,3 @@
-
 export interface WireframeData {
   title?: string;
   description?: string;
@@ -15,6 +14,19 @@ export interface WireframeData {
   style?: any; // Make style accept any type to handle both string and object
   mobileConsiderations?: string;
   accessibilityNotes?: string;
+  layoutType?: string;
+  colorScheme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+  };
+  typography?: {
+    headings?: string;
+    body?: string;
+    fontPairings?: string[];
+  };
+  [key: string]: any; // Allow any additional properties
 }
 
 export interface WireframePage {
@@ -77,7 +89,6 @@ export interface WireframeGenerationResult {
   success?: boolean; // Adding success property
 }
 
-// Add missing interfaces referenced in other files
 export interface WireframeSection {
   id?: string;
   name: string;

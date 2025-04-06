@@ -117,7 +117,7 @@ export const questionnaireWireframeBridge = {
           body: bodyFont
         }
       },
-      // Using styleObject for style to match WireframeData interface
+      // Using style object for style to match WireframeData interface
       style: {
         colorScheme: {
           primary: primaryColor,
@@ -135,6 +135,7 @@ export const questionnaireWireframeBridge = {
           scale: [0, 1, 2, 3, 4, 5, 6, 7, 8]
         }
       },
+      // Add these fields as they now exist in both WireframeData interfaces
       mobileConsiderations: "Responsive design with mobile-first approach.",
       accessibilityNotes: "Ensure all elements meet WCAG 2.1 AA standards."
     };

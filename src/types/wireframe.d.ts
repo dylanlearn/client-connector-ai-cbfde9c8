@@ -51,6 +51,15 @@ export interface WireframeData {
   mobileConsiderations?: string; // Add this field for questionnaire-wireframe-bridge.ts
   accessibilityNotes?: string; // Add this field for questionnaire-wireframe-bridge.ts
   style?: string | object; // Allow style to be either string or object
+  // Add fields from wireframe-types.ts for consistency
+  pages?: any[];
+  styleToken?: string;
+  darkMode?: boolean;
+  mobileLayouts?: any;
+  styleVariants?: any;
+  designReasoning?: any;
+  animations?: any;
+  imageUrl?: string;
   [key: string]: any; // Allow any other properties
 }
 
