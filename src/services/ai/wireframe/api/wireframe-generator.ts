@@ -5,7 +5,6 @@ import {
   WireframeGenerationResult,
   WireframeData
 } from "../wireframe-types";
-import { CreativePromptService } from "../../creative-prompt-service";
 import { CreativeEnhancementService } from "../../creative-enhancement-service";
 
 /**
@@ -32,7 +31,7 @@ export const wireframeGenerator = {
           undefined
       };
       
-      // Apply advanced creative enhancement with the new service
+      // Apply advanced creative enhancement with the service
       if (enhancedParams.enhancedCreativity && enhancedParams.description) {
         // Use the wireframing creative profile for optimal results
         enhancedParams.description = CreativeEnhancementService.enhancePrompt(
