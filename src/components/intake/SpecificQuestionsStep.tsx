@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -8,7 +9,7 @@ import SiteTypeFields from "./site-type-fields/SiteTypeFields";
 import { getFormSchema, getDefaultValues, getSiteTypeName } from "./utils/form-helpers";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
 import { useAIContent } from "@/hooks/ai-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -121,10 +122,10 @@ const SpecificQuestionsStep = ({
     setAiPowered(true);
     setIsAiInitializing(false);
     
-    toast({
+    toast("AI examples enabled", {
       description: "Hover over the info icons to see AI-generated example answers tailored to your project"
     });
-  }, [toast]);
+  }, []);
 
   const handleAIToggle = (enabled: boolean) => {
     if (enabled) {
@@ -136,7 +137,7 @@ const SpecificQuestionsStep = ({
 
   const handleSelectWireframe = (id: string) => {
     setSelectedWireframeId(id);
-    toast({
+    toast("Wireframe selected", {
       description: "You can preview this design in the wireframe tab"
     });
   };

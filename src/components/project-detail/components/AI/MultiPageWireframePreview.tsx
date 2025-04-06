@@ -12,6 +12,21 @@ interface MultiPageWireframePreviewProps {
 const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ wireframe }) => {
   const isMultiPage = wireframe?.pages && wireframe.pages.length > 1;
   
+  const convertToVisualizer = (data: WireframeData) => ({
+    id: data.id || "wireframe-preview",
+    title: data.title || "Wireframe Preview",
+    description: data.description || "",
+    imageUrl: data.imageUrl || "",
+    sections: data.sections?.map((section: any, index: number) => ({
+      id: section.id || `section-${index}`,
+      name: section.name || section.type || `Section ${index + 1}`,
+      description: section.description || section.content || "",
+      imageUrl: section.imageUrl || ""
+    })) || [],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  });
+  
   return (
     <div className="border rounded-md overflow-hidden">
       {isMultiPage ? (
@@ -43,10 +58,10 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
                 <TabsContent value="desktop">
                   <div className="border rounded-lg p-4 bg-white overflow-hidden">
                     <WireframeDataVisualizer 
-                      wireframeData={{
+                      wireframe={convertToVisualizer({
                         ...wireframe,
                         sections: page.sections || []
-                      }}
+                      })}
                       viewMode="preview"
                       deviceType="desktop"
                     />
@@ -56,10 +71,10 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
                 <TabsContent value="mobile">
                   <div className="max-w-[320px] mx-auto border rounded-lg p-4 bg-white overflow-hidden">
                     <WireframeDataVisualizer 
-                      wireframeData={{
+                      wireframe={convertToVisualizer({
                         ...wireframe,
                         sections: page.sections || []
-                      }}
+                      })}
                       viewMode="preview"
                       deviceType="mobile"
                     />
@@ -86,7 +101,7 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
             <TabsContent value="desktop">
               <div className="border rounded-lg p-4 bg-white overflow-hidden">
                 <WireframeDataVisualizer 
-                  wireframeData={wireframe}
+                  wireframe={convertToVisualizer(wireframe)}
                   viewMode="preview"
                   deviceType="desktop"
                 />
@@ -96,7 +111,7 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
             <TabsContent value="mobile">
               <div className="max-w-[320px] mx-auto border rounded-lg p-4 bg-white overflow-hidden">
                 <WireframeDataVisualizer 
-                  wireframeData={wireframe}
+                  wireframe={convertToVisualizer(wireframe)}
                   viewMode="preview"
                   deviceType="mobile"
                 />

@@ -59,7 +59,6 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   }, [projectId, loadProjectWireframes]);
   
   useEffect(() => {
-    // Sync creativity level with hook
     setCreativityLevelInHook(creativityLevel);
   }, [creativityLevel, setCreativityLevelInHook]);
   
@@ -75,7 +74,6 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       darkMode: darkMode
     };
     
-    // Add reference inspiration if selected
     if (useDesignMemory && selectedReference) {
       params.baseWireframe = selectedReference.metadata;
     }
@@ -104,7 +102,6 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const handleSaveToMemory = async () => {
     if (!currentWireframe?.wireframe) return null;
     
-    // Extract tags from the description and title
     const extractTags = (text: string) => {
       const words = text.toLowerCase().split(/\s+/);
       const commonTags = ['modern', 'minimal', 'dashboard', 'ecommerce', 'landing', 'dark', 'light', 
@@ -116,12 +113,10 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     const wireframeTitle = currentWireframe.wireframe.title || 'Untitled Wireframe';
     const wireframeDescription = currentWireframe.wireframe.description || userInput;
     
-    // Combine tags from title and description
     const titleTags = extractTags(wireframeTitle);
     const descriptionTags = extractTags(wireframeDescription);
     const tags = Array.from(new Set([...titleTags, ...descriptionTags]));
     
-    // Add style as a tag
     if (styleToken) {
       tags.push(styleToken.toLowerCase());
     }
@@ -359,7 +354,20 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 
                 <div className="p-4">
                   <WireframeVisualizer
-                    wireframeData={currentWireframe.wireframe}
+                    wireframe={{
+                      id: currentWireframe.id || "current-wireframe", 
+                      title: currentWireframe.wireframe.title || "Untitled Wireframe",
+                      description: currentWireframe.wireframe.description || "",
+                      imageUrl: currentWireframe.wireframe.imageUrl || "",
+                      sections: currentWireframe.wireframe.sections?.map((section: any, index: number) => ({
+                        id: section.id || `section-${index}`,
+                        name: section.name || section.type || `Section ${index + 1}`,
+                        description: section.description || section.content || "",
+                        imageUrl: section.imageUrl || ""
+                      })) || [],
+                      version: "1.0",
+                      lastUpdated: new Date().toLocaleDateString()
+                    }}
                     viewMode="preview"
                     deviceType="desktop"
                     darkMode={darkMode}
@@ -403,7 +411,15 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                         <CardContent className="p-0">
                           <div className="h-[300px] overflow-hidden">
                             <WireframeVisualizer
-                              wireframeData={wireframe.data || wireframe as unknown as WireframeData}
+                              wireframe={{
+                                id: wireframe.id || `variation-${index}`,
+                                title: wireframe.title || `Variation ${index + 1}`,
+                                description: wireframe.description || "",
+                                imageUrl: wireframe.imageUrl || "",
+                                sections: wireframe.data?.sections || wireframe.sections || [],
+                                version: "1.0",
+                                lastUpdated: new Date().toLocaleDateString()
+                              }}
                               viewMode="preview"
                               deviceType="desktop"
                               darkMode={darkMode}

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { WireframeDataVisualizer } from './index';
+import { WireframeDataVisualizer } from './WireframeVisualizer';
 import { WireframeData } from '@/types/wireframe';
 
 interface AdvancedWireframeGeneratorProps {

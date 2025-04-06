@@ -9,7 +9,7 @@ import {
   Layout, RefreshCw, Share2, Layers, Monitor, 
   Smartphone, PanelLeft, Eye, Wand2
 } from "lucide-react";
-import { WireframeDataVisualizer } from "@/components/wireframe";
+import { WireframeVisualizer, WireframeDataVisualizer } from "@/components/wireframe";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -133,6 +133,21 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
   const toggleViewMode = () => {
     setViewMode(viewMode === "flowchart" ? "preview" : "flowchart");
   };
+
+  const adaptWireframeForVisualizer = (data: any) => ({
+    id: data.id || "wireframe-preview",
+    title: data.title || "Wireframe Preview",
+    description: data.description || "Generated wireframe",
+    imageUrl: data.imageUrl || "/wireframes/default.jpg",
+    sections: data.sections?.map((section: any, index: number) => ({
+      id: section.id || `section-${index}`,
+      name: section.name || section.type || `Section ${index + 1}`,
+      description: section.description || section.content || "",
+      imageUrl: section.imageUrl || ""
+    })) || [],
+    version: "1.0",
+    lastUpdated: new Date().toLocaleDateString()
+  });
 
   const sampleComponents = [
     { name: "Hero Section", type: "hero", preview: "/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png" },
@@ -388,118 +403,79 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
                 </div>
               )}
             </CardHeader>
-            <CardContent className="min-h-[500px] relative">
+            <div className="px-6 pb-6">
               {isGenerating ? (
-                <div className="flex flex-col items-center justify-center h-80 space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-primary/10 rounded-full w-40 h-40 flex items-center justify-center">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                      </div>
-                    </div>
-                    <div className="bg-primary/5 rounded-lg p-12 backdrop-blur-sm">
-                      <div className="space-y-4">
-                        <p className="font-medium text-xl text-center">Generating Wireframe</p>
-                        <p className="text-sm text-muted-foreground text-center max-w-xs">
-                          Creating a detailed wireframe based on your description. This may take a moment...
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex flex-col items-center justify-center h-64 bg-muted/30 rounded-lg">
+                  <Loader2 className="h-8 w-8 animate-spin mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">Generating wireframe...</p>
                 </div>
               ) : currentWireframe ? (
-                <div className="space-y-4">
-                  <div className="bg-muted rounded-lg overflow-hidden">
-                    {viewMode === "flowchart" ? (
-                      <div className="relative bg-blue-50/70 rounded-lg p-6 overflow-auto min-h-[500px]">
-                        {currentWireframe.wireframe.pages ? (
-                          <WireframeDataVisualizer 
-                            wireframeData={currentWireframe.wireframe}
-                            viewMode="flowchart"
-                          />
-                        ) : (
-                          <WireframeDataVisualizer 
-                            wireframeData={currentWireframe.wireframe}
-                            viewMode="preview"
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="p-4">
-                        <Tabs defaultValue="desktop">
-                          <TabsList>
-                            <TabsTrigger value="desktop" className="flex items-center gap-1">
-                              <Monitor className="h-4 w-4" />
-                              Desktop
-                            </TabsTrigger>
-                            <TabsTrigger value="mobile" className="flex items-center gap-1">
-                              <Smartphone className="h-4 w-4" />
-                              Mobile
-                            </TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="desktop">
-                            <WireframeDataVisualizer 
-                              wireframeData={currentWireframe.wireframe}
-                              viewMode="preview"
-                              deviceType="desktop"
-                            />
-                          </TabsContent>
-                          <TabsContent value="mobile">
-                            <WireframeDataVisualizer 
-                              wireframeData={currentWireframe.wireframe}
-                              viewMode="preview"
-                              deviceType="mobile"
-                            />
-                          </TabsContent>
-                        </Tabs>
-                      </div>
-                    )}
+                <div className="relative">
+                  <div className="absolute right-2 top-2 flex gap-1 z-10">
+                    <Button size="icon" variant="outline" className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm" onClick={handleCopyJSON}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="outline" className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm" onClick={handleCopyImage}>
+                      <Layout className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="outline" className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm" onClick={handleDownload}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="outline" className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm" onClick={handleGenerateVariation}>
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
                   </div>
+                  
+                  {viewMode === "flowchart" ? (
+                    <div className="bg-muted/30 border rounded-xl overflow-hidden">
+                      <WireframeVisualizer
+                        wireframe={adaptWireframeForVisualizer(currentWireframe.wireframe)}
+                        viewMode="flowchart"
+                      />
+                    </div>
+                  ) : (
+                    <Tabs defaultValue="desktop">
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="desktop" className="flex items-center gap-1">
+                          <Monitor className="h-4 w-4" />
+                          Desktop
+                        </TabsTrigger>
+                        <TabsTrigger value="mobile" className="flex items-center gap-1">
+                          <Smartphone className="h-4 w-4" />
+                          Mobile
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="desktop">
+                        <div className="bg-muted/30 border rounded-xl overflow-hidden">
+                          <WireframeVisualizer
+                            wireframe={adaptWireframeForVisualizer(currentWireframe.wireframe)}
+                            viewMode="preview"
+                            deviceType="desktop"
+                          />
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="mobile">
+                        <div className="max-w-[375px] mx-auto bg-muted/30 border rounded-xl overflow-hidden">
+                          <WireframeVisualizer
+                            wireframe={adaptWireframeForVisualizer(currentWireframe.wireframe)}
+                            viewMode="preview"
+                            deviceType="mobile"
+                          />
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-80 text-center text-muted-foreground">
-                  <Layout className="h-12 w-12 mb-4 text-muted-foreground/50" />
-                  <p>No wireframe generated yet</p>
-                  <p className="text-sm mt-1">
-                    Fill out the form and click Generate
+                <div className="flex flex-col items-center justify-center h-64 border border-dashed rounded-lg text-center">
+                  <Layout className="h-8 w-8 mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground mb-2">No wireframe generated yet</p>
+                  <p className="text-xs text-muted-foreground max-w-md">
+                    Enter a detailed description and click "Generate Wireframe" to create your first wireframe
                   </p>
                 </div>
               )}
-            </CardContent>
-            {currentWireframe && (
-              <CardFooter className="flex flex-wrap justify-between gap-2">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleGenerateVariation}>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Generate Variation
-                  </Button>
-                  {multiPage && (
-                    <Button variant="outline" size="sm">
-                      <Layers className="mr-2 h-4 w-4" />
-                      Edit Pages
-                    </Button>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                    <Code className="mr-2 h-4 w-4" />
-                    Copy JSON
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleCopyImage}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Image
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleDownload}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
-                  </Button>
-                </div>
-              </CardFooter>
-            )}
+            </div>
           </Card>
         </div>
       </div>
