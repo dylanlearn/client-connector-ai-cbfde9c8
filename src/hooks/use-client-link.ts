@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createClientAccessLink } from "@/services/clients";
@@ -113,6 +114,9 @@ export const useClientLink = ({ userId, projects, onLinkCreated }: UseClientLink
       if (link && linkId) {
         const newLink: ClientAccessLink = {
           id: linkId,
+          linkId: linkId, // Add the required linkId property
+          name: clientName, // Add the required name property
+          email: clientEmail, // Add the required email property
           designerId: userId,
           projectId: selectedProjectId,
           projectTitle: selectedProjectId 
