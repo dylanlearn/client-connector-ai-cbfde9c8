@@ -66,6 +66,13 @@ export const mainNavItems = [
   }
 ];
 
+// Define the interface for navigation items
+export interface NavigationItemProps {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
 interface NavigationProps {
   items: NavigationItemProps[];
 }
