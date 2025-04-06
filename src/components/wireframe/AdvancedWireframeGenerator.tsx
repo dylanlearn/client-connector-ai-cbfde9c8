@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAdvancedWireframe, UseAdvancedWireframeParams } from '@/hooks/use-advanced-wireframe';
-import { Loader2, Sparkles, ScrollText, LayoutPanelTop } from 'lucide-react';
+import { Loader2, Wand2, ScrollText, LayoutPanelTop } from 'lucide-react';
 import { FlowchartView } from './FlowchartView';
 import WireframeVisualizer from './WireframeVisualizer';
 
@@ -112,7 +112,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     <Card className={`w-full ${darkMode ? 'bg-gray-800 border-gray-700' : ''}`}>
       <CardHeader className={darkMode ? 'border-gray-700' : ''}>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className={`h-5 w-5 ${darkMode ? 'text-blue-400' : 'text-primary'}`} />
+          <Wand2 className={`h-5 w-5 ${darkMode ? 'text-blue-400' : 'text-primary'}`} />
           Advanced Wireframe Generator
         </CardTitle>
         <CardDescription className={darkMode ? 'text-gray-400' : ''}>
@@ -229,7 +229,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-2 h-4 w-4" />
+                  <Wand2 className="mr-2 h-4 w-4" />
                   Generate Wireframe
                 </>
               )}
