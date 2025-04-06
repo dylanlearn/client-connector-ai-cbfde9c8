@@ -69,23 +69,53 @@ export const getClientTasks = async (
       return null;
     }
 
-    // Map the data with proper type casting for clientResponse
-    return data.map(task => ({
-      id: task.id,
-      linkId: task.link_id,
-      taskType: task.task_type as 'intakeForm' | 'designPicker' | 'templates',
-      status: task.status as TaskStatus,
-      completedAt: task.completed_at ? new Date(task.completed_at) : null,
-      designerNotes: task.designer_notes,
-      clientResponse: task.client_response, // This is now compatible with the updated type
-      createdAt: new Date(task.created_at),
-      updatedAt: new Date(task.updated_at)
-    })) as ClientTask[]; // Explicit cast to ClientTask[]
+    // Map the data to ClientTask format
+    return data.map(task => {
+      const mappedTask: ClientTask = {
+        id: task.id,
+        title: getTaskTitle(task.task_type),
+        description: getTaskDescription(task.task_type),
+        type: task.task_type,
+        status: task.status as TaskStatus,
+        completionPercentage: task.status === 'completed' ? 100 : 0,
+        clientId: linkData.id,
+        
+        // Additional properties
+        linkId: task.link_id,
+        taskType: task.task_type as 'intakeForm' | 'designPicker' | 'templates',
+        completedAt: task.completed_at ? new Date(task.completed_at) : null,
+        designerNotes: task.designer_notes,
+        clientResponse: task.client_response,
+        createdAt: new Date(task.created_at),
+        updatedAt: new Date(task.updated_at)
+      };
+      
+      return mappedTask;
+    });
   } catch (error) {
     console.error('Error in getClientTasks:', error);
     return null;
   }
 };
+
+// Helper functions for task display
+function getTaskTitle(taskType: string): string {
+  switch (taskType) {
+    case 'intakeForm': return 'Complete Project Intake Form';
+    case 'designPicker': return 'Select Design Preferences';
+    case 'templates': return 'Browse Template Options';
+    default: return taskType;
+  }
+}
+
+function getTaskDescription(taskType: string): string {
+  switch (taskType) {
+    case 'intakeForm': return 'Tell us about your business and project goals';
+    case 'designPicker': return 'Help us understand your design preferences';
+    case 'templates': return 'Find templates that match your style';
+    default: return '';
+  }
+}
 
 // Update task status - optimized for speed
 export const updateTaskStatus = async (

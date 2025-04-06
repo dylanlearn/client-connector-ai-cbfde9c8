@@ -4,7 +4,7 @@ import { useAnalytics } from "@/hooks/use-analytics";
 
 const TopRankedDesigns = () => {
   const { getTopRankedDesigns, isLoading, isRealtime } = useAnalytics();
-  const topDesigns = getTopRankedDesigns(4);
+  const topDesigns = getTopRankedDesigns();
 
   if (isLoading) {
     return <div className="space-y-3">
@@ -41,8 +41,8 @@ const TopRankedDesigns = () => {
           </div>
           <div className="flex items-center">
             <Star className="w-4 h-4 text-amber-500 fill-amber-500 mr-1.5" />
-            <span className="text-sm">{design.averageRank.toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground ml-2">({design.count}×)</span>
+            <span className="text-sm">{design.averageRank?.toFixed(1) || design.rank.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground ml-2">({design.count || 1}×)</span>
           </div>
         </div>
       ))}

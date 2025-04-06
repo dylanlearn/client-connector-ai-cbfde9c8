@@ -1,88 +1,91 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { recordApiUsage } from "@/utils/monitoring/api-usage";
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Service for generating design images using AI
- */
-export const DesignImageService = {
-  /**
-   * Generate a design image using AI
-   */
-  generateDesignImage: async (
-    designType: string,
-    description: string,
-    style?: string
-  ): Promise<string> => {
-    try {
-      // Start timing the API call for monitoring
-      const startTime = performance.now();
-      
-      const { data, error } = await supabase.functions.invoke("generate-design-image", {
-        body: {
-          designType,
-          description,
-          style
-        }
+export interface ImageGenerationRequest {
+  prompt: string;
+  style?: string;
+  size?: string;
+  numberOfImages?: number;
+}
+
+export interface ImageGenerationResponse {
+  imageUrls: string[];
+  error?: string;
+}
+
+// Function to generate images based on prompt and design parameters
+export const generateDesignImages = async (
+  request: ImageGenerationRequest
+): Promise<ImageGenerationResponse> => {
+  try {
+    const { prompt, style = 'digital-art', size = '1024x1024', numberOfImages = 1 } = request;
+    
+    // Call the Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('generate-images', {
+      body: { 
+        prompt, 
+        style, 
+        size, 
+        numberOfImages 
+      }
+    });
+
+    if (error) {
+      console.error('Error generating images:', error);
+      return { 
+        imageUrls: [], 
+        error: error.message
+      };
+    }
+    
+    return {
+      imageUrls: data?.imageUrls || [],
+    };
+  } catch (error) {
+    console.error('Error in generateDesignImages:', error);
+    return {
+      imageUrls: [],
+      error: 'Failed to generate design images'
+    };
+  }
+};
+
+// Function to store a generated image in Supabase Storage
+export const storeGeneratedImage = async (
+  imageUrl: string, 
+  designId: string
+): Promise<string | null> => {
+  try {
+    // Download the image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) throw new Error('Failed to fetch image');
+    
+    const imageBlob = await imageResponse.blob();
+    
+    // Upload to Storage
+    const fileName = `design-${designId}-${Date.now()}.png`;
+    const filePath = `generated-designs/${fileName}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('design-images')
+      .upload(filePath, imageBlob, {
+        contentType: 'image/png',
+        cacheControl: '3600'
       });
       
-      // Record API usage for monitoring
-      const endTime = performance.now();
-      await recordApiUsage(
-        "generate-design-image", 
-        endTime - startTime, 
-        error ? 500 : 200,
-        undefined,
-        { designType, style }
-      );
-      
-      if (error) {
-        console.error("Error generating design image:", error);
-        throw new Error(`Failed to generate image: ${error.message}`);
-      }
-      
-      if (!data?.success || !data?.imageUrl) {
-        throw new Error("Failed to generate image: No image URL returned");
-      }
-      
-      return data.imageUrl;
-    } catch (error) {
-      console.error("Exception in generateDesignImage:", error);
-      
-      // Return fallback image based on design type
-      const fallbackImages: Record<string, string> = {
-        hero: "https://placehold.co/1024x576/3b82f6/ffffff?text=Hero+Section",
-        navbar: "https://placehold.co/1024x576/475569/ffffff?text=Navigation+Bar",
-        about: "https://placehold.co/1024x576/10b981/ffffff?text=About+Section",
-        footer: "https://placehold.co/1024x576/6366f1/ffffff?text=Footer+Section",
-        font: "https://placehold.co/1024x576/f59e0b/ffffff?text=Typography",
-        animation: "https://placehold.co/1024x576/ec4899/ffffff?text=Animation",
-        interaction: "https://placehold.co/1024x576/8b5cf6/ffffff?text=Interaction"
-      };
-      
-      const fallbackImage = fallbackImages[designType.toLowerCase()] || 
-        "https://placehold.co/1024x576/64748b/ffffff?text=Design+Image";
-      
-      // Re-throw the error for the hook to handle
-      throw error;
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      return null;
     }
-  },
-  
-  /**
-   * Get a fallback image based on design type
-   */
-  getFallbackImage: (designType: string): string => {
-    const fallbackImages: Record<string, string> = {
-      hero: "https://placehold.co/1024x576/3b82f6/ffffff?text=Hero+Section",
-      navbar: "https://placehold.co/1024x576/475569/ffffff?text=Navigation+Bar",
-      about: "https://placehold.co/1024x576/10b981/ffffff?text=About+Section",
-      footer: "https://placehold.co/1024x576/6366f1/ffffff?text=Footer+Section",
-      font: "https://placehold.co/1024x576/f59e0b/ffffff?text=Typography",
-      animation: "https://placehold.co/1024x576/ec4899/ffffff?text=Animation",
-      interaction: "https://placehold.co/1024x576/8b5cf6/ffffff?text=Interaction"
-    };
     
-    return fallbackImages[designType.toLowerCase()] || 
-      "https://placehold.co/1024x576/64748b/ffffff?text=Design+Image";
+    // Get the public URL
+    const { data } = supabase.storage
+      .from('design-images')
+      .getPublicUrl(filePath);
+      
+    return data.publicUrl;
+  } catch (error) {
+    console.error('Error storing generated image:', error);
+    return null;
   }
 };

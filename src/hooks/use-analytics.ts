@@ -10,6 +10,8 @@ export interface AnalyticsData {
   title?: string;
   average_rank?: number;
   selection_count?: number;
+  category?: string;
+  percentage?: number;
 }
 
 export interface UserPreference {
@@ -18,6 +20,10 @@ export interface UserPreference {
   title: string;
   rank: number;
   category: string;
+  notes?: string;
+  design_option_id?: string;
+  averageRank?: number;
+  count?: number;
 }
 
 export function useAnalytics() {
@@ -41,7 +47,9 @@ export function useAnalytics() {
               date: new Date().toISOString(),
               title: 'Modern design',
               average_rank: 1.8,
-              selection_count: 42
+              selection_count: 42,
+              category: 'Modern design',
+              percentage: 65
             },
             {
               id: '2',
@@ -51,7 +59,9 @@ export function useAnalytics() {
               date: new Date().toISOString(),
               title: 'Minimalist',
               average_rank: 2.3,
-              selection_count: 35
+              selection_count: 35,
+              category: 'Minimalist',
+              percentage: 42
             }
           ]);
           
@@ -59,16 +69,24 @@ export function useAnalytics() {
             {
               id: '1',
               designId: 'design1',
+              design_option_id: 'design1',
               title: 'Modern design',
               rank: 1,
-              category: 'style'
+              category: 'style',
+              notes: 'Great design',
+              averageRank: 1.8,
+              count: 42
             },
             {
               id: '2',
               designId: 'design2',
+              design_option_id: 'design2',
               title: 'Minimalist',
               rank: 2,
-              category: 'style'
+              category: 'style',
+              notes: 'Clean and simple',
+              averageRank: 2.3,
+              count: 35
             }
           ]);
           
@@ -89,25 +107,41 @@ export function useAnalytics() {
   };
   
   const getCategoryDistribution = () => {
-    const categories = {};
+    const categories = {} as Record<string, number>;
     userPreferences.forEach(pref => {
       categories[pref.category] = (categories[pref.category] || 0) + 1;
     });
+    
+    // Convert to array with percentage calculations
+    const total = Object.values(categories).reduce((sum, count) => sum + count, 0);
     return Object.entries(categories).map(([category, count]) => ({
       category,
-      count
+      count,
+      value: Math.round((count / total) * 100),
+      color: getColorForCategory(category)
     }));
   };
   
-  const getTopRankedDesigns = () => {
-    return [...userPreferences].sort((a, b) => a.rank - b.rank).slice(0, 5);
+  const getColorForCategory = (category: string) => {
+    const colors = {
+      'style': '#ee682b',
+      'layout': '#8439e9',
+      'typography': '#6142e7',
+      'color': '#3f9cff',
+      'component': '#18ccb6'
+    };
+    return (colors as Record<string, string>)[category.toLowerCase()] || '#6142e7';
+  };
+  
+  const getTopRankedDesigns = (limit = 4) => {
+    return [...userPreferences].sort((a, b) => a.rank - b.rank).slice(0, limit);
   };
   
   const getPreferenceTimeline = () => {
     return analytics.map(item => ({
-      date: new Date(item.date),
-      value: item.value,
-      label: item.label
+      date: new Date(item.date).toLocaleDateString(),
+      [item.title || 'Value']: item.value,
+      category: item.category
     }));
   };
 

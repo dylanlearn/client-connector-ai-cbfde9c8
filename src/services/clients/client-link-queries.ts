@@ -42,19 +42,25 @@ export const getClientLinks = async (designerId: string): Promise<ClientAccessLi
       }
     }
 
+    // Map to our ClientAccessLink interface format with camelCase properties
     return data.map(link => ({
       id: link.id,
+      token: link.token,
+      status: link.status as 'active' | 'expired' | 'used' | 'completed',
+      created_at: link.created_at,
+      expires_at: link.expires_at,
+      project_id: link.project_id,
+      
+      // Additional mapped properties with camelCase
       designerId: link.designer_id,
       projectId: link.project_id,
       projectTitle: link.project_id ? projectTitles[link.project_id] || null : null,
       clientName: link.client_name,
       clientEmail: link.client_email,
       clientPhone: link.client_phone,
-      token: link.token,
-      createdAt: link.created_at, // Return as string instead of Date
-      expiresAt: link.expires_at, // Return as string instead of Date
-      lastAccessedAt: link.last_accessed_at || null, // Return as string instead of Date
-      status: link.status as "active" | "expired" | "completed", // Properly type the status value
+      createdAt: link.created_at,
+      expiresAt: link.expires_at,
+      lastAccessedAt: link.last_accessed_at || null,
       personalMessage: link.personal_message
     }));
   } catch (error) {

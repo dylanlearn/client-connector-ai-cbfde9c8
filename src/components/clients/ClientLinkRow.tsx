@@ -1,5 +1,5 @@
 
-import { ClientAccessLink } from "@/utils/client-service";
+import { ClientAccessLink } from "@/types/client";
 import { Badge } from "@/components/ui/badge";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
@@ -21,7 +21,7 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
       case 'active':
         return 'default';
       case 'completed':
-        return 'secondary'; // Instead of 'success' which doesn't exist
+        return 'secondary';
       default:
         return 'outline';
     }
@@ -57,14 +57,14 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
         </Badge>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {formatDistanceToNow(link.createdAt, { addSuffix: true })}
+        {formatDistanceToNow(new Date(link.createdAt || link.created_at), { addSuffix: true })}
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        {formatDistanceToNow(link.expiresAt, { addSuffix: true })}
+        {formatDistanceToNow(new Date(link.expiresAt || link.expires_at), { addSuffix: true })}
       </TableCell>
       <TableCell className="hidden lg:table-cell">
         {link.lastAccessedAt 
-          ? formatDistanceToNow(link.lastAccessedAt, { addSuffix: true })
+          ? formatDistanceToNow(new Date(link.lastAccessedAt), { addSuffix: true })
           : "Never"
         }
       </TableCell>
@@ -72,10 +72,10 @@ export default function ClientLinkRow({ link, onRefresh }: ClientLinkRowProps) {
         <ClientLinkActions
           linkId={link.id}
           token={link.token}
-          designerId={link.designerId}
-          clientEmail={link.clientEmail}
-          clientPhone={link.clientPhone}
-          status={link.status}
+          designerId={link.designerId || ''}
+          clientEmail={link.clientEmail || ''}
+          clientPhone={link.clientPhone || ''}
+          status={link.status as 'active' | 'expired' | 'completed'}
           onRefresh={onRefresh}
         />
       </TableCell>
