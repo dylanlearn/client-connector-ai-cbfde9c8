@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,10 +14,9 @@ import { Loader2, Wand2, ScrollText, LayoutPanelTop, Save, Sparkles } from 'luci
 import { WireframeVisualizer, WireframeDataVisualizer } from '@/components/wireframe';
 import DesignMemoryPanel from './DesignMemoryPanel';
 import { DesignReference } from '@/services/ai/design/design-memory-reference-service';
-import { WireframeGenerationParams, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeGenerationParams, WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
 
-// Define AIWireframe interface here to fix the missing type error
 interface AIWireframe {
   id: string;
   title: string;
@@ -184,7 +182,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         id: section.id || `section-${Math.random().toString(36).substring(7)}`,
         name: section.name || section.sectionType,
         description: section.description || "",
-        imageUrl: ""  // Using empty string as fallback since imageUrl might not exist
+        imageUrl: section.imageUrl || "" 
       })) : [],
       version: "1.0",
       lastUpdated: new Date(wireframe.created_at || Date.now()).toLocaleDateString()
