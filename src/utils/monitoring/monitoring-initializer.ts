@@ -10,7 +10,7 @@ export function initializeMonitoringSystem() {
   
   try {
     // Initialize error logger - stub implementation
-    ClientErrorLogger.init();
+    ClientErrorLogger.initialize();
     
     console.info("Monitoring system initialized successfully");
     return true;

@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from "uuid";
 import { AIMessage, AIAnalysis } from "@/types/ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +8,7 @@ export const createUserMessage = (content: string): AIMessage => ({
   content,
   role: "user",
   createdAt: new Date(),
+  timestamp: new Date().toISOString(),
 });
 
 export const createAssistantMessage = (content: string): AIMessage => ({
@@ -16,6 +16,7 @@ export const createAssistantMessage = (content: string): AIMessage => ({
   content,
   role: "assistant",
   createdAt: new Date(),
+  timestamp: new Date().toISOString(),
 });
 
 export const createErrorMessage = (): AIMessage => ({
@@ -23,6 +24,7 @@ export const createErrorMessage = (): AIMessage => ({
   content: "I'm sorry, I encountered an error processing your request. Please try again later.",
   role: "assistant",
   createdAt: new Date(),
+  timestamp: new Date().toISOString(),
 });
 
 export const generateAIResponse = async (
