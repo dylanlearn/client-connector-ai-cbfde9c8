@@ -9,16 +9,11 @@ import {
   BarChart3,
   BrainCircuit,
   MessageSquareText,
-  Globe
+  Globe,
+  Layout
 } from "lucide-react";
 
-interface NavigationItemProps {
-  title: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-export const mainNavItems: NavigationItemProps[] = [
+export const mainNavItems = [
   {
     title: "Dashboard",
     href: "/dashboard",
@@ -43,6 +38,11 @@ export const mainNavItems: NavigationItemProps[] = [
     title: "Design Picker",
     href: "/design-picker",
     icon: <Palette className="h-5 w-5" />,
+  },
+  {
+    title: "Wireframe Generator",
+    href: "/wireframe-generator",
+    icon: <Layout className="h-5 w-5" />,
   },
   {
     title: "Analytics",

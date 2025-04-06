@@ -32,6 +32,7 @@ const WebsiteAnalyzer = lazy(() => import('./pages/design-analysis/WebsiteAnalyz
 const FeedbackAnalysis = lazy(() => import('./pages/FeedbackAnalysis'));
 const ClientAccess = lazy(() => import('./pages/ClientAccess'));
 const DesignPicker = lazy(() => import('./pages/DesignPicker'));
+const WireframeGenerator = lazy(() => import('./pages/WireframeGenerator'));
 
 function App() {
   return (
@@ -70,6 +71,7 @@ function App() {
               <Route path="/client-hub" element={<ClientHub />} />
               <Route path="/intake-form" element={<IntakeForm />} />
               <Route path="/design-picker" element={<DesignPicker />} />
+              <Route path="/wireframe-generator" element={<WireframeGenerator />} />
               
               <Route element={
                 <RequirePermission permission={Permission.VIEW_ANALYTICS} redirectTo="/dashboard">
