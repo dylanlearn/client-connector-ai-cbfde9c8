@@ -15,7 +15,7 @@ interface WireframeSection {
   imageUrl?: string;
 }
 
-interface WireframeProps {
+export interface WireframeProps {
   wireframe: {
     id: string;
     title: string;
