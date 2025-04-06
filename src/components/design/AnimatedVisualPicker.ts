@@ -11,5 +11,5 @@ export interface DesignOption {
 }
 
 // Re-export components from the new locations
-export { AnimatedVisualPicker } from './visual-picker/AnimatedVisualPicker';
+export { default as AnimatedVisualPicker } from './visual-picker/AnimatedVisualPicker';
 export { VisualPicker } from './VisualPicker';

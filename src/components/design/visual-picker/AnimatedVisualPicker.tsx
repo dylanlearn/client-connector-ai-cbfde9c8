@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -12,7 +13,8 @@ interface AnimatedVisualPickerProps {
   className?: string;
 }
 
-export const AnimatedVisualPicker = ({ 
+// Changed to a named function declaration that's exported as default
+const AnimatedVisualPicker = ({ 
   options, 
   onSelect, 
   category, 
@@ -158,4 +160,5 @@ export const AnimatedVisualPicker = ({
   );
 };
 
+// Export as default
 export default AnimatedVisualPicker;
