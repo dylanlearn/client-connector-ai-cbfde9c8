@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,9 +15,20 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
+  const { toast: uiToast } = useToast();
 
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
+  
+  // Get the intended destination from location state, default to /dashboard
+  const from = location.state?.from || "/dashboard";
+
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,14 +46,16 @@ export default function Login() {
       setErrorMessage('');
       setIsLoading(true);
       
-      // Fix: Pass only email and password
       await signIn(email, password);
       
       // Log success
       console.log('Login successful');
       
+      // Show success toast
+      toast.success('Login successful');
+      
       // Redirect to dashboard
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       setErrorMessage(error.message || 'Failed to login');
@@ -55,9 +69,8 @@ export default function Login() {
       setErrorMessage('');
       setIsLoading(true);
       
-      // Fix: Call with no arguments
       await signInWithGoogle();
-      
+      // Note: The redirection will be handled by the OAuth callback
     } catch (error: any) {
       console.error('Google login error:', error);
       setErrorMessage(error.message || 'Failed to login with Google');

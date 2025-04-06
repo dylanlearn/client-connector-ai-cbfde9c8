@@ -1,7 +1,8 @@
 
-import { ReactNode, useEffect } from 'react';
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { ReactNode, useEffect, useRef } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export interface ProtectedRouteProps {
   children?: ReactNode;
@@ -10,29 +11,42 @@ export interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+  const timeoutRef = useRef<number | null>(null);
 
   // Add a timeout to prevent infinite loading states
   useEffect(() => {
-    let timeoutId: number | undefined;
+    // Clear previous timeout if it exists
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     
     if (isLoading) {
-      timeoutId = window.setTimeout(() => {
+      timeoutRef.current = window.setTimeout(() => {
         console.warn('Authentication check is taking too long, redirecting to login');
-        navigate('/login', { state: { from: location.pathname } });
-      }, 5000); // 5 second timeout
+        // This will force a redirect to login if auth check takes too long
+        if (!user) {
+          window.location.href = `/login?redirect=${encodeURIComponent(location.pathname)}`;
+        }
+      }, 3000); // 3 second timeout (reduced from 5s for better UX)
     }
     
     return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
-  }, [isLoading, navigate, location.pathname]);
+  }, [isLoading, location.pathname, user]);
 
   // Show loading state if auth is still being checked
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
-    </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" />
+        <p className="ml-2 text-gray-600">Loading your account...</p>
+      </div>
+    );
   }
 
   if (!user) {
