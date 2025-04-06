@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { Button } from '@/components/ui/button';
-import { Eye, Download, Star, Sparkles, Layers, FileText } from 'lucide-react';
+import { Eye, Download, Star, Wand2, Layers, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
