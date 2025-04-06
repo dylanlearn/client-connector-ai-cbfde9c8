@@ -1,8 +1,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Check, X, Eye } from "lucide-react";
+import { Heart } from "lucide-react";
 import { DesignOption } from "../AnimatedVisualPicker";
 import { renderAnimationPreviewDemo, InteractionPreviewDemo } from "./PreviewDemos";
 
@@ -29,105 +28,99 @@ export const DesignCard: React.FC<DesignCardProps> = ({
   isDragging,
   isPreviewVisible,
   setIsPreviewVisible,
-  handleDragEnd,
   handleMouseDown,
   handleMouseMove,
   handleTouchStart,
   handleTouchMove,
 }) => {
   // Calculate rotation based on drag offset
-  const rotation = offsetX * 0.05;
-  
-  // Define responsive card animation
-  const cardAnimations = {
-    initial: { scale: 0.8, opacity: 0 },
-    animate: { scale: 1, opacity: 1 },
-    exit: { 
-      x: direction === "left" ? -300 : direction === "right" ? 300 : 0, 
-      opacity: 0, 
-      transition: { duration: 0.2 } 
-    },
-    transition: { duration: 0.3 }
-  };
+  const rotate = isDragging ? offsetX * 0.1 : 0;
 
   return (
-    <motion.div 
-      className="absolute inset-0 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md overflow-hidden"
+    <motion.div
+      key={currentOption.id}
+      className="absolute w-full h-full bg-white rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing"
       style={{ 
-        x: isDragging ? offsetX : 0,
-        rotate: isDragging ? rotation : 0,
-        cursor: isDragging ? "grabbing" : "grab"
+        x: offsetX,
+        rotate: rotate,
+        perspective: 1000
       }}
-      {...cardAnimations}
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ 
+        x: direction === "left" ? -500 : direction === "right" ? 500 : 0,
+        rotate: direction === "left" ? -30 : direction === "right" ? 30 : 0,
+        opacity: 0,
+        transition: { duration: 0.3 }
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onMouseUp={handleDragEnd}
-      onMouseLeave={handleDragEnd}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
-      onTouchEnd={handleDragEnd}
+      whileTap={{ cursor: "grabbing" }}
     >
-      {/* Like/Dislike Indicators */}
-      {offsetX > 50 && (
-        <div className="absolute top-4 right-4 bg-green-100 p-2 rounded-full z-10">
-          <Check className="h-6 w-6 text-green-500" />
-        </div>
-      )}
-      {offsetX < -50 && (
-        <div className="absolute top-4 left-4 bg-red-100 p-2 rounded-full z-10">
-          <X className="h-6 w-6 text-red-500" />
+      {/* Like/Dislike indicators */}
+      {isDragging && offsetX > 50 && (
+        <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded-full">
+          <Heart className="h-5 w-5 fill-white" />
         </div>
       )}
       
-      {/* Card Header */}
-      <div className="p-4 border-b">
-        <h3 className="font-medium text-lg">{currentOption.title}</h3>
-        <p className="text-sm text-gray-500">{currentOption.description}</p>
-      </div>
+      {isDragging && offsetX < -50 && (
+        <div className="absolute top-4 left-4 bg-red-500 text-white p-2 rounded-full">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="none"
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+      )}
       
-      {/* Preview Section */}
-      <div className="relative h-[250px] bg-gray-50 flex items-center justify-center p-4">
-        {currentOption.category === "animation" && renderAnimationPreviewDemo(currentOption)}
-        
-        {currentOption.category === "interaction" && (
-          <InteractionPreviewDemo 
-            currentOption={currentOption}
-            isPreviewVisible={isPreviewVisible}
-            setIsPreviewVisible={setIsPreviewVisible}
+      {/* Card content */}
+      <div className="h-[65%] bg-muted flex items-center justify-center overflow-hidden">
+        {(currentOption.category === "animation") ? (
+          <div className="w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+            {renderAnimationPreviewDemo(currentOption)}
+          </div>
+        ) : (currentOption.category === "interaction") ? (
+          <div className="w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+            <InteractionPreviewDemo 
+              currentOption={currentOption}
+              isPreviewVisible={isPreviewVisible}
+              setIsPreviewVisible={setIsPreviewVisible}
+            />
+          </div>
+        ) : (
+          <img 
+            src={currentOption.imageUrl} 
+            alt={currentOption.title}
+            className="w-full h-full object-cover"
           />
         )}
+        
+        {isLiked[currentOption.id] && (
+          <div className="absolute top-3 right-3 bg-red-500 text-white p-1.5 rounded-full">
+            <Heart className="h-5 w-5 fill-white" />
+          </div>
+        )}
       </div>
       
-      {/* Card Actions */}
-      <div className="p-4 flex justify-between items-center">
-        <div>
-          {isLiked[currentOption.id] === true && (
-            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-              Selected
-            </span>
-          )}
-          {isLiked[currentOption.id] === false && (
-            <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">
-              Skipped
-            </span>
-          )}
-        </div>
-        
-        {currentOption.preview && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsPreviewVisible(!isPreviewVisible);
-            }}
-            className="ml-auto"
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            {isPreviewVisible ? "Close Preview" : "Full Preview"}
-          </Button>
-        )}
+      <div className="p-4">
+        <h4 className="text-lg font-semibold">{currentOption.title}</h4>
+        <p className="text-sm text-muted-foreground line-clamp-2">{currentOption.description}</p>
       </div>
     </motion.div>
   );
 };
+
+export default DesignCard;

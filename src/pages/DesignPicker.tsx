@@ -5,12 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Paintbrush, Palette, Layout, RefreshCw } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { VisualPicker } from "@/components/design/VisualPicker";
+import { VisualPicker, DesignOption } from "@/components/design/VisualPicker";
 import { toast } from "sonner";
 import { designOptions } from "@/data/design-options";
 import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
 import { useAuth } from "@/hooks/use-auth";
 import DesignImageManager from "@/components/design/DesignImageManager";
+import AnimatedVisualPicker from "@/components/design/AnimatedVisualPicker";
 
 const DesignPicker = () => {
   const [activeTab, setActiveTab] = useState("layouts");
@@ -62,7 +63,6 @@ const DesignPicker = () => {
     }
   };
   
-  // New function specifically for generating navbar images
   const handleRefreshNavbarImages = async () => {
     if (isGenerating || !user) return;
     
@@ -104,6 +104,11 @@ const DesignPicker = () => {
   const fontOptions = designOptions.filter(option => option.category === "font");
   const animationOptions = designOptions.filter(option => option.category === "animation");
   const interactionOptions = designOptions.filter(option => option.category === "interaction");
+
+  // Function to handle selecting a design from the AnimatedVisualPicker
+  const handleSelectFromSwiper = (option: DesignOption) => {
+    handleDesignSelect(option, true);
+  };
 
   return (
     <DashboardLayout>
@@ -149,9 +154,9 @@ const DesignPicker = () => {
                   </Button>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={heroOptions} 
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper}
                     category="hero"
                   />
                 </CardContent>
@@ -173,9 +178,9 @@ const DesignPicker = () => {
                   </div>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={navbarOptions} 
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper} 
                     category="navbar"
                   />
                 </CardContent>
@@ -199,9 +204,9 @@ const DesignPicker = () => {
                   </Button>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={aboutOptions}
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper} 
                     category="about"
                   />
                 </CardContent>
@@ -221,9 +226,9 @@ const DesignPicker = () => {
                   </Button>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={footerOptions}
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper} 
                     category="footer"
                   />
                 </CardContent>
@@ -247,9 +252,9 @@ const DesignPicker = () => {
                   </Button>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={fontOptions}
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper} 
                     category="font"
                   />
                 </CardContent>
@@ -269,9 +274,9 @@ const DesignPicker = () => {
                   </Button>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={animationOptions}
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper} 
                     category="animation"
                   />
                 </CardContent>
@@ -293,9 +298,9 @@ const DesignPicker = () => {
                   </Button>
                 </div>
                 <CardContent className="p-0">
-                  <VisualPicker 
+                  <AnimatedVisualPicker 
                     options={interactionOptions}
-                    onSelectOption={handleDesignSelect} 
+                    onSelect={handleSelectFromSwiper} 
                     category="interaction"
                   />
                 </CardContent>

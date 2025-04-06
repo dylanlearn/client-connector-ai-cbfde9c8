@@ -128,7 +128,9 @@ export const AnimatedVisualPicker = ({
       
       <div 
         className="relative w-full max-w-md h-[400px] mb-4"
-        ref={cardRef}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+        onTouchEnd={handleDragEnd}
       >
         <DesignCard
           currentOption={currentOption}
@@ -156,3 +158,5 @@ export const AnimatedVisualPicker = ({
     </div>
   );
 };
+
+export default AnimatedVisualPicker;

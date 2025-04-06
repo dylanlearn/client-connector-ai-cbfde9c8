@@ -1,5 +1,5 @@
 
-import { AnimationConfigType } from "./types";
+import { AnimationConfigType, AnimationPreferenceOptions } from "./types";
 import { getBasicAnimationConfig } from "./animations-1-5";
 import { getAdvancedAnimationConfig } from "./animations-6-10";
 
@@ -35,7 +35,8 @@ export const getAnimationCategory = (animationId: string): string => {
  */
 export const getAnimationConfig = (
   animationType: string,
-  isPlaying: boolean
+  isPlaying: boolean,
+  options?: AnimationPreferenceOptions
 ): AnimationConfigType => {
   // Create a cache key based on animation type and playing state
   const cacheKey = `${animationType}-${isPlaying}`;
@@ -52,9 +53,9 @@ export const getAnimationConfig = (
     const animationNumber = parseInt(animationType.split('-')[1]);
     
     if (animationNumber <= 5) {
-      config = getBasicAnimationConfig(animationType, isPlaying);
+      config = getBasicAnimationConfig(animationType);
     } else if (animationNumber <= 10) {
-      config = getAdvancedAnimationConfig(animationType, isPlaying);
+      config = getAdvancedAnimationConfig(animationType, options);
     } else {
       config = { initial: {}, animate: {} };
     }

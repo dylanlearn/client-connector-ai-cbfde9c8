@@ -2,21 +2,20 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { MousePointer } from "lucide-react";
 import { DesignOption } from "../AnimatedVisualPicker";
 
-// Animation Previews
-export const renderAnimationPreviewDemo = (currentOption: DesignOption) => {
-  switch (currentOption.id) {
+// Animation preview demos for the design card
+export const renderAnimationPreviewDemo = (option: DesignOption) => {
+  switch (option.id) {
     case "animation-1":
       return (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 items-center"
+          className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 items-center w-32 h-32"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full"/>
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full"/>
           <div className="w-full h-2 bg-gray-200 rounded-full"/>
           <div className="w-4/5 h-2 bg-gray-200 rounded-full"/>
         </motion.div>
@@ -27,27 +26,27 @@ export const renderAnimationPreviewDemo = (currentOption: DesignOption) => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 items-center"
+          className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 items-center w-32 h-32"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full"/>
+          <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full"/>
           <div className="w-full h-2 bg-gray-200 rounded-full"/>
           <div className="w-4/5 h-2 bg-gray-200 rounded-full"/>
         </motion.div>
       );
     case "animation-3":
       return (
-        <div className="relative h-full">
+        <div className="relative h-full w-32">
           <motion.div 
-            initial={{ y: 20 }}
-            animate={{ y: -20 }}
+            initial={{ y: 0 }}
+            animate={{ y: -10 }}
             transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse" }}
-            className="absolute inset-x-0 top-0 bg-indigo-100 h-16 rounded-t-lg"
+            className="absolute inset-x-0 top-8 bg-indigo-100 h-16 rounded-t-lg"
           />
           <motion.div 
-            initial={{ y: 10 }}
-            animate={{ y: -10 }}
+            initial={{ y: 0 }}
+            animate={{ y: -5 }}
             transition={{ duration: 1.2, repeat: Infinity, repeatType: "reverse", delay: 0.2 }}
-            className="absolute inset-x-8 top-8 bg-white p-4 rounded-lg shadow-lg z-10"
+            className="absolute inset-x-4 top-12 bg-white p-4 rounded-lg shadow-lg z-10"
           >
             <div className="w-full h-2 bg-gray-200 rounded-full mb-2"/>
             <div className="w-3/4 h-2 bg-gray-200 rounded-full"/>
@@ -61,8 +60,10 @@ export const renderAnimationPreviewDemo = (currentOption: DesignOption) => {
           animate={{ rotateY: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           style={{ perspective: 1000 }}
-          className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg"
-        />
+          className="w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center"
+        >
+          <span className="text-white font-medium">3D</span>
+        </motion.div>
       );
     case "animation-5":
       return (
@@ -74,42 +75,66 @@ export const renderAnimationPreviewDemo = (currentOption: DesignOption) => {
           Hover Me
         </motion.button>
       );
+    case "animation-6":
+      return (
+        <div className="flex items-center justify-center">
+          <motion.div
+            className="w-24 h-24 bg-gradient-to-r from-indigo-600 to-blue-400 rounded-xl shadow-lg flex items-center justify-center text-white"
+            drag
+            dragConstraints={{ left: -50, right: 50, top: -50, bottom: 50 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <span>Magnetic</span>
+          </motion.div>
+        </div>
+      );
+    case "animation-7":
+      return (
+        <div className="flex items-center justify-center">
+          <motion.div
+            className="w-24 h-24 bg-gradient-to-r from-purple-600 to-pink-400 shadow-lg flex items-center justify-center text-white"
+            initial={{ borderRadius: "16px" }}
+            animate={{ borderRadius: ["16px", "50%", "16px"] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <span>Morph</span>
+          </motion.div>
+        </div>
+      );
     default:
       return (
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-lg flex items-center justify-center">
-          <div className="h-10 w-10 text-gray-400">✨</div>
+        <div className="flex items-center justify-center">
+          <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
+            Preview
+          </div>
         </div>
       );
   }
 };
 
-// Interaction Preview component with modal state
-export const InteractionPreviewDemo = ({ 
-  currentOption, 
-  isPreviewVisible, 
-  setIsPreviewVisible 
-}: { 
-  currentOption: DesignOption, 
-  isPreviewVisible: boolean, 
-  setIsPreviewVisible: React.Dispatch<React.SetStateAction<boolean>> 
-}) => {
-  const togglePreview = () => {
-    setIsPreviewVisible(!isPreviewVisible);
-  };
+// Interaction preview demo component
+export const InteractionPreviewDemo: React.FC<{
+  currentOption: DesignOption;
+  isPreviewVisible: boolean;
+  setIsPreviewVisible: React.Dispatch<React.SetStateAction<boolean>>;
+}> = ({ currentOption, isPreviewVisible, setIsPreviewVisible }) => {
+  const [hovering, setHovering] = useState(false);
 
   switch (currentOption.id) {
     case "interaction-1":
       return (
         <motion.div 
-          whileHover={{ 
-            scale: 1.05, 
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" 
-          }}
-          className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 w-full"
+          onHoverStart={() => setHovering(true)}
+          onHoverEnd={() => setHovering(false)}
+          whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+          className="bg-white p-4 rounded-lg shadow flex flex-col gap-2 w-full max-w-xs"
         >
           <div className="w-full h-3 bg-gray-200 rounded-full"/>
           <div className="w-4/5 h-3 bg-gray-200 rounded-full"/>
-          <p className="text-xs text-gray-400 mt-2 text-center">Hover me</p>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            {hovering ? "Hovering!" : "Hover me"}
+          </p>
         </motion.div>
       );
     case "interaction-2":
@@ -119,10 +144,10 @@ export const InteractionPreviewDemo = ({
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              togglePreview();
+              setIsPreviewVisible(!isPreviewVisible);
             }}
           >
-            Open Modal
+            {isPreviewVisible ? "Close Modal" : "Open Modal"}
           </Button>
           
           <AnimatePresence>
@@ -165,64 +190,10 @@ export const InteractionPreviewDemo = ({
           </AnimatePresence>
         </div>
       );
-    case "interaction-3":
-      return (
-        <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 w-full h-full flex items-center justify-center">
-          <motion.div
-            animate={{ x: [-10, 10], y: [-5, 5] }}
-            transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
-            className="absolute w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white"
-          >
-            <MousePointer className="h-4 w-4" />
-          </motion.div>
-          <p className="text-xs text-gray-500">Custom cursor follow effect</p>
-        </div>
-      );
-    case "interaction-4":
-      return (
-        <div className="w-full flex flex-col gap-2 items-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full h-4 bg-gray-200 rounded-full"
-          />
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="w-4/5 h-4 bg-gray-200 rounded-full"
-          />
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-3/5 h-4 bg-gray-200 rounded-full"
-          />
-          <p className="text-xs text-gray-400 mt-2">Scroll reveal elements</p>
-        </div>
-      );
-    case "interaction-5":
-      return (
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 w-full h-full flex items-center justify-center">
-          <motion.div 
-            drag
-            dragConstraints={{
-              top: -20,
-              left: -20,
-              right: 20,
-              bottom: 20,
-            }}
-            className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-xs cursor-grab active:cursor-grabbing"
-          >
-            Drag me
-          </motion.div>
-        </div>
-      );
     default:
       return (
         <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-lg flex items-center justify-center">
-          <MousePointer className="h-10 w-10 text-gray-400" />
+          <div className="text-gray-400 text-sm">Interaction Preview</div>
         </div>
       );
   }
