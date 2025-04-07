@@ -93,7 +93,8 @@ export const versionComparisonService = {
    * @param newerText The newer text.
    * @returns An array of diff segments.
    */
-  generateTextDiff: (olderText: string, newerText: string): [string, number][] => {
+  generateTextDiff: (olderText: string, newerText: string): any[] => {
+    // Using 'any[]' to resolve type incompatibilities with fast-diff
     return fastDiff(olderText, newerText);
   }
 };
