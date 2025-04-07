@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { componentLibraryService } from '@/services/component-library-service';
@@ -9,7 +8,9 @@ import {
   ComponentVariant,
   PricingComponentProps,
   TestimonialComponentProps,
-  FeatureGridComponentProps
+  FeatureGridComponentProps,
+  FAQComponentProps,
+  CTAComponentProps
 } from '@/types/component-library';
 
 export function useComponentLibrary() {
@@ -147,6 +148,34 @@ export function useComponentLibrary() {
     }
   };
 
+  const initializeFAQComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeFAQComponentLibrary();
+      toast.success('FAQ component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing FAQ library:', error);
+      toast.error('Failed to initialize FAQ component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeCTAComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeCTAComponentLibrary();
+      toast.success('CTA component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing CTA library:', error);
+      toast.error('Failed to initialize CTA component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Load component types on mount
   useEffect(() => {
     loadComponentTypes();
@@ -166,6 +195,8 @@ export function useComponentLibrary() {
     initializeHeroComponentLibrary,
     initializePricingComponentLibrary,
     initializeTestimonialsComponentLibrary,
-    initializeFeatureGridComponentLibrary
+    initializeFeatureGridComponentLibrary,
+    initializeFAQComponentLibrary,
+    initializeCTAComponentLibrary
   };
 }

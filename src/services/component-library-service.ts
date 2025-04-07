@@ -6,13 +6,17 @@ import {
   ComponentVariant,
   PricingComponentProps,
   TestimonialComponentProps,
-  FeatureGridComponentProps
+  FeatureGridComponentProps,
+  FAQComponentProps,
+  CTAComponentProps
 } from '@/types/component-library';
 import {
   pricingVariants,
   testimonialVariants,
   featureGridVariants
 } from '@/data/component-library-variants';
+import { faqVariants } from '@/data/component-library-variants-faq';
+import { ctaVariants } from '@/data/component-library-variants-cta';
 
 /**
  * Service for interacting with the component library database tables
@@ -622,6 +626,232 @@ export const componentLibraryService = {
     }
   },
 
+  // Initialize FAQ Component Library
+  async initializeFAQComponentLibrary(): Promise<void> {
+    try {
+      // Check if FAQ component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const faqType = existingTypes.find(type => type.name === 'FAQ Section');
+      
+      if (faqType) {
+        console.log('FAQ component type already initialized.');
+        return;
+      }
+
+      // Create FAQ Component Type
+      const faqComponentType = await this.createComponentType({
+        name: 'FAQ Section',
+        description: 'Section displaying frequently asked questions',
+        category: 'content',
+        icon: 'message-circle'
+      });
+
+      // Create FAQ Component Fields
+      const fields = [
+        {
+          component_type_id: faqComponentType.id,
+          name: 'title',
+          type: 'text' as const,
+          description: 'Section heading',
+          default_value: 'Frequently Asked Questions',
+        },
+        {
+          component_type_id: faqComponentType.id,
+          name: 'subtitle',
+          type: 'text' as const,
+          description: 'Section subheading',
+          default_value: '',
+        },
+        {
+          component_type_id: faqComponentType.id,
+          name: 'faqs',
+          type: 'array' as const,
+          description: 'Array of FAQ items',
+          default_value: [],
+        },
+        {
+          component_type_id: faqComponentType.id,
+          name: 'faqType',
+          type: 'select' as const,
+          description: 'Type of FAQ display',
+          default_value: 'accordion',
+          options: [
+            { label: 'Accordion', value: 'accordion' },
+            { label: 'List', value: 'list' },
+            { label: 'Grid', value: 'grid' },
+          ],
+        },
+        {
+          component_type_id: faqComponentType.id,
+          name: 'animationStyle',
+          type: 'select' as const,
+          description: 'Animation style for FAQ items',
+          default_value: 'expand',
+          options: [
+            { label: 'Expand', value: 'expand' },
+            { label: 'Fade', value: 'fade' },
+            { label: 'None', value: 'none' },
+          ],
+        },
+        {
+          component_type_id: faqComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'center',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: faqComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+          ],
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined FAQ variants
+      for (const variant of faqVariants) {
+        await this.createComponentVariant({
+          component_type_id: faqComponentType.id,
+          variant_token: variant.variant,
+          name: variant.title || 'FAQ Section',
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('FAQ component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing FAQ component library:', error);
+      throw error;
+    }
+  },
+
+  // Initialize CTA Component Library
+  async initializeCTAComponentLibrary(): Promise<void> {
+    try {
+      // Check if CTA component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const ctaType = existingTypes.find(type => type.name === 'CTA Section');
+      
+      if (ctaType) {
+        console.log('CTA component type already initialized.');
+        return;
+      }
+
+      // Create CTA Component Type
+      const ctaComponentType = await this.createComponentType({
+        name: 'CTA Section',
+        description: 'Call-to-action section for conversion',
+        category: 'content',
+        icon: 'megaphone'
+      });
+
+      // Create CTA Component Fields
+      const fields = [
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'headline',
+          type: 'text' as const,
+          description: 'Main headline text',
+          default_value: 'Get Started Today',
+          validation: { required: true }
+        },
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'subheadline',
+          type: 'text' as const,
+          description: 'Supporting subheadline text',
+          default_value: '',
+        },
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'cta',
+          type: 'array' as const,
+          description: 'Call-to-action button details',
+          default_value: { label: 'Get Started', url: '#' },
+        },
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'ctaSecondary',
+          type: 'array' as const,
+          description: 'Secondary call-to-action button details',
+          default_value: null,
+        },
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+            { label: 'Gradient', value: 'gradient' },
+          ],
+        },
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'center',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: ctaComponentType.id,
+          name: 'testimonial',
+          type: 'array' as const,
+          description: 'Optional testimonial to include',
+          default_value: null,
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined CTA variants
+      for (const variant of ctaVariants) {
+        await this.createComponentVariant({
+          component_type_id: ctaComponentType.id,
+          variant_token: variant.variant,
+          name: variant.headline || 'CTA Section',
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('CTA component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing CTA component library:', error);
+      throw error;
+    }
+  },
+
   // Main initialization function
   async initializeComponentLibrary(): Promise<void> {
     try {
@@ -630,6 +860,8 @@ export const componentLibraryService = {
       await this.initializePricingComponentLibrary();
       await this.initializeTestimonialsComponentLibrary();
       await this.initializeFeatureGridComponentLibrary();
+      await this.initializeFAQComponentLibrary();
+      await this.initializeCTAComponentLibrary();
       console.log('Component library initialization complete!');
     } catch (error) {
       console.error('Error during component library initialization:', error);
