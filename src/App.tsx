@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import EnhancedWireframeStudio from './components/wireframe/EnhancedWireframeStudio'
 import ComponentLibraryInitializer from './components/wireframe/admin/ComponentLibraryInitializer'
 import FAQCTAInitializer from './components/wireframe/admin/FAQCTAInitializer'
+import NavFooterInitializer from './components/wireframe/admin/NavFooterInitializer'
 
 function App() {
   return (
@@ -29,9 +30,15 @@ function App() {
             <h2 className="text-xl font-bold mb-4">Component Library Initialization</h2>
             <div className="space-y-6">
               <ComponentLibraryInitializer />
+              
               <div className="my-4">
                 <h3 className="text-lg font-medium mb-2">FAQ & CTA Components</h3>
                 <FAQCTAInitializer />
+              </div>
+              
+              <div className="my-4">
+                <h3 className="text-lg font-medium mb-2">Navigation & Footer Components</h3>
+                <NavFooterInitializer />
               </div>
             </div>
           </Card>

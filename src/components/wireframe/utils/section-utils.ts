@@ -5,6 +5,8 @@ import { TestimonialsSection } from '../sections/TestimonialsSection';
 import { FeaturesSection } from '../sections/FeaturesSection';
 import { FAQSection } from '../sections/FAQSection';
 import { CTASection } from '../sections/CTASection';
+import { NavigationSection } from '../sections/NavigationSection';
+import { FooterSection } from '../sections/FooterSection';
 
 /**
  * Maps section types to their corresponding component renderers
@@ -15,6 +17,8 @@ export const sectionTypeToComponent: Record<string, React.ComponentType<any>> = 
   'feature-grid': FeaturesSection,
   'faq': FAQSection,
   'cta': CTASection,
+  'navigation': NavigationSection,
+  'footer': FooterSection,
   // Add other section types as needed
 };
 
@@ -56,6 +60,16 @@ export const processSectionData = (section: WireframeSection) => {
         // Transform any section-specific data needed here
       };
     case 'cta':
+      return {
+        ...section,
+        // Transform any section-specific data needed here
+      };
+    case 'navigation':
+      return {
+        ...section,
+        // Transform any section-specific data needed here
+      };
+    case 'footer':
       return {
         ...section,
         // Transform any section-specific data needed here

@@ -8,7 +8,9 @@ import {
   TestimonialComponentProps,
   FeatureGridComponentProps,
   FAQComponentProps,
-  CTAComponentProps
+  CTAComponentProps,
+  NavigationComponentProps,
+  FooterComponentProps
 } from '@/types/component-library';
 import {
   pricingVariants,
@@ -17,6 +19,8 @@ import {
 } from '@/data/component-library-variants';
 import { faqVariants } from '@/data/component-library-variants-faq';
 import { ctaVariants } from '@/data/component-library-variants-cta';
+import { navigationVariants } from '@/data/component-library-variants-navigation';
+import { footerVariants } from '@/data/component-library-variants-footer';
 
 /**
  * Service for interacting with the component library database tables
@@ -852,6 +856,238 @@ export const componentLibraryService = {
     }
   },
 
+  // Initialize Navigation Component Library
+  async initializeNavigationComponentLibrary(): Promise<void> {
+    try {
+      // Check if navigation component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const navType = existingTypes.find(type => type.name === 'Navigation');
+      
+      if (navType) {
+        console.log('Navigation component type already initialized.');
+        return;
+      }
+
+      // Create Navigation Component Type
+      const navigationComponentType = await this.createComponentType({
+        name: 'Navigation',
+        description: 'Header navigation section for website navigation',
+        category: 'navigation',
+        icon: 'layout-panel-top'
+      });
+
+      // Create Navigation Component Fields
+      const fields = [
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'logo',
+          type: 'image' as const,
+          description: 'Logo image URL',
+          default_value: '',
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'links',
+          type: 'array' as const,
+          description: 'Array of navigation links',
+          default_value: [],
+          validation: { required: true }
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'cta',
+          type: 'array' as const,
+          description: 'Call to action button',
+          default_value: null,
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'mobileMenuStyle',
+          type: 'select' as const,
+          description: 'Style of mobile menu',
+          default_value: 'dropdown',
+          options: [
+            { label: 'Drawer', value: 'drawer' },
+            { label: 'Dropdown', value: 'dropdown' },
+            { label: 'Overlay', value: 'overlay' },
+          ],
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Alignment of navigation items',
+          default_value: 'left',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Glass', value: 'glass' },
+            { label: 'Transparent', value: 'transparent' },
+            { label: 'Gradient', value: 'gradient' },
+            { label: 'Image', value: 'image' },
+          ],
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'sticky',
+          type: 'boolean' as const,
+          description: 'Whether the navigation should be sticky',
+          default_value: false,
+        },
+        {
+          component_type_id: navigationComponentType.id,
+          name: 'hasSearch',
+          type: 'boolean' as const,
+          description: 'Whether to show search functionality',
+          default_value: false,
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined navigation variants
+      for (const variant of navigationVariants) {
+        await this.createComponentVariant({
+          component_type_id: navigationComponentType.id,
+          variant_token: variant.variant,
+          name: variant.variant,
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Navigation component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing navigation component library:', error);
+      throw error;
+    }
+  },
+
+  // Initialize Footer Component Library
+  async initializeFooterComponentLibrary(): Promise<void> {
+    try {
+      // Check if footer component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const footerType = existingTypes.find(type => type.name === 'Footer');
+      
+      if (footerType) {
+        console.log('Footer component type already initialized.');
+        return;
+      }
+
+      // Create Footer Component Type
+      const footerComponentType = await this.createComponentType({
+        name: 'Footer',
+        description: 'Footer section for website footer',
+        category: 'navigation',
+        icon: 'layout-panel-bottom'
+      });
+
+      // Create Footer Component Fields
+      const fields = [
+        {
+          component_type_id: footerComponentType.id,
+          name: 'logo',
+          type: 'image' as const,
+          description: 'Logo image URL',
+          default_value: '',
+        },
+        {
+          component_type_id: footerComponentType.id,
+          name: 'columns',
+          type: 'array' as const,
+          description: 'Array of footer columns',
+          default_value: [],
+          validation: { required: true }
+        },
+        {
+          component_type_id: footerComponentType.id,
+          name: 'newsletter',
+          type: 'array' as const,
+          description: 'Newsletter subscription form',
+          default_value: null,
+        },
+        {
+          component_type_id: footerComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+            { label: 'Gradient', value: 'gradient' },
+          ],
+        },
+        {
+          component_type_id: footerComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'left',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: footerComponentType.id,
+          name: 'showSocialIcons',
+          type: 'boolean' as const,
+          description: 'Whether to show social media icons',
+          default_value: true,
+        },
+        {
+          component_type_id: footerComponentType.id,
+          name: 'showLegalLinks',
+          type: 'boolean' as const,
+          description: 'Whether to show legal links',
+          default_value: true,
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined footer variants
+      for (const variant of footerVariants) {
+        await this.createComponentVariant({
+          component_type_id: footerComponentType.id,
+          variant_token: variant.variant,
+          name: variant.variant,
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Footer component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing footer component library:', error);
+      throw error;
+    }
+  },
+
   // Main initialization function
   async initializeComponentLibrary(): Promise<void> {
     try {
@@ -862,6 +1098,8 @@ export const componentLibraryService = {
       await this.initializeFeatureGridComponentLibrary();
       await this.initializeFAQComponentLibrary();
       await this.initializeCTAComponentLibrary();
+      await this.initializeNavigationComponentLibrary();
+      await this.initializeFooterComponentLibrary();
       console.log('Component library initialization complete!');
     } catch (error) {
       console.error('Error during component library initialization:', error);

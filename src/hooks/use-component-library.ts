@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { componentLibraryService } from '@/services/component-library-service';
@@ -10,7 +11,9 @@ import {
   TestimonialComponentProps,
   FeatureGridComponentProps,
   FAQComponentProps,
-  CTAComponentProps
+  CTAComponentProps,
+  NavigationComponentProps,
+  FooterComponentProps
 } from '@/types/component-library';
 
 export function useComponentLibrary() {
@@ -176,6 +179,34 @@ export function useComponentLibrary() {
     }
   };
 
+  const initializeNavigationComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeNavigationComponentLibrary();
+      toast.success('Navigation component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing Navigation library:', error);
+      toast.error('Failed to initialize Navigation component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeFooterComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeFooterComponentLibrary();
+      toast.success('Footer component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing Footer library:', error);
+      toast.error('Failed to initialize Footer component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Load component types on mount
   useEffect(() => {
     loadComponentTypes();
@@ -197,6 +228,8 @@ export function useComponentLibrary() {
     initializeTestimonialsComponentLibrary,
     initializeFeatureGridComponentLibrary,
     initializeFAQComponentLibrary,
-    initializeCTAComponentLibrary
+    initializeCTAComponentLibrary,
+    initializeNavigationComponentLibrary,
+    initializeFooterComponentLibrary
   };
 }

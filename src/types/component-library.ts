@@ -157,3 +157,47 @@ export interface CTAComponentProps {
     avatar?: string;
   };
 }
+
+// Navigation Component Types
+export interface NavigationComponentProps {
+  variant: string;
+  logo?: string;
+  links: Array<{
+    label: string;
+    url: string;
+    isPrimary?: boolean;
+  }>;
+  cta?: {
+    label: string;
+    url: string;
+  };
+  mobileMenuStyle?: 'drawer' | 'dropdown' | 'overlay';
+  alignment?: 'left' | 'center' | 'right';
+  backgroundStyle?: 'light' | 'dark' | 'glass' | 'transparent' | 'gradient' | 'image';
+  styleNote?: string;
+  sticky?: boolean;
+  hasSearch?: boolean;
+}
+
+// Footer Component Types
+export interface FooterComponentProps {
+  variant: string;
+  logo?: string;
+  columns: Array<{
+    heading: string;
+    links: Array<{
+      label: string;
+      url: string;
+    }>;
+  }>;
+  newsletter?: {
+    placeholder: string;
+    ctaLabel: string;
+    successMessage?: string;
+  };
+  backgroundStyle?: 'light' | 'dark' | 'image' | 'gradient';
+  alignment?: 'left' | 'center' | 'right';
+  styleNote?: string;
+  showSocialIcons?: boolean;
+  showLegalLinks?: boolean;
+}
