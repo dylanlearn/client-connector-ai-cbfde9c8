@@ -1,327 +1,146 @@
 
-// Creative enhancements for wireframe generation
+/**
+ * Helper utilities for enhancing wireframe generation
+ */
 
-export const addCreativeEnhancements = (wireframeData: any): any => {
-  // Enhanced wireframe data with more creative elements
-  const enhancedData = { ...wireframeData };
+// Add creative enhancements to the wireframe data
+export function addCreativeEnhancements(wireframeData: any, creativityLevel: number = 7) {
+  // Don't modify if no wireframe data
+  if (!wireframeData) return wireframeData;
   
-  // Add creative color palettes based on design principles
-  if (!enhancedData.designTokens || !enhancedData.designTokens.colors) {
-    enhancedData.designTokens = enhancedData.designTokens || {};
-    enhancedData.designTokens.colors = {};
-  }
-  
-  // Generate creative color variations
-  enhancedData.designTokens.colors = {
-    ...enhancedData.designTokens.colors,
-    accent: generateCreativeAccentColors(enhancedData.designTokens.colors.primary || '#4F46E5'),
-  };
-  
-  // Add animation suggestions if not present
-  if (!enhancedData.animations) {
-    enhancedData.animations = generateAnimationSuggestions();
-  }
-  
-  // Add creative typography pairings
-  if (!enhancedData.designTokens.typography) {
-    enhancedData.designTokens.typography = {};
-  }
-  
-  enhancedData.designTokens.typography = {
-    ...enhancedData.designTokens.typography,
-    pairings: generateCreativeTypographyPairings(),
-  };
-  
-  // Add creative component variations if sections exist
-  if (enhancedData.sections && Array.isArray(enhancedData.sections)) {
-    enhancedData.sections = enhancedData.sections.map((section: any) => {
-      return {
-        ...section,
-        styleVariants: generateComponentVariations(section.type),
-      };
+  // Enhance sections based on creativity level
+  if (wireframeData.sections && Array.isArray(wireframeData.sections)) {
+    wireframeData.sections = wireframeData.sections.map(section => {
+      // Add animation suggestions for higher creativity levels
+      if (creativityLevel >= 6 && !section.animationSuggestions) {
+        section.animationSuggestions = generateAnimationSuggestion(section.sectionType);
+      }
+      
+      // Add style variants for higher creativity levels
+      if (creativityLevel >= 8 && !section.styleVariants) {
+        section.styleVariants = generateStyleVariants(section.sectionType);
+      }
+      
+      return section;
     });
   }
   
-  // Add design rationale for creative choices
-  enhancedData.creativeRationale = generateCreativeRationale(
-    enhancedData.title, 
-    enhancedData.designTokens.colors.primary
-  );
-  
-  return enhancedData;
-};
-
-// Helper functions for creative enhancements
-
-function generateCreativeAccentColors(primaryColor: string): Record<string, string> {
-  // Simple algorithm to generate complementary and analogous colors
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result 
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } 
-      : { r: 0, g: 0, b: 0 };
-  };
-  
-  const rgbToHex = (r: number, g: number, b: number) => {
-    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-  };
-  
-  const rgb = hexToRgb(primaryColor);
-  
-  // Generate complementary color
-  const complementary = rgbToHex(
-    255 - rgb.r,
-    255 - rgb.g,
-    255 - rgb.b
-  );
-  
-  // Generate analogous colors
-  const analogous1 = rgbToHex(
-    Math.min(255, rgb.r + 40),
-    Math.min(255, rgb.g - 20),
-    Math.min(255, rgb.b + 20)
-  );
-  
-  const analogous2 = rgbToHex(
-    Math.min(255, rgb.r - 40),
-    Math.min(255, rgb.g + 20),
-    Math.min(255, rgb.b - 20)
-  );
-  
-  return {
-    complementary,
-    analogous1,
-    analogous2,
-    vibrant: selectVibrantAccentColor(primaryColor),
-  };
-}
-
-function selectVibrantAccentColor(primaryColor: string): string {
-  // Vibrant color options for different color families
-  const vibrantOptions = {
-    blue: ['#00BFFF', '#1E90FF', '#4169E1'],
-    red: ['#FF4500', '#FF6347', '#FF7F50'],
-    green: ['#32CD32', '#00FA9A', '#00FF7F'],
-    purple: ['#9370DB', '#8A2BE2', '#9932CC'],
-    yellow: ['#FFD700', '#FFA500', '#FFFF00'],
-  };
-  
-  // Determine color family based on primary color
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result 
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } 
-      : { r: 0, g: 0, b: 0 };
-  };
-  
-  const rgb = hexToRgb(primaryColor);
-  
-  if (rgb.r > rgb.g && rgb.r > rgb.b) {
-    return vibrantOptions.red[Math.floor(Math.random() * 3)];
-  } else if (rgb.g > rgb.r && rgb.g > rgb.b) {
-    return vibrantOptions.green[Math.floor(Math.random() * 3)];
-  } else if (rgb.b > rgb.r && rgb.b > rgb.g) {
-    return vibrantOptions.blue[Math.floor(Math.random() * 3)];
-  } else if (rgb.r > 200 && rgb.g > 200) {
-    return vibrantOptions.yellow[Math.floor(Math.random() * 3)];
-  } else {
-    return vibrantOptions.purple[Math.floor(Math.random() * 3)];
+  // Add enhanced design tokens based on creativity level
+  if (wireframeData.designTokens) {
+    wireframeData.designTokens = enhanceDesignTokens(wireframeData.designTokens, creativityLevel);
   }
+  
+  return wireframeData;
 }
 
-function generateAnimationSuggestions(): any {
-  // Creative animation suggestions
-  return {
-    transitions: [
-      {
-        name: "Subtle Fade",
-        description: "Elements fade in with slight upward movement for a clean entrance",
-        css: "transition: opacity 0.4s ease-out, transform 0.4s ease-out; transform: translateY(10px); opacity: 0;"
-      },
-      {
-        name: "Elastic Bounce",
-        description: "Elements appear with a playful bounce that adds personality",
-        css: "transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: scale(0.8);"
-      },
-      {
-        name: "Staggered Reveal",
-        description: "Elements appear in sequence with slight delays between each",
-        css: "transition: opacity 0.4s ease, transform 0.4s ease; transform: translateY(15px); opacity: 0;"
-      }
+// Generate animation suggestions based on section type
+function generateAnimationSuggestion(sectionType: string) {
+  const baseAnimations = {
+    hero: [
+      { element: "heading", animation: "fade-in-up", timing: "0.5s ease-out" },
+      { element: "subheading", animation: "fade-in-up", timing: "0.7s ease-out", delay: "0.2s" },
+      { element: "cta-button", animation: "pulse", timing: "2s infinite" }
     ],
-    hover: [
-      {
-        name: "Depth Shift",
-        description: "Elements appear to move forward slightly on hover",
-        css: "transition: transform 0.3s ease, box-shadow 0.3s ease; &:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }"
-      },
-      {
-        name: "Color Pulse",
-        description: "Background slightly shifts color on hover",
-        css: "transition: background-color 0.3s ease; &:hover { background-color: rgba(var(--color-primary-rgb), 0.05); }"
-      }
+    features: [
+      { element: "feature-cards", animation: "fade-in-stagger", timing: "0.5s ease-out", staggerDelay: "0.15s" }
+    ],
+    testimonials: [
+      { element: "testimonial-cards", animation: "slide-in-from-right", timing: "0.6s ease-in-out" }
+    ],
+    gallery: [
+      { element: "images", animation: "zoom-in", timing: "0.4s ease-out" }
+    ],
+    cta: [
+      { element: "cta-container", animation: "pulse", timing: "2s infinite" }
+    ],
+    footer: [
+      { element: "social-icons", animation: "bounce", timing: "0.3s", hoverEffect: true }
     ]
   };
+  
+  // Default animations for unknown section types
+  const defaultAnimations = [
+    { element: "container", animation: "fade-in", timing: "0.5s ease-out" }
+  ];
+  
+  return baseAnimations[sectionType.toLowerCase()] || defaultAnimations;
 }
 
-function generateCreativeTypographyPairings(): any {
-  // Creative font pairings that work well together
-  const pairings = [
+// Generate style variants based on section type
+function generateStyleVariants(sectionType: string) {
+  const variants = [
     {
-      name: "Modern Contrast",
-      heading: "Montserrat",
-      body: "Merriweather",
-      description: "Clean, modern heading with a readable serif body"
+      name: "Light",
+      styles: {
+        backgroundColor: "#ffffff",
+        textColor: "#333333",
+        accentColor: "#3b82f6"
+      }
     },
     {
-      name: "Contemporary Elegance",
-      heading: "Playfair Display",
-      body: "Source Sans Pro",
-      description: "Elegant serif headings with clean sans-serif body"
+      name: "Dark",
+      styles: {
+        backgroundColor: "#1f2937",
+        textColor: "#f3f4f6",
+        accentColor: "#60a5fa"
+      }
     },
     {
-      name: "Tech Forward",
-      heading: "Space Grotesk",
-      body: "Inter",
-      description: "Modern technical feel with excellent readability"
-    },
-    {
-      name: "Creative Bold",
-      heading: "Abril Fatface",
-      body: "Poppins",
-      description: "Bold, creative headings with a friendly body text"
-    },
-    {
-      name: "Classic Professional",
-      heading: "Libre Baskerville",
-      body: "Raleway",
-      description: "Traditional, trustworthy headings with contemporary body text"
+      name: "Colorful",
+      styles: {
+        backgroundColor: "#f0f9ff",
+        textColor: "#1e3a8a",
+        accentColor: "#2dd4bf"
+      }
     }
   ];
   
-  // Return 3 random pairings
-  const shuffled = [...pairings].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 3);
+  return variants;
 }
 
-function generateComponentVariations(componentType: string): any[] {
-  // Generate creative component variations based on component type
-  const variations: any[] = [];
+// Enhance design tokens with more creative options
+function enhanceDesignTokens(tokens: any, creativityLevel: number) {
+  if (!tokens) return tokens;
   
-  const basicVariations = [
-    {
-      name: "Standard",
-      description: "The standard implementation style"
-    },
-    {
-      name: "Minimal",
-      description: "A stripped-back, clean variation with minimal decoration"
-    }
-  ];
+  // Only enhance at higher creativity levels
+  if (creativityLevel < 5) return tokens;
   
-  // Add component-specific variations
-  switch (componentType) {
-    case "hero":
-      variations.push(
-        {
-          name: "Split Content",
-          description: "Content and image in a side-by-side layout"
-        },
-        {
-          name: "Gradient Overlay",
-          description: "Bold gradient background with text overlay"
-        },
-        {
-          name: "Animated Background",
-          description: "Subtle animated elements in the background"
-        }
-      );
-      break;
-      
-    case "cta":
-      variations.push(
-        {
-          name: "Floating Card",
-          description: "CTA in a card that stands out from the background"
-        },
-        {
-          name: "Full Width Banner",
-          description: "Bold full-width banner with contrasting background"
-        }
-      );
-      break;
-      
-    case "feature":
-      variations.push(
-        {
-          name: "Icon Grid",
-          description: "Features presented in a grid with prominent icons"
-        },
-        {
-          name: "Alternating Layout",
-          description: "Features in an alternating left/right layout"
-        },
-        {
-          name: "Card Collection",
-          description: "Each feature in its own distinct card"
-        }
-      );
-      break;
-      
-    case "testimonial":
-      variations.push(
-        {
-          name: "Quote Carousel",
-          description: "Rotating carousel of testimonial quotes"
-        },
-        {
-          name: "Profile Cards",
-          description: "Testimonials with prominent customer photos"
-        }
-      );
-      break;
-      
-    default:
-      variations.push(
-        {
-          name: "Creative Layout",
-          description: "Unique layout with visual interest"
-        },
-        {
-          name: "Interactive Elements",
-          description: "Interactive elements to engage users"
-        }
-      );
+  // Add color palette variations
+  if (tokens.colors && creativityLevel >= 7) {
+    tokens.colors.variations = [
+      { name: "Vibrant", primary: adjustColor(tokens.colors.primary, 20), secondary: adjustColor(tokens.colors.secondary, 20) },
+      { name: "Muted", primary: desaturateColor(tokens.colors.primary), secondary: desaturateColor(tokens.colors.secondary) }
+    ];
   }
   
-  return [...basicVariations, ...variations];
+  // Add enhanced typography options
+  if (tokens.typography && creativityLevel >= 6) {
+    tokens.typography.alternativeFonts = [
+      { heading: "Montserrat", body: "Open Sans" },
+      { heading: "Playfair Display", body: "Source Sans Pro" }
+    ];
+  }
+  
+  // Add micro-interactions at highest creativity levels
+  if (creativityLevel >= 9) {
+    tokens.interactions = {
+      hover: { scale: 1.02, transition: "all 0.2s ease" },
+      active: { scale: 0.98, transition: "all 0.1s ease" },
+      buttonHover: { y: -2, shadow: "0 4px 6px rgba(0,0,0,0.1)" }
+    };
+  }
+  
+  return tokens;
 }
 
-function generateCreativeRationale(title: string, primaryColor: string): any {
-  // Generate creative rationale for the design choices
-  return {
-    colorStrategy: "The color palette is designed to balance brand recognition with emotional impact. " +
-      "The primary color establishes the core identity, while complementary and analogous colors " +
-      "create visual interest and guide the user's attention through the interface.",
-      
-    typographyStrategy: "Typography selections prioritize both readability and personality. " +
-      "The pairing of distinctive headings with highly legible body text creates a clear " +
-      "visual hierarchy while maintaining a cohesive voice throughout the design.",
-      
-    layoutPrinciples: "The layout employs a balance of white space and content density to create " +
-      "breathing room while maintaining engagement. Key elements use strategic positioning to " +
-      "draw attention to primary conversion points and core messaging.",
-      
-    motionPhilosophy: "Animation is employed subtly and purposefully to enhance usability and " +
-      "add moments of delight. Transitions are timed to feel responsive without being distracting, " +
-      "creating a fluid and polished experience."
-  };
+// Helper function to adjust color brightness
+function adjustColor(color: string, percent: number): string {
+  // Simple placeholder implementation - in real code would use proper color manipulation
+  return color; // In a real implementation, would adjust the brightness
+}
+
+// Helper function to desaturate colors
+function desaturateColor(color: string): string {
+  // Simple placeholder implementation - in real code would use proper color manipulation
+  return color; // In a real implementation, would desaturate the color
 }
