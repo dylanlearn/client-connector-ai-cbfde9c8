@@ -6,7 +6,6 @@ import {
   WireframeGenerationResult,
   WireframeData 
 } from "@/services/ai/wireframe/wireframe-types";
-import { ToastAction } from "@/components/ui/toast";
 
 export function useWireframeGenerator(
   defaultCreativityLevel: number,
@@ -75,11 +74,12 @@ Include intuitive navigation and clear call-to-action elements.`;
       const errorMessage = err instanceof Error ? err.message : "Failed to generate wireframe";
       setError(err instanceof Error ? err : new Error(errorMessage));
       
+      // Using string-based action instead of JSX since this is a .ts file, not .tsx
       toast({
         title: "Wireframe generation failed",
         description: errorMessage,
         variant: "destructive",
-        action: <ToastAction altText="Try again">Try again</ToastAction>,
+        // Removed JSX-based action that was causing the error
       });
       
       return null;
