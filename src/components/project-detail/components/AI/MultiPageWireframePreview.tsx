@@ -21,7 +21,8 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({ w
       id: section.id || `section-${index}`,
       name: section.name || section.type || `Section ${index + 1}`,
       description: section.description || section.content || "",
-      imageUrl: section.imageUrl || ""
+      imageUrl: section.imageUrl || "",
+      sectionType: section.sectionType || "generic" // Adding the required sectionType property
     })) || [],
     version: "1.0",
     lastUpdated: new Date().toLocaleDateString()
