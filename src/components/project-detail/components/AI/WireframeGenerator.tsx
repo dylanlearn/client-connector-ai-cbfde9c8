@@ -57,7 +57,7 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
     defaultValues: {
       projectId,
       description: '',
-      complexity: 'moderate',
+      complexity: 'moderate' as 'simple' | 'moderate' | 'complex',
       style: 'modern',
       enhancedCreativity: true,
       creativityLevel: defaultCreativity || 8,
@@ -89,6 +89,8 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
     
     try {
       if (data.multiPageLayout && (!data.pageTypes || data.pageTypes.length === 0)) {
+        data.stylePreferences = data.stylePreferences || [];
+        
         const defaultPageTypes = ['home', 'about', 'services', 'contact'];
         data.pageTypes = defaultPageTypes.slice(0, data.pages || 1);
       }

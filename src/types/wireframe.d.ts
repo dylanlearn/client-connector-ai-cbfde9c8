@@ -1,4 +1,3 @@
-
 /**
  * Type definitions for wireframe version control
  */
@@ -32,9 +31,9 @@ export interface WireframeSourceData {
 }
 
 export interface WireframeData {
-  title?: string;
+  title: string;
   description?: string;
-  sections?: any[]; // Make sections optional consistently across interfaces
+  sections: any[];
   layoutType?: string;
   colorScheme?: {
     primary?: string;
@@ -48,10 +47,9 @@ export interface WireframeData {
     fontPairings?: string[];
   };
   designTokens?: Record<string, any>;
-  mobileConsiderations?: string; // Add this field for questionnaire-wireframe-bridge.ts
-  accessibilityNotes?: string; // Add this field for questionnaire-wireframe-bridge.ts
-  style?: string | object; // Allow style to be either string or object
-  // Add fields from wireframe-types.ts for consistency
+  mobileConsiderations?: string;
+  accessibilityNotes?: string;
+  style?: string | object;
   pages?: any[];
   styleToken?: string;
   darkMode?: boolean;
@@ -60,7 +58,7 @@ export interface WireframeData {
   designReasoning?: any;
   animations?: any;
   imageUrl?: string;
-  [key: string]: any; // Allow any other properties
+  [key: string]: any;
 }
 
 export interface WireframeVersion {
@@ -87,8 +85,7 @@ export interface WireframeBranch {
   name: string;
   versions: WireframeVersion[];
   current_version_id?: string;
-  latest_version_id?: string; // Add this field to match usage
-  created_at: string;
+  latest_version_id?: string;
 }
 
 export interface WireframeVersionTree {

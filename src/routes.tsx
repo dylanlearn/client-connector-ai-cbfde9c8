@@ -1,5 +1,5 @@
 import { createBrowserRouter, matchPath } from "react-router-dom";
-import DesignProcessProvider from "./contexts/design-process/DesignProcessProvider";
+import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
 import App from "./App";
 import Dashboard from "./pages/Dashboard";
