@@ -53,7 +53,8 @@ export const FeedbackDatabase = {
         limit
       };
       
-      return await RpcClient.feedbackAnalysis.list(analysisFilters);
+      const results = await RpcClient.feedbackAnalysis.list(analysisFilters);
+      return results as PastAnalysisResult[];
     } catch (error) {
       console.error("Exception fetching feedback analyses:", error);
       return [];

@@ -5,14 +5,20 @@ import { CheckCircle, AlertCircle, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+// Define type for system status values
+type SystemStatusType = 'healthy' | 'degraded' | 'offline';
+
+// Define interface for system status
+interface SystemStatusState {
+  database: SystemStatusType;
+  api: SystemStatusType;
+  edgeFunctions: SystemStatusType;
+  rpcFunctions: SystemStatusType;
+  storage: SystemStatusType;
+}
+
 export function SystemStatus() {
-  const [systemStatus, setSystemStatus] = useState<{
-    database: 'healthy' | 'degraded' | 'offline';
-    api: 'healthy' | 'degraded' | 'offline';
-    edgeFunctions: 'healthy' | 'degraded' | 'offline';
-    rpcFunctions: 'healthy' | 'degraded' | 'offline';
-    storage: 'healthy' | 'degraded' | 'offline';
-  }>({
+  const [systemStatus, setSystemStatus] = useState<SystemStatusState>({
     database: 'healthy',
     api: 'healthy',
     edgeFunctions: 'healthy',
@@ -34,7 +40,7 @@ export function SystemStatus() {
         const apiStatus = apiResponse.error ? 'offline' : 'healthy';
         
         // Check edge functions status
-        let edgeFunctionStatus = 'healthy';
+        let edgeFunctionStatus: SystemStatusType = 'healthy';
         try {
           const edgeFunctionResponse = await supabase.functions.invoke('analytics-api', {
             body: { action: 'ping' }
@@ -52,14 +58,14 @@ export function SystemStatus() {
         const rpcStatus = rpcResponse.error ? 'offline' : 'healthy';
         
         // Check storage status
-        const storageStatus = 'healthy'; // Placeholder as we don't have a direct way to check storage
+        const storageStatus = 'healthy' as SystemStatusType; // Placeholder as we don't have a direct way to check storage
         
         setSystemStatus({
-          database: dbStatus as any,
-          api: apiStatus as any,
-          edgeFunctions: edgeFunctionStatus as any,
-          rpcFunctions: rpcStatus as any,
-          storage: storageStatus as any
+          database: dbStatus as SystemStatusType,
+          api: apiStatus as SystemStatusType,
+          edgeFunctions: edgeFunctionStatus,
+          rpcFunctions: rpcStatus as SystemStatusType,
+          storage: storageStatus
         });
       } catch (error) {
         console.error('Error checking system status:', error);
@@ -74,7 +80,7 @@ export function SystemStatus() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: SystemStatusType) => {
     switch (status) {
       case 'healthy':
         return <Badge className="bg-green-500"><CheckCircle className="size-4 mr-1" /> Operational</Badge>;

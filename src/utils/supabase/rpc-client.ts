@@ -3,6 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { ErrorHandlingConfig } from "../monitoring/error-config";
 import { toast } from "sonner";
 
+// Define types for feedback analysis
+interface FeedbackAnalysisRecord {
+  userId?: string;
+  projectId?: string;
+  originalFeedback?: string;
+  summary?: string;
+  actionItems?: any[];
+  toneAnalysis?: any;
+  priority?: string;
+  status?: string;
+  category?: string;
+}
+
+interface AnalysisFilters {
+  status?: string;
+  priority?: string;
+  userId?: string;
+  projectId?: string;
+  category?: string;
+  limit?: number;
+}
+
 /**
  * Client for interacting with Supabase RPC functions
  */
@@ -192,7 +214,7 @@ export const RpcClient = {
     /**
      * Store feedback analysis results
      */
-    async store(data: any): Promise<string | null> {
+    async store(data: FeedbackAnalysisRecord): Promise<string | null> {
       try {
         const { data: result, error } = await supabase.rpc('manage_feedback_analysis', {
           p_action: 'store',
@@ -214,14 +236,7 @@ export const RpcClient = {
     /**
      * List feedback analyses with optional filters
      */
-    async list(filters?: {
-      status?: string,
-      priority?: 'high' | 'medium' | 'low',
-      userId?: string,
-      projectId?: string,
-      category?: string,
-      limit?: number
-    }): Promise<any[]> {
+    async list(filters?: AnalysisFilters): Promise<any[]> {
       try {
         const { data: result, error } = await supabase.rpc('manage_feedback_analysis', {
           p_action: 'list',
