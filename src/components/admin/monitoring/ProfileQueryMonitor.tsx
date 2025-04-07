@@ -1,11 +1,12 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileQueryTable from "./ProfileQueryTable";
 import ProfileQuerySetupAlert from "./ProfileQuerySetupAlert";
+import { useFetchErrorHandler } from "@/hooks/error-handling/use-fetch-error-handler";
 
 interface QueryStatsResult {
   timestamp: string;
@@ -19,10 +20,13 @@ interface QueryStatsResult {
 }
 
 export const ProfileQueryMonitor: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<QueryStatsResult | null>(null);
-  const [setupCompleted, setSetupCompleted] = useState<boolean>(true);
+  const { isLoading, error, wrapFetch, setIsLoading } = useFetchErrorHandler({
+    component: 'ProfileQueryMonitor',
+    defaultErrorMessage: 'Failed to retrieve profile query statistics'
+  });
+  
+  const [stats, setStats] = React.useState<QueryStatsResult | null>(null);
+  const [setupCompleted, setSetupCompleted] = React.useState<boolean>(true);
 
   useEffect(() => {
     fetchProfileQueryStats();
@@ -30,13 +34,15 @@ export const ProfileQueryMonitor: React.FC = () => {
 
   const fetchProfileQueryStats = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase.rpc('get_profile_query_stats');
+      setIsLoading(true);
       
-      if (error) {
-        setError(`Error fetching query stats: ${error.message}`);
-        setSetupCompleted(false);
-        return;
+      const { data, error: fetchError } = await wrapFetch(
+        supabase.rpc('get_profile_query_stats'),
+        'fetch stats'
+      );
+      
+      if (fetchError) {
+        throw fetchError;
       }
 
       if (data && !data.extension_enabled) {
@@ -46,32 +52,31 @@ export const ProfileQueryMonitor: React.FC = () => {
         setStats(data as QueryStatsResult);
       }
     } catch (err) {
-      setError(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
+      // Error already handled by wrapFetch
       setSetupCompleted(false);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const runSetupScript = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setIsLoading(true);
       
-      // Run the setup script via Supabase function
-      const { error } = await supabase.rpc('run_pg_stat_statements_setup');
+      const { error: setupError } = await wrapFetch(
+        supabase.rpc('run_pg_stat_statements_setup'),
+        'setup script'
+      );
       
-      if (error) {
-        throw new Error(`Error running setup script: ${error.message}`);
+      if (setupError) {
+        throw setupError;
       }
       
       // Re-fetch stats after setup
       await fetchProfileQueryStats();
       
     } catch (err) {
-      setError(`Setup failed: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setLoading(false);
+      // Error already handled by wrapFetch
     }
   };
 
@@ -88,7 +93,7 @@ export const ProfileQueryMonitor: React.FC = () => {
       </CardHeader>
       
       <CardContent>
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-pulse text-muted-foreground">Loading stats...</div>
           </div>
@@ -96,7 +101,7 @@ export const ProfileQueryMonitor: React.FC = () => {
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{error.message}</AlertDescription>
           </Alert>
         ) : !setupCompleted ? (
           <ProfileQuerySetupAlert onSetupClick={runSetupScript} />
@@ -116,5 +121,4 @@ export const ProfileQueryMonitor: React.FC = () => {
   );
 };
 
-// Add a default export as well to ensure both named and default exports work
 export default ProfileQueryMonitor;

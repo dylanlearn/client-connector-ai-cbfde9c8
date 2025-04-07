@@ -9,16 +9,38 @@ import { getFallbackContent } from './utils/fallback-utils';
 import { getTestVariant, recordTestSuccess, recordTestFailure } from './utils/test-variant-utils';
 import { useAuth } from '@/hooks/use-auth';
 
+// Define specific error types for better error handling
+class TimeoutError extends Error {
+  constructor(message = 'Request timed out') {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
+class NetworkError extends Error {
+  constructor(message = 'Network connection error') {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+class ContentGenerationError extends Error {
+  constructor(message = 'Content generation failed', public originalError?: Error) {
+    super(message);
+    this.name = 'ContentGenerationError';
+  }
+}
+
 /**
  * Optimized hook for managing AI content generation with improved performance
  */
 export function useGeneration({
   autoRetry = true,
-  maxRetries = 1, // Reduced from 2 to 1 for faster response
-  timeout = 8000, // Reduced from 10000 to 8000ms
+  maxRetries = 1,
+  timeout = 8000,
   showToasts = false,
   useFallbacks = true,
-  enableABTesting = false // Disabled by default for better performance
+  enableABTesting = false
 }: UseGenerationOptions = {}): UseGenerationReturn {
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastError, setLastError] = useState<Error | null>(null);
@@ -41,6 +63,35 @@ export function useGeneration({
       }
     };
   }, []);
+
+  // Handler for network or connectivity errors
+  const handleNetworkError = (error: unknown): NetworkError => {
+    console.error('Network error during generation:', error);
+    const networkError = new NetworkError(
+      error instanceof Error ? `Network error: ${error.message}` : 'Network connection failed'
+    );
+    
+    if (showToasts) {
+      toast.error("Network Error", {
+        description: "Please check your internet connection"
+      });
+    }
+    
+    return networkError;
+  };
+
+  // Handler for timeouts
+  const handleTimeoutError = (): TimeoutError => {
+    const timeoutError = new TimeoutError(`Request timed out after ${timeout}ms`);
+    
+    if (showToasts) {
+      toast.error("Request Timeout", {
+        description: "The AI generation request took too long"
+      });
+    }
+    
+    return timeoutError;
+  };
 
   // Function to attempt generation with retry logic
   const attemptGeneration = useCallback(async (
@@ -70,31 +121,61 @@ export function useGeneration({
         testVariantId: testInfo?.testVariantId
       };
       
-      const content = await AIGeneratorService.generateContent(generationOptions);
-      
-      const latencyMs = Date.now() - startTime;
-      
-      // Record test success if A/B testing is enabled
-      if (enableABTesting && testInfo?.activeTestId && testInfo?.testVariantId && user) {
-        await recordTestSuccess(
-          testInfo.activeTestId,
-          testInfo.testVariantId,
-          user.id,
-          latencyMs
-        );
+      // Check for abort signal
+      if (abortControllerRef.current?.signal.aborted) {
+        throw new Error('Request was canceled');
       }
       
-      // Clear timeout on success
-      if (requestTimeoutRef.current) {
-        clearTimeout(requestTimeoutRef.current);
-        requestTimeoutRef.current = null;
+      // Use a try-catch with specific error type handling
+      try {
+        const content = await AIGeneratorService.generateContent(generationOptions);
+        const latencyMs = Date.now() - startTime;
+        
+        // Record test success if A/B testing is enabled
+        if (enableABTesting && testInfo?.activeTestId && testInfo?.testVariantId && user) {
+          await recordTestSuccess(
+            testInfo.activeTestId,
+            testInfo.testVariantId,
+            user.id,
+            latencyMs
+          );
+        }
+        
+        // Clear timeout on success
+        if (requestTimeoutRef.current) {
+          clearTimeout(requestTimeoutRef.current);
+          requestTimeoutRef.current = null;
+        }
+        
+        // Cache the successful result
+        requestCacheRef.current.set(cacheKey, content);
+        
+        return content;
+      } catch (error) {
+        // Classify the error type
+        if (error instanceof TypeError && error.message.includes('networkerror')) {
+          throw handleNetworkError(error);
+        } else if (error instanceof DOMException && error.name === 'AbortError') {
+          throw new Error('Request was aborted');
+        } else {
+          throw new ContentGenerationError(
+            error instanceof Error ? error.message : 'Unknown generation error',
+            error instanceof Error ? error : undefined
+          );
+        }
       }
-      
-      // Cache the successful result
-      requestCacheRef.current.set(cacheKey, content);
-      
-      return content;
     } catch (error) {
+      // Log different types of errors differently
+      if (error instanceof TimeoutError) {
+        console.warn('Generation timed out:', error.message);
+      } else if (error instanceof NetworkError) {
+        console.error('Network error:', error.message);
+      } else if (error instanceof ContentGenerationError) {
+        console.error('Content generation error:', error.message, error.originalError);
+      } else {
+        console.error('Unknown error during generation:', error);
+      }
+      
       // Record test failure if A/B testing is enabled
       if (enableABTesting && testInfo?.activeTestId && testInfo?.testVariantId && user) {
         await recordTestFailure(
@@ -105,12 +186,24 @@ export function useGeneration({
         );
       }
       
-      // Retry logic
+      // Retry logic with different delays based on error type
       if (autoRetry && retryCount < maxRetries) {
         console.log(`Retrying AI generation (${retryCount + 1}/${maxRetries})...`);
         
-        // Exponential backoff
-        const backoffDelay = calculateBackoffDelay(retryCount);
+        // Different backoff strategies based on error type
+        let backoffDelay: number;
+        
+        if (error instanceof NetworkError) {
+          // Network errors get a longer delay
+          backoffDelay = calculateBackoffDelay(retryCount, 1000, 1.5);
+        } else if (error instanceof TimeoutError) {
+          // Timeout errors get a more aggressive delay
+          backoffDelay = calculateBackoffDelay(retryCount, 1500, 2);
+        } else {
+          // Standard backoff for other errors
+          backoffDelay = calculateBackoffDelay(retryCount);
+        }
+        
         await new Promise(resolve => setTimeout(resolve, backoffDelay));
         
         return attemptGeneration(request, retryCount + 1, testInfo);
@@ -118,7 +211,7 @@ export function useGeneration({
       
       throw error;
     }
-  }, [autoRetry, maxRetries, user, enableABTesting]);
+  }, [autoRetry, maxRetries, user, enableABTesting, showToasts, timeout]);
 
   const generate = useCallback(async (request: ContentRequest): Promise<string> => {
     setIsGenerating(true);
@@ -131,7 +224,7 @@ export function useGeneration({
     }
     
     const { controller, clearTimeoutFn } = createTimeoutController(timeout, () => {
-      setLastError(new Error('Request timed out'));
+      setLastError(new TimeoutError());
       setIsGenerating(false);
       
       if (showToasts) {
@@ -158,17 +251,20 @@ export function useGeneration({
       clearTimeoutFn(); // Clear the timeout on success
       return result;
     } catch (error) {
-      console.error('AI content generation failed:', error);
-      setLastError(error instanceof Error ? error : new Error('Unknown error'));
-      
-      if (showToasts) {
-        toast.error("Generation Failed", {
-          description: "Failed to generate AI content"
-        });
+      // More specific error handling based on error type
+      if (error instanceof TimeoutError) {
+        setLastError(error);
+      } else if (error instanceof NetworkError) {
+        setLastError(error);
+      } else if (error instanceof ContentGenerationError) {
+        setLastError(error);
+      } else {
+        setLastError(error instanceof Error ? error : new Error('Unknown error'));
       }
       
       // Return fallback content if enabled
       if (useFallbacks) {
+        console.log('Using fallback content due to error');
         return getFallbackContent(request.type, request.context);
       }
       

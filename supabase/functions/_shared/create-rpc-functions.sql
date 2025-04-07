@@ -1,67 +1,70 @@
 
--- Function to analyze profile queries
+-- Create a base function for analyzing profile queries
+-- This centralizes the logic and allows other functions to call it with different parameters
+
 CREATE OR REPLACE FUNCTION public.analyze_profile_queries(
-  max_queries integer DEFAULT 20,
-  query_filter text DEFAULT '%profiles%'
+  query_pattern text DEFAULT '%profile%'
 )
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  query_stats jsonb;
-  extension_exists boolean;
-BEGIN
-  -- Check if the extension exists
-  SELECT EXISTS (
-    SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements'
-  ) INTO extension_exists;
-  
-  -- If extension doesn't exist, return early with status
-  IF NOT extension_exists THEN
-    RETURN jsonb_build_object(
-      'timestamp', now(),
-      'extension_enabled', false,
-      'queries', '[]'::jsonb
-    );
-  END IF;
-
-  -- Get query statistics with filtering
-  SELECT 
-    jsonb_agg(jsonb_build_object(
-      'query', query,
-      'calls', calls,
-      'total_exec_time', total_exec_time,
-      'mean_exec_time', mean_exec_time
-    ))
-  INTO query_stats
-  FROM pg_stat_statements
-  WHERE query ILIKE query_filter
-  AND query NOT ILIKE '%pg_stat_statements%'
-  ORDER BY total_exec_time DESC
-  LIMIT max_queries;
-  
-  RETURN jsonb_build_object(
-    'timestamp', now(),
-    'extension_enabled', true,
-    'queries', COALESCE(query_stats, '[]'::jsonb)
-  );
-END;
-$$;
-
--- Function to get profile query stats - uses the base analyze function
-CREATE OR REPLACE FUNCTION public.get_profile_query_stats()
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  result jsonb;
+  extension_exists boolean;
 BEGIN
-  -- Use the base function with default parameters
-  RETURN public.analyze_profile_queries();
+  -- Check if pg_stat_statements extension is installed
+  SELECT EXISTS (
+    SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements'
+  ) INTO extension_exists;
+  
+  IF NOT extension_exists THEN
+    -- Return structured result indicating extension is not enabled
+    RETURN jsonb_build_object(
+      'timestamp', now(),
+      'extension_enabled', false,
+      'queries', jsonb_build_array()
+    );
+  END IF;
+  
+  -- Try to query pg_stat_statements to get profile-related queries
+  BEGIN
+    SELECT jsonb_build_object(
+      'timestamp', now(),
+      'extension_enabled', true,
+      'queries', COALESCE(
+        (
+          SELECT jsonb_agg(
+            jsonb_build_object(
+              'query', query,
+              'calls', calls,
+              'total_exec_time', total_exec_time,
+              'mean_exec_time', mean_exec_time
+            )
+          )
+          FROM pg_stat_statements
+          WHERE query ILIKE query_pattern
+          ORDER BY total_exec_time DESC
+          LIMIT 50
+        ),
+        '[]'::jsonb
+      )
+    ) INTO result;
+    
+    RETURN result;
+  EXCEPTION WHEN OTHERS THEN
+    -- Handle errors accessing pg_stat_statements
+    RETURN jsonb_build_object(
+      'timestamp', now(),
+      'extension_enabled', false,
+      'error', 'Error accessing pg_stat_statements: ' || SQLERRM,
+      'queries', jsonb_build_array()
+    );
+  END;
 END;
 $$;
 
--- Function to run setup for pg_stat_statements
+-- Create a function to run setup for pg_stat_statements
 CREATE OR REPLACE FUNCTION public.run_pg_stat_statements_setup()
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -69,37 +72,66 @@ SECURITY DEFINER
 AS $$
 DECLARE
   extension_exists boolean;
+  result jsonb;
+  setup_commands text[];
+  cmd text;
 BEGIN
-  -- Check if extension exists first
+  -- Check if extension already exists
   SELECT EXISTS (
     SELECT 1 FROM pg_extension WHERE extname = 'pg_stat_statements'
   ) INTO extension_exists;
   
-  -- Create extension if it doesn't exist
-  IF NOT extension_exists THEN
-    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-  END IF;
+  -- Prepare setup commands with error handling for each
+  setup_commands := ARRAY[
+    'CREATE EXTENSION IF NOT EXISTS pg_stat_statements',
+    'ALTER SYSTEM SET pg_stat_statements.max = 10000',
+    'ALTER SYSTEM SET pg_stat_statements.track = all',
+    'SELECT pg_stat_statements_reset()' -- Reset statistics for clean start
+  ];
   
-  -- Configure the extension settings
-  EXECUTE 'ALTER SYSTEM SET pg_stat_statements.max = 10000';
-  EXECUTE 'ALTER SYSTEM SET pg_stat_statements.track = ''all''';
-  
-  -- Create index on profiles table if it doesn't exist
-  CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
-  
-  -- Reset statistics to start fresh
-  SELECT pg_stat_statements_reset();
-  
-  RETURN jsonb_build_object(
+  -- Initialize result object
+  result := jsonb_build_object(
+    'timestamp', now(),
     'success', true,
-    'timestamp', now(),
-    'message', 'pg_stat_statements setup completed successfully'
+    'actions', jsonb_build_array(),
+    'extension_existed', extension_exists
   );
-EXCEPTION WHEN OTHERS THEN
-  RETURN jsonb_build_object(
-    'success', false,
-    'timestamp', now(),
-    'message', 'Error setting up pg_stat_statements: ' || SQLERRM
+  
+  -- Execute each command with error handling
+  FOREACH cmd IN ARRAY setup_commands LOOP
+    BEGIN
+      EXECUTE cmd;
+      
+      -- Record successful command
+      result := jsonb_set(
+        result, 
+        '{actions}', 
+        (result->'actions') || jsonb_build_object('command', cmd, 'success', true)
+      );
+    EXCEPTION WHEN OTHERS THEN
+      -- Record failed command
+      result := jsonb_set(
+        result,
+        '{actions}', 
+        (result->'actions') || jsonb_build_object(
+          'command', cmd, 
+          'success', false,
+          'error', SQLERRM
+        )
+      );
+      
+      -- Mark overall process as failed
+      result := jsonb_set(result, '{success}', 'false'::jsonb);
+    END;
+  END LOOP;
+  
+  -- Provide instructions for completing setup
+  result := jsonb_set(
+    result,
+    '{next_steps}',
+    '"To complete setup, restart the database or reload the PostgreSQL configuration"'::jsonb
   );
+  
+  RETURN result;
 END;
 $$;
