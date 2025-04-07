@@ -117,3 +117,43 @@ export interface FeatureGridComponentProps {
   styleNote?: string;
   mediaType?: 'icon' | 'image' | 'none';
 }
+
+// FAQ Component Types
+export interface FAQComponentProps {
+  variant: string;
+  title?: string;
+  subtitle?: string;
+  faqs: Array<{
+    question: string;
+    answer: string;
+    isExpandedByDefault?: boolean;
+  }>;
+  faqType?: 'accordion' | 'list' | 'grid';
+  animationStyle?: 'expand' | 'fade' | 'none';
+  alignment?: 'left' | 'center' | 'right';
+  backgroundStyle?: 'light' | 'dark' | 'image';
+  styleNote?: string;
+}
+
+// CTA Component Types
+export interface CTAComponentProps {
+  variant: string;
+  headline: string;
+  subheadline?: string;
+  cta: {
+    label: string;
+    url: string;
+  };
+  ctaSecondary?: {
+    label: string;
+    url: string;
+  };
+  backgroundStyle?: 'light' | 'dark' | 'image' | 'gradient';
+  alignment?: 'left' | 'center' | 'right';
+  styleNote?: string;
+  testimonial?: {
+    quote: string;
+    author: string;
+    avatar?: string;
+  };
+}

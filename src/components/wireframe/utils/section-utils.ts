@@ -3,6 +3,8 @@ import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { PricingSection } from '../sections/PricingSection';
 import { TestimonialsSection } from '../sections/TestimonialsSection';
 import { FeaturesSection } from '../sections/FeaturesSection';
+import { FAQSection } from '../sections/FAQSection';
+import { CTASection } from '../sections/CTASection';
 
 /**
  * Maps section types to their corresponding component renderers
@@ -11,6 +13,8 @@ export const sectionTypeToComponent: Record<string, React.ComponentType<any>> = 
   'pricing': PricingSection,
   'testimonial': TestimonialsSection,
   'feature-grid': FeaturesSection,
+  'faq': FAQSection,
+  'cta': CTASection,
   // Add other section types as needed
 };
 
@@ -42,6 +46,16 @@ export const processSectionData = (section: WireframeSection) => {
         // Transform any section-specific data needed here
       };
     case 'feature-grid':
+      return {
+        ...section,
+        // Transform any section-specific data needed here
+      };
+    case 'faq':
+      return {
+        ...section,
+        // Transform any section-specific data needed here
+      };
+    case 'cta':
       return {
         ...section,
         // Transform any section-specific data needed here

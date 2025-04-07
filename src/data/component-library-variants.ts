@@ -1,9 +1,12 @@
-
 import { 
   PricingComponentProps, 
   TestimonialComponentProps,
-  FeatureGridComponentProps 
+  FeatureGridComponentProps,
+  FAQComponentProps,
+  CTAComponentProps
 } from '@/types/component-library';
+import { faqVariants } from './component-library-variants-faq';
+import { ctaVariants } from './component-library-variants-cta';
 
 // ================================
 // Pricing Component Variants
@@ -855,3 +858,7 @@ export const featureGridVariants: FeatureGridComponentProps[] = [
     ]
   }
 ];
+
+// Re-export FAQ and CTA variants from their separate files
+export { faqVariants } from './component-library-variants-faq';
+export { ctaVariants } from './component-library-variants-cta';
