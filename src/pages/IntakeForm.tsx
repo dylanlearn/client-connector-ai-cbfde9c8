@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -23,14 +24,14 @@ const IntakeForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { 
     formData, 
     updateFormData, 
     submitForm, 
     clearFormData, 
     hasStartedForm, 
-    isLoading,
+    isLoading: isFormLoading,
     isSaving,
     getSavedStep,
     saveCurrentStep,
@@ -62,7 +63,7 @@ const IntakeForm = () => {
   }, [currentStep, saveCurrentStep]);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isAuthLoading && !user) {
       console.log("User not authenticated, redirecting to login");
       toast({
         title: "Authentication Required",
@@ -71,9 +72,9 @@ const IntakeForm = () => {
       });
       navigate("/login");
     }
-  }, [user, navigate, toast, isLoading]);
+  }, [user, navigate, toast, isAuthLoading]);
 
-  if (isLoading) {
+  if (isAuthLoading || isFormLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[50vh]">
