@@ -1,61 +1,66 @@
 
 import React from 'react';
-import { WireframeData } from '@/types/wireframe';
-import WireframeDataVisualizer from './WireframeDataVisualizer';
+import { WireframeProps } from './types';
+import { getSectionComponent, processSectionData } from './utils/section-utils';
 
 interface WireframeVisualizerProps {
-  wireframe: {
-    id: string;
-    title: string;
-    description?: string;
-    sections: any[];
-    imageUrl?: string;
-  };
+  wireframe: WireframeProps;
   viewMode?: 'preview' | 'flowchart';
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
   darkMode?: boolean;
-  onSelect?: (id: string) => void;
 }
 
-const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
+export const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
-  deviceType = 'desktop',
   darkMode = false,
-  onSelect
 }) => {
-  // Convert wireframe to WireframeData format expected by WireframeDataVisualizer
-  const wireframeData: WireframeData = {
-    id: wireframe.id,
-    title: wireframe.title,
-    description: wireframe.description,
-    sections: wireframe.sections.map(section => {
-      // Ensure each section has the required sectionType field
-      return {
-        ...section,
-        sectionType: section.sectionType || 'generic'
-      };
-    }),
-    imageUrl: wireframe.imageUrl
-  };
-
-  const handleClick = () => {
-    if (onSelect) {
-      onSelect(wireframe.id);
-    }
-  };
+  if (!wireframe || !wireframe.sections || wireframe.sections.length === 0) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-gray-500">No wireframe data available to display</p>
+      </div>
+    );
+  }
 
   return (
-    <div 
-      className={`cursor-pointer ${onSelect ? 'hover:ring-2 hover:ring-primary/50' : ''}`}
-      onClick={handleClick}
-    >
-      <WireframeDataVisualizer
-        wireframeData={wireframeData}
-        viewMode={viewMode}
-        deviceType={deviceType}
-        darkMode={darkMode}
-      />
+    <div className={`wireframe-visualizer ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}>
+      <div className="wireframe-header p-4 border-b">
+        <h2 className="text-xl font-bold">{wireframe.title || 'Untitled Wireframe'}</h2>
+        {wireframe.description && <p className="text-sm text-gray-500">{wireframe.description}</p>}
+        {wireframe.lastUpdated && (
+          <p className="text-xs text-gray-500 mt-1">Last updated: {new Date(wireframe.lastUpdated).toLocaleString()}</p>
+        )}
+      </div>
+      
+      <div className="wireframe-body">
+        {wireframe.sections.map((section, index) => {
+          const SectionComponent = getSectionComponent(section);
+          
+          if (!SectionComponent) {
+            // Fallback for unknown section types
+            return (
+              <div key={`section-${index}`} className="border p-4 m-4">
+                <p>Unknown section type: {section.sectionType || 'undefined'}</p>
+              </div>
+            );
+          }
+          
+          // Process section data for the specific component type
+          const processedData = processSectionData(section);
+          
+          // Render the appropriate section component
+          return (
+            <div key={`section-${index}`} className="section-wrapper">
+              <SectionComponent 
+                sectionIndex={index}
+                data={processedData}
+                viewMode={viewMode}
+                darkMode={darkMode}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
