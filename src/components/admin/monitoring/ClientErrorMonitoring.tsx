@@ -1,15 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientError } from "@/utils/monitoring/types";
 import { fetchClientErrors, resolveClientError, getErrorStatistics } from "@/utils/monitoring/client-error-dashboard";
-import { AlertMessage } from "@/components/ui/alert-message";
-import { Loader2, CheckCircle, AlertCircle, ListFilter } from "lucide-react";
+import { ListFilter } from "lucide-react";
+import { ErrorList } from "./error-management/ErrorList";
+import { ResolutionDialog } from "./error-management/ResolutionDialog";
+import LoadingStateWrapper from "@/components/ui/LoadingStateWrapper";
 
 export function ClientErrorMonitoring() {
   const [errors, setErrors] = useState<ClientError[]>([]);
@@ -21,7 +20,6 @@ export function ClientErrorMonitoring() {
     byComponent: {} as Record<string, number>
   });
   const [selectedError, setSelectedError] = useState<ClientError | null>(null);
-  const [resolutionNotes, setResolutionNotes] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
   // Fetch errors on component mount
@@ -54,7 +52,7 @@ export function ClientErrorMonitoring() {
     setErrorStatistics(stats);
   };
 
-  const handleResolveError = async () => {
+  const handleResolveError = async (resolutionNotes: string) => {
     if (!selectedError) return;
     
     const success = await resolveClientError(selectedError.id!, resolutionNotes);
@@ -68,7 +66,6 @@ export function ClientErrorMonitoring() {
         )
       );
       setSelectedError(null);
-      setResolutionNotes("");
     }
   };
 
@@ -105,153 +102,32 @@ export function ClientErrorMonitoring() {
             </TabsList>
           </div>
           
-          <TabsContent value="all" className="mt-0">
-            {renderErrorList()}
-          </TabsContent>
-          
-          <TabsContent value="unresolved" className="mt-0">
-            {renderErrorList()}
-          </TabsContent>
-          
-          <TabsContent value="resolved" className="mt-0">
-            {renderErrorList()}
-          </TabsContent>
+          <LoadingStateWrapper
+            isLoading={isLoading}
+            error={null}
+            isEmpty={errors.length === 0}
+            loadingMessage="Loading client errors..."
+            emptyState={
+              <div className="p-8 text-center text-muted-foreground">
+                No errors found matching the current filter.
+              </div>
+            }
+          >
+            <ErrorList
+              errors={errors}
+              isLoading={isLoading}
+              onResolveClick={(error) => setSelectedError(error)}
+            />
+          </LoadingStateWrapper>
         </Tabs>
         
         {/* Resolution dialog */}
-        <Dialog open={!!selectedError} onOpenChange={(open) => !open && setSelectedError(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Resolve Error</DialogTitle>
-              <DialogDescription>
-                Add resolution notes and mark this error as resolved.
-              </DialogDescription>
-            </DialogHeader>
-            
-            {selectedError && (
-              <div className="space-y-4 my-4">
-                <div>
-                  <h4 className="font-medium">Error Message:</h4>
-                  <p className="text-sm text-destructive">{selectedError.error_message}</p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium">Component:</h4>
-                  <p className="text-sm">{selectedError.component_name || 'Unknown'}</p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium">Resolution Notes:</h4>
-                  <Textarea
-                    value={resolutionNotes}
-                    onChange={(e) => setResolutionNotes(e.target.value)}
-                    placeholder="Enter your resolution notes here..."
-                    className="w-full mt-1"
-                  />
-                </div>
-              </div>
-            )}
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedError(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleResolveError}>
-                Mark as Resolved
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ResolutionDialog
+          error={selectedError}
+          onClose={() => setSelectedError(null)}
+          onResolve={handleResolveError}
+        />
       </CardContent>
     </Card>
   );
-
-  function renderErrorList() {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      );
-    }
-    
-    if (errors.length === 0) {
-      return (
-        <AlertMessage type="info" title="No errors found">
-          No client errors have been recorded matching the current filter.
-        </AlertMessage>
-      );
-    }
-    
-    return (
-      <div className="space-y-4">
-        {errors.map((error) => (
-          <div 
-            key={error.id} 
-            className="p-4 border rounded-md hover:bg-accent transition-colors"
-          >
-            <div className="flex justify-between items-start">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  {error.resolved ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-5 w-5 text-amber-500" />
-                  )}
-                  <span className="font-medium text-sm">
-                    {error.error_message}
-                  </span>
-                </div>
-                
-                <div className="text-xs text-muted-foreground">
-                  {new Date(error.timestamp!).toLocaleString()}
-                </div>
-                
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {error.component_name && (
-                    <Badge variant="outline">{error.component_name}</Badge>
-                  )}
-                  <Badge variant="outline">{error.url?.split('?')[0]}</Badge>
-                  {error.resolved && (
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      Resolved
-                    </Badge>
-                  )}
-                </div>
-                
-                {error.resolution_notes && (
-                  <div className="mt-2 text-sm italic border-l-2 pl-2 border-primary-200">
-                    {error.resolution_notes}
-                  </div>
-                )}
-              </div>
-              
-              {!error.resolved && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setSelectedError(error);
-                    setResolutionNotes("");
-                  }}
-                >
-                  Resolve
-                </Button>
-              )}
-            </div>
-            
-            {error.error_stack && (
-              <details className="mt-3">
-                <summary className="cursor-pointer text-xs text-muted-foreground">
-                  Error Stack
-                </summary>
-                <pre className="mt-2 text-xs p-2 bg-slate-50 rounded-md overflow-auto max-h-32">
-                  {error.error_stack}
-                </pre>
-              </details>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
 }
