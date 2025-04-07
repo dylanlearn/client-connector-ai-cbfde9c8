@@ -15,12 +15,25 @@ export interface UserProfile {
   subscription_status: string | null;
 }
 
+// Admin email list - for client-side admin detection
+const ADMIN_EMAILS = [
+  'dylanmohseni0@gmail.com',
+  'admin@example.com',
+  // add other admin emails here
+];
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+
+  // Check if email is in admin list
+  const isAdminEmail = useCallback((email: string | undefined): boolean => {
+    if (!email) return false;
+    return ADMIN_EMAILS.includes(email.toLowerCase());
+  }, []);
 
   // Memoize fetch profile for performance
   const fetchProfile = useCallback(async (userId: string) => {
@@ -52,10 +65,40 @@ export function useAuth() {
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        
+        // If we're dealing with the admin email, we can create a temporary profile
+        const currentUser = supabase.auth.getUser().then(({data}) => {
+          if (data.user && isAdminEmail(data.user.email)) {
+            console.log('Admin email detected, creating temporary admin profile');
+            const tempAdminProfile: UserProfile = {
+              id: data.user.id,
+              email: data.user.email || '',
+              name: data.user.user_metadata?.name || 'Admin User',
+              avatar_url: data.user.user_metadata?.avatar_url || null,
+              role: 'admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              phone_number: null,
+              subscription_status: 'sync-pro'
+            };
+            setProfile(tempAdminProfile);
+            
+            // Cache the temporary profile
+            localStorage.setItem(`profile-${userId}`, JSON.stringify(tempAdminProfile));
+            localStorage.setItem(`profile-${userId}-time`, Date.now().toString());
+          }
+        });
         return;
       }
 
       console.log('Profile fetched successfully:', data);
+      
+      // If this is an admin email but profile doesn't have admin role, override it
+      if (data && data.email && isAdminEmail(data.email) && data.role !== 'admin') {
+        data.role = 'admin';
+        console.log('Overriding profile with admin role for admin email');
+      }
+      
       if (data) {
         setProfile(data as UserProfile);
         
@@ -68,7 +111,7 @@ export function useAuth() {
     } finally {
       setIsProfileLoading(false);
     }
-  }, []);
+  }, [isAdminEmail]);
 
   // SignIn function
   const signIn = async (email: string, password: string) => {
@@ -153,6 +196,11 @@ export function useAuth() {
       
       if (currentSession?.user) {
         fetchProfile(currentSession.user.id);
+        
+        // Check if this is an admin email
+        if (currentSession.user.email && isAdminEmail(currentSession.user.email)) {
+          console.log('Admin email detected during initialization');
+        }
       }
       
       setIsLoading(false);
@@ -161,7 +209,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile, isAdminEmail]);
 
   return {
     user,

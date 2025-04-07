@@ -40,6 +40,19 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     };
   }, [isLoading, location.pathname, user]);
 
+  // Debug logs for admin access
+  useEffect(() => {
+    if (adminOnly) {
+      console.log('AdminOnly route access attempt:', { 
+        isLoading, 
+        userExists: !!user, 
+        profile, 
+        userEmail: user?.email,
+        userRole: profile?.role 
+      });
+    }
+  }, [adminOnly, isLoading, user, profile]);
+
   // Show loading state if auth is still being checked
   if (isLoading) {
     return (
@@ -56,9 +69,22 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
   }
   
   // For admin routes, check if user has admin role
-  if (adminOnly && profile?.role !== 'admin') {
-    console.log('Non-admin user tried to access admin route:', profile?.role);
-    return <Navigate to="/dashboard" replace />;
+  // Note: we're checking both profile.role and also the email directly
+  if (adminOnly) {
+    const isAdmin = profile?.role === 'admin';
+    const isAdminEmail = user.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email);
+    
+    if (!isAdmin && !isAdminEmail) {
+      console.log('Non-admin user tried to access admin route:', {
+        role: profile?.role,
+        email: user.email,
+        isAdminByEmail: isAdminEmail
+      });
+      return <Navigate to="/dashboard" replace />;
+    }
+    
+    // User is confirmed admin, proceed
+    console.log('Admin access granted to', user.email);
   }
 
   return children ? <>{children}</> : <Outlet />;
