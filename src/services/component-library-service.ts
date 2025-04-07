@@ -1,10 +1,19 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ComponentType, 
   ComponentField, 
   ComponentStyle, 
-  ComponentVariant 
+  ComponentVariant,
+  PricingComponentProps,
+  TestimonialComponentProps,
+  FeatureGridComponentProps
 } from '@/types/component-library';
+import {
+  pricingVariants,
+  testimonialVariants,
+  featureGridVariants
+} from '@/data/component-library-variants';
 
 /**
  * Service for interacting with the component library database tables
@@ -276,12 +285,355 @@ export const componentLibraryService = {
       }
 
       // Create Hero Variants from existing heroVariants
-      // For this part, we'll need to create variants - we'd typically import from hero-components.ts
+      // For this part, we'd typically import from hero-components.ts
       // and loop through each variant to create it in the database
 
       console.log('Hero component library initialized successfully.');
     } catch (error) {
       console.error('Error initializing hero component library:', error);
+      throw error;
+    }
+  },
+
+  // Initialize Pricing Component Library
+  async initializePricingComponentLibrary(): Promise<void> {
+    try {
+      // Check if pricing component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const pricingType = existingTypes.find(type => type.name === 'Pricing Section');
+      
+      if (pricingType) {
+        console.log('Pricing component type already initialized.');
+        return;
+      }
+
+      // Create Pricing Component Type
+      const pricingComponentType = await this.createComponentType({
+        name: 'Pricing Section',
+        description: 'Section displaying pricing plans and options',
+        category: 'content',
+        icon: 'credit-card'
+      });
+
+      // Create Pricing Component Fields
+      const fields = [
+        {
+          component_type_id: pricingComponentType.id,
+          name: 'title',
+          type: 'text' as const,
+          description: 'Section heading',
+          default_value: 'Simple, Transparent Pricing',
+          validation: { required: true }
+        },
+        {
+          component_type_id: pricingComponentType.id,
+          name: 'description',
+          type: 'textarea' as const,
+          description: 'Optional section subheading or description',
+          default_value: 'Choose the plan that works for your needs.',
+        },
+        {
+          component_type_id: pricingComponentType.id,
+          name: 'plans',
+          type: 'array' as const,
+          description: 'Array of pricing plans to display',
+          default_value: [],
+        },
+        {
+          component_type_id: pricingComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'center',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: pricingComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+          ],
+        },
+        {
+          component_type_id: pricingComponentType.id,
+          name: 'mediaType',
+          type: 'select' as const,
+          description: 'Type of media to include',
+          default_value: 'none',
+          options: [
+            { label: 'None', value: 'none' },
+            { label: 'Icon', value: 'icon' },
+            { label: 'Image', value: 'image' },
+          ],
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined pricing variants
+      for (const variant of pricingVariants) {
+        await this.createComponentVariant({
+          component_type_id: pricingComponentType.id,
+          variant_token: variant.variant,
+          name: variant.title,
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Pricing component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing pricing component library:', error);
+      throw error;
+    }
+  },
+
+  // Initialize Testimonials Component Library
+  async initializeTestimonialsComponentLibrary(): Promise<void> {
+    try {
+      // Check if testimonials component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const testimonialType = existingTypes.find(type => type.name === 'Testimonials Section');
+      
+      if (testimonialType) {
+        console.log('Testimonials component type already initialized.');
+        return;
+      }
+
+      // Create Testimonials Component Type
+      const testimonialComponentType = await this.createComponentType({
+        name: 'Testimonials Section',
+        description: 'Section displaying customer testimonials and reviews',
+        category: 'content',
+        icon: 'message-circle'
+      });
+
+      // Create Testimonials Component Fields
+      const fields = [
+        {
+          component_type_id: testimonialComponentType.id,
+          name: 'title',
+          type: 'text' as const,
+          description: 'Section heading',
+          default_value: 'What Our Customers Say',
+        },
+        {
+          component_type_id: testimonialComponentType.id,
+          name: 'subtitle',
+          type: 'text' as const,
+          description: 'Section subheading',
+          default_value: '',
+        },
+        {
+          component_type_id: testimonialComponentType.id,
+          name: 'testimonials',
+          type: 'array' as const,
+          description: 'Array of testimonial objects',
+          default_value: [],
+        },
+        {
+          component_type_id: testimonialComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'center',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: testimonialComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+          ],
+        },
+        {
+          component_type_id: testimonialComponentType.id,
+          name: 'mediaType',
+          type: 'select' as const,
+          description: 'Type of media to include with testimonials',
+          default_value: 'avatar',
+          options: [
+            { label: 'Avatar', value: 'avatar' },
+            { label: 'Logo', value: 'logo' },
+            { label: 'None', value: 'none' },
+          ],
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined testimonial variants
+      for (const variant of testimonialVariants) {
+        await this.createComponentVariant({
+          component_type_id: testimonialComponentType.id,
+          variant_token: variant.variant,
+          name: variant.title || 'Testimonials',
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Testimonials component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing testimonials component library:', error);
+      throw error;
+    }
+  },
+
+  // Initialize Feature Grid Component Library
+  async initializeFeatureGridComponentLibrary(): Promise<void> {
+    try {
+      // Check if feature grid component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const featureGridType = existingTypes.find(type => type.name === 'Feature Grid');
+      
+      if (featureGridType) {
+        console.log('Feature Grid component type already initialized.');
+        return;
+      }
+
+      // Create Feature Grid Component Type
+      const featureGridComponentType = await this.createComponentType({
+        name: 'Feature Grid',
+        description: 'Grid layout for showcasing product or service features',
+        category: 'content',
+        icon: 'grid'
+      });
+
+      // Create Feature Grid Component Fields
+      const fields = [
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'title',
+          type: 'text' as const,
+          description: 'Section heading',
+          default_value: 'Features',
+        },
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'subtitle',
+          type: 'text' as const,
+          description: 'Section subheading',
+          default_value: '',
+        },
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'features',
+          type: 'array' as const,
+          description: 'Array of feature objects',
+          default_value: [],
+        },
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'columns',
+          type: 'select' as const,
+          description: 'Number of columns in the grid',
+          default_value: 3,
+          options: [
+            { label: '2 Columns', value: 2 },
+            { label: '3 Columns', value: 3 },
+            { label: '4 Columns', value: 4 },
+          ],
+        },
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'center',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' },
+          ],
+        },
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+          ],
+        },
+        {
+          component_type_id: featureGridComponentType.id,
+          name: 'mediaType',
+          type: 'select' as const,
+          description: 'Type of media to include with features',
+          default_value: 'icon',
+          options: [
+            { label: 'Icon', value: 'icon' },
+            { label: 'Image', value: 'image' },
+            { label: 'None', value: 'none' },
+          ],
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined feature grid variants
+      for (const variant of featureGridVariants) {
+        await this.createComponentVariant({
+          component_type_id: featureGridComponentType.id,
+          variant_token: variant.variant,
+          name: variant.title || 'Feature Grid',
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Feature Grid component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing feature grid component library:', error);
+      throw error;
+    }
+  },
+
+  // Main initialization function
+  async initializeComponentLibrary(): Promise<void> {
+    try {
+      console.log('Initializing component library...');
+      await this.initializeHeroComponentLibrary();
+      await this.initializePricingComponentLibrary();
+      await this.initializeTestimonialsComponentLibrary();
+      await this.initializeFeatureGridComponentLibrary();
+      console.log('Component library initialization complete!');
+    } catch (error) {
+      console.error('Error during component library initialization:', error);
       throw error;
     }
   }

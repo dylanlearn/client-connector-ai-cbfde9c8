@@ -6,7 +6,10 @@ import {
   ComponentType, 
   ComponentField, 
   ComponentStyle, 
-  ComponentVariant 
+  ComponentVariant,
+  PricingComponentProps,
+  TestimonialComponentProps,
+  FeatureGridComponentProps
 } from '@/types/component-library';
 
 export function useComponentLibrary() {
@@ -72,7 +75,22 @@ export function useComponentLibrary() {
     }
   };
 
-  // Initialize the hero component library
+  // Initialize the component libraries
+  const initializeComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeComponentLibrary();
+      toast.success('Component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing component library:', error);
+      toast.error('Failed to initialize component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize specific component libraries
   const initializeHeroComponentLibrary = async () => {
     try {
       setIsLoading(true);
@@ -82,6 +100,48 @@ export function useComponentLibrary() {
     } catch (error) {
       console.error('Error initializing hero library:', error);
       toast.error('Failed to initialize hero component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializePricingComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializePricingComponentLibrary();
+      toast.success('Pricing component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing pricing library:', error);
+      toast.error('Failed to initialize pricing component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeTestimonialsComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeTestimonialsComponentLibrary();
+      toast.success('Testimonials component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing testimonials library:', error);
+      toast.error('Failed to initialize testimonials component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeFeatureGridComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeFeatureGridComponentLibrary();
+      toast.success('Feature Grid component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing feature grid library:', error);
+      toast.error('Failed to initialize feature grid component library');
     } finally {
       setIsLoading(false);
     }
@@ -102,6 +162,10 @@ export function useComponentLibrary() {
     loadComponentTypes,
     selectComponentType,
     getVariantDetails,
-    initializeHeroComponentLibrary
+    initializeComponentLibrary,
+    initializeHeroComponentLibrary,
+    initializePricingComponentLibrary,
+    initializeTestimonialsComponentLibrary,
+    initializeFeatureGridComponentLibrary
   };
 }

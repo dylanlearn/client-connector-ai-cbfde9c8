@@ -58,3 +58,62 @@ export interface VariantStyle {
   priority: number;
   created_at: string;
 }
+
+// Pricing Component Types
+export interface PricingComponentProps {
+  variant: string;
+  title: string;
+  description?: string;
+  plans: Array<{
+    name: string;
+    price: string;
+    description?: string;
+    features: string[];
+    cta: {
+      label: string;
+      url: string;
+    };
+    badge?: string;
+  }>;
+  alignment?: 'left' | 'center' | 'right';
+  backgroundStyle?: 'light' | 'dark' | 'image';
+  styleNote?: string;
+  mediaType?: 'none' | 'icon' | 'image';
+}
+
+// Testimonial Component Types
+export interface TestimonialComponentProps {
+  variant: string;
+  title?: string;
+  subtitle?: string;
+  testimonials: Array<{
+    quote: string;
+    author: string;
+    role?: string;
+    avatar?: string;
+    brandLogo?: string;
+  }>;
+  alignment?: 'left' | 'center' | 'right';
+  backgroundStyle?: 'light' | 'dark' | 'image';
+  styleNote?: string;
+  mediaType?: 'avatar' | 'logo' | 'none';
+}
+
+// Feature Grid Component Types
+export interface FeatureGridComponentProps {
+  variant: string;
+  title?: string;
+  subtitle?: string;
+  features: Array<{
+    title: string;
+    description?: string;
+    icon?: string;
+    image?: string;
+    badge?: string;
+  }>;
+  columns?: 2 | 3 | 4;
+  alignment?: 'left' | 'center' | 'right';
+  backgroundStyle?: 'light' | 'dark' | 'image';
+  styleNote?: string;
+  mediaType?: 'icon' | 'image' | 'none';
+}

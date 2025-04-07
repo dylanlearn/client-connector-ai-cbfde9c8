@@ -1,5 +1,5 @@
 
-import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
+import { ReactNode } from 'react';
 
 export interface WireframeProps {
   id: string;
@@ -7,27 +7,11 @@ export interface WireframeProps {
   description?: string;
   sections: any[];
   imageUrl?: string;
-  version?: string;
   lastUpdated?: string;
 }
 
-export interface WireframeVisualizerProps {
-  wireframe: WireframeProps;
-  darkMode?: boolean;
-  onSelect?: (id: string) => void;
-}
-
-export interface SectionRenderProps {
-  section: WireframeSection;
-  darkMode?: boolean;
-}
-
-export interface ComponentPreviewProps {
-  component: any;
-  darkMode?: boolean;
-}
-
-export interface WireframeDataVisualizerProps {
-  wireframe: WireframeData;
+export interface SectionPreviewProps {
+  section: any;
+  viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
 }
