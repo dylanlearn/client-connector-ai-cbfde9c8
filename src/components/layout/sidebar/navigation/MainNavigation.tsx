@@ -6,7 +6,7 @@ import {
   FolderKanban,
   Settings,
   Users,
-  FileAnalytics,
+  FileText,
   BarChart3,
   Layout,
   Wand2,
@@ -60,7 +60,7 @@ export const mainNavItems: MainNavigationItemProps[] = [
   {
     title: "Feedback Analysis",
     href: "/feedback-analysis",
-    icon: <FileAnalytics className="h-5 w-5" />,
+    icon: <FileText className="h-5 w-5" />,
   },
   {
     title: "Analytics",
