@@ -83,15 +83,14 @@ export const heroComponent: ComponentDefinition = {
     name: 'Hero Section',
     sectionType: 'hero',
     componentVariant: 'hero-centered',
-    data: {
-      heading: 'Your Impactful Heading Here',
-      subheading: 'A descriptive subheading to provide more context and engage your visitors.',
-      primaryCta: 'Get Started',
-      secondaryCta: 'Learn More',
-      backgroundType: 'color',
-      backgroundColor: '#f9fafb',
-      imageUrl: ''
-    },
+    // Instead of using 'data', add properties directly to the section
+    heading: 'Your Impactful Heading Here',
+    subheading: 'A descriptive subheading to provide more context and engage your visitors.',
+    primaryCta: 'Get Started',
+    secondaryCta: 'Learn More',
+    backgroundType: 'color',
+    backgroundColor: '#f9fafb',
+    imageUrl: '',
     styleProperties: {
       paddingTop: 'lg',
       paddingBottom: 'lg',
@@ -180,28 +179,27 @@ export const featuresComponent: ComponentDefinition = {
     name: 'Features Section',
     sectionType: 'features',
     componentVariant: 'features-grid',
-    data: {
-      heading: 'Key Features',
-      subheading: 'Discover what makes our product stand out from the competition.',
-      features: [
-        {
-          title: 'Feature One',
-          description: 'Description of the first feature highlighting its benefits.',
-          icon: 'star'
-        },
-        {
-          title: 'Feature Two',
-          description: 'Description of the second feature highlighting its benefits.',
-          icon: 'clock'
-        },
-        {
-          title: 'Feature Three',
-          description: 'Description of the third feature highlighting its benefits.',
-          icon: 'shield'
-        }
-      ],
-      columnsCount: 3
-    },
+    // Instead of using 'data', add properties directly to the section
+    heading: 'Key Features',
+    subheading: 'Discover what makes our product stand out from the competition.',
+    features: [
+      {
+        title: 'Feature One',
+        description: 'Description of the first feature highlighting its benefits.',
+        icon: 'star'
+      },
+      {
+        title: 'Feature Two',
+        description: 'Description of the second feature highlighting its benefits.',
+        icon: 'clock'
+      },
+      {
+        title: 'Feature Three',
+        description: 'Description of the third feature highlighting its benefits.',
+        icon: 'shield'
+      }
+    ],
+    columnsCount: 3,
     styleProperties: {
       paddingTop: 'md',
       paddingBottom: 'md',
