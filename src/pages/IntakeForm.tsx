@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,15 +15,15 @@ import SpecificQuestionsStep from "@/components/intake/SpecificQuestionsStep";
 import DesignPreferencesStep from "@/components/intake/DesignPreferencesStep";
 import CompletionStep from "@/components/intake/CompletionStep";
 import { useIntakeForm } from "@/hooks/intake-form";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const IntakeForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const { 
     formData, 
     updateFormData, 
@@ -42,15 +41,12 @@ const IntakeForm = () => {
   const totalSteps = 5;
   const [showResumeDialog, setShowResumeDialog] = useState(false);
 
-  // Check for existing form data and show resume dialog
   useEffect(() => {
-    // Don't show the resume dialog on the index page
     if (location.pathname !== "/" && hasInProgressForm()) {
       setShowResumeDialog(true);
     }
   }, [location.pathname, hasInProgressForm]);
 
-  // Set the initial step based on saved progress
   useEffect(() => {
     if (!showResumeDialog) {
       const savedStep = getSavedStep();
@@ -60,24 +56,33 @@ const IntakeForm = () => {
     }
   }, [getSavedStep, showResumeDialog]);
 
-  // Save current step to localStorage whenever it changes
   useEffect(() => {
     saveCurrentStep(currentStep);
-    // Scroll to top on step change
     window.scrollTo(0, 0);
   }, [currentStep, saveCurrentStep]);
 
-  // Redirect if not logged in
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
+      console.log("User not authenticated, redirecting to login");
       toast({
         title: "Authentication Required",
         description: "Please log in to access the intake form",
         variant: "destructive",
       });
-      navigate("/login?redirect=/intake-form");
+      navigate("/login");
     }
-  }, [user, navigate, toast]);
+  }, [user, navigate, toast, isLoading]);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[50vh]">
+          <LoadingSpinner size="lg" />
+          <p className="ml-2">Loading your profile...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const handleStartNewForm = () => {
     clearFormData();

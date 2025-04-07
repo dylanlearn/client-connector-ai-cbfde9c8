@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import DesignProcessProvider from "./contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -104,17 +103,14 @@ const router = createBrowserRouter([
         path: '/analytics',
         element: <ProtectedRoute><Analytics /></ProtectedRoute>,
       },
-      // Add the missing route for WireframeGenerator
       {
         path: '/wireframe-generator',
         element: <ProtectedRoute><WireframeGenerator /></ProtectedRoute>,
       },
-      // Add the missing route for Clients
       {
         path: '/clients',
         element: <ProtectedRoute><Clients /></ProtectedRoute>,
       },
-      // Use AdminRoute for admin paths
       {
         path: '/admin',
         element: <AdminRoute><AdminPanel /></AdminRoute>,

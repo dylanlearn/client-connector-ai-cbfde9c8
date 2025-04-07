@@ -24,23 +24,9 @@ import RoleManagementGuide from "@/components/admin/RoleManagementGuide";
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isAdmin, isVerifying, verifyAdminStatus } = useAdminStatus();
+  const { isAdmin, isVerifying } = useAdminStatus();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
-
-  useEffect(() => {
-    const checkAccess = async () => {
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-      
-      // Verify admin status - the hook will handle the rest
-      await verifyAdminStatus();
-    };
-    
-    checkAccess();
-  }, [user, navigate, toast, verifyAdminStatus]);
   
   if (isVerifying) {
     return (

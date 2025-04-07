@@ -16,16 +16,23 @@ export function useAdminStatus() {
   useEffect(() => {
     // Check if user has admin role or is an admin email
     const checkAdminStatus = () => {
-      console.log("Checking admin status with:", { profile, user });
+      console.log("Checking admin status with:", { 
+        profile, 
+        user,
+        profileRole: profile?.role,
+        userEmail: user?.email,
+        adminEmails: ADMIN_EMAILS 
+      });
       
       // Consider both profile role and admin email list
-      const adminCheck = 
-        profile?.role === 'admin' || 
-        (user?.email && ADMIN_EMAILS.includes(user.email));
+      const adminByRole = profile?.role === 'admin';
+      const adminByEmail = user?.email && ADMIN_EMAILS.includes(user.email);
+      const adminCheck = adminByRole || adminByEmail;
       
-      console.log("Admin check result:", adminCheck, {
-        profileCheck: profile?.role === 'admin',
-        emailCheck: user?.email && ADMIN_EMAILS.includes(user.email),
+      console.log("Admin check results:", { 
+        adminByRole,
+        adminByEmail,
+        isAdmin: adminCheck,
         email: user?.email
       });
       
@@ -33,7 +40,12 @@ export function useAdminStatus() {
       setIsVerifying(false);
     };
     
-    checkAdminStatus();
+    // Short delay to ensure profile is loaded
+    const timer = setTimeout(() => {
+      checkAdminStatus();
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [profile, user]);
 
   // Added a function to verify admin status if needed
@@ -42,16 +54,16 @@ export function useAdminStatus() {
     try {
       // In a real app, this might make an API call to verify admin status
       // For now, we'll use the profile check and email check
-      const adminCheck = 
-        profile?.role === 'admin' || 
-        (user?.email && ADMIN_EMAILS.includes(user.email));
+      const adminByRole = profile?.role === 'admin';
+      const adminByEmail = user?.email && ADMIN_EMAILS.includes(user.email);
+      const adminCheck = adminByRole || adminByEmail;
       
       setIsAdmin(adminCheck);
       console.log('Admin verification complete:', {
         isAdmin: adminCheck,
-        method: profile?.role === 'admin' ? 'profile' : 'email',
-        email: user?.email,
-        adminEmails: ADMIN_EMAILS
+        method: adminByRole ? 'profile role' : (adminByEmail ? 'admin email' : 'none'),
+        role: profile?.role,
+        email: user?.email
       });
     } catch (error) {
       console.error("Error verifying admin status:", error);
