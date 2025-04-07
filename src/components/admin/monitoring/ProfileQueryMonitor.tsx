@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
   DatabaseIcon,
   RefreshCw
 } from "lucide-react";
+import { getProfileQueryStatistics, formatQueryTime } from "@/utils/monitoring/query-stats";
 
 type ProfileQueryStat = {
   query: string;
@@ -40,11 +40,10 @@ export function ProfileQueryMonitor() {
       setLoading(true);
       setError(null);
       
-      // Call a simpler version of the function that handles aggregation properly
-      const { data, error } = await supabase.rpc('get_profile_query_stats');
+      const data = await getProfileQueryStatistics();
       
-      if (error) {
-        throw error;
+      if (!data) {
+        throw new Error('Failed to fetch profile query statistics');
       }
       
       setQueryStats(data);
@@ -66,13 +65,6 @@ export function ProfileQueryMonitor() {
       clearInterval(interval);
     };
   }, []);
-
-  const formatTime = (ms: number) => {
-    if (ms < 1) {
-      return `${(ms * 1000).toFixed(2)} µs`;
-    }
-    return `${ms.toFixed(2)} ms`;
-  };
 
   return (
     <div className="space-y-4">
@@ -138,8 +130,8 @@ export function ProfileQueryMonitor() {
                             </div>
                           </TableCell>
                           <TableCell>{stat.calls.toLocaleString()}</TableCell>
-                          <TableCell>{formatTime(stat.total_exec_time)}</TableCell>
-                          <TableCell>{formatTime(stat.mean_exec_time)}</TableCell>
+                          <TableCell>{formatQueryTime(stat.total_exec_time)}</TableCell>
+                          <TableCell>{formatQueryTime(stat.mean_exec_time)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
