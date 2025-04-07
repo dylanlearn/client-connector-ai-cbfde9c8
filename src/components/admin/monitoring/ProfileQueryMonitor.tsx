@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -47,7 +46,6 @@ export function ProfileQueryMonitor() {
       setLoading(true);
       setError(null);
       
-      // First verify if the extension is available
       setCheckingSetup(true);
       const isEnabled = await checkPgStatStatementsEnabled();
       setExtensionEnabled(isEnabled);
@@ -63,14 +61,12 @@ export function ProfileQueryMonitor() {
         return;
       }
       
-      // Fetch the actual query statistics
       const data = await getProfileQueryStatistics();
       
       if (!data) {
         throw new Error('Failed to fetch profile query statistics');
       }
       
-      // Update extension status based on response
       if (data.extension_enabled !== undefined) {
         setExtensionEnabled(data.extension_enabled);
       }
@@ -94,7 +90,6 @@ export function ProfileQueryMonitor() {
   const verifyAndFixSetup = async () => {
     setCheckingSetup(true);
     try {
-      // Try to fix the setup via our helper function
       const isEnabled = await checkPgStatStatementsEnabled();
       setExtensionEnabled(isEnabled);
       
@@ -120,7 +115,6 @@ export function ProfileQueryMonitor() {
   useEffect(() => {
     fetchProfileQueryStats();
     
-    // Set up a refresh interval for 60 seconds
     const interval = setInterval(fetchProfileQueryStats, 60000);
     
     return () => {

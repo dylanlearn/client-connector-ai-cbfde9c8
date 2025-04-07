@@ -1,7 +1,6 @@
 
--- Function to analyze profile queries
-CREATE OR REPLACE FUNCTION public.analyze_profile_queries()
-RETURNS JSONB
+CREATE OR REPLACE FUNCTION public.get_profile_query_stats()
+RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
@@ -24,6 +23,7 @@ BEGIN
   
   RETURN jsonb_build_object(
     'timestamp', now(),
+    'extension_enabled', true,
     'queries', COALESCE(query_stats, '[]'::jsonb)
   );
 END;
