@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -164,14 +163,12 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     { value: 'playful', label: 'Playful' }
   ];
   
-  // Helper function to ensure sections have required id property
   const adaptSectionsForVisualizer = (sections: WireframeSection[] = []): any[] => {
     return sections.map((section, index) => ({
       id: section.id || `section-${index}`,
       name: section.name,
       sectionType: section.sectionType,
       description: section.description || '',
-      imageUrl: section.imageUrl || ''
     }));
   };
   
