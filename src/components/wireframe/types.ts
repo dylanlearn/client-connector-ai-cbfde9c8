@@ -39,9 +39,12 @@ export interface WireframeProps {
   isSelected?: boolean;
   className?: string;
   darkMode?: boolean; // Added darkMode prop
+  viewMode?: 'flowchart' | 'preview'; // Added viewMode prop
+  deviceType?: 'desktop' | 'mobile' | 'tablet'; // Added deviceType prop
 }
 
 export interface WireframeDataProps {
   wireframeData: WireframeData;
   className?: string;
+  darkMode?: boolean; // Added darkMode prop
 }

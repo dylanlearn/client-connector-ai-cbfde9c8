@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
   const [prompt, setPrompt] = useState<string>('');
   const [pageType, setPageType] = useState<string>('landing');
   const [stylePreference, setStylePreference] = useState<string>('modern');
-  const [complexity, setComplexity] = useState<string>('moderate');
+  const [complexity, setComplexity] = useState<'simple' | 'moderate' | 'complex'>('moderate'); // Fixed type
   const [creativityLevel, setCreativityLevel] = useState<number>(5);
   const [isMultiPage, setIsMultiPage] = useState<boolean>(false);
   const [numPages, setNumPages] = useState<number>(1);
@@ -61,7 +62,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
       prompt: prompt,
       pageType: pageType,
       stylePreferences: [stylePreference],
-      complexity: complexity as 'simple' | 'moderate' | 'complex',
+      complexity: complexity, // Now correctly typed
       creativityLevel: creativityLevel,
       enhancedCreativity: isEnhancedCreativity,
       darkMode: isDarkMode,
@@ -127,10 +128,6 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
     }
   };
 
-  const getSelectedComplexity = (): string => {
-    return complexity;
-  };
-
   return (
     <div className={`space-y-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
       <Card className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}>
@@ -187,7 +184,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="complexity">Complexity</Label>
-              <Select onValueChange={setComplexity}>
+              <Select onValueChange={(value: 'simple' | 'moderate' | 'complex') => setComplexity(value)}>
                 <SelectTrigger className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}>
                   <SelectValue placeholder="Select complexity" defaultValue={complexity} />
                 </SelectTrigger>

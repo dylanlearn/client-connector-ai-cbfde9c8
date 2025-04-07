@@ -38,10 +38,10 @@ export interface WireframeData {
   sections: any[];
   layoutType?: string;
   colorScheme?: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    background: string;
+    primary: string; // Required to match service type
+    secondary: string; // Required to match service type
+    accent: string; // Required to match service type
+    background: string; // Required to match service type
     text?: string;
   };
   typography?: {
