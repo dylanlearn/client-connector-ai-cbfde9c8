@@ -2559,6 +2559,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_profile_query_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_user_permissions: {
         Args: {
           p_user_id: string
