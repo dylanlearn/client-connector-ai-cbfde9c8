@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface HeroSectionRendererProps {
   section: WireframeSection;
@@ -9,110 +9,77 @@ interface HeroSectionRendererProps {
   darkMode?: boolean;
 }
 
-const HeroSectionRenderer: React.FC<HeroSectionRendererProps> = ({ 
-  section, 
+const HeroSectionRenderer: React.FC<HeroSectionRendererProps> = ({
+  section,
   viewMode,
-  darkMode = false
+  darkMode = false,
 }) => {
-  // Extract relevant properties from the section
-  const variant = section.componentVariant || 'hero-standard-001';
-  const styleProperties = section.styleProperties || {};
-  
-  // Basic rendering for flowchart mode (simplified representation)
+  // Extract section data
+  const { name, description, componentVariant, id } = section;
+  const headline = section.headline || section.data?.headline || 'Hero Headline';
+  const subheadline = section.subheadline || section.data?.subheadline || 'Supporting text for the headline';
+  const ctaText = section.ctaText || section.data?.ctaText || 'Get Started';
+  const imageUrl = section.imageUrl || section.data?.imageUrl || '';
+
+  // Render different views based on viewMode
   if (viewMode === 'flowchart') {
     return (
-      <div className="border-2 border-dashed p-4 rounded-lg bg-muted/30">
-        <div className="flex items-center justify-between mb-2">
-          <Badge variant="outline">{section.sectionType}: {variant}</Badge>
-        </div>
-        <h3 className="text-md font-medium">{section.name}</h3>
-        <p className="text-sm text-muted-foreground">{section.description || 'Hero section'}</p>
-      </div>
+      <Card className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white'} mb-4`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center justify-between">
+            {name || 'Hero Section'}
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+              {componentVariant || 'Standard'}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm mb-2">{description || 'Hero section with headline, subheadline, and CTA'}</div>
+          <div className="grid grid-cols-12 gap-2 p-2 border rounded-md">
+            {imageUrl && (
+              <div className="col-span-5">
+                <div className="aspect-video bg-gray-100 flex items-center justify-center text-xs text-gray-400 rounded overflow-hidden">
+                  Image
+                </div>
+              </div>
+            )}
+            <div className={`${imageUrl ? 'col-span-7' : 'col-span-12'} space-y-2`}>
+              <div className="h-6 bg-gray-100 w-3/4 rounded"></div>
+              <div className="h-4 bg-gray-100 w-full rounded"></div>
+              <div className="h-4 bg-gray-100 w-5/6 rounded"></div>
+              <div className="h-8 bg-primary/20 w-1/3 rounded mt-2"></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
-  
-  // Preview mode rendering - select the appropriate variant
-  switch (variant) {
-    case 'hero-centered-001':
-      return (
-        <div className={`py-16 px-4 text-center ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100'}`}>
-          <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl font-bold mb-6">Your Main Headline</h1>
-            <p className="text-xl mb-8">A supporting subheading that provides more context and details about your offer.</p>
-            <div className="flex justify-center space-x-4">
-              <button className={`px-6 py-3 rounded-md ${darkMode ? 'bg-primary text-primary-foreground' : 'bg-primary text-white'}`}>
-                Primary CTA
-              </button>
-              <button className={`px-6 py-3 rounded-md border ${darkMode ? 'border-white text-white' : 'border-gray-800 text-gray-800'}`}>
-                Secondary CTA
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-      
-    case 'hero-split-001':
-      return (
-        <div className={`grid md:grid-cols-2 gap-8 items-center ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100'}`}>
-          <div className="p-8">
-            <h1 className="text-4xl font-bold mb-4">Split Hero Headline</h1>
-            <p className="text-lg mb-6">A detailed description of your product or service that appears next to an image.</p>
-            <button className={`px-6 py-3 rounded-md ${darkMode ? 'bg-primary text-primary-foreground' : 'bg-primary text-white'}`}>
-              Learn More
+
+  // Preview mode
+  return (
+    <div className={`hero-section p-6 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white'}`}>
+      <div className="container mx-auto">
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="md:w-1/2 space-y-4">
+            <h1 className="text-3xl md:text-4xl font-bold">{headline}</h1>
+            <p className="text-lg text-muted-foreground">{subheadline}</p>
+            <button className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+              {ctaText}
             </button>
           </div>
-          <div className={`h-64 ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center`}>
-            <span className="text-lg">Image Placeholder</span>
-          </div>
-        </div>
-      );
-    
-    case 'hero-ecom-001':
-      return (
-        <div className={`px-8 py-12 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100'}`}>
-          <div className="grid md:grid-cols-5 gap-8 items-center">
-            <div className="md:col-span-3">
-              <h1 className="text-3xl font-bold mb-2">Product Headline</h1>
-              <p className="text-lg mb-4">Short product description highlighting key benefits.</p>
-              <div className="mb-6">
-                <span className={`text-2xl font-bold ${darkMode ? 'text-primary' : 'text-primary'}`}>$199.00</span>
-                <span className="ml-2 line-through text-muted-foreground">$249.00</span>
-              </div>
-              <div className="flex space-x-3">
-                <button className={`px-6 py-3 rounded-md ${darkMode ? 'bg-primary text-primary-foreground' : 'bg-primary text-white'}`}>
-                  Add to Cart
-                </button>
-                <button className={`px-6 py-3 rounded-md border ${darkMode ? 'border-white text-white' : 'border-gray-800 text-gray-800'}`}>
-                  Details
-                </button>
-              </div>
+          {imageUrl ? (
+            <div className="md:w-1/2">
+              <img src={imageUrl} alt="Hero" className="rounded-lg shadow-md" />
             </div>
-            <div className={`md:col-span-2 h-64 ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center rounded-lg`}>
-              <span className="text-lg">Product Image</span>
+          ) : (
+            <div className="md:w-1/2 aspect-video bg-muted rounded-lg flex items-center justify-center">
+              <span className="text-muted-foreground">Hero Image Placeholder</span>
             </div>
-          </div>
+          )}
         </div>
-      );
-          
-    // Default to standard hero
-    default:
-      return (
-        <div className={`py-16 px-8 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-100'}`}>
-          <div className="max-w-4xl">
-            <h1 className="text-5xl font-bold mb-6">Standard Hero Headline</h1>
-            <p className="text-xl mb-8 max-w-2xl">A compelling description that explains the value of your product or service.</p>
-            <div className="flex space-x-4">
-              <button className={`px-6 py-3 rounded-md ${darkMode ? 'bg-primary text-primary-foreground' : 'bg-primary text-white'}`}>
-                Get Started
-              </button>
-              <button className={`px-6 py-3 rounded-md border ${darkMode ? 'border-white text-white' : 'border-gray-800 text-gray-800'}`}>
-                Learn More
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-  }
+      </div>
+    </div>
+  );
 };
 
 export default HeroSectionRenderer;

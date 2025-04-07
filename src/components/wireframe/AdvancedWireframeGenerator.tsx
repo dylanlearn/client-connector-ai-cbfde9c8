@@ -29,6 +29,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
         {initialData && (
           <WireframeDataVisualizer 
             wireframeData={initialData}
+            viewMode="preview"  // Added required viewMode prop
             darkMode={darkMode}
           />
         )}
