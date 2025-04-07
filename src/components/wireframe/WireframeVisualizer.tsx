@@ -7,12 +7,16 @@ interface WireframeVisualizerProps {
   wireframe: WireframeProps;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSelect?: (id: string) => void;
 }
 
 export const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  onSelect,
 }) => {
   if (!wireframe || !wireframe.sections || wireframe.sections.length === 0) {
     return (
@@ -22,8 +26,22 @@ export const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     );
   }
 
+  // Add click handler for the wireframe if onSelect is provided
+  const handleWireframeClick = () => {
+    if (onSelect && wireframe.id) {
+      onSelect(wireframe.id);
+    }
+  };
+
   return (
-    <div className={`wireframe-visualizer ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}>
+    <div 
+      className={`wireframe-visualizer ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}
+      style={{ 
+        maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
+        margin: deviceType !== 'desktop' ? '0 auto' : undefined
+      }}
+      onClick={onSelect ? handleWireframeClick : undefined}
+    >
       <div className="wireframe-header p-4 border-b">
         <h2 className="text-xl font-bold">{wireframe.title || 'Untitled Wireframe'}</h2>
         {wireframe.description && <p className="text-sm text-gray-500">{wireframe.description}</p>}

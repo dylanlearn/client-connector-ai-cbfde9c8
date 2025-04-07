@@ -8,6 +8,7 @@ export interface WireframeProps {
   sections: any[];
   imageUrl?: string;
   lastUpdated?: string;
+  version?: string;
 }
 
 export interface SectionPreviewProps {
