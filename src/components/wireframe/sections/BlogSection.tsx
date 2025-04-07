@@ -2,6 +2,7 @@
 import React from 'react';
 import { BlogSectionProps } from '@/types/component-library';
 import { cn } from '@/lib/utils';
+import { CalendarIcon, User2Icon, TagIcon } from 'lucide-react';
 
 interface BlogSectionComponentProps {
   sectionIndex?: number;
@@ -93,6 +94,74 @@ export const BlogSection: React.FC<BlogSectionComponentProps> = ({
     }
   };
 
+  const renderPostCard = (post, idx) => {
+    return (
+      <div 
+        key={idx} 
+        className={cn(
+          "blog-post overflow-hidden rounded-lg shadow-md bg-white dark:bg-gray-800 h-full",
+          blogData.layoutStyle === 'carousel' && "flex-shrink-0 snap-center w-80",
+          blogData.layoutStyle === 'list' && "flex flex-col md:flex-row gap-6"
+        )}
+      >
+        {/* Post Image */}
+        {post.image && (
+          <div 
+            className={cn(
+              "bg-gray-200 overflow-hidden",
+              blogData.layoutStyle === 'list' ? "md:w-1/3 h-48" : "aspect-video w-full"
+            )}
+          >
+            <div 
+              className="w-full h-full bg-gray-300 bg-opacity-50"
+              style={{ background: post.image ? `url(${post.image}) center/cover` : '' }}
+            ></div>
+          </div>
+        )}
+        
+        {/* Post Content */}
+        <div className={cn(
+          "p-4", 
+          blogData.layoutStyle === 'list' && "md:w-2/3"
+        )}>
+          {/* Category */}
+          {blogData.showCategories && post.category && (
+            <div className="flex items-center text-sm text-blue-600 dark:text-blue-400 mb-2">
+              <TagIcon className="h-3 w-3 mr-1" />
+              {post.category}
+            </div>
+          )}
+          
+          {/* Title */}
+          <h3 className="text-xl font-semibold mb-2 line-clamp-2">{post.title}</h3>
+          
+          {/* Summary */}
+          {post.summary && (
+            <p className={`${blogData.backgroundStyle === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-3 line-clamp-3`}>
+              {post.summary}
+            </p>
+          )}
+          
+          {/* Author & Date */}
+          <div className="flex items-center text-sm mt-4 text-gray-500 dark:text-gray-400 justify-between">
+            {blogData.showAuthors && post.author && (
+              <div className="flex items-center">
+                <User2Icon className="h-3 w-3 mr-1" />
+                <span>{post.author}</span>
+              </div>
+            )}
+            {post.date && (
+              <div className="flex items-center">
+                <CalendarIcon className="h-3 w-3 mr-1" />
+                <span>{post.date}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div 
       key={sectionIndex} 
@@ -120,61 +189,7 @@ export const BlogSection: React.FC<BlogSectionComponentProps> = ({
         
         {/* Blog Posts */}
         <div className={getLayoutClass()}>
-          {blogData.posts?.map((post, idx) => (
-            <div 
-              key={idx} 
-              className={cn(
-                "blog-post overflow-hidden",
-                blogData.layoutStyle === 'carousel' && "flex-shrink-0 snap-center w-80",
-                blogData.layoutStyle === 'list' && "flex flex-col md:flex-row gap-6"
-              )}
-            >
-              {/* Post Image */}
-              {post.image && (
-                <div 
-                  className={cn(
-                    "bg-gray-200 bg-opacity-30 rounded overflow-hidden",
-                    blogData.layoutStyle === 'list' ? "md:w-1/3 h-48" : "aspect-video w-full"
-                  )}
-                >
-                  <div className="w-full h-full bg-gray-300 bg-opacity-50"></div>
-                </div>
-              )}
-              
-              {/* Post Content */}
-              <div className={cn(
-                "mt-4", 
-                blogData.layoutStyle === 'list' && "md:w-2/3"
-              )}>
-                {/* Category */}
-                {blogData.showCategories && post.category && (
-                  <div className="text-sm text-blue-600 dark:text-blue-400 mb-2">
-                    {post.category}
-                  </div>
-                )}
-                
-                {/* Title */}
-                <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                
-                {/* Summary */}
-                {post.summary && (
-                  <p className={`${blogData.backgroundStyle === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-3`}>
-                    {post.summary}
-                  </p>
-                )}
-                
-                {/* Author & Date */}
-                <div className="flex items-center justify-between text-sm mt-2">
-                  {blogData.showAuthors && post.author && (
-                    <div>{post.author}</div>
-                  )}
-                  {post.date && (
-                    <div className="text-gray-500 dark:text-gray-400">{post.date}</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+          {blogData.posts?.map((post, idx) => renderPostCard(post, idx))}
         </div>
       </div>
     </div>

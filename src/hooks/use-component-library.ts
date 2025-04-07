@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { componentLibraryService } from '@/services/component-library-service';
@@ -13,7 +12,9 @@ import {
   FAQComponentProps,
   CTAComponentProps,
   NavigationComponentProps,
-  FooterComponentProps
+  FooterComponentProps,
+  BlogSectionProps,
+  ContactComponentProps
 } from '@/types/component-library';
 
 export function useComponentLibrary() {
@@ -24,7 +25,6 @@ export function useComponentLibrary() {
   const [variants, setVariants] = useState<ComponentVariant[]>([]);
   const [styles, setStyles] = useState<ComponentStyle[]>([]);
 
-  // Load all component types
   const loadComponentTypes = async () => {
     try {
       setIsLoading(true);
@@ -39,7 +39,6 @@ export function useComponentLibrary() {
     }
   };
 
-  // Select a component type and load its fields and variants
   const selectComponentType = async (typeId: string) => {
     try {
       setIsLoading(true);
@@ -51,7 +50,6 @@ export function useComponentLibrary() {
       
       setSelectedType(type);
       
-      // Load fields and variants for this component type
       const [typeFields, typeVariants] = await Promise.all([
         componentLibraryService.getComponentFields(typeId),
         componentLibraryService.getComponentVariants(typeId)
@@ -67,7 +65,6 @@ export function useComponentLibrary() {
     }
   };
 
-  // Get variant details including associated styles
   const getVariantDetails = async (variantId: string) => {
     try {
       const variantStyles = await componentLibraryService.getVariantStyles(variantId);
@@ -79,7 +76,6 @@ export function useComponentLibrary() {
     }
   };
 
-  // Initialize the component libraries
   const initializeComponentLibrary = async () => {
     try {
       setIsLoading(true);
@@ -94,7 +90,6 @@ export function useComponentLibrary() {
     }
   };
 
-  // Initialize specific component libraries
   const initializeHeroComponentLibrary = async () => {
     try {
       setIsLoading(true);
@@ -207,7 +202,34 @@ export function useComponentLibrary() {
     }
   };
 
-  // Load component types on mount
+  const initializeBlogComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeBlogComponentLibrary();
+      toast.success('Blog component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing blog library:', error);
+      toast.error('Failed to initialize blog component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initializeContactComponentLibrary = async () => {
+    try {
+      setIsLoading(true);
+      await componentLibraryService.initializeContactComponentLibrary();
+      toast.success('Contact component library initialized successfully');
+      await loadComponentTypes();
+    } catch (error) {
+      console.error('Error initializing contact library:', error);
+      toast.error('Failed to initialize contact component library');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadComponentTypes();
   }, []);
@@ -230,6 +252,8 @@ export function useComponentLibrary() {
     initializeFAQComponentLibrary,
     initializeCTAComponentLibrary,
     initializeNavigationComponentLibrary,
-    initializeFooterComponentLibrary
+    initializeFooterComponentLibrary,
+    initializeBlogComponentLibrary,
+    initializeContactComponentLibrary
   };
 }

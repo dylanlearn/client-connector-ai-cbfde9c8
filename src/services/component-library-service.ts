@@ -10,7 +10,9 @@ import {
   FAQComponentProps,
   CTAComponentProps,
   NavigationComponentProps,
-  FooterComponentProps
+  FooterComponentProps,
+  BlogSectionProps,
+  ContactComponentProps
 } from '@/types/component-library';
 import {
   pricingVariants,
@@ -21,6 +23,8 @@ import { faqVariants } from '@/data/component-library-variants-faq';
 import { ctaVariants } from '@/data/component-library-variants-cta';
 import { navigationVariants } from '@/data/component-library-variants-navigation';
 import { footerVariants } from '@/data/component-library-variants-footer';
+import { blogVariants } from '@/data/component-library-variants-blog';
+import { contactVariants } from '@/data/component-library-variants-contact';
 
 /**
  * Service for interacting with the component library database tables
@@ -1088,6 +1092,248 @@ export const componentLibraryService = {
     }
   },
 
+  // Initialize Blog Component Library
+  async initializeBlogComponentLibrary(): Promise<void> {
+    try {
+      // Check if blog component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const blogType = existingTypes.find(type => type.name === 'Blog Section');
+      
+      if (blogType) {
+        console.log('Blog component type already initialized.');
+        return;
+      }
+
+      // Create Blog Component Type
+      const blogComponentType = await this.createComponentType({
+        name: 'Blog Section',
+        description: 'Section displaying blog posts or articles',
+        category: 'content',
+        icon: 'newspaper'
+      });
+
+      // Create Blog Component Fields
+      const fields = [
+        {
+          component_type_id: blogComponentType.id,
+          name: 'headline',
+          type: 'text' as const,
+          description: 'Section heading',
+          default_value: 'Latest Articles',
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'description',
+          type: 'textarea' as const,
+          description: 'Section subheading or description',
+          default_value: 'Stay up-to-date with our latest news and updates.'
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'posts',
+          type: 'array' as const,
+          description: 'Array of blog post objects',
+          default_value: [],
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'layoutStyle',
+          type: 'select' as const,
+          description: 'Layout style for blog posts',
+          default_value: 'grid',
+          options: [
+            { label: 'Grid', value: 'grid' },
+            { label: 'List', value: 'list' },
+            { label: 'Carousel', value: 'carousel' }
+          ]
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+            { label: 'Gradient', value: 'gradient' }
+          ]
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'left',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'showCategories',
+          type: 'boolean' as const,
+          description: 'Show post categories',
+          default_value: true
+        },
+        {
+          component_type_id: blogComponentType.id,
+          name: 'showAuthors',
+          type: 'boolean' as const,
+          description: 'Show post authors',
+          default_value: true
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined blog variants
+      for (const variant of blogVariants) {
+        await this.createComponentVariant({
+          component_type_id: blogComponentType.id,
+          variant_token: variant.variant,
+          name: variant.headline || 'Blog Section',
+          description: variant.styleNote || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Blog component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing blog component library:', error);
+      throw error;
+    }
+  },
+
+  // Initialize Contact Component Library
+  async initializeContactComponentLibrary(): Promise<void> {
+    try {
+      // Check if contact component type already exists
+      const existingTypes = await this.getComponentTypes();
+      const contactType = existingTypes.find(type => type.name === 'Contact Section');
+      
+      if (contactType) {
+        console.log('Contact component type already initialized.');
+        return;
+      }
+
+      // Create Contact Component Type
+      const contactComponentType = await this.createComponentType({
+        name: 'Contact Section',
+        description: 'Section with contact form and information',
+        category: 'form',
+        icon: 'mail'
+      });
+
+      // Create Contact Component Fields
+      const fields = [
+        {
+          component_type_id: contactComponentType.id,
+          name: 'headline',
+          type: 'text' as const,
+          description: 'Section heading',
+          default_value: 'Contact Us'
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'subheadline',
+          type: 'textarea' as const,
+          description: 'Supporting text under heading',
+          default_value: "We'd love to hear from you. Send us a message and we'll respond as soon as possible."
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'formFields',
+          type: 'array' as const,
+          description: 'Form fields configuration',
+          default_value: []
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'ctaLabel',
+          type: 'text' as const,
+          description: 'Form submit button text',
+          default_value: 'Send Message'
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'showMap',
+          type: 'boolean' as const,
+          description: 'Display a map',
+          default_value: false
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'contactInfo',
+          type: 'array' as const,
+          description: 'Contact information details',
+          default_value: {}
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'socialLinks',
+          type: 'array' as const,
+          description: 'Social media links',
+          default_value: []
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'alignment',
+          type: 'select' as const,
+          description: 'Content alignment',
+          default_value: 'left',
+          options: [
+            { label: 'Left', value: 'left' },
+            { label: 'Center', value: 'center' },
+            { label: 'Right', value: 'right' }
+          ]
+        },
+        {
+          component_type_id: contactComponentType.id,
+          name: 'backgroundStyle',
+          type: 'select' as const,
+          description: 'Background style',
+          default_value: 'light',
+          options: [
+            { label: 'Light', value: 'light' },
+            { label: 'Dark', value: 'dark' },
+            { label: 'Image', value: 'image' },
+            { label: 'Gradient', value: 'gradient' }
+          ]
+        }
+      ];
+
+      // Create all fields
+      for (const field of fields) {
+        await this.createComponentField(field);
+      }
+
+      // Create variants from predefined contact variants
+      for (const variant of contactVariants) {
+        await this.createComponentVariant({
+          component_type_id: contactComponentType.id,
+          variant_token: variant.variant,
+          name: variant.headline || 'Contact Section',
+          description: variant.subheadline || '',
+          default_data: variant,
+          thumbnail_url: null
+        });
+      }
+
+      console.log('Contact component library initialized successfully.');
+    } catch (error) {
+      console.error('Error initializing contact component library:', error);
+      throw error;
+    }
+  },
+
   // Main initialization function
   async initializeComponentLibrary(): Promise<void> {
     try {
@@ -1100,6 +1346,8 @@ export const componentLibraryService = {
       await this.initializeCTAComponentLibrary();
       await this.initializeNavigationComponentLibrary();
       await this.initializeFooterComponentLibrary();
+      await this.initializeBlogComponentLibrary();
+      await this.initializeContactComponentLibrary();
       console.log('Component library initialization complete!');
     } catch (error) {
       console.error('Error during component library initialization:', error);
