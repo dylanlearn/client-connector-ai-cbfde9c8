@@ -732,6 +732,157 @@ export type Database = {
           },
         ]
       }
+      component_fields: {
+        Row: {
+          component_type_id: string
+          created_at: string
+          default_value: string | null
+          description: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string
+          validation: Json | null
+        }
+        Insert: {
+          component_type_id: string
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+          validation?: Json | null
+        }
+        Update: {
+          component_type_id?: string
+          created_at?: string
+          default_value?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+          validation?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_fields_component_type_id_fkey"
+            columns: ["component_type_id"]
+            isOneToOne: false
+            referencedRelation: "component_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      component_styles: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          properties: Json
+          style_token: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          properties: Json
+          style_token: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          properties?: Json
+          style_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      component_types: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      component_variants: {
+        Row: {
+          component_type_id: string
+          created_at: string
+          default_data: Json
+          description: string | null
+          id: string
+          name: string
+          thumbnail_url: string | null
+          updated_at: string
+          variant_token: string
+        }
+        Insert: {
+          component_type_id: string
+          created_at?: string
+          default_data: Json
+          description?: string | null
+          id?: string
+          name: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          variant_token: string
+        }
+        Update: {
+          component_type_id?: string
+          created_at?: string
+          default_data?: Json
+          description?: string | null
+          id?: string
+          name?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+          variant_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "component_variants_component_type_id_fkey"
+            columns: ["component_type_id"]
+            isOneToOne: false
+            referencedRelation: "component_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_analytics: {
         Row: {
           average_rank: number
@@ -1817,6 +1968,42 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      variant_styles: {
+        Row: {
+          created_at: string
+          priority: number
+          style_id: string
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          priority?: number
+          style_id: string
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          priority?: number
+          style_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variant_styles_style_id_fkey"
+            columns: ["style_id"]
+            isOneToOne: false
+            referencedRelation: "component_styles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variant_styles_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "component_variants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wireframe_background_tasks: {
         Row: {

@@ -2,11 +2,10 @@
 import React from 'react';
 import { BlogSectionProps } from '@/types/component-library';
 import { cn } from '@/lib/utils';
-import { Calendar, User, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BlogSectionComponentProps {
   sectionIndex?: number;
-  data?: BlogSectionProps;
+  data?: Partial<BlogSectionProps>;
   variant?: string;
   className?: string;
 }
@@ -21,30 +20,39 @@ export const BlogSection: React.FC<BlogSectionComponentProps> = ({
   const blogData: Partial<BlogSectionProps> = data || {
     variant,
     headline: "Latest Articles",
-    description: "Stay up to date with our latest news and updates",
-    layoutStyle: 'grid',
+    description: "Stay up-to-date with our latest news and product updates.",
     posts: [
       {
-        title: "Getting Started with Our Platform",
-        url: "/blog/getting-started",
-        summary: "A comprehensive guide to help you get started with our platform.",
-        image: "/images/blog/getting-started.jpg",
-        category: "Guide",
-        author: "John Doe",
+        title: "Introducing Our New Feature",
+        url: "/blog/new-feature",
+        summary: "Learn about our exciting new feature that helps boost productivity.",
+        image: "/images/blog/feature.jpg",
+        category: "Product",
+        author: "Jane Smith",
         date: "2023-05-15"
       },
       {
-        title: "10 Tips for Better Productivity",
-        url: "/blog/productivity-tips",
-        summary: "Learn how to boost your productivity with these simple tips.",
-        image: "/images/blog/productivity.jpg",
-        category: "Tips",
-        author: "Jane Smith",
+        title: "How to Maximize Your Workflow",
+        url: "/blog/workflow",
+        summary: "Tips and tricks for getting the most out of your daily work routine.",
+        image: "/images/blog/workflow.jpg",
+        category: "Guides",
+        author: "John Doe",
         date: "2023-05-10"
+      },
+      {
+        title: "Case Study: Enterprise Success",
+        url: "/blog/case-study",
+        summary: "How our enterprise customers achieve 200% ROI with our platform.",
+        image: "/images/blog/case-study.jpg",
+        category: "Case Studies",
+        author: "Emily Johnson",
+        date: "2023-05-01"
       }
     ],
-    alignment: 'left',
+    layoutStyle: 'grid',
     backgroundStyle: 'light',
+    alignment: 'left',
     showCategories: true,
     showAuthors: true
   };
@@ -75,151 +83,15 @@ export const BlogSection: React.FC<BlogSectionComponentProps> = ({
     }
   };
 
-  // Render the appropriate layout based on layoutStyle
-  const renderLayout = () => {
+  // Determine layout class
+  const getLayoutClass = () => {
     switch (blogData.layoutStyle) {
+      case 'list': return 'flex flex-col space-y-8';
+      case 'carousel': return 'flex overflow-x-auto snap-x snap-mandatory space-x-6 pb-6';
       case 'grid':
-        return renderGridLayout();
-      case 'list':
-        return renderListLayout();
-      case 'carousel':
-        return renderCarouselLayout();
-      default:
-        return renderGridLayout();
+      default: return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8';
     }
   };
-
-  // Grid layout for posts
-  const renderGridLayout = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      {blogData.posts?.map((post, idx) => (
-        <div key={idx} className="flex flex-col h-full overflow-hidden rounded-lg shadow-sm">
-          {post.image && (
-            <div className="w-full h-48 bg-gray-300 bg-opacity-30 rounded-t-lg"></div>
-          )}
-          <div className="p-4 flex-grow">
-            {blogData.showCategories && post.category && (
-              <div className="flex items-center space-x-1 mb-2">
-                <Tag size={14} />
-                <div className="w-16 h-3 bg-gray-200 bg-opacity-30 rounded">{post.category}</div>
-              </div>
-            )}
-            <div className="w-full h-6 bg-gray-300 bg-opacity-30 rounded mb-2">{post.title}</div>
-            {post.summary && (
-              <div className="w-full h-12 bg-gray-200 bg-opacity-30 rounded"></div>
-            )}
-            <div className="flex items-center mt-4 space-x-4">
-              {blogData.showAuthors && post.author && (
-                <div className="flex items-center space-x-1">
-                  <User size={14} />
-                  <div className="w-16 h-3 bg-gray-200 bg-opacity-30 rounded">{post.author}</div>
-                </div>
-              )}
-              {post.date && (
-                <div className="flex items-center space-x-1">
-                  <Calendar size={14} />
-                  <div className="w-20 h-3 bg-gray-200 bg-opacity-30 rounded">{post.date}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  // List layout for posts
-  const renderListLayout = () => (
-    <div className="space-y-6 mt-8">
-      {blogData.posts?.map((post, idx) => (
-        <div key={idx} className="flex flex-col md:flex-row gap-4 pb-6 border-b">
-          {post.image && (
-            <div className="w-full md:w-1/4 h-32 md:h-24 bg-gray-300 bg-opacity-30 rounded-lg"></div>
-          )}
-          <div className="flex-grow">
-            {blogData.showCategories && post.category && (
-              <div className="flex items-center space-x-1 mb-2">
-                <Tag size={14} />
-                <div className="w-16 h-3 bg-gray-200 bg-opacity-30 rounded">{post.category}</div>
-              </div>
-            )}
-            <div className="w-full h-6 bg-gray-300 bg-opacity-30 rounded mb-2">{post.title}</div>
-            {post.summary && (
-              <div className="w-full h-4 bg-gray-200 bg-opacity-30 rounded"></div>
-            )}
-            <div className="flex items-center mt-2 space-x-4">
-              {blogData.showAuthors && post.author && (
-                <div className="flex items-center space-x-1">
-                  <User size={14} />
-                  <div className="w-16 h-3 bg-gray-200 bg-opacity-30 rounded">{post.author}</div>
-                </div>
-              )}
-              {post.date && (
-                <div className="flex items-center space-x-1">
-                  <Calendar size={14} />
-                  <div className="w-20 h-3 bg-gray-200 bg-opacity-30 rounded">{post.date}</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  // Carousel layout for posts
-  const renderCarouselLayout = () => (
-    <div className="relative mt-8">
-      <div className="overflow-hidden">
-        <div className="flex">
-          {blogData.posts?.slice(0, 1).map((post, idx) => (
-            <div key={idx} className="w-full flex-shrink-0">
-              <div className="flex flex-col md:flex-row gap-6">
-                {post.image && (
-                  <div className="w-full md:w-1/2 h-64 bg-gray-300 bg-opacity-30 rounded-lg"></div>
-                )}
-                <div className="flex-grow">
-                  {blogData.showCategories && post.category && (
-                    <div className="flex items-center space-x-1 mb-2">
-                      <Tag size={14} />
-                      <div className="w-16 h-3 bg-gray-200 bg-opacity-30 rounded">{post.category}</div>
-                    </div>
-                  )}
-                  <div className="w-full h-8 bg-gray-300 bg-opacity-30 rounded mb-3">{post.title}</div>
-                  {post.summary && (
-                    <div className="w-full h-20 bg-gray-200 bg-opacity-30 rounded"></div>
-                  )}
-                  <div className="flex items-center mt-4 space-x-4">
-                    {blogData.showAuthors && post.author && (
-                      <div className="flex items-center space-x-1">
-                        <User size={14} />
-                        <div className="w-16 h-3 bg-gray-200 bg-opacity-30 rounded">{post.author}</div>
-                      </div>
-                    )}
-                    {post.date && (
-                      <div className="flex items-center space-x-1">
-                        <Calendar size={14} />
-                        <div className="w-20 h-3 bg-gray-200 bg-opacity-30 rounded">{post.date}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Carousel controls */}
-      <div className="flex justify-center mt-6 space-x-2">
-        <button className="w-10 h-10 rounded-full bg-gray-200 bg-opacity-30 flex items-center justify-center">
-          <ChevronLeft size={20} />
-        </button>
-        <button className="w-10 h-10 rounded-full bg-gray-200 bg-opacity-30 flex items-center justify-center">
-          <ChevronRight size={20} />
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <div 
@@ -232,21 +104,78 @@ export const BlogSection: React.FC<BlogSectionComponentProps> = ({
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Section Header */}
-        {blogData.headline && (
-          <div className={`w-64 h-8 bg-gray-300 bg-opacity-30 rounded mb-4 ${getAlignmentClass() === 'text-center' ? 'mx-auto' : ''}`}>
-            {blogData.headline}
+        {/* Header */}
+        {(blogData.headline || blogData.description) && (
+          <div className="mb-12">
+            {blogData.headline && (
+              <h2 className="text-3xl font-bold mb-4">{blogData.headline}</h2>
+            )}
+            {blogData.description && (
+              <p className={`text-lg ${blogData.backgroundStyle === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                {blogData.description}
+              </p>
+            )}
           </div>
         )}
         
-        {blogData.description && (
-          <div className={`w-full md:w-2/3 h-4 bg-gray-200 bg-opacity-30 rounded mb-8 ${getAlignmentClass() === 'text-center' ? 'mx-auto' : ''} ${getAlignmentClass() === 'text-right' ? 'ml-auto' : ''}`}>
-            {blogData.description}
-          </div>
-        )}
-        
-        {/* Posts Layout */}
-        {renderLayout()}
+        {/* Blog Posts */}
+        <div className={getLayoutClass()}>
+          {blogData.posts?.map((post, idx) => (
+            <div 
+              key={idx} 
+              className={cn(
+                "blog-post overflow-hidden",
+                blogData.layoutStyle === 'carousel' && "flex-shrink-0 snap-center w-80",
+                blogData.layoutStyle === 'list' && "flex flex-col md:flex-row gap-6"
+              )}
+            >
+              {/* Post Image */}
+              {post.image && (
+                <div 
+                  className={cn(
+                    "bg-gray-200 bg-opacity-30 rounded overflow-hidden",
+                    blogData.layoutStyle === 'list' ? "md:w-1/3 h-48" : "aspect-video w-full"
+                  )}
+                >
+                  <div className="w-full h-full bg-gray-300 bg-opacity-50"></div>
+                </div>
+              )}
+              
+              {/* Post Content */}
+              <div className={cn(
+                "mt-4", 
+                blogData.layoutStyle === 'list' && "md:w-2/3"
+              )}>
+                {/* Category */}
+                {blogData.showCategories && post.category && (
+                  <div className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+                    {post.category}
+                  </div>
+                )}
+                
+                {/* Title */}
+                <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
+                
+                {/* Summary */}
+                {post.summary && (
+                  <p className={`${blogData.backgroundStyle === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-3`}>
+                    {post.summary}
+                  </p>
+                )}
+                
+                {/* Author & Date */}
+                <div className="flex items-center justify-between text-sm mt-2">
+                  {blogData.showAuthors && post.author && (
+                    <div>{post.author}</div>
+                  )}
+                  {post.date && (
+                    <div className="text-gray-500 dark:text-gray-400">{post.date}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
