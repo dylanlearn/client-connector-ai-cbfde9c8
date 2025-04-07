@@ -67,6 +67,24 @@ export const navigationComponents: ComponentDefinition = {
       name: 'Freelancer Navigation',
       description: 'Freelancer-style nav with subtle image layer and project CTA',
       thumbnail: '/thumbnails/nav-flex-003.png'
+    },
+    {
+      id: 'nav-food-001',
+      name: 'Restaurant Navigation',
+      description: 'Restaurant-style nav with glass effect and prominent order CTA',
+      thumbnail: '/thumbnails/nav-food-001.png'
+    },
+    {
+      id: 'nav-media-001',
+      name: 'Media Portal Navigation',
+      description: 'Media portal nav with category focus and prominent search',
+      thumbnail: '/thumbnails/nav-media-001.png'
+    },
+    {
+      id: 'nav-nonprofit-001',
+      name: 'Nonprofit Navigation',
+      description: 'Nonprofit navigation with mission focus and prominent donation CTA',
+      thumbnail: '/thumbnails/nav-nonprofit-001.png'
     }
   ],
   fields: [

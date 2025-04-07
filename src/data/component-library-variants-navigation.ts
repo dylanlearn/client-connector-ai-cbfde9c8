@@ -160,5 +160,53 @@ export const navigationVariants: NavigationComponentProps[] = [
     sticky: false,
     mobileMenuStyle: "overlay",
     styleNote: "Freelancer-style nav with subtle image layer and project CTA"
+  },
+  
+  // === NEW VARIANTS (3 ADDITIONAL) ===
+  {
+    variant: 'nav-food-001', // Perfect for restaurants, food blogs, or culinary brands with emphasis on visual appeal
+    logo: "/logos/tastecrafted.svg",
+    links: [
+      { label: "Menu", url: "/menu" },
+      { label: "Locations", url: "/locations" },
+      { label: "About Us", url: "/about" }
+    ],
+    cta: { label: "Order Online", url: "/order" },
+    backgroundStyle: "glass",
+    alignment: "center",
+    sticky: true,
+    mobileMenuStyle: "drawer",
+    styleNote: "Restaurant-style nav with glass effect and prominent order CTA"
+  },
+  {
+    variant: 'nav-media-001', // Great for media sites, blogs, news portals with categorized navigation
+    logo: "/logos/mediahub.svg",
+    links: [
+      { label: "News", url: "/news" },
+      { label: "Entertainment", url: "/entertainment" },
+      { label: "Sports", url: "/sports" },
+      { label: "Tech", url: "/tech" }
+    ],
+    hasSearch: true,
+    backgroundStyle: "dark",
+    alignment: "left",
+    sticky: true,
+    mobileMenuStyle: "dropdown",
+    styleNote: "Media portal nav with category focus and prominent search"
+  },
+  {
+    variant: 'nav-nonprofit-001', // Ideal for NGOs, charities, causes and foundations with donation focus
+    logo: "/logos/worldchange.svg",
+    links: [
+      { label: "Our Mission", url: "/mission" },
+      { label: "Programs", url: "/programs" },
+      { label: "Impact", url: "/impact" }
+    ],
+    cta: { label: "Donate Now", url: "/donate" },
+    backgroundStyle: "light",
+    alignment: "center",
+    sticky: false,
+    mobileMenuStyle: "overlay",
+    styleNote: "Nonprofit navigation with mission focus and prominent donation CTA"
   }
 ];
