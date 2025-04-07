@@ -1,26 +1,43 @@
 
-import React from "react";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import React, { useState } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
 
+interface QueryData {
+  query: string;
+  calls: number;
+  totalExecTime: number; // Changed to camelCase for consistency
+  meanExecTime: number; // Changed to camelCase for consistency
+}
+
 interface ProfileQueryTableProps {
-  queries: Array<{
-    query: string;
-    calls: number;
-    total_exec_time: number;
-    mean_exec_time: number;
-  }>;
+  queries: QueryData[];
   timestamp: string;
 }
 
 const ProfileQueryTable: React.FC<ProfileQueryTableProps> = ({ queries, timestamp }) => {
-  // Format the timestamp for display
-  const formattedTimestamp = timestamp 
-    ? `Updated ${formatDistanceToNow(new Date(timestamp), { addSuffix: true })}`
-    : "Last updated: unknown";
-  
-  // Format execution time (convert ms to readable format)
-  const formatExecTime = (ms: number): string => {
+  const [sortField, setSortField] = useState<keyof QueryData>("totalExecTime");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: keyof QueryData) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const sortedQueries = [...queries].sort((a, b) => {
+    if (sortDirection === "asc") {
+      return a[sortField] > b[sortField] ? 1 : -1;
+    } else {
+      return a[sortField] < b[sortField] ? 1 : -1;
+    }
+  });
+
+  // Format time values
+  const formatTime = (ms: number): string => {
     if (ms < 1) {
       return `${(ms * 1000).toFixed(2)}μs`;
     } else if (ms < 1000) {
@@ -29,40 +46,61 @@ const ProfileQueryTable: React.FC<ProfileQueryTableProps> = ({ queries, timestam
       return `${(ms / 1000).toFixed(2)}s`;
     }
   };
-  
-  // Truncate long query strings
-  const truncateQuery = (query: string, maxLength: number = 100): string => {
-    return query.length > maxLength
-      ? `${query.substring(0, maxLength)}...`
-      : query;
-  };
-  
+
   return (
-    <>
-      <Table>
-        <TableCaption>{formattedTimestamp}</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[40%]">Query</TableHead>
-            <TableHead className="text-right">Calls</TableHead>
-            <TableHead className="text-right">Total Time</TableHead>
-            <TableHead className="text-right">Mean Time</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {queries.map((item, index) => (
-            <TableRow key={index}>
-              <TableCell className="font-mono text-xs">
-                {truncateQuery(item.query)}
-              </TableCell>
-              <TableCell className="text-right">{item.calls.toLocaleString()}</TableCell>
-              <TableCell className="text-right">{formatExecTime(item.total_exec_time)}</TableCell>
-              <TableCell className="text-right">{formatExecTime(item.mean_exec_time)}</TableCell>
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        Last updated: {formatDistanceToNow(new Date(timestamp))} ago
+      </div>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50%]">Query</TableHead>
+              <TableHead 
+                className="cursor-pointer" 
+                onClick={() => handleSort("calls")}
+              >
+                Calls
+                {sortField === "calls" && (
+                  <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                )}
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer" 
+                onClick={() => handleSort("totalExecTime")}
+              >
+                Total Time
+                {sortField === "totalExecTime" && (
+                  <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                )}
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer" 
+                onClick={() => handleSort("meanExecTime")}
+              >
+                Avg Time
+                {sortField === "meanExecTime" && (
+                  <span className="ml-1">{sortDirection === "asc" ? "↑" : "↓"}</span>
+                )}
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </>
+          </TableHeader>
+          <TableBody>
+            {sortedQueries.map((query, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-mono text-xs">
+                  {query.query}
+                </TableCell>
+                <TableCell>{query.calls.toLocaleString()}</TableCell>
+                <TableCell>{formatTime(query.totalExecTime)}</TableCell>
+                <TableCell>{formatTime(query.meanExecTime)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 };
 

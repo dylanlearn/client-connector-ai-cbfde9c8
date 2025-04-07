@@ -1,0 +1,46 @@
+
+import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
+
+// Types for WireframeFlow component
+export interface WireframeFlowProps {
+  onComplete: (selectedWireframe: WireframeSelection) => void;
+}
+
+// Define the WireframeSelection interface for better type safety
+export interface WireframeSelection {
+  id?: string;
+  title: string;
+  description: string;
+  sections?: WireframeSection[];
+  imageUrl?: string;
+  style?: string;
+  layoutType?: string;
+}
+
+// Interface for the Wireframe Bridge component
+export interface IntakeWireframeBridgeProps {
+  intakeData: {
+    projectName?: string;
+    projectDescription?: string;
+    siteType?: string;
+    designStyle?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    conversionPriority?: string;
+    fontStyle?: string;
+  };
+  onComplete?: (wireframeData: WireframeData) => void;
+}
+
+// Types for WireframeVisualizer component
+export interface WireframeProps {
+  wireframe: WireframeData;
+  onSelect?: () => void;
+  isSelected?: boolean;
+  className?: string;
+}
+
+export interface WireframeDataProps {
+  wireframeData: WireframeData;
+  className?: string;
+}

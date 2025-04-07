@@ -7,15 +7,16 @@ import { supabase } from "@/integrations/supabase/client";
 import ProfileQueryTable from "./ProfileQueryTable";
 import ProfileQuerySetupAlert from "./ProfileQuerySetupAlert";
 import { useFetchErrorHandler } from "@/hooks/error-handling/use-fetch-error-handler";
+import { LoadingStateWrapper } from "@/components/ui/LoadingStateWrapper";
 
 interface QueryStatsResult {
   timestamp: string;
-  extension_enabled: boolean;
+  extensionEnabled: boolean; // Changed to camelCase for consistency
   queries: Array<{
     query: string;
     calls: number;
-    total_exec_time: number;
-    mean_exec_time: number;
+    totalExecTime: number; // Changed to camelCase for consistency
+    meanExecTime: number; // Changed to camelCase for consistency
   }>;
 }
 
@@ -55,11 +56,23 @@ export const ProfileQueryMonitor: React.FC = () => {
         throw new Error('No data returned from stats query');
       }
 
-      if (data && !data.extension_enabled) {
+      // Convert snake_case to camelCase
+      const formattedData: QueryStatsResult = {
+        timestamp: data.timestamp,
+        extensionEnabled: data.extension_enabled,
+        queries: data.queries.map((q: any) => ({
+          query: q.query,
+          calls: q.calls,
+          totalExecTime: q.total_exec_time,
+          meanExecTime: q.mean_exec_time
+        }))
+      };
+
+      if (!formattedData.extensionEnabled) {
         setSetupCompleted(false);
       } else {
         setSetupCompleted(true);
-        setStats(data as QueryStatsResult);
+        setStats(formattedData);
       }
     } catch (err) {
       // Error already handled by wrapFetch
@@ -98,6 +111,26 @@ export const ProfileQueryMonitor: React.FC = () => {
     }
   };
 
+  const renderContent = () => {
+    if (!setupCompleted) {
+      return <ProfileQuerySetupAlert onSetupClick={runSetupScript} />;
+    }
+    
+    if (stats?.queries && stats.queries.length > 0) {
+      return <ProfileQueryTable queries={stats.queries} timestamp={stats.timestamp} />;
+    }
+    
+    return (
+      <Alert>
+        <Terminal className="h-4 w-4" />
+        <AlertTitle>No profile queries detected</AlertTitle>
+        <AlertDescription>
+          No profile-related queries have been executed yet or they haven't been captured by pg_stat_statements.
+        </AlertDescription>
+      </Alert>
+    );
+  };
+
   return (
     <Card className="col-span-3">
       <CardHeader>
@@ -111,29 +144,14 @@ export const ProfileQueryMonitor: React.FC = () => {
       </CardHeader>
       
       <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-pulse text-muted-foreground">Loading stats...</div>
-          </div>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
-          </Alert>
-        ) : !setupCompleted ? (
-          <ProfileQuerySetupAlert onSetupClick={runSetupScript} />
-        ) : stats?.queries && stats.queries.length > 0 ? (
-          <ProfileQueryTable queries={stats.queries} timestamp={stats.timestamp} />
-        ) : (
-          <Alert>
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>No profile queries detected</AlertTitle>
-            <AlertDescription>
-              No profile-related queries have been executed yet or they haven't been captured by pg_stat_statements.
-            </AlertDescription>
-          </Alert>
-        )}
+        <LoadingStateWrapper
+          isLoading={isLoading}
+          error={error}
+          isEmpty={!setupCompleted || (stats?.queries?.length === 0)}
+          emptyState={renderContent()}
+        >
+          {renderContent()}
+        </LoadingStateWrapper>
       </CardContent>
     </Card>
   );

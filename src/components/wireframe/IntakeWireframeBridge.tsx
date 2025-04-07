@@ -1,17 +1,11 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
-import { IntakeFormData } from '@/types/intake-form';
 import { toast } from 'sonner';
 import WireframeFlow from './WireframeFlow';
 import { Loader2, ArrowRight, Check } from 'lucide-react';
-import { WireframeData } from '@/types/wireframe';
-
-interface IntakeWireframeBridgeProps {
-  intakeData: IntakeFormData;
-  onComplete?: (wireframeData: WireframeData) => void;
-}
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { IntakeWireframeBridgeProps, WireframeSelection } from './types';
 
 const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   intakeData,
@@ -49,7 +43,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
     }
   };
   
-  const handleWireframeSelected = (selectedWireframe: any) => {
+  const handleWireframeSelected = (selectedWireframe: WireframeSelection) => {
     // Convert the selected wireframe to WireframeData format
     const wireframeData: WireframeData = {
       title: selectedWireframe.title,
@@ -66,7 +60,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
         body: 'sans-serif',
         fontPairings: ['Inter', 'Roboto']
       },
-      sections: selectedWireframe.sections?.map((s: any) => ({
+      sections: selectedWireframe.sections?.map((s) => ({
         id: s.id,
         type: s.name,
         content: s.description || '',
