@@ -1,18 +1,6 @@
 
-import WireframeVisualizer, { WireframeDataVisualizer } from "./WireframeVisualizer";
-import WireframeFlow from "./WireframeFlow";
-import AdvancedWireframeGenerator from "./AdvancedWireframeGenerator";
-
-// Re-export the components
-export {
-  WireframeVisualizer,
-  WireframeDataVisualizer,
-  WireframeFlow,
-  AdvancedWireframeGenerator
-};
-
-// Type exports
-export type { 
-  WireframeProps, 
-  WireframeDataProps 
-} from "./WireframeVisualizer";
+export { default as WireframeVisualizer } from './WireframeVisualizer';
+export { default as WireframeDataVisualizer } from './WireframeDataVisualizer';
+export { default as WireframeFlow } from './WireframeFlow';
+export { default as EnhancedWireframeStudio } from './EnhancedWireframeStudio';
+export type { WireframeProps } from './WireframeVisualizer';
