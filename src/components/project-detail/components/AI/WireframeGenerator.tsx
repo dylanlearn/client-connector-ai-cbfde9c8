@@ -58,6 +58,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
 
     const params = {
       projectId: projectId,
+      description: prompt,
       prompt: prompt,
       pageType: pageType,
       stylePreferences: [stylePreference],
@@ -116,9 +117,11 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
       const mockAIWireframe: AIWireframe = {
         id: 'mock-id',
         project_id: projectId,
-        prompt: prompt,
+        projectId: projectId,
         title: wireframeName,
         description: wireframeDescription,
+        prompt: prompt,
+        sections: generatedWireframe.sections || [],
         data: generatedWireframe,
       };
       onWireframeSaved(mockAIWireframe);

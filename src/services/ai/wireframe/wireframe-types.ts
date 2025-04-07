@@ -50,9 +50,9 @@ export interface WireframeComponent {
 }
 
 export interface CopySuggestions {
-  heading?: string;
-  subheading?: string;
-  cta?: string;
+  heading?: string | string[];
+  subheading?: string | string[];
+  cta?: string | string[];
   [key: string]: any;
 }
 
@@ -109,6 +109,7 @@ export interface AIWireframe {
   wireframe_data?: any;
   created_at?: string;
   updated_at?: string;
+  prompt?: string; // Adding prompt field to AIWireframe
 }
 
 export interface WireframePage {
@@ -142,6 +143,7 @@ export interface WireframeGenerationParams {
   prompt?: string;
   title?: string;
   darkMode?: boolean;
+  stylePreferences?: string[]; // Adding stylePreferences
 }
 
 export interface WireframeGenerationResult {
@@ -168,21 +170,28 @@ export interface WireframeGenerationResult {
 // Additional interfaces for version control 
 export interface WireframeVersion {
   id: string;
-  wireframeId: string;
-  versionNumber: number;
+  wireframe_id: string;
+  version_number: number;
+  branch_name: string;
   data: any;
-  createdAt: string;
-  createdBy?: string;
-  description?: string;
+  parent_version_id?: string;
+  is_current: boolean;
+  change_description?: string;
+  created_at: string;
+  created_by?: string;
+  sourceData?: any;
 }
 
 export interface VersionComparisonResult {
   differences: any[];
   summary: string;
+  changes?: any[]; // Adding changes property
 }
 
 export interface BranchInfo {
   name: string;
   versions: WireframeVersion[];
   latestVersion?: WireframeVersion;
+  latest_version_id?: string; // Adding for backward compatibility
 }
+

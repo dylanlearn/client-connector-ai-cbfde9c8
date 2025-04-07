@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeData, WireframeSection, WireframeComponent, CopySuggestions, WireframeGenerationParams } from "@/services/ai/wireframe/wireframe-types";
 import { IntakeFormData } from '@/types/intake-form';
@@ -180,7 +179,10 @@ export const questionnaireWireframeBridge = {
   /**
    * Transforms intake data to wireframe generation parameters
    */
-  transformIntakeToWireframeParams: (intakeData: IntakeFormData, recommendations?: any): WireframeGenerationParams => {
+  transformIntakeToWireframeParams: (
+    intakeData: IntakeFormData,
+    designRecommendation?: any
+  ): WireframeGenerationParams => {
     const promptText = `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`;
     const stylePreferences = intakeData.designStyle || 'modern';
 
@@ -209,11 +211,13 @@ export const questionnaireWireframeBridge = {
     }));
 
     return {
-      description: promptText,
+      description: `Generate wireframe for ${intakeData.projectName || "a new project"}: ${intakeData.projectDescription || ""}`,
       projectId: intakeData.formId,
-      industry: intakeData.siteType || 'general',
-      pageType: intakeData.siteType || 'general',
+      industry: intakeData.siteType || "business",
+      style: stylePreferences,
       stylePreferences: [stylePreferences],
+      enhancedCreativity: true,
+      creativityLevel: 8,
       complexity: 'moderate' as 'simple' | 'moderate' | 'complex',
     };
   }

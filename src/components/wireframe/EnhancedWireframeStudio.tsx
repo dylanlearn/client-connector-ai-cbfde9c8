@@ -48,6 +48,8 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const [showMemoryPanel, setShowMemoryPanel] = useState(false);
   const [creativityLevel, setCreativityLevel] = useState(7);
   const [selectedReference, setSelectedReference] = useState<DesignReference | null>(null);
+  const [previewData, setPreviewData] = useState<WireframeData | null>(null);
+  const [previewingWireframe, setPreviewingWireframe] = useState<WireframeData | null>(null);
   
   const {
     isGenerating,
@@ -150,6 +152,20 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   
   const handleShowMemoryPanel = () => {
     setShowMemoryPanel(!showMemoryPanel);
+  };
+  
+  const handlePreviewWireframe = () => {
+    if (!previewData) return;
+    
+    const previewWireframe = {
+      id: `preview-${Date.now()}`,
+      title: previewData.title || "Wireframe Preview",
+      description: previewData.description || "",
+      sections: previewData.sections || [],
+      imageUrl: previewData.imageUrl || "",
+    };
+    
+    setPreviewingWireframe(previewWireframe);
   };
   
   const styleOptions = [

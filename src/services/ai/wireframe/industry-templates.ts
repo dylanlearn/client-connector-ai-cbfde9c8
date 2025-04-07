@@ -10,6 +10,11 @@ const createComponent = (type: string, content: string): WireframeComponent => {
   };
 };
 
+// Helper function to convert array to single string or keep as is for backward compatibility
+const formatCopy = (value: string[] | string): string | string[] => {
+  return value; // Now our interface supports both string and string[]
+};
+
 export const industryTemplates: Record<string, WireframeData> = {
   'technology': {
     title: 'Technology Website Template',
