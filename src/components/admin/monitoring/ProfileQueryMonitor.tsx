@@ -14,9 +14,10 @@ import {
 import {
   AlertCircle,
   DatabaseIcon,
-  RefreshCw
+  RefreshCw,
+  Info
 } from "lucide-react";
-import { getProfileQueryStatistics, formatQueryTime } from "@/utils/monitoring/query-stats";
+import { getProfileQueryStatistics, formatQueryTime, checkPgStatStatementsEnabled } from "@/utils/monitoring/query-stats";
 
 type ProfileQueryStat = {
   query: string;
@@ -34,12 +35,18 @@ export function ProfileQueryMonitor() {
   const [queryStats, setQueryStats] = useState<ProfileQueryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [extensionEnabled, setExtensionEnabled] = useState<boolean | null>(null);
 
   const fetchProfileQueryStats = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Check if the pg_stat_statements extension is enabled
+      const isEnabled = await checkPgStatStatementsEnabled();
+      setExtensionEnabled(isEnabled);
+      
+      // Fetch the actual query statistics
       const data = await getProfileQueryStatistics();
       
       if (!data) {
@@ -94,6 +101,17 @@ export function ProfileQueryMonitor() {
         </Alert>
       )}
 
+      {extensionEnabled === false && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Configuration Issue</AlertTitle>
+          <AlertDescription>
+            The pg_stat_statements extension appears to be disabled or not properly configured.
+            This extension is required to collect query statistics.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {loading && <p className="text-center py-4">Loading query statistics...</p>}
 
       {!loading && !error && queryStats && (
@@ -138,7 +156,15 @@ export function ProfileQueryMonitor() {
                   </Table>
                 </div>
               ) : (
-                <p>No profile queries found in the monitoring period.</p>
+                <div className="py-8 text-center border rounded-md bg-gray-50">
+                  <p className="text-md font-medium mb-2">No profile queries found in the monitoring period</p>
+                  <p className="text-sm text-muted-foreground">This could be because:</p>
+                  <ul className="text-sm text-muted-foreground mt-2 space-y-1 max-w-md mx-auto text-left px-4">
+                    <li>No recent queries have accessed the profiles table</li>
+                    <li>The pg_stat_statements extension needs configuration</li>
+                    <li>Query statistics have been reset recently</li>
+                  </ul>
+                </div>
               )}
             </CardContent>
           </Card>
