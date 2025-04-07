@@ -72,7 +72,11 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
     try {
       const result = await generateWireframe(params);
       if (result?.wireframe) {
-        setGeneratedWireframe(result.wireframe);
+        const wireframeWithId = {
+          ...result.wireframe,
+          id: `generated-${Date.now()}`
+        };
+        setGeneratedWireframe(wireframeWithId);
         toast({
           title: "Wireframe generated",
           description: "Your wireframe is ready to preview."

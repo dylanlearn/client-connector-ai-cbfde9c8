@@ -46,6 +46,7 @@ export interface WireframeSection {
  * Type for wireframe data
  */
 export interface WireframeData {
+  id?: string; // Added id field to match needs in WireframeVisualizer
   title: string;
   description?: string;
   sections: WireframeSection[];

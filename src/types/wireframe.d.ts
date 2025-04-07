@@ -32,20 +32,21 @@ export interface WireframeSourceData {
 }
 
 export interface WireframeData {
-  title: string; // Changed from optional to required
+  id?: string; // Added id field to match WireframeProps
+  title: string;
   description?: string;
   sections: any[];
   layoutType?: string;
   colorScheme?: {
-    primary: string; // Changed from optional to required
-    secondary: string; // Changed from optional to required
-    accent: string; // Changed from optional to required
-    background: string; // Changed from optional to required
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
     text?: string;
   };
   typography?: {
-    headings?: string;
-    body?: string;
+    headings: string; // Required to match service type
+    body: string; // Required to match service type
     fontPairings?: string[];
   };
   designTokens?: Record<string, any>;

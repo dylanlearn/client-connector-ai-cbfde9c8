@@ -34,10 +34,11 @@ export interface IntakeWireframeBridgeProps {
 
 // Types for WireframeVisualizer component
 export interface WireframeProps {
-  wireframe: WireframeData;
+  wireframe: WireframeData & { id?: string }; // Modified to make id optional
   onSelect?: () => void;
   isSelected?: boolean;
   className?: string;
+  darkMode?: boolean; // Added darkMode prop
 }
 
 export interface WireframeDataProps {
