@@ -1,5 +1,5 @@
 
-import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
+import { WireframeSection } from "@/services/ai/wireframe/wireframe-types";
 
 // Types for WireframeFlow component
 export interface WireframeFlowProps {
@@ -29,22 +29,28 @@ export interface IntakeWireframeBridgeProps {
     conversionPriority?: string;
     fontStyle?: string;
   };
-  onComplete?: (wireframeData: WireframeData) => void;
+  onComplete?: (wireframeData: any) => void;
 }
 
 // Types for WireframeVisualizer component
 export interface WireframeProps {
-  wireframe: (WireframeData & { id: string }); // Make sure id is required
+  wireframe: {
+    id: string;
+    title: string;
+    description?: string;
+    sections: any[];
+    imageUrl?: string;
+  };
   onSelect?: () => void;
   isSelected?: boolean;
   className?: string;
-  darkMode?: boolean; // Added darkMode prop
-  viewMode?: 'flowchart' | 'preview'; // Added viewMode prop
-  deviceType?: 'desktop' | 'mobile' | 'tablet'; // Added deviceType prop
+  darkMode?: boolean;
+  viewMode?: 'flowchart' | 'preview';
+  deviceType?: 'desktop' | 'mobile' | 'tablet';
 }
 
 export interface WireframeDataProps {
-  wireframeData: WireframeData;
+  wireframeData: any;
   className?: string;
-  darkMode?: boolean; // Added darkMode prop
+  darkMode?: boolean;
 }

@@ -14,13 +14,15 @@ interface WireframeVisualizerProps {
   viewMode?: 'preview' | 'flowchart';
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   darkMode?: boolean;
+  onSelect?: (id: string) => void;
 }
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
   deviceType = 'desktop',
-  darkMode = false
+  darkMode = false,
+  onSelect
 }) => {
   // Convert wireframe to WireframeData format expected by WireframeDataVisualizer
   const wireframeData: WireframeData = {
@@ -37,13 +39,24 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     imageUrl: wireframe.imageUrl
   };
 
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(wireframe.id);
+    }
+  };
+
   return (
-    <WireframeDataVisualizer
-      wireframeData={wireframeData}
-      viewMode={viewMode}
-      deviceType={deviceType}
-      darkMode={darkMode}
-    />
+    <div 
+      className={`cursor-pointer ${onSelect ? 'hover:ring-2 hover:ring-primary/50' : ''}`}
+      onClick={handleClick}
+    >
+      <WireframeDataVisualizer
+        wireframeData={wireframeData}
+        viewMode={viewMode}
+        deviceType={deviceType}
+        darkMode={darkMode}
+      />
+    </div>
   );
 };
 

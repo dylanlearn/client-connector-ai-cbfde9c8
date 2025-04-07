@@ -360,20 +360,21 @@ export const heroComponents: ComponentDefinition = {
     name: 'Hero Section',
     sectionType: 'hero',
     componentVariant: 'hero-startup-001',
-    headline: 'Launch Faster With AI Design',
-    subheadline: 'Generate, edit, and deploy in record time.',
-    ctaText: 'Start Free Trial',
-    ctaUrl: '/signup',
-    ctaSecondaryText: 'Request Demo',
-    ctaSecondaryUrl: '/demo',
-    alignment: 'left',
-    backgroundType: 'light',
-    mediaType: 'image',
-    imageUrl: '/placeholder.svg',
+    data: {
+      headline: 'Launch Faster With AI Design',
+      subheadline: 'Generate, edit, and deploy in record time.',
+      ctaText: 'Start Free Trial',
+      ctaUrl: '/signup',
+      ctaSecondaryText: 'Request Demo',
+      ctaSecondaryUrl: '/demo',
+      alignment: 'left',
+      backgroundType: 'light',
+      mediaType: 'image',
+      imageUrl: '/placeholder.svg',
+    },
     styleProperties: {
       padding: 'large',
       alignment: 'left',
-    },
-    data: {}
+    }
   }
 };
