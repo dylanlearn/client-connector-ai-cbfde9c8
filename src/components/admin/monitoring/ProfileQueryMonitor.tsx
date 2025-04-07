@@ -36,13 +36,23 @@ export const ProfileQueryMonitor: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const { data, error: fetchError } = await wrapFetch(
-        supabase.rpc('get_profile_query_stats'),
+      // Create a proper Promise that resolves with the response from the RPC call
+      const fetchPromise = new Promise<any>(async (resolve, reject) => {
+        const response = await supabase.rpc('get_profile_query_stats');
+        if (response.error) {
+          reject(response.error);
+        } else {
+          resolve(response.data);
+        }
+      });
+      
+      const data = await wrapFetch(
+        fetchPromise,
         'fetch stats'
       );
       
-      if (fetchError) {
-        throw fetchError;
+      if (!data) {
+        throw new Error('No data returned from stats query');
       }
 
       if (data && !data.extension_enabled) {
@@ -63,20 +73,28 @@ export const ProfileQueryMonitor: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const { error: setupError } = await wrapFetch(
-        supabase.rpc('run_pg_stat_statements_setup'),
+      // Create a proper Promise that resolves with the response from the RPC call
+      const setupPromise = new Promise<any>(async (resolve, reject) => {
+        const response = await supabase.rpc('run_pg_stat_statements_setup');
+        if (response.error) {
+          reject(response.error);
+        } else {
+          resolve(response.data);
+        }
+      });
+      
+      await wrapFetch(
+        setupPromise,
         'setup script'
       );
-      
-      if (setupError) {
-        throw setupError;
-      }
       
       // Re-fetch stats after setup
       await fetchProfileQueryStats();
       
     } catch (err) {
       // Error already handled by wrapFetch
+    } finally {
+      setIsLoading(false);
     }
   };
 
