@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FeedbackComment } from "../feedback-types";
 
 /**
- * Operations for handling feedback comments
+ * Comments operations for feedback analysis
  */
 export const FeedbackComments = {
   /**
@@ -14,31 +14,27 @@ export const FeedbackComments = {
     comment: string
   ): Promise<string | null> => {
     try {
-      // Get the current user ID
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User must be authenticated to add comments');
-      }
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
       
       const { data, error } = await supabase
         .from('feedback_comments')
         .insert({
           feedback_id: feedbackId,
-          user_id: user.id,
-          comment
+          comment,
+          user_id: userId
         })
         .select('id')
         .single();
-      
+
       if (error) {
-        console.error('Error adding comment:', error);
+        console.error("Error adding feedback comment:", error);
         return null;
       }
-      
+
       return data.id;
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error("Exception adding feedback comment:", error);
       return null;
     }
   },
@@ -48,55 +44,33 @@ export const FeedbackComments = {
    */
   getComments: async (feedbackId: string): Promise<FeedbackComment[]> => {
     try {
-      // First, we need to fetch the comments directly without joining to profiles
       const { data, error } = await supabase
         .from('feedback_comments')
         .select(`
           id,
           comment,
           created_at,
-          user_id
+          user_id,
+          profiles:user_id (name, avatar_url)
         `)
         .eq('feedback_id', feedbackId)
         .order('created_at', { ascending: true });
-      
+
       if (error) {
-        console.error('Error fetching comments:', error);
+        console.error("Error fetching feedback comments:", error);
         return [];
       }
-      
-      // Then we'll transform the data to the expected format
-      // and add user email info if we can find it
-      const comments: FeedbackComment[] = [];
-      
-      for (const item of data || []) {
-        // Try to get the user email if available
-        let userEmail: string | undefined = undefined;
-        
-        if (item.user_id) {
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', item.user_id)
-            .maybeSingle();
-            
-          if (!userError && userData) {
-            userEmail = userData.email;
-          }
-        }
-        
-        comments.push({
-          id: item.id,
-          comment: item.comment,
-          createdAt: item.created_at,
-          userId: item.user_id,
-          userEmail
-        });
-      }
-      
-      return comments;
+
+      return data.map(item => ({
+        id: item.id,
+        comment: item.comment,
+        createdAt: item.created_at,
+        userId: item.user_id,
+        userName: item.profiles?.name || 'Unknown User',
+        userAvatar: item.profiles?.avatar_url
+      }));
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error("Exception fetching feedback comments:", error);
       return [];
     }
   }

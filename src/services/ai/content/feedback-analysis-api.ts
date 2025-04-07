@@ -1,7 +1,4 @@
 
-import { FeedbackApiClient } from "./api/feedback-api-client";
-import { FeedbackDatabase } from "./api/feedback-database";
-import { FeedbackComments } from "./api/feedback-comments";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FeedbackAnalysisRecord, 

@@ -1,14 +1,15 @@
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 
-interface ActionItem {
+export interface ActionItem {
   task: string;
   priority: 'high' | 'medium' | 'low';
   urgency: number;
 }
 
-interface ToneAnalysis {
+export interface ToneAnalysis {
   positive: number;
   neutral: number;
   negative: number;

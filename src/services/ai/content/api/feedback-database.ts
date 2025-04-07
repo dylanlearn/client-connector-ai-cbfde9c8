@@ -3,8 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   FeedbackAnalysisRecord, 
   FeedbackStatus,
-  ActionItem,
-  ToneAnalysis,
   PastAnalysisResult,
   AnalysisFilters
 } from "../feedback-types";
@@ -16,35 +14,32 @@ export const FeedbackDatabase = {
   /**
    * Store feedback analysis in the database
    */
-  storeFeedbackAnalysis: async (
-    record: FeedbackAnalysisRecord
-  ): Promise<string | null> => {
+  storeFeedbackAnalysis: async (record: FeedbackAnalysisRecord): Promise<string | null> => {
     try {
-      // Ensure action_items and tone_analysis are stored as JSON strings
-      const recordToStore = {
-        ...record,
-        action_items: typeof record.action_items === 'string' 
-          ? record.action_items 
-          : JSON.stringify(record.action_items),
-        tone_analysis: typeof record.tone_analysis === 'string' 
-          ? record.tone_analysis 
-          : JSON.stringify(record.tone_analysis)
-      };
-      
       const { data, error } = await supabase
         .from('feedback_analysis')
-        .insert(recordToStore)
+        .insert({
+          user_id: record.userId,
+          project_id: record.projectId,
+          original_feedback: record.originalFeedback,
+          summary: record.summary,
+          action_items: record.actionItems,
+          tone_analysis: record.toneAnalysis,
+          priority: record.priority,
+          status: record.status || 'open',
+          category: record.category
+        })
         .select('id')
         .single();
-      
+
       if (error) {
-        console.error('Error saving feedback analysis:', error);
+        console.error("Error storing feedback analysis:", error);
         return null;
       }
-      
+
       return data.id;
     } catch (error) {
-      console.error('Error storing feedback analysis:', error);
+      console.error("Exception storing feedback analysis:", error);
       return null;
     }
   },
@@ -57,116 +52,56 @@ export const FeedbackDatabase = {
     filters?: AnalysisFilters
   ): Promise<PastAnalysisResult[]> => {
     try {
-      // Get the current user ID if available
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-      
       let query = supabase
         .from('feedback_analysis')
-        .select()
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
+      
+      if (filters) {
+        if (filters.status) {
+          query = query.eq('status', filters.status);
+        }
         
-      // If we have a user ID, filter by it
-      if (userId) {
-        query = query.eq('user_id', userId);
+        if (filters.priority) {
+          query = query.eq('priority', filters.priority);
+        }
+        
+        if (filters.userId) {
+          query = query.eq('user_id', filters.userId);
+        }
+        
+        if (filters.projectId) {
+          query = query.eq('project_id', filters.projectId);
+        }
+        
+        if (filters.category) {
+          query = query.eq('category', filters.category);
+        }
       }
-      
-      // Apply additional filters if provided
-      if (filters?.projectId) {
-        query = query.eq('project_id', filters.projectId);
-      }
-      
-      if (filters?.category) {
-        query = query.eq('category', filters.category);
-      }
-      
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
-      }
-      
+
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching past analyses:', error);
-        throw error;
-      }
-
-      if (!data || data.length === 0) {
+        console.error("Error fetching feedback analyses:", error);
         return [];
       }
 
-      // Transform the database records into the expected return format
-      return data.map(item => {
-        // Parse action_items and tone_analysis if they're stored as strings
-        let actionItems: ActionItem[] = [];
-        try {
-          const parsedItems = typeof item.action_items === 'string' 
-            ? JSON.parse(item.action_items) 
-            : item.action_items;
-            
-          // Ensure each action item has a valid priority
-          actionItems = Array.isArray(parsedItems) ? parsedItems.map(actionItem => {
-            let priority: 'high' | 'medium' | 'low' = 'medium';
-            if (actionItem.priority === 'high' || actionItem.priority === 'medium' || actionItem.priority === 'low') {
-              priority = actionItem.priority as 'high' | 'medium' | 'low';
-            }
-            
-            return {
-              task: actionItem.task,
-              priority,
-              urgency: Number(actionItem.urgency) || 5
-            };
-          }) : [];
-        } catch (e) {
-          console.error('Error parsing action_items:', e);
-          actionItems = [];
-        }
-
-        let toneAnalysis: ToneAnalysis;
-        try {
-          toneAnalysis = typeof item.tone_analysis === 'string' 
-            ? JSON.parse(item.tone_analysis) 
-            : item.tone_analysis;
-        } catch (e) {
-          console.error('Error parsing tone_analysis:', e);
-          toneAnalysis = {
-            positive: 0,
-            neutral: 1,
-            negative: 0,
-            urgent: false,
-            critical: false,
-            vague: false
-          };
-        }
-
-        // Validate status and priority
-        const status = (item.status === 'open' || item.status === 'in_progress' || 
-                        item.status === 'implemented' || item.status === 'declined')
-          ? item.status as FeedbackStatus
-          : 'open' as FeedbackStatus;
-        
-        const priority = (item.priority === 'high' || item.priority === 'medium' || item.priority === 'low')
-          ? item.priority as 'high' | 'medium' | 'low'
-          : 'medium' as 'high' | 'medium' | 'low';
-
-        return {
-          id: item.id,
-          originalFeedback: item.original_feedback,
-          result: {
-            summary: item.summary,
-            actionItems,
-            toneAnalysis
-          },
-          createdAt: item.created_at,
-          priority,
-          status,
-          category: item.category,
-          projectId: item.project_id
-        };
-      });
+      return data.map(item => ({
+        id: item.id,
+        originalFeedback: item.original_feedback,
+        result: {
+          summary: item.summary,
+          actionItems: item.action_items,
+          toneAnalysis: item.tone_analysis
+        },
+        createdAt: item.created_at,
+        status: item.status,
+        priority: item.priority,
+        category: item.category
+      }));
     } catch (error) {
-      console.error('Error fetching past analyses:', error);
+      console.error("Exception fetching feedback analyses:", error);
       return [];
     }
   },
@@ -183,15 +118,15 @@ export const FeedbackDatabase = {
         .from('feedback_analysis')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', id);
-      
+
       if (error) {
-        console.error('Error updating feedback status:', error);
+        console.error("Error updating feedback status:", error);
         return false;
       }
-      
+
       return true;
     } catch (error) {
-      console.error('Error updating feedback status:', error);
+      console.error("Exception updating feedback status:", error);
       return false;
     }
   },
@@ -208,15 +143,15 @@ export const FeedbackDatabase = {
         .from('feedback_analysis')
         .update({ priority, updated_at: new Date().toISOString() })
         .eq('id', id);
-      
+
       if (error) {
-        console.error('Error updating feedback priority:', error);
+        console.error("Error updating feedback priority:", error);
         return false;
       }
-      
+
       return true;
     } catch (error) {
-      console.error('Error updating feedback priority:', error);
+      console.error("Exception updating feedback priority:", error);
       return false;
     }
   }

@@ -7,14 +7,22 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useFeedbackAnalysis } from "@/hooks/use-feedback-analysis";
-import { FeedbackAnalysisResult } from "@/services/ai/content/feedback-analysis-service";
+import { FeedbackAnalysisResult } from "@/services/ai/content/feedback-types";
 
 interface FeedbackAnalyzerProps {
   onAnalysisComplete?: (result: FeedbackAnalysisResult) => void;
+  initialFeedback?: string;
+  placeholder?: string;
+  className?: string;
 }
 
-export const FeedbackAnalyzer = ({ onAnalysisComplete }: FeedbackAnalyzerProps) => {
-  const [feedbackText, setFeedbackText] = useState("");
+export const FeedbackAnalyzer = ({ 
+  onAnalysisComplete, 
+  initialFeedback = "", 
+  placeholder = "Paste client feedback here...",
+  className = ""
+}: FeedbackAnalyzerProps) => {
+  const [feedbackText, setFeedbackText] = useState(initialFeedback);
   const { analyzeFeedback, isAnalyzing, result, error, isAuthenticated } = useFeedbackAnalysis();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +49,7 @@ export const FeedbackAnalyzer = ({ onAnalysisComplete }: FeedbackAnalyzerProps) 
   };
 
   return (
-    <Card className="w-full">
+    <Card className={`w-full ${className}`}>
       <CardHeader>
         <CardTitle>Analyze Client Feedback</CardTitle>
       </CardHeader>
@@ -67,7 +75,7 @@ export const FeedbackAnalyzer = ({ onAnalysisComplete }: FeedbackAnalyzerProps) 
           )}
           
           <Textarea
-            placeholder="Paste client feedback here..."
+            placeholder={placeholder}
             className="min-h-[150px] resize-y"
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
