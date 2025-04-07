@@ -14,7 +14,6 @@ import { FeedbackApiClient } from './api/feedback-api-client';
 
 // Define interface for the FeedbackAnalysisAPI
 interface IFeedbackAnalysisAPI {
-  callAnalyzeFeedbackFunction: (feedbackText: string) => Promise<FeedbackAnalysisResult>;
   analyzeFeedback: (feedbackText: string) => Promise<FeedbackAnalysisResult>;
   storeFeedbackAnalysis: (record: FeedbackAnalysisRecord) => Promise<string | null>;
   getPastAnalyses: (limit?: number, filters?: AnalysisFilters) => Promise<PastAnalysisResult[]>;
@@ -28,13 +27,6 @@ interface IFeedbackAnalysisAPI {
  * API service for feedback analysis operations
  */
 export const FeedbackAnalysisAPI: IFeedbackAnalysisAPI = {
-  /**
-   * Call the analyze-feedback edge function
-   */
-  callAnalyzeFeedbackFunction: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
-    return FeedbackApiClient.callAnalyzeFeedbackFunction(feedbackText);
-  },
-
   /**
    * Analyze feedback text and return insights
    */

@@ -23,7 +23,7 @@ export function useFeedbackAnalysis() {
     
     try {
       // Call the API to analyze the feedback
-      const analysisResult = await FeedbackAnalysisService.callAnalyzeFeedbackFunction(feedbackText);
+      const analysisResult = await FeedbackAnalysisService.analyzeFeedback(feedbackText);
       
       setResult(analysisResult);
       
