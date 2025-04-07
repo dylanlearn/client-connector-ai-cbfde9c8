@@ -2399,6 +2399,15 @@ export type Database = {
       }
     }
     Functions: {
+      analyze_interaction_patterns: {
+        Args: {
+          p_user_id: string
+          p_event_type?: string
+          p_page_url?: string
+          p_limit?: number
+        }
+        Returns: Json
+      }
       analyze_profile_queries: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2743,6 +2752,31 @@ export type Database = {
             }
             Returns: unknown
           }
+      manage_error_config: {
+        Args: {
+          p_action: string
+          p_component?: string
+          p_error_type?: string
+          p_config?: Json
+        }
+        Returns: Json
+      }
+      manage_feedback_analysis: {
+        Args: {
+          p_action: string
+          p_data?: Json
+          p_user_id?: string
+        }
+        Returns: Json
+      }
+      manage_wireframe_design_memory: {
+        Args: {
+          p_action: string
+          p_user_id: string
+          p_data?: Json
+        }
+        Returns: Json
+      }
       query_interaction_events: {
         Args: {
           query_text: string

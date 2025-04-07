@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RpcClient } from "../supabase/rpc-client";
 
 // Error handling actions
 export type ErrorAction = 'log' | 'notify' | 'retry' | 'fallback';
@@ -27,26 +28,8 @@ export async function getErrorHandlingConfig(
   component: string,
   errorType: string
 ): Promise<ErrorHandlingConfig | null> {
-  try {
-    const { data, error } = await supabase.rpc('get_error_handling_config', {
-      p_component: component,
-      p_error_type: errorType
-    });
-    
-    if (error) {
-      console.error('Error fetching error handling config:', error);
-      return null;
-    }
-    
-    if (data && data.length > 0) {
-      return data[0] as ErrorHandlingConfig;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Failed to get error handling config:', error);
-    return null;
-  }
+  // Use the RPC function instead of direct database query
+  return RpcClient.errorConfig.get(component, errorType);
 }
 
 /**
@@ -155,49 +138,6 @@ async function retryOperation(
  * Update or create error handling configuration
  */
 export async function upsertErrorHandlingConfig(config: ErrorHandlingConfig): Promise<boolean> {
-  try {
-    if (config.id) {
-      // Update existing configuration
-      const { error } = await supabase
-        .from('error_handling_config')
-        .update({
-          component: config.component,
-          error_type: config.error_type,
-          action: config.action,
-          max_retries: config.max_retries,
-          retry_delay_ms: config.retry_delay_ms,
-          notification_endpoint: config.notification_endpoint,
-          severity: config.severity
-        })
-        .eq('id', config.id);
-        
-      if (error) {
-        console.error('Error updating error handling config:', error);
-        return false;
-      }
-    } else {
-      // Create new configuration
-      const { error } = await supabase
-        .from('error_handling_config')
-        .insert({
-          component: config.component,
-          error_type: config.error_type,
-          action: config.action,
-          max_retries: config.max_retries,
-          retry_delay_ms: config.retry_delay_ms,
-          notification_endpoint: config.notification_endpoint,
-          severity: config.severity
-        });
-        
-      if (error) {
-        console.error('Error creating error handling config:', error);
-        return false;
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Failed to upsert error handling config:', error);
-    return false;
-  }
+  // Use the RPC function instead of direct database query
+  return RpcClient.errorConfig.upsert(config);
 }

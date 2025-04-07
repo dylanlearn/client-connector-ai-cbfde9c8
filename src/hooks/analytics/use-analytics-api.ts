@@ -1,5 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DesignAnalytics, UserPreference, InteractionEvent } from "@/types/analytics";
+import { RpcClient } from "@/utils/supabase/rpc-client";
 
 // Use a direct approach for tables not in the generated types
 export const fetchAnalyticsData = async (userId: string, designOptionIds: string[]) => {
@@ -39,7 +41,7 @@ export const getUserDesignOptionIds = async (userId: string) => {
   return data ? data.map(pref => pref.design_option_id) : [];
 };
 
-// Use direct table queries for interaction events instead of RPC
+// Use direct table queries for interaction events
 export const fetchInteractionEvents = async (
   userId: string,
   eventType?: string,
@@ -72,7 +74,7 @@ export const fetchInteractionEvents = async (
   }
 };
 
-// Use direct table insert for storing interactions
+// Use RPC function for batch inserts instead of direct inserts
 export const storeInteractionEvent = async (
   userId: string,
   eventType: 'click' | 'hover' | 'scroll' | 'view',
@@ -83,18 +85,16 @@ export const storeInteractionEvent = async (
   metadata?: Record<string, any>
 ): Promise<void> => {
   try {
-    const { error } = await supabase
-      .from('interaction_events')
-      .insert({
-        user_id: userId,
-        event_type: eventType,
-        page_url: pageUrl,
-        x_position: position.x,
-        y_position: position.y,
-        element_selector: elementSelector,
-        session_id: sessionId,
-        metadata: metadata || {}
-      });
+    const { error } = await supabase.rpc('insert_interaction_event', {
+      p_user_id: userId,
+      p_event_type: eventType,
+      p_page_url: pageUrl,
+      p_x_position: position.x,
+      p_y_position: position.y,
+      p_element_selector: elementSelector,
+      p_session_id: sessionId,
+      p_metadata: metadata || {}
+    });
     
     if (error) throw error;
   } catch (error) {
@@ -151,28 +151,12 @@ export const subscribeToInteractionEvents = (
   };
 };
 
-// Add a new function to analyze interaction patterns using the new consolidated API
+// Use the new RPC function for interaction analysis
 export const analyzeInteractionPatterns = async (
   userId: string,
   eventType?: string,
   pageUrl?: string,
   limit: number = 1000
 ): Promise<any> => {
-  try {
-    const { data, error } = await supabase.functions.invoke("analytics-api", {
-      body: {
-        action: "analyze_interaction_patterns",
-        userId,
-        eventType,
-        pageUrl,
-        limit
-      }
-    });
-
-    if (error) throw error;
-    return data || { insights: [], hotspots: [], patterns: [] };
-  } catch (error) {
-    console.error('Error analyzing interaction patterns:', error);
-    return { insights: [], hotspots: [], patterns: [] };
-  }
+  return RpcClient.interactionAnalytics.analyzePatterns(userId, eventType, pageUrl, limit);
 };
