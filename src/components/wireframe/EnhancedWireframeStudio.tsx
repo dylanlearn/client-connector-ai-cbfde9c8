@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +17,7 @@ import DesignMemoryPanel from './DesignMemoryPanel';
 import { DesignReference } from '@/services/ai/design/design-memory-reference-service';
 import { WireframeGenerationParams, WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
+import { WireframeProps } from './types';
 
 interface AIWireframe {
   id: string;
@@ -161,6 +163,17 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     { value: 'luxury', label: 'Luxury' },
     { value: 'playful', label: 'Playful' }
   ];
+  
+  // Helper function to ensure sections have required id property
+  const adaptSectionsForVisualizer = (sections: WireframeSection[] = []): any[] => {
+    return sections.map((section, index) => ({
+      id: section.id || `section-${index}`,
+      name: section.name,
+      sectionType: section.sectionType,
+      description: section.description || '',
+      imageUrl: section.imageUrl || ''
+    }));
+  };
   
   return (
     <div className="space-y-4">
@@ -332,7 +345,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                         title: currentWireframe.wireframe.title || 'Generated Wireframe',
                         description: currentWireframe.wireframe.description || '',
                         imageUrl: currentWireframe.wireframe.imageUrl,
-                        sections: currentWireframe.wireframe.sections || [],
+                        sections: adaptSectionsForVisualizer(currentWireframe.wireframe.sections),
                         version: '1.0',
                         lastUpdated: new Date().toISOString()
                       }}
