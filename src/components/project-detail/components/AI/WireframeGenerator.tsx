@@ -293,7 +293,13 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
               />
             </div>
             
-            <WireframeVisualizer wireframe={generatedWireframe} darkMode={darkMode} />
+            <WireframeVisualizer 
+              wireframe={{
+                ...generatedWireframe,
+                id: generatedWireframe.id || `generated-${Date.now()}`
+              }} 
+              darkMode={darkMode} 
+            />
           </CardContent>
           <div className="p-4 border-t">
             <Button onClick={handleSaveWireframe} className="w-full">
