@@ -1,77 +1,78 @@
 
 import { ComponentDefinition } from '../component-registry';
+import blogVariants from '@/data/component-library-variants-blog';
 
 export const blogComponents: ComponentDefinition = {
   type: 'blog',
   name: 'Blog Section',
-  description: 'Display your latest articles and posts',
+  description: 'Blog post listings in various layouts',
   category: 'content',
-  icon: 'file-text',
+  icon: 'newspaper',
   variants: [
     {
       id: 'blog-startup-001',
-      name: 'Startup Blog Grid',
+      name: 'Latest Updates',
       description: 'Modern grid layout with card shadows and hover effects',
       thumbnail: '/thumbnails/blog-startup-001.png'
     },
     {
       id: 'blog-creative-001',
-      name: 'Creative Journal',
-      description: 'Centered gradient layout with creative branding',
+      name: 'The Journal',
+      description: 'Centered gradient layout with creative branding, stacked thumbnails, and layered text',
       thumbnail: '/thumbnails/blog-creative-001.png'
     },
     {
       id: 'blog-creative-002',
       name: 'Studio Dispatch',
-      description: 'Visually-driven creative blog slider',
+      description: 'Visually-driven creative blog slider with large fonts and mixed media',
       thumbnail: '/thumbnails/blog-creative-002.png'
     },
     {
       id: 'blog-creative-003',
-      name: 'Minimal Field Notes',
-      description: 'Minimalist, dark-mode editorial layout',
+      name: 'Field Notes',
+      description: 'Minimalist, dark-mode editorial layout with no categories or summaries — just vibes',
       thumbnail: '/thumbnails/blog-creative-003.png'
     },
     {
       id: 'blog-startup-002',
-      name: 'Engineering Blog',
-      description: 'Technical SaaS blog layout with minimalist theme',
+      name: 'Engineering Deep Dives',
+      description: 'Technical SaaS blog layout with minimalist theme and dev focus',
       thumbnail: '/thumbnails/blog-startup-002.png'
     },
     {
       id: 'blog-startup-003',
-      name: 'Startup Journal',
-      description: 'Gradient-backed story slider',
+      name: 'The Startup Journal',
+      description: 'Gradient-backed story slider — great for YC/startup blogs',
       thumbnail: '/thumbnails/blog-startup-003.png'
     },
     {
       id: 'blog-startup-004',
       name: 'Insights Hub',
-      description: 'Image-heavy grid layout for marketing blogs',
+      description: 'Image-heavy grid layout styled for marketing and growth blogs',
       thumbnail: '/thumbnails/blog-startup-004.png'
     },
     {
       id: 'blog-ecom-001',
-      name: 'Product Blog',
-      description: 'Shoppable content grid layout',
+      name: 'The Fit Edit',
+      description: 'Glossier/Gymshark-inspired grid for shoppable content',
       thumbnail: '/thumbnails/blog-ecom-001.png'
     },
     {
       id: 'blog-ecom-002',
-      name: 'Press Coverage',
-      description: 'Dark editorial press-style layout',
+      name: 'In the Press',
+      description: 'Dark editorial press-style layout with minimal markup',
       thumbnail: '/thumbnails/blog-ecom-002.png'
     },
     {
       id: 'blog-ecom-003',
-      name: 'Brand Story',
-      description: 'Lifestyle slider for storytelling',
+      name: 'Behind the Brand',
+      description: 'Lifestyle-style slider for storytelling with product overlap',
       thumbnail: '/thumbnails/blog-ecom-003.png'
     },
     {
       id: 'blog-flex-001',
-      name: 'Simple Updates',
-      description: 'General-purpose blog layout',
+      name: 'What\'s New',
+      description: 'General-purpose blog layout ideal for portfolios or consultants',
       thumbnail: '/thumbnails/blog-flex-001.png'
     },
     {
@@ -82,8 +83,8 @@ export const blogComponents: ComponentDefinition = {
     },
     {
       id: 'blog-flex-003',
-      name: 'Founder Notes',
-      description: 'Personal blog layout for creators',
+      name: 'Founder\'s Notes',
+      description: 'Carousel-driven, personal blog layout for creators or indie founders',
       thumbnail: '/thumbnails/blog-flex-003.png'
     }
   ],
@@ -93,20 +94,20 @@ export const blogComponents: ComponentDefinition = {
       name: 'Headline',
       type: 'text',
       description: 'Main heading for the blog section',
-      defaultValue: 'Latest Articles'
+      defaultValue: 'Latest Updates'
     },
     {
       id: 'description',
       name: 'Description',
       type: 'textarea',
-      description: 'Brief description or introduction for the blog section',
-      defaultValue: 'Stay up-to-date with our latest news and insights'
+      description: 'Supporting text beneath the headline',
+      defaultValue: 'Stay up-to-date with our latest news and product updates.'
     },
     {
       id: 'layoutStyle',
       name: 'Layout Style',
       type: 'select',
-      description: 'How the blog posts should be arranged',
+      description: 'The layout style for blog posts',
       options: [
         { label: 'Grid', value: 'grid' },
         { label: 'List', value: 'list' },
@@ -137,7 +138,7 @@ export const blogComponents: ComponentDefinition = {
         { label: 'Center', value: 'center' },
         { label: 'Right', value: 'right' }
       ],
-      defaultValue: 'left'
+      defaultValue: 'center'
     },
     {
       id: 'showCategories',

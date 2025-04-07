@@ -1,380 +1,180 @@
 
 import { ComponentDefinition } from '../component-registry';
 
-/**
- * Interface for Hero Component data
- */
-export interface HeroComponentProps {
-  variant: string;
-  headline: string;
-  subheadline?: string;
-  image?: string;
-  cta?: {
-    label: string;
-    url: string;
-  };
-  ctaSecondary?: {
-    label: string;
-    url: string;
-  };
-  badge?: string;
-  alignment?: 'left' | 'center' | 'right';
-  backgroundStyle?: 'light' | 'dark' | 'image';
-  styleNote?: string;
-  mediaType?: 'image' | 'video' | 'illustration';
-}
-
-/**
- * Hero component variants for the wireframe editor
- */
-export const heroVariants: HeroComponentProps[] = [
-  // === CREATIVE VARIANTS ===
-  {
-    variant: 'hero-creative-001',
-    headline: "Design Beyond Limits",
-    subheadline: "Elevate your digital presence with expressive visuals.",
-    image: "/placeholder.svg",
-    cta: { label: "Explore Gallery", url: "/gallery" },
-    ctaSecondary: { label: "Contact Sales", url: "/contact" },
-    alignment: "center",
-    backgroundStyle: "image",
-    styleNote: "Creative layout with strong visual emphasis and image background",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-creative-002',
-    headline: "Ideas in Motion",
-    subheadline: "Animation meets strategy — build with fluid creativity.",
-    image: "/placeholder.svg",
-    cta: { label: "See in Action", url: "/motion" },
-    alignment: "left",
-    backgroundStyle: "dark",
-    styleNote: "Dark creative layout ideal for animated visuals or motion showcases",
-    mediaType: "video"
-  },
-  {
-    variant: 'hero-creative-003',
-    headline: "Art-Driven Interfaces",
-    subheadline: "Because your brand deserves personality.",
-    image: "/placeholder.svg",
-    cta: { label: "Get Inspired", url: "/inspiration" },
-    alignment: "center",
-    backgroundStyle: "light",
-    styleNote: "Clean, art-focused layout for creative agencies or portfolios",
-    mediaType: "illustration"
-  },
-
-  // === STARTUP-FOCUSED VARIANTS ===
-  {
-    variant: 'hero-startup-001',
-    headline: "Launch Faster With AI Design",
-    subheadline: "Generate, edit, and deploy in record time.",
-    image: "/placeholder.svg",
-    cta: { label: "Start Free Trial", url: "/signup" },
-    ctaSecondary: { label: "Request Demo", url: "/demo" },
-    alignment: "left",
-    backgroundStyle: "light",
-    styleNote: "Left-aligned startup hero with bold CTA and clean layout",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-startup-002',
-    headline: "Build Better. Ship Quicker.",
-    subheadline: "Tools that scale with your MVP.",
-    image: "/placeholder.svg",
-    cta: { label: "Book Demo", url: "/demo" },
-    alignment: "center",
-    backgroundStyle: "dark",
-    styleNote: "Center-aligned dark layout with strong contrast, ideal for SaaS startups",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-startup-003',
-    headline: "Your Product, Front and Center",
-    subheadline: "Clean, bold, and conversion-optimized.",
-    image: "/placeholder.svg",
-    cta: { label: "See Features", url: "/features" },
-    alignment: "right",
-    backgroundStyle: "light",
-    styleNote: "Right-aligned hero for startups with product images",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-startup-004',
-    headline: "No-Code. Full Control.",
-    subheadline: "Ideal for fast-moving founders and small teams.",
-    image: "/placeholder.svg",
-    cta: { label: "Start Building", url: "/launch" },
-    alignment: "center",
-    backgroundStyle: "image",
-    styleNote: "No-code hero with vibrant visual background and clear call-to-action",
-    mediaType: "image"
-  },
-
-  // === ECOMMERCE VARIANTS ===
-  {
-    variant: 'hero-ecom-001',
-    headline: "New Season. New Arrivals.",
-    subheadline: "Shop the latest drops before they sell out.",
-    image: "/placeholder.svg",
-    cta: { label: "Shop Now", url: "/shop" },
-    ctaSecondary: { label: "View All", url: "/products" },
-    alignment: "left",
-    backgroundStyle: "light",
-    styleNote: "Retail-style eCommerce hero with left-aligned image and urgency",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-ecom-002',
-    headline: "Style, Simplified",
-    subheadline: "Discover curated essentials for everyday wear.",
-    image: "/placeholder.svg",
-    cta: { label: "Browse Collection", url: "/collection" },
-    alignment: "center",
-    backgroundStyle: "image",
-    styleNote: "Elegant fashion-focused layout with image background",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-ecom-003',
-    headline: "Tech Meets Lifestyle",
-    subheadline: "Where innovation and comfort intersect.",
-    image: "/placeholder.svg",
-    cta: { label: "Shop Devices", url: "/products" },
-    alignment: "right",
-    backgroundStyle: "dark",
-    styleNote: "Bold right-aligned tech-focused ecommerce layout",
-    mediaType: "image"
-  },
-
-  // === FLEXIBLE/OTHER VARIANTS ===
-  {
-    variant: 'hero-flex-001',
-    headline: "Your Ideas Deserve a Beautiful Start",
-    subheadline: "Templates and tools for every industry.",
-    image: "/placeholder.svg",
-    cta: { label: "Browse Templates", url: "/templates" },
-    alignment: "center",
-    backgroundStyle: "light",
-    styleNote: "Flexible hero layout ideal for template platforms and multi-industry use",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-flex-002',
-    headline: "Get Online in Minutes",
-    subheadline: "Perfect for local businesses, agencies, and creators.",
-    image: "/placeholder.svg",
-    cta: { label: "Start Free", url: "/start" },
-    alignment: "left",
-    backgroundStyle: "light",
-    styleNote: "Service-based hero for local or small business with left image",
-    mediaType: "image"
-  },
-  {
-    variant: 'hero-flex-003',
-    headline: "Turn Your Vision Into a Page",
-    subheadline: "Flexible layouts, instant feedback, live previews.",
-    image: "/placeholder.svg",
-    cta: { label: "Try the Builder", url: "/builder" },
-    alignment: "center",
-    backgroundStyle: "image",
-    styleNote: "Platform-focused layout with flexible calls-to-action and visual backdrop",
-    mediaType: "image"
-  }
-];
-
-/**
- * Hero component definitions for the wireframe editor
- */
 export const heroComponents: ComponentDefinition = {
   type: 'hero',
   name: 'Hero Section',
-  description: 'Main banner section typically at the top of a page',
-  category: 'content',
-  icon: 'layout-dashboard',
+  description: 'Impactful hero sections for landing pages',
+  category: 'layout',
+  icon: 'layout',
   variants: [
     {
       id: 'hero-creative-001',
-      name: 'Creative Hero 1',
-      description: 'Creative layout with strong visual emphasis and image background',
+      name: 'Creative Studio Hero',
+      description: 'Bold typography with abstract shapes background',
+      thumbnail: '/thumbnails/hero-creative-001.png'
     },
     {
       id: 'hero-creative-002',
-      name: 'Creative Hero 2',
-      description: 'Dark creative layout ideal for animated visuals or motion showcases',
+      name: 'Visual Portfolio Hero',
+      description: 'Fullscreen image/video with overlay text',
+      thumbnail: '/thumbnails/hero-creative-002.png'
     },
     {
       id: 'hero-creative-003',
-      name: 'Creative Hero 3',
-      description: 'Clean, art-focused layout for creative agencies or portfolios',
+      name: 'Agency Splash Hero',
+      description: 'Dynamic animated hero with horizontal scroll effect',
+      thumbnail: '/thumbnails/hero-creative-003.png'
     },
     {
       id: 'hero-startup-001',
-      name: 'Startup Hero 1',
-      description: 'Left-aligned startup hero with bold CTA and clean layout',
+      name: 'Product Launch Hero',
+      description: 'Clean SaaS hero with image and dual CTAs',
+      thumbnail: '/thumbnails/hero-startup-001.png'
     },
     {
       id: 'hero-startup-002',
-      name: 'Startup Hero 2',
-      description: 'Center-aligned dark layout with strong contrast, ideal for SaaS startups',
+      name: 'Tech Dashboard Hero',
+      description: 'Feature-focused hero with dashboard preview',
+      thumbnail: '/thumbnails/hero-startup-002.png'
     },
     {
       id: 'hero-startup-003',
-      name: 'Startup Hero 3',
-      description: 'Right-aligned hero for startups with product images',
+      name: 'App Showcase Hero',
+      description: 'Mobile app preview with gradient background',
+      thumbnail: '/thumbnails/hero-startup-003.png'
     },
     {
       id: 'hero-startup-004',
-      name: 'Startup Hero 4',
-      description: 'No-code hero with vibrant visual background and clear call-to-action',
+      name: 'B2B Enterprise Hero',
+      description: 'Professional hero section with trust badges and testimonials',
+      thumbnail: '/thumbnails/hero-startup-004.png'
     },
     {
       id: 'hero-ecom-001',
-      name: 'eCommerce Hero 1',
-      description: 'Retail-style eCommerce hero with left-aligned image and urgency',
+      name: 'Product Collection Hero',
+      description: 'Gymshark-inspired hero with product highlights',
+      thumbnail: '/thumbnails/hero-ecom-001.png'
     },
     {
       id: 'hero-ecom-002',
-      name: 'eCommerce Hero 2',
-      description: 'Elegant fashion-focused layout with image background',
+      name: 'Lifestyle Product Hero',
+      description: 'Glossier-style hero with product spotlights',
+      thumbnail: '/thumbnails/hero-ecom-002.png'
     },
     {
       id: 'hero-ecom-003',
-      name: 'eCommerce Hero 3',
-      description: 'Bold right-aligned tech-focused ecommerce layout',
+      name: 'Premium Showcase Hero',
+      description: 'Apple-inspired minimal hero with product focus',
+      thumbnail: '/thumbnails/hero-ecom-003.png'
     },
     {
       id: 'hero-flex-001',
-      name: 'Flexible Hero 1',
-      description: 'Flexible hero layout ideal for template platforms and multi-industry use',
+      name: 'Personal Brand Hero',
+      description: 'Coach/consultant hero with clear value proposition',
+      thumbnail: '/thumbnails/hero-flex-001.png'
     },
     {
       id: 'hero-flex-002',
-      name: 'Flexible Hero 2',
-      description: 'Service-based hero for local or small business with left image',
+      name: 'Education Platform Hero',
+      description: 'Course/learning platform with social proof',
+      thumbnail: '/thumbnails/hero-flex-002.png'
     },
     {
       id: 'hero-flex-003',
-      name: 'Flexible Hero 3',
-      description: 'Platform-focused layout with flexible calls-to-action and visual backdrop',
-    },
+      name: 'Freelancer Portfolio Hero',
+      description: 'Minimal portfolio hero with project highlights',
+      thumbnail: '/thumbnails/hero-flex-003.png'
+    }
   ],
   fields: [
     {
       id: 'headline',
       name: 'Headline',
       type: 'text',
-      description: 'Primary heading text',
-      defaultValue: 'Main Headline Goes Here',
-      validation: {
-        required: true,
-      },
+      description: 'Main heading for the hero section',
+      defaultValue: 'Your Compelling Headline Here'
     },
     {
       id: 'subheadline',
       name: 'Subheadline',
       type: 'textarea',
-      description: 'Supporting text that appears below headline',
-      defaultValue: 'This is a supporting text that provides more context to the headline above.',
+      description: 'Supporting text beneath the headline',
+      defaultValue: 'A clear, concise explanation of your value proposition.'
     },
     {
-      id: 'ctaText',
-      name: 'CTA Button Text',
+      id: 'primaryCta',
+      name: 'Primary CTA',
       type: 'text',
-      description: 'Call to action button text',
-      defaultValue: 'Get Started',
+      description: 'Text for the primary call to action button',
+      defaultValue: 'Get Started'
     },
     {
-      id: 'ctaUrl',
-      name: 'CTA URL',
+      id: 'secondaryCta',
+      name: 'Secondary CTA',
       type: 'text',
-      description: 'Call to action button link',
-      defaultValue: '#',
-    },
-    {
-      id: 'ctaSecondaryText',
-      name: 'Secondary Button Text',
-      type: 'text',
-      description: 'Text for the secondary button',
-      defaultValue: 'Learn More',
-    },
-    {
-      id: 'ctaSecondaryUrl',
-      name: 'Secondary Button URL',
-      type: 'text',
-      description: 'Link for the secondary button',
-      defaultValue: '#',
+      description: 'Text for the secondary call to action button (optional)',
+      defaultValue: 'Learn More'
     },
     {
       id: 'backgroundType',
       name: 'Background Type',
       type: 'select',
-      description: 'Type of background for the hero section',
-      defaultValue: 'light',
+      description: 'The type of background for the hero section',
       options: [
-        { label: 'Light', value: 'light' },
-        { label: 'Dark', value: 'dark' },
+        { label: 'Solid Color', value: 'color' },
+        { label: 'Gradient', value: 'gradient' },
         { label: 'Image', value: 'image' },
+        { label: 'Video', value: 'video' }
       ],
+      defaultValue: 'color'
     },
     {
-      id: 'alignment',
-      name: 'Content Alignment',
-      type: 'select',
-      description: 'Alignment of the hero content',
-      defaultValue: 'left',
-      options: [
-        { label: 'Left', value: 'left' },
-        { label: 'Center', value: 'center' },
-        { label: 'Right', value: 'right' },
-      ],
-    },
-    {
-      id: 'imageUrl',
-      name: 'Image URL',
+      id: 'backgroundImage',
+      name: 'Background Image',
       type: 'image',
-      description: 'URL for the hero image',
-      defaultValue: '',
+      description: 'Background image for the hero section',
+      defaultValue: ''
     },
     {
-      id: 'mediaType',
-      name: 'Media Type',
+      id: 'heroImage',
+      name: 'Hero Image',
+      type: 'image',
+      description: 'Main image or illustration for the hero section',
+      defaultValue: ''
+    },
+    {
+      id: 'layout',
+      name: 'Layout',
       type: 'select',
-      description: 'Type of media to display in the hero',
-      defaultValue: 'image',
+      description: 'The layout of the hero content',
       options: [
-        { label: 'Image', value: 'image' },
-        { label: 'Video', value: 'video' },
-        { label: 'Illustration', value: 'illustration' },
+        { label: 'Center', value: 'center' },
+        { label: 'Split (Text Left)', value: 'split-left' },
+        { label: 'Split (Text Right)', value: 'split-right' }
       ],
+      defaultValue: 'center'
     },
     {
-      id: 'badge',
-      name: 'Badge Text',
-      type: 'text',
-      description: 'Optional badge text to display (e.g., "New", "Featured")',
-      defaultValue: '',
-    },
+      id: 'showTrustBadges',
+      name: 'Show Trust Badges',
+      type: 'boolean',
+      description: 'Whether to display customer/partner logos',
+      defaultValue: false
+    }
   ],
   defaultData: {
-    name: 'Hero Section',
     sectionType: 'hero',
     componentVariant: 'hero-startup-001',
+    name: 'Hero Section',
     data: {
-      headline: 'Launch Faster With AI Design',
-      subheadline: 'Generate, edit, and deploy in record time.',
-      ctaText: 'Start Free Trial',
-      ctaUrl: '/signup',
-      ctaSecondaryText: 'Request Demo',
-      ctaSecondaryUrl: '/demo',
-      alignment: 'left',
-      backgroundType: 'light',
-      mediaType: 'image',
-      imageUrl: '/placeholder.svg',
-    },
-    styleProperties: {
-      padding: 'large',
-      alignment: 'left',
+      headline: 'Your Compelling Headline Here',
+      subheadline: 'A clear, concise explanation of your value proposition.',
+      primaryCta: 'Get Started',
+      secondaryCta: 'Learn More',
+      backgroundType: 'color',
+      layout: 'split-left',
+      showTrustBadges: true
     }
   }
 };
