@@ -2,18 +2,26 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  ListTodo,
+  Layers,
+  FolderKanban,
+  Settings,
   Users,
-  FileText,
-  Palette,
+  FileAnalytics,
   BarChart3,
-  BrainCircuit,
-  MessageSquareText,
-  Globe,
-  Layout
+  Layout,
+  Wand2,
+  Microscope,
+  FileInput
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export const mainNavItems = [
+export interface MainNavigationItemProps {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+export const mainNavItems: MainNavigationItemProps[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
@@ -22,7 +30,7 @@ export const mainNavItems = [
   {
     title: "Projects",
     href: "/projects",
-    icon: <ListTodo className="h-5 w-5" />,
+    icon: <FolderKanban className="h-5 w-5" />,
   },
   {
     title: "Clients",
@@ -30,14 +38,9 @@ export const mainNavItems = [
     icon: <Users className="h-5 w-5" />,
   },
   {
-    title: "Intake Form",
-    href: "/intake-form",
-    icon: <FileText className="h-5 w-5" />,
-  },
-  {
     title: "Design Picker",
     href: "/design-picker",
-    icon: <Palette className="h-5 w-5" />,
+    icon: <Layers className="h-5 w-5" />,
   },
   {
     title: "Wireframe Generator",
@@ -45,60 +48,64 @@ export const mainNavItems = [
     icon: <Layout className="h-5 w-5" />,
   },
   {
+    title: "Website Analyzer",
+    href: "/website-analyzer",
+    icon: <Microscope className="h-5 w-5" />,
+  },
+  {
+    title: "AI Suggestions",
+    href: "/ai-suggestions",
+    icon: <Wand2 className="h-5 w-5" />,
+  },
+  {
+    title: "Feedback Analysis",
+    href: "/feedback-analysis",
+    icon: <FileAnalytics className="h-5 w-5" />,
+  },
+  {
     title: "Analytics",
     href: "/analytics",
     icon: <BarChart3 className="h-5 w-5" />,
   },
   {
-    title: "AI Suggestions",
-    href: "/ai-suggestions",
-    icon: <BrainCircuit className="h-5 w-5" />,
+    title: "Intake Form",
+    href: "/intake-form",
+    icon: <FileInput className="h-5 w-5" />,
   },
-  {
-    title: "Feedback Analysis",
-    href: "/feedback-analysis",
-    icon: <MessageSquareText className="h-5 w-5" />,
-  },
-  {
-    title: "Website Analyzer",
-    href: "/website-analyzer",
-    icon: <Globe className="h-5 w-5" />,
-  }
 ];
 
-// Define the interface for navigation items
-export interface NavigationItemProps {
-  title: string;
-  href: string;
-  icon: React.ReactNode;
+interface MainNavigationProps {
+  items: MainNavigationItemProps[];
 }
 
-interface NavigationProps {
-  items: NavigationItemProps[];
-}
-
-const MainNavigation = ({ items }: NavigationProps) => {
+export default function MainNavigation({ items }: MainNavigationProps) {
   return (
-    <ul className="space-y-1">
-      {items.map((item) => (
-        <li key={item.href}>
-          <NavLink
-            to={item.href}
-            className={({ isActive }) =>
-              `flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`
-            }
-          >
-            {item.icon}
-            <span className="ml-3">{item.title}</span>
-          </NavLink>
-        </li>
-      ))}
-    </ul>
+    <nav className="grid items-start px-2 text-sm font-medium">
+      <div className="pb-4">
+        <h2 className="mb-2 px-4 text-xs font-semibold tracking-tight text-muted-foreground">
+          Main
+        </h2>
+        <ul className="space-y-1">
+          {items.map((item) => (
+            <li key={item.href}>
+              <NavLink
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )
+                }
+              >
+                {item.icon}
+                <span className="ml-3">{item.title}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
   );
-};
-
-export default MainNavigation;
+}

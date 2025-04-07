@@ -20,6 +20,8 @@ import WebsiteAnalyzer from "./pages/design-analysis/WebsiteAnalyzer";
 import FeedbackAnalysis from "./pages/FeedbackAnalysis";
 import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import Analytics from "./pages/Analytics";
+import WireframeGenerator from "./pages/WireframeGenerator";
+import Clients from "./pages/Clients";
 
 // Define type augmentation for window object
 interface WindowWithAdminRoutes extends Window {
@@ -102,21 +104,32 @@ const router = createBrowserRouter([
         path: '/analytics',
         element: <ProtectedRoute><Analytics /></ProtectedRoute>,
       },
+      // Add the missing route for WireframeGenerator
+      {
+        path: '/wireframe-generator',
+        element: <ProtectedRoute><WireframeGenerator /></ProtectedRoute>,
+      },
+      // Add the missing route for Clients
+      {
+        path: '/clients',
+        element: <ProtectedRoute><Clients /></ProtectedRoute>,
+      },
+      // Use AdminRoute for admin paths
       {
         path: '/admin',
-        element: <ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>,
+        element: <AdminRoute><AdminPanel /></AdminRoute>,
       },
       {
         path: '/admin/analytics',
-        element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
+        element: <AdminRoute><AdminAnalytics /></AdminRoute>,
       },
       {
         path: '/admin/supabase-audit',
-        element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
+        element: <AdminRoute><AdminAnalytics /></AdminRoute>,
       },
       {
         path: '/admin/audit-and-monitoring',
-        element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
+        element: <AdminRoute><AdminAnalytics /></AdminRoute>,
       },
       {
         path: '*',
