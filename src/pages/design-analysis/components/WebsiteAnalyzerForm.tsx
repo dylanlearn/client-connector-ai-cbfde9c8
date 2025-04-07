@@ -12,7 +12,7 @@ interface WebsiteAnalyzerFormProps {
   activeTab: 'full' | 'section';
   setActiveTab: (tab: 'full' | 'section') => void;
   onAnalyzeWebsite: (url: string) => Promise<WebsiteAnalysisResult | null>;
-  onAnalyzeWebsiteSection: (section: string, url: string) => Promise<WebsiteAnalysisResult | null>;
+  onAnalyzeWebsiteSection: (section: SectionType, url: string) => Promise<WebsiteAnalysisResult | null>;
 }
 
 export default function WebsiteAnalyzerForm({
@@ -23,7 +23,7 @@ export default function WebsiteAnalyzerForm({
   onAnalyzeWebsiteSection
 }: WebsiteAnalyzerFormProps) {
   const [url, setUrl] = useState('');
-  const [section, setSection] = useState<string>('hero');
+  const [section, setSection] = useState<SectionType>('hero');
 
   const handleAnalyze = async () => {
     if (!url) return;
@@ -75,7 +75,7 @@ export default function WebsiteAnalyzerForm({
                 <select
                   className="w-full border rounded-md px-3 py-2 mt-1"
                   value={section}
-                  onChange={(e) => setSection(e.target.value)}
+                  onChange={(e) => setSection(e.target.value as SectionType)}
                 >
                   <option value="hero">Hero Section</option>
                   <option value="features">Features Section</option>
