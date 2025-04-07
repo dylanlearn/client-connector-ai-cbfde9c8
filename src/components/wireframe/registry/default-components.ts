@@ -1,10 +1,11 @@
 
 import { ComponentDefinition } from './component-registry';
+import { createComponentDefinition, createSectionData } from './registry-utils';
 
 /**
  * Hero Section Component Definition
  */
-export const heroComponent: ComponentDefinition = {
+export const heroComponent: ComponentDefinition = createComponentDefinition({
   type: 'hero',
   name: 'Hero Section',
   description: 'Main banner section typically at the top of a webpage',
@@ -79,30 +80,52 @@ export const heroComponent: ComponentDefinition = {
       defaultValue: ''
     }
   ],
-  defaultData: {
+  defaultData: createSectionData({
     name: 'Hero Section',
     sectionType: 'hero',
     componentVariant: 'hero-centered',
-    // Instead of using 'data', add properties directly to the section
-    heading: 'Your Impactful Heading Here',
-    subheading: 'A descriptive subheading to provide more context and engage your visitors.',
-    primaryCta: 'Get Started',
-    secondaryCta: 'Learn More',
-    backgroundType: 'color',
-    backgroundColor: '#f9fafb',
-    imageUrl: '',
     styleProperties: {
       paddingTop: 'lg',
       paddingBottom: 'lg',
       textAlignment: 'center'
-    }
-  }
-};
+    },
+    // Additional custom fields for this section type
+    components: [
+      {
+        type: 'heading',
+        id: 'main-heading',
+        content: 'Your Impactful Heading Here',
+        props: { level: 1 }
+      },
+      {
+        type: 'text',
+        id: 'main-subheading',
+        content: 'A descriptive subheading to provide more context and engage your visitors.',
+        props: { size: 'lg' }
+      },
+      {
+        type: 'button',
+        id: 'primary-cta',
+        content: 'Get Started',
+        props: { variant: 'primary' }
+      },
+      {
+        type: 'button',
+        id: 'secondary-cta',
+        content: 'Learn More',
+        props: { variant: 'secondary' }
+      }
+    ],
+    layoutType: 'centered',
+    // Store metadata for rendering and customization
+    designReasoning: 'A hero section helps establish brand identity and convey the main value proposition.'
+  })
+});
 
 /**
  * Features Section Component Definition
  */
-export const featuresComponent: ComponentDefinition = {
+export const featuresComponent: ComponentDefinition = createComponentDefinition({
   type: 'features',
   name: 'Features Section',
   description: 'Showcase your product or service features',
@@ -175,38 +198,58 @@ export const featuresComponent: ComponentDefinition = {
       defaultValue: 3
     }
   ],
-  defaultData: {
+  defaultData: createSectionData({
     name: 'Features Section',
     sectionType: 'features',
     componentVariant: 'features-grid',
-    // Instead of using 'data', add properties directly to the section
-    heading: 'Key Features',
-    subheading: 'Discover what makes our product stand out from the competition.',
-    features: [
-      {
-        title: 'Feature One',
-        description: 'Description of the first feature highlighting its benefits.',
-        icon: 'star'
-      },
-      {
-        title: 'Feature Two',
-        description: 'Description of the second feature highlighting its benefits.',
-        icon: 'clock'
-      },
-      {
-        title: 'Feature Three',
-        description: 'Description of the third feature highlighting its benefits.',
-        icon: 'shield'
-      }
-    ],
-    columnsCount: 3,
     styleProperties: {
       paddingTop: 'md',
       paddingBottom: 'md',
       backgroundColor: '#ffffff'
-    }
-  }
-};
+    },
+    components: [
+      {
+        type: 'heading',
+        id: 'features-heading',
+        content: 'Key Features',
+        props: { level: 2 }
+      },
+      {
+        type: 'text',
+        id: 'features-subheading',
+        content: 'Discover what makes our product stand out from the competition.',
+        props: { size: 'md' }
+      },
+      {
+        type: 'feature-grid',
+        id: 'features-grid',
+        props: { columns: 3 },
+        children: [
+          {
+            type: 'feature-card',
+            id: 'feature-1',
+            props: { icon: 'star', title: 'Feature One' },
+            content: 'Description of the first feature highlighting its benefits.'
+          },
+          {
+            type: 'feature-card',
+            id: 'feature-2',
+            props: { icon: 'clock', title: 'Feature Two' },
+            content: 'Description of the second feature highlighting its benefits.'
+          },
+          {
+            type: 'feature-card',
+            id: 'feature-3',
+            props: { icon: 'shield', title: 'Feature Three' },
+            content: 'Description of the third feature highlighting its benefits.'
+          }
+        ]
+      }
+    ],
+    layoutType: 'grid',
+    designReasoning: 'Feature sections help highlight the benefits and capabilities of your product or service.'
+  })
+});
 
 /**
  * Register default components
