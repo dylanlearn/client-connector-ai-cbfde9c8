@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { DesignAnalytics, UserPreference, InteractionEvent } from "@/types/analytics";
 
@@ -150,4 +149,30 @@ export const subscribeToInteractionEvents = (
   return () => {
     supabase.removeChannel(interactionChannel);
   };
+};
+
+// Add a new function to analyze interaction patterns using the new consolidated API
+export const analyzeInteractionPatterns = async (
+  userId: string,
+  eventType?: string,
+  pageUrl?: string,
+  limit: number = 1000
+): Promise<any> => {
+  try {
+    const { data, error } = await supabase.functions.invoke("analytics-api", {
+      body: {
+        action: "analyze_interaction_patterns",
+        userId,
+        eventType,
+        pageUrl,
+        limit
+      }
+    });
+
+    if (error) throw error;
+    return data || { insights: [], hotspots: [], patterns: [] };
+  } catch (error) {
+    console.error('Error analyzing interaction patterns:', error);
+    return { insights: [], hotspots: [], patterns: [] };
+  }
 };

@@ -132,9 +132,10 @@ export const VectorMemoryService = {
     limit?: number;
   } = {}) => {
     try {
-      // Invoke the analyze-memory-patterns edge function with appropriate parameters
-      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+      // Invoke the consolidated analytics-api with appropriate parameters
+      const { data, error } = await supabase.functions.invoke('analytics-api', {
         body: {
+          action: 'analyze_memory_patterns',
           analysis_type: 'similarity_trends',
           segment_by: options.segmentBy || 'category',
           timeframe: options.timeframe ? {
@@ -163,9 +164,10 @@ export const VectorMemoryService = {
     minSimilarity?: number;
   } = {}) => {
     try {
-      // Invoke the analyze-memory-patterns edge function with appropriate parameters
-      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+      // Invoke the consolidated analytics-api with appropriate parameters
+      const { data, error } = await supabase.functions.invoke('analytics-api', {
         body: {
+          action: 'analyze_memory_patterns',
           analysis_type: 'prompt_heatmaps',
           outcome_metric: options.outcomeMetric || 'relevance_score',
           time_range: options.timeRange ? {
@@ -197,9 +199,10 @@ export const VectorMemoryService = {
     } = {}
   ) => {
     try {
-      // Invoke the analyze-memory-patterns edge function with appropriate parameters
-      const { data, error } = await supabase.functions.invoke('analyze-memory-patterns', {
+      // Invoke the consolidated analytics-api with appropriate parameters
+      const { data, error } = await supabase.functions.invoke('analytics-api', {
         body: {
+          action: 'analyze_memory_patterns',
           analysis_type: 'behavioral_fingerprints',
           user_id: userId,
           cluster_count: options.clusterCount || 5,

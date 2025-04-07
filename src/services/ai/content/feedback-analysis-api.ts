@@ -1,4 +1,3 @@
-
 import { FeedbackApiClient } from "./api/feedback-api-client";
 import { FeedbackDatabase } from "./api/feedback-database";
 import { FeedbackComments } from "./api/feedback-comments";
@@ -19,7 +18,18 @@ export const FeedbackAnalysisAPI = {
    * Call the analyze-feedback edge function
    */
   callAnalyzeFeedbackFunction: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
-    return FeedbackApiClient.callAnalyzeFeedbackFunction(feedbackText);
+    const { data, error } = await supabase.functions.invoke("analytics-api", {
+      body: {
+        action: "analyze_feedback",
+        feedbackText
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data as FeedbackAnalysisResult;
   },
 
   /**

@@ -51,8 +51,11 @@ export const AIDesignAnalysisService = {
         success: boolean;
         analysis: DesignAnalysisResponse;
         error?: string;
-      }>("analyze-design-patterns", {
-        body: request
+      }>("analytics-api", {
+        body: {
+          action: "analyze_design_patterns",
+          ...request
+        }
       });
 
       if (error || !data || data.error) {
