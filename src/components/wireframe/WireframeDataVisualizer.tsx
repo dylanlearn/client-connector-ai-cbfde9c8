@@ -10,12 +10,22 @@ interface WireframeDataVisualizerProps {
   wireframeData: any;
   title?: string;
   description?: string;
+  viewMode?: 'preview' | 'flowchart' | string;
+  deviceType?: 'desktop' | 'mobile' | 'tablet' | string;
+  darkMode?: boolean;
+  showGrid?: boolean;
+  highlightSections?: boolean;
 }
 
 const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
   wireframeData,
   title = 'Wireframe Data',
-  description = 'JSON representation of the wireframe structure'
+  description = 'JSON representation of the wireframe structure',
+  viewMode = 'preview',
+  deviceType = 'desktop',
+  darkMode = false,
+  showGrid = false,
+  highlightSections = false
 }) => {
   const [activeTab, setActiveTab] = useState('preview');
 
@@ -23,8 +33,17 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
     navigator.clipboard.writeText(JSON.stringify(wireframeData, null, 2));
   };
 
+  // Apply dark mode class if enabled
+  const containerClass = darkMode ? 'bg-gray-900 text-gray-100' : '';
+  
+  // Apply grid overlay if showGrid is enabled
+  const gridClass = showGrid ? 'bg-grid-pattern' : '';
+  
+  // Apply highlight style for sections if highlightSections is enabled
+  const sectionClass = highlightSections ? 'border-2 border-blue-400' : 'border';
+
   return (
-    <Card>
+    <Card className={containerClass}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -43,7 +62,7 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
           </TabsList>
           
           <TabsContent value="preview">
-            <div className="space-y-4">
+            <div className={`space-y-4 ${gridClass}`}>
               {wireframeData.title && (
                 <div>
                   <h3 className="font-medium text-sm mb-1">Title</h3>
@@ -63,7 +82,7 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
                   <h3 className="font-medium text-sm mb-2">Sections</h3>
                   <div className="space-y-2">
                     {wireframeData.sections.map((section: any, index: number) => (
-                      <div key={section.id || index} className="border rounded-md p-3">
+                      <div key={section.id || index} className={`rounded-md p-3 ${sectionClass}`}>
                         <div className="flex justify-between items-start mb-1">
                           <h4 className="font-medium">{section.name || `Section ${index + 1}`}</h4>
                           {section.type && (
@@ -84,7 +103,7 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
                   <h3 className="font-medium text-sm mb-2">Components</h3>
                   <div className="space-y-2">
                     {wireframeData.components.map((component: any, index: number) => (
-                      <div key={component.id || index} className="border rounded-md p-3">
+                      <div key={component.id || index} className={`rounded-md p-3 ${sectionClass}`}>
                         <h4 className="font-medium">{component.name || `Component ${index + 1}`}</h4>
                         {component.type && (
                           <Badge variant="secondary" className="mt-1">{component.type}</Badge>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { WireframeDataVisualizer } from './WireframeVisualizer';
+import WireframeDataVisualizer from './WireframeDataVisualizer';
 import { WireframeData } from '@/types/wireframe';
 
 interface AdvancedWireframeGeneratorProps {
@@ -29,8 +29,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
         {initialData && (
           <WireframeDataVisualizer 
             wireframeData={initialData}
-            viewMode="preview"
-            deviceType="desktop"
             darkMode={darkMode}
           />
         )}
