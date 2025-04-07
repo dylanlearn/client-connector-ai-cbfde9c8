@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WireframeData } from '@/types/wireframe';
@@ -13,6 +12,7 @@ export interface WireframeState {
   showGrid: boolean;
   highlightSections: boolean;
   darkMode: boolean;
+  hiddenSections: string[];
   history: {
     past: WireframeData[];
     future: WireframeData[];
@@ -27,6 +27,7 @@ export interface WireframeState {
   toggleShowGrid: () => void;
   toggleHighlightSections: () => void;
   toggleDarkMode: () => void;
+  toggleSectionVisibility: (sectionId: string) => void;
   
   // Section operations
   addSection: (section: Partial<WireframeSection>) => void;
@@ -67,6 +68,7 @@ export const useWireframeStore = create<WireframeState>()(
       showGrid: false,
       highlightSections: true,
       darkMode: false,
+      hiddenSections: [],
       history: {
         past: [],
         future: []
@@ -106,6 +108,15 @@ export const useWireframeStore = create<WireframeState>()(
           }
         }
       })),
+      
+      toggleSectionVisibility: (sectionId) => set((state) => {
+        const isHidden = state.hiddenSections.includes(sectionId);
+        return {
+          hiddenSections: isHidden
+            ? state.hiddenSections.filter(id => id !== sectionId)
+            : [...state.hiddenSections, sectionId]
+        };
+      }),
       
       addSection: (section) => {
         const newSection: WireframeSection = {
@@ -217,7 +228,8 @@ export const useWireframeStore = create<WireframeState>()(
       name: 'wireframe-storage',
       partialize: (state) => ({
         wireframe: state.wireframe,
-        darkMode: state.darkMode
+        darkMode: state.darkMode,
+        hiddenSections: state.hiddenSections
       })
     }
   )

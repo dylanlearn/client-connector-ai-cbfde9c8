@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layout, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeCanvasProps {
   projectId?: string;
@@ -19,6 +20,18 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
   const showGrid = useWireframeStore((state) => state.showGrid);
   const highlightSections = useWireframeStore((state) => state.highlightSections);
   const activeSection = useWireframeStore((state) => state.activeSection);
+  const hiddenSections = useWireframeStore((state) => state.hiddenSections);
+  
+  // Filter out hidden sections for display
+  const visibleSections = wireframe.sections
+    ? wireframe.sections.filter(section => !hiddenSections.includes(section.id))
+    : [];
+  
+  // Create a new wireframe object with only visible sections
+  const visibleWireframe = {
+    ...wireframe,
+    sections: visibleSections
+  };
   
   if (!wireframe) {
     return (
@@ -34,7 +47,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
     );
   }
 
-  if (wireframe.sections?.length === 0) {
+  if (visibleSections.length === 0) {
     return (
       <Card className={cn("border rounded-lg p-4 relative min-h-80", className)}>
         <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
@@ -53,7 +66,10 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
   return (
     <div className={cn("border rounded-lg p-4 relative min-h-80", className)}>
       <WireframeDataVisualizer 
-        wireframeData={wireframe} 
+        wireframeData={{
+          ...visibleWireframe,
+          id: visibleWireframe.id || `wireframe-${Date.now()}` // Ensure ID exists
+        }}
         viewMode="preview"
         deviceType={activeDevice}
         darkMode={darkMode}

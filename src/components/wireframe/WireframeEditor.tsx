@@ -3,10 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { useComponentRegistry } from './registry/ComponentRegistration';
 import { getAllComponentDefinitions, createSectionInstance } from './registry/component-registry';
 import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
-import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useWireframeStore } from '@/stores/wireframe-store';
+import WireframeToolbar from './WireframeToolbar';
+import WireframeCanvas from './WireframeCanvas';
+import SectionControls from './SectionControls';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -16,15 +31,24 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   // Ensure components are registered
   useComponentRegistry();
   const [components, setComponents] = useState<any[]>([]);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [editingSectionName, setEditingSectionName] = useState('');
+  const [editingSectionDescription, setEditingSectionDescription] = useState('');
   const { toast } = useToast();
   
   // Use the Zustand store for state management
   const {
     wireframe,
     addSection,
+    updateSection,
+    removeSection,
     setWireframe,
     activeSection,
-    setActiveSection
+    setActiveSection,
+    reorderSections,
+    hiddenSections,
+    toggleSectionVisibility
   } = useWireframeStore();
 
   useEffect(() => {
@@ -57,7 +81,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       }
 
       // Create wireframe data with proper type alignment
-      const wireframeData: WireframeData = {
+      const wireframeData = {
         title: wireframe.title || "New Wireframe",
         description: wireframe.description || "Created with the Wireframe Editor",
         sections: wireframe.sections || []
@@ -90,60 +114,151 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const handleSelectSection = (sectionId: string) => {
     setActiveSection(sectionId);
   };
+  
+  // Handle edit section dialog
+  const openEditDialog = (sectionId: string) => {
+    const section = wireframe.sections.find(s => s.id === sectionId);
+    if (section) {
+      setEditingSectionId(sectionId);
+      setEditingSectionName(section.name);
+      setEditingSectionDescription(section.description || '');
+      setIsEditDialogOpen(true);
+    }
+  };
+  
+  const saveEditSection = () => {
+    if (editingSectionId) {
+      updateSection(editingSectionId, {
+        name: editingSectionName,
+        description: editingSectionDescription
+      });
+      
+      setIsEditDialogOpen(false);
+      
+      toast({
+        title: "Section updated",
+        description: "Section details have been updated"
+      });
+    }
+  };
+
+  // Handle section deletion
+  const handleDeleteSection = (sectionId: string) => {
+    removeSection(sectionId);
+    
+    toast({
+      title: "Section removed",
+      description: "Section has been removed from wireframe"
+    });
+  };
+
+  // Handle section reordering
+  const handleMoveSection = (currentIndex: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (newIndex >= 0 && newIndex < wireframe.sections.length) {
+      reorderSections(currentIndex, newIndex);
+    }
+  };
 
   return (
     <div className="wireframe-editor">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Wireframe Editor</h2>
-        <Button onClick={saveWireframe} variant="default">Save Wireframe</Button>
-      </div>
+      <WireframeToolbar onSave={saveWireframe} />
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+        <Tabs defaultValue="components" className="md:col-span-1">
+          <TabsList className="grid grid-cols-2 w-full mb-4">
+            <TabsTrigger value="components">Components</TabsTrigger>
+            <TabsTrigger value="sections">Sections</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="components" className="bg-card p-4 rounded-lg shadow">
+            <h3 className="text-lg font-medium mb-4">Component Library</h3>
+            <ScrollArea className="h-[500px]">
+              <div className="space-y-2">
+                {components.map(component => (
+                  <Button
+                    key={component.type}
+                    variant="outline"
+                    className="w-full justify-start text-left"
+                    onClick={() => handleAddSection(component.type)}
+                  >
+                    {component.name}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="sections" className="bg-card p-4 rounded-lg shadow">
+            <h3 className="text-lg font-medium mb-4">Section Manager</h3>
+            <ScrollArea className="h-[500px]">
+              <div className="space-y-2">
+                {wireframe.sections.length === 0 ? (
+                  <div className="text-center p-4 text-sm text-muted-foreground">
+                    No sections added yet. Add components from the Components tab.
+                  </div>
+                ) : (
+                  wireframe.sections.map((section, index) => (
+                    <SectionControls
+                      key={section.id}
+                      section={section}
+                      sectionIndex={index}
+                      totalSections={wireframe.sections.length}
+                      onMoveUp={() => handleMoveSection(index, 'up')}
+                      onMoveDown={() => handleMoveSection(index, 'down')}
+                      onDelete={() => handleDeleteSection(section.id)}
+                      onEdit={() => openEditDialog(section.id)}
+                      onToggleVisibility={() => toggleSectionVisibility(section.id)}
+                      isVisible={!hiddenSections.includes(section.id)}
+                    />
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Components Panel */}
-        <div className="bg-card p-4 rounded-lg shadow">
-          <h3 className="text-lg font-medium mb-4">Component Library</h3>
-          <div className="space-y-2">
-            {components.map(component => (
-              <Button
-                key={component.type}
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleAddSection(component.type)}
-              >
-                {component.name}
-              </Button>
-            ))}
+        {/* Canvas Area */}
+        <div className="md:col-span-3">
+          <WireframeCanvas projectId={projectId} className="min-h-[600px]" />
+        </div>
+      </div>
+      
+      {/* Edit Section Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Section</DialogTitle>
+            <DialogDescription>
+              Update section details and properties
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="sectionName">Section Name</Label>
+              <Input
+                id="sectionName"
+                value={editingSectionName}
+                onChange={(e) => setEditingSectionName(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sectionDescription">Description</Label>
+              <Textarea
+                id="sectionDescription"
+                value={editingSectionDescription}
+                onChange={(e) => setEditingSectionDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
           </div>
-        </div>
-
-        {/* Editor Panel */}
-        <div className="md:col-span-3 bg-card p-4 rounded-lg shadow min-h-[500px]">
-          <h3 className="text-lg font-medium mb-4">Canvas</h3>
-          {wireframe.sections.length === 0 ? (
-            <div className="border-2 border-dashed border-muted rounded-lg p-12 text-center">
-              <p className="text-muted-foreground">Select components from the library to add to your wireframe</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {wireframe.sections.map((section, index) => (
-                <div 
-                  key={section.id} 
-                  className={`border p-4 rounded-lg cursor-pointer transition-colors ${
-                    activeSection === section.id ? 'bg-muted border-primary' : ''
-                  }`}
-                  onClick={() => handleSelectSection(section.id)}
-                >
-                  <h4 className="font-medium">{section.name}</h4>
-                  <p className="text-sm text-muted-foreground">Type: {section.sectionType}</p>
-                  {section.componentVariant && (
-                    <p className="text-sm text-muted-foreground">Variant: {section.componentVariant}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+          
+          <Button onClick={saveEditSection} className="w-full">Save Changes</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
