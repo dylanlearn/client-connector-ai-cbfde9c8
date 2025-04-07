@@ -8,11 +8,11 @@ import React, {
 } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-// Define the DesignStage type
+// Define the DesignStage type and export it
 export type DesignStage = 'intake' | 'analysis' | 'wireframe' | 'moodboard' | 'design' | 'delivery';
 
 // Define context types
-interface DesignProcessContextType {
+export interface DesignProcessContextType {
   sections: any[];
   addSection: (section: any) => void;
   updateSection: (id: string, updates: any) => void;

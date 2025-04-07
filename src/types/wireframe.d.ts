@@ -1,3 +1,4 @@
+
 /**
  * Type definitions for wireframe version control
  */
@@ -31,15 +32,16 @@ export interface WireframeSourceData {
 }
 
 export interface WireframeData {
-  title: string;
+  title: string; // Changed from optional to required
   description?: string;
   sections: any[];
   layoutType?: string;
   colorScheme?: {
-    primary?: string;
-    secondary?: string;
-    accent?: string;
-    background?: string;
+    primary: string; // Changed from optional to required
+    secondary: string; // Changed from optional to required
+    accent: string; // Changed from optional to required
+    background: string; // Changed from optional to required
+    text?: string;
   };
   typography?: {
     headings?: string;
