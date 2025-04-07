@@ -92,8 +92,9 @@ export const resendClientLink = async (
       formattedRecipient = `+${formattedRecipient}`;
     }
     
-    const response = await supabase.functions.invoke('send-client-link', {
+    const response = await supabase.functions.invoke('notifications-api', {
       body: {
+        action: 'send-client-link',
         linkId,
         deliveryType,
         recipient: formattedRecipient,

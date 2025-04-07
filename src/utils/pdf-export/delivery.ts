@@ -43,8 +43,9 @@ export const sendPDFByEmail = async (
     });
 
     // Send to Supabase Edge Function
-    const { error } = await supabase.functions.invoke('send-pdf-export', {
+    const { error } = await supabase.functions.invoke('notifications-api', {
       body: {
+        action: 'send-pdf-export',
         pdfBase64,
         email,
         subject,
@@ -105,8 +106,9 @@ export const sendPDFBySMS = async (
     const pdfUrl = publicUrlData.publicUrl;
     
     // Send SMS with link via Edge Function
-    const { error } = await supabase.functions.invoke('send-sms', {
+    const { error } = await supabase.functions.invoke('notifications-api', {
       body: {
+        action: 'send-sms',
         phoneNumber,
         message: message || "Here's your exported PDF:",
         pdfUrl

@@ -71,8 +71,11 @@ export const useClientNotifications = (projectId?: string) => {
   const sendNotification = useMutation({
     mutationFn: async (notificationId: string) => {
       return withRetry(async () => {
-        const { data, error } = await supabase.functions.invoke('send-client-notification', {
-          body: { notificationId }
+        const { data, error } = await supabase.functions.invoke('notifications-api', {
+          body: { 
+            action: 'send-client-notification',
+            notificationId 
+          }
         });
 
         if (error) throw new Error(`Error sending notification: ${error.message}`);
