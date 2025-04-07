@@ -14,6 +14,12 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminPanel from "./pages/AdminPanel";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import Projects from "./pages/Projects";
+import IntakeForm from "./pages/IntakeForm";
+import WebsiteAnalyzer from "./pages/design-analysis/WebsiteAnalyzer";
+import FeedbackAnalysis from "./pages/FeedbackAnalysis";
+import AIDesignSuggestions from "./pages/AIDesignSuggestions";
+import Analytics from "./pages/Analytics";
 
 // Define type augmentation for window object
 interface WindowWithAdminRoutes extends Window {
@@ -61,6 +67,10 @@ const router = createBrowserRouter([
         element: <ProtectedRoute><Settings /></ProtectedRoute>,
       },
       {
+        path: '/projects',
+        element: <ProtectedRoute><Projects /></ProtectedRoute>,
+      },
+      {
         path: '/project/:projectId',
         element: <ProtectedRoute><ProjectDetailPage /></ProtectedRoute>,
       },
@@ -71,6 +81,26 @@ const router = createBrowserRouter([
       {
         path: '/design-picker',
         element: <ProtectedRoute><DesignPicker /></ProtectedRoute>,
+      },
+      {
+        path: '/intake-form',
+        element: <ProtectedRoute><IntakeForm /></ProtectedRoute>,
+      },
+      {
+        path: '/website-analyzer',
+        element: <ProtectedRoute><WebsiteAnalyzer /></ProtectedRoute>,
+      },
+      {
+        path: '/feedback-analysis',
+        element: <ProtectedRoute><FeedbackAnalysis /></ProtectedRoute>,
+      },
+      {
+        path: '/ai-suggestions',
+        element: <ProtectedRoute><AIDesignSuggestions /></ProtectedRoute>,
+      },
+      {
+        path: '/analytics',
+        element: <ProtectedRoute><Analytics /></ProtectedRoute>,
       },
       {
         path: '/admin',

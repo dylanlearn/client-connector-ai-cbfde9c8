@@ -1,5 +1,11 @@
 
 import WebsiteAnalyzerComponent from "./components/WebsiteAnalyzer";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
-// Re-export the WebsiteAnalyzer component as the default export
-export default WebsiteAnalyzerComponent;
+export default function WebsiteAnalyzer() {
+  return (
+    <DashboardLayout>
+      <WebsiteAnalyzerComponent />
+    </DashboardLayout>
+  );
+}
