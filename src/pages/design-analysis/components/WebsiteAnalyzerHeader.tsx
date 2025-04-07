@@ -6,7 +6,7 @@ interface WebsiteAnalyzerHeaderProps {
   isLoggedIn: boolean;
 }
 
-const WebsiteAnalyzerHeader = ({ isLoggedIn }: WebsiteAnalyzerHeaderProps) => {
+export default function WebsiteAnalyzerHeader({ isLoggedIn }: WebsiteAnalyzerHeaderProps) {
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Website Design Analysis</h1>
@@ -24,6 +24,4 @@ const WebsiteAnalyzerHeader = ({ isLoggedIn }: WebsiteAnalyzerHeaderProps) => {
       )}
     </>
   );
-};
-
-export default WebsiteAnalyzerHeader;
+}
