@@ -1,4 +1,6 @@
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 export async function handleMemoryPatterns(req: Request, payload: any, supabase: any) {
   const { analysis_type, category, limit = 100, segment_by, timeframe, user_id, cluster_count } = payload;
   
@@ -164,7 +166,10 @@ async function analyzeGlobalMemoryInsights(supabase: any, category: string = 'de
     .order('frequency', { ascending: false })
     .limit(limit);
   
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching global memories for analysis:", error);
+    return { insights: ["Not enough data to extract insights"] };
+  }
   
   if (!data || data.length === 0) {
     return { insights: ["Not enough data to extract insights"] };
@@ -198,7 +203,7 @@ function extractTopCategories(items: any[], limit: number = 3) {
 }
 
 function generateSampleInsights(category: string, count: number): string[] {
-  const baseInsights = {
+  const baseInsights: Record<string, string[]> = {
     design_patterns: [
       "Users prefer clean, minimalist layouts",
       "Dark mode is preferred for extended usage",
