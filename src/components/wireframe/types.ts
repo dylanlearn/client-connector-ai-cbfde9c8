@@ -34,7 +34,7 @@ export interface IntakeWireframeBridgeProps {
 
 // Types for WireframeVisualizer component
 export interface WireframeProps {
-  wireframe: WireframeData & { id: string }; // Modified to make id required when passed to WireframeVisualizer
+  wireframe: (WireframeData & { id: string }); // Make sure id is required
   onSelect?: () => void;
   isSelected?: boolean;
   className?: string;

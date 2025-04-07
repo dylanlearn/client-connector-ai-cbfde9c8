@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +29,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
   const [prompt, setPrompt] = useState<string>('');
   const [pageType, setPageType] = useState<string>('landing');
   const [stylePreference, setStylePreference] = useState<string>('modern');
-  const [complexity, setComplexity] = useState<'simple' | 'moderate' | 'complex'>('moderate'); // Fixed type
+  const [complexity, setComplexity] = useState<'simple' | 'moderate' | 'complex'>('moderate');
   const [creativityLevel, setCreativityLevel] = useState<number>(5);
   const [isMultiPage, setIsMultiPage] = useState<boolean>(false);
   const [numPages, setNumPages] = useState<number>(1);
@@ -62,7 +61,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
       prompt: prompt,
       pageType: pageType,
       stylePreferences: [stylePreference],
-      complexity: complexity, // Now correctly typed
+      complexity: complexity,
       creativityLevel: creativityLevel,
       enhancedCreativity: isEnhancedCreativity,
       darkMode: isDarkMode,
@@ -75,7 +74,7 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
       if (result?.wireframe) {
         const wireframeWithId = {
           ...result.wireframe,
-          id: `generated-${Date.now()}`
+          id: result.wireframe.id || `generated-${Date.now()}`
         };
         setGeneratedWireframe(wireframeWithId);
         toast({
@@ -108,16 +107,14 @@ const AdvancedWireframeGenerator: React.FC<WireframeGeneratorProps> = ({
       return;
     }
 
-    // Placeholder for save functionality
     toast({
       title: "Wireframe saved",
       description: "Your wireframe has been saved successfully."
     });
 
     if (onWireframeSaved) {
-      // Create a mock AIWireframe object for the callback
       const mockAIWireframe: AIWireframe = {
-        id: 'mock-id', // Replace with actual ID if available
+        id: 'mock-id',
         project_id: projectId,
         prompt: prompt,
         title: wireframeName,
