@@ -9,17 +9,19 @@ import { useAdminStatus } from "@/hooks/use-admin-status";
 const AppSidebar = () => {
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { isAdmin } = useAdminStatus();
 
-  // Log admin status to help with debugging
+  // Enhanced admin status logging for debugging
   useEffect(() => {
     console.log("AppSidebar - Admin status:", {
       "profile?.role": profile?.role, 
       "isAdmin from hook": isAdmin,
+      "user email": user?.email,
+      "isInAdminList": user?.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email),
       "current path": location.pathname
     });
-  }, [profile, isAdmin, location.pathname]);
+  }, [profile, isAdmin, location.pathname, user]);
 
   const toggleMobileSidebar = () => {
     setIsMobileOpen(!isMobileOpen);

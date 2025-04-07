@@ -8,13 +8,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShieldCheck, Activity, Database, Settings, LogOut, User, FileText } from "lucide-react";
 import { logClientError } from "@/utils/monitoring/client-error-logger";
-import { useAuthorization } from "@/hooks/use-authorization";
-import { Permission } from "@/utils/authorization/auth-service";
-import PermissionGate from "@/components/auth/PermissionGate";
+import { useAdminStatus } from "@/hooks/use-admin-status"; // Switch to useAdminStatus hook
 
 export const UserMenu = () => {
   const { user, signOut, profile } = useAuth();
-  const { isAdmin } = useAuthorization();
+  const { isAdmin } = useAdminStatus(); // Use the dedicated admin hook
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -27,6 +25,11 @@ export const UserMenu = () => {
       console.error("Error signing out:", error);
       logClientError("Sign out error", "UserMenu", user?.id, { error });
     }
+  };
+  
+  const handleAdminPanelClick = () => {
+    console.log("Navigating to admin panel. Current admin status:", { isAdmin, email: user?.email, role: profile?.role });
+    navigate("/admin");
   };
 
   return (
@@ -47,7 +50,7 @@ export const UserMenu = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{profile?.name || user?.user_metadata?.name}</p>
+            <p className="text-sm font-medium">{profile?.name || user?.user_metadata?.name || user?.email}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
         </DropdownMenuLabel>
@@ -63,30 +66,30 @@ export const UserMenu = () => {
           Templates
         </DropdownMenuItem>
         
-        {/* Admin menu items - only shown to admins */}
-        <PermissionGate permission={Permission.VIEW_ADMIN_PANEL}>
+        {/* Admin menu items - shown based on admin status */}
+        {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
               Admin Controls
             </DropdownMenuLabel>
             
-            <DropdownMenuItem onClick={() => navigate("/admin")} className="text-indigo-600 cursor-pointer">
+            <DropdownMenuItem onClick={handleAdminPanelClick} className="text-indigo-600 cursor-pointer">
               <ShieldCheck className="mr-2 h-4 w-4" />
               Admin Panel
             </DropdownMenuItem>
             
-            <DropdownMenuItem onClick={() => navigate("/admin-analytics")} className="text-indigo-600 cursor-pointer">
+            <DropdownMenuItem onClick={() => navigate("/admin/analytics")} className="text-indigo-600 cursor-pointer">
               <Activity className="mr-2 h-4 w-4" />
               Admin Analytics
             </DropdownMenuItem>
             
-            <DropdownMenuItem onClick={() => navigate("/admin-analytics?tab=supabase")} className="text-indigo-600 cursor-pointer">
+            <DropdownMenuItem onClick={() => navigate("/admin/supabase-audit")} className="text-indigo-600 cursor-pointer">
               <Database className="mr-2 h-4 w-4" />
               Supabase Audit
             </DropdownMenuItem>
           </>
-        </PermissionGate>
+        )}
         
         <DropdownMenuSeparator />
         

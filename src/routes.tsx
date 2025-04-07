@@ -11,8 +11,20 @@ import NotFound from "./pages/NotFound";
 import DesignPicker from "./pages/DesignPicker";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminRoute from "./components/auth/AdminRoute";
 import AdminPanel from "./pages/AdminPanel";
 import AdminAnalytics from "./pages/AdminAnalytics";
+
+// Debug helper 
+if (typeof window !== 'undefined') {
+  window.checkAdminRoutes = () => {
+    console.log('Admin routes check:');
+    const adminRoutes = ['/admin', '/admin/analytics', '/admin/supabase-audit', '/admin/audit-and-monitoring'];
+    adminRoutes.forEach(route => {
+      console.log(`Can access ${route}:`, matchPath(route, window.location.pathname));
+    });
+  };
+}
 
 const router = createBrowserRouter([
   {

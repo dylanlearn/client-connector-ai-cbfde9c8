@@ -48,7 +48,8 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
         userExists: !!user, 
         profile, 
         userEmail: user?.email,
-        userRole: profile?.role 
+        userRole: profile?.role,
+        adminEmails: ['dylanmohseni0@gmail.com', 'admin@example.com']
       });
     }
   }, [adminOnly, isLoading, user, profile]);
@@ -68,9 +69,16 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
   
-  // For admin routes, check if user has admin role
-  // Note: we're checking both profile.role and also the email directly
+  // For admin routes, check if user has admin role or is in admin email list
   if (adminOnly) {
+    // Force debug output to help diagnose the issue
+    console.log('Admin access check:', {
+      email: user.email,
+      role: profile?.role,
+      isAdminByRole: profile?.role === 'admin',
+      isAdminByEmail: user.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email)
+    });
+    
     const isAdmin = profile?.role === 'admin';
     const isAdminEmail = user.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email);
     
