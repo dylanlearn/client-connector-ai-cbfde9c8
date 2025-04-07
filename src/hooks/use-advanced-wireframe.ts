@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "./use-toast";
 import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface UseAdvancedWireframeParams {
   userInput: string;
@@ -34,7 +35,24 @@ export function useAdvancedWireframe() {
         description: "Creating a highly structured design from your input...",
       });
       
-      const result = await AdvancedWireframeService.generateWireframe(params);
+      // Call the generation-api with the advanced wireframe action
+      const { data, error } = await supabase.functions.invoke('generation-api', {
+        body: {
+          action: 'generate-advanced-wireframe',
+          ...params
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Edge function error: ${error.message}`);
+      }
+      
+      if (!data || !data.wireframe) {
+        throw new Error("No wireframe data returned from API");
+      }
+      
+      // Process the result
+      const result = data;
       
       // Ensure the wireframe has the correct type structure
       if (result.wireframe) {
@@ -171,8 +189,8 @@ export function useAdvancedWireframe() {
     designMemory,
     error,
     generateWireframe,
-    saveWireframe,
-    loadDesignMemory,
-    storeDesignMemory
+    saveWireframe: AdvancedWireframeService.saveWireframe,
+    loadDesignMemory: AdvancedWireframeService.retrieveDesignMemory,
+    storeDesignMemory: AdvancedWireframeService.storeDesignMemory
   };
 }

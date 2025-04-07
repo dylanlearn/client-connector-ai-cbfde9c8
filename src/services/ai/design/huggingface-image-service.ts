@@ -29,8 +29,9 @@ export const HuggingFaceImageService = {
       } = options;
       
       // Call the Supabase Edge Function to generate image
-      const { data, error } = await supabase.functions.invoke('generate-advanced-image', {
+      const { data, error } = await supabase.functions.invoke('generation-api', {
         body: {
+          action: 'generate-advanced-image',
           prompt: enhancedCreativity 
             ? `${prompt}. Make it highly creative, unique, and visually striking. ${style}` 
             : `${prompt}. ${style}`,

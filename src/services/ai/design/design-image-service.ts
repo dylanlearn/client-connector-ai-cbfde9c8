@@ -29,12 +29,12 @@ export const DesignImageService = {
       const prompt = `${designType} design: ${description}${style ? `. Style: ${style}` : ''}`;
       
       // Call the Supabase Edge Function to generate image
-      const { data, error } = await supabase.functions.invoke('generate-images', {
+      const { data, error } = await supabase.functions.invoke('generation-api', {
         body: { 
-          prompt, 
-          style: style || 'digital-art', 
-          size: '1024x1024', 
-          numberOfImages: 1 
+          action: 'generate-design-image',
+          designType,
+          description, 
+          style
         }
       });
 
@@ -43,11 +43,11 @@ export const DesignImageService = {
         throw new Error(`Failed to generate design image: ${error.message}`);
       }
       
-      if (!data?.imageUrls || data.imageUrls.length === 0) {
-        throw new Error('No image URLs returned from API');
+      if (!data?.imageUrl) {
+        throw new Error('No image URL returned from API');
       }
       
-      return data.imageUrls[0];
+      return data.imageUrl;
     } catch (error) {
       console.error('Exception in generateDesignImage:', error);
       throw error;
@@ -78,8 +78,9 @@ export const generateDesignImages = async (
     const { prompt, style = 'digital-art', size = '1024x1024', numberOfImages = 1 } = request;
     
     // Call the Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('generate-images', {
+    const { data, error } = await supabase.functions.invoke('generation-api', {
       body: { 
+        action: 'generate-images',
         prompt, 
         style, 
         size, 

@@ -27,3 +27,6 @@ site_url = "http://localhost:3000"
 [functions]
 [functions.notifications-api]
 verify_jwt = true
+[functions.generation-api]
+verify_jwt = true
+

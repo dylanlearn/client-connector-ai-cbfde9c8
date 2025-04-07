@@ -55,8 +55,11 @@ export const wireframeGenerator = {
           prompt_tokens: number;
         };
         creativityLevel?: number;
-      }>('generate-wireframe', {
-        body: enhancedParams
+      }>('generation-api', {
+        body: {
+          action: 'generate-wireframe',
+          ...enhancedParams
+        }
       });
       
       if (error) {
