@@ -1,128 +1,122 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
+import { createHash } from 'crypto';
+import { 
+  WireframeGenerationParams, 
+  WireframeData, 
+  WireframeGenerationResult 
+} from './wireframe-types';
 
 /**
- * Service for caching wireframe generation results
+ * Service for caching wireframe generation requests and results
  */
-export const WireframeCacheService = {
+export class WireframeCacheService {
   /**
-   * Generate a cache key for wireframe params
+   * Generate a cache key for wireframe generation parameters
    */
-  generateCacheKey: (params: WireframeGenerationParams): string | undefined => {
-    if (!params.description && !params.prompt) {
-      return undefined;
+  static generateCacheKey(params: WireframeGenerationParams): string {
+    // Extract the parameters that affect the wireframe generation result
+    const keyParams: Record<string, any> = {
+      description: params.description || '',
+      industry: params.industry || '',
+      pageType: params.pageType || '',
+      style: params.style || '',
+      colorTheme: params.colorTheme || '',
+      complexity: params.complexity || 'moderate',
+      creativityLevel: params.creativityLevel || 8,
+      enhancedCreativity: params.enhancedCreativity || false
+    };
+    
+    // Add special handling for multi-page layouts
+    if (params.multiPageLayout) {
+      keyParams.multiPageLayout = true;
+      keyParams.pages = params.pages || 1;
     }
     
-    // Create a deterministic cache key based on significant parameters
-    const keyParts = [
-      params.description || params.prompt || '',
-      params.style || 'default',
-      params.colorTheme || 'default',
-      params.complexity || 'standard',
-      params.industry || 'general',
-      params.enhancedCreativity ? 'creative' : 'standard',
-      params.creativityLevel?.toString() || '5',
-      params.pages?.toString() || '1' // Add pages parameter to cache key
+    // Add specific component types if specified
+    if (params.componentTypes && params.componentTypes.length > 0) {
+      keyParams.componentTypes = params.componentTypes.join(',');
+    }
+    
+    // Add moodboard selections if included
+    if (params.moodboardSelections && params.moodboardSelections.length > 0) {
+      keyParams.moodboardSelections = params.moodboardSelections.join(',');
+    }
+    
+    // Create a JSON string from the parameters
+    const paramString = JSON.stringify(keyParams);
+    
+    // Return SHA-256 hash of the parameter string
+    return createHash('sha256')
+      .update(paramString)
+      .digest('hex');
+  }
+  
+  /**
+   * Check if the wireframe data requires regeneration based on parameter changes
+   */
+  static requiresRegeneration(
+    currentParams: WireframeGenerationParams,
+    previousParams: WireframeGenerationParams
+  ): boolean {
+    // Compare critical parameters that would require regeneration
+    const criticalChanges = [
+      currentParams.description !== previousParams.description,
+      currentParams.industry !== previousParams.industry,
+      currentParams.pageType !== previousParams.pageType,
+      currentParams.complexity !== previousParams.complexity,
+      currentParams.style !== previousParams.style,
+      currentParams.colorTheme !== previousParams.colorTheme
     ];
     
-    // Add additional parameters if they exist
-    if (params.componentTypes?.length) {
-      keyParts.push(params.componentTypes.join('-'));
+    // If multi-page layout is involved, check page count
+    if (currentParams.multiPageLayout || previousParams.multiPageLayout) {
+      criticalChanges.push(
+        currentParams.multiPageLayout !== previousParams.multiPageLayout ||
+        (currentParams.pages || 0) !== (previousParams.pages || 0)
+      );
     }
     
-    // Handle extra parameters that might be present
-    if (params.moodboardSelections) {
-      const { layoutPreferences, fonts, colors, tone } = params.moodboardSelections;
-      if (layoutPreferences?.length) keyParts.push(`layout:${layoutPreferences.join('|')}`);
-      if (fonts?.length) keyParts.push(`fonts:${fonts.join('|')}`);
-      if (colors?.length) keyParts.push(`colors:${colors.join('|')}`);
-      if (tone?.length) keyParts.push(`tone:${tone.join('|')}`);
-    }
-    
-    // Create a hash of the key parts
-    const keyString = keyParts.join('_').toLowerCase();
-    return `wireframe:${keyString.substring(0, 100)}`;
-  },
-  
-  /**
-   * Store a generation result in the cache
-   */
-  cacheResult: async (cacheKey: string, result: WireframeGenerationResult): Promise<void> => {
-    try {
-      if (!cacheKey) {
-        return;
-      }
-      
-      await supabase
-        .from('wireframe_cache')
-        .upsert({
-          cache_key: cacheKey,
-          result_data: result,
-          created_at: new Date().toISOString(),
-          expiry: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString(), // 24hr expiry
-          is_multi_page: result.wireframe.pages?.length > 1 || false, // Flag multi-page wireframes
-          page_count: result.wireframe.pages?.length || 1
-        });
-    } catch (error) {
-      console.error("Error caching wireframe result:", error);
-    }
-  },
-  
-  /**
-   * Retrieve a cached generation result
-   */
-  getCachedResult: async (cacheKey: string): Promise<WireframeGenerationResult | null> => {
-    try {
-      if (!cacheKey) {
-        return null;
-      }
-      
-      const { data, error } = await supabase
-        .from('wireframe_cache')
-        .select('result_data')
-        .eq('cache_key', cacheKey)
-        .gt('expiry', new Date().toISOString())
-        .single();
-      
-      if (error || !data) {
-        return null;
-      }
-      
-      return data.result_data as WireframeGenerationResult;
-    } catch (error) {
-      console.error("Error retrieving cached wireframe:", error);
-      return null;
-    }
-  },
-  
-  /**
-   * Get similar wireframe designs from cache
-   */
-  getSimilarCachedWireframes: async (industry: string, style?: string, limit: number = 3): Promise<WireframeGenerationResult[]> => {
-    try {
-      let query = supabase
-        .from('wireframe_cache')
-        .select('result_data')
-        .ilike('cache_key', `%${industry.toLowerCase()}%`)
-        .gt('expiry', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(limit);
-        
-      if (style) {
-        query = query.ilike('cache_key', `%${style.toLowerCase()}%`);
-      }
-      
-      const { data, error } = await query;
-      
-      if (error || !data) {
-        return [];
-      }
-      
-      return data.map(item => item.result_data as WireframeGenerationResult);
-    } catch (error) {
-      console.error("Error retrieving similar cached wireframes:", error);
-      return [];
-    }
+    return criticalChanges.some(change => change === true);
   }
-};
+  
+  /**
+   * Compare two wireframes to calculate similarity score
+   */
+  static calculateSimilarityScore(wireframe1: WireframeData, wireframe2: WireframeData): number {
+    let score = 0;
+    let totalFactors = 0;
+    
+    // Check section count similarity
+    const sectionCountSimilarity = 
+      Math.min(wireframe1.sections.length, wireframe2.sections.length) / 
+      Math.max(wireframe1.sections.length, wireframe2.sections.length);
+    score += sectionCountSimilarity;
+    totalFactors++;
+    
+    // Check multi-page similarity if applicable
+    const hasPages1 = !!(wireframe1.pages && wireframe1.pages.length > 0);
+    const hasPages2 = !!(wireframe2.pages && wireframe2.pages.length > 0);
+    
+    if (hasPages1 && hasPages2) {
+      const pageCountSimilarity =
+        Math.min((wireframe1.pages || []).length, (wireframe2.pages || []).length) /
+        Math.max((wireframe1.pages || []).length, (wireframe2.pages || []).length);
+      score += pageCountSimilarity;
+      totalFactors++;
+    }
+    
+    // Calculate section type similarity
+    const sectionTypes1 = wireframe1.sections.map(s => s.sectionType);
+    const sectionTypes2 = wireframe2.sections.map(s => s.sectionType);
+    
+    const commonSectionTypes = sectionTypes1.filter(type => sectionTypes2.includes(type));
+    const sectionTypeSimilarity = 
+      commonSectionTypes.length / Math.max(sectionTypes1.length, sectionTypes2.length);
+    
+    score += sectionTypeSimilarity;
+    totalFactors++;
+    
+    // Return average score (scale 0-1)
+    return score / totalFactors;
+  }
+}

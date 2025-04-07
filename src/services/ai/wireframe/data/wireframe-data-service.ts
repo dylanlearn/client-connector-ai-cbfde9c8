@@ -1,82 +1,79 @@
 
-import { WireframeApiService } from '../api';
-import { AIWireframe, WireframeData } from '../wireframe-types';
+import { AIWireframe, WireframeData, WireframeSection } from '../wireframe-types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Service for handling wireframe data operations
+ * Service for wireframe data transformation and processing
  */
 export const WireframeDataService = {
   /**
-   * Helper function to extract WireframeData from various data structures
+   * Standardize a wireframe record by ensuring all necessary fields
    */
-  extractWireframeData: (wireframe: AIWireframe): WireframeData | null => {
-    // Check if data property already exists
+  standardizeWireframeRecord: (wireframe: AIWireframe): AIWireframe => {
+    // Ensure a standardized data structure for all wireframes
+    let wireframeData: WireframeData | undefined;
+    
+    // Access data from various possible locations in the object
     if (wireframe.data) {
-      return wireframe.data;
+      wireframeData = wireframe.data;
+    } else if (wireframe.wireframe_data) {
+      wireframeData = wireframe.wireframe_data;
+    } else {
+      // Create minimal wireframe data structure if none exists
+      wireframeData = {
+        title: wireframe.title || 'Untitled Wireframe',
+        description: wireframe.description || '',
+        sections: wireframe.sections || [],
+        layoutType: 'standard'
+      };
     }
-    
-    // Extract from generation_params if available
-    if (wireframe.generation_params && typeof wireframe.generation_params === 'object') {
-      if ('result_data' in wireframe.generation_params) {
-        return wireframe.generation_params.result_data as WireframeData;
-      }
-    }
-    
-    // Extract from wireframe_data if available
-    if (wireframe.wireframe_data) {
-      return wireframe.wireframe_data;
-    }
-    
-    // Construct a basic wireframe data object from available properties
-    return {
-      title: wireframe.title || wireframe.description || "Untitled Wireframe",
-      description: wireframe.description || "",
-      sections: wireframe.sections || []
-    };
-  },
-  
-  /**
-   * Get all wireframes for a project
-   */
-  getProjectWireframes: async (projectId: string): Promise<AIWireframe[]> => {
-    try {
-      const wireframes = await WireframeApiService.getProjectWireframes(projectId);
-      
-      // Process each wireframe to extract and structure the data correctly
-      return wireframes.map(wireframe => {
-        // Extract wireframe data using the helper function
-        const wireframeData = WireframeDataService.extractWireframeData(wireframe);
-        
-        // Add structured data to the wireframe object
+
+    // Ensure all sections have IDs
+    if (wireframeData.sections) {
+      wireframeData.sections = wireframeData.sections.map(section => {
         return {
-          ...wireframe,
-          data: wireframeData
+          ...section,
+          id: section.id || uuidv4()
         };
       });
-    } catch (error) {
-      console.error("Error in wireframe service getProjectWireframes:", error);
-      throw error;
     }
+
+    // Return standardized record
+    return {
+      ...wireframe,
+      data: wireframeData
+    };
   },
-  
+
   /**
-   * Get a specific wireframe by ID
+   * Get the title of a wireframe, with fallbacks
    */
-  getWireframe: async (wireframeId: string): Promise<AIWireframe | null> => {
-    try {
-      const wireframe = await WireframeApiService.getWireframe(wireframeId);
-      
-      // Extract wireframe data using the helper function
-      const wireframeData = WireframeDataService.extractWireframeData(wireframe);
-      
-      // Add the extracted data to the wireframe object
-      return {
-        ...wireframe,
-        data: wireframeData
-      };
-    } catch (error) {
-      console.error("Error in wireframe service getWireframe:", error);
-      throw error;
+  getWireframeTitle: (wireframe: AIWireframe): string => {
+    // Try to get title from different possible locations
+    if (wireframe.data && wireframe.data.title) {
+      return wireframe.data.title;
     }
+    
+    if (wireframe.wireframe_data && wireframe.wireframe_data.title) {
+      return wireframe.wireframe_data.title;
+    }
+    
+    return wireframe.title || 'Untitled Wireframe';
   },
+
+  /**
+   * Ensure section has required properties
+   */
+  ensureValidSection: (section: Partial<WireframeSection>): WireframeSection => {
+    return {
+      id: section.id || uuidv4(),
+      name: section.name || 'Unnamed Section',
+      sectionType: section.sectionType || 'generic',
+      layoutType: section.layoutType || 'standard',
+      description: section.description || '',
+      components: section.components || [],
+      // Copy over any other properties that might exist
+      ...section
+    };
+  }
 };

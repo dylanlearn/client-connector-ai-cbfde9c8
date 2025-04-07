@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,7 +19,8 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
   wireframe,
   onApplyRecommendation
 }) => {
-  const wireframeData = wireframe.wireframe_data || wireframe.data;
+  // Use data from the appropriate property, with fallbacks
+  const wireframeData = wireframe.data || wireframe.wireframe_data;
   
   if (!wireframeData) {
     return (
@@ -161,7 +161,6 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
                 icon={<Layout className="h-5 w-5" />}
               />
               
-              {/* Similar pattern for other tabs */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
@@ -187,14 +186,12 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
             </div>
           </TabsContent>
           
-          {/* Similar pattern for other tabs: typography, color, mobile */}
           <TabsContent value="typography">
             <AIInsightCard 
               title="Typography Analysis" 
               insights={typographyInsights.recommendations}
               icon={<Type className="h-5 w-5" />}
             />
-            {/* Typography recommendations and quick actions */}
           </TabsContent>
           
           <TabsContent value="color">
@@ -203,7 +200,6 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
               insights={colorInsights.recommendations}
               icon={<Palette className="h-5 w-5" />}
             />
-            {/* Color recommendations and quick actions */}
           </TabsContent>
           
           <TabsContent value="mobile">
@@ -212,7 +208,6 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
               insights={mobileInsights.recommendations}
               icon={<BarChart4 className="h-5 w-5" />}
             />
-            {/* Mobile recommendations and quick actions */}
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -326,9 +321,6 @@ function analyzeWireframe(wireframeData: any) {
     ],
     quickFixes: []
   };
-  
-  // Here we could add logic to analyze the wireframe structure
-  // and generate more personalized insights
   
   return {
     conversionInsights,

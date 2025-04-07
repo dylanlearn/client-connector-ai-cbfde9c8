@@ -1,9 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/components/ui/use-toast';
 import { IntakeFormData } from '@/types/intake-form';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { v4 as uuidv4 } from 'uuid';
 
 export type DesignStage = 
   | 'intake'
@@ -63,7 +63,6 @@ export const DesignProcessProvider: React.FC<{ children: React.ReactNode }> = ({
   const [clientFeedback, setClientFeedback] = useState<string[]>([]);
   const [designerNotes, setDesignerNotes] = useState<string[]>([]);
   
-  // Calculate progress based on current stage
   const calculateProgress = (): number => {
     const stages: DesignStage[] = ['intake', 'analysis', 'moodboard', 'wireframe', 'feedback', 'revision', 'handoff'];
     const currentIndex = stages.indexOf(currentStage);
@@ -72,11 +71,8 @@ export const DesignProcessProvider: React.FC<{ children: React.ReactNode }> = ({
   
   const progress = calculateProgress();
   
-  // Load saved data if available
   useEffect(() => {
     if (user) {
-      // In a real implementation, we would fetch the user's saved design process data
-      // For now, we'll just check local storage
       const savedProcess = localStorage.getItem(`designProcess_${user.id}`);
       if (savedProcess) {
         try {
@@ -102,7 +98,6 @@ export const DesignProcessProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user]);
   
-  // Save process data when it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem(`designProcess_${user.id}`, JSON.stringify({
@@ -134,8 +129,6 @@ export const DesignProcessProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     
     try {
-      // In a real implementation, this would call an AI service
-      // For now, we'll simulate a brief generation
       const brief: DesignBrief = {
         title: `Design Brief for ${intakeData.projectName || 'Unnamed Project'}`,
         description: intakeData.projectDescription || 'No description provided',
@@ -173,28 +166,10 @@ export const DesignProcessProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     
     try {
-      // In a real implementation, this would call the wireframe generation service
-      // For now, we'll simulate a wireframe
       const wireframe: WireframeData = {
         title: designBrief.title,
         description: designBrief.description,
-        sections: [
-          {
-            name: "Hero Section",
-            sectionType: "hero",
-            components: []
-          },
-          {
-            name: "Features Section",
-            sectionType: "features",
-            components: []
-          },
-          {
-            name: "Testimonials",
-            sectionType: "testimonials",
-            components: []
-          }
-        ]
+        sections: generateWireframeSections()
       };
       
       setWireframeData(wireframe);

@@ -8,6 +8,9 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
 const WireframeGenerator = () => {
+  // Create a fixed demo project ID for this page
+  const demoProjectId = "demo-project";
+  
   return (
     <DashboardLayout>
       {/* Register components */}
@@ -30,7 +33,7 @@ const WireframeGenerator = () => {
         </Alert>
         
         <TooltipProvider>
-          <WireframeEditor projectId="demo-project" />
+          <WireframeEditor projectId={demoProjectId} />
         </TooltipProvider>
       </div>
     </DashboardLayout>

@@ -1,5 +1,6 @@
-
+import { v4 as uuidv4 } from 'uuid';
 import { WireframeData, WireframeSection, WireframeComponent, CopySuggestions } from "@/services/ai/wireframe/wireframe-types";
+import { IntakeFormData } from '@/types/intake-form';
 
 /**
  * Bridges the questionnaire data to a wireframe data structure.
@@ -146,13 +147,41 @@ export const questionnaireWireframeBridge = {
   /**
    * Transforms intake data to wireframe generation parameters
    */
-  transformIntakeToWireframeParams: (intakeData: any, designRecommendations: any): any => {
+  transformIntakeToWireframeParams: (intakeData: IntakeFormData, recommendations?: any): WireframeGenerationParams => {
+    const promptText = `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`;
+    const stylePreferences = intakeData.designStyle || 'modern';
+
+    // Create components with proper IDs
+    const components: WireframeComponent[] = [
+      { id: uuidv4(), type: 'header', content: intakeData.companyName },
+      { id: uuidv4(), type: 'footer', content: intakeData.contactInfo }
+    ];
+
+    // Create sections with proper IDs
+    const sections: WireframeSection[] = getRecommendedSections(intakeData).map(sectionType => ({
+      id: uuidv4(),
+      name: sectionNameFromType(sectionType),
+      sectionType: sectionType,
+      layoutType: sectionLayoutFromType(sectionType),
+      layout: {
+        type: 'flex',
+        alignment: 'center',
+      },
+      components: components.filter(c => c.type === sectionType),
+      copySuggestions: {
+        heading: intakeData.keyMessages,
+        subheading: intakeData.secondaryMessages,
+      },
+      description: `${sectionNameFromType(sectionType)} for ${intakeData.companyName}`
+    }));
+
     return {
+      description: promptText,
       projectId: intakeData.formId,
-      prompt: `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`,
-      style: intakeData.designStyle || 'modern',
       industry: intakeData.industry,
-      complexity: 'medium'
+      pageType: intakeData.siteType,
+      stylePreferences: stylePreferences,
+      complexity: 'moderate',
     };
   },
   

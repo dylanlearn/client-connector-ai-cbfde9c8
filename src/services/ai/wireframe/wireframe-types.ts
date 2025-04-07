@@ -59,6 +59,7 @@ export interface WireframeData {
   typography?: {
     headings: string;
     body: string;
+    fontPairings?: string[];
   };
   designTokens?: Record<string, any>;
   mobileLayouts?: any;
@@ -66,6 +67,9 @@ export interface WireframeData {
   designReasoning?: string;
   animations?: any;
   imageUrl?: string;
+  pages?: any[];
+  style?: string;
+  colorTheme?: string;
 }
 
 /**
@@ -90,6 +94,9 @@ export interface AIWireframe {
   updated_at?: string;
   sections?: WireframeSection[];
   data?: WireframeData;
+  wireframe_data?: WireframeData;
+  title?: string;
+  pages?: any[];
 }
 
 /**
@@ -98,6 +105,15 @@ export interface AIWireframe {
 export interface WireframeGenerationResult {
   wireframe?: WireframeData;
   model?: string;
+  usage?: {
+    total_tokens: number;
+    completion_tokens: number;
+    prompt_tokens: number;
+  };
+  generationTime?: number;
+  usedModels?: string[];
+  success?: boolean;
+  creativityLevel?: number;
 }
 
 /**
@@ -113,4 +129,45 @@ export interface WireframeGenerationParams {
   complexity?: 'simple' | 'moderate' | 'complex';
   baseWireframe?: WireframeData;
   creativityLevel?: number;
+  // Extra properties used in different components
+  style?: string;
+  enhancedCreativity?: boolean;
+  colorTheme?: string;
+  darkMode?: boolean;
+  multiPageLayout?: boolean;
+  pages?: number;
+  pageTypes?: string[];
+  typography?: any;
+  componentTypes?: string[];
+  moodboardSelections?: string[];
+  additionalInstructions?: string;
+}
+
+// Additional types needed for version control
+export interface WireframeVersion {
+  id: string;
+  wireframe_id: string;
+  version_number: number;
+  branch_name: string;
+  data: Record<string, any>;
+  parent_version_id?: string;
+  is_current: boolean;
+  change_description?: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface BranchInfo {
+  name: string;
+  versions: WireframeVersion[];
+  latest_version_id?: string;
+}
+
+export interface VersionComparisonResult {
+  changes: Array<{
+    type: "added" | "removed" | "modified";
+    path: string;
+    values: [any, any];
+  }>;
+  summary: string;
 }

@@ -1,6 +1,7 @@
+
 import { useState, useCallback } from 'react';
 import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
-import { WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeGenerationParams, WireframeGenerationResult, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 export function useWireframeGenerator(
   creativityLevel: number,
@@ -11,23 +12,18 @@ export function useWireframeGenerator(
   const [error, setError] = useState<Error | null>(null);
   
   const generateWireframe = useCallback(async (
-    title: string,
-    description: string,
-    projectId?: string
+    params: WireframeGenerationParams
   ) => {
     setIsGenerating(true);
     setError(null);
     
     try {
-      const params = {
-        title,
-        description,
-        projectId,
+      const fullParams = {
+        ...params,
         creativityLevel,
-        timestamp: new Date().toISOString()
       };
       
-      const result = await WireframeService.generateWireframe(params);
+      const result = await WireframeService.generateWireframe(fullParams);
       
       setCurrentWireframe(result);
       
@@ -55,17 +51,19 @@ export function useWireframeGenerator(
     }
   }, [creativityLevel, setCurrentWireframe, toast]);
 
-  const generateCreativeVariation = useCallback(async (baseWireframe: WireframeGenerationResult) => {
+  const generateCreativeVariation = useCallback(async (
+    baseResult: WireframeGenerationResult
+  ) => {
     setIsGenerating(true);
     setError(null);
     
     try {
       // In a real implementation, this would send the base wireframe 
       // to the backend to generate a variation with higher creativity
-      const params = {
-        title: `Creative variation of ${baseWireframe.wireframe?.title || "Wireframe"}`,
-        description: baseWireframe.wireframe?.description,
-        baseWireframe: baseWireframe.wireframe,
+      const params: WireframeGenerationParams = {
+        title: `Creative variation of ${baseResult.wireframe?.title || "Wireframe"}`,
+        description: baseResult.wireframe?.description,
+        baseWireframe: baseResult.wireframe,
         creativityLevel: Math.min(creativityLevel + 2, 10), // Increase creativity
         timestamp: new Date().toISOString()
       };

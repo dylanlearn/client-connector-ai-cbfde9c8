@@ -20,7 +20,7 @@ export function useWireframeGeneration() {
   const { 
     isGenerating, 
     error,
-    generateWireframe,
+    generateWireframe: generateWireframeBase,
     generateCreativeVariation 
   } = useWireframeGenerator(creativityLevel, setCurrentWireframe, toast);
 
@@ -33,6 +33,23 @@ export function useWireframeGeneration() {
     provideFeedback,
     deleteWireframe
   } = useWireframeFeedback(wireframes, setWireframes, toast);
+
+  // Wrap the generateWireframe function to handle different param formats
+  const generateWireframe = useCallback(async (
+    params: WireframeGenerationParams | string, 
+    projectId?: string
+  ) => {
+    // Handle string input (convert to params object)
+    if (typeof params === 'string') {
+      return generateWireframeBase({
+        description: params,
+        projectId,
+        creativityLevel
+      });
+    }
+    // Handle params object directly
+    return generateWireframeBase(params);
+  }, [generateWireframeBase, creativityLevel]);
 
   return {
     isGenerating,

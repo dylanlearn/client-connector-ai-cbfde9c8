@@ -20,7 +20,7 @@ import { WireframeProps } from './types';
 
 interface AIWireframe {
   id: string;
-  title: string;
+  title?: string;
   description: string;
   wireframe_data?: WireframeData;
   image_url?: string;
@@ -103,7 +103,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const handleGenerateVariation = async () => {
     if (!currentWireframe?.wireframe) return;
     
-    const result = await generateCreativeVariation(currentWireframe.wireframe, projectId);
+    const result = await generateCreativeVariation(currentWireframe);
     
     if (result && onWireframeGenerated) {
       onWireframeGenerated();
@@ -338,7 +338,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                   <div className="border rounded-md p-1 bg-background">
                     <WireframeVisualizer 
                       wireframe={{
-                        id: currentWireframe.wireframe.id || 'temp-id',
+                        id: 'temp-id',
                         title: currentWireframe.wireframe.title || 'Generated Wireframe',
                         description: currentWireframe.wireframe.description || '',
                         imageUrl: currentWireframe.wireframe.imageUrl,

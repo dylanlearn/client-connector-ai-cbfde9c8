@@ -1,215 +1,193 @@
 
+import { v4 as uuidv4 } from 'uuid';
 import { WireframeData } from './wireframe-types';
 
-// Sample industry-specific wireframe templates
-const industryTemplates: Record<string, WireframeData> = {
-  ecommerce: {
-    title: "E-Commerce Website",
-    description: "A standard e-commerce website template with product listings, cart, and checkout flow.",
-    sections: [
-      {
-        name: "Hero Section",
-        sectionType: "hero",
-        layoutType: "full-width",
-        layout: { type: "standard-layout", alignment: "center" },
-        components: [
-          { type: "heading", content: "Welcome to Our Store" },
-          { type: "paragraph", content: "Discover amazing products at great prices." },
-          { type: "button", content: "Shop Now" }
-        ],
-        copySuggestions: {
-          heading: "Welcome to Our Store",
-          subheading: "Discover amazing products at great prices.",
-          cta: "Shop Now"
-        },
-        description: "Main hero banner with promotional message"
-      },
-      {
-        name: "Featured Products",
-        sectionType: "products",
-        layoutType: "grid",
-        layout: { type: "grid-layout", columns: 3 },
-        components: [
-          { type: "heading", content: "Featured Products" },
-          { type: "product-card", content: "Product 1" },
-          { type: "product-card", content: "Product 2" },
-          { type: "product-card", content: "Product 3" }
-        ],
-        copySuggestions: {
-          heading: "Featured Products",
-          subheading: "Our top picks this week",
-          cta: "View All"
-        },
-        description: "Display of featured or top-selling products"
-      }
-    ],
-    designTokens: {
-      colors: {
-        primary: "#4a90e2",
-        secondary: "#50e3c2",
-        accent: "#b8e986",
-        background: "#ffffff",
-        text: "#333333"
-      },
-      typography: {
-        headings: "Montserrat, sans-serif",
-        body: "Open Sans, sans-serif"
-      }
-    }
-  },
-  
-  portfolio: {
-    title: "Portfolio Website",
-    description: "A professional portfolio website for showcasing work and skills.",
-    sections: [
-      {
-        name: "Hero Section",
-        sectionType: "hero",
-        layoutType: "full-width",
-        layout: { type: "standard-layout", alignment: "left" },
-        components: [
-          { type: "heading", content: "Hi, I'm [Name]" },
-          { type: "paragraph", content: "I'm a professional specializing in [field]." },
-          { type: "button", content: "View My Work" }
-        ],
-        copySuggestions: {
-          heading: "Hi, I'm [Name]",
-          subheading: "I'm a professional specializing in [field].",
-          cta: "View My Work"
-        },
-        description: "Personal introduction and key message"
-      },
-      {
-        name: "Portfolio Gallery",
-        sectionType: "gallery",
-        layoutType: "masonry",
-        layout: { type: "masonry-layout" },
-        components: [
-          { type: "heading", content: "My Work" },
-          { type: "image", content: "Project 1" },
-          { type: "image", content: "Project 2" },
-          { type: "image", content: "Project 3" }
-        ],
-        copySuggestions: {
-          heading: "My Work",
-          subheading: "Selected projects and case studies",
-          cta: "See more"
-        },
-        description: "Gallery showcase of work samples and projects"
-      }
-    ],
-    designTokens: {
-      colors: {
-        primary: "#333333",
-        secondary: "#6200ee",
-        accent: "#03dac6",
-        background: "#ffffff",
-        text: "#333333"
-      },
-      typography: {
-        headings: "Playfair Display, serif",
-        body: "Raleway, sans-serif"
-      }
-    }
-  },
-  
-  business: {
-    title: "Business Website",
-    description: "A professional website for businesses and organizations.",
-    sections: [
-      {
-        name: "Hero Section",
-        sectionType: "hero",
-        layoutType: "split",
-        layout: { type: "split-layout", ratio: "60-40" },
-        components: [
-          { type: "heading", content: "We Help Businesses Grow" },
-          { type: "paragraph", content: "Strategic solutions for modern challenges." },
-          { type: "button", content: "Learn More" },
-          { type: "image", content: "Business Image" }
-        ],
-        copySuggestions: {
-          heading: "We Help Businesses Grow",
-          subheading: "Strategic solutions for modern challenges.",
-          cta: "Learn More"
-        },
-        description: "Main banner with value proposition"
-      },
-      {
-        name: "Services",
-        sectionType: "services",
-        layoutType: "cards",
-        layout: { type: "card-layout", columns: 3 },
-        components: [
-          { type: "heading", content: "Our Services" },
-          { type: "service-card", content: "Service 1" },
-          { type: "service-card", content: "Service 2" },
-          { type: "service-card", content: "Service 3" }
-        ],
-        copySuggestions: {
-          heading: "Our Services",
-          subheading: "How we can help your business thrive",
-          cta: "Get Started"
-        },
-        description: "Services offered by the business"
-      }
-    ],
-    designTokens: {
-      colors: {
-        primary: "#0056b3",
-        secondary: "#6c757d",
-        accent: "#ffc107",
-        background: "#ffffff",
-        text: "#212529"
-      },
-      typography: {
-        headings: "Merriweather, serif",
-        body: "Source Sans Pro, sans-serif"
-      }
-    }
-  }
-};
-
 /**
- * Service for working with industry-specific wireframe templates
+ * Service for providing industry-specific wireframe templates
  */
 export const industryTemplateService = {
   /**
-   * Get template data for a specific industry
+   * Get a template wireframe for a specific industry
    */
-  getTemplatesForIndustry: (industry: string): WireframeData | undefined => {
-    const normalizedIndustry = industry.toLowerCase().trim();
-    
-    // Try to find exact match
-    if (industryTemplates[normalizedIndustry]) {
-      return industryTemplates[normalizedIndustry];
-    }
-    
-    // Try to find partial match
-    for (const key of Object.keys(industryTemplates)) {
-      if (key.includes(normalizedIndustry) || normalizedIndustry.includes(key)) {
-        return industryTemplates[key];
+  getTemplatesForIndustry: (industry: string): WireframeData => {
+    const templates: Record<string, WireframeData> = {
+      'ecommerce': {
+        title: 'E-Commerce Template',
+        description: 'Standard e-commerce website template with product listings and checkout flow',
+        sections: [
+          {
+            id: uuidv4(),
+            name: 'Header with Search',
+            sectionType: 'header',
+            components: [
+              { id: uuidv4(), type: 'navigation', content: 'Main navigation with cart' },
+              { id: uuidv4(), type: 'search', content: 'Product search box' },
+              { id: uuidv4(), type: 'cart-icon', content: 'Shopping cart icon with counter' }
+            ],
+            copySuggestions: {
+              heading: ['Shop the Latest Trends', 'Discover Quality Products'],
+              subheading: ['Free shipping on orders over $50', 'Satisfaction guaranteed'],
+              cta: ['Shop Now', 'Explore']
+            }
+          },
+          {
+            id: uuidv4(),
+            name: 'Product Grid',
+            sectionType: 'product-grid',
+            components: [
+              { id: uuidv4(), type: 'filter', content: 'Product filtering sidebar' },
+              { id: uuidv4(), type: 'product-card', content: 'Product card with image and price' },
+              { id: uuidv4(), type: 'pagination', content: 'Product pagination' },
+              { id: uuidv4(), type: 'sort', content: 'Product sorting dropdown' }
+            ],
+            copySuggestions: {
+              heading: ['Featured Products', 'New Arrivals', 'Best Sellers'],
+              subheading: ['Shop by category', 'Handpicked for you'],
+              cta: ['Add to Cart', 'Quick View', 'Save for Later']
+            }
+          },
+          {
+            id: uuidv4(),
+            name: 'Footer',
+            sectionType: 'footer',
+            components: [
+              { id: uuidv4(), type: 'footer-links', content: 'Footer navigation links' },
+              { id: uuidv4(), type: 'newsletter', content: 'Newsletter signup' },
+              { id: uuidv4(), type: 'social-links', content: 'Social media icons' }
+            ],
+            copySuggestions: {
+              heading: ['Stay Connected', 'Sign Up for Updates'],
+              subheading: ['Follow us on social media', 'Get exclusive offers'],
+              cta: ['Subscribe', 'Follow Us']
+            }
+          }
+        ],
+        layoutType: 'grid',
+        colorScheme: {
+          primary: '#3498db',
+          secondary: '#2ecc71',
+          accent: '#f39c12',
+          background: '#ffffff'
+        },
+        typography: {
+          headings: 'Montserrat',
+          body: 'Open Sans'
+        }
+      },
+      'saas': {
+        title: 'SaaS Platform Template',
+        description: 'Template for SaaS and web application landing pages',
+        sections: [
+          {
+            id: uuidv4(),
+            name: 'Hero with CTA',
+            sectionType: 'hero',
+            components: [
+              { id: uuidv4(), type: 'hero-heading', content: 'Main value proposition heading' },
+              { id: uuidv4(), type: 'hero-subheading', content: 'Supporting text explaining benefits' },
+              { id: uuidv4(), type: 'cta-button', content: 'Primary call to action button' },
+              { id: uuidv4(), type: 'hero-image', content: 'App screenshot or illustration' }
+            ],
+            copySuggestions: {
+              heading: ['Simplify Your Workflow', 'Boost Team Productivity', 'Work Smarter, Not Harder'],
+              subheading: ['All-in-one platform for teams', 'Trusted by over 10,000 companies'],
+              cta: ['Start Free Trial', 'Book a Demo', 'Get Started']
+            }
+          },
+          {
+            id: uuidv4(),
+            name: 'Features Section',
+            sectionType: 'features',
+            components: [
+              { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' },
+              { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' },
+              { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' },
+              { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' }
+            ],
+            copySuggestions: {
+              heading: ['Powerful Features', 'Why Choose Us', 'Built for Teams'],
+              subheading: ['Everything you need to succeed', 'Designed with your workflow in mind'],
+              cta: ['Learn More', 'See All Features']
+            }
+          }
+        ],
+        layoutType: 'flex',
+        colorScheme: {
+          primary: '#6772e5',
+          secondary: '#24b47e',
+          accent: '#e25950',
+          background: '#f6f9fc'
+        },
+        typography: {
+          headings: 'Inter',
+          body: 'Roboto'
+        }
+      },
+      'portfolio': {
+        title: 'Creative Portfolio Template',
+        description: 'Portfolio template for designers, photographers, and creatives',
+        sections: [
+          {
+            id: uuidv4(),
+            name: 'Minimal Header',
+            sectionType: 'header',
+            components: [
+              { id: uuidv4(), type: 'logo', content: 'Personal logo' },
+              { id: uuidv4(), type: 'menu', content: 'Minimal navigation menu' }
+            ],
+            copySuggestions: {
+              heading: ['Work', 'Projects', 'Portfolio'],
+              subheading: ['Designer & Developer', 'Visual Artist'],
+              cta: ['View Work', 'Get in Touch']
+            }
+          },
+          {
+            id: uuidv4(),
+            name: 'Project Grid',
+            sectionType: 'projects',
+            components: [
+              { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' },
+              { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' },
+              { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' },
+              { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' }
+            ],
+            copySuggestions: {
+              heading: ['Selected Works', 'Recent Projects', 'Featured Work'],
+              subheading: ['Explore my projects', 'A collection of my best work'],
+              cta: ['View Project', 'Case Study', 'Learn More']
+            }
+          },
+          {
+            id: uuidv4(),
+            name: 'About Section',
+            sectionType: 'about',
+            components: [
+              { id: uuidv4(), type: 'profile-image', content: 'Professional headshot' },
+              { id: uuidv4(), type: 'bio', content: 'Professional biography' },
+              { id: uuidv4(), type: 'skills-list', content: 'List of key skills' },
+              { id: uuidv4(), type: 'contact-info', content: 'Contact information' }
+            ],
+            copySuggestions: {
+              heading: ['About Me', 'Hello, I\'m [Name]', 'Nice to Meet You'],
+              subheading: ['Designer based in [Location]', 'Passionate about creating beautiful experiences'],
+              cta: ['Download Resume', 'View LinkedIn', 'Contact Me']
+            }
+          }
+        ],
+        layoutType: 'masonry',
+        colorScheme: {
+          primary: '#000000',
+          secondary: '#333333',
+          accent: '#ff3366',
+          background: '#ffffff'
+        },
+        typography: {
+          headings: 'Playfair Display',
+          body: 'Source Sans Pro'
+        }
       }
-    }
+    };
     
-    // Default to business if no match found
-    return industryTemplates.business;
-  },
-  
-  /**
-   * Get all available industry templates
-   */
-  getAllTemplates: (): Record<string, WireframeData> => {
-    return { ...industryTemplates };
-  },
-  
-  /**
-   * Get a list of available industry names
-   */
-  getAvailableIndustries: (): string[] => {
-    return Object.keys(industryTemplates);
+    return templates[industry.toLowerCase()] || templates['saas'];
   }
 };
-
-// For backward compatibility
-export const IndustryTemplateService = industryTemplateService;
