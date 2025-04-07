@@ -1943,6 +1943,48 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_components: {
+        Row: {
+          category: string
+          created_at: string
+          default_data: Json
+          description: string | null
+          fields: Json
+          icon: string | null
+          id: string
+          name: string
+          type: string
+          updated_at: string
+          variants: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          default_data?: Json
+          description?: string | null
+          fields?: Json
+          icon?: string | null
+          id?: string
+          name: string
+          type: string
+          updated_at?: string
+          variants?: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          default_data?: Json
+          description?: string | null
+          fields?: Json
+          icon?: string | null
+          id?: string
+          name?: string
+          type?: string
+          updated_at?: string
+          variants?: Json
+        }
+        Relationships: []
+      }
       wireframe_design_memory: {
         Row: {
           blueprint_id: string | null
@@ -2375,6 +2417,48 @@ export type Database = {
           },
         ]
       }
+      wireframes: {
+        Row: {
+          created_at: string
+          data: Json
+          description: string | null
+          design_tokens: Json | null
+          id: string
+          status: string
+          style_variant: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          description?: string | null
+          design_tokens?: Json | null
+          id?: string
+          status?: string
+          style_variant?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          description?: string | null
+          design_tokens?: Json | null
+          id?: string
+          status?: string
+          style_variant?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       memory_system_stats: {
@@ -2771,6 +2855,27 @@ export type Database = {
             }
           | { p_user_id: string }
         Returns: string
+      }
+      save_wireframe_sections: {
+        Args: { p_wireframe_id: string; p_sections: Json }
+        Returns: {
+          animation_suggestions: Json | null
+          components: Json | null
+          copy_suggestions: Json | null
+          created_at: string | null
+          description: string | null
+          design_reasoning: string | null
+          dynamic_elements: Json | null
+          id: string
+          layout_type: string
+          mobile_layout: Json | null
+          name: string
+          position_order: number | null
+          section_type: string
+          style_variants: Json | null
+          updated_at: string | null
+          wireframe_id: string | null
+        }[]
       }
       search_memory_embeddings: {
         Args:

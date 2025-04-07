@@ -1,6 +1,21 @@
 
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
+export interface ComponentField {
+  id: string;
+  name: string;
+  type: 'text' | 'textarea' | 'number' | 'select' | 'boolean' | 'color' | 'image' | 'array';
+  description?: string;
+  defaultValue?: any;
+  options?: { label: string; value: any }[];
+  validation?: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+    pattern?: string;
+  };
+}
+
 export interface ComponentVariant {
   id: string;
   name: string;
@@ -17,21 +32,6 @@ export interface ComponentDefinition {
   variants: ComponentVariant[];
   fields: ComponentField[];
   defaultData: Partial<WireframeSection>;
-}
-
-export interface ComponentField {
-  id: string;
-  name: string;
-  type: 'text' | 'textarea' | 'number' | 'select' | 'boolean' | 'color' | 'image' | 'array';
-  description?: string;
-  defaultValue?: any;
-  options?: { label: string; value: any }[];
-  validation?: {
-    required?: boolean;
-    min?: number;
-    max?: number;
-    pattern?: string;
-  };
 }
 
 // Store for all registered components
