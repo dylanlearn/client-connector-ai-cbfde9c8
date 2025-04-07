@@ -1,5 +1,160 @@
 
 import { ComponentDefinition } from '../component-registry';
+import { HeroComponentProps } from '@/types/component-library';
+
+// Hero component variants data
+export const heroVariants: HeroComponentProps[] = [
+  // === CREATIVE VARIANTS ===
+  {
+    variant: 'hero-creative-001',
+    headline: "Bold Creative Studio",
+    subheadline: "We craft visual stories that captivate and inspire",
+    cta: { label: "View Our Work", url: "/portfolio" },
+    backgroundStyle: "dark",
+    alignment: "left",
+    mediaType: "image",
+    image: "/thumbnails/hero-creative-001.png",
+    styleNote: "Bold typography with abstract shapes background"
+  },
+  {
+    variant: 'hero-creative-002',
+    headline: "Visual Stories",
+    subheadline: "Award-winning design for brands that stand out",
+    cta: { label: "Explore", url: "/work" },
+    backgroundStyle: "image",
+    alignment: "center",
+    mediaType: "video",
+    image: "/thumbnails/hero-creative-002.png",
+    styleNote: "Fullscreen image/video with overlay text"
+  },
+  {
+    variant: 'hero-creative-003',
+    headline: "Digital Experiences",
+    subheadline: "Interactive design for the modern web",
+    cta: { label: "Get Started", url: "/contact" },
+    backgroundStyle: "gradient",
+    alignment: "right",
+    mediaType: "illustration",
+    image: "/thumbnails/hero-creative-003.png",
+    styleNote: "Dynamic animated hero with horizontal scroll effect"
+  },
+  
+  // === STARTUP-FOCUSED VARIANTS ===
+  {
+    variant: 'hero-startup-001',
+    headline: "Build Better Products",
+    subheadline: "The all-in-one platform for growing SaaS companies",
+    cta: { label: "Start Free Trial", url: "/trial" },
+    backgroundStyle: "light",
+    alignment: "left",
+    mediaType: "image",
+    image: "/thumbnails/hero-startup-001.png",
+    styleNote: "Clean SaaS hero with image and dual CTAs"
+  },
+  {
+    variant: 'hero-startup-002',
+    headline: "Your Data, Simplified",
+    subheadline: "Modern analytics platform for modern teams",
+    cta: { label: "See Demo", url: "/demo" },
+    backgroundStyle: "light",
+    alignment: "right",
+    mediaType: "image",
+    image: "/thumbnails/hero-startup-002.png",
+    styleNote: "Feature-focused hero with dashboard preview"
+  },
+  {
+    variant: 'hero-startup-003',
+    headline: "The Modern App",
+    subheadline: "Everything you need, nothing you don't",
+    cta: { label: "Download", url: "/download" },
+    backgroundStyle: "gradient",
+    alignment: "center",
+    mediaType: "image",
+    image: "/thumbnails/hero-startup-003.png",
+    styleNote: "Mobile app preview with gradient background"
+  },
+  {
+    variant: 'hero-startup-004',
+    headline: "Enterprise Solutions",
+    subheadline: "Scalable technology for growing businesses",
+    cta: { label: "Talk to Sales", url: "/contact" },
+    backgroundStyle: "light",
+    alignment: "left",
+    mediaType: "image",
+    image: "/thumbnails/hero-startup-004.png",
+    styleNote: "Professional hero section with trust badges and testimonials"
+  },
+  
+  // === ECOMMERCE VARIANTS ===
+  {
+    variant: 'hero-ecom-001',
+    headline: "New Collection",
+    subheadline: "Performance wear designed for your lifestyle",
+    cta: { label: "Shop Now", url: "/collection" },
+    backgroundStyle: "image",
+    alignment: "center",
+    mediaType: "image",
+    image: "/thumbnails/hero-ecom-001.png",
+    styleNote: "Gymshark-inspired hero with product highlights"
+  },
+  {
+    variant: 'hero-ecom-002',
+    headline: "Clean Beauty",
+    subheadline: "Skincare made simple, clean, and effective",
+    cta: { label: "Shop All", url: "/shop" },
+    backgroundStyle: "light",
+    alignment: "right",
+    mediaType: "image",
+    image: "/thumbnails/hero-ecom-002.png",
+    styleNote: "Glossier-style hero with product spotlights"
+  },
+  {
+    variant: 'hero-ecom-003',
+    headline: "Introducing New Pro",
+    subheadline: "Our most powerful device yet",
+    cta: { label: "Learn More", url: "/product" },
+    backgroundStyle: "dark",
+    alignment: "center",
+    mediaType: "image",
+    image: "/thumbnails/hero-ecom-003.png",
+    styleNote: "Apple-inspired minimal hero with product focus"
+  },
+  
+  // === FLEXIBLE/OTHER VARIANTS ===
+  {
+    variant: 'hero-flex-001',
+    headline: "Transform Your Business",
+    subheadline: "Strategic consulting for entrepreneurs and leaders",
+    cta: { label: "Book a Call", url: "/book" },
+    backgroundStyle: "light",
+    alignment: "left",
+    mediaType: "image",
+    image: "/thumbnails/hero-flex-001.png",
+    styleNote: "Coach/consultant hero with clear value proposition"
+  },
+  {
+    variant: 'hero-flex-002',
+    headline: "Learn Without Limits",
+    subheadline: "Online courses in design, business, and technology",
+    cta: { label: "Browse Courses", url: "/courses" },
+    backgroundStyle: "dark",
+    alignment: "center",
+    mediaType: "video",
+    image: "/thumbnails/hero-flex-002.png",
+    styleNote: "Course/learning platform with social proof"
+  },
+  {
+    variant: 'hero-flex-003',
+    headline: "Portfolio",
+    subheadline: "Digital projects from concept to completion",
+    cta: { label: "View Work", url: "/portfolio" },
+    backgroundStyle: "light",
+    alignment: "right",
+    mediaType: "image",
+    image: "/thumbnails/hero-flex-003.png",
+    styleNote: "Minimal portfolio hero with project highlights"
+  }
+];
 
 export const heroComponents: ComponentDefinition = {
   type: 'hero',

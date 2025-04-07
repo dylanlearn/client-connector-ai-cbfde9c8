@@ -1,4 +1,3 @@
-
 // TypeScript types for the component library database schema
 
 export interface ComponentType {
@@ -250,4 +249,25 @@ export interface BlogSectionProps {
   showCategories?: boolean;
   showAuthors?: boolean;
   styleNote?: string;
+}
+
+// Hero Component Types
+export interface HeroComponentProps {
+  variant: string;
+  headline: string;
+  subheadline?: string;
+  cta: {
+    label: string;
+    url: string;
+  };
+  ctaSecondary?: {
+    label: string;
+    url: string;
+  };
+  backgroundStyle?: 'light' | 'dark' | 'image' | 'gradient';
+  alignment?: 'left' | 'center' | 'right';
+  styleNote?: string;
+  mediaType?: 'image' | 'video' | 'illustration' | 'none';
+  image?: string;
+  badge?: string;
 }

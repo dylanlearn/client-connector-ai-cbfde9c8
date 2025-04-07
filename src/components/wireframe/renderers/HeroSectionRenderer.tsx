@@ -2,7 +2,8 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { heroVariants, HeroComponentProps } from '../registry/components/hero-components';
+import { heroVariants, heroComponents } from '../registry/components/hero-components';
+import { HeroComponentProps } from '@/types/component-library';
 
 interface HeroSectionRendererProps {
   section: WireframeSection;
