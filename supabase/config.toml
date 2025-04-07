@@ -71,3 +71,4 @@ port = 54321
 
 [functions.admin-api]
 verify_jwt = true
+
