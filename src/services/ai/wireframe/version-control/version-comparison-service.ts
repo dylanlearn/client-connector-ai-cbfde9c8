@@ -1,4 +1,5 @@
-import { diff } from 'fast-diff';
+
+import fastDiff from 'fast-diff';
 import { WireframeVersion, VersionComparisonResult } from "@/services/ai/wireframe/wireframe-types";
 
 /**
@@ -93,6 +94,6 @@ export const versionComparisonService = {
    * @returns An array of diff segments.
    */
   generateTextDiff: (olderText: string, newerText: string): [string, number][] => {
-    return diff(olderText, newerText);
+    return fastDiff(olderText, newerText);
   }
 };
