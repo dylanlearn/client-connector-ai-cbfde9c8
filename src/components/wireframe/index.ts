@@ -10,6 +10,9 @@ export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenera
 // Export section components
 export { default as SectionControls } from './SectionControls';
 
+// Export renderers
+export { default as HeroSectionRenderer } from './renderers/HeroSectionRenderer';
+
 // Export registry components
 export * from './registry/register-components';
 export * from './registry/component-registry';

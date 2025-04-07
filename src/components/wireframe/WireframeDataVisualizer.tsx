@@ -1,5 +1,7 @@
+
 import React from 'react';
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData } from '@/types/wireframe';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import HeroSectionRenderer from './renderers/HeroSectionRenderer';

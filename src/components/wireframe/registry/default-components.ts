@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from './component-registry';
 import { heroComponents } from './components/hero-components';
 

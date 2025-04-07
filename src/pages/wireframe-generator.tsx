@@ -1,11 +1,11 @@
 
 import React from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import WireframeEditor from "@/components/wireframe/WireframeEditor";
 import { ComponentRegistration } from "@/components/wireframe/registry/ComponentRegistration";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { AdvancedWireframeGenerator } from "@/components/wireframe";
 
 const WireframeGenerator = () => {
   // Create a fixed demo project ID for this page
@@ -33,7 +33,10 @@ const WireframeGenerator = () => {
         </Alert>
         
         <TooltipProvider>
-          <WireframeEditor projectId={demoProjectId} />
+          <AdvancedWireframeGenerator 
+            projectId={demoProjectId}
+            viewMode="preview"
+          />
         </TooltipProvider>
       </div>
     </DashboardLayout>
