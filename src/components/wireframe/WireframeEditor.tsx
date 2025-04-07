@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useComponentRegistry } from './registry/ComponentRegistration';
-import { getAllComponentDefinitions } from './registry/component-registry';
+import { getAllComponentDefinitions, createSectionInstance } from './registry/component-registry';
 import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useWireframeStore } from '@/stores/wireframe-store';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -15,8 +16,16 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   // Ensure components are registered
   useComponentRegistry();
   const [components, setComponents] = useState<any[]>([]);
-  const [sections, setSections] = useState<WireframeSection[]>([]);
   const { toast } = useToast();
+  
+  // Use the Zustand store for state management
+  const {
+    wireframe,
+    addSection,
+    setWireframe,
+    activeSection,
+    setActiveSection
+  } = useWireframeStore();
 
   useEffect(() => {
     // Get all registered component definitions
@@ -24,22 +33,15 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     setComponents(definitions);
   }, []);
 
-  // Function to add a new section
-  const addSection = (componentType: string) => {
-    const definition = components.find(c => c.type === componentType);
-    if (!definition) return;
-
-    const newSection: WireframeSection = {
-      id: crypto.randomUUID(),
-      name: definition.name,
-      sectionType: componentType,
-      layoutType: 'default',
-      components: definition.defaultData.components || [],
-      styleProperties: definition.defaultData.styleProperties || {},
-      componentVariant: definition.variants[0]?.id || 'default'
-    };
-
-    setSections(prev => [...prev, newSection]);
+  // Function to add a new section from the component library
+  const handleAddSection = (componentType: string) => {
+    const sectionData = createSectionInstance(componentType);
+    addSection(sectionData);
+    
+    toast({
+      title: "Section added",
+      description: `Added ${componentType} section to wireframe`
+    });
   };
 
   // Function to save wireframe to database
@@ -56,13 +58,10 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
 
       // Create wireframe data
       const wireframeData = {
-        title: "New Wireframe",
-        description: "Created with the Wireframe Editor",
-        data: {
-          title: "New Wireframe",
-          sections: sections
-        },
-        sections: sections
+        title: wireframe.title || "New Wireframe",
+        description: wireframe.description || "Created with the Wireframe Editor",
+        data: wireframe,
+        sections: wireframe.sections
       };
 
       const result = await WireframeService.createWireframe(wireframeData);
@@ -77,22 +76,27 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       console.error("Error saving wireframe:", error);
       toast({
         title: "Error",
-        description: "Failed to save wireframe",
+        description: "Failed to save wireframe. Please ensure you're logged in.",
         variant: "destructive",
       });
     }
+  };
+
+  // Handle section selection
+  const handleSelectSection = (sectionId: string) => {
+    setActiveSection(sectionId);
   };
 
   return (
     <div className="wireframe-editor">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Wireframe Editor</h2>
-        <Button onClick={saveWireframe}>Save Wireframe</Button>
+        <Button onClick={saveWireframe} variant="default">Save Wireframe</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Components Panel */}
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-card p-4 rounded-lg shadow">
           <h3 className="text-lg font-medium mb-4">Component Library</h3>
           <div className="space-y-2">
             {components.map(component => (
@@ -100,7 +104,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
                 key={component.type}
                 variant="outline"
                 className="w-full justify-start"
-                onClick={() => addSection(component.type)}
+                onClick={() => handleAddSection(component.type)}
               >
                 {component.name}
               </Button>
@@ -109,18 +113,27 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         </div>
 
         {/* Editor Panel */}
-        <div className="md:col-span-3 bg-white p-4 rounded-lg shadow min-h-[500px]">
+        <div className="md:col-span-3 bg-card p-4 rounded-lg shadow min-h-[500px]">
           <h3 className="text-lg font-medium mb-4">Canvas</h3>
-          {sections.length === 0 ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-              <p className="text-gray-500">Select components from the library to add to your wireframe</p>
+          {wireframe.sections.length === 0 ? (
+            <div className="border-2 border-dashed border-muted rounded-lg p-12 text-center">
+              <p className="text-muted-foreground">Select components from the library to add to your wireframe</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {sections.map((section, index) => (
-                <div key={section.id || index} className="border p-4 rounded-lg">
+              {wireframe.sections.map((section, index) => (
+                <div 
+                  key={section.id} 
+                  className={`border p-4 rounded-lg cursor-pointer transition-colors ${
+                    activeSection === section.id ? 'bg-muted border-primary' : ''
+                  }`}
+                  onClick={() => handleSelectSection(section.id)}
+                >
                   <h4 className="font-medium">{section.name}</h4>
-                  <p className="text-sm text-gray-500">Type: {section.sectionType}</p>
+                  <p className="text-sm text-muted-foreground">Type: {section.sectionType}</p>
+                  {section.componentVariant && (
+                    <p className="text-sm text-muted-foreground">Variant: {section.componentVariant}</p>
+                  )}
                 </div>
               ))}
             </div>
