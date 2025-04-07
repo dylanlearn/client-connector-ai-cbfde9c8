@@ -12,15 +12,38 @@ import { FeedbackDatabase } from './api/feedback-database';
 import { FeedbackComments } from './api/feedback-comments';
 import { FeedbackApiClient } from './api/feedback-api-client';
 
+// Define interface for the FeedbackAnalysisAPI
+interface IFeedbackAnalysisAPI {
+  callAnalyzeFeedbackFunction: (feedbackText: string) => Promise<FeedbackAnalysisResult>;
+  analyzeFeedback: (feedbackText: string) => Promise<FeedbackAnalysisResult>;
+  storeFeedbackAnalysis: (record: FeedbackAnalysisRecord) => Promise<string | null>;
+  getPastAnalyses: (limit?: number, filters?: AnalysisFilters) => Promise<PastAnalysisResult[]>;
+  updateFeedbackStatus: (id: string, status: FeedbackStatus) => Promise<boolean>;
+  updateFeedbackPriority: (id: string, priority: 'high' | 'medium' | 'low') => Promise<boolean>;
+  addComment: (feedbackId: string, comment: string) => Promise<string | null>;
+  getComments: (feedbackId: string) => Promise<FeedbackComment[]>;
+}
+
 /**
  * API service for feedback analysis operations
  */
-export const FeedbackAnalysisAPI = {
+export const FeedbackAnalysisAPI: IFeedbackAnalysisAPI = {
   /**
    * Call the analyze-feedback edge function
    */
   callAnalyzeFeedbackFunction: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
     return FeedbackApiClient.callAnalyzeFeedbackFunction(feedbackText);
+  },
+
+  /**
+   * Analyze feedback text and return insights
+   */
+  analyzeFeedback: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
+    try {
+      return await FeedbackApiClient.callAnalyzeFeedbackFunction(feedbackText);
+    } catch (error: any) {
+      throw new Error(`Feedback analysis failed: ${error.message}`);
+    }
   },
 
   /**
