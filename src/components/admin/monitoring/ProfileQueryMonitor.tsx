@@ -18,7 +18,7 @@ interface QueryStatsResult {
   }>;
 }
 
-const ProfileQueryMonitor: React.FC = () => {
+export const ProfileQueryMonitor: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<QueryStatsResult | null>(null);

@@ -41,8 +41,9 @@ export function useWireframeFeedback(
       await WireframeService.deleteWireframe(wireframeId);
       
       // Update the local state by removing the deleted wireframe
-      setWireframes(prevWireframes => 
-        prevWireframes.filter(wireframe => wireframe.id !== wireframeId)
+      // Fix the type error by ensuring we return AIWireframe[] type
+      setWireframes((prevWireframes: AIWireframe[]) => 
+        prevWireframes.filter((wireframe: AIWireframe) => wireframe.id !== wireframeId)
       );
       
       toast({

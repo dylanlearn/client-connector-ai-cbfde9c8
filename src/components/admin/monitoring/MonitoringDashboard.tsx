@@ -7,6 +7,7 @@ import { ApiUsageMetrics } from "@/components/admin/monitoring/ApiUsageMetrics";
 import { MonitoringControls } from "@/components/admin/monitoring/MonitoringControls";
 import { ClientErrorMonitoring } from "@/components/admin/monitoring/ClientErrorMonitoring";
 import { DatabaseMaintenancePanel } from "@/components/admin/monitoring/DatabaseMaintenancePanel";
+import { ProfileQueryMonitor } from "@/components/admin/monitoring/ProfileQueryMonitor";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { recordSystemStatus } from "@/utils/monitoring/system-status";
@@ -14,7 +15,6 @@ import { MonitoringConfiguration } from "@/utils/monitoring/types";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, ShieldAlert } from "lucide-react";
-import { ProfileQueryMonitor } from "./ProfileQueryMonitor";
 import { initDatabaseHealthMonitoring } from "@/utils/database/maintenance-scheduler";
 
 interface MonitoringComponentConfig {
