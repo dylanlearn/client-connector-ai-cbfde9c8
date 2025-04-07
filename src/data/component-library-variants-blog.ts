@@ -1,4 +1,3 @@
-
 import { BlogSectionProps } from '@/types/component-library';
 
 // BLOG SECTION COMPONENT LIBRARY VARIANTS
@@ -45,80 +44,237 @@ export const blogVariants: BlogSectionProps[] = [
   },
   {
     variant: 'blog-creative-001',
-    headline: "Our Journal",
-    description: "Creative thoughts, design insights, and artistic explorations.",
-    alignment: 'left',
-    backgroundStyle: 'dark',
-    layoutStyle: 'list',
-    styleNote: "Editorial-style list layout with asymmetric design elements",
+    headline: "The Journal",
+    description: "Essays, inspiration, and deep dives from the creative side.",
+    layoutStyle: "grid",
+    alignment: "center",
+    backgroundStyle: "gradient",
     showCategories: true,
     showAuthors: true,
     posts: [
       {
-        title: "Design Systems That Scale",
-        url: "/journal/design-systems",
-        summary: "How to build extensible design systems that grow with your brand.",
-        image: "/images/blog/design.jpg",
-        category: "Design",
-        author: "Alex Chen",
-        date: "2023-05-18"
+        title: "Design in Motion",
+        url: "/journal/design-motion",
+        summary: "Exploring the kinetic qualities of digital storytelling.",
+        category: "Editorial",
+        author: "Nico Mora",
+        date: "2024-03-15",
+        image: "/images/blog/motion.jpg"
       },
       {
-        title: "Typography Trends for 2023",
-        url: "/journal/typography",
-        summary: "Exploring the latest trends in digital typography and font pairings.",
-        image: "/images/blog/typography.jpg",
-        category: "Typography",
-        author: "Maria Rodriguez",
-        date: "2023-05-12"
-      },
-      {
-        title: "Color Theory in Digital Spaces",
-        url: "/journal/color-theory",
-        summary: "Understanding how colors impact user experience and brand perception.",
-        image: "/images/blog/color.jpg",
-        category: "Color Theory",
-        author: "David Kim",
-        date: "2023-05-05"
+        title: "Palette Studies",
+        url: "/journal/color-2024",
+        summary: "Color, mood, and motion across modern interfaces.",
+        category: "Color",
+        author: "Eli Yang",
+        date: "2024-02-20",
+        image: "/images/blog/color.jpg"
       }
-    ]
+    ],
+    styleNote: "Centered gradient layout with creative branding, stacked thumbnails, and layered text"
   },
   {
-    variant: 'blog-ecommerce-001',
-    headline: "Latest From Our Blog",
-    description: "Stories, tips and guides to help you find the perfect product.",
-    alignment: 'center',
-    backgroundStyle: 'light',
-    layoutStyle: 'carousel',
-    styleNote: "Product-focused carousel layout with prominent images",
-    showCategories: true,
-    showAuthors: false,
+    variant: 'blog-creative-002',
+    headline: "Studio Dispatch",
+    description: "Project notes, creative updates, and things we're vibing on.",
+    layoutStyle: "carousel",
+    alignment: "left",
+    backgroundStyle: "image",
     posts: [
       {
-        title: "Summer Collection Lookbook",
-        url: "/blog/summer-collection",
-        summary: "Explore our new summer designs inspired by coastal living.",
-        image: "/images/blog/summer.jpg",
-        category: "Collections",
-        date: "2023-05-20"
+        title: "Experimental Typography",
+        url: "/dispatch/type",
+        summary: "Exploring shape, form, and message.",
+        author: "Tasha Kim",
+        image: "/images/blog/type.jpg"
       },
       {
-        title: "5 Ways to Style Our Bestseller",
-        url: "/blog/styling-guide",
-        summary: "Creative ways to incorporate our most popular product into your lifestyle.",
-        image: "/images/blog/style.jpg",
-        category: "Styling",
-        date: "2023-05-17"
-      },
-      {
-        title: "Behind the Scenes: Product Design",
-        url: "/blog/product-design",
-        summary: "How we design and test our products before they reach our store.",
-        image: "/images/blog/design-process.jpg",
-        category: "Process",
-        date: "2023-05-08"
+        title: "Set Design to Web Design",
+        url: "/dispatch/set-to-screen",
+        summary: "Physical composition lessons applied to layout."
       }
-    ]
+    ],
+    styleNote: "Visually-driven creative blog slider with large fonts and mixed media"
+  },
+  {
+    variant: 'blog-creative-003',
+    headline: "Field Notes",
+    layoutStyle: "list",
+    backgroundStyle: "dark",
+    alignment: "right",
+    posts: [
+      {
+        title: "On Pattern Disruption",
+        url: "/notes/pattern-break",
+        date: "2024-01-12"
+      },
+      {
+        title: "Notes from the Archive",
+        url: "/notes/archive"
+      }
+    ],
+    styleNote: "Minimalist, dark-mode editorial layout with no categories or summaries — just vibes"
+  },
+  {
+    variant: 'blog-startup-002',
+    headline: "Engineering Deep Dives",
+    description: "A look under the hood of our infrastructure and process.",
+    layoutStyle: "list",
+    backgroundStyle: "dark",
+    alignment: "left",
+    showAuthors: true,
+    posts: [
+      {
+        title: "How We Rebuilt Syncing from Scratch",
+        url: "/blog/sync-rebuild",
+        author: "Linda Xu"
+      },
+      {
+        title: "The Power of Edge Functions",
+        url: "/blog/edge-power"
+      }
+    ],
+    styleNote: "Technical SaaS blog layout with minimalist theme and dev focus"
+  },
+  {
+    variant: 'blog-startup-003',
+    headline: "The Startup Journal",
+    layoutStyle: "carousel",
+    backgroundStyle: "gradient",
+    alignment: "center",
+    posts: [
+      {
+        title: "Our Founder Story",
+        url: "/story/founder",
+        summary: "How we got started — and what we've learned."
+      },
+      {
+        title: "Hiring for Culture and Growth",
+        url: "/journal/hiring"
+      }
+    ],
+    styleNote: "Gradient-backed story slider — great for YC/startup blogs"
+  },
+  {
+    variant: 'blog-startup-004',
+    headline: "Insights Hub",
+    description: "Whitepapers, reports, and business tools for decision-makers.",
+    layoutStyle: "grid",
+    backgroundStyle: "image",
+    alignment: "right",
+    posts: [
+      {
+        title: "2024 SaaS Trends Report",
+        url: "/insights/2024-trends",
+        image: "/images/blog/saasreport.jpg"
+      }
+    ],
+    styleNote: "Image-heavy grid layout styled for marketing and growth blogs"
+  },
+  {
+    variant: 'blog-ecom-001',
+    headline: "The Fit Edit",
+    description: "How-tos, style guides, and product drops.",
+    layoutStyle: "grid",
+    alignment: "center",
+    backgroundStyle: "light",
+    posts: [
+      {
+        title: "Best Sellers for Spring",
+        url: "/blog/spring-best",
+        image: "/images/blog/spring.jpg"
+      },
+      {
+        title: "Fit & Fabric Explained",
+        url: "/blog/fabric",
+        summary: "How we choose materials for comfort and performance."
+      }
+    ],
+    styleNote: "Glossier/Gymshark-inspired grid for shoppable content"
+  },
+  {
+    variant: 'blog-ecom-002',
+    headline: "In the Press",
+    layoutStyle: "list",
+    backgroundStyle: "dark",
+    alignment: "left",
+    posts: [
+      {
+        title: "Featured in Elle Magazine",
+        url: "/press/elle"
+      },
+      {
+        title: "2024 Design Award Winner",
+        url: "/press/awards"
+      }
+    ],
+    styleNote: "Dark editorial press-style layout with minimal markup"
+  },
+  {
+    variant: 'blog-ecom-003',
+    headline: "Behind the Brand",
+    layoutStyle: "carousel",
+    backgroundStyle: "gradient",
+    alignment: "right",
+    posts: [
+      {
+        title: "From Sketch to Shelf",
+        url: "/brand/sketch",
+        image: "/images/blog/sketch.jpg"
+      }
+    ],
+    styleNote: "Lifestyle-style slider for storytelling with product overlap"
+  },
+  {
+    variant: 'blog-flex-001',
+    headline: "What's New",
+    layoutStyle: "list",
+    alignment: "left",
+    backgroundStyle: "light",
+    posts: [
+      {
+        title: "Speaking at WebConf 2024",
+        url: "/updates/webconf"
+      },
+      {
+        title: "New Client Feature",
+        url: "/updates/clients"
+      }
+    ],
+    styleNote: "General-purpose blog layout ideal for portfolios or consultants"
+  },
+  {
+    variant: 'blog-flex-002',
+    headline: "Resource Library",
+    description: "Templates, case studies, and community favorites.",
+    layoutStyle: "grid",
+    alignment: "center",
+    backgroundStyle: "image",
+    posts: [
+      {
+        title: "Brand Strategy Template",
+        url: "/library/brand-template"
+      },
+      {
+        title: "Case Study: Revamp 2023",
+        url: "/library/revamp"
+      }
+    ],
+    styleNote: "Utility-first layout for blog-as-resource-hub"
+  },
+  {
+    variant: 'blog-flex-003',
+    headline: "Founder's Notes",
+    layoutStyle: "carousel",
+    backgroundStyle: "dark",
+    alignment: "center",
+    posts: [
+      {
+        title: "Why I Started This Company",
+        url: "/notes/origin"
+      }
+    ],
+    styleNote: "Carousel-driven, personal blog layout for creators or indie founders"
   }
 ];
 
