@@ -15,16 +15,14 @@ import AdminRoute from "./components/auth/AdminRoute";
 import AdminPanel from "./pages/AdminPanel";
 import AdminAnalytics from "./pages/AdminAnalytics";
 
-// Declare the global interface at the top level of the file
-declare global {
-  interface Window {
-    checkAdminRoutes?: () => void;
-  }
+// Define type augmentation for window object
+interface WindowWithAdminRoutes extends Window {
+  checkAdminRoutes?: () => void;
 }
 
-// Debug helper
+// Add debug helper
 if (typeof window !== 'undefined') {
-  window.checkAdminRoutes = () => {
+  (window as WindowWithAdminRoutes).checkAdminRoutes = () => {
     console.log('Admin routes check:');
     const adminRoutes = ['/admin', '/admin/analytics', '/admin/supabase-audit', '/admin/audit-and-monitoring'];
     adminRoutes.forEach(route => {
