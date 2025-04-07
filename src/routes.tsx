@@ -1,5 +1,5 @@
 
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, matchPath } from "react-router-dom";
 import DesignProcessProvider from "./contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
 import App from "./App";
@@ -15,8 +15,15 @@ import AdminRoute from "./components/auth/AdminRoute";
 import AdminPanel from "./pages/AdminPanel";
 import AdminAnalytics from "./pages/AdminAnalytics";
 
-// Debug helper 
+// Debug helper with type declaration
 if (typeof window !== 'undefined') {
+  // Using declaration merging to add the property to Window
+  declare global {
+    interface Window {
+      checkAdminRoutes?: () => void;
+    }
+  }
+  
   window.checkAdminRoutes = () => {
     console.log('Admin routes check:');
     const adminRoutes = ['/admin', '/admin/analytics', '/admin/supabase-audit', '/admin/audit-and-monitoring'];
