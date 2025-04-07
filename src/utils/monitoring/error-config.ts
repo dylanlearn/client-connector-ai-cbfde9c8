@@ -171,9 +171,12 @@ export async function upsertErrorHandlingConfig(config: ErrorHandlingConfig): Pr
         })
         .eq('id', config.id);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating error handling config:', error);
+        return false;
+      }
     } else {
-      // Insert new configuration
+      // Create new configuration
       const { error } = await supabase
         .from('error_handling_config')
         .insert({
@@ -186,7 +189,10 @@ export async function upsertErrorHandlingConfig(config: ErrorHandlingConfig): Pr
           severity: config.severity
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating error handling config:', error);
+        return false;
+      }
     }
     
     return true;
