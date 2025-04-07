@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { AIGeneratorService } from '@/services/ai';
@@ -9,25 +8,50 @@ import { getFallbackContent } from './utils/fallback-utils';
 import { getTestVariant, recordTestSuccess, recordTestFailure } from './utils/test-variant-utils';
 import { useAuth } from '@/hooks/use-auth';
 
-// Define specific error types for better error handling
-class TimeoutError extends Error {
-  constructor(message = 'Request timed out') {
+// Improved error types for better error classification and handling
+class AIGenerationError extends Error {
+  constructor(message = 'Error during AI content generation', public cause?: Error) {
     super(message);
+    this.name = 'AIGenerationError';
+    // Maintain error stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, AIGenerationError);
+    }
+  }
+}
+
+class TimeoutError extends AIGenerationError {
+  constructor(message = 'Request timed out', timeoutMs?: number) {
+    super(timeoutMs ? `Request timed out after ${timeoutMs}ms` : message);
     this.name = 'TimeoutError';
   }
 }
 
-class NetworkError extends Error {
-  constructor(message = 'Network connection error') {
-    super(message);
+class NetworkError extends AIGenerationError {
+  constructor(message = 'Network connection error', public statusCode?: number, public originalError?: Error) {
+    super(message, originalError);
     this.name = 'NetworkError';
   }
 }
 
-class ContentGenerationError extends Error {
-  constructor(message = 'Content generation failed', public originalError?: Error) {
+class AuthorizationError extends AIGenerationError {
+  constructor(message = 'Authorization failed') {
     super(message);
-    this.name = 'ContentGenerationError';
+    this.name = 'AuthorizationError';
+  }
+}
+
+class ServiceUnavailableError extends AIGenerationError {
+  constructor(message = 'Service is currently unavailable') {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+
+class RateLimitError extends AIGenerationError {
+  constructor(message = 'Rate limit exceeded') {
+    super(message);
+    this.name = 'RateLimitError';
   }
 }
 
@@ -63,6 +87,53 @@ export function useGeneration({
       }
     };
   }, []);
+
+  // Improved error handler for classifying errors
+  const classifyError = (error: unknown): AIGenerationError => {
+    // Already classified error
+    if (error instanceof AIGenerationError) {
+      return error;
+    }
+    
+    // Network errors
+    if (error instanceof TypeError && (error.message.includes('networkerror') || error.message.includes('failed to fetch'))) {
+      return new NetworkError(
+        'Network connection failed. Please check your internet connection.',
+        undefined,
+        error instanceof Error ? error : undefined
+      );
+    }
+    
+    // Aborted requests
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return new AIGenerationError('Request was canceled');
+    }
+    
+    // Handle HTTP error status codes
+    if (error && typeof error === 'object' && 'status' in error) {
+      const status = (error as { status: number }).status;
+      
+      if (status === 401 || status === 403) {
+        return new AuthorizationError('API authorization failed. Please check your credentials.');
+      }
+      
+      if (status === 429) {
+        return new RateLimitError('Too many requests. Please try again later.');
+      }
+      
+      if (status >= 500) {
+        return new ServiceUnavailableError('Service is currently unavailable. Please try again later.');
+      }
+      
+      return new NetworkError(`HTTP error: ${status}`, status);
+    }
+    
+    // Unknown errors
+    return new AIGenerationError(
+      error instanceof Error ? error.message : 'Unknown error during content generation',
+      error instanceof Error ? error : undefined
+    );
+  };
 
   // Handler for network or connectivity errors
   const handleNetworkError = (error: unknown): NetworkError => {
@@ -117,13 +188,13 @@ export function useGeneration({
         context: request.context,
         tone: request.tone,
         maxLength: request.maxLength,
-        cacheKey: cacheKey,
+        cacheKey: `ai-content-${request.type}-${request.context || ''}-${request.tone || ''}`,
         testVariantId: testInfo?.testVariantId
       };
       
       // Check for abort signal
       if (abortControllerRef.current?.signal.aborted) {
-        throw new Error('Request was canceled');
+        throw new AIGenerationError('Request was canceled');
       }
       
       // Use a try-catch with specific error type handling
@@ -148,30 +219,27 @@ export function useGeneration({
         }
         
         // Cache the successful result
-        requestCacheRef.current.set(cacheKey, content);
+        requestCacheRef.current.set(generationOptions.cacheKey, content);
         
         return content;
       } catch (error) {
-        // Classify the error type
-        if (error instanceof TypeError && error.message.includes('networkerror')) {
-          throw handleNetworkError(error);
-        } else if (error instanceof DOMException && error.name === 'AbortError') {
-          throw new Error('Request was aborted');
-        } else {
-          throw new ContentGenerationError(
-            error instanceof Error ? error.message : 'Unknown generation error',
-            error instanceof Error ? error : undefined
-          );
-        }
+        // Classify the error using our new error classifier
+        throw classifyError(error);
       }
     } catch (error) {
-      // Log different types of errors differently
+      // Improved error logging with more details
       if (error instanceof TimeoutError) {
         console.warn('Generation timed out:', error.message);
       } else if (error instanceof NetworkError) {
-        console.error('Network error:', error.message);
-      } else if (error instanceof ContentGenerationError) {
-        console.error('Content generation error:', error.message, error.originalError);
+        console.error('Network error:', error.message, error.statusCode);
+      } else if (error instanceof RateLimitError) {
+        console.error('Rate limit exceeded:', error.message);
+      } else if (error instanceof AuthorizationError) {
+        console.error('Authorization failed:', error.message);
+      } else if (error instanceof ServiceUnavailableError) {
+        console.error('Service unavailable:', error.message);
+      } else if (error instanceof AIGenerationError) {
+        console.error('AI generation error:', error.message, error.cause);
       } else {
         console.error('Unknown error during generation:', error);
       }
@@ -186,7 +254,7 @@ export function useGeneration({
         );
       }
       
-      // Retry logic with different delays based on error type
+      // Improved retry logic based on error type
       if (autoRetry && retryCount < maxRetries) {
         console.log(`Retrying AI generation (${retryCount + 1}/${maxRetries})...`);
         
@@ -199,6 +267,12 @@ export function useGeneration({
         } else if (error instanceof TimeoutError) {
           // Timeout errors get a more aggressive delay
           backoffDelay = calculateBackoffDelay(retryCount, 1500, 2);
+        } else if (error instanceof ServiceUnavailableError) {
+          // Server errors need longer backoff
+          backoffDelay = calculateBackoffDelay(retryCount, 2000, 2);
+        } else if (error instanceof RateLimitError) {
+          // Rate limit errors need much longer backoff
+          backoffDelay = calculateBackoffDelay(retryCount, 3000, 2.5);
         } else {
           // Standard backoff for other errors
           backoffDelay = calculateBackoffDelay(retryCount);
@@ -256,7 +330,7 @@ export function useGeneration({
         setLastError(error);
       } else if (error instanceof NetworkError) {
         setLastError(error);
-      } else if (error instanceof ContentGenerationError) {
+      } else if (error instanceof AIGenerationError) {
         setLastError(error);
       } else {
         setLastError(error instanceof Error ? error : new Error('Unknown error'));

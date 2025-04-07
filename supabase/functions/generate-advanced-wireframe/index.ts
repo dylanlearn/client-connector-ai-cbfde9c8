@@ -19,17 +19,39 @@ serve(async (req) => {
   }
 
   try {
-    // Get and validate OpenAI API key
+    // Get and validate OpenAI API key with improved error message
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey || openAIApiKey.trim() === '') {
-      throw new Error('OpenAI API key is not configured or is invalid. Please check your environment variables.');
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable in your Supabase project settings.');
+    }
+    
+    if (openAIApiKey.trim() === '') {
+      throw new Error('OpenAI API key is empty. Please provide a valid API key in your Supabase project settings.');
+    }
+    
+    if (!openAIApiKey.startsWith('sk-')) {
+      throw new Error('Invalid OpenAI API key format. API keys should start with "sk-". Please check your API key in Supabase project settings.');
     }
 
-    // Validate input parameters
-    const { userInput, projectId, styleToken, includeDesignMemory = false } = await req.json();
+    // Validate input parameters with detailed validation errors
+    const requestData = await req.json();
     
-    if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
-      throw new Error('Valid user input is required');
+    if (!requestData) {
+      throw new Error('Request body is missing. Please provide the required parameters.');
+    }
+    
+    const { userInput, projectId, styleToken, includeDesignMemory = false } = requestData;
+    
+    if (!userInput) {
+      throw new Error('User input is required. Please provide a description for the wireframe.');
+    }
+    
+    if (typeof userInput !== 'string') {
+      throw new Error('User input must be a string. Please provide a text description for the wireframe.');
+    }
+    
+    if (userInput.trim() === '') {
+      throw new Error('User input cannot be empty. Please provide a meaningful description for the wireframe.');
     }
     
     console.log(`Processing wireframe request for input: ${userInput.substring(0, 50)}...`);
@@ -64,7 +86,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Unknown error occurred' 
+        error: error.message || 'Unknown error occurred',
+        errorType: error.name,
+        errorDetails: error.stack
       }),
       { 
         status: 500, 
