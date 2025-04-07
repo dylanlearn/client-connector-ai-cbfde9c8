@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -148,6 +147,10 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     setUseDesignMemory(true);
   };
   
+  const handleShowMemoryPanel = () => {
+    setShowMemoryPanel(!showMemoryPanel);
+  };
+  
   const styleOptions = [
     { value: 'modern', label: 'Modern & Clean' },
     { value: 'minimalist', label: 'Minimalist' },
@@ -234,7 +237,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setShowMemoryPanel(!showMemoryPanel)}
+                  onClick={handleShowMemoryPanel}
                   className="ml-auto"
                 >
                   {showMemoryPanel ? 'Hide Memory' : 'Show Memory'}
@@ -324,7 +327,15 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 {currentWireframe.wireframe ? (
                   <div className="border rounded-md p-1 bg-background">
                     <WireframeVisualizer 
-                      wireframe={currentWireframe.wireframe as any}
+                      wireframe={{
+                        id: currentWireframe.wireframe.id || 'temp-id',
+                        title: currentWireframe.wireframe.title || 'Generated Wireframe',
+                        description: currentWireframe.wireframe.description || '',
+                        imageUrl: currentWireframe.wireframe.imageUrl,
+                        sections: currentWireframe.wireframe.sections || [],
+                        version: '1.0',
+                        lastUpdated: new Date().toISOString()
+                      }}
                       darkMode={darkMode}
                     />
                   </div>
@@ -359,4 +370,3 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
 };
 
 export default EnhancedWireframeStudio;
-
