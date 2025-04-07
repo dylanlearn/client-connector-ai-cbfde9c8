@@ -61,15 +61,17 @@ export function useMonitoringConfig(onConfigUpdateCallback?: () => void) {
     try {
       // Update each configuration in sequence
       for (const config of configurations) {
+        const updateData = {
+          warning_threshold: config.warning_threshold,
+          critical_threshold: config.critical_threshold,
+          check_interval: config.check_interval,
+          enabled: config.enabled,
+          notification_enabled: config.notification_enabled
+        };
+
         const { error } = await supabase
           .from('monitoring_configuration')
-          .update({
-            warning_threshold: config.warning_threshold,
-            critical_threshold: config.critical_threshold,
-            check_interval: config.check_interval,
-            enabled: config.enabled,
-            notification_enabled: config.notification_enabled
-          })
+          .update(updateData)
           .eq('id', config.id);
           
         if (error) throw error;

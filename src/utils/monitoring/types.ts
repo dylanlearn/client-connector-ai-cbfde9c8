@@ -22,7 +22,9 @@ export interface MonitoringConfiguration {
   warning_threshold: number;
   critical_threshold: number;
   check_interval: number;
+  check_interval_seconds?: number; // Added for backward compatibility
   enabled: boolean;
+  notification_enabled?: boolean; // Added missing field
   created_at?: string;
   updated_at?: string;
 }
@@ -40,4 +42,18 @@ export interface ClientError {
   timestamp?: string;
   resolved?: boolean;
   resolution_notes?: string;
+}
+
+// API Usage Record type
+export interface ApiUsageRecord {
+  id?: string;
+  endpoint: string;
+  method: string;
+  user_id?: string;
+  status_code: number;
+  response_time_ms: number;
+  request_timestamp: string;
+  ip_address?: string;
+  request_payload?: Record<string, any>;
+  error_message?: string;
 }

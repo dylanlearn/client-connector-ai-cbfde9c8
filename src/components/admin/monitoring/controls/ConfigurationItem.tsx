@@ -45,7 +45,7 @@ export function ConfigurationItem({ config, onConfigChange }: ConfigurationItemP
             id={`interval-${config.id}`}
             type="number" 
             min="5"
-            value={config.check_interval_seconds || config.check_interval} 
+            value={config.check_interval} 
             onChange={(e) => onConfigChange('check_interval', Number(e.target.value))}
           />
         </div>
