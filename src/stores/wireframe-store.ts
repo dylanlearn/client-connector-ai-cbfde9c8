@@ -1,7 +1,8 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { WireframeData, WireframeSection } from '@/types/wireframe';
+import { WireframeData } from '@/types/wireframe';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface WireframeState {

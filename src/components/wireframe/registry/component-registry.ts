@@ -1,5 +1,5 @@
 
-import { WireframeSection } from '@/types/wireframe';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export interface ComponentVariant {
   id: string;

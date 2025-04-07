@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { WireframeSection } from '@/types/wireframe';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { createSectionInstance, getComponentDefinition } from '@/components/wireframe/registry/component-registry';
 import { useToast } from '@/hooks/use-toast';
 
