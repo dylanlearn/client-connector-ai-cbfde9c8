@@ -19,24 +19,29 @@ interface DesignMemoryPanelProps {
   onSelectReference?: (reference: DesignReference) => void;
   onSaveCurrentDesign?: () => Promise<DesignReference | null>;
   className?: string;
+  selectedReferenceId?: string;
+  filterType?: string;
 }
 
 export const DesignMemoryPanel: React.FC<DesignMemoryPanelProps> = ({
   darkMode = false,
   onSelectReference,
   onSaveCurrentDesign,
-  className
+  className,
+  selectedReferenceId,
+  filterType
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(filterType || null);
   const { references, isLoading, searchReferences, storeReference } = useDesignReferences();
   
   useEffect(() => {
     // Load initial references
     searchReferences({
-      limit: 20
+      limit: 20,
+      type: filterType as any || undefined
     });
-  }, [searchReferences]);
+  }, [searchReferences, filterType]);
   
   const handleSearch = () => {
     const params: DesignReferenceSearchParams = {
@@ -155,7 +160,8 @@ export const DesignMemoryPanel: React.FC<DesignMemoryPanelProps> = ({
                 key={reference.id} 
                 className={cn(
                   "overflow-hidden cursor-pointer hover:shadow-md transition-shadow",
-                  darkMode ? "bg-gray-800 border-gray-700" : ""
+                  darkMode ? "bg-gray-800 border-gray-700" : "",
+                  selectedReferenceId === reference.id ? "ring-2 ring-primary" : ""
                 )}
                 onClick={() => onSelectReference?.(reference)}
               >

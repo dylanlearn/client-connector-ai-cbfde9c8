@@ -243,10 +243,10 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
               
               {showMemoryPanel && (
                 <DesignMemoryPanel 
-                  references={references}
-                  onSelect={handleReferenceSelect}
-                  selectedId={selectedReference?.id}
+                  onSelectReference={handleReferenceSelect}
+                  selectedReferenceId={selectedReference?.id}
                   filterType="wireframe"
+                  darkMode={darkMode}
                 />
               )}
             </CardContent>
@@ -324,7 +324,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 {currentWireframe.wireframe ? (
                   <div className="border rounded-md p-1 bg-background">
                     <WireframeVisualizer 
-                      wireframe={currentWireframe.wireframe}
+                      wireframe={currentWireframe.wireframe as any}
                       darkMode={darkMode}
                     />
                   </div>
@@ -359,3 +359,4 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
 };
 
 export default EnhancedWireframeStudio;
+
