@@ -1,92 +1,140 @@
 
 import { TabsContent } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
 import { ParsedSuggestion } from "./types";
-import ColorPalette from "./ColorPalette";
-import TypographyDisplay from "./TypographyDisplay";
-import LayoutSuggestions from "./LayoutSuggestions";
-import ComponentSuggestions from "./ComponentSuggestions";
-import SuggestionRawText from "./SuggestionRawText";
+import SuggestionCategory from "./SuggestionCategory";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SuggestionTabsProps {
   activeTab: string;
   parsedSuggestion: ParsedSuggestion | null;
   rawSuggestions: string;
-  saveComponentToLibrary: (component: string) => Promise<void>;
+  saveComponentToLibrary: (componentText: string) => Promise<void>;
 }
 
-const SuggestionTabs = ({
-  activeTab,
-  parsedSuggestion,
+const SuggestionTabs = ({ 
+  activeTab, 
+  parsedSuggestion, 
   rawSuggestions,
-  saveComponentToLibrary
+  saveComponentToLibrary 
 }: SuggestionTabsProps) => {
-  const hasColors = parsedSuggestion?.colors && parsedSuggestion.colors.length > 0;
-  const hasTypography = parsedSuggestion?.typography && parsedSuggestion.typography.length > 0;
-  const hasLayouts = parsedSuggestion?.layouts && parsedSuggestion.layouts.length > 0;
-  const hasComponents = parsedSuggestion?.components && parsedSuggestion.components.length > 0;
-
   return (
     <>
-      <TabsContent value="all" className="space-y-6">
-        <SuggestionRawText text={rawSuggestions} />
-        
-        {parsedSuggestion && (
-          <>
-            {hasColors && <ColorPalette colors={parsedSuggestion.colors} />}
-            {hasTypography && <TypographyDisplay typography={parsedSuggestion.typography} />}
-            {hasLayouts && <LayoutSuggestions layouts={parsedSuggestion.layouts} />}
-            {hasComponents && (
-              <ComponentSuggestions 
-                components={parsedSuggestion.components}
-                onSaveToLibrary={saveComponentToLibrary}
+      <TabsContent value="all">
+        {parsedSuggestion ? (
+          <div className="space-y-8">
+            {parsedSuggestion.colors && parsedSuggestion.colors.length > 0 && (
+              <SuggestionCategory 
+                title="Color Palette" 
+                suggestions={parsedSuggestion.colors} 
+                type="colors"
+                onSave={saveComponentToLibrary}
               />
             )}
-          </>
+            
+            {parsedSuggestion.typography && parsedSuggestion.typography.length > 0 && (
+              <SuggestionCategory 
+                title="Typography" 
+                suggestions={parsedSuggestion.typography} 
+                type="typography"
+                onSave={saveComponentToLibrary}
+              />
+            )}
+            
+            {parsedSuggestion.layouts && parsedSuggestion.layouts.length > 0 && (
+              <SuggestionCategory 
+                title="Layout Structure" 
+                suggestions={parsedSuggestion.layouts} 
+                type="layout"
+                onSave={saveComponentToLibrary}
+              />
+            )}
+            
+            {parsedSuggestion.components && parsedSuggestion.components.length > 0 && (
+              <SuggestionCategory 
+                title="Components" 
+                suggestions={parsedSuggestion.components} 
+                type="components"
+                onSave={saveComponentToLibrary}
+              />
+            )}
+          </div>
+        ) : (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>No suggestion data available</AlertDescription>
+          </Alert>
         )}
       </TabsContent>
       
       <TabsContent value="colors">
-        {hasColors ? (
-          <ColorPalette colors={parsedSuggestion!.colors} />
+        {parsedSuggestion && parsedSuggestion.colors && parsedSuggestion.colors.length > 0 ? (
+          <SuggestionCategory 
+            title="Color Palette" 
+            suggestions={parsedSuggestion.colors} 
+            type="colors"
+            onSave={saveComponentToLibrary}
+          />
         ) : (
-          <Card className="p-4 text-center text-muted-foreground">
-            No specific color suggestions found.
-          </Card>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>No color suggestions available</AlertDescription>
+          </Alert>
         )}
       </TabsContent>
       
       <TabsContent value="typography">
-        {hasTypography ? (
-          <TypographyDisplay typography={parsedSuggestion!.typography} />
+        {parsedSuggestion && parsedSuggestion.typography && parsedSuggestion.typography.length > 0 ? (
+          <SuggestionCategory 
+            title="Typography" 
+            suggestions={parsedSuggestion.typography} 
+            type="typography"
+            onSave={saveComponentToLibrary}
+          />
         ) : (
-          <Card className="p-4 text-center text-muted-foreground">
-            No specific typography suggestions found.
-          </Card>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>No typography suggestions available</AlertDescription>
+          </Alert>
         )}
       </TabsContent>
       
       <TabsContent value="layout">
-        {hasLayouts ? (
-          <LayoutSuggestions layouts={parsedSuggestion!.layouts} />
+        {parsedSuggestion && parsedSuggestion.layouts && parsedSuggestion.layouts.length > 0 ? (
+          <SuggestionCategory 
+            title="Layout Structure" 
+            suggestions={parsedSuggestion.layouts} 
+            type="layout"
+            onSave={saveComponentToLibrary}
+          />
         ) : (
-          <Card className="p-4 text-center text-muted-foreground">
-            No specific layout suggestions found.
-          </Card>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>No layout suggestions available</AlertDescription>
+          </Alert>
         )}
       </TabsContent>
       
       <TabsContent value="components">
-        {hasComponents ? (
-          <ComponentSuggestions 
-            components={parsedSuggestion!.components}
-            onSaveToLibrary={saveComponentToLibrary}
+        {parsedSuggestion && parsedSuggestion.components && parsedSuggestion.components.length > 0 ? (
+          <SuggestionCategory 
+            title="Components" 
+            suggestions={parsedSuggestion.components} 
+            type="components"
+            onSave={saveComponentToLibrary}
           />
         ) : (
-          <Card className="p-4 text-center text-muted-foreground">
-            No specific component suggestions found.
-          </Card>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>No component suggestions available</AlertDescription>
+          </Alert>
         )}
+      </TabsContent>
+      
+      <TabsContent value="raw">
+        <div className="p-4 bg-muted rounded-md">
+          <pre className="whitespace-pre-wrap text-sm">{rawSuggestions}</pre>
+        </div>
       </TabsContent>
     </>
   );

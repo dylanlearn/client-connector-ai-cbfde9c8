@@ -1,6 +1,7 @@
 
 import { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface TabItem {
   id: string;
@@ -24,7 +25,7 @@ export function TabManager({
 }: TabManagerProps) {
   return (
     <Tabs
-      defaultValue={activeTab}
+      value={activeTab}
       onValueChange={onTabChange}
       className={className}
     >
@@ -40,9 +41,15 @@ export function TabManager({
         <TabsContent 
           key={tab.id} 
           value={tab.id}
-          isLoading={tab.isLoading}
         >
-          {tab.content}
+          {tab.isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-48 w-full" />
+            </div>
+          ) : (
+            tab.content
+          )}
         </TabsContent>
       ))}
     </Tabs>

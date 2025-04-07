@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
 import { parseSuggestionText } from "./utils/suggestionParser";
 import { ParsedSuggestion } from "./types";
 import { AlertCircle } from "lucide-react";
@@ -42,31 +42,6 @@ const SuggestionResult: React.FC<SuggestionResultProps> = ({ suggestions, prompt
       setIsParsingComplete(false);
     }
   }, [suggestions]);
-
-  // Save suggestion to database (simulated for now)
-  const saveSuggestionToDatabase = async () => {
-    if (!user || !suggestions || !prompt) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // Simulate successful saving by showing toast success
-      toast({
-        title: "Suggestion saved",
-        description: "Your design suggestion has been saved successfully.",
-      });
-    } catch (error) {
-      console.error("Error saving suggestion:", error);
-      toast({
-        title: "Failed to save",
-        description: "There was an error saving your design suggestion.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   // Save a component to the component library
   const saveComponentToLibrary = async (componentText: string) => {

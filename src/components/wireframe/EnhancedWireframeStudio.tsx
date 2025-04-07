@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -150,125 +151,53 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const styleOptions = [
     { value: 'modern', label: 'Modern & Clean' },
     { value: 'minimalist', label: 'Minimalist' },
-    { value: 'brutalist', label: 'Brutalist' },
-    { value: 'glassy', label: 'Glassmorphic' },
     { value: 'corporate', label: 'Corporate' },
-    { value: 'playful', label: 'Playful' },
-    { value: 'editorial', label: 'Editorial' },
-    { value: 'tech-forward', label: 'Tech-Forward' }
+    { value: 'creative', label: 'Creative' },
+    { value: 'tech', label: 'Tech-focused' },
+    { value: 'bold', label: 'Bold & Vibrant' },
+    { value: 'luxury', label: 'Luxury' },
+    { value: 'playful', label: 'Playful' }
   ];
   
-  const displayWireframe = currentWireframe?.wireframe ? {
-    id: currentWireframe.wireframe.id || "generated-wireframe",
-    title: currentWireframe.wireframe.title || "Generated Wireframe",
-    description: currentWireframe.wireframe.description || "",
-    sections: Array.isArray(currentWireframe.wireframe.sections) ? currentWireframe.wireframe.sections.map(section => ({
-      id: section.id || `section-${Math.random().toString(36).substring(7)}`,
-      name: section.name || section.sectionType,
-      description: section.description || "",
-      imageUrl: section.styleProperties?.imageUrl || section.layout?.imageUrl || ""
-    })) : [],
-    version: "1.0",
-    lastUpdated: new Date().toLocaleDateString()
-  } : null;
-
-  const convertAIWireframeToVisualizer = (wireframe: AIWireframe) => {
-    return {
-      id: wireframe.id || "default-id",
-      title: wireframe.title || wireframe.wireframe_data?.title || "Wireframe",
-      description: wireframe.description || wireframe.wireframe_data?.description || "",
-      imageUrl: wireframe.image_url || "",
-      sections: Array.isArray(wireframe.sections) ? wireframe.sections.map(section => ({
-        id: section.id || `section-${Math.random().toString(36).substring(7)}`,
-        name: section.name || section.sectionType,
-        description: section.description || "",
-        imageUrl: section.styleProperties?.imageUrl || section.layout?.imageUrl || ""
-      })) : [],
-      version: "1.0",
-      lastUpdated: new Date(wireframe.created_at || Date.now()).toLocaleDateString()
-    };
-  };
-
   return (
-    <div className={cn(
-      "enhanced-wireframe-studio grid",
-      showMemoryPanel ? "grid-cols-[1fr_350px]" : "grid-cols-1",
-      darkMode ? "text-gray-200" : ""
-    )}>
-      <Card className={cn(
-        "w-full", 
-        darkMode ? "bg-gray-800 border-gray-700" : "",
-        showMemoryPanel ? "rounded-r-none border-r-0" : ""
-      )}>
-        <CardHeader className={darkMode ? "border-gray-700" : ""}>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Wand2 className={`h-5 w-5 ${darkMode ? "text-blue-400" : "text-primary"}`} />
-              Enhanced Wireframe Studio
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowMemoryPanel(!showMemoryPanel)}
-              className={darkMode ? "bg-gray-700 border-gray-600" : ""}
-            >
-              {showMemoryPanel ? "Hide" : "Show"} Memory
-            </Button>
-          </CardTitle>
-          <CardDescription className={darkMode ? "text-gray-400" : ""}>
-            Create detailed wireframes with AI and design memory
-          </CardDescription>
-        </CardHeader>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="px-6">
-            <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="prompt">
-                <ScrollText className="h-4 w-4 mr-2" />
-                Prompt
-              </TabsTrigger>
-              <TabsTrigger value="preview" disabled={!currentWireframe}>
-                <LayoutPanelTop className="h-4 w-4 mr-2" />
-                Preview
-              </TabsTrigger>
-              <TabsTrigger value="variations" disabled={!currentWireframe}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Variations
-              </TabsTrigger>
-            </TabsList>
-          </div>
+    <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="prompt">
+            <ScrollText className="mr-2 h-4 w-4" />
+            Prompt
+          </TabsTrigger>
           
-          <TabsContent value="prompt">
-            <CardContent className="space-y-4 pt-4">
-              <div>
-                <Label htmlFor="user-input" className={darkMode ? "text-gray-200" : ""}>Design Description</Label>
-                <Textarea
-                  id="user-input"
-                  placeholder="Describe the website design you want to create..."
-                  rows={5}
-                  className={cn(
-                    "resize-none mt-1",
-                    darkMode ? "bg-gray-700 border-gray-600 text-gray-200" : ""
-                  )}
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                />
-              </div>
+          <TabsTrigger value="preview" disabled={!currentWireframe}>
+            <LayoutPanelTop className="mr-2 h-4 w-4" />
+            Preview
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="prompt" className="space-y-4 mt-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Generate AI Wireframe</CardTitle>
+              <CardDescription>
+                Describe the page or layout you want to create
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea 
+                placeholder="Describe the wireframe you want to generate. Be specific about layout, purpose, and the type of content you want to include..."
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                className="min-h-[120px]"
+              />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="style-select" className={darkMode ? "text-gray-200" : ""}>Visual Style</Label>
+                <div className="space-y-2">
+                  <Label>Design Style</Label>
                   <Select value={styleToken} onValueChange={setStyleToken}>
-                    <SelectTrigger 
-                      id="style-select" 
-                      className={cn(
-                        "mt-1",
-                        darkMode ? "bg-gray-700 border-gray-600 text-gray-200" : ""
-                      )}
-                    >
+                    <SelectTrigger>
                       <SelectValue placeholder="Select style" />
                     </SelectTrigger>
-                    <SelectContent className={darkMode ? "bg-gray-700 border-gray-600 text-gray-200" : ""}>
+                    <SelectContent>
                       {styleOptions.map((style) => (
                         <SelectItem key={style.value} value={style.value}>
                           {style.label}
@@ -278,19 +207,19 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                   </Select>
                 </div>
                 
-                <div>
-                  <Label htmlFor="creativity-level" className={darkMode ? "text-gray-200" : ""}>
-                    Creativity Level: {creativityLevel}/10
-                  </Label>
+                <div className="space-y-2">
+                  <Label>Creativity Level: {creativityLevel}</Label>
                   <Slider
-                    id="creativity-level"
+                    value={[creativityLevel]}
                     min={1}
                     max={10}
                     step={1}
-                    value={[creativityLevel]}
-                    onValueChange={(value) => setCreativityLevel(value[0])}
-                    className="mt-3"
+                    onValueChange={(vals) => setCreativityLevel(vals[0])}
                   />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Conservative</span>
+                    <span>Creative</span>
+                  </div>
                 </div>
               </div>
               
@@ -299,56 +228,33 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                   id="use-memory"
                   checked={useDesignMemory}
                   onCheckedChange={setUseDesignMemory}
-                  disabled={!selectedReference}
                 />
-                <Label 
-                  htmlFor="use-memory" 
-                  className={selectedReference 
-                    ? darkMode ? "text-gray-200" : "" 
-                    : "text-gray-400"}
+                <Label htmlFor="use-memory" className="cursor-pointer">Use Design Memory</Label>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowMemoryPanel(!showMemoryPanel)}
+                  className="ml-auto"
                 >
-                  Use selected design reference
-                  {!selectedReference && " (No reference selected)"}
-                </Label>
+                  {showMemoryPanel ? 'Hide Memory' : 'Show Memory'}
+                </Button>
               </div>
               
-              {selectedReference && (
-                <div className={cn(
-                  "p-3 border rounded",
-                  darkMode ? "border-gray-700 bg-gray-800" : "border-gray-200 bg-gray-50"
-                )}>
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium text-sm">
-                      {selectedReference.title}
-                    </h4>
-                    <Badge variant="outline">{selectedReference.type}</Badge>
-                  </div>
-                  {selectedReference.description && (
-                    <p className="text-xs mb-2 text-gray-500">
-                      {selectedReference.description.length > 120 
-                        ? selectedReference.description.slice(0, 120) + '...' 
-                        : selectedReference.description}
-                    </p>
-                  )}
-                </div>
+              {showMemoryPanel && (
+                <DesignMemoryPanel 
+                  references={references}
+                  onSelect={handleReferenceSelect}
+                  selectedId={selectedReference?.id}
+                  filterType="wireframe"
+                />
               )}
             </CardContent>
-            
-            <CardFooter className="flex justify-between pt-2">
-              <div className="text-sm text-muted-foreground">
-                {references.length > 0 && (
-                  <Badge variant="outline" className={cn(
-                    "text-xs",
-                    darkMode ? "border-gray-600 text-gray-300" : ""
-                  )}>
-                    {references.length} References Available
-                  </Badge>
-                )}
-              </div>
+            <CardFooter>
               <Button 
                 onClick={handleGenerate} 
                 disabled={isGenerating || !userInput.trim()}
-                className={darkMode ? "hover:bg-blue-600" : ""}
+                className="w-full"
               >
                 {isGenerating ? (
                   <>
@@ -363,119 +269,91 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 )}
               </Button>
             </CardFooter>
-          </TabsContent>
+          </Card>
           
-          <TabsContent value="preview">
-            {currentWireframe && (
-              <div>
-                <div className={cn(
-                  "p-4 border-b",
-                  darkMode ? "border-gray-700" : "border-gray-200"
-                )}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-lg">
-                      {currentWireframe.wireframe.title || 'Untitled Wireframe'}
-                    </h3>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={handleSaveToMemory}>
-                        <Save className="h-4 w-4 mr-1" />
-                        Save to Memory
-                      </Button>
+          {wireframes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Wireframes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[400px] overflow-y-auto">
+                  {wireframes.map((wireframe) => (
+                    <div
+                      key={wireframe.id}
+                      className="flex items-center p-4 border-b hover:bg-muted/50 cursor-pointer"
+                      onClick={() => {
+                        // TODO: Add logic to view this wireframe
+                      }}
+                    >
+                      <div>
+                        <h4 className="font-medium">
+                          {wireframe.title || 'Untitled Wireframe'}
+                        </h4>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {wireframe.description || 'No description'}
+                        </p>
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="preview" className="space-y-4 mt-2">
+          {currentWireframe && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{currentWireframe.wireframe?.title || 'Generated Wireframe'}</CardTitle>
+                    <CardDescription>
+                      {currentWireframe.wireframe?.description || 'AI generated wireframe based on your requirements'}
+                    </CardDescription>
                   </div>
-                  {currentWireframe.wireframe.description && (
-                    <p className={cn(
-                      "text-sm",
-                      darkMode ? "text-gray-400" : "text-gray-500"
-                    )}>
-                      {currentWireframe.wireframe.description}
-                    </p>
-                  )}
+                  <div className="flex space-x-2">
+                    <Badge variant="outline">{styleToken}</Badge>
+                    <Badge variant="secondary">Creativity: {creativityLevel}</Badge>
+                  </div>
                 </div>
-                
-                <div className="p-4">
-                  {displayWireframe && (
-                    <WireframeVisualizer
-                      wireframe={displayWireframe}
-                      viewMode="preview"
-                      deviceType="desktop"
+              </CardHeader>
+              
+              <CardContent>
+                {currentWireframe.wireframe ? (
+                  <div className="border rounded-md p-1 bg-background">
+                    <WireframeVisualizer 
+                      wireframe={currentWireframe.wireframe}
                       darkMode={darkMode}
-                      interactive={true}
-                      highlightSections={true}
                     />
-                  )}
-                </div>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="variations">
-            {currentWireframe && (
-              <div className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium">Generate Creative Variations</h3>
-                  <Button 
-                    size="sm"
-                    onClick={handleGenerateVariation}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 mr-2" />
-                    )}
-                    Create Variation
-                  </Button>
-                </div>
-                
-                {wireframes.length > 1 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {wireframes.slice(0, 4).map((wireframe, index) => (
-                      <Card key={wireframe.id || index} className={cn(
-                        "overflow-hidden",
-                        darkMode ? "bg-gray-800 border-gray-700" : ""
-                      )}>
-                        <CardHeader className="p-3">
-                          <CardTitle className="text-sm">{wireframe.title || `Variation ${index + 1}`}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          <div className="h-[300px] overflow-hidden">
-                            <WireframeVisualizer
-                              wireframe={convertAIWireframeToVisualizer(wireframe)}
-                              viewMode="preview"
-                              deviceType="desktop"
-                              darkMode={darkMode}
-                            />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
                   </div>
                 ) : (
-                  <div className="text-center p-8 border rounded-md bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
-                    <p className="mb-2">No variations generated yet</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Click "Create Variation" to generate design alternatives based on your current wireframe
-                    </p>
+                  <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
+                    <p className="text-muted-foreground">No preview available</p>
                   </div>
                 )}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </Card>
-      
-      {showMemoryPanel && (
-        <DesignMemoryPanel
-          darkMode={darkMode}
-          onSelectReference={handleReferenceSelect}
-          onSaveCurrentDesign={handleSaveToMemory}
-          className={cn(
-            "border rounded-r-lg", 
-            darkMode ? "border-gray-700 bg-gray-800" : "border-gray-200"
+              </CardContent>
+              
+              <CardFooter className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateVariation}
+                  disabled={isGenerating}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Variation
+                </Button>
+                
+                <Button onClick={handleSaveToMemory}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save to Design Memory
+                </Button>
+              </CardFooter>
+            </Card>
           )}
-        />
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

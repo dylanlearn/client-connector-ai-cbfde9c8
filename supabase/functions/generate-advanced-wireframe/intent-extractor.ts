@@ -1,62 +1,104 @@
 
-import { CallOpenAIOptions, callOpenAI } from "./openai-client.ts";
+// Intent extractor module for the advanced wireframe generator
+import { OpenAI } from "https://deno.land/x/openai@v4.20.1/mod.ts";
 
-export interface IntentData {
-  structuredIntent: string;
+interface IntentData {
+  primaryPurpose: string;
+  targetAudience: string;
+  keyElements: string[];
+  suggestedLayout: string;
+  contentTypes: string[];
+  callToAction: string;
   visualTone: string;
-  contentPurpose?: string;
-  suggestedSections: string[];
-  pageType: string;
-  audienceLevel?: string;
-  complexity: string;
+  specialRequirements?: string[];
+  techStack?: string[];
 }
 
-/**
- * Extracts intent from user input
- */
 export async function extractIntent(userInput: string, styleToken?: string): Promise<IntentData> {
-  if (!userInput || typeof userInput !== 'string') {
-    throw new Error('Valid user input is required for intent extraction');
-  }
-
-  const prompt = `
-Interpret this user request and return a layout blueprint with section types, visual tone, content intent, and component variants.
-
-User input: "${userInput}"
-
-Return a structured JSON object with the following properties:
-- structuredIntent: Brief description of what the user wants
-- visualTone: Keywords describing the visual style (e.g., modern, sleek, playful)
-- contentPurpose: What this wireframe is trying to achieve
-- suggestedSections: Array of section types needed
-- pageType: What kind of page this is (landing, dashboard, product, etc.)
-- audienceLevel: Who this design is for (technical, general, executive, etc.)
-- complexity: Suggested complexity level (simple, standard, advanced)
-`;
-
   try {
-    const response = await callOpenAI(prompt, { 
-      systemMessage: 'You are an expert UI/UX designer and wireframe generator. Create detailed, structured wireframe specifications based on user input.'
-    });
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     
-    // Try to parse the JSON response
-    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                      response.match(/\{[\s\S]*\}/);
-                      
-    if (jsonMatch && jsonMatch[0]) {
-      return JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+    if (!openAIApiKey) {
+      throw new Error("OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable in your Supabase project settings.");
+    }
+
+    const openai = new OpenAI({
+      apiKey: openAIApiKey,
+    });
+
+    // Enhanced system prompt for better intent extraction
+    const systemPrompt = `You are a specialist in UI/UX design and web development requirements analysis.
+Your task is to extract key design intents from the user's description to guide the wireframe generation process.
+Return ONLY a JSON object with no additional text. The JSON should contain these fields:
+- primaryPurpose: The main goal of the page or application described
+- targetAudience: The intended users
+- keyElements: Array of key UI elements that must be included
+- suggestedLayout: A layout pattern recommendation (e.g., Z-pattern, F-pattern, cards, etc.)
+- contentTypes: Array of content types needed (e.g., text, images, videos, forms)
+- callToAction: Main CTA for the page
+- visualTone: Overall visual style (e.g., minimalist, bold, corporate, playful)
+- specialRequirements: Optional array of special requirements or constraints
+- techStack: Optional array of technology requirements if mentioned`;
+
+    // Add style token if provided
+    const userPrompt = styleToken 
+      ? `${userInput}\n\nPreferred visual style: ${styleToken}` 
+      : userInput;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.5,
+    });
+
+    // Get the assistant's message content
+    const assistantMessage = response.choices[0]?.message?.content;
+    
+    if (!assistantMessage) {
+      throw new Error("Failed to get a complete response from OpenAI");
+    }
+
+    console.log("Raw intent data:", assistantMessage);
+
+    // Parse the JSON response
+    try {
+      const intentData = JSON.parse(assistantMessage) as IntentData;
+      return intentData;
+    } catch (parseError) {
+      console.error("Failed to parse intent data JSON:", parseError);
+      console.log("Raw content that failed parsing:", assistantMessage);
+      
+      // Provide a simplified fallback
+      return {
+        primaryPurpose: "Website or application page",
+        targetAudience: "General users",
+        keyElements: ["Header", "Content section", "Footer"],
+        suggestedLayout: "Standard layout",
+        contentTypes: ["Text", "Images"],
+        callToAction: "Primary action",
+        visualTone: styleToken || "Modern"
+      };
+    }
+  } catch (error) {
+    console.error("Error in extractIntent:", error);
+    
+    // Check for API key related errors
+    if (error.message && error.message.includes("API key")) {
+      throw error; // Rethrow API key errors for proper handling
     }
     
-    // If we can't extract JSON, return a structured format based on the text
+    // Return fallback data for other errors
     return {
-      structuredIntent: userInput,
-      visualTone: styleToken || "modern",
-      suggestedSections: ["hero", "features", "footer"],
-      pageType: "landing",
-      complexity: "standard"
+      primaryPurpose: "Website or application page",
+      targetAudience: "General users",
+      keyElements: ["Header", "Content section", "Footer"],
+      suggestedLayout: "Standard layout",
+      contentTypes: ["Text", "Images"],
+      callToAction: "Primary action",
+      visualTone: styleToken || "Modern"
     };
-  } catch (error) {
-    console.error("Error parsing intent extraction:", error);
-    throw new Error("Failed to parse intent extraction results");
   }
 }
