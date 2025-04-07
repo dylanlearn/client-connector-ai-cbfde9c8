@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { OpenAI } from "https://esm.sh/openai@4.0.0";
@@ -17,9 +16,39 @@ const openai = new OpenAI({
 // Setup Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+// Validate required environment variables
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error("Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+}
+
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Helper functions
+function validatePromptParams(params: Record<string, any>): void {
+  // Validate required parameters
+  if (!params.description) {
+    throw new Error("Description is required for prompt generation");
+  }
+  
+  // Validate parameter types
+  if (typeof params.description !== 'string') {
+    throw new Error("Description must be a string");
+  }
+  
+  if (params.style && typeof params.style !== 'string') {
+    throw new Error("Style must be a string if provided");
+  }
+  
+  if (params.colorTheme && typeof params.colorTheme !== 'string') {
+    throw new Error("Color theme must be a string if provided");
+  }
+  
+  if (params.enhancedCreativity !== undefined && typeof params.enhancedCreativity !== 'boolean') {
+    throw new Error("Enhanced creativity flag must be a boolean if provided");
+  }
+}
+
 function generatePrompt(
   description: string,
   style: string = "modern",
@@ -27,17 +56,34 @@ function generatePrompt(
   colorTheme?: string,
   baseWireframe?: any
 ) {
+  // Sanitize inputs to prevent injection
+  const sanitizedDescription = description.replace(/[<>"']/g, '');
+  const sanitizedStyle = style.replace(/[<>"']/g, '');
+  const sanitizedColorTheme = colorTheme?.replace(/[<>"']/g, '');
+  
   // Base prompt
-  let prompt = `Generate a detailed wireframe structure for a ${style} website based on this description: "${description}".\n\n`;
+  let prompt = `Generate a detailed wireframe structure for a ${sanitizedStyle} website based on this description: "${sanitizedDescription}".\n\n`;
   
   // Add color theme if provided
-  if (colorTheme) {
-    prompt += `Use this color theme: ${colorTheme}.\n\n`;
+  if (sanitizedColorTheme) {
+    prompt += `Use this color theme: ${sanitizedColorTheme}.\n\n`;
   }
   
   // Add base wireframe reference if provided
   if (baseWireframe) {
-    prompt += `Use this existing wireframe as a reference, but create a different variation: ${JSON.stringify(baseWireframe)}.\n\n`;
+    // Only include essential properties to avoid large JSON
+    const safeBaseWireframe = {
+      title: baseWireframe.title,
+      description: baseWireframe.description,
+      style: baseWireframe.style,
+      sections: baseWireframe.sections?.map((section: any) => ({
+        name: section.name,
+        sectionType: section.sectionType,
+        layout: section.layout
+      })) || []
+    };
+    
+    prompt += `Use this existing wireframe as a reference, but create a different variation: ${JSON.stringify(safeBaseWireframe)}.\n\n`;
   }
   
   // Enhanced creativity instructions
@@ -67,6 +113,11 @@ async function cacheWireframeResult(
   model: string,
   usage: any
 ) {
+  if (!wireframe || !params) {
+    console.log("Missing required data for caching");
+    return;
+  }
+  
   try {
     // Create a hash key for the cache
     const paramsHash = JSON.stringify({
@@ -99,6 +150,10 @@ async function cacheWireframeResult(
 }
 
 async function checkWireframeCache(params: Record<string, any>) {
+  if (!params) {
+    return null;
+  }
+  
   try {
     if (params.cacheKey) {
       // Try to find by cache key first
@@ -302,9 +357,14 @@ function desaturateColor(color: string): string {
   return color; // In a real implementation, would desaturate the color
 }
 
-// Handler for wireframe generation
+// Handler for wireframe generation with improved input validation
 async function handleGenerateWireframe(body: any) {
   try {
+    // Validate input and use destructuring with defaults for safety
+    if (!body || typeof body !== 'object') {
+      throw new Error("Invalid request body");
+    }
+    
     const {
       description,
       style = "modern",
@@ -318,8 +378,23 @@ async function handleGenerateWireframe(body: any) {
       creativityLevel = 7, // Default to moderate creativity
     } = body;
     
+    // Input validation
+    validatePromptParams({
+      description,
+      style,
+      enhancedCreativity,
+      colorTheme,
+      creativityLevel
+    });
+    
     if (!description) {
-      return { error: "Description is required" };
+      throw new Error("Description is required");
+    }
+    
+    // Check if API key is available
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
+      throw new Error("OpenAI API key not configured");
     }
     
     // Check cache first
@@ -434,14 +509,30 @@ serve(async (req) => {
   }
 
   try {
-    const { action, ...body } = await req.json();
+    // Validate the request body exists and is valid JSON
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      throw new Error("Invalid JSON in request body");
+    }
+    
+    if (!body || typeof body !== 'object') {
+      throw new Error("Invalid request format");
+    }
+    
+    const { action, ...requestParams } = body;
+    
+    if (!action || typeof action !== 'string') {
+      throw new Error("Action parameter is required");
+    }
     
     let result;
     
     // Route to appropriate handler based on action
     switch (action) {
       case 'generate-wireframe':
-        result = await handleGenerateWireframe(body);
+        result = await handleGenerateWireframe(requestParams);
         break;
         
       // Add other generation action handlers here as needed

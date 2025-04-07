@@ -2,8 +2,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -17,14 +15,17 @@ serve(async (req) => {
   }
 
   try {
+    // Get and validate OpenAI API key
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey || openAIApiKey.trim() === '') {
+      throw new Error('OpenAI API key is not configured or is invalid. Please check your environment variables.');
+    }
+
+    // Validate input parameters
     const { userInput, projectId, styleToken, includeDesignMemory = false } = await req.json();
     
-    if (!userInput) {
-      throw new Error('User input is required');
-    }
-    
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key is not configured');
+    if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
+      throw new Error('Valid user input is required');
     }
     
     console.log(`Processing wireframe request for input: ${userInput.substring(0, 50)}...`);
@@ -71,6 +72,15 @@ serve(async (req) => {
 
 // Step 1: Extract intent from user input
 async function extractIntent(userInput: string, styleToken?: string) {
+  if (!userInput || typeof userInput !== 'string') {
+    throw new Error('Valid user input is required for intent extraction');
+  }
+
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key is not configured');
+  }
+
   const prompt = `
 Interpret this user request and return a layout blueprint with section types, visual tone, content intent, and component variants.
 
@@ -113,6 +123,10 @@ Return a structured JSON object with the following properties:
 
 // Step 2: Generate layout blueprint
 async function generateLayoutBlueprint(intentData: any) {
+  if (!intentData || typeof intentData !== 'object') {
+    throw new Error('Valid intent data is required for blueprint generation');
+  }
+
   const prompt = `
 Based on this user vision, output a JSON layout blueprint with the following for each section:
 - type
@@ -199,6 +213,10 @@ Return a JSON object with an updated "sections" array containing these enhanced 
 
 // Step 4: Apply style modifiers to the wireframe
 async function applyStyleModifiers(wireframe: any, styleToken: string = 'modern') {
+  if (!wireframe || typeof wireframe !== 'object') {
+    throw new Error('Valid wireframe data is required for style modification');
+  }
+
   const prompt = `
 Apply a unified visual style across this layout: ${styleToken}.
 Style options include: brutalist, soft, glassy, corporate, playful, editorial, tech-forward.
@@ -252,29 +270,44 @@ Return a JSON object with the original wireframe structure but with these style 
   }
 }
 
-// Helper function to call OpenAI API
+// Helper function to call OpenAI API with input validation and error handling
 async function callOpenAI(prompt: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are an expert UI/UX designer and wireframe generator. Create detailed, structured wireframe specifications based on user input.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key is not configured');
+  }
+  
+  if (!prompt || typeof prompt !== 'string') {
+    throw new Error('Valid prompt is required');
   }
 
-  const data = await response.json();
-  return data.choices[0].message.content;
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'You are an expert UI/UX designer and wireframe generator. Create detailed, structured wireframe specifications based on user input.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error("Error calling OpenAI API:", error);
+    throw new Error(`Failed to get response from OpenAI: ${error.message}`);
+  }
 }
