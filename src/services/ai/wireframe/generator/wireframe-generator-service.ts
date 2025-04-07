@@ -6,7 +6,7 @@ import {
   AIWireframe,
   WireframeData
 } from '../wireframe-types';
-import { industryTemplateService } from '../industry-templates';
+import { WireframeTemplateService } from '../templates/wireframe-template-service';
 import { WireframeVersionControlService } from '../version-control/wireframe-version-control-service';
 
 /**
@@ -23,7 +23,7 @@ export const WireframeGeneratorService = {
       // Apply industry templates if specified in params
       if (params.industry) {
         try {
-          const baseWireframe = industryTemplateService.getTemplatesForIndustry(params.industry);
+          const baseWireframe = WireframeTemplateService.getTemplatesForIndustry(params.industry);
           
           // Merge template with any custom parameters
           params = {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useComponentRegistry } from './registry/ComponentRegistration';
 import { getAllComponentDefinitions, createSectionInstance } from './registry/component-registry';
@@ -56,19 +57,18 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       }
 
       // Create wireframe data with proper type alignment
-      const wireframeData = {
+      const wireframeData: WireframeData = {
         title: wireframe.title || "New Wireframe",
         description: wireframe.description || "Created with the Wireframe Editor",
-        data: {
-          ...wireframe,
-          // Ensure wireframe data has the required fields for WireframeData type
-          title: wireframe.title || "New Wireframe",
-          sections: wireframe.sections || [] 
-        } as WireframeData,
         sections: wireframe.sections || []
       };
 
-      const result = await WireframeService.createWireframe(wireframeData);
+      const result = await WireframeService.createWireframe({
+        title: wireframeData.title,
+        description: wireframeData.description,
+        data: wireframeData,
+        sections: wireframeData.sections
+      });
 
       toast({
         title: "Success",

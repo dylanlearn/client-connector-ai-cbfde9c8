@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,19 +57,14 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
     defaultValues: {
       projectId,
       description: '',
-      complexity: 'standard',
+      complexity: 'moderate',
       style: 'modern',
       enhancedCreativity: true,
       creativityLevel: defaultCreativity || 8,
       pages: 1,
       multiPageLayout: false,
       pageTypes: [],
-      moodboardSelections: {
-        layoutPreferences: [],
-        fonts: [],
-        colors: [],
-        tone: []
-      }
+      moodboardSelections: {}
     }
   });
   
@@ -275,15 +269,15 @@ const WireframeGenerator: React.FC<WireframeGeneratorProps> = ({ projectId, onWi
                   <Label htmlFor="complexity">Complexity</Label>
                   <Select
                     onValueChange={(value) => setValue('complexity', value)}
-                    defaultValue="standard"
+                    defaultValue="moderate"
                   >
                     <SelectTrigger id="complexity" className="mt-1">
                       <SelectValue placeholder="Select complexity" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="simple">Simple (3-4 sections)</SelectItem>
-                      <SelectItem value="standard">Standard (5-7 sections)</SelectItem>
-                      <SelectItem value="advanced">Advanced (8+ sections)</SelectItem>
+                      <SelectItem value="moderate">Standard (5-7 sections)</SelectItem>
+                      <SelectItem value="complex">Advanced (8+ sections)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

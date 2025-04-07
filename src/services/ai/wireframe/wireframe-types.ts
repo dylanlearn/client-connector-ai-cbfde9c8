@@ -73,6 +73,7 @@ export interface WireframeData {
   colorTheme?: string;
   mobileConsiderations?: string;
   accessibilityNotes?: string;
+  deviceType?: 'desktop' | 'mobile' | 'tablet';
 }
 
 /**
@@ -142,9 +143,10 @@ export interface WireframeGenerationParams {
   pageTypes?: string[];
   typography?: any;
   componentTypes?: string[];
-  moodboardSelections?: string[];
+  moodboardSelections?: any;
   additionalInstructions?: string;
   title?: string;
+  timestamp?: string;
 }
 
 // Additional types needed for version control

@@ -63,11 +63,9 @@ export function useWireframeGenerator(
       // In a real implementation, this would send the base wireframe 
       // to the backend to generate a variation with higher creativity
       const params: WireframeGenerationParams = {
-        title: `Creative variation of ${baseResult.wireframe?.title || "Wireframe"}`,
-        description: baseResult.wireframe?.description,
+        description: `Creative variation of ${baseResult.wireframe?.title || "Wireframe"}`,
         baseWireframe: baseResult.wireframe,
         creativityLevel: Math.min(creativityLevel + 2, 10), // Increase creativity
-        timestamp: new Date().toISOString()
       };
       
       const result = await WireframeService.generateWireframe(params);

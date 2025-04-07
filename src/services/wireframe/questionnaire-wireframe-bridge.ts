@@ -121,24 +121,8 @@ export const questionnaireWireframeBridge = {
           body: bodyFont
         }
       },
-      // Define style as object instead of string
-      style: {
-        colorScheme: {
-          primary: primaryColor,
-          secondary: secondaryColor,
-          accent: accentColor,
-          background: backgroundColor,
-          text: textColor
-        },
-        typography: {
-          headingFont: headingFont,
-          bodyFont: bodyFont
-        },
-        spacing: {
-          unit: 8,
-          scale: [0, 1, 2, 3, 4, 5, 6, 7, 8]
-        }
-      },
+      // Define style as string instead of object
+      style: "standard",
       // Add these fields as they now exist in both WireframeData interfaces
       mobileConsiderations: "Responsive design with mobile-first approach.",
       accessibilityNotes: "Ensure all elements meet WCAG 2.1 AA standards."
