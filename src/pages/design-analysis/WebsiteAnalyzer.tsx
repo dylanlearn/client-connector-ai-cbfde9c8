@@ -5,6 +5,7 @@ import WebsiteAnalyzerForm from "./components/WebsiteAnalyzerForm";
 import AnalysisResults from "./components/AnalysisResults";
 import { useAuth } from "@/hooks/use-auth";
 import { useWebsiteAnalysis } from '@/hooks/ai-design/useWebsiteAnalysis';
+import { SectionType } from '@/hooks/ai-design/website-analysis/types';
 
 /**
  * Website Analyzer page that uses the application shell defined in App.tsx

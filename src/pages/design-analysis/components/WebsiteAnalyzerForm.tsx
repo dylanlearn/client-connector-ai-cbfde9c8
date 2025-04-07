@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Globe, Section, Zap } from 'lucide-react';
+import { WebsiteAnalysisResult, SectionType } from '@/hooks/ai-design/website-analysis/types';
 
 interface WebsiteAnalyzerFormProps {
   isAnalyzing: boolean;
   activeTab: 'full' | 'section';
   setActiveTab: (tab: 'full' | 'section') => void;
-  onAnalyzeWebsite: (url: string) => Promise<void>;
-  onAnalyzeWebsiteSection: (section: string, url: string) => Promise<void>;
+  onAnalyzeWebsite: (url: string) => Promise<WebsiteAnalysisResult | null>;
+  onAnalyzeWebsiteSection: (section: string, url: string) => Promise<WebsiteAnalysisResult | null>;
 }
 
 export default function WebsiteAnalyzerForm({
