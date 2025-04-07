@@ -14,3 +14,4 @@ ALTER SYSTEM SET pg_stat_statements.track = 'all';
 
 -- Create index on profiles table if it doesn't exist
 CREATE INDEX IF NOT EXISTS idx_profiles_id ON profiles(id);
+
