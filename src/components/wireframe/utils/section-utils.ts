@@ -7,6 +7,8 @@ import { FAQSection } from '../sections/FAQSection';
 import { CTASection } from '../sections/CTASection';
 import { NavigationSection } from '../sections/NavigationSection';
 import { FooterSection } from '../sections/FooterSection';
+import { ContactSection } from '../sections/ContactSection';
+import { BlogSection } from '../sections/BlogSection';
 
 /**
  * Maps section types to their corresponding component renderers
@@ -19,6 +21,8 @@ export const sectionTypeToComponent: Record<string, React.ComponentType<any>> = 
   'cta': CTASection,
   'navigation': NavigationSection,
   'footer': FooterSection,
+  'contact': ContactSection,
+  'blog': BlogSection,
   // Add other section types as needed
 };
 
@@ -70,6 +74,16 @@ export const processSectionData = (section: WireframeSection) => {
         // Transform any section-specific data needed here
       };
     case 'footer':
+      return {
+        ...section,
+        // Transform any section-specific data needed here
+      };
+    case 'contact':
+      return {
+        ...section,
+        // Transform any section-specific data needed here
+      };
+    case 'blog':
       return {
         ...section,
         // Transform any section-specific data needed here

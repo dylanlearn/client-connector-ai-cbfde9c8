@@ -201,3 +201,53 @@ export interface FooterComponentProps {
   showSocialIcons?: boolean;
   showLegalLinks?: boolean;
 }
+
+// Contact Component Types
+export interface ContactComponentProps {
+  variant: string;
+  headline?: string;
+  subheadline?: string;
+  formFields: Array<{
+    label: string;
+    name: string;
+    type: 'text' | 'email' | 'textarea' | 'select';
+    required?: boolean;
+    placeholder?: string;
+  }>;
+  ctaLabel: string;
+  showMap?: boolean;
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+    address?: string;
+  };
+  socialLinks?: Array<{
+    platform: string;
+    url: string;
+  }>;
+  alignment?: 'left' | 'center' | 'right';
+  backgroundStyle?: 'light' | 'dark' | 'image' | 'gradient';
+  styleNote?: string;
+}
+
+// Blog Section Types
+export interface BlogSectionProps {
+  variant: string;
+  headline?: string;
+  description?: string;
+  posts: Array<{
+    title: string;
+    url: string;
+    summary?: string;
+    image?: string;
+    category?: string;
+    author?: string;
+    date?: string;
+  }>;
+  layoutStyle?: 'grid' | 'list' | 'carousel';
+  backgroundStyle?: 'light' | 'dark' | 'image' | 'gradient';
+  alignment?: 'left' | 'center' | 'right';
+  showCategories?: boolean;
+  showAuthors?: boolean;
+  styleNote?: string;
+}
