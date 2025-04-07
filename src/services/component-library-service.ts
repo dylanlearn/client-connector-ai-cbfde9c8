@@ -149,7 +149,9 @@ export const componentLibraryService = {
       .order('priority');
     
     if (error) throw new Error(`Error fetching variant styles: ${error.message}`);
-    return data?.map(item => item.component_styles) || [];
+    
+    // Fix the type conversion by properly mapping the result
+    return data?.map(item => item.component_styles as ComponentStyle) || [];
   },
 
   // Initialize Hero Component Library
