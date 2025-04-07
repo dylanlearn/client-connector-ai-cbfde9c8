@@ -139,9 +139,11 @@ export const footerComponents: ComponentDefinition = {
     sectionType: 'footer',
     componentVariant: 'footer-startup-001',
     name: 'Footer Section',
-    backgroundStyle: 'light',
-    alignment: 'center',
-    showSocialIcons: true,
-    showLegalLinks: true
+    data: {
+      backgroundStyle: 'light',
+      alignment: 'center',
+      showSocialIcons: true,
+      showLegalLinks: true
+    }
   }
 };

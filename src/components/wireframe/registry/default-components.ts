@@ -15,4 +15,3 @@ export const defaultComponents: ComponentDefinition[] = [
   footerComponents
   // Add other component types here as you develop them
 ];
-

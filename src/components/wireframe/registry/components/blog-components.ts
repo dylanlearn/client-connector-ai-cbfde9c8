@@ -158,12 +158,14 @@ export const blogComponents: ComponentDefinition = {
     sectionType: 'blog',
     componentVariant: 'blog-startup-001',
     name: 'Blog Section',
-    headline: 'Latest Updates',
-    description: 'Stay up-to-date with our latest news and product updates',
-    layoutStyle: 'grid',
-    backgroundStyle: 'light',
-    alignment: 'center',
-    showCategories: true,
-    showAuthors: true
+    data: {
+      headline: 'Latest Updates',
+      description: 'Stay up-to-date with our latest news and product updates',
+      layoutStyle: 'grid',
+      backgroundStyle: 'light',
+      alignment: 'center',
+      showCategories: true,
+      showAuthors: true
+    }
   }
 };

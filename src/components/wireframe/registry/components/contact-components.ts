@@ -152,11 +152,13 @@ export const contactComponents: ComponentDefinition = {
     sectionType: 'contact',
     componentVariant: 'contact-startup-001',
     name: 'Contact Section',
-    headline: 'Get in Touch',
-    subheadline: "We'd love to hear from you. Fill out the form below and we'll get back to you as soon as possible.",
-    ctaLabel: 'Send Message',
-    backgroundStyle: 'light',
-    alignment: 'left',
-    showMap: false
+    data: {
+      headline: 'Get in Touch',
+      subheadline: "We'd love to hear from you. Fill out the form below and we'll get back to you as soon as possible.",
+      ctaLabel: 'Send Message',
+      backgroundStyle: 'light',
+      alignment: 'left',
+      showMap: false
+    }
   }
 };
