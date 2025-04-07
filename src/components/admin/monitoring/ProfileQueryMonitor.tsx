@@ -40,7 +40,8 @@ export function ProfileQueryMonitor() {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase.rpc('analyze_profile_queries');
+      // Call a simpler version of the function that handles aggregation properly
+      const { data, error } = await supabase.rpc('get_profile_query_stats');
       
       if (error) {
         throw error;
