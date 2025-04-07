@@ -69,8 +69,12 @@ export default function Login() {
       setErrorMessage('');
       setIsLoading(true);
       
-      await signInWithGoogle();
-      // Note: The redirection will be handled by the OAuth callback
+      console.log('Starting Google login process');
+      const result = await signInWithGoogle();
+      console.log('Google login initiated:', result);
+      
+      // Note: The redirect will be handled by the OAuth flow, 
+      // we don't need to navigate programmatically
     } catch (error: any) {
       console.error('Google login error:', error);
       setErrorMessage(error.message || 'Failed to login with Google');

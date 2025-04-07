@@ -6,10 +6,11 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export interface ProtectedRouteProps {
   children?: ReactNode;
+  adminOnly?: boolean;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) => {
+  const { user, isLoading, profile } = useAuth();
   const location = useLocation();
   const timeoutRef = useRef<number | null>(null);
 
@@ -28,7 +29,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         if (!user) {
           window.location.href = `/login?redirect=${encodeURIComponent(location.pathname)}`;
         }
-      }, 3000); // 3 second timeout (reduced from 5s for better UX)
+      }, 3000); // 3 second timeout
     }
     
     return () => {
@@ -49,8 +50,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
+  // If not logged in, redirect to login
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+  
+  // For admin routes, check if user has admin role
+  if (adminOnly && profile?.role !== 'admin') {
+    console.log('Non-admin user tried to access admin route:', profile?.role);
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

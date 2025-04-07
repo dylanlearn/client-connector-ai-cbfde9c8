@@ -26,6 +26,7 @@ export function useAuth() {
   const fetchProfile = useCallback(async (userId: string) => {
     try {
       setIsProfileLoading(true);
+      console.log('Fetching profile for user:', userId);
       
       // Check local storage cache first
       const cachedProfile = localStorage.getItem(`profile-${userId}`);
@@ -35,6 +36,7 @@ export function useAuth() {
       if (cachedProfile && cachedTime) {
         const parsedTime = parseInt(cachedTime, 10);
         if (Date.now() - parsedTime < 5 * 60 * 1000) {
+          console.log('Using cached profile');
           setProfile(JSON.parse(cachedProfile));
           setIsProfileLoading(false);
           return;
@@ -53,6 +55,7 @@ export function useAuth() {
         return;
       }
 
+      console.log('Profile fetched successfully:', data);
       if (data) {
         setProfile(data as UserProfile);
         
@@ -69,6 +72,7 @@ export function useAuth() {
 
   // SignIn function
   const signIn = async (email: string, password: string) => {
+    console.log('Signing in with email:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -80,6 +84,7 @@ export function useAuth() {
 
   // SignOut function
   const signOut = async () => {
+    console.log('Signing out');
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     
@@ -88,10 +93,16 @@ export function useAuth() {
       localStorage.removeItem(`profile-${user.id}`);
       localStorage.removeItem(`profile-${user.id}-time`);
     }
+    
+    // Clear state
+    setUser(null);
+    setSession(null);
+    setProfile(null);
   };
 
   // Sign in with Google
   const signInWithGoogle = async () => {
+    console.log('Signing in with Google');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -99,12 +110,18 @@ export function useAuth() {
       }
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Google OAuth error:', error);
+      throw error;
+    }
+    
+    console.log('Google sign-in initiated:', data);
     return data;
   };
 
   // Initialize auth state
   useEffect(() => {
+    console.log('Setting up auth state');
     setIsLoading(true);
     
     // Set up auth changes listener first
@@ -130,6 +147,7 @@ export function useAuth() {
     
     // Then check current session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Current session:', currentSession ? 'exists' : 'none');
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       

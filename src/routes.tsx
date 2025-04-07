@@ -11,6 +11,8 @@ import NotFound from "./pages/NotFound";
 import DesignPicker from "./pages/DesignPicker";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AdminPanel from "./pages/AdminPanel";
+import AdminAnalytics from "./pages/AdminAnalytics";
 
 const router = createBrowserRouter([
   {
@@ -52,6 +54,22 @@ const router = createBrowserRouter([
       {
         path: '/design-picker',
         element: <ProtectedRoute><DesignPicker /></ProtectedRoute>,
+      },
+      {
+        path: '/admin',
+        element: <ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/analytics',
+        element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/supabase-audit',
+        element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/audit-and-monitoring',
+        element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
       },
       {
         path: '*',
