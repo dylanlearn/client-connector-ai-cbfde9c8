@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   ComponentType, 
@@ -151,7 +150,7 @@ export const componentLibraryService = {
     if (error) throw new Error(`Error fetching variant styles: ${error.message}`);
     
     // Fix the type conversion by properly mapping the result
-    return data?.map(item => item.component_styles as ComponentStyle) || [];
+    return data?.map(item => item.component_styles as unknown as ComponentStyle) || [];
   },
 
   // Initialize Hero Component Library
