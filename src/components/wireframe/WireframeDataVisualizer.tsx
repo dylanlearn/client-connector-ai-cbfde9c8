@@ -16,6 +16,7 @@ interface WireframeDataVisualizerProps {
   darkMode?: boolean;
   showGrid?: boolean;
   highlightSections?: boolean;
+  activeSection?: string | null;
 }
 
 const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
@@ -26,7 +27,8 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
   deviceType = 'desktop',
   darkMode = false,
   showGrid = false,
-  highlightSections = false
+  highlightSections = false,
+  activeSection = null
 }) => {
   const [activeTab, setActiveTab] = useState('preview');
 
@@ -275,7 +277,14 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
               {wireframeData.sections && wireframeData.sections.length > 0 && (
                 <div className="space-y-8 pb-4">
                   {wireframeData.sections.map((section: any, index: number) => (
-                    <div key={section.id || index} className={`rounded-lg p-4 ${sectionClass}`}>
+                    <div 
+                      key={section.id || index} 
+                      className={cn(
+                        "rounded-lg p-4",
+                        sectionClass,
+                        activeSection === section.id ? "ring-2 ring-primary" : ""
+                      )}
+                    >
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-2">
                           {getSectionIcon(section.sectionType || section.type)}

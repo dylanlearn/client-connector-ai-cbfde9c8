@@ -2413,46 +2413,27 @@ export type Database = {
         Returns: Json
       }
       analyze_wireframe_sections: {
-        Args: {
-          p_start_date: string
-        }
+        Args: { p_start_date: string }
         Returns: Json
       }
       batch_insert_interaction_events: {
-        Args: {
-          p_events: Json
-        }
+        Args: { p_events: Json }
         Returns: undefined
       }
-      binary_quantize:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       check_database_performance: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
       check_wireframe_cache: {
-        Args: {
-          p_params_hash: string
-        }
+        Args: { p_params_hash: string }
         Returns: Json
       }
       check_wireframe_rate_limits: {
-        Args: {
-          p_user_id: string
-          p_max_daily: number
-          p_max_hourly: number
-        }
+        Args: { p_user_id: string; p_max_daily: number; p_max_hourly: number }
         Returns: Json
       }
       clear_expired_wireframe_cache: {
@@ -2460,17 +2441,11 @@ export type Database = {
         Returns: number
       }
       compare_wireframe_versions: {
-        Args: {
-          p_version_id1: string
-          p_version_id2: string
-        }
+        Args: { p_version_id1: string; p_version_id2: string }
         Returns: Json
       }
       create_background_task: {
-        Args: {
-          p_task_type: string
-          p_input_data: Json
-        }
+        Args: { p_task_type: string; p_input_data: Json }
         Returns: string
       }
       create_system_alert: {
@@ -2507,10 +2482,7 @@ export type Database = {
         }
       }
       get_error_handling_config: {
-        Args: {
-          p_component: string
-          p_error_type: string
-        }
+        Args: { p_component: string; p_error_type: string }
         Returns: {
           action: string
           component: string
@@ -2549,10 +2521,7 @@ export type Database = {
         }[]
       }
       get_latest_version_number: {
-        Args: {
-          p_wireframe_id: string
-          p_branch_name: string
-        }
+        Args: { p_wireframe_id: string; p_branch_name: string }
         Returns: number
       }
       get_next_pending_task: {
@@ -2564,21 +2533,15 @@ export type Database = {
         Returns: Json
       }
       get_user_permissions: {
-        Args: {
-          p_user_id: string
-        }
+        Args: { p_user_id: string }
         Returns: Database["public"]["Enums"]["auth_permission"][]
       }
       get_user_role: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
       get_wireframe_branches: {
-        Args: {
-          p_wireframe_id: string
-        }
+        Args: { p_wireframe_id: string }
         Returns: {
           name: string
           created_at: string
@@ -2587,16 +2550,11 @@ export type Database = {
         }[]
       }
       get_wireframe_metrics: {
-        Args: {
-          p_start_date: string
-          p_project_id?: string
-        }
+        Args: { p_start_date: string; p_project_id?: string }
         Returns: Json
       }
       get_wireframe_version: {
-        Args: {
-          p_version_id: string
-        }
+        Args: { p_version_id: string }
         Returns: {
           branch_name: string | null
           change_description: string | null
@@ -2611,9 +2569,7 @@ export type Database = {
         }
       }
       get_wireframe_versions: {
-        Args: {
-          p_wireframe_id: string
-        }
+        Args: { p_wireframe_id: string }
         Returns: {
           branch_name: string | null
           change_description: string | null
@@ -2628,57 +2584,39 @@ export type Database = {
         }[]
       }
       halfvec_avg: {
-        Args: {
-          "": number[]
-        }
+        Args: { "": number[] }
         Returns: unknown
       }
       halfvec_out: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       halfvec_send: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: string
       }
       halfvec_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
+        Args: { "": unknown[] }
         Returns: number
       }
       hnsw_bit_support: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       hnsw_halfvec_support: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       hnsw_sparsevec_support: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       hnswhandler: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       increment_cache_hit: {
-        Args: {
-          p_cache_id: string
-        }
+        Args: { p_cache_id: string }
         Returns: undefined
       }
       insert_interaction_event: {
@@ -2695,67 +2633,33 @@ export type Database = {
         Returns: undefined
       }
       is_admin: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: boolean
       }
       is_subscribed: {
-        Args: {
-          user_id: string
-        }
+        Args: { user_id: string }
         Returns: boolean
       }
       ivfflat_bit_support: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       ivfflat_halfvec_support: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       ivfflathandler: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
-      l2_norm:
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-      l2_normalize:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
       manage_error_config: {
         Args: {
           p_action: string
@@ -2766,25 +2670,15 @@ export type Database = {
         Returns: Json
       }
       manage_feedback_analysis: {
-        Args: {
-          p_action: string
-          p_data?: Json
-          p_user_id?: string
-        }
+        Args: { p_action: string; p_data?: Json; p_user_id?: string }
         Returns: Json
       }
       manage_wireframe_design_memory: {
-        Args: {
-          p_action: string
-          p_user_id: string
-          p_data?: Json
-        }
+        Args: { p_action: string; p_user_id: string; p_data?: Json }
         Returns: Json
       }
       query_interaction_events: {
-        Args: {
-          query_text: string
-        }
+        Args: { query_text: string }
         Returns: {
           device_type: string | null
           element_selector: string | null
@@ -2853,11 +2747,7 @@ export type Database = {
         Returns: string
       }
       record_system_event: {
-        Args: {
-          p_event_type: string
-          p_details: Json
-          p_severity?: string
-        }
+        Args: { p_event_type: string; p_details: Json; p_severity?: string }
         Returns: undefined
       }
       record_template_purchase: {
@@ -2869,9 +2759,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      record_wireframe_generation:
-        | {
-            Args: {
+      record_wireframe_generation: {
+        Args:
+          | {
               p_project_id: string
               p_prompt: string
               p_generation_params: Json
@@ -2879,72 +2769,47 @@ export type Database = {
               p_success: boolean
               p_generation_time: number
             }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_user_id: string
-            }
-            Returns: undefined
-          }
-      search_memory_embeddings:
-        | {
-            Args: {
+          | { p_user_id: string }
+        Returns: string
+      }
+      search_memory_embeddings: {
+        Args:
+          | {
               query_embedding: string
               match_threshold?: number
               match_count?: number
               filter_memory_type?: string
             }
-            Returns: {
-              id: string
-              memory_id: string
-              memory_type: string
-              content: string
-              similarity: number
-              created_at: string
-              metadata: Json
-            }[]
-          }
-        | {
-            Args: {
+          | {
               query_text: string
               match_threshold?: number
               match_count?: number
               filter_memory_type?: string
             }
-            Returns: {
-              id: string
-              memory_id: string
-              memory_type: string
-              content: string
-              similarity: number
-              created_at: string
-              metadata: Json
-            }[]
-          }
+        Returns: {
+          id: string
+          memory_id: string
+          memory_type: string
+          content: string
+          similarity: number
+          created_at: string
+          metadata: Json
+        }[]
+      }
       set_versions_inactive: {
-        Args: {
-          p_wireframe_id: string
-          p_branch_name: string
-        }
+        Args: { p_wireframe_id: string; p_branch_name: string }
         Returns: undefined
       }
       sparsevec_out: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: unknown
       }
       sparsevec_send: {
-        Args: {
-          "": unknown
-        }
+        Args: { "": unknown }
         Returns: string
       }
       sparsevec_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
+        Args: { "": unknown[] }
         Returns: number
       }
       store_memory_embedding: {
@@ -2989,10 +2854,7 @@ export type Database = {
         Returns: undefined
       }
       update_wireframe_data: {
-        Args: {
-          p_wireframe_id: string
-          p_data: Json
-        }
+        Args: { p_wireframe_id: string; p_data: Json }
         Returns: {
           animations: Json | null
           created_at: string | null
@@ -3029,46 +2891,27 @@ export type Database = {
         Returns: boolean
       }
       vector_avg: {
-        Args: {
-          "": number[]
-        }
+        Args: { "": number[] }
         Returns: string
       }
-      vector_dims:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
       vector_norm: {
-        Args: {
-          "": string
-        }
+        Args: { "": string }
         Returns: number
       }
       vector_out: {
-        Args: {
-          "": string
-        }
+        Args: { "": string }
         Returns: unknown
       }
       vector_send: {
-        Args: {
-          "": string
-        }
+        Args: { "": string }
         Returns: string
       }
       vector_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
+        Args: { "": unknown[] }
         Returns: number
       }
     }
@@ -3117,27 +2960,29 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
-  PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -3145,20 +2990,22 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -3166,20 +3013,22 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
-  TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -3187,21 +3036,23 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof Database },
-  EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
@@ -3210,6 +3061,54 @@ export type CompositeTypes<
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      animation_category: [
+        "morphing_shape",
+        "progressive_disclosure",
+        "intent_based_motion",
+        "glassmorphism",
+        "hover_effect",
+        "modal_dialog",
+        "custom_cursor",
+        "scroll_animation",
+        "drag_interaction",
+        "magnetic_element",
+        "color_shift",
+        "parallax_tilt",
+      ],
+      auth_permission: [
+        "VIEW_DASHBOARD",
+        "MANAGE_PROJECTS",
+        "EDIT_PROFILE",
+        "VIEW_ANALYTICS",
+        "MANAGE_USERS",
+        "VIEW_ADMIN_PANEL",
+        "ACCESS_PREMIUM_FEATURES",
+      ],
+      subscription_status: [
+        "free",
+        "basic",
+        "pro",
+        "sync",
+        "sync-pro",
+        "trial",
+      ],
+      template_status: ["active", "archived", "draft"],
+      user_role: [
+        "free",
+        "pro",
+        "sync",
+        "sync-pro",
+        "trial",
+        "template-buyer",
+        "admin",
+      ],
+    },
+  },
+} as const
