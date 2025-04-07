@@ -359,7 +359,6 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                         description: currentWireframe.wireframe.description || '',
                         imageUrl: currentWireframe.wireframe.imageUrl,
                         sections: adaptSectionsForVisualizer(currentWireframe.wireframe.sections),
-                        version: '1.0',
                         lastUpdated: new Date().toISOString()
                       }}
                       darkMode={darkMode}
