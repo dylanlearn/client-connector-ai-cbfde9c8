@@ -1,9 +1,9 @@
 
 import { TabsContent } from "@/components/ui/tabs";
-import { ParsedSuggestion } from "./types";
-import SuggestionCategory from "./SuggestionCategory";
-import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import SuggestionCategory from "@/components/ai/design-suggestions/SuggestionCategory";
+import { ParsedSuggestion } from "./types";
 
 interface SuggestionTabsProps {
   activeTab: string;
