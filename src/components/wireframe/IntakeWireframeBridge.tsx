@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import WireframeFlow from './WireframeFlow';
 import { Loader2, ArrowRight, Check } from 'lucide-react';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { IntakeWireframeBridgeProps, WireframeSelection } from './types';
 
 const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
@@ -62,10 +63,11 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       },
       sections: selectedWireframe.sections?.map((s) => ({
         id: s.id,
-        type: s.name,
-        content: s.description || '',
-        imageUrl: s.imageUrl || ''
-      })) || [],
+        name: s.name,
+        sectionType: s.sectionType || 'generic',
+        components: [],
+        description: s.description || ''
+      } as WireframeSection)) || [],
       mobileConsiderations: "Optimized for mobile viewing with responsive layout",
       accessibilityNotes: "Follows WCAG guidelines for maximum accessibility",
       imageUrl: selectedWireframe.imageUrl || '',
