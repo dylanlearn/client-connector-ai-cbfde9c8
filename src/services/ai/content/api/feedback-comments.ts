@@ -66,8 +66,10 @@ export const FeedbackComments = {
         comment: item.comment,
         createdAt: item.created_at,
         userId: item.user_id,
-        userName: item.profiles && typeof item.profiles === 'object' ? item.profiles.name : 'Unknown User',
-        userAvatar: item.profiles && typeof item.profiles === 'object' ? item.profiles.avatar_url : undefined
+        userName: item.profiles && typeof item.profiles === 'object' ? 
+                  (item.profiles as any).name : 'Unknown User',
+        userAvatar: item.profiles && typeof item.profiles === 'object' ? 
+                    (item.profiles as any).avatar_url : undefined
       }));
     } catch (error) {
       console.error("Exception fetching feedback comments:", error);
