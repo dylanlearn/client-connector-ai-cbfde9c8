@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,7 +63,6 @@ export default function WebsiteAnalyzerComponent() {
       );
     }
     
-    // Display the latest result
     const latestResult = analysisResults[analysisResults.length - 1];
     
     return (
@@ -131,7 +129,7 @@ export default function WebsiteAnalyzerComponent() {
   };
 
   return (
-    <div className="container py-8 max-w-4xl">
+    <div className="py-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Website Design Analyzer</h1>
       
       <Card>

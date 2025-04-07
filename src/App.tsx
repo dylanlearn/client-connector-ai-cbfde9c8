@@ -5,6 +5,10 @@ import { QueryProvider } from './providers/QueryProvider';
 import AppSidebar from './components/layout/sidebar/AppSidebar';
 import DashboardHeader from './components/dashboard/DashboardHeader';
 
+/**
+ * Main application component that serves as the application shell
+ * Provides the outer layout structure, authentication context, and query capabilities
+ */
 function App() {
   return (
     <QueryProvider>
@@ -13,9 +17,9 @@ function App() {
           <AppSidebar />
           <div className="flex-1">
             <DashboardHeader />
-            <div className="container px-4 py-6 md:px-6 lg:px-8">
+            <main className="container px-4 py-6 md:px-6 lg:px-8">
               <Outlet />
-            </div>
+            </main>
           </div>
         </div>
       </AuthProvider>

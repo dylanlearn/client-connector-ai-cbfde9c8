@@ -8,6 +8,10 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+/**
+ * Header component for the dashboard layout
+ * Provides navigation, user menu, and subscription status
+ */
 const DashboardHeader = () => {
   const { status } = useSubscription();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,15 +49,50 @@ const DashboardHeader = () => {
       
       {/* Mobile navigation overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)}>
-          <div className="bg-white dark:bg-gray-800 w-64 h-full p-4" onClick={e => e.stopPropagation()}>
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden" 
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 w-64 h-full p-4" 
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex flex-col gap-4 p-2">
-              <Link to="/dashboard" className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Dashboard</Link>
-              <Link to="/projects" className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Projects</Link>
-              <Link to="/new-project" className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">New Project</Link>
-              <Link to="/ai-design-suggestions" className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">AI Assistant</Link>
-              <Link to="/settings" className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Settings</Link>
-              <Link to="/templates" className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">Templates</Link>
+              <Link 
+                to="/dashboard" 
+                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link 
+                to="/projects" 
+                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Projects
+              </Link>
+              <Link 
+                to="/website-analyzer" 
+                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Website Analyzer
+              </Link>
+              <Link 
+                to="/ai-suggestions" 
+                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                AI Assistant
+              </Link>
+              <Link 
+                to="/settings" 
+                className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Settings
+              </Link>
             </div>
           </div>
         </div>

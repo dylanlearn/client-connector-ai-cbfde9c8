@@ -16,6 +16,9 @@ interface Project {
   status: string;
 }
 
+/**
+ * Dashboard page component that fits within the application shell
+ */
 const Dashboard = () => {
   const { user, profile } = useAuth();
   const { activeTab, handleTabChange } = useDashboardTabs();

@@ -1,18 +1,19 @@
 
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
 import './index.css'
 import { AppProviders } from './providers/AppProviders'
 import { initializeErrorHandling } from "@/utils/monitoring/error-handling";
+import { RouterProvider } from 'react-router-dom';
+import router from './routes';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-// Render the app first 
+// Render the app with the router
 root.render(
   <React.StrictMode>
     <AppProviders>
-      <App />
+      <RouterProvider router={router} />
     </AppProviders>
   </React.StrictMode>
 );

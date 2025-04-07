@@ -1,28 +1,21 @@
 
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { ReactNode } from 'react';
 import { QueryProvider } from './QueryProvider';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from 'sonner';
-import { ProfileProvider } from '@/contexts/ProfileContext';
+import { Toaster } from '@/components/ui/sonner';
 
 interface AppProvidersProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
+/**
+ * Global providers for the entire application
+ * Sets up query client and other global contexts
+ */
+export const AppProviders = ({ children }: AppProvidersProps) => {
   return (
-    <BrowserRouter>
-      <QueryProvider>
-        <AuthProvider>
-          <ProfileProvider>
-            {children}
-          </ProfileProvider>
-          <Toaster />
-          <SonnerToaster position="top-right" />
-        </AuthProvider>
-      </QueryProvider>
-    </BrowserRouter>
+    <QueryProvider>
+      {children}
+      <Toaster richColors position="top-right" />
+    </QueryProvider>
   );
 };
