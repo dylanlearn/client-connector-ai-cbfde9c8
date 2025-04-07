@@ -5,7 +5,7 @@ import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
 
 export function useWireframeFeedback(
   wireframes: AIWireframe[],
-  setWireframes: (wireframes: AIWireframe[]) => void,
+  setWireframes: React.Dispatch<React.SetStateAction<AIWireframe[]>>,
   toast: any
 ) {
   const provideFeedback = async (wireframeId: string, feedback: string, rating?: number) => {
@@ -41,9 +41,8 @@ export function useWireframeFeedback(
       await WireframeService.deleteWireframe(wireframeId);
       
       // Update the local state by removing the deleted wireframe
-      // Fix the type error by ensuring we return AIWireframe[] type
-      setWireframes((prevWireframes: AIWireframe[]) => 
-        prevWireframes.filter((wireframe: AIWireframe) => wireframe.id !== wireframeId)
+      setWireframes(prevWireframes => 
+        prevWireframes.filter(wireframe => wireframe.id !== wireframeId)
       );
       
       toast({

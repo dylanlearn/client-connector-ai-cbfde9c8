@@ -116,4 +116,5 @@ export const ProfileQueryMonitor: React.FC = () => {
   );
 };
 
+// Add a default export as well to ensure both named and default exports work
 export default ProfileQueryMonitor;
