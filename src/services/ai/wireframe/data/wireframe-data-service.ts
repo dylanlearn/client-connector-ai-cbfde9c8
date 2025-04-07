@@ -31,9 +31,18 @@ export const WireframeDataService = {
     // Ensure all sections have IDs
     if (wireframeData.sections) {
       wireframeData.sections = wireframeData.sections.map(section => {
+        // Ensure components have IDs
+        const components = section.components?.map(component => {
+          return {
+            ...component,
+            id: component.id || uuidv4()
+          };
+        });
+        
         return {
           ...section,
-          id: section.id || uuidv4()
+          id: section.id || uuidv4(),
+          components: components || []
         };
       });
     }
@@ -71,9 +80,35 @@ export const WireframeDataService = {
       sectionType: section.sectionType || 'generic',
       layoutType: section.layoutType || 'standard',
       description: section.description || '',
-      components: section.components || [],
+      components: section.components?.map(component => ({
+        ...component,
+        id: component.id || uuidv4()
+      })) || [],
       // Copy over any other properties that might exist
       ...section
     };
+  },
+  
+  /**
+   * Get wireframe by ID with proper data structure
+   */
+  getWireframe: async (id: string): Promise<AIWireframe | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('ai_wireframes')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error || !data) {
+        console.error('Error fetching wireframe:', error);
+        return null;
+      }
+      
+      return WireframeDataService.standardizeWireframeRecord(data as AIWireframe);
+    } catch (error) {
+      console.error('Error in getWireframe:', error);
+      return null;
+    }
   }
 };

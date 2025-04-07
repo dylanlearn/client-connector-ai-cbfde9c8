@@ -1,86 +1,92 @@
 
-import { useState, useCallback } from 'react';
-import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
-import { AIWireframe } from '@/services/ai/wireframe/wireframe-types';
+import { useCallback } from "react";
+import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
+import { WireframeManagementService } from "@/services/ai/wireframe/management/wireframe-management-service";
 
 export function useWireframeFeedback(
   wireframes: AIWireframe[],
   setWireframes: (wireframes: AIWireframe[]) => void,
   toast: any
 ) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  /**
+   * Provide feedback for a wireframe
+   */
   const provideFeedback = useCallback(async (
-    wireframeId: string,
-    feedback: string,
+    wireframeId: string, 
+    feedback: string, 
     rating?: number
   ) => {
-    setIsSubmitting(true);
-    
     try {
-      await WireframeService.updateWireframeFeedback(wireframeId, feedback, rating);
+      const success = await WireframeManagementService.updateWireframeFeedback(
+        wireframeId, 
+        feedback, 
+        rating
+      );
       
-      // Update the wireframe in the list with new feedback
-      setWireframes(wireframes.map(wireframe => {
-        if (wireframe.id === wireframeId) {
-          return {
-            ...wireframe,
-            feedback,
-            rating: rating !== undefined ? rating : wireframe.rating
-          };
-        }
-        return wireframe;
-      }));
+      if (success) {
+        // Update the wireframes state with the new feedback
+        setWireframes(wireframes.map(wireframe => 
+          wireframe.id === wireframeId 
+            ? { ...wireframe, feedback, rating } 
+            : wireframe
+        ));
+        
+        toast({
+          title: "Feedback submitted",
+          description: "Thank you for your feedback"
+        });
+        
+        return true;
+      } else {
+        throw new Error("Failed to update wireframe feedback");
+      }
+    } catch (error) {
+      console.error("Error providing feedback:", error);
       
       toast({
-        title: "Feedback submitted",
-        description: "Thanks for your feedback!"
-      });
-      
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to submit feedback";
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Error submitting feedback",
+        description: "Please try again later",
         variant: "destructive"
       });
       
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   }, [wireframes, setWireframes, toast]);
-
+  
+  /**
+   * Delete a wireframe
+   */
   const deleteWireframe = useCallback(async (wireframeId: string) => {
     try {
-      await WireframeService.deleteWireframe(wireframeId);
+      const success = await WireframeManagementService.deleteWireframe(wireframeId);
       
-      // Remove the wireframe from the list
-      setWireframes(wireframes.filter(wireframe => wireframe.id !== wireframeId));
+      if (success) {
+        // Remove the deleted wireframe from state
+        setWireframes(wireframes.filter(wireframe => wireframe.id !== wireframeId));
+        
+        toast({
+          title: "Wireframe deleted",
+          description: "Wireframe has been successfully deleted"
+        });
+        
+        return true;
+      } else {
+        throw new Error("Failed to delete wireframe");
+      }
+    } catch (error) {
+      console.error("Error deleting wireframe:", error);
       
       toast({
-        title: "Wireframe deleted",
-        description: "The wireframe has been removed"
-      });
-      
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete wireframe";
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Error deleting wireframe",
+        description: "Please try again later",
         variant: "destructive"
       });
       
       return false;
     }
   }, [wireframes, setWireframes, toast]);
-
+  
   return {
-    isSubmitting,
     provideFeedback,
     deleteWireframe
   };

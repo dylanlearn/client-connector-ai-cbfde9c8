@@ -1,5 +1,6 @@
+
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeSection, WireframeComponent, CopySuggestions } from "@/services/ai/wireframe/wireframe-types";
+import { WireframeData, WireframeSection, WireframeComponent, CopySuggestions, WireframeGenerationParams } from "@/services/ai/wireframe/wireframe-types";
 import { IntakeFormData } from '@/types/intake-form';
 
 /**
@@ -40,6 +41,7 @@ export const questionnaireWireframeBridge = {
     // Helper function to create a default section
     const createDefaultSection = (index: number): WireframeSection => {
       return {
+        id: uuidv4(),
         name: sectionHeadings[index] || `Section ${index + 1}`,
         sectionType: sectionTypes[index] || "generic",
         layoutType: sectionLayouts[index] || "standard",
@@ -48,14 +50,14 @@ export const questionnaireWireframeBridge = {
           alignment: "center"
         },
         components: [
-          { type: "heading", content: sectionHeadings[index] || `Section ${index + 1}` },
-          { type: "paragraph", content: sectionDescriptions[index] || "Default section description." }
+          { id: uuidv4(), type: "heading", content: sectionHeadings[index] || `Section ${index + 1}` },
+          { id: uuidv4(), type: "paragraph", content: sectionDescriptions[index] || "Default section description." }
         ],
         copySuggestions: {
           heading: sectionHeadings[index] || `Section ${index + 1}`,
           subheading: sectionDescriptions[index] || "A brief overview of this section."
         },
-        description: sectionDescriptions[index] || "Default section description." // Add description property
+        description: sectionDescriptions[index] || "Default section description."
       };
     };
 
@@ -75,15 +77,16 @@ export const questionnaireWireframeBridge = {
       const components: WireframeComponent[] = componentTypes.map(componentType => {
         switch (componentType) {
           case "image":
-            return { type: "image", content: sectionImage };
+            return { id: uuidv4(), type: "image", content: sectionImage };
           case "button":
-            return { type: "button", content: sectionCTA };
+            return { id: uuidv4(), type: "button", content: sectionCTA };
           default:
-            return { type: "text", content: sectionCopyText };
+            return { id: uuidv4(), type: "text", content: sectionCopyText };
         }
       });
 
       return {
+        id: uuidv4(),
         name: sectionHeading,
         sectionType: sectionType,
         layoutType: sectionLayout,
@@ -96,7 +99,7 @@ export const questionnaireWireframeBridge = {
           heading: sectionHeading,
           subheading: sectionDescription
         },
-        description: sectionDescription // Add description property
+        description: sectionDescription
       };
     });
 
@@ -118,7 +121,7 @@ export const questionnaireWireframeBridge = {
           body: bodyFont
         }
       },
-      // Using style object for style to match WireframeData interface
+      // Define style as object instead of string
       style: {
         colorScheme: {
           primary: primaryColor,
@@ -145,46 +148,30 @@ export const questionnaireWireframeBridge = {
   },
   
   /**
-   * Transforms intake data to wireframe generation parameters
+   * Helper functions for transforming data
    */
-  transformIntakeToWireframeParams: (intakeData: IntakeFormData, recommendations?: any): WireframeGenerationParams => {
-    const promptText = `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`;
-    const stylePreferences = intakeData.designStyle || 'modern';
-
-    // Create components with proper IDs
-    const components: WireframeComponent[] = [
-      { id: uuidv4(), type: 'header', content: intakeData.companyName },
-      { id: uuidv4(), type: 'footer', content: intakeData.contactInfo }
-    ];
-
-    // Create sections with proper IDs
-    const sections: WireframeSection[] = getRecommendedSections(intakeData).map(sectionType => ({
-      id: uuidv4(),
-      name: sectionNameFromType(sectionType),
-      sectionType: sectionType,
-      layoutType: sectionLayoutFromType(sectionType),
-      layout: {
-        type: 'flex',
-        alignment: 'center',
-      },
-      components: components.filter(c => c.type === sectionType),
-      copySuggestions: {
-        heading: intakeData.keyMessages,
-        subheading: intakeData.secondaryMessages,
-      },
-      description: `${sectionNameFromType(sectionType)} for ${intakeData.companyName}`
-    }));
-
-    return {
-      description: promptText,
-      projectId: intakeData.formId,
-      industry: intakeData.industry,
-      pageType: intakeData.siteType,
-      stylePreferences: stylePreferences,
-      complexity: 'moderate',
-    };
+  sectionNameFromType: (sectionType: string): string => {
+    switch(sectionType) {
+      case 'hero': return 'Hero Section';
+      case 'features': return 'Features Section';
+      case 'footer': return 'Footer Section';
+      case 'testimonials': return 'Testimonials Section';
+      case 'products': return 'Products Section';
+      case 'contact': return 'Contact Section';
+      default: return `${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} Section`;
+    }
   },
-  
+
+  sectionLayoutFromType: (sectionType: string): string => {
+    switch(sectionType) {
+      case 'hero': return 'centered';
+      case 'features': return 'grid';
+      case 'testimonials': return 'carousel';
+      case 'products': return 'list';
+      default: return 'standard';
+    }
+  },
+
   /**
    * Get recommended sections based on intake data
    */
@@ -204,6 +191,47 @@ export const questionnaireWireframeBridge = {
     }
     
     return defaultSections;
+  },
+  
+  /**
+   * Transforms intake data to wireframe generation parameters
+   */
+  transformIntakeToWireframeParams: (intakeData: IntakeFormData, recommendations?: any): WireframeGenerationParams => {
+    const promptText = `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`;
+    const stylePreferences = intakeData.designStyle || 'modern';
+
+    // Create components with proper IDs
+    const components: WireframeComponent[] = [
+      { id: uuidv4(), type: 'header', content: intakeData.projectName || 'Header' },
+      { id: uuidv4(), type: 'footer', content: 'Contact Information' }
+    ];
+
+    // Create sections with proper IDs
+    const sections: WireframeSection[] = questionnaireWireframeBridge.getRecommendedSections(intakeData).map(sectionType => ({
+      id: uuidv4(),
+      name: questionnaireWireframeBridge.sectionNameFromType(sectionType),
+      sectionType: sectionType,
+      layoutType: questionnaireWireframeBridge.sectionLayoutFromType(sectionType),
+      layout: {
+        type: 'flex',
+        alignment: 'center',
+      },
+      components: components.filter(c => c.type === sectionType),
+      copySuggestions: {
+        heading: intakeData.projectName || 'Main Heading',
+        subheading: 'Secondary message'
+      },
+      description: `${questionnaireWireframeBridge.sectionNameFromType(sectionType)} for ${intakeData.projectName || 'the project'}`
+    }));
+
+    return {
+      description: promptText,
+      projectId: intakeData.formId,
+      industry: intakeData.siteType || 'general',
+      pageType: intakeData.siteType || 'general',
+      stylePreferences: [stylePreferences],
+      complexity: 'moderate' as 'simple' | 'moderate' | 'complex',
+    };
   }
 };
 

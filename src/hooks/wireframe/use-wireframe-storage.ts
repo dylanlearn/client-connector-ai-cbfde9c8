@@ -1,6 +1,7 @@
 
-import { useCallback } from "react";
-import { WireframeService } from "@/services/ai/wireframe/wireframe-service";
+import { useState, useEffect, useCallback } from "react";
+import { WireframeDataService } from "@/services/ai/wireframe/data/wireframe-data-service";
+import { wireframeStorage } from "@/services/ai/wireframe/api/wireframe-storage";
 import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
 
 export function useWireframeStorage(
@@ -9,37 +10,51 @@ export function useWireframeStorage(
 ) {
   const loadProjectWireframes = useCallback(async (projectId: string) => {
     try {
-      const results = await WireframeService.getProjectWireframes(projectId);
-      setWireframes(results);
-      return results;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load wireframes";
+      const wireframes = await wireframeStorage.getProjectWireframes(projectId);
       
+      // Standardize all wireframe records
+      const standardizedWireframes = wireframes.map(wireframe => 
+        WireframeDataService.standardizeWireframeRecord(wireframe)
+      );
+      
+      setWireframes(standardizedWireframes);
+      
+      return standardizedWireframes;
+    } catch (error) {
+      console.error("Error loading wireframes:", error);
       toast({
-        title: "Failed to load wireframes",
-        description: errorMessage,
-        variant: "destructive",
+        title: "Error loading wireframes",
+        description: "Please try again later",
+        variant: "destructive"
       });
-      
       return [];
     }
-  }, [toast, setWireframes]);
+  }, [setWireframes, toast]);
 
-  const getWireframe = async (wireframeId: string) => {
+  const getWireframe = useCallback(async (wireframeId: string) => {
     try {
-      return await WireframeService.getWireframe(wireframeId);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to get wireframe";
+      const wireframe = await WireframeDataService.getWireframe(wireframeId);
       
+      if (!wireframe) {
+        toast({
+          title: "Wireframe not found",
+          description: "The requested wireframe could not be found",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      return wireframe;
+    } catch (error) {
+      console.error("Error getting wireframe:", error);
       toast({
-        title: "Failed to load wireframe",
-        description: errorMessage,
-        variant: "destructive",
+        title: "Error loading wireframe",
+        description: "Please try again later",
+        variant: "destructive"
       });
-      
       return null;
     }
-  };
+  }, [toast]);
 
   return {
     loadProjectWireframes,

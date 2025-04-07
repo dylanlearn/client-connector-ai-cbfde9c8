@@ -215,6 +215,44 @@ export const DesignProcessProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [user, toast]);
   
+  const generateWireframeSections = (projectType: string) => {
+    const sections = [];
+    
+    if (projectType === "website" || projectType === "app") {
+      sections.push({
+        id: uuidv4(),
+        name: "Hero Section",
+        sectionType: "hero",
+        components: [
+          { id: uuidv4(), type: "heading", content: "Welcome to our site" },
+          { id: uuidv4(), type: "paragraph", content: "This is a sample hero section." }
+        ]
+      });
+      
+      sections.push({
+        id: uuidv4(),
+        name: "Features Section",
+        sectionType: "features",
+        components: [
+          { id: uuidv4(), type: "heading", content: "Our Features" },
+          { id: uuidv4(), type: "feature-list", content: "List of features" }
+        ]
+      });
+      
+      sections.push({
+        id: uuidv4(),
+        name: "Contact Section",
+        sectionType: "contact",
+        components: [
+          { id: uuidv4(), type: "heading", content: "Get in Touch" },
+          { id: uuidv4(), type: "contact-form", content: "Contact form" }
+        ]
+      });
+    }
+    
+    return sections;
+  };
+  
   const value = {
     currentStage,
     progress,

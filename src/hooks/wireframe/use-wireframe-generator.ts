@@ -21,6 +21,8 @@ export function useWireframeGenerator(
       const fullParams = {
         ...params,
         creativityLevel,
+        // Ensure complexity is one of the allowed values
+        complexity: params.complexity || 'moderate' as 'simple' | 'moderate' | 'complex'
       };
       
       const result = await WireframeService.generateWireframe(fullParams);

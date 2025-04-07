@@ -1,122 +1,94 @@
-import { WireframeApiService } from '../api';
-import { WireframeData, AIWireframe } from '../wireframe-types';
-import { WireframeVersionControlService } from '../version-control/wireframe-version-control-service';
+
 import { WireframeDataService } from '../data/wireframe-data-service';
-import { industryTemplateService } from '../industry-templates';
+import { AIWireframe } from '../wireframe-types';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Service for managing wireframe updates, templates, and versions
+ * Service for managing wireframes in the application
  */
 export const WireframeManagementService = {
   /**
-   * Update a wireframe with new data and create a version
+   * Get a wireframe by ID
    */
-  updateWireframe: async (
-    wireframeId: string,
-    data: Partial<WireframeData>,
-    userId: string,
-    changeDescription: string = "Updated wireframe"
-  ): Promise<AIWireframe | null> => {
+  getWireframe: async (id: string): Promise<AIWireframe | null> => {
     try {
-      // First get the current wireframe
-      const currentWireframe = await WireframeDataService.getWireframe(wireframeId);
-      
-      if (!currentWireframe || !currentWireframe.data) {
-        throw new Error("Wireframe not found or data missing");
-      }
-      
-      // Merge current data with updates
-      const updatedData: WireframeData = {
-        ...currentWireframe.data,
-        ...data
-      };
-      
-      // Update the wireframe in the database
-      const updatedWireframe = await WireframeApiService.updateWireframeData(
-        wireframeId, 
-        updatedData
-      );
-      
-      // Create a new version in version control
-      await WireframeVersionControlService.createVersion(
-        wireframeId,
-        updatedData,
-        changeDescription,
-        userId
-      );
-      
-      return updatedWireframe;
+      return await WireframeDataService.getWireframe(id);
     } catch (error) {
-      console.error("Error in wireframe service updateWireframe:", error);
-      throw error;
+      console.error('Error in getWireframe:', error);
+      return null;
     }
   },
   
   /**
-   * Apply an industry template to an existing wireframe
+   * Get all wireframes for a project
    */
-  applyTemplateToWireframe: async (
-    wireframeId: string,
-    industry: string,
-    userId: string,
-    preserveSections: boolean = true
-  ): Promise<AIWireframe | null> => {
+  getAllWireframes: async (projectId: string): Promise<AIWireframe[]> => {
     try {
-      // Get the current wireframe
-      const currentWireframe = await WireframeDataService.getWireframe(wireframeId);
-      
-      if (!currentWireframe) {
-        throw new Error("Wireframe not found");
-      }
-      
-      // Get the template for the industry
-      const templateData = industryTemplateService.getTemplatesForIndustry(industry);
-      
-      // Combine data based on preserveSections setting
-      let updatedData: WireframeData;
-      
-      if (preserveSections && currentWireframe.data) {
-        // Keep existing sections and add template sections
-        const existingSections = currentWireframe.data.sections || [];
-        const templateSections = templateData?.sections || [];
+      const { data, error } = await supabase
+        .from('ai_wireframes')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false });
         
-        updatedData = {
-          ...currentWireframe.data,
-          sections: [...existingSections, ...templateSections]
-        };
-      } else {
-        // Replace with template but preserve wireframe metadata
-        updatedData = {
-          title: currentWireframe.data?.title || templateData?.title || "Untitled Wireframe",
-          description: currentWireframe.data?.description || templateData?.description || "",
-          sections: templateData?.sections || [],
-          // Other properties will come from templateData or be undefined
-          ...(templateData || {})
-        };
+      if (error) {
+        console.error('Error fetching wireframes:', error);
+        return [];
       }
       
-      // Update the wireframe
-      return WireframeManagementService.updateWireframe(
-        wireframeId,
-        updatedData,
-        userId,
-        `Applied template: ${industry}`
+      return (data as AIWireframe[]).map(wireframe => 
+        WireframeDataService.standardizeWireframeRecord(wireframe)
       );
     } catch (error) {
-      console.error("Error applying template to wireframe:", error);
-      throw error;
+      console.error('Error in getAllWireframes:', error);
+      return [];
+    }
+  },
+  
+  /**
+   * Update wireframe feedback
+   */
+  updateWireframeFeedback: async (wireframeId: string, feedback: string, rating?: number): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('ai_wireframes')
+        .update({ 
+          feedback,
+          rating,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', wireframeId);
+        
+      if (error) {
+        console.error('Error updating wireframe feedback:', error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in updateWireframeFeedback:', error);
+      return false;
     }
   },
   
   /**
    * Delete a wireframe
    */
-  deleteWireframe: async (wireframeId: string): Promise<void> => {
+  deleteWireframe: async (wireframeId: string): Promise<boolean> => {
     try {
-      await WireframeApiService.deleteWireframe(wireframeId);
+      const { error } = await supabase
+        .from('ai_wireframes')
+        .delete()
+        .eq('id', wireframeId);
+        
+      if (error) {
+        console.error('Error deleting wireframe:', error);
+        return false;
+      }
+      
+      return true;
     } catch (error) {
-      console.error("Error in wireframe service deleteWireframe:", error);
-      throw error;
+      console.error('Error in deleteWireframe:', error);
+      return false;
     }
-  },
+  }
 };

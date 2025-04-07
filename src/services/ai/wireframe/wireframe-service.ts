@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeData, WireframeSection } from './wireframe-types';
+import { WireframeData, WireframeSection, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Service for wireframe management in the application
@@ -205,49 +206,61 @@ export const WireframeService = {
   /**
    * Generate a wireframe based on parameters
    */
-  generateWireframe: async (params: any) => {
+  generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
     try {
       // This would typically call an AI model or backend service
       // For now we'll create a simple wireframe with default sections
-      const wireframeData = {
-        title: params.title || "Generated Wireframe",
-        description: params.description || "Auto-generated wireframe",
-        data: {
-          layoutType: "standard",
-          colorScheme: {
-            primary: "#4F46E5",
-            secondary: "#A855F7",
-            accent: "#F59E0B",
-            background: "#FFFFFF"
-          },
-          typography: {
-            headings: "Raleway, sans-serif",
-            body: "Inter, sans-serif"
-          }
-        },
+      
+      // Ensure we have a title
+      const title = params.title || params.description?.substring(0, 50) || "Generated Wireframe";
+      const description = params.description || "Auto-generated wireframe";
+      
+      const wireframeData: WireframeData = {
+        title: title,
+        description: description,
         sections: [
           {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name: "Hero Section",
             sectionType: "hero",
             componentVariant: "hero-centered",
-            components: []
+            components: [
+              { id: uuidv4(), type: "heading", content: "Welcome to Your Website" },
+              { id: uuidv4(), type: "paragraph", content: "This is an automatically generated wireframe." }
+            ]
           },
           {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             name: "Features Section",
             sectionType: "features",
             componentVariant: "features-grid",
-            components: []
+            components: [
+              { id: uuidv4(), type: "heading", content: "Features" },
+              { id: uuidv4(), type: "feature-item", content: "Feature 1" },
+              { id: uuidv4(), type: "feature-item", content: "Feature 2" }
+            ]
           }
-        ]
+        ],
+        layoutType: "standard",
+        colorScheme: {
+          primary: "#4F46E5",
+          secondary: "#A855F7",
+          accent: "#F59E0B",
+          background: "#FFFFFF"
+        },
+        typography: {
+          headings: "Raleway, sans-serif",
+          body: "Inter, sans-serif"
+        }
       };
       
-      const result = await WireframeService.createWireframe(wireframeData);
-      
+      // Return the wireframe data in the expected format
       return {
-        wireframe: result.data,
-        model: "simple-generator-v1"
+        wireframe: wireframeData,
+        model: "simple-generator-v1",
+        generationTime: 0.5,
+        success: true,
+        creativityLevel: params.creativityLevel || 5
       };
     } catch (error) {
       console.error("Error generating wireframe:", error);

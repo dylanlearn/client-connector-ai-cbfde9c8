@@ -14,10 +14,10 @@ export interface WireframeComponent {
  * Types for copy suggestions
  */
 export interface CopySuggestions {
-  heading?: string[];
-  subheading?: string[];
-  cta?: string[];
-  body?: string[];
+  heading?: string | string[];
+  subheading?: string | string[];
+  cta?: string | string[];
+  body?: string | string[];
 }
 
 /**
@@ -55,6 +55,7 @@ export interface WireframeData {
     secondary: string;
     accent: string;
     background: string;
+    text?: string;
   };
   typography?: {
     headings: string;
@@ -68,8 +69,10 @@ export interface WireframeData {
   animations?: any;
   imageUrl?: string;
   pages?: any[];
-  style?: string;
+  style?: string | object;
   colorTheme?: string;
+  mobileConsiderations?: string;
+  accessibilityNotes?: string;
 }
 
 /**
@@ -94,7 +97,7 @@ export interface AIWireframe {
   updated_at?: string;
   sections?: WireframeSection[];
   data?: WireframeData;
-  wireframe_data?: WireframeData;
+  wireframe_data?: WireframeData; // Legacy support
   title?: string;
   pages?: any[];
 }
@@ -129,7 +132,7 @@ export interface WireframeGenerationParams {
   complexity?: 'simple' | 'moderate' | 'complex';
   baseWireframe?: WireframeData;
   creativityLevel?: number;
-  // Extra properties used in different components
+  // Extended properties
   style?: string;
   enhancedCreativity?: boolean;
   colorTheme?: string;
@@ -141,6 +144,7 @@ export interface WireframeGenerationParams {
   componentTypes?: string[];
   moodboardSelections?: string[];
   additionalInstructions?: string;
+  title?: string;
 }
 
 // Additional types needed for version control

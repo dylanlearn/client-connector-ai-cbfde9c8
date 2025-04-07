@@ -50,7 +50,8 @@ const WireframeGenerator = () => {
       style,
       enhancedCreativity: true,
       multiPageLayout: multiPage,
-      pages: pagesCount
+      pages: pagesCount,
+      complexity: 'moderate'
     });
   };
 
