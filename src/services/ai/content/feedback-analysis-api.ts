@@ -8,6 +8,9 @@ import {
   PastAnalysisResult,
   AnalysisFilters
 } from "./feedback-types";
+import { FeedbackDatabase } from './api/feedback-database';
+import { FeedbackComments } from './api/feedback-comments';
+import { FeedbackApiClient } from './api/feedback-api-client';
 
 /**
  * API service for feedback analysis operations
@@ -17,18 +20,7 @@ export const FeedbackAnalysisAPI = {
    * Call the analyze-feedback edge function
    */
   callAnalyzeFeedbackFunction: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
-    const { data, error } = await supabase.functions.invoke("analytics-api", {
-      body: {
-        action: "analyze_feedback",
-        feedbackText
-      }
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    return data as FeedbackAnalysisResult;
+    return FeedbackApiClient.callAnalyzeFeedbackFunction(feedbackText);
   },
 
   /**
