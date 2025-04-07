@@ -49,7 +49,7 @@ export function useUserManagement() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      const { data, error } = await supabase.functions.invoke("admin-api", {
         body: { action: "list_users" },
       });
 
@@ -74,7 +74,7 @@ export function useUserManagement() {
     setIsUpdating(userId);
     try {
       console.log(`Updating user ${userId} to role ${role}`);
-      const { data, error } = await supabase.functions.invoke("admin-user-management", {
+      const { data, error } = await supabase.functions.invoke("admin-api", {
         body: { 
           action: "update_user_role",
           userId,

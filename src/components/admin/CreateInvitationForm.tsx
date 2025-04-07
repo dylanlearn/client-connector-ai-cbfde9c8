@@ -38,7 +38,7 @@ export function CreateInvitationForm({ onInvitationCreated }: CreateInvitationFo
   const handleCreateInvitation = async () => {
     setIsCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-invitations", {
+      const { data, error } = await supabase.functions.invoke("admin-api", {
         body: {
           action: "create_invitation",
           plan,

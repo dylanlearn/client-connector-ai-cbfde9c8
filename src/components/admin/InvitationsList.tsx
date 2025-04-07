@@ -35,7 +35,7 @@ export function InvitationsList({
 
   const handleRevokeInvitation = async (code: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke("admin-invitations", {
+      const { data, error } = await supabase.functions.invoke("admin-api", {
         body: {
           action: "revoke_invitation",
           code,

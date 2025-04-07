@@ -17,7 +17,7 @@ export function InvitationManager() {
   const fetchInvitations = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-invitations", {
+      const { data, error } = await supabase.functions.invoke("admin-api", {
         body: { action: "list_invitations" },
       });
 
