@@ -1,5 +1,5 @@
 
-export { ConfigurationItem } from './ConfigurationItem';
-export { SaveButton } from './SaveButton';
-export { LoadingState } from './LoadingState';
-export { ErrorMessage } from './ErrorMessage';
+export * from './ConfigurationItem';
+export * from './SaveButton';
+export * from './LoadingState';
+export * from './ErrorMessage';
