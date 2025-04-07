@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { cn } from '@/lib/utils';
 
 interface SectionControlsProps {
   section: WireframeSection;
@@ -32,17 +33,22 @@ const SectionControls: React.FC<SectionControlsProps> = ({
   isVisible = true
 }) => {
   return (
-    <Card className="p-2 flex items-center justify-between bg-muted/50 mb-2">
+    <Card className={cn(
+      "p-2 flex items-center justify-between mb-2",
+      isVisible ? "bg-muted/50" : "bg-muted/20 text-muted-foreground"
+    )}>
       <div className="flex items-center gap-1">
         <Move className="h-4 w-4 text-muted-foreground cursor-move" />
-        <span className="text-sm font-medium ml-2 truncate">{section.name || section.sectionType}</span>
+        <span className="text-sm font-medium ml-2 truncate">
+          {section.name || section.sectionType}
+        </span>
       </div>
       
       <div className="flex items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
-              variant="ghost" 
+              variant={isVisible ? "ghost" : "outline"} 
               size="icon" 
               className="h-7 w-7" 
               onClick={onToggleVisibility}

@@ -1,11 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { WireframeDataVisualizer } from '@/components/wireframe';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Layout, Wand2 } from 'lucide-react';
+import { Layout, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeCanvasProps {
@@ -21,6 +22,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
   const highlightSections = useWireframeStore((state) => state.highlightSections);
   const activeSection = useWireframeStore((state) => state.activeSection);
   const hiddenSections = useWireframeStore((state) => state.hiddenSections);
+  const showAllSections = useWireframeStore((state) => state.showAllSections);
   
   // Filter out hidden sections for display
   const visibleSections = wireframe.sections
@@ -32,6 +34,11 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
     ...wireframe,
     sections: visibleSections
   };
+
+  // Determine if all sections are hidden
+  const allSectionsHidden = wireframe.sections && 
+    wireframe.sections.length > 0 && 
+    hiddenSections.length === wireframe.sections.length;
   
   if (!wireframe) {
     return (
@@ -47,7 +54,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
     );
   }
 
-  if (visibleSections.length === 0) {
+  if (wireframe.sections.length === 0) {
     return (
       <Card className={cn("border rounded-lg p-4 relative min-h-80", className)}>
         <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
@@ -60,6 +67,30 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
           </div>
         </div>
       </Card>
+    );
+  }
+
+  if (allSectionsHidden) {
+    return (
+      <div className={cn("border rounded-lg p-4 relative min-h-80", className)}>
+        <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
+          <EyeOff className="h-16 w-16 text-gray-300" />
+          <div>
+            <h3 className="text-lg font-medium mb-1">All Sections Hidden</h3>
+            <p className="text-muted-foreground max-w-md">
+              All sections are currently hidden from view.
+            </p>
+            <Button 
+              className="mt-4" 
+              variant="outline" 
+              onClick={showAllSections}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Show All Sections
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 

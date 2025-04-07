@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { 
-  Layers, Move, Grid, Trash, Undo, Redo, Save, Eye, Sun, Moon,
-  Smartphone, Tablet, Monitor, PanelLeft
+  Layers, Move, Grid, Trash, Undo, Redo, Save, Sun, Moon,
+  Smartphone, Tablet, Monitor, Eye, EyeOff 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -23,8 +23,20 @@ const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
     toggleDarkMode,
     undo,
     redo,
-    history
+    history,
+    wireframe,
+    hideAllSections,
+    showAllSections,
+    hiddenSections
   } = useWireframeStore();
+
+  // Calculate if all sections are currently hidden
+  const allSectionsHidden = wireframe.sections && 
+    wireframe.sections.length > 0 && 
+    hiddenSections.length === wireframe.sections.length;
+
+  // Calculate if any sections are currently hidden
+  const anySectionsHidden = hiddenSections.length > 0;
 
   return (
     <div className="flex flex-wrap items-center gap-2 p-2 bg-card rounded-lg shadow-sm border">
@@ -98,6 +110,22 @@ const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{darkMode ? 'Light Mode' : 'Dark Mode'}</TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={allSectionsHidden ? showAllSections : hideAllSections}
+              disabled={!wireframe.sections || wireframe.sections.length === 0}
+            >
+              {allSectionsHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {allSectionsHidden ? 'Show All Sections' : 'Hide All Sections'}
+          </TooltipContent>
         </Tooltip>
       </div>
 

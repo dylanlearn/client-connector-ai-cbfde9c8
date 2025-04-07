@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WireframeData } from '@/types/wireframe';
@@ -28,6 +29,8 @@ export interface WireframeState {
   toggleHighlightSections: () => void;
   toggleDarkMode: () => void;
   toggleSectionVisibility: (sectionId: string) => void;
+  hideAllSections: () => void;
+  showAllSections: () => void;
   
   // Section operations
   addSection: (section: Partial<WireframeSection>) => void;
@@ -117,6 +120,12 @@ export const useWireframeStore = create<WireframeState>()(
             : [...state.hiddenSections, sectionId]
         };
       }),
+
+      hideAllSections: () => set((state) => ({
+        hiddenSections: state.wireframe.sections.map(section => section.id)
+      })),
+      
+      showAllSections: () => set({ hiddenSections: [] }),
       
       addSection: (section) => {
         const newSection: WireframeSection = {
@@ -158,7 +167,9 @@ export const useWireframeStore = create<WireframeState>()(
               (section) => section.id !== sectionId
             )
           },
-          activeSection: null
+          activeSection: null,
+          // Also remove from hiddenSections if it exists there
+          hiddenSections: state.hiddenSections.filter(id => id !== sectionId)
         }));
         
         get().saveToHistory();
