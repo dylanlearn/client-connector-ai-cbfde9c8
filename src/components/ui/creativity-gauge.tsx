@@ -27,13 +27,13 @@ export function CreativityGauge({
   // Ensure value is always within bounds
   const safeValue = Math.min(Math.max(1, value), max);
   
-  // Determine color based on value
+  // Determine color based on value - REVERSED color scheme
   const getColor = (value: number, max: number) => {
     try {
       const percentage = (value / max) * 100;
-      if (percentage < 30) return "#22c55e"; // Low creativity - green
+      if (percentage < 30) return "#ef4444"; // Low creativity - red
       if (percentage < 70) return "#eab308"; // Medium creativity - yellow
-      return "#ef4444"; // High creativity - red
+      return "#22c55e"; // High creativity - green
     } catch (error) {
       console.error("Error calculating color:", error);
       return "#eab308"; // Default to yellow on error
