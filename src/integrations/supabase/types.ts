@@ -2005,6 +2005,47 @@ export type Database = {
           },
         ]
       }
+      wireframe_action_history: {
+        Row: {
+          action_type: string
+          canvas_id: string
+          component_id: string | null
+          created_at: string
+          id: string
+          new_state: Json | null
+          previous_state: Json | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          canvas_id: string
+          component_id?: string | null
+          created_at?: string
+          id?: string
+          new_state?: Json | null
+          previous_state?: Json | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          canvas_id?: string
+          component_id?: string | null
+          created_at?: string
+          id?: string
+          new_state?: Json | null
+          previous_state?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_action_history_canvas_id_fkey"
+            columns: ["canvas_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_canvas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wireframe_background_tasks: {
         Row: {
           completed_at: string | null
@@ -2103,6 +2144,119 @@ export type Database = {
         }
         Relationships: []
       }
+      wireframe_canvas: {
+        Row: {
+          canvas_state: Json
+          created_at: string
+          grid_settings: Json
+          id: string
+          is_active: boolean
+          name: string
+          pan_offset: Json
+          project_id: string
+          updated_at: string
+          user_id: string
+          version: number
+          zoom_level: number
+        }
+        Insert: {
+          canvas_state?: Json
+          created_at?: string
+          grid_settings?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          pan_offset?: Json
+          project_id: string
+          updated_at?: string
+          user_id: string
+          version?: number
+          zoom_level?: number
+        }
+        Update: {
+          canvas_state?: Json
+          created_at?: string
+          grid_settings?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          pan_offset?: Json
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+          zoom_level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_canvas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wireframe_canvas_components: {
+        Row: {
+          canvas_id: string
+          component_library_id: string | null
+          component_type: string
+          created_at: string
+          id: string
+          is_locked: boolean
+          is_visible: boolean
+          layer_index: number
+          position: Json
+          properties: Json
+          size: Json
+          updated_at: string
+        }
+        Insert: {
+          canvas_id: string
+          component_library_id?: string | null
+          component_type: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          is_visible?: boolean
+          layer_index?: number
+          position?: Json
+          properties?: Json
+          size?: Json
+          updated_at?: string
+        }
+        Update: {
+          canvas_id?: string
+          component_library_id?: string | null
+          component_type?: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          is_visible?: boolean
+          layer_index?: number
+          position?: Json
+          properties?: Json
+          size?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wireframe_canvas_components_canvas_id_fkey"
+            columns: ["canvas_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_canvas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wireframe_canvas_components_component_library_id_fkey"
+            columns: ["component_library_id"]
+            isOneToOne: false
+            referencedRelation: "wireframe_components_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wireframe_component_variants: {
         Row: {
           component_type: string
@@ -2169,6 +2323,48 @@ export type Database = {
           type?: string
           updated_at?: string
           variants?: Json
+        }
+        Relationships: []
+      }
+      wireframe_components_library: {
+        Row: {
+          category: string
+          component_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          properties: Json
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          component_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          properties: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          component_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          properties?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2371,6 +2567,36 @@ export type Database = {
           navigation_structure?: Json | null
           page_layouts?: Json
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wireframe_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          settings: Json
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          settings?: Json
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          settings?: Json
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

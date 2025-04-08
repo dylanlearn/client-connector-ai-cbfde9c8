@@ -1,19 +1,12 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
+import { 
+  WireframeMemoryService, 
+  DesignMemoryResponse,
+  DesignMemoryData
+} from '@/services/ai/wireframe/wireframe-memory-service';
 import { useAuth } from '@/hooks/use-auth';
-
-interface DesignMemory {
-  id: string;
-  project_id: string;
-  blueprint_id?: string;
-  layout_patterns?: any;
-  style_preferences?: any;
-  component_preferences?: any;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-}
+import { useToast } from '@/hooks/use-toast';
 
 interface UseDesignMemoryProps {
   projectId?: string;
@@ -22,41 +15,48 @@ interface UseDesignMemoryProps {
 export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [designMemory, setDesignMemory] = useState<DesignMemory | null>(null);
+  const [designMemory, setDesignMemory] = useState<DesignMemoryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  const fetchDesignMemory = async () => {
+  const fetchDesignMemory = useCallback(async () => {
     if (!projectId || !user) return null;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const { data, error } = await supabase
-        .from('design_memory')
-        .select('*')
-        .eq('project_id', projectId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      setDesignMemory(data);
-      return data;
+      const memory = await WireframeMemoryService.getDesignMemory(projectId);
+      setDesignMemory(memory);
+      return memory;
     } catch (err: any) {
       console.error('Error fetching design memory:', err);
       setError(err.message || 'Failed to load design memory');
+      toast({
+        title: "Error",
+        description: "Failed to load design memory",
+        variant: "destructive"
+      });
       return null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId, user, toast]);
 
-  const saveDesignMemory = async (
-    memoryData: Partial<Omit<DesignMemory, 'id' | 'created_at' | 'updated_at' | 'user_id'>>
+  const saveDesignMemory = useCallback(async (
+    memoryData: Partial<Omit<DesignMemoryData, 'projectId'>> & { projectId?: string }
   ) => {
-    if (!projectId || !user) return null;
+    const effectiveProjectId = memoryData.projectId || projectId;
+    
+    if (!effectiveProjectId || !user) {
+      toast({
+        title: "Error",
+        description: "Project ID is required to save design memory",
+        variant: "destructive"
+      });
+      return null;
+    }
     
     setIsSaving(true);
     setError(null);
@@ -65,52 +65,51 @@ export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
       // Check if we already have a design memory for this project
       if (designMemory?.id) {
         // Update existing entry
-        const { data, error } = await supabase
-          .from('design_memory')
-          .update({
-            ...memoryData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', designMemory.id)
-          .select()
-          .single();
+        const result = await WireframeMemoryService.updateDesignMemory({
+          memoryId: designMemory.id,
+          updates: {
+            blueprint_id: memoryData.blueprintId,
+            layout_patterns: memoryData.layoutPatterns,
+            style_preferences: memoryData.stylePreferences,
+            component_preferences: memoryData.componentPreferences
+          }
+        });
         
-        if (error) throw error;
-        
-        setDesignMemory(data);
-        return data;
+        setDesignMemory(result);
+        return result;
       } else {
         // Create new entry
-        const { data, error } = await supabase
-          .from('design_memory')
-          .insert({
-            project_id: projectId,
-            user_id: user.id,
-            ...memoryData
-          })
-          .select()
-          .single();
+        const result = await WireframeMemoryService.storeDesignMemory({
+          projectId: effectiveProjectId,
+          blueprintId: memoryData.blueprintId,
+          layoutPatterns: memoryData.layoutPatterns,
+          stylePreferences: memoryData.stylePreferences,
+          componentPreferences: memoryData.componentPreferences
+        });
         
-        if (error) throw error;
-        
-        setDesignMemory(data);
-        return data;
+        setDesignMemory(result);
+        return result;
       }
     } catch (err: any) {
       console.error('Error saving design memory:', err);
       setError(err.message || 'Failed to save design memory');
+      toast({
+        title: "Error",
+        description: "Failed to save design memory",
+        variant: "destructive"
+      });
       return null;
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [projectId, user, designMemory, toast]);
 
   // Fetch design memory when component mounts
   useEffect(() => {
     if (projectId && user) {
       fetchDesignMemory();
     }
-  }, [projectId, user?.id]);
+  }, [projectId, user?.id, fetchDesignMemory]);
 
   // Set up real-time subscription for design memory changes
   useEffect(() => {
@@ -122,12 +121,14 @@ export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'design_memory',
+          table: 'wireframe_design_memory',
           filter: `project_id=eq.${projectId}` 
         }, 
         (payload) => {
           console.log('Design memory changed:', payload);
-          fetchDesignMemory();
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+            fetchDesignMemory();
+          }
         }
       )
       .subscribe();
@@ -135,7 +136,7 @@ export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [projectId, user?.id]);
+  }, [projectId, user?.id, fetchDesignMemory]);
 
   return {
     designMemory,

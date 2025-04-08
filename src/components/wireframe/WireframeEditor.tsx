@@ -1,9 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useComponentRegistry } from './registry/ComponentRegistration';
-import { getAllComponentDefinitions, createSectionInstance } from './registry/component-registry';
-import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { getAllComponentDefinitions } from './registry/component-registry';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
@@ -28,6 +26,7 @@ import { GripVertical, Columns, EyeIcon, Save } from 'lucide-react';
 import AdvancedSectionEditDialog from './AdvancedSectionEditDialog';
 import SideBySidePreview from './SideBySidePreview';
 import { useAuth } from '@/hooks/use-auth';
+import { useWireframeEditor } from '@/hooks/wireframe/use-wireframe-editor';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -49,7 +48,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const { toast: uiToast } = useToast();
   const { user } = useAuth();
   
-  // Use the Zustand store for state management
+  // Use the Zustand store for section state management
   const {
     wireframe,
     addSection,
@@ -60,8 +59,19 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     setActiveSection,
     reorderSections,
     hiddenSections,
-    toggleSectionVisibility
+    toggleSectionVisibility,
+    updateCanvasSettings,
+    canvasSettings
   } = useWireframeStore();
+  
+  // Use our new wireframe editor hook
+  const {
+    isLoading,
+    error,
+    project,
+    canvas,
+    initializeEditor,
+  } = useWireframeEditor(projectId);
 
   useEffect(() => {
     // Get all registered component definitions
@@ -69,10 +79,23 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     setComponents(definitions);
   }, []);
 
+  // Initialize editor when component mounts
+  useEffect(() => {
+    if (projectId) {
+      initializeEditor(projectId);
+    }
+  }, [projectId, initializeEditor]);
+
   // Function to add a new section from the component library
   const handleAddSection = (componentType: string) => {
-    const sectionData = createSectionInstance(componentType);
-    addSection(sectionData);
+    const sectionName = componentType.charAt(0).toUpperCase() + componentType.slice(1);
+    
+    addSection({
+      name: sectionName,
+      sectionType: componentType,
+      layoutType: 'default',
+      description: `A ${componentType} section`,
+    });
     
     toast.success("Section added", {
       description: `Added ${componentType} section to wireframe`,
@@ -109,44 +132,15 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       setIsSaving(true);
       console.log("Saving wireframe with ID:", wireframe.id || "new wireframe");
 
-      // Create wireframe data with proper type alignment
-      const wireframeData = {
-        id: wireframe.id, // Include ID if it exists for updates
-        title: wireframe.title || "New Wireframe",
-        description: wireframe.description || "Created with the Wireframe Editor",
-        sections: wireframe.sections || []
-      };
-
-      const result = await WireframeService.createWireframe({
-        title: wireframeData.title,
-        description: wireframeData.description,
-        data: wireframeData,
-        sections: wireframeData.sections
-      });
-
-      // Update wireframe ID if it was a new wireframe or ID has changed
-      if (result && result.id && (!wireframe.id || wireframe.id !== result.id)) {
-        setWireframe({
-          ...wireframe,
-          id: result.id,
-          lastUpdated: result.lastUpdated
-        });
-        console.log("Wireframe saved with ID:", result.id);
-      } else if (result) {
-        // Update the lastUpdated timestamp
-        setWireframe({
-          ...wireframe,
-          lastUpdated: result.lastUpdated
-        });
-      }
-
+      // TODO: Implement saving to database via WireframeMemoryService
+      // This is a placeholder for now
+      
       setLastSaved(new Date());
       toast.success("Wireframe saved", {
         description: "Wireframe saved successfully",
         duration: 5000
       });
 
-      return result;
     } catch (error: any) {
       console.error("Error saving wireframe:", error);
       toast.error("Error saving wireframe", {
@@ -197,7 +191,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     }
   };
 
-  const handleAdvancedSectionUpdate = (sectionId: string, updates: Partial<WireframeSection>) => {
+  const handleAdvancedSectionUpdate = (sectionId: string, updates: any) => {
     updateSection(sectionId, updates);
     
     toast.success("Section updated", {
@@ -245,6 +239,28 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const togglePreviewMode = () => {
     setPreviewMode(!previewMode);
   };
+
+  // Update canvas settings (zoom, grid, etc.)
+  const handleUpdateCanvasSettings = (updates: any) => {
+    updateCanvasSettings(updates);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 border border-red-300 bg-red-50 rounded-lg text-red-800">
+        <h3 className="text-lg font-medium">Error loading wireframe editor</h3>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   // Main editor content that will be wrapped by SideBySidePreview
   const editorContent = (
@@ -362,7 +378,13 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
 
         {/* Canvas Area */}
         <div className="md:col-span-3">
-          <WireframeCanvas projectId={projectId} className="min-h-[600px]" onSectionClick={handleSelectSection} />
+          <WireframeCanvas 
+            projectId={projectId} 
+            className="min-h-[600px]" 
+            onSectionClick={handleSelectSection}
+            canvasSettings={canvasSettings}
+            onUpdateCanvasSettings={handleUpdateCanvasSettings}
+          />
         </div>
       </div>
       

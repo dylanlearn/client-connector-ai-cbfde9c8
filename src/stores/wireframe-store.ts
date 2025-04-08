@@ -1,247 +1,303 @@
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { WireframeData } from '@/types/wireframe';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
 
+export interface WireframeSection {
+  id: string;
+  name: string;
+  description?: string;
+  sectionType: string;
+  layoutType?: string;
+  componentVariant?: string; 
+  components?: any[];
+  styleProperties?: any;
+  positionOrder?: number;
+  designReasoning?: string;
+  copySuggestions?: any[];
+  mobileLayout?: any;
+  animationSuggestions?: any[];
+}
+
 export interface WireframeState {
-  wireframe: WireframeData;
+  id?: string;
+  title: string;
+  description?: string;
+  sections: WireframeSection[];
+  styleToken?: string;
+  colorScheme?: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+  };
+  typography?: {
+    headings: string;
+    body: string;
+  };
+  lastUpdated?: string;
+}
+
+interface WireframeStoreState {
+  wireframe: WireframeState;
   activeSection: string | null;
-  activeDevice: 'desktop' | 'tablet' | 'mobile';
-  editMode: boolean;
-  showGrid: boolean;
-  highlightSections: boolean;
-  darkMode: boolean;
+  activeComponentId: string | null;
   hiddenSections: string[];
-  history: {
-    past: WireframeData[];
-    future: WireframeData[];
+  undoStack: WireframeState[];
+  redoStack: WireframeState[];
+  canvasSettings: {
+    zoom: number;
+    panOffset: { x: number, y: number };
+    showGrid: boolean;
+    snapToGrid: boolean;
+    gridSize: number;
   };
   
   // Actions
-  setWireframe: (wireframe: WireframeData) => void;
-  updateWireframe: (updates: Partial<WireframeData>) => void;
-  setActiveSection: (sectionId: string | null) => void;
-  setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
-  toggleEditMode: () => void;
-  toggleShowGrid: () => void;
-  toggleHighlightSections: () => void;
-  toggleDarkMode: () => void;
-  toggleSectionVisibility: (sectionId: string) => void;
-  hideAllSections: () => void;
-  showAllSections: () => void;
-  
-  // Section operations
-  addSection: (section: Partial<WireframeSection>) => void;
+  setWireframe: (wireframe: Partial<WireframeState>) => void;
+  addSection: (section: Omit<WireframeSection, 'id'>) => void;
   updateSection: (sectionId: string, updates: Partial<WireframeSection>) => void;
   removeSection: (sectionId: string) => void;
-  reorderSections: (fromIndex: number, toIndex: number) => void;
+  reorderSections: (sourceIndex: number, destinationIndex: number) => void;
+  setActiveSection: (sectionId: string | null) => void;
+  setActiveComponent: (componentId: string | null) => void;
+  toggleSectionVisibility: (sectionId: string) => void;
+  updateCanvasSettings: (updates: Partial<WireframeStoreState['canvasSettings']>) => void;
   
-  // History operations
+  // Undo/Redo
+  saveStateForUndo: () => void;
   undo: () => void;
   redo: () => void;
-  saveToHistory: () => void;
+  resetHistory: () => void;
 }
 
-const DEFAULT_WIREFRAME: WireframeData = {
-  title: 'New Wireframe',
-  description: 'Create your wireframe by adding sections',
-  sections: [],
-  layoutType: 'standard',
-  colorScheme: {
-    primary: '#4F46E5',
-    secondary: '#A855F7',
-    accent: '#F59E0B',
-    background: '#FFFFFF'
+export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
+  wireframe: {
+    title: 'New Wireframe',
+    description: '',
+    sections: [],
   },
-  typography: {
-    headings: 'Raleway, sans-serif',
-    body: 'Inter, sans-serif'
-  }
-};
+  activeSection: null,
+  activeComponentId: null,
+  hiddenSections: [],
+  undoStack: [],
+  redoStack: [],
+  canvasSettings: {
+    zoom: 1,
+    panOffset: { x: 0, y: 0 },
+    showGrid: true,
+    snapToGrid: true,
+    gridSize: 8,
+  },
 
-export const useWireframeStore = create<WireframeState>()(
-  persist(
-    (set, get) => ({
-      wireframe: DEFAULT_WIREFRAME,
-      activeSection: null,
-      activeDevice: 'desktop',
-      editMode: false,
-      showGrid: false,
-      highlightSections: true,
-      darkMode: false,
-      hiddenSections: [],
-      history: {
-        past: [],
-        future: []
+  setWireframe: (wireframe) => {
+    set((state) => ({
+      wireframe: {
+        ...state.wireframe,
+        ...wireframe,
       },
+    }));
+  },
 
-      setWireframe: (wireframe) => {
-        set({ wireframe });
-        get().saveToHistory();
-      },
+  addSection: (sectionData) => {
+    const section: WireframeSection = {
+      ...sectionData,
+      id: uuidv4(),
+    };
+    
+    set((state) => {
+      // Save current state for undo
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
       
-      updateWireframe: (updates) => {
-        set((state) => ({
-          wireframe: { ...state.wireframe, ...updates }
-        }));
-        get().saveToHistory();
-      },
+      // Add section to the end of the sections array
+      const sections = [...state.wireframe.sections, section];
       
-      setActiveSection: (sectionId) => set({ activeSection: sectionId }),
-      
-      setActiveDevice: (device) => set({ activeDevice: device }),
-      
-      toggleEditMode: () => set((state) => ({ editMode: !state.editMode })),
-      
-      toggleShowGrid: () => set((state) => ({ showGrid: !state.showGrid })),
-      
-      toggleHighlightSections: () => set((state) => ({ 
-        highlightSections: !state.highlightSections 
-      })),
-      
-      toggleDarkMode: () => set((state) => ({ 
-        darkMode: !state.darkMode,
+      return {
         wireframe: {
           ...state.wireframe,
-          colorScheme: {
-            ...state.wireframe.colorScheme,
-            background: !state.darkMode ? '#111827' : '#FFFFFF'
-          }
-        }
-      })),
-      
-      toggleSectionVisibility: (sectionId) => set((state) => {
-        const isHidden = state.hiddenSections.includes(sectionId);
-        return {
-          hiddenSections: isHidden
-            ? state.hiddenSections.filter(id => id !== sectionId)
-            : [...state.hiddenSections, sectionId]
-        };
-      }),
+          sections,
+          lastUpdated: new Date().toISOString(),
+        },
+        undoStack,
+        redoStack: [],
+        activeSection: section.id, // Auto-select the new section
+      };
+    });
+  },
 
-      hideAllSections: () => set((state) => ({
-        hiddenSections: state.wireframe.sections.map(section => section.id)
-      })),
+  updateSection: (sectionId, updates) => {
+    set((state) => {
+      const sections = state.wireframe.sections.map((section) =>
+        section.id === sectionId ? { ...section, ...updates } : section
+      );
       
-      showAllSections: () => set({ hiddenSections: [] }),
+      // Save current state for undo
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
       
-      addSection: (section) => {
-        const newSection: WireframeSection = {
-          id: uuidv4(),
-          name: section.name || 'New Section',
-          sectionType: section.sectionType || 'default',
-          ...section
-        };
-        
-        set((state) => ({
-          wireframe: {
-            ...state.wireframe,
-            sections: [...(state.wireframe.sections || []), newSection]
-          },
-          activeSection: newSection.id
-        }));
-        
-        get().saveToHistory();
-      },
+      return {
+        wireframe: {
+          ...state.wireframe,
+          sections,
+          lastUpdated: new Date().toISOString(),
+        },
+        undoStack,
+        redoStack: [],
+      };
+    });
+  },
+
+  removeSection: (sectionId) => {
+    set((state) => {
+      // Save current state for undo
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
       
-      updateSection: (sectionId, updates) => {
-        set((state) => ({
-          wireframe: {
-            ...state.wireframe,
-            sections: (state.wireframe.sections || []).map((section) =>
-              section.id === sectionId ? { ...section, ...updates } : section
-            )
-          }
-        }));
-        
-        get().saveToHistory();
-      },
+      const sections = state.wireframe.sections.filter(
+        (section) => section.id !== sectionId
+      );
       
-      removeSection: (sectionId) => {
-        set((state) => ({
-          wireframe: {
-            ...state.wireframe,
-            sections: (state.wireframe.sections || []).filter(
-              (section) => section.id !== sectionId
-            )
-          },
-          activeSection: null,
-          // Also remove from hiddenSections if it exists there
-          hiddenSections: state.hiddenSections.filter(id => id !== sectionId)
-        }));
-        
-        get().saveToHistory();
-      },
+      // If we're removing the currently active section, clear activeSection
+      const activeSection = state.activeSection === sectionId ? null : state.activeSection;
       
-      reorderSections: (fromIndex, toIndex) => {
-        set((state) => {
-          const sections = [...(state.wireframe.sections || [])];
-          const [removed] = sections.splice(fromIndex, 1);
-          sections.splice(toIndex, 0, removed);
-          
-          return {
-            wireframe: {
-              ...state.wireframe,
-              sections
-            }
-          };
-        });
-        
-        get().saveToHistory();
-      },
+      // Also remove from hiddenSections if it's there
+      const hiddenSections = state.hiddenSections.filter(id => id !== sectionId);
       
-      saveToHistory: () => {
-        set((state) => ({
-          history: {
-            past: [...state.history.past, JSON.parse(JSON.stringify(state.wireframe))],
-            future: []
-          }
-        }));
-      },
-      
-      undo: () => {
-        set((state) => {
-          if (state.history.past.length === 0) return state;
-          
-          const newPast = [...state.history.past];
-          const previous = newPast.pop();
-          
-          return {
-            wireframe: previous!,
-            history: {
-              past: newPast,
-              future: [state.wireframe, ...state.history.future]
-            }
-          };
-        });
-      },
-      
-      redo: () => {
-        set((state) => {
-          if (state.history.future.length === 0) return state;
-          
-          const newFuture = [...state.history.future];
-          const next = newFuture.shift();
-          
-          return {
-            wireframe: next!,
-            history: {
-              past: [...state.history.past, state.wireframe],
-              future: newFuture
-            }
-          };
-        });
+      return {
+        wireframe: {
+          ...state.wireframe,
+          sections,
+          lastUpdated: new Date().toISOString(),
+        },
+        undoStack,
+        redoStack: [],
+        activeSection,
+        hiddenSections,
+      };
+    });
+  },
+
+  reorderSections: (sourceIndex, destinationIndex) => {
+    set((state) => {
+      if (
+        sourceIndex < 0 ||
+        sourceIndex >= state.wireframe.sections.length ||
+        destinationIndex < 0 ||
+        destinationIndex >= state.wireframe.sections.length
+      ) {
+        return state; // Invalid indices
       }
-    }),
-    {
-      name: 'wireframe-storage',
-      partialize: (state) => ({
-        wireframe: state.wireframe,
-        darkMode: state.darkMode,
-        hiddenSections: state.hiddenSections
-      })
-    }
-  )
-);
+      
+      // Save current state for undo
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
+      
+      // Create a new array with the sections reordered
+      const sections = [...state.wireframe.sections];
+      const [movedSection] = sections.splice(sourceIndex, 1);
+      sections.splice(destinationIndex, 0, movedSection);
+      
+      // Update positionOrder if it exists
+      const updatedSections = sections.map((section, index) => ({
+        ...section,
+        positionOrder: index,
+      }));
+      
+      return {
+        wireframe: {
+          ...state.wireframe,
+          sections: updatedSections,
+          lastUpdated: new Date().toISOString(),
+        },
+        undoStack,
+        redoStack: [],
+      };
+    });
+  },
+
+  setActiveSection: (sectionId) => {
+    set({
+      activeSection: sectionId,
+      activeComponentId: null, // Clear active component when setting active section
+    });
+  },
+
+  setActiveComponent: (componentId) => {
+    set({
+      activeComponentId: componentId,
+    });
+  },
+
+  toggleSectionVisibility: (sectionId) => {
+    set((state) => {
+      const isHidden = state.hiddenSections.includes(sectionId);
+      
+      return {
+        hiddenSections: isHidden
+          ? state.hiddenSections.filter(id => id !== sectionId)
+          : [...state.hiddenSections, sectionId],
+      };
+    });
+  },
+
+  updateCanvasSettings: (updates) => {
+    set((state) => ({
+      canvasSettings: {
+        ...state.canvasSettings,
+        ...updates,
+      },
+    }));
+  },
+
+  saveStateForUndo: () => {
+    set((state) => ({
+      undoStack: [...state.undoStack, { ...state.wireframe }],
+      redoStack: [], // Clear redo stack whenever we save a new state
+    }));
+  },
+
+  undo: () => {
+    set((state) => {
+      if (state.undoStack.length === 0) return state;
+      
+      // Get the last state from the undo stack
+      const undoStack = [...state.undoStack];
+      const previousState = undoStack.pop();
+      
+      if (!previousState) return state;
+      
+      // Add current state to redo stack
+      const redoStack = [...state.redoStack, { ...state.wireframe }];
+      
+      return {
+        wireframe: previousState,
+        undoStack,
+        redoStack,
+      };
+    });
+  },
+
+  redo: () => {
+    set((state) => {
+      if (state.redoStack.length === 0) return state;
+      
+      // Get the last state from the redo stack
+      const redoStack = [...state.redoStack];
+      const nextState = redoStack.pop();
+      
+      if (!nextState) return state;
+      
+      // Add current state to undo stack
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
+      
+      return {
+        wireframe: nextState,
+        undoStack,
+        redoStack,
+      };
+    });
+  },
+
+  resetHistory: () => {
+    set({
+      undoStack: [],
+      redoStack: [],
+    });
+  },
+}));
