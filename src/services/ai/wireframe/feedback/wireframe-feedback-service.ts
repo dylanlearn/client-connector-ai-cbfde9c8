@@ -1,5 +1,5 @@
 
-import { WireframeApiService } from '../wireframe-api';
+import wireframeApiService from '../api/wireframe-api-service';
 
 /**
  * Service focused on wireframe feedback and ratings
@@ -14,7 +14,7 @@ export const WireframeFeedbackService = {
     rating?: number
   ): Promise<void> => {
     try {
-      await WireframeApiService.updateWireframeFeedback(wireframeId, feedback, rating);
+      await wireframeApiService.updateWireframeFeedback(wireframeId, feedback, rating);
     } catch (error) {
       console.error("Error in wireframe service updateWireframeFeedback:", error);
       throw error;

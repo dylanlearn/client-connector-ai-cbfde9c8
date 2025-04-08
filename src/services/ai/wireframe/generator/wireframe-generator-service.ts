@@ -1,5 +1,5 @@
 
-import { WireframeApiService } from '../wireframe-api';
+import wireframeApiService from '../api/wireframe-api-service';
 import {
   WireframeGenerationParams,
   WireframeGenerationResult,
@@ -38,7 +38,7 @@ export const WireframeGeneratorService = {
       }
       
       // Call the API service to generate the wireframe
-      const result = await WireframeApiService.generateWireframe(params);
+      const result = await wireframeApiService.generateWireframe(params);
       
       // Save the generated wireframe to the database if there's a project ID
       if (params.projectId && result.wireframe) {
@@ -48,7 +48,7 @@ export const WireframeGeneratorService = {
           title: result.wireframe.title || "Untitled Wireframe"
         };
         
-        await WireframeApiService.saveWireframe(
+        await wireframeApiService.saveWireframe(
           params.projectId,
           params.prompt || params.description, // Use prompt if available, otherwise use description
           wireframeWithTitle,
@@ -58,7 +58,7 @@ export const WireframeGeneratorService = {
         
         // If project is provided, create initial version in version control
         try {
-          const lastWireframe = await WireframeApiService.getLatestWireframe(params.projectId);
+          const lastWireframe = await wireframeApiService.getLatestWireframe(params.projectId);
           
           if (lastWireframe) {
             await WireframeVersionControlService.createVersion(

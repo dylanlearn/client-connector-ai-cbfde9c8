@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
-import { WireframeApiService } from '@/services/ai/wireframe/wireframe-api';
+import wireframeApiService from '@/services/ai/wireframe/api/wireframe-api-service';
 import type { 
   WireframeGenerationParams, 
   WireframeGenerationResult 
@@ -25,7 +25,7 @@ export function useWireframeGenerator(
       // First, check if user is trying to generate from existing wireframe
       let initialWireframe = null;
       if (params.baseWireframe && params.baseWireframe.id) {
-        initialWireframe = await WireframeApiService.getWireframe(params.baseWireframe.id);
+        initialWireframe = await wireframeApiService.getWireframe(params.baseWireframe.id);
       }
 
       // Enhance params with creativity level if not provided
@@ -35,8 +35,8 @@ export function useWireframeGenerator(
         enhancedCreativity: params.enhancedCreativity !== undefined ? params.enhancedCreativity : true
       };
 
-      // Call the API service to generate wireframe - WireframeApiService instead of WireframeService
-      const result = await WireframeApiService.generateWireframe(enhancedParams);
+      // Call the API service to generate wireframe
+      const result = await wireframeApiService.generateWireframe(enhancedParams);
 
       if (!result || !result.wireframe) {
         const errorMsg = "Failed to generate wireframe";

@@ -86,7 +86,6 @@ class DeviceAdaptiveWireframeApiService implements WireframeApiService {
         id: `${originalWireframe.id}-${device}`,
         title: `${originalWireframe.title} (${device})`,
         sections: adaptedSections,
-        // Fixed: deviceTarget is not in the WireframeData type, use metadata instead
         metadata: {
           ...originalWireframe.metadata,
           deviceType: device
@@ -118,7 +117,7 @@ class DeviceAdaptiveWireframeApiService implements WireframeApiService {
             mobileOptimized: true
           }));
         }
-        // Fixed: assign correct type for mobileLayout
+        // Use the correct type for mobileLayout
         adaptedSection.mobileLayout = {
           structure: 'stacked',
           stackOrder: adaptedSection.components?.map(c => c.id) || []
@@ -134,7 +133,7 @@ class DeviceAdaptiveWireframeApiService implements WireframeApiService {
             tabletOptimized: true
           }));
         }
-        // Fixed: add layout info to the existing layout property instead
+        // Add layout info to the existing layout property
         adaptedSection.layout = typeof adaptedSection.layout === 'string' 
           ? { type: adaptedSection.layout, tabletGrid: 'grid-2' }
           : { ...adaptedSection.layout, tabletGrid: 'grid-2' };

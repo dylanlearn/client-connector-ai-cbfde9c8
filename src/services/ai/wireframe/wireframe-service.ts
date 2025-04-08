@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeApiService } from "./wireframe-api";
+import wireframeApiService from "./api/wireframe-api-service";
 import type { 
   WireframeGenerationParams, 
   WireframeData, 
@@ -31,7 +31,7 @@ export class WireframeService {
       let existingWireframe: AIWireframe | null = null;
       if (params.data.id) {
         try {
-          existingWireframe = await WireframeApiService.getWireframe(params.data.id);
+          existingWireframe = await wireframeApiService.getWireframe(params.data.id);
           console.log("Found existing wireframe:", existingWireframe ? "yes" : "no");
         } catch (error) {
           console.log("Error checking for existing wireframe:", error);
@@ -42,7 +42,7 @@ export class WireframeService {
       if (existingWireframe) {
         // Update existing wireframe
         console.log("Updating existing wireframe with ID:", params.data.id);
-        const updated = await WireframeApiService.updateWireframeData(
+        const updated = await wireframeApiService.updateWireframeData(
           params.data.id!,
           {
             ...params.data,
@@ -69,7 +69,7 @@ export class WireframeService {
         console.log("Using wireframe ID:", wireframeId);
         
         // Save to database 
-        const result = await WireframeApiService.saveWireframe(
+        const result = await wireframeApiService.saveWireframe(
           wireframeId,
           prompt,
           {
@@ -105,7 +105,7 @@ export class WireframeService {
   static async getWireframe(wireframeId: string): Promise<WireframeData | null> {
     try {
       console.log("Getting wireframe with ID:", wireframeId);
-      const wireframe = await WireframeApiService.getWireframe(wireframeId);
+      const wireframe = await wireframeApiService.getWireframe(wireframeId);
       
       if (!wireframe) {
         console.log("Wireframe not found");
