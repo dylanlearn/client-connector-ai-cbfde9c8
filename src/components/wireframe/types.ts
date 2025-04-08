@@ -1,6 +1,8 @@
 
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
+export { WireframeSection };
+
 export interface WireframeProps {
   id?: string;
   title?: string;

@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { WireframeSection } from './types';
+import React from 'react';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 
 interface WireframeComponentProps {
