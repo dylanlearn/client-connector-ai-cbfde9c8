@@ -10,8 +10,12 @@ export * from './ai-memory-service';
 // Export nested service directories
 export * from './analytics';
 export * from './content';
-// We'll import design namespace but avoid re-exporting PatternRecognitionOptions
+
+// Import design namespace instead of re-exporting everything
+// This avoids the PatternRecognitionOptions conflict
 import * as design from './design';
 export { design };
+
+// Export other modules
 export * from './summary';
 export * from './memory';
