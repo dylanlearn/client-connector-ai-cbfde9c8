@@ -1,19 +1,21 @@
 
 import React from 'react';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { Skeleton } from '@/components/ui/skeleton';
-import WireframeSectionRenderer from './WireframeSectionRenderer';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import ComponentRenderer from './renderers/ComponentRenderer';
+import { cn } from '@/lib/utils';
+import { GripVertical } from 'lucide-react';
 
 interface WireframeDataVisualizerProps {
   wireframeData: WireframeData;
-  viewMode: 'preview' | 'flowchart';
+  viewMode?: 'preview' | 'flowchart';
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   darkMode?: boolean;
   showGrid?: boolean;
   highlightSections?: boolean;
   activeSection?: string | null;
-  onSectionClick?: (sectionId: string) => void;
+  isDraggable?: boolean; // New prop to control if sections can be dragged
+  onDragEnd?: (result: DropResult) => void; // New prop for drag-and-drop callback
 }
 
 export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
@@ -24,50 +26,108 @@ export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = (
   showGrid = false,
   highlightSections = false,
   activeSection = null,
-  onSectionClick,
+  isDraggable = false,
+  onDragEnd
 }) => {
-  if (!wireframeData || !wireframeData.sections) {
+  // Add device-specific width constraints
+  const deviceWidthClass = () => {
+    switch (deviceType) {
+      case 'mobile':
+        return 'max-w-[375px] mx-auto';
+      case 'tablet':
+        return 'max-w-[768px] mx-auto';
+      default:
+        return 'w-full';
+    }
+  };
+
+  // Handle sections with no grid
+  if (!wireframeData.sections || wireframeData.sections.length === 0) {
     return (
-      <div className="p-4">
-        <Skeleton className="h-[300px] w-full" />
+      <div className={cn(
+        "w-full min-h-[200px] flex items-center justify-center", 
+        darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-600'
+      )}>
+        <p>No sections available</p>
       </div>
     );
   }
 
-  return (
-    <div 
-      className={`wireframe-visualizer ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}
-      style={{ 
-        maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
-        margin: '0 auto'
-      }}
-    >
-      <div className={`wireframe-sections ${showGrid ? 'grid grid-cols-12 gap-4' : ''}`}>
-        {wireframeData.sections.map((section: WireframeSection, index: number) => {
-          const isActive = activeSection === section.id;
-          
-          return (
-            <div 
-              key={section.id || `section-${index}`} 
-              className={`wireframe-section-wrapper relative ${
-                showGrid ? 'col-span-12' : ''
-              } ${
-                isActive ? 'ring-2 ring-primary' : ''
-              } ${
-                highlightSections ? 'hover:ring-2 hover:ring-primary/50' : ''
-              }`}
-            >
-              <WireframeSectionRenderer 
-                section={section}
-                viewMode={viewMode}
-                darkMode={darkMode}
-                sectionIndex={index}
-                onSectionClick={onSectionClick}
-              />
-            </div>
-          );
-        })}
+  // Render sections without drag-and-drop
+  if (!isDraggable) {
+    return (
+      <div className={cn(
+        deviceWidthClass(),
+        darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-600'
+      )}>
+        {wireframeData.sections.map((section, index) => (
+          <div 
+            key={section.id}
+            className={cn(
+              'relative transition-all duration-200',
+              showGrid ? 'border border-dashed border-gray-300 my-2' : '',
+              highlightSections ? 'hover:outline hover:outline-blue-300' : '',
+              activeSection === section.id ? 'outline outline-blue-500' : ''
+            )}
+          >
+            <ComponentRenderer 
+              section={section} 
+              viewMode={viewMode} 
+              darkMode={darkMode} 
+            />
+          </div>
+        ))}
       </div>
+    );
+  }
+
+  // Render sections with drag-and-drop
+  return (
+    <div className={cn(
+      deviceWidthClass(),
+      darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-600'
+    )}>
+      <Droppable droppableId="wireframe-sections">
+        {(provided) => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            className="space-y-1"
+          >
+            {wireframeData.sections.map((section, index) => (
+              <Draggable key={section.id} draggableId={section.id} index={index}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    className={cn(
+                      'relative transition-all duration-200 group',
+                      showGrid ? 'border border-dashed border-gray-300 my-2' : '',
+                      highlightSections ? 'hover:outline hover:outline-blue-300' : '',
+                      activeSection === section.id ? 'outline outline-blue-500' : ''
+                    )}
+                  >
+                    {/* Drag handle */}
+                    <div 
+                      {...provided.dragHandleProps}
+                      className="absolute top-0 left-0 z-10 p-2 bg-white bg-opacity-80 rounded cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <GripVertical className="h-4 w-4 text-gray-500" />
+                    </div>
+                    
+                    <ComponentRenderer 
+                      section={section} 
+                      viewMode={viewMode} 
+                      darkMode={darkMode} 
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
     </div>
   );
 };

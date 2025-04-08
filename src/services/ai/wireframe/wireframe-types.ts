@@ -1,4 +1,3 @@
-
 /**
  * Interface for an AI-generated wireframe
  */
@@ -59,6 +58,7 @@ export interface WireframeSection {
   data?: any;
   dynamicElements?: any;
   styleVariants?: any;
+  isDragging?: boolean; // Added property for drag tracking
 }
 
 /**

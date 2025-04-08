@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Layout, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeCanvasProps {
@@ -23,6 +24,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
   const activeSection = useWireframeStore((state) => state.activeSection);
   const hiddenSections = useWireframeStore((state) => state.hiddenSections);
   const showAllSections = useWireframeStore((state) => state.showAllSections);
+  const reorderSections = useWireframeStore((state) => state.reorderSections);
   
   // Filter out hidden sections for display
   const visibleSections = wireframe.sections
@@ -39,6 +41,22 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
   const allSectionsHidden = wireframe.sections && 
     wireframe.sections.length > 0 && 
     hiddenSections.length === wireframe.sections.length;
+
+  // Handle drag end event
+  const handleDragEnd = (result: DropResult) => {
+    // Dropped outside the list
+    if (!result.destination) return;
+    
+    // Find the actual indices in the original sections array
+    const allSectionIds = wireframe.sections.map(section => section.id);
+    const visibleSectionIds = visibleSections.map(section => section.id);
+    
+    const fromIndex = allSectionIds.indexOf(visibleSectionIds[result.source.index]);
+    const toIndex = allSectionIds.indexOf(visibleSectionIds[result.destination.index]);
+    
+    // Reorder sections using the store method
+    reorderSections(fromIndex, toIndex);
+  };
   
   if (!wireframe) {
     return (
@@ -96,18 +114,21 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
 
   return (
     <div className={cn("border rounded-lg p-4 relative min-h-80", className)}>
-      <WireframeDataVisualizer 
-        wireframeData={{
-          ...visibleWireframe,
-          id: visibleWireframe.id || `wireframe-${Date.now()}` // Ensure ID exists
-        }}
-        viewMode="preview"
-        deviceType={activeDevice}
-        darkMode={darkMode}
-        showGrid={showGrid}
-        highlightSections={highlightSections}
-        activeSection={activeSection}
-      />
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <WireframeDataVisualizer 
+          wireframeData={{
+            ...visibleWireframe,
+            id: visibleWireframe.id || `wireframe-${Date.now()}` // Ensure ID exists
+          }}
+          viewMode="preview"
+          deviceType={activeDevice}
+          darkMode={darkMode}
+          showGrid={showGrid}
+          highlightSections={highlightSections}
+          activeSection={activeSection}
+          isDraggable={true} // New prop to enable drag-and-drop in the visualizer
+        />
+      </DragDropContext>
     </div>
   );
 };

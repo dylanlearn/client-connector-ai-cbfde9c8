@@ -7,6 +7,7 @@ import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useWireframeStore } from '@/stores/wireframe-store';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import WireframeToolbar from './WireframeToolbar';
 import WireframeCanvas from './WireframeCanvas';
 import SectionControls from './SectionControls';
@@ -22,6 +23,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { GripVertical } from 'lucide-react';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -152,13 +154,15 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     });
   };
 
-  // Handle section reordering
-  const handleMoveSection = (currentIndex: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+  // Handle drag end event for section list
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    reorderSections(result.source.index, result.destination.index);
     
-    if (newIndex >= 0 && newIndex < wireframe.sections.length) {
-      reorderSections(currentIndex, newIndex);
-    }
+    toast({
+      title: "Sections reordered",
+      description: "The wireframe sections have been reordered"
+    });
   };
 
   return (
@@ -193,28 +197,74 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
           <TabsContent value="sections" className="bg-card p-4 rounded-lg shadow">
             <h3 className="text-lg font-medium mb-4">Section Manager</h3>
             <ScrollArea className="h-[500px]">
-              <div className="space-y-2">
-                {wireframe.sections.length === 0 ? (
-                  <div className="text-center p-4 text-sm text-muted-foreground">
-                    No sections added yet. Add components from the Components tab.
-                  </div>
-                ) : (
-                  wireframe.sections.map((section, index) => (
-                    <SectionControls
-                      key={section.id}
-                      section={section}
-                      sectionIndex={index}
-                      totalSections={wireframe.sections.length}
-                      onMoveUp={() => handleMoveSection(index, 'up')}
-                      onMoveDown={() => handleMoveSection(index, 'down')}
-                      onDelete={() => handleDeleteSection(section.id)}
-                      onEdit={() => openEditDialog(section.id)}
-                      onToggleVisibility={() => toggleSectionVisibility(section.id)}
-                      isVisible={!hiddenSections.includes(section.id)}
-                    />
-                  ))
-                )}
-              </div>
+              {wireframe.sections.length === 0 ? (
+                <div className="text-center p-4 text-sm text-muted-foreground">
+                  No sections added yet. Add components from the Components tab.
+                </div>
+              ) : (
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="section-list">
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-2"
+                      >
+                        {wireframe.sections.map((section, index) => (
+                          <Draggable key={section.id} draggableId={section.id} index={index}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className="border rounded-md p-2 bg-background hover:bg-accent/5 transition-colors"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div {...provided.dragHandleProps} className="cursor-grab">
+                                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                  </div>
+                                  
+                                  <div className="flex-1" onClick={() => handleSelectSection(section.id)}>
+                                    <p className="font-medium">{section.name}</p>
+                                    <p className="text-xs text-muted-foreground">{section.sectionType}</p>
+                                  </div>
+                                  
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => toggleSectionVisibility(section.id)}
+                                      className="px-2 h-8"
+                                    >
+                                      {hiddenSections.includes(section.id) ? 'Show' : 'Hide'}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => openEditDialog(section.id)}
+                                      className="px-2 h-8"
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteSection(section.id)}
+                                      className="px-2 h-8 text-destructive hover:text-destructive"
+                                    >
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>
