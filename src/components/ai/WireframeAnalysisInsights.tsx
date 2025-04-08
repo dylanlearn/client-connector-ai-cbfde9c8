@@ -1,10 +1,11 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, CheckCircle2, XCircle, Zap, BarChart4, Layout, Type, Palette } from "lucide-react";
-import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
+import { AIWireframe, aiWireframeToWireframeData } from "@/services/ai/wireframe/wireframe-types";
 import AIInsightCard from "@/components/ai/AIInsightCard";
 
 interface WireframeAnalysisInsightsProps {
@@ -19,8 +20,10 @@ const WireframeAnalysisInsights: React.FC<WireframeAnalysisInsightsProps> = ({
   wireframe,
   onApplyRecommendation
 }) => {
-  // Use data from the appropriate property, with fallbacks
-  const wireframeData = wireframe.data || wireframe.wireframe_data;
+  // Get wireframe data using proper fallbacks
+  const wireframeData = wireframe.wireframe_data || 
+                       wireframe.data || 
+                       aiWireframeToWireframeData(wireframe);
   
   if (!wireframeData) {
     return (

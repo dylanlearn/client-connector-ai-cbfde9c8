@@ -1,8 +1,16 @@
+
 // Fix the typography interface to include fontPairings
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeGenerationParams, WireframeData, WireframeComponent, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeGenerationParams, WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { IntakeFormData } from '@/types/intake-form';
+
+// Define the WireframeComponent interface locally if needed
+interface WireframeComponent {
+  id: string;
+  type: string;
+  content?: any;
+}
 
 interface IntakeData {
   // ... keep existing interface properties
@@ -39,6 +47,7 @@ export const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       id: uuidv4(),
       name: sectionNameFromType(sectionType),
       sectionType: sectionType,
+      // Use layoutType as part of the WireframeSection interface
       layoutType: sectionLayoutFromType(sectionType),
       layout: {
         type: 'flex',
@@ -57,6 +66,7 @@ export const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       title: data.projectName || 'Untitled Wireframe',
       description: data.projectDescription || 'Generated from intake form data',
       sections,
+      // layoutType is now supported by our updated interface
       layoutType: 'responsive',
       colorScheme: {
         primary: data.primaryColor || '#3b82f6',
@@ -69,6 +79,7 @@ export const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
         body: data.bodyFont || 'Roboto',
         fontPairings: data.fontPairings || ['Inter', 'Roboto']
       },
+      // style is now supported by our updated interface
       style: data.designStyle || 'modern'
     };
     
@@ -79,6 +90,7 @@ export const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       complexity: 'moderate' as const,
       stylePreferences: data.stylePreferences || ['clean', 'modern'],
       baseWireframe: wireframeData,
+      // industry is now supported by our updated interface
       industry: data.industry || 'general'
     };
   };

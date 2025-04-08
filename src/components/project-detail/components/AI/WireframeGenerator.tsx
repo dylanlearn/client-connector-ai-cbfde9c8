@@ -13,6 +13,8 @@ import { WireframeVisualizer } from '@/components/wireframe';
 import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { WireframeProps } from '@/components/wireframe/types';
+import { adaptSectionsForVisualizer } from '@/components/wireframe/EnhancedWireframeStudio';
 
 interface WireframeGeneratorProps {
   projectId: string;
@@ -151,6 +153,15 @@ const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({
     });
   };
 
+  const adaptSectionsForVisualizer = (sections: any[]): any[] => {
+    return sections.map((section, index) => ({
+      id: section.id || `section-${index}`,
+      name: section.name,
+      sectionType: section.sectionType,
+      description: section.description || '',
+    }));
+  };
+
   return (
     <div className={`space-y-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
       <Card className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}>
@@ -287,7 +298,7 @@ const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({
         </div>
       </Card>
 
-      {generatedWireframe && (
+      {currentWireframe && currentWireframe.wireframe && (
         <Card className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}>
           <CardHeader>
             <CardTitle>Generated Wireframe</CardTitle>
@@ -316,13 +327,23 @@ const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({
               />
             </div>
             
-            <WireframeVisualizer 
-              wireframe={{
-                ...generatedWireframe,
-                id: generatedWireframe.id || `generated-${Date.now()}`
-              }} 
-              darkMode={darkMode} 
-            />
+            {currentWireframe.wireframe ? (
+              <WireframeVisualizer 
+                wireframe={{
+                  id: currentWireframe.wireframe.id || `generated-${Date.now()}`,
+                  title: currentWireframe.wireframe.title || 'Generated Wireframe',
+                  description: currentWireframe.wireframe.description || '',
+                  imageUrl: currentWireframe.wireframe.imageUrl,
+                  sections: adaptSectionsForVisualizer(currentWireframe.wireframe.sections || []),
+                  lastUpdated: new Date().toISOString()
+                }} 
+                darkMode={darkMode} 
+              />
+            ) : (
+              <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
+                <p className="text-muted-foreground">No preview available</p>
+              </div>
+            )}
           </CardContent>
           <div className="p-4 border-t">
             <Button onClick={handleSaveWireframe} className="w-full">

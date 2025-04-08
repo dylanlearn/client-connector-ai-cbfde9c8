@@ -82,31 +82,16 @@ export function useWireframeGenerator(
         return { error: errorMsg };
       }
 
-      // Generate a creative variation using the API service - WireframeApiService instead of WireframeService
-      const result = await WireframeApiService.generateCreativeVariation({
+      // Create our own implementation since the API service doesn't seem to have this method
+      const variationParams: WireframeGenerationParams = {
+        description: `Creative variation of "${currentWireframe.wireframe.title || 'Untitled Wireframe'}"`,
         baseWireframe: currentWireframe.wireframe,
-        creativityLevel: creativityLevel
-      });
-
-      if (!result || !result.wireframe) {
-        const errorMsg = "Failed to generate wireframe variation";
-        setError(errorMsg);
-        if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
-        return { error: errorMsg };
-      }
-
-      // Create the result object
-      const generationResult: WireframeGenerationResult = {
-        wireframe: result.wireframe,
-        imageUrl: result.imageUrl
+        creativityLevel: creativityLevel,
+        enhancedCreativity: true
       };
 
-      // Update current wireframe if setter provided
-      if (setCurrentWireframe) {
-        setCurrentWireframe(generationResult);
-      }
-
-      return generationResult;
+      // Use the regular generateWireframe with our variation parameters
+      return await generateWireframe(variationParams);
     } catch (error: any) {
       const errorMsg = error.message || "An unexpected error occurred";
       setError(errorMsg);
@@ -115,7 +100,7 @@ export function useWireframeGenerator(
     } finally {
       setIsGenerating(false);
     }
-  }, [creativityLevel, toast, setCurrentWireframe]);
+  }, [creativityLevel, toast, setCurrentWireframe, generateWireframe]);
 
   return {
     isGenerating,

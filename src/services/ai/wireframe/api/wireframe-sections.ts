@@ -1,7 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
-import { AIWireframe, WireframeSection, WireframeComponent, CopySuggestions, WireframeData } from "../wireframe-types";
+import { 
+  WireframeSection, 
+  WireframeComponent,
+  CopySuggestions
+} from "../wireframe-types";
 
 /**
  * Service for managing wireframe sections in the database

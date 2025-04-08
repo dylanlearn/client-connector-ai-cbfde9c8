@@ -3,7 +3,7 @@ import { WireframeSection, WireframeData, AIWireframe } from '@/services/ai/wire
 
 export interface WireframeProps {
   id: string;
-  title: string;
+  title: string; // Required field
   description?: string;
   sections: any[];
   imageUrl?: string;
