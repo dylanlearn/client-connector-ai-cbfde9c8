@@ -165,11 +165,10 @@ export function useAdvancedWireframe() {
         description: "Storing wireframe in your project...",
       });
       
+      // Fixed here - removing extra arguments
       const result = await AdvancedWireframeService.saveWireframe(
         projectId,
-        prompt,
-        currentWireframe,
-        layoutAnalysis
+        prompt
       );
       
       toast({
