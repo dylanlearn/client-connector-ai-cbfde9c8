@@ -21,6 +21,7 @@ export interface AIWireframe {
   wireframe_data?: WireframeData; 
   prompt?: string;
   imageUrl?: string;
+  success?: boolean;
 }
 
 /**
@@ -110,6 +111,15 @@ export interface WireframeGenerationParams {
   stylePreferences?: string[];
   complexity?: 'simple' | 'moderate' | 'complex';
   customParams?: Record<string, any>;
+  // Additional properties that were missing
+  industry?: string;
+  pageType?: string;
+  colorTheme?: string;
+  multiPageLayout?: boolean;
+  pages?: number;
+  componentTypes?: string[];
+  moodboardSelections?: string[];
+  title?: string;
 }
 
 /**
@@ -125,6 +135,17 @@ export interface WireframeGenerationResult {
     completionTokens: number;
     model: string;
   };
+  // Additional properties used in the codebase
+  generationTime?: number;
+  usedModels?: string[];
+  model?: string;
+  usage?: {
+    total_tokens: number;
+    completion_tokens: number;
+    prompt_tokens: number;
+  };
+  creativityLevel?: number;
+  success?: boolean;
 }
 
 /**
@@ -177,6 +198,7 @@ export interface BranchInfo {
   current_version_id?: string;
   latest_version_id?: string;
   versions: WireframeVersion[];
+  latestVersion?: WireframeVersion; // Added for compatibility
 }
 
 /**
@@ -189,4 +211,5 @@ export interface VersionComparisonResult {
     values: [any, any];
   }>;
   summary: string;
+  differences?: any; // Added for compatibility
 }

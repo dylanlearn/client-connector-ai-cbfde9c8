@@ -91,11 +91,20 @@ const WireframeSectionPreview: React.FC<WireframeSectionPreviewProps> = ({ secti
     }
   };
 
-  const layoutClass = section.layout?.type === 'centered' 
-    ? 'items-center text-center' 
-    : section.layout?.type === 'right' 
-      ? 'items-end text-right' 
-      : 'items-start';
+  // Handle layout which can be either a string or an object
+  const getLayoutClass = () => {
+    if (!section.layout) return 'items-start';
+    
+    if (typeof section.layout === 'string') {
+      // Handle string layout
+      return section.layout === 'centered' ? 'items-center text-center' :
+        section.layout === 'right' ? 'items-end text-right' : 'items-start';
+    } else {
+      // Handle object layout
+      return section.layout.type === 'centered' ? 'items-center text-center' :
+        section.layout.type === 'right' ? 'items-end text-right' : 'items-start';
+    }
+  };
 
   return (
     <Card className={cn("overflow-hidden", className)}>
@@ -106,7 +115,7 @@ const WireframeSectionPreview: React.FC<WireframeSectionPreviewProps> = ({ secti
         </div>
       </CardHeader>
       <CardContent>
-        <div className={cn("flex flex-col", layoutClass)}>
+        <div className={cn("flex flex-col", getLayoutClass())}>
           {section.components?.map(renderComponent)}
         </div>
       </CardContent>
