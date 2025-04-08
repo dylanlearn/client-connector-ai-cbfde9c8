@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect, FormEvent, ClipboardEvent, useCallback, memo } from 'react';
+import { debounce } from 'lodash';
 
 interface RichTextEditorProps {
   value: string;
@@ -19,13 +20,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
   const previousValueRef = useRef(value);
   
   // Debounce the onChange handler to prevent excessive updates
-  const debouncedOnChange = useCallback((content: string) => {
-    // Only update if the content actually changed
-    if (content !== previousValueRef.current) {
-      previousValueRef.current = content;
-      onChange(content);
-    }
-  }, [onChange]);
+  const debouncedOnChange = useCallback(
+    debounce((content: string) => {
+      // Only update if the content actually changed
+      if (content !== previousValueRef.current) {
+        previousValueRef.current = content;
+        onChange(content);
+      }
+    }, 250),
+    [onChange]
+  );
   
   // Set initial content and handle content updates from parent
   useEffect(() => {
@@ -63,7 +67,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
   // Handle blur
   const handleBlur = useCallback(() => {
     setIsFocused(false);
-  }, []);
+    
+    // Ensure we have the final value on blur
+    if (editorRef.current) {
+      const content = editorRef.current.innerHTML;
+      if (content !== previousValueRef.current) {
+        previousValueRef.current = content;
+        onChange(content);
+      }
+    }
+  }, [onChange]);
   
   // Handle paste to strip formatting
   const handlePaste = useCallback((e: ClipboardEvent<HTMLDivElement>) => {

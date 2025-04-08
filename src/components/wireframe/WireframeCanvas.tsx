@@ -1,15 +1,23 @@
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import ComponentRenderer from './renderers/ComponentRenderer';
+import { toast } from 'sonner';
 
 interface WireframeCanvasProps {
   projectId?: string;
   className?: string;
+  onSectionClick?: (sectionId: string) => void;
 }
 
-const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, className }) => {
+const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ 
+  projectId, 
+  className,
+  onSectionClick 
+}) => {
+  const [isRendering, setIsRendering] = useState(false);
+  
   const { 
     wireframe,
     activeDevice,
@@ -19,6 +27,13 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, class
     activeSection,
     hiddenSections
   } = useWireframeStore();
+  
+  // Effect to handle rendering state for performance feedback
+  useEffect(() => {
+    setIsRendering(true);
+    const timer = setTimeout(() => setIsRendering(false), 100);
+    return () => clearTimeout(timer);
+  }, [wireframe, activeDevice, darkMode, showGrid]);
   
   // Memoize the section rendering to prevent excessive re-renders
   const renderSection = useCallback((section, index) => {
@@ -35,6 +50,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, class
           }
         )}
         id={`section-${section.id}`}
+        onClick={() => onSectionClick && onSectionClick(section.id)}
       >
         {highlightSections && (
           <div className="absolute top-0 left-0 bg-primary text-white text-xs px-2 py-1 rounded-br-md z-10">
@@ -48,7 +64,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, class
         />
       </div>
     );
-  }, [hiddenSections, highlightSections, activeSection, darkMode]);
+  }, [hiddenSections, highlightSections, activeSection, darkMode, onSectionClick]);
   
   return (
     <div 
@@ -60,7 +76,8 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, class
           "grid bg-grid-pattern": showGrid,
           "p-4": activeDevice === 'desktop',
           "max-w-3xl mx-auto p-4": activeDevice === 'tablet',
-          "max-w-sm mx-auto p-2": activeDevice === 'mobile'
+          "max-w-sm mx-auto p-2": activeDevice === 'mobile',
+          "opacity-80": isRendering
         },
         className
       )}
