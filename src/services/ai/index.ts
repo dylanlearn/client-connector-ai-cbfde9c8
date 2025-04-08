@@ -4,8 +4,16 @@ export * from './ai-analyzer-service';
 export * from './ai-generator-service';
 export * from './ai-summary-service';
 export * from './ai-memory-service';
-export * from './ai-model-selector';
-export * from './ai-design-service';  // Re-add this export which was removed
+
+// Export AIDesignService from ai-design-service
+export { AIDesignService } from './ai-design-service';
+
+// For ai-model-selector, specifically export the named items we need
+// while avoiding the PatternRecognitionOptions conflict
+export { 
+  AIFeatureType, 
+  selectModelForFeature 
+} from './ai-model-selector';
 
 // Export nested service directories
 export * from './analytics';
