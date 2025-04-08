@@ -6,6 +6,7 @@ import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import WireframeToolbar from './WireframeToolbar';
@@ -26,7 +27,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { GripVertical, Columns, EyeIcon } from 'lucide-react';
 import AdvancedSectionEditDialog from './AdvancedSectionEditDialog';
 import SideBySidePreview from './SideBySidePreview';
-import { toast } from 'sonner';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -42,7 +42,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const [editingSectionName, setEditingSectionName] = useState('');
   const [editingSectionDescription, setEditingSectionDescription] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   
   // Use the Zustand store for state management
   const {
@@ -69,8 +69,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     const sectionData = createSectionInstance(componentType);
     addSection(sectionData);
     
-    toast({
-      title: "Section added",
+    toast.success("Section added", {
       description: `Added ${componentType} section to wireframe`
     });
   };
@@ -79,7 +78,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const saveWireframe = async () => {
     try {
       if (!projectId) {
-        toast({
+        uiToast({
           title: "Error",
           description: "Project ID is required to save wireframe",
           variant: "destructive",
@@ -101,18 +100,15 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         sections: wireframeData.sections
       });
 
-      toast({
-        title: "Success",
-        description: "Wireframe saved successfully",
+      toast.success("Success", {
+        description: "Wireframe saved successfully"
       });
 
       return result;
     } catch (error) {
       console.error("Error saving wireframe:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save wireframe. Please ensure you're logged in.",
-        variant: "destructive",
+      toast.error("Error", {
+        description: "Failed to save wireframe. Please ensure you're logged in."
       });
     }
   };
@@ -148,8 +144,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       
       setIsEditDialogOpen(false);
       
-      toast({
-        title: "Section updated",
+      toast.success("Section updated", {
         description: "Section details have been updated"
       });
     }
@@ -158,8 +153,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const handleAdvancedSectionUpdate = (sectionId: string, updates: Partial<WireframeSection>) => {
     updateSection(sectionId, updates);
     
-    toast({
-      title: "Section updated",
+    toast.success("Section updated", {
       description: "Section content has been updated"
     });
   };
@@ -168,8 +162,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const handleDeleteSection = (sectionId: string) => {
     removeSection(sectionId);
     
-    toast({
-      title: "Section removed",
+    toast.success("Section removed", {
       description: "Section has been removed from wireframe"
     });
   };
@@ -179,8 +172,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     if (!result.destination) return;
     reorderSections(result.source.index, result.destination.index);
     
-    toast({
-      title: "Sections reordered",
+    toast.success("Sections reordered", {
       description: "The wireframe sections have been reordered"
     });
   };
