@@ -15,19 +15,21 @@ import { contactComponents } from './components/contact-components';
 // Export functions from component-registry
 export { 
   registerComponent,
-  getComponentDefinition,
-  getComponentVariant,
   getAllComponentDefinitions 
 } from './component-registry';
 
-// Export types from component-types
-export {
+// Export types from component-types using 'export type' syntax for isolatedModules
+export type {
   ComponentField,
   ComponentVariant,
   ComponentDefinition,
   ComponentLibrary,
   StyleConfig,
-  ResponsiveConfig,
+  ResponsiveConfig
+} from './component-types';
+
+// Export device breakpoints and utilities as values
+export { 
   deviceBreakpoints,
   getDeviceStyles,
   styleOptionsToTailwind

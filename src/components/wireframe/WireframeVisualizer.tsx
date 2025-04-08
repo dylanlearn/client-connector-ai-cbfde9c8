@@ -1,25 +1,18 @@
 
 import React from 'react';
 import { WireframeVisualizerProps } from './types';
-import WireframeSectionRenderer from './WireframeSectionRenderer';
-import { Separator } from '@/components/ui/separator';
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
   darkMode = false,
-  onSectionClick,
-  activeSection = null,
   deviceType = 'desktop',
-  onSelect,
+  onSectionClick,
+  activeSection,
+  onSelect
 }) => {
   if (!wireframe || !wireframe.sections) {
-    return (
-      <div className="p-6 text-center">
-        <div className="text-lg font-medium mb-2">No wireframe data available</div>
-        <p className="text-muted-foreground">Please generate a wireframe first</p>
-      </div>
-    );
+    return <div className="p-4 text-center">No wireframe data available</div>;
   }
 
   const handleSectionClick = (sectionId: string) => {
@@ -28,7 +21,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
     }
   };
 
-  const handleWireframeClick = () => {
+  const handleSelect = () => {
     if (onSelect && wireframe.id) {
       onSelect(wireframe.id);
     }
@@ -36,40 +29,37 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
 
   return (
     <div 
-      className={`wireframe-visualizer ${darkMode ? 'dark' : ''}`}
-      onClick={onSelect ? handleWireframeClick : undefined}
+      className={`wireframe-visualizer ${darkMode ? 'dark' : ''} ${deviceType}`}
+      onClick={handleSelect}
     >
-      <div className="wireframe-header p-4 border-b">
-        <h1 className="text-xl font-bold">{wireframe.title}</h1>
-        {wireframe.description && (
-          <p className="text-muted-foreground mt-1">{wireframe.description}</p>
-        )}
+      <div className="wireframe-title text-xl font-bold mb-4">
+        {wireframe.title || 'Untitled Wireframe'}
       </div>
       
-      <div 
-        className="wireframe-sections"
-        style={{ 
-          maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
-          margin: deviceType !== 'desktop' ? '0 auto' : undefined
-        }}
-      >
+      <div className="wireframe-sections space-y-4">
         {wireframe.sections.map((section, index) => (
-          <React.Fragment key={section.id || index}>
-            <div
-              className={`wireframe-section relative ${
-                activeSection === section.id ? 'ring-2 ring-primary' : ''
-              }`}
-            >
-              <WireframeSectionRenderer 
-                section={section}
-                viewMode={viewMode}
-                darkMode={darkMode}
-                sectionIndex={index}
-                onSectionClick={onSectionClick ? () => handleSectionClick(section.id) : undefined}
+          <div 
+            key={section.id || `section-${index}`} 
+            className={`wireframe-section p-4 border rounded-md ${
+              activeSection === section.id ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200'
+            }`}
+            onClick={() => handleSectionClick(section.id || `section-${index}`)}
+          >
+            <h3 className="text-lg font-medium">{section.name || `Section ${index + 1}`}</h3>
+            <p className="text-sm text-gray-500">{section.description || section.sectionType}</p>
+            {viewMode === 'preview' && section.imageUrl && (
+              <img 
+                src={section.imageUrl} 
+                alt={section.name || `Section ${index + 1}`} 
+                className="mt-2 w-full rounded-sm" 
               />
-            </div>
-            {index < wireframe.sections.length - 1 && <Separator className="my-2" />}
-          </React.Fragment>
+            )}
+            {section.componentVariant && (
+              <div className="mt-2 text-xs bg-muted inline-block px-2 py-1 rounded">
+                {section.componentVariant}
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>

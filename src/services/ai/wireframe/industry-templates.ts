@@ -1,230 +1,106 @@
-import { WireframeData, WireframeSection, WireframeComponent } from './wireframe-types';
-import { v4 as uuidv4 } from 'uuid';
+import { WireframeGeneratorPrompt } from './wireframe-types';
 
-// Helper function to create components with IDs
-const createComponent = (type: string, content: string): WireframeComponent => {
-  return {
-    id: uuidv4(),
-    type,
-    content
-  };
+// Template definitions for different industries
+const ecommerceTemplate = {
+  title: "E-commerce Website Template",
+  sections: ["hero", "product-grid", "featured-products", "testimonials", "newsletter", "footer"],
+  components: ["header", "product-card", "cart", "search", "filters"],
+  features: (["product showcase", "shopping cart", "checkout flow", "product reviews"]).join(", "), // Convert to string
+  colorSchemes: (["blue-green", "black-white-accent", "brand-neutral"]).join(", "), // Convert to string
+  layoutOptions: (["grid", "masonry", "horizontal scroll"]).join(", "), // Convert to string
 };
 
-// Helper function to convert array to single string or keep as is for backward compatibility
-const formatCopy = (value: string[] | string): string | string[] => {
-  return value; // Now our interface supports both string and string[]
+const portfolioTemplate = {
+  title: "Portfolio Website Template",
+  sections: ["hero", "projects", "about", "contact"],
+  components: ["header", "project-card", "gallery", "contact-form"],
+  features: (["project gallery", "about me", "contact form", "skills"]).join(", "), // Convert to string
+  colorSchemes: (["monochrome", "earthy", "dark-mode"]).join(", "), // Convert to string
+  layoutOptions: (["full-screen", "minimalist", "parallax"]).join(", "), // Convert to string
 };
 
-export const industryTemplates: Record<string, WireframeData> = {
-  'technology': {
-    title: 'Technology Website Template',
-    description: 'A modern design for tech companies',
-    sections: [
-      {
-        id: uuidv4(),
-        name: 'Hero Section',
-        sectionType: 'hero',
-        components: [
-          createComponent('heading', 'Welcome to Tech Solutions'),
-          createComponent('subheading', 'Innovative technology for modern problems'),
-          createComponent('cta-button', 'Learn More')
-        ],
-        copySuggestions: {
-          heading: ['Innovative Solutions', 'Tech for Tomorrow', 'Cutting-edge Technology'],
-          subheading: ['Empowering businesses through technology', 'Building the future, one byte at a time'],
-          cta: ['Get Started', 'Explore Solutions', 'Learn More']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Product Grid',
-        sectionType: 'product-grid',
-        components: [
-          { id: uuidv4(), type: 'filter', content: 'Product filtering sidebar' },
-          { id: uuidv4(), type: 'product-card', content: 'Product card with image and price' },
-          { id: uuidv4(), type: 'pagination', content: 'Product pagination' },
-          { id: uuidv4(), type: 'sort', content: 'Product sorting dropdown' }
-        ],
-        copySuggestions: {
-          heading: ['Featured Products', 'New Arrivals', 'Best Sellers'],
-          subheading: ['Shop by category', 'Handpicked for you'],
-          cta: ['Add to Cart', 'Quick View', 'Save for Later']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Footer',
-        sectionType: 'footer',
-        components: [
-          { id: uuidv4(), type: 'footer-links', content: 'Footer navigation links' },
-          { id: uuidv4(), type: 'newsletter', content: 'Newsletter signup' },
-          { id: uuidv4(), type: 'social-links', content: 'Social media icons' }
-        ],
-        copySuggestions: {
-          heading: ['Stay Connected', 'Sign Up for Updates'],
-          subheading: ['Follow us on social media', 'Get exclusive offers'],
-          cta: ['Subscribe', 'Follow Us']
-        }
-      }
-    ],
-    layoutType: 'grid',
-    colorScheme: {
-      primary: '#0099FF',
-      secondary: '#6F42C1',
-      accent: '#FF5C00',
-      background: '#FFFFFF'
-    },
-    typography: {
-      headings: 'Inter, sans-serif',
-      body: 'Roboto, sans-serif'
-    }
-  },
-  'ecommerce': {
-    title: 'E-Commerce Template',
-    description: 'Standard e-commerce website template with product listings and checkout flow',
-    sections: [
-      {
-        id: uuidv4(),
-        name: 'Header with Search',
-        sectionType: 'header',
-        components: [
-          { id: uuidv4(), type: 'navigation', content: 'Main navigation with cart' },
-          { id: uuidv4(), type: 'search', content: 'Product search box' },
-          { id: uuidv4(), type: 'cart-icon', content: 'Shopping cart icon with counter' }
-        ],
-        copySuggestions: {
-          heading: ['Shop the Latest Trends', 'Discover Quality Products'],
-          subheading: ['Free shipping on orders over $50', 'Satisfaction guaranteed'],
-          cta: ['Shop Now', 'Explore']
-        }
-      }
-    ],
-    layoutType: 'grid',
-    colorScheme: {
-      primary: '#3498db',
-      secondary: '#2ecc71',
-      accent: '#f39c12',
-      background: '#ffffff'
-    },
-    typography: {
-      headings: 'Montserrat',
-      body: 'Open Sans'
-    }
-  },
-  'saas': {
-    title: 'SaaS Platform Template',
-    description: 'Template for SaaS and web application landing pages',
-    sections: [
-      {
-        id: uuidv4(),
-        name: 'Hero with CTA',
-        sectionType: 'hero',
-        components: [
-          { id: uuidv4(), type: 'hero-heading', content: 'Main value proposition heading' },
-          { id: uuidv4(), type: 'hero-subheading', content: 'Supporting text explaining benefits' },
-          { id: uuidv4(), type: 'cta-button', content: 'Primary call to action button' },
-          { id: uuidv4(), type: 'hero-image', content: 'App screenshot or illustration' }
-        ],
-        copySuggestions: {
-          heading: ['Simplify Your Workflow', 'Boost Team Productivity', 'Work Smarter, Not Harder'],
-          subheading: ['All-in-one platform for teams', 'Trusted by over 10,000 companies'],
-          cta: ['Start Free Trial', 'Book a Demo', 'Get Started']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Features Section',
-        sectionType: 'features',
-        components: [
-          { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' },
-          { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' },
-          { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' },
-          { id: uuidv4(), type: 'feature-card', content: 'Feature card with icon and description' }
-        ],
-        copySuggestions: {
-          heading: ['Powerful Features', 'Why Choose Us', 'Built for Teams'],
-          subheading: ['Everything you need to succeed', 'Designed with your workflow in mind'],
-          cta: ['Learn More', 'See All Features']
-        }
-      }
-    ],
-    layoutType: 'flex',
-    colorScheme: {
-      primary: '#6772e5',
-      secondary: '#24b47e',
-      accent: '#e25950',
-      background: '#f6f9fc'
-    },
-    typography: {
-      headings: 'Inter',
-      body: 'Roboto'
-    }
-  },
-  'portfolio': {
-    title: 'Creative Portfolio Template',
-    description: 'Portfolio template for designers, photographers, and creatives',
-    sections: [
-      {
-        id: uuidv4(),
-        name: 'Minimal Header',
-        sectionType: 'header',
-        components: [
-          { id: uuidv4(), type: 'logo', content: 'Personal logo' },
-          { id: uuidv4(), type: 'menu', content: 'Minimal navigation menu' }
-        ],
-        copySuggestions: {
-          heading: ['Work', 'Projects', 'Portfolio'],
-          subheading: ['Designer & Developer', 'Visual Artist'],
-          cta: ['View Work', 'Get in Touch']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Project Grid',
-        sectionType: 'projects',
-        components: [
-          { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' },
-          { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' },
-          { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' },
-          { id: uuidv4(), type: 'project-card', content: 'Project thumbnail with hover effect' }
-        ],
-        copySuggestions: {
-          heading: ['Selected Works', 'Recent Projects', 'Featured Work'],
-          subheading: ['Explore my projects', 'A collection of my best work'],
-          cta: ['View Project', 'Case Study', 'Learn More']
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'About Section',
-        sectionType: 'about',
-        components: [
-          { id: uuidv4(), type: 'profile-image', content: 'Professional headshot' },
-          { id: uuidv4(), type: 'bio', content: 'Professional biography' },
-          { id: uuidv4(), type: 'skills-list', content: 'List of key skills' },
-          { id: uuidv4(), type: 'contact-info', content: 'Contact information' }
-        ],
-        copySuggestions: {
-          heading: ['About Me', 'Hello, I\'m [Name]', 'Nice to Meet You'],
-          subheading: ['Designer based in [Location]', 'Passionate about creating beautiful experiences'],
-          cta: ['Download Resume', 'View LinkedIn', 'Contact Me']
-        }
-      }
-    ],
-    layoutType: 'masonry',
-    colorScheme: {
-      primary: '#000000',
-      secondary: '#333333',
-      accent: '#ff3366',
-      background: '#ffffff'
-    },
-    typography: {
-      headings: 'Playfair Display',
-      body: 'Source Sans Pro'
-    }
-  }
+const saasTemplate = {
+  title: "SaaS Landing Page Template",
+  sections: ["hero", "features", "pricing", "testimonials", "cta", "footer"],
+  components: ["header", "feature-block", "pricing-table", "testimonial-card", "form"],
+  features: (["feature highlights", "pricing plans", "customer testimonials", "call to action"]).join(", "), // Convert to string
+  colorSchemes: (["gradient", "tech-blue", "clean-white"]).join(", "), // Convert to string
+  layoutOptions: (["single-page", "split-screen", "isometric"]).join(", "), // Convert to string
 };
 
-export const getTemplateForIndustry = (industry: string): WireframeData => {
-  return industryTemplates[industry.toLowerCase()] || industryTemplates['technology'];
+const blogTemplate = {
+  title: "Blog Website Template",
+  sections: ["hero", "blog-posts", "categories", "newsletter", "footer"],
+  components: ["header", "blog-card", "category-list", "subscribe-form"],
+  features: (["blog posts", "category filters", "search", "comments"]).join(", "), // Convert to string
+  colorSchemes: (["light-theme", "vintage", "pastel"]).join(", "), // Convert to string
+  layoutOptions: (["list-view", "grid-view", "masonry-grid"]).join(", "), // Convert to string
+};
+
+const agencyTemplate = {
+  title: "Agency Website Template",
+  sections: ["hero", "services", "portfolio", "team", "contact", "footer"],
+  components: ["header", "service-card", "project-card", "team-member", "contact-form"],
+  features: (["service offerings", "portfolio showcase", "team bios", "contact form"]).join(", "), // Convert to string
+  colorSchemes: (["corporate", "bold-contrast", "modern-clean"]).join(", "), // Convert to string
+  layoutOptions: (["interactive", "dynamic", "grid-based"]).join(", "), // Convert to string
+};
+
+const restaurantTemplate = {
+  title: "Restaurant Website Template",
+  sections: ["hero", "menu", "about", "gallery", "contact", "footer"],
+  components: ["header", "menu-item", "about-section", "image-gallery", "reservation-form"],
+  features: (["menu display", "online ordering", "image gallery", "reservation form"]).join(", "), // Convert to string
+  colorSchemes: (["warm-tones", "rustic", "elegant"]).join(", "), // Convert to string
+  layoutOptions: (["parallax-scrolling", "full-width", "image-focused"]).join(", "), // Convert to string
+};
+
+const realEstateTemplate = {
+  title: "Real Estate Website Template",
+  sections: ["hero", "properties", "agents", "testimonials", "contact", "footer"],
+  components: ["header", "property-card", "agent-profile", "testimonial-card", "search-form"],
+  features: (["property listings", "agent profiles", "property search", "contact form"]).join(", "), // Convert to string
+  colorSchemes: (["neutral", "blue-accent", "modern-luxury"]).join(", "), // Convert to string
+  layoutOptions: (["map-integration", "carousel", "grid-listings"]).join(", "), // Convert to string
+};
+
+const travelTemplate = {
+  title: "Travel Agency Website Template",
+  sections: ["hero", "destinations", "tours", "testimonials", "contact", "footer"],
+  components: ["header", "destination-card", "tour-package", "testimonial-card", "booking-form"],
+  features: (["destination showcase", "tour packages", "booking form", "customer reviews"]).join(", "), // Convert to string
+  colorSchemes: (["vibrant", "ocean-blue", "nature-green"]).join(", "), // Convert to string
+  layoutOptions: (["full-screen", "interactive-map", "carousel-tours"]).join(", "), // Convert to string
+};
+
+const educationTemplate = {
+  title: "Education Website Template",
+  sections: ["hero", "courses", "events", "testimonials", "contact", "footer"],
+  components: ["header", "course-card", "event-item", "testimonial-card", "application-form"],
+  features: (["course listings", "event calendar", "student testimonials", "application form"]).join(", "), // Convert to string
+  colorSchemes: (["academic-blue", "bright-yellow", "clean-white"]).join(", "), // Convert to string
+  layoutOptions: (["grid-courses", "event-timeline", "interactive-campus"]).join(", "), // Convert to string
+};
+
+const healthTemplate = {
+  title: "Healthcare Website Template",
+  sections: ["hero", "services", "doctors", "testimonials", "contact", "footer"],
+  components: ["header", "service-card", "doctor-profile", "testimonial-card", "appointment-form"],
+  features: (["service offerings", "doctor profiles", "appointment booking", "patient testimonials"]).join(", "), // Convert to string
+  colorSchemes: (["medical-blue", "calm-green", "clean-white"]).join(", "), // Convert to string
+  layoutOptions: (["clean-layout", "service-blocks", "doctor-grid"]).join(", "), // Convert to string
+};
+
+// Map of industry to template
+export const industryTemplates: Record<string, Partial<WireframeGeneratorPrompt>> = {
+  "ecommerce": ecommerceTemplate,
+  "portfolio": portfolioTemplate,
+  "saas": saasTemplate,
+  "blog": blogTemplate,
+  "agency": agencyTemplate,
+  "restaurant": restaurantTemplate,
+  "real-estate": realEstateTemplate,
+  "travel": travelTemplate,
+  "education": educationTemplate,
+  "healthcare": healthTemplate,
 };

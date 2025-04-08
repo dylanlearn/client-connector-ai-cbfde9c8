@@ -1,28 +1,31 @@
 
 // Re-export specific types and functions without duplication
 export * from './renderers/ComponentRenderer';
-export * from './WireframeVisualizer';
 export * from './WireframeFlow';
-export * from './WireframeDataVisualizer';
-export * from './WireframeEditor';
-export * from './AdvancedWireframeGenerator';
 
-// Only export specific types from component-registry to avoid ambiguous exports
+// Export components that were missing
+export { default as WireframeVisualizer } from './WireframeVisualizer';
+export { default as WireframeDataVisualizer } from './WireframeDataVisualizer';
+export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenerator';
+
+// Only export specific functions from component-registry to avoid ambiguous exports
 export { 
   registerComponent,
-  getComponentDefinition,
-  getComponentVariant,
   getAllComponentDefinitions
 } from './registry/component-registry';
 
-// Export types from component-types directly
-export {
+// Export types from component-types using 'export type' syntax for isolatedModules
+export type { 
   ComponentField,
   ComponentVariant,
   ComponentDefinition,
   ComponentLibrary,
   StyleConfig,
-  ResponsiveConfig,
+  ResponsiveConfig
+} from './registry/component-types';
+
+// Export device breakpoints and utilities as values
+export { 
   deviceBreakpoints,
   getDeviceStyles,
   styleOptionsToTailwind

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeGenerationParams, WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { IntakeFormData } from '@/types/intake-form';
+import React from 'react'; // Add React import for ReactNode type
 
 // Define the WireframeComponent interface locally if needed
 interface WireframeComponent {
@@ -61,8 +62,9 @@ export const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       description: `${sectionNameFromType(sectionType)} for ${data.companyName}`
     }));
     
-    // Create a basic wireframe structure
+    // Create a basic wireframe structure with required ID
     const wireframeData: WireframeData = {
+      id: uuidv4(), // Add required ID field
       title: data.projectName || 'Untitled Wireframe',
       description: data.projectDescription || 'Generated from intake form data',
       sections,
