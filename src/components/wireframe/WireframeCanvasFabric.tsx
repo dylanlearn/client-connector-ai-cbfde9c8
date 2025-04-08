@@ -1,4 +1,3 @@
-
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
@@ -198,8 +197,8 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   }, [wireframe, activeDevice, darkMode, showGrid]);
   
   useEffect(() => {
-    const handleDocMouseUp = (e: MouseEvent) => {
-      handleMouseUp(e);
+    const handleDocMouseUp = () => {
+      handleMouseUp();
     };
     
     const handleDocKeyDown = (e: KeyboardEvent) => {
@@ -210,16 +209,24 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
       handleKeyUp(e);
     };
     
+    const handleDocMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        handleMouseMove(e);
+      }
+    };
+    
     document.addEventListener('keydown', handleDocKeyDown);
     document.addEventListener('keyup', handleDocKeyUp);
     document.addEventListener('mouseup', handleDocMouseUp);
+    document.addEventListener('mousemove', handleDocMouseMove);
     
     return () => {
       document.removeEventListener('keydown', handleDocKeyDown);
       document.removeEventListener('keyup', handleDocKeyUp);
       document.removeEventListener('mouseup', handleDocMouseUp);
+      document.removeEventListener('mousemove', handleDocMouseMove);
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseUp]);
+  }, [handleKeyDown, handleKeyUp, handleMouseUp, handleMouseMove, isDragging]);
   
   return (
     <div className="wireframe-canvas-fabric-container relative">
@@ -257,7 +264,7 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
           minHeight: '200px'
         }}
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
+        onMouseMove={(e) => isDragging && handleMouseMove(e)}
         onWheel={handleWheel}
       >
         <canvas 

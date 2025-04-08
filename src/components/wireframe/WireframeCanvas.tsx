@@ -1,4 +1,3 @@
-
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -99,17 +98,18 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
       handleKeyUp(e);
     };
     
-    const handleDocMouseUp = (e: MouseEvent) => {
-      handleMouseUp(e);
+    const handleDocMouseUp = () => {
+      handleMouseUp();
     };
     
     const handleDocMouseMove = (e: MouseEvent) => {
-      handleMouseMove(e);
+      if (isDragging) {
+        handleMouseMove(e);
+      }
     };
     
     document.addEventListener('keydown', handleDocKeyDown);
     document.addEventListener('keyup', handleDocKeyUp);
-    
     document.addEventListener('mouseup', handleDocMouseUp);
     document.addEventListener('mousemove', handleDocMouseMove);
     
@@ -119,7 +119,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
       document.removeEventListener('mouseup', handleDocMouseUp);
       document.removeEventListener('mousemove', handleDocMouseMove);
     };
-  }, [handleKeyDown, handleKeyUp, handleMouseUp, handleMouseMove]);
+  }, [handleKeyDown, handleKeyUp, handleMouseUp, handleMouseMove, isDragging]);
 
   const handleSectionMouseDown = useCallback((e: React.MouseEvent, sectionId: string) => {
     if (!editMode) return;
@@ -274,6 +274,8 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
           onResetZoom={resetZoom}
           onToggleGrid={toggleGrid}
           onToggleSnapToGrid={toggleSnapToGrid}
+          showGrid={config.showGrid}
+          snapToGrid={config.snapToGrid}
           className="mb-2"
         />
       )}
@@ -285,7 +287,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
           "wireframe-canvas bg-background border rounded-md overflow-hidden transition-all duration-300",
           darkMode ? "dark bg-slate-900" : "bg-white",
           {
-            "grid bg-grid-pattern": showGrid || canvasSettings?.showGrid,
+            "grid bg-grid-pattern": showGrid || config.showGrid,
             "p-4": activeDevice === 'desktop',
             "max-w-3xl mx-auto p-4": activeDevice === 'tablet',
             "max-w-sm mx-auto p-2": activeDevice === 'mobile',
@@ -296,13 +298,14 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
           className
         )}
         style={{
-          zoom: canvasSettings?.zoom || 1,
-          transform: `translate(${canvasSettings?.panOffset?.x || 0}px, ${canvasSettings?.panOffset?.y || 0}px)`,
+          zoom: config.zoom || 1,
+          transform: `translate(${config.panOffset?.x || 0}px, ${config.panOffset?.y || 0}px)`,
           height: editMode ? '600px' : 'auto',
           minHeight: '200px'
         }}
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
+        onMouseMove={(e) => isDragging && handleMouseMove(e)}
       >
         <div 
           className={cn(

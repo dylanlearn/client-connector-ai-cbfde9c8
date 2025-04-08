@@ -77,7 +77,7 @@ export function useCanvasInteractions({
     }
   }, [isDragging, lastPosition, config.panOffset, updateConfig]);
   
-  const handleMouseUp = useCallback((e: MouseEvent | React.MouseEvent) => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
   
