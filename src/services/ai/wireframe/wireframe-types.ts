@@ -1,8 +1,4 @@
 
-/**
- * Type definitions for wireframe components and sections
- */
-
 export interface WireframeSection {
   id: string;
   name: string;
@@ -109,7 +105,8 @@ export interface AIWireframe {
   wireframe_data?: any;
   created_at?: string;
   updated_at?: string;
-  prompt?: string; // Adding prompt field to AIWireframe
+  prompt?: string;
+  generation_params?: any; // Added this property to fix the error
 }
 
 export interface WireframePage {
@@ -143,7 +140,7 @@ export interface WireframeGenerationParams {
   prompt?: string;
   title?: string;
   darkMode?: boolean;
-  stylePreferences?: string[]; // Adding stylePreferences
+  stylePreferences?: string[];
 }
 
 export interface WireframeGenerationResult {
@@ -185,13 +182,12 @@ export interface WireframeVersion {
 export interface VersionComparisonResult {
   differences: any[];
   summary: string;
-  changes?: any[]; // Adding changes property
+  changes?: any[];
 }
 
 export interface BranchInfo {
   name: string;
   versions: WireframeVersion[];
   latestVersion?: WireframeVersion;
-  latest_version_id?: string; // Adding for backward compatibility
+  latest_version_id?: string;
 }
-
