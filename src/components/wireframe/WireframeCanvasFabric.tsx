@@ -1,5 +1,5 @@
-
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useFabric } from '@/hooks/use-fabric';
@@ -32,7 +32,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   const fabricCanvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   
-  // Get data from wireframe store
   const { 
     wireframe,
     activeDevice: storeActiveDevice,
@@ -42,13 +41,10 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
     updateCanvasSettings
   } = useWireframeStore();
   
-  // Use device type from props if provided, otherwise use from store
   const activeDevice = deviceType || storeActiveDevice;
   
-  // Use canvas settings from props if provided, otherwise use from store
   const effectiveCanvasSettings = propCanvasSettings || storeCanvasSettings;
   
-  // Initialize fabric.js
   const {
     canvasRef,
     fabricCanvas,
@@ -64,7 +60,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
     initialConfig: effectiveCanvasSettings
   });
   
-  // Set up canvas interaction hooks
   const {
     handleMouseDown,
     handleMouseMove,
@@ -82,26 +77,19 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   } = useCanvasInteractions({ 
     canvasRef: canvasContainerRef,
     onConfigChange: (config) => {
-      // Update the fabric canvas config
       updateConfig(config);
-      
-      // Also pass changes to parent component if needed
       if (onUpdateCanvasSettings) {
         onUpdateCanvasSettings(config);
       }
     }
   });
 
-  // Load wireframe data into the fabric canvas
   useEffect(() => {
     if (fabricCanvas && wireframe && wireframe.sections) {
       try {
-        // Clear existing canvas content
         fabricCanvas.clear();
         
-        // Re-add grid if needed
         if (canvasConfig.showGrid) {
-          // Create grid lines
           const width = fabricCanvas.getWidth();
           const height = fabricCanvas.getHeight();
           const gridSize = canvasConfig.gridSize;
@@ -129,21 +117,17 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
           }
         }
         
-        // Add sections
         let topPosition = 20;
         
         wireframe.sections.forEach((section, index) => {
           if (!section) return;
           
-          // Default width based on device type
           let width = fabricCanvas.getWidth() - 40;
           if (activeDevice === 'tablet') width = Math.min(width, 700);
           if (activeDevice === 'mobile') width = Math.min(width, 350);
           
-          // Get height from section or default
           const height = section.dimensions?.height || 200;
           
-          // Create section container
           const rect = new fabric.Rect({
             left: 20,
             top: topPosition,
@@ -164,7 +148,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
             }
           });
           
-          // Create section label
           const label = new fabric.Text(section.name || `Section ${index + 1}`, {
             left: 30,
             top: topPosition + 10,
@@ -174,7 +157,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
             selectable: false
           });
           
-          // Create a group for the section
           const sectionGroup = new fabric.Group([rect, label], {
             data: {
               id: section.id,
@@ -183,17 +165,14 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
             }
           });
           
-          // Add the group to the canvas
           fabricCanvas.add(sectionGroup);
           
-          // Set up event handlers for the section
           sectionGroup.on('selected', () => {
             if (onSectionClick) {
               onSectionClick(section.id);
             }
           });
           
-          // Update position for next section
           topPosition += height + 20;
         });
         
@@ -210,14 +189,12 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   }, [fabricCanvas, wireframe, activeDevice, darkMode, canvasConfig.showGrid, 
       canvasConfig.gridSize, editMode, onSectionClick, toast]);
 
-  // Effect for handling rendering state
   useEffect(() => {
     setIsRendering(true);
     const timer = setTimeout(() => setIsRendering(false), 100);
     return () => clearTimeout(timer);
   }, [wireframe, activeDevice, darkMode, showGrid]);
   
-  // Effect to add/remove global event listeners
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
@@ -232,7 +209,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   
   return (
     <div className="wireframe-canvas-fabric-container relative">
-      {/* Canvas Controls */}
       {editMode && (
         <CanvasControls
           onZoomIn={fabricZoomIn || zoomIn}
@@ -246,7 +222,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
         />
       )}
       
-      {/* Canvas Area */}
       <div 
         id="wireframe-canvas-fabric"
         ref={canvasContainerRef}
@@ -271,7 +246,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
         onMouseMove={handleMouseMove}
         onWheel={handleWheel}
       >
-        {/* Fabric.js Canvas */}
         <canvas 
           ref={fabricCanvasRef} 
           className="w-full h-full"

@@ -24,6 +24,7 @@ export interface WireframeGenerationParams {
   moodboardSelections?: any[];
   prompt?: string;
   stylePreferences?: string[];
+  enableLayoutIntelligence?: boolean;
 }
 
 export interface WireframeGenerationResult {
@@ -90,6 +91,7 @@ export interface WireframeSection {
   layoutScore?: number;
   optimizationSuggestions?: string[];
   patternMatch?: string;
+  positionOrder?: number;
 }
 
 export interface WireframeComponent {
@@ -193,6 +195,9 @@ export interface WireframeResult {
   wireframe: WireframeData;
   [key: string]: any;
 }
+
+// Add an alias for WireframeGenerationParams as WireframeGeneratorPrompt for backward compatibility
+export type WireframeGeneratorPrompt = WireframeGenerationParams;
 
 // Helper function to convert AIWireframe to WireframeData
 export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeData | null {

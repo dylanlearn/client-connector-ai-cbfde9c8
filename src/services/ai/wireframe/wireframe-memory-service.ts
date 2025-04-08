@@ -112,6 +112,45 @@ export class WireframeMemoryService {
   }
   
   /**
+   * Get project data by ID
+   */
+  async getProject(projectId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting project:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Save project data
+   */
+  async saveProject(projectId: string, projectData: any): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .update(projectData)
+        .eq('id', projectId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error saving project:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Format the response from database to a consistent API format
    */
   private formatResponse(data: any): DesignMemoryResponse {
