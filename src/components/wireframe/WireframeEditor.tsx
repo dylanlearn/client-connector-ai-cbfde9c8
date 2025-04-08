@@ -24,9 +24,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { GripVertical, Columns, EyeIcon } from 'lucide-react';
+import { GripVertical, Columns, EyeIcon, Save } from 'lucide-react';
 import AdvancedSectionEditDialog from './AdvancedSectionEditDialog';
 import SideBySidePreview from './SideBySidePreview';
+import { useAuth } from '@/hooks/use-auth';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -44,7 +45,9 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const [previewMode, setPreviewMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const { toast: uiToast } = useToast();
+  const { user } = useAuth();
   
   // Use the Zustand store for state management
   const {
@@ -72,24 +75,39 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     addSection(sectionData);
     
     toast.success("Section added", {
-      description: `Added ${componentType} section to wireframe`
+      description: `Added ${componentType} section to wireframe`,
+      duration: 3000
     });
   };
 
   // Function to save wireframe to database
   const saveWireframe = async () => {
     try {
+      setSaveAttempted(true);
+      
+      // Check if user is authenticated
+      if (!user && projectId) {
+        uiToast({
+          title: "Authentication Required",
+          description: "You need to be logged in to save wireframes.",
+          variant: "destructive",
+          duration: 5000
+        });
+        return null;
+      }
+
       if (!projectId) {
         uiToast({
           title: "Error",
           description: "Project ID is required to save wireframe",
           variant: "destructive",
+          duration: 5000
         });
-        return;
+        return null;
       }
 
       setIsSaving(true);
-      console.log("Saving wireframe with ID:", wireframe.id);
+      console.log("Saving wireframe with ID:", wireframe.id || "new wireframe");
 
       // Create wireframe data with proper type alignment
       const wireframeData = {
@@ -106,27 +124,34 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         sections: wireframeData.sections
       });
 
-      // Update wireframe ID if it was a new wireframe
+      // Update wireframe ID if it was a new wireframe or ID has changed
       if (result && result.id && (!wireframe.id || wireframe.id !== result.id)) {
         setWireframe({
           ...wireframe,
-          id: result.id
+          id: result.id,
+          lastUpdated: result.lastUpdated
         });
-        console.log("Wireframe saved with new ID:", result.id);
+        console.log("Wireframe saved with ID:", result.id);
+      } else if (result) {
+        // Update the lastUpdated timestamp
+        setWireframe({
+          ...wireframe,
+          lastUpdated: result.lastUpdated
+        });
       }
 
       setLastSaved(new Date());
-      toast.success("Success", {
+      toast.success("Wireframe saved", {
         description: "Wireframe saved successfully",
-        duration: 3000
+        duration: 5000
       });
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving wireframe:", error);
-      toast.error("Error", {
-        description: "Failed to save wireframe. Please ensure you're logged in.",
-        duration: 5000
+      toast.error("Error saving wireframe", {
+        description: error.message || "Failed to save wireframe. Please ensure you're logged in.",
+        duration: 8000
       });
       return null;
     } finally {
@@ -166,7 +191,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       setIsEditDialogOpen(false);
       
       toast.success("Section updated", {
-        description: "Section details have been updated"
+        description: "Section details have been updated",
+        duration: 3000
       });
     }
   };
@@ -175,7 +201,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     updateSection(sectionId, updates);
     
     toast.success("Section updated", {
-      description: "Section content has been updated"
+      description: "Section content has been updated",
+      duration: 3000
     });
   };
 
@@ -184,7 +211,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     removeSection(sectionId);
     
     toast.success("Section removed", {
-      description: "Section has been removed from wireframe"
+      description: "Section has been removed from wireframe",
+      duration: 3000
     });
   };
 
@@ -194,7 +222,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     reorderSections(result.source.index, result.destination.index);
     
     toast.success("Sections reordered", {
-      description: "The wireframe sections have been reordered"
+      description: "The wireframe sections have been reordered",
+      duration: 3000
     });
   };
   
@@ -207,7 +236,9 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   // Handle Copy JSON
   const handleCopyJson = () => {
     navigator.clipboard.writeText(JSON.stringify(wireframe, null, 2));
-    toast.success("Wireframe JSON copied to clipboard");
+    toast.success("Wireframe JSON copied to clipboard", {
+      duration: 3000
+    });
   };
   
   // Toggle preview mode
@@ -221,21 +252,42 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       <WireframeToolbar onSave={saveWireframe} />
       
       <div className="flex justify-between my-4">
-        <div>
+        <div className="flex items-center">
           {lastSaved && (
             <p className="text-sm text-muted-foreground">
               Last saved: {lastSaved.toLocaleTimeString()}
             </p>
           )}
+          {!lastSaved && saveAttempted && (
+            <p className="text-sm text-amber-500">
+              Not saved yet
+            </p>
+          )}
+          {isSaving && (
+            <p className="text-sm text-blue-500 ml-4">
+              Saving...
+            </p>
+          )}
         </div>
-        <Button 
-          onClick={togglePreviewMode} 
-          variant="outline" 
-          className="gap-2"
-        >
-          {previewMode ? <Columns className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-          {previewMode ? "Split View" : "Preview Mode"}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={saveWireframe} 
+            variant="outline"
+            disabled={isSaving}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+          <Button 
+            onClick={togglePreviewMode} 
+            variant="outline" 
+            className="gap-2"
+          >
+            {previewMode ? <Columns className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+            {previewMode ? "Split View" : "Preview Mode"}
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">

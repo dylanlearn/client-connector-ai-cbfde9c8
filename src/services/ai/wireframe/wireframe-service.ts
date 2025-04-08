@@ -5,7 +5,9 @@ import type {
   WireframeGenerationParams, 
   WireframeData, 
   WireframeSection,
-  AIWireframe
+  AIWireframe,
+  wireframeDataToAIWireframe,
+  aiWireframeToWireframeData
 } from "./wireframe-types";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,7 +41,7 @@ export class WireframeService {
 
       if (existingWireframe) {
         // Update existing wireframe
-        console.log("Updating existing wireframe");
+        console.log("Updating existing wireframe with ID:", params.data.id);
         const updated = await WireframeApiService.updateWireframeData(
           params.data.id!,
           {
@@ -51,10 +53,10 @@ export class WireframeService {
         console.log("Wireframe updated successfully");
         return updated ? {
           id: updated.id,
-          title: updated.description || params.title,
+          title: updated.title || params.title,
           description: updated.description || params.description,
           sections: params.sections,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: updated.updated_at || new Date().toISOString()
         } : null;
       } else {
         // Create new wireframe
@@ -62,9 +64,13 @@ export class WireframeService {
         // Generate a prompt based on the wireframe data
         const prompt = `${params.title}: ${params.description}`;
         
+        // Generate a new UUID if not provided
+        const wireframeId = params.data.id || uuidv4();
+        console.log("Using wireframe ID:", wireframeId);
+        
         // Save to database 
         const result = await WireframeApiService.saveWireframe(
-          uuidv4(), // Generate a project ID if not provided
+          wireframeId,
           prompt,
           {
             ...params.data,
@@ -81,10 +87,10 @@ export class WireframeService {
         // Return the wireframe data
         return {
           id: result.id,
-          title: result.description || params.title,
+          title: result.title || params.title,
           description: result.description || params.description,
           sections: params.sections,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: result.updated_at || new Date().toISOString()
         };
       }
     } catch (error) {
@@ -111,9 +117,10 @@ export class WireframeService {
       // Convert to WireframeData format
       return {
         id: wireframe.id,
-        title: wireframe.description || "Untitled Wireframe",
+        title: wireframe.title || wireframe.description || "Untitled Wireframe",
         description: wireframe.description || "",
         sections: wireframe.sections || [],
+        imageUrl: wireframe.image_url || "",
         lastUpdated: wireframe.updated_at || new Date().toISOString()
       };
     } catch (error) {
