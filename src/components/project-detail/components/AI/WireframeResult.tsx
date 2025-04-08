@@ -54,22 +54,32 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
             <div>
               <h4 className="text-sm font-medium mb-2">Copy Suggestions</h4>
               <div className="border rounded-md p-3 bg-gray-50">
-                {section.copySuggestions.heading && (
+                {typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions) && section.copySuggestions.heading && (
                   <div className="mb-2">
                     <div className="text-xs text-gray-500">Heading:</div>
                     <div className="text-sm font-medium">{String(section.copySuggestions.heading)}</div>
                   </div>
                 )}
-                {section.copySuggestions.subheading && (
+                {typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions) && section.copySuggestions.subheading && (
                   <div className="mb-2">
                     <div className="text-xs text-gray-500">Subheading:</div>
                     <div className="text-sm">{String(section.copySuggestions.subheading)}</div>
                   </div>
                 )}
-                {section.copySuggestions.cta && (
+                {typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions) && section.copySuggestions.cta && (
                   <div>
                     <div className="text-xs text-gray-500">CTA:</div>
                     <div className="text-sm text-primary">{String(section.copySuggestions.cta)}</div>
+                  </div>
+                )}
+                {Array.isArray(section.copySuggestions) && section.copySuggestions.length > 0 && (
+                  <div>
+                    <div className="text-xs text-gray-500">Suggestions:</div>
+                    <ul className="text-sm list-disc pl-4 mt-1">
+                      {section.copySuggestions.map((suggestion, i) => (
+                        <li key={i}>{String(suggestion)}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>

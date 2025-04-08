@@ -35,12 +35,29 @@ export interface WireframeSection {
     alignment: string;
     [key: string]: any;
   };
+  animationSuggestions?: {
+    type?: string;
+    element?: string;
+    timing?: string;
+    effect?: string[];
+    [key: string]: any;
+  };
+  mobileLayout?: {
+    structure?: string;
+    stackOrder?: string[];
+    [key: string]: any;
+  };
+  designReasoning?: string;
+  layoutScore?: number;
+  optimizationSuggestions?: any[];
+  patternMatch?: any;
   [key: string]: any;
 }
 
 export interface WireframeComponent {
   id: string;
   type: string;
+  content?: string | any;
   name?: string;
   properties?: Record<string, any>;
   children?: WireframeComponent[];
@@ -80,6 +97,9 @@ export interface WireframeResult {
   };
   style?: string | Record<string, any>;
   visualReferences?: string[];
+  layoutType?: string;
+  id?: string;
+  imageUrl?: string;
   [key: string]: any;
 }
 
@@ -126,14 +146,24 @@ export interface AIWireframe {
   data?: any;
   sections?: any[];
   project_id?: string;
+  projectId?: string; // Adding this field to resolve inconsistencies
+  prompt?: string;
+  generation_params?: any;
 }
 
 export interface WireframeData {
   id: string;
-  title: string;
+  title: string; // Making this required as per error message
   sections: WireframeSection[];
-  style?: Record<string, any>;
-  colorScheme?: Record<string, string>;
+  style?: string | Record<string, any>;
+  colorScheme?: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text?: string;
+    [key: string]: any;
+  };
   description?: string;
   designTokens?: any;
   mobileLayouts?: any;
@@ -149,6 +179,9 @@ export interface WireframeData {
     fontPairings?: string[];
     [key: string]: any;
   };
+  layoutType?: string; // Adding this field to resolve type errors
+  lastUpdated?: string; // Adding this field to resolve type errors
+  visualReferences?: string[];
 }
 
 export interface WireframeGenerationParams {
@@ -169,6 +202,9 @@ export interface WireframeGenerationParams {
   moodboardSelections?: any[];
   prompt?: string;
   enableLayoutIntelligence?: boolean;
+  stylePreferences?: string[]; // Adding this field to resolve type errors
+  customParams?: any; // Adding this field to resolve type errors
+  darkMode?: boolean; // Adding this field to resolve type errors
 }
 
 export interface WireframeGenerationResult {
@@ -177,11 +213,18 @@ export interface WireframeGenerationResult {
   completionTokens?: number;
   totalTokens?: number;
   generations?: number;
+  generationTime?: number; // Adding this field to resolve type errors
   timeTaken?: number;
   error?: string;
   imageUrl?: string;
   layoutAnalysis?: any;
   success?: boolean;
+  model?: string;
+  usage?: {
+    total_tokens: number;
+    completion_tokens: number;
+    prompt_tokens: number;
+  };
 }
 
 export interface CopySuggestions {
@@ -219,6 +262,7 @@ export interface VersionComparisonResult {
   modified: string[];
   unchanged: string[];
   additions?: string[];
+  deletions?: string[]; // Adding this field to resolve type errors
 }
 
 // Helper function to convert AIWireframe to WireframeData
@@ -228,7 +272,12 @@ export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeDat
     title: wireframe.title || '',
     description: wireframe.description || '',
     sections: (wireframe.sections || wireframe.wireframe?.sections || []),
-    colorScheme: wireframe.wireframe?.colorScheme || {},
+    colorScheme: wireframe.wireframe?.colorScheme || {
+      primary: '',
+      secondary: '',
+      accent: '',
+      background: ''
+    },
     style: wireframe.wireframe?.style || {},
     // Include additional properties that might be needed
     imageUrl: wireframe.preview || '',

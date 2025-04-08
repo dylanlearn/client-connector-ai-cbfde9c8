@@ -112,7 +112,7 @@ const WireframeCard = ({ wireframe, onDelete }: { wireframe: AIWireframe; onDele
         <Separator />
         <CardFooter className="pt-4 flex justify-between">
           <div className="text-sm text-muted-foreground flex items-center gap-2">
-            {wireframe.created_at && format(new Date(wireframe.created_at), 'MMM d, yyyy')}
+            {wireframe.createdAt && format(new Date(wireframe.createdAt), 'MMM d, yyyy')}
             <button onClick={handleCopyId} className="p-1 hover:bg-muted rounded">
               <Copy className="h-3 w-3" />
             </button>

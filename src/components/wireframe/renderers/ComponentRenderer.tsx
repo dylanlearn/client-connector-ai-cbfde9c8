@@ -47,8 +47,9 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     const baseStyles = componentDef.baseStyles || {};
     const responsiveConfig = componentDef.responsiveConfig || {};
     
-    const deviceStyles = getDeviceStyles(baseStyles, responsiveConfig, deviceType);
-    return styleOptionsToTailwind(deviceStyles);
+    // Use the overloaded function with correct arguments
+    const deviceStylesObj = getDeviceStyles(baseStyles, responsiveConfig, deviceType);
+    return styleOptionsToTailwind(deviceStylesObj);
   };
 
   // Placeholder renderer for component types

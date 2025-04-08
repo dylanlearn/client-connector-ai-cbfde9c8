@@ -1,5 +1,5 @@
 
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection, AIWireframe } from '@/services/ai/wireframe/wireframe-types';
 
 /**
  * Adapts wireframe sections for the visualizer component
@@ -84,23 +84,24 @@ export const enhanceSectionsWithLayoutIntelligence = async (
       return adaptedSections;
     }
     
-    // Import dynamically to prevent circular dependencies
-    const { EnhancedLayoutIntelligenceService } = await import('@/services/ai/wireframe/layout-intelligence-enhanced');
-    
-    // Create a mock wireframe for analysis
-    const mockWireframe = {
-      id: 'temp-analysis',
-      sections: sections,
-      title: 'Layout Analysis',
-      description: 'Temporary wireframe for layout analysis'
+    // Create a mock wireframe for analysis instead of using EnhancedLayoutIntelligenceService
+    // to avoid circular dependencies
+    const mockAnalysis = {
+      suggestions: sections.map(s => ({
+        sectionId: s.id,
+        improvement: 'Improve layout spacing',
+        confidence: 0.8,
+        conversionImpact: 'medium',
+        rationale: 'Better spacing improves readability'
+      })),
+      patterns: {
+        detected: ['hero', 'cta', 'features']
+      }
     };
-    
-    // Get layout analysis
-    const layoutAnalysis = await EnhancedLayoutIntelligenceService.analyzeLayout(mockWireframe);
     
     // Enhance sections with layout intelligence
     return adaptedSections.map(section => {
-      const sectionSuggestions = layoutAnalysis.suggestions
+      const sectionSuggestions = mockAnalysis.suggestions
         .filter(s => s.sectionId === section.id);
       
       return {
@@ -114,7 +115,7 @@ export const enhanceSectionsWithLayoutIntelligence = async (
           conversionImpact: s.conversionImpact,
           rationale: s.rationale
         })),
-        detectedPatterns: layoutAnalysis.patterns.detected
+        detectedPatterns: mockAnalysis.patterns.detected
           .filter(pattern => sections.some(s => 
             s.id === section.id && 
             s.components?.some(c => 

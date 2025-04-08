@@ -26,6 +26,8 @@ export interface ComponentDefinition {
   variants: ComponentVariant[];
   fields: ComponentField[];
   defaultData: any;
+  baseStyles?: Record<string, any>;
+  responsiveConfig?: Record<string, any>;
   [key: string]: any;
 }
 
@@ -51,8 +53,20 @@ export const deviceBreakpoints = {
   mobile: 480
 };
 
-export function getDeviceStyles(styles: StyleConfig, device: 'desktop' | 'tablet' | 'mobile'): string {
-  return styles[device] || styles.desktop;
+export function getDeviceStyles(styles: StyleConfig | Record<string, any>, device: 'desktop' | 'tablet' | 'mobile'): string {
+  if (!styles) return '';
+  return styles[device] || styles.desktop || '';
+}
+
+// Overloaded function for the new pattern with responsiveConfig
+export function getDeviceStyles(baseStyles: Record<string, any>, responsiveConfig: Record<string, any>, device: 'desktop' | 'tablet' | 'mobile'): Record<string, any> {
+  if (!baseStyles || !responsiveConfig) return baseStyles || {};
+  
+  // Merge base styles with device-specific overrides
+  return {
+    ...baseStyles,
+    ...(responsiveConfig[device] || {})
+  };
 }
 
 export function styleOptionsToTailwind(options: Record<string, any>): string {

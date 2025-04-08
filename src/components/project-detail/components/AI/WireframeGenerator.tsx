@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +14,7 @@ import { WireframeVisualizer } from '@/components/wireframe';
 import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeProps } from '@/components/wireframe/types';
 import { adaptSectionsForVisualizer } from '@/components/wireframe/utils/wireframe-adapter';
-import { CreativityGauge } from '@/components/ui/creativity-gauge';
 
 interface WireframeGeneratorProps {
   projectId: string;
@@ -83,14 +82,34 @@ const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({
       console.log("Generating wireframe with params:", params);
       const result = await generateWireframe(params);
       if (result?.wireframe) {
-        const wireframeWithId = {
-          ...result.wireframe,
-          id: result.wireframe.id || `generated-${Date.now()}`
+        // Create a wireframe data with required title field
+        const wireframeWithId: WireframeData = {
+          id: result.wireframe.id || `generated-${Date.now()}`,
+          title: result.wireframe.title || "Untitled Wireframe",
+          sections: result.wireframe.sections || [],
+          description: result.wireframe.description,
+          colorScheme: result.wireframe.colorScheme,
+          typography: result.wireframe.typography,
+          style: result.wireframe.style,
+          imageUrl: result.wireframe.imageUrl
         };
+        
         setGeneratedWireframe(wireframeWithId);
         
         if (onWireframeGenerated) {
-          onWireframeGenerated(wireframeWithId as AIWireframe);
+          const aiWireframe: AIWireframe = {
+            id: wireframeWithId.id,
+            title: wireframeWithId.title,
+            description: wireframeWithId.description || '',
+            wireframe: result.wireframe,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            data: wireframeWithId,
+            sections: wireframeWithId.sections,
+            project_id: projectId
+          };
+          
+          onWireframeGenerated(aiWireframe);
         }
         
         toast({
@@ -127,19 +146,18 @@ const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({
     const wireframeToSave: AIWireframe = {
       id: generatedWireframe.id || uuidv4(),
       project_id: isValidUUID(projectId) ? projectId : uuidv4(),
-      projectId: isValidUUID(projectId) ? projectId : uuidv4(),
       title: wireframeName || "Untitled Wireframe",
       description: wireframeDescription || prompt,
-      prompt: prompt,
+      wireframe: {
+        title: wireframeName || "Untitled Wireframe",
+        description: wireframeDescription || prompt,
+        sections: generatedWireframe.sections || [],
+        id: generatedWireframe.id
+      },
       sections: generatedWireframe.sections || [],
       data: generatedWireframe,
-      created_at: new Date().toISOString(),
-      generation_params: {
-        model: 'wireframe-generator-v1',
-        prompt: prompt,
-        stylePreferences: [stylePreference],
-        complexity: complexity
-      }
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     console.log("Saving wireframe:", wireframeToSave);
@@ -152,15 +170,6 @@ const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({
       title: "Wireframe saved",
       description: "Your wireframe has been saved successfully."
     });
-  };
-
-  const adaptSectionsForVisualizer = (sections: any[]): any[] => {
-    return sections.map((section, index) => ({
-      id: section.id || `section-${index}`,
-      name: section.name,
-      sectionType: section.sectionType,
-      description: section.description || '',
-    }));
   };
 
   return (

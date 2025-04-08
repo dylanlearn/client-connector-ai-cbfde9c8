@@ -1,10 +1,10 @@
 
 import { useState, useCallback } from 'react';
-import { WireframeService } from '@/services/ai/wireframe/wireframe-service';
 import wireframeApiService from '@/services/ai/wireframe/api/wireframe-api-service';
 import type { 
   WireframeGenerationParams, 
-  WireframeGenerationResult 
+  WireframeGenerationResult, 
+  WireframeResult
 } from '@/services/ai/wireframe/wireframe-types';
 
 // This hook provides wireframe generation functionality
@@ -42,7 +42,14 @@ export function useWireframeGenerator(
         const errorMsg = "Failed to generate wireframe";
         setError(errorMsg);
         if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
-        return { error: errorMsg };
+        return { 
+          wireframe: {
+            sections: [],
+            title: "Error",
+            description: "Failed to generate wireframe"
+          },
+          error: errorMsg 
+        };
       }
 
       // Create the result object
@@ -61,7 +68,14 @@ export function useWireframeGenerator(
       const errorMsg = error.message || "An unexpected error occurred";
       setError(errorMsg);
       if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
-      return { error: errorMsg };
+      return { 
+        wireframe: {
+          sections: [],
+          title: "Error",
+          description: "An error occurred"
+        },
+        error: errorMsg 
+      };
     } finally {
       setIsGenerating(false);
     }
@@ -79,7 +93,14 @@ export function useWireframeGenerator(
         const errorMsg = "No wireframe to generate variation from";
         setError(errorMsg);
         if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
-        return { error: errorMsg };
+        return { 
+          wireframe: {
+            sections: [],
+            title: "Error",
+            description: "No wireframe to generate variation from"
+          },
+          error: errorMsg 
+        };
       }
 
       // Create our own implementation since the API service doesn't seem to have this method
@@ -96,7 +117,14 @@ export function useWireframeGenerator(
       const errorMsg = error.message || "An unexpected error occurred";
       setError(errorMsg);
       if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
-      return { error: errorMsg };
+      return { 
+        wireframe: {
+          sections: [],
+          title: "Error",
+          description: "An error generating variation"
+        },
+        error: errorMsg 
+      };
     } finally {
       setIsGenerating(false);
     }
