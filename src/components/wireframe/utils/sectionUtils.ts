@@ -20,29 +20,29 @@ import {
 export function getSectionIcon(sectionType: string): React.ReactNode {
   switch (sectionType) {
     case 'hero':
-      return <Home size={16} />;
+      return React.createElement(Home, { size: 16 });
     case 'feature-grid':
-      return <Grid size={16} />;
+      return React.createElement(Grid, { size: 16 });
     case 'testimonials':
-      return <MessageSquare size={16} />;
+      return React.createElement(MessageSquare, { size: 16 });
     case 'pricing':
-      return <DollarSign size={16} />;
+      return React.createElement(DollarSign, { size: 16 });
     case 'faq':
-      return <HelpCircle size={16} />;
+      return React.createElement(HelpCircle, { size: 16 });
     case 'cta':
-      return <Send size={16} />;
+      return React.createElement(Send, { size: 16 });
     case 'navigation':
-      return <Navigation size={16} />;
+      return React.createElement(Navigation, { size: 16 });
     case 'footer':
-      return <Layout size={16} />;
+      return React.createElement(Layout, { size: 16 });
     case 'blog':
-      return <BookOpen size={16} />;
+      return React.createElement(BookOpen, { size: 16 });
     case 'contact':
-      return <Mail size={16} />;
+      return React.createElement(Mail, { size: 16 });
     case 'team':
-      return <Users size={16} />;
+      return React.createElement(Users, { size: 16 });
     default:
-      return <Layout size={16} />;
+      return React.createElement(Layout, { size: 16 });
   }
 }
 
