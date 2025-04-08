@@ -56,6 +56,7 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
         Array.isArray(designRecommendations) && designRecommendations.length > 0 ? designRecommendations[0] : null
       );
       
+      // Now wireframeParams is properly of type WireframeGenerationParams
       const result = await generateWireframe(wireframeParams);
       
       if (result) {

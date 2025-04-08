@@ -7,35 +7,37 @@ export function useFabric() {
   const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
 
+  // Define the initializeFabric function
+  const initializeFabric = (canvasElement?: HTMLCanvasElement) => {
+    const canvasEl = canvasElement || canvasRef.current;
+    if (!canvasEl) return null;
+    
+    // Create new canvas instance
+    const canvas = new fabric.Canvas(canvasEl, {
+      backgroundColor: '#ffffff',
+      preserveObjectStacking: true,
+      selection: true
+    });
+
+    // Set up event handlers
+    canvas.on('selection:created', (e) => {
+      setSelectedObject(e.selected?.[0] || null);
+    });
+
+    canvas.on('selection:updated', (e) => {
+      setSelectedObject(e.selected?.[0] || null);
+    });
+
+    canvas.on('selection:cleared', () => {
+      setSelectedObject(null);
+    });
+
+    setFabricCanvas(canvas);
+    return canvas;
+  };
+
   useEffect(() => {
     // Initialize Fabric canvas
-    const initializeFabric = () => {
-      if (!canvasRef.current) return;
-      
-      // Create new canvas instance
-      const canvas = new fabric.Canvas(canvasRef.current, {
-        backgroundColor: '#ffffff',
-        preserveObjectStacking: true,
-        selection: true
-      });
-
-      // Set up event handlers
-      canvas.on('selection:created', (e) => {
-        setSelectedObject(e.selected?.[0] || null);
-      });
-
-      canvas.on('selection:updated', (e) => {
-        setSelectedObject(e.selected?.[0] || null);
-      });
-
-      canvas.on('selection:cleared', () => {
-        setSelectedObject(null);
-      });
-
-      setFabricCanvas(canvas);
-      return canvas;
-    };
-
     const canvas = initializeFabric();
     
     // Cleanup on unmount

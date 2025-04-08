@@ -2,6 +2,7 @@
 import React from 'react';
 import ComponentRenderer from './renderers/ComponentRenderer';
 import { cn } from '@/lib/utils';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeVisualizerProps {
   wireframe: {
@@ -14,7 +15,7 @@ export interface WireframeVisualizerProps {
       name: string;
       description?: string;
       imageUrl?: string;
-      sectionType?: string;
+      sectionType: string; // Making this required to match WireframeSection type
       componentVariant?: string;
       data?: Record<string, any>;
     }>;
@@ -23,8 +24,8 @@ export interface WireframeVisualizerProps {
   };
   viewMode?: 'preview' | 'flowchart';
   deviceType?: 'desktop' | 'tablet' | 'mobile';
-  darkMode?: boolean; // Add this prop
-  onSelect?: (id: string) => void; // Add this prop
+  darkMode?: boolean; 
+  onSelect?: (id: string) => void;
   className?: string;
 }
 
@@ -32,8 +33,8 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
   deviceType = 'desktop',
-  darkMode = false, // Use the prop with default value
-  onSelect, // Use the prop
+  darkMode = false,
+  onSelect,
   className
 }) => {
   if (!wireframe || !wireframe.sections) {

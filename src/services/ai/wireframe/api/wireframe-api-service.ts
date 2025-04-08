@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Replace process.env with import.meta.env for Vite
@@ -56,6 +55,23 @@ export class WireframeAPIService {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to generate wireframe');
+    }
+  }
+
+  /**
+   * Updates wireframe feedback
+   * @param wireframeId The ID of the wireframe to update
+   * @param feedback The feedback data
+   * @returns A promise that resolves with the updated wireframe
+   */
+  async updateWireframeFeedback(wireframeId: string, feedback: any) {
+    try {
+      const response = await this.api.post(`/api/wireframe/${wireframeId}/feedback`, {
+        feedback
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to update wireframe feedback');
     }
   }
 
@@ -126,23 +142,6 @@ export class WireframeAPIService {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to analyze layout');
-    }
-  }
-
-  /**
-   * Updates wireframe feedback
-   * @param wireframeId The ID of the wireframe to update
-   * @param feedback The feedback data
-   * @returns A promise that resolves with the updated wireframe
-   */
-  async updateWireframeFeedback(wireframeId: string, feedback: any) {
-    try {
-      const response = await this.api.post(`/api/wireframe/${wireframeId}/feedback`, {
-        feedback
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to update wireframe feedback');
     }
   }
 
