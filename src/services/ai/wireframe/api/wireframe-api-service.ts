@@ -1,13 +1,5 @@
 
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  WireframeGeneratorPrompt, 
-  WireframeResult,
-  WireframeSection,
-  WireframeComponent,
-  WireframeData
-} from '../wireframe-types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -19,15 +11,15 @@ export class WireframeAPIService {
     baseURL: API_BASE_URL,
     timeout: 10000,
     headers: {
-      'Content-Type': 'application/json',
-    },
+      'Content-Type': 'application/json'
+    }
   });
   
   constructor() {
     // Add a response interceptor to handle errors
     this.api.interceptors.response.use(
-      (response) => response,
-      (error) => {
+      response => response,
+      error => {
         console.error('API Error:', error);
         
         // Conditionally log the request and response data
@@ -54,10 +46,12 @@ export class WireframeAPIService {
 
   /**
    * Generates a wireframe based on the provided prompt.
+   * @param prompt The wireframe generation prompt.
+   * @returns A promise that resolves with the generated wireframe result.
    */
-  async generateWireframe(prompt: WireframeGeneratorPrompt): Promise<WireframeResult> {
+  async generateWireframe(prompt: any) {
     try {
-      const response = await this.api.post<WireframeResult>('/api/wireframe/generate', prompt);
+      const response = await this.api.post('/api/wireframe/generate', prompt);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to generate wireframe');
@@ -66,10 +60,16 @@ export class WireframeAPIService {
 
   /**
    * Generates a section based on the provided type and data.
+   * @param type The type of the section to generate.
+   * @param data The data to use for generating the section.
+   * @returns A promise that resolves with the generated wireframe section.
    */
-  async generateSection(type: string, data?: any): Promise<WireframeSection> {
+  async generateSection(type: string, data: any) {
     try {
-      const response = await this.api.post<WireframeSection>(`/api/wireframe/section/generate`, { type, data });
+      const response = await this.api.post(`/api/wireframe/section/generate`, {
+        type,
+        data
+      });
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to generate section');
@@ -78,10 +78,16 @@ export class WireframeAPIService {
 
   /**
    * Enhances a wireframe based on the provided wireframe and prompt.
+   * @param wireframe The wireframe to enhance.
+   * @param prompt The prompt to use for enhancing the wireframe.
+   * @returns A promise that resolves with the enhanced wireframe result.
    */
-  async enhanceWireframe(wireframe: WireframeResult, prompt?: string): Promise<WireframeResult> {
+  async enhanceWireframe(wireframe: any, prompt: string) {
     try {
-      const response = await this.api.post<WireframeResult>('/api/wireframe/enhance', { wireframe, prompt });
+      const response = await this.api.post('/api/wireframe/enhance', {
+        wireframe,
+        prompt
+      });
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to enhance wireframe');
@@ -90,22 +96,32 @@ export class WireframeAPIService {
 
   /**
    * Generates variations of a section based on the provided section and count.
+   * @param section The section to generate variations for.
+   * @param count The number of variations to generate.
+   * @returns A promise that resolves with an array of generated wireframe sections.
    */
-  async generateVariations(section: WireframeSection, count?: number): Promise<WireframeSection[]> {
+  async generateVariations(section: any, count: number) {
     try {
-      const response = await this.api.post<WireframeSection[]>('/api/wireframe/section/variations', { section, count });
+      const response = await this.api.post('/api/wireframe/section/variations', {
+        section,
+        count
+      });
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to generate variations');
     }
   }
-  
+
   /**
    * Analyzes a wireframe for layout patterns and optimization opportunities.
+   * @param wireframeData The wireframe data to analyze.
+   * @returns A promise that resolves with the layout analysis result.
    */
-  async analyzeLayout(wireframeData: WireframeData): Promise<any> {
+  async analyzeLayout(wireframeData: any) {
     try {
-      const response = await this.api.post<any>('/api/wireframe/analyze/layout', { wireframeData });
+      const response = await this.api.post('/api/wireframe/analyze/layout', {
+        wireframeData
+      });
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to analyze layout');
@@ -113,73 +129,42 @@ export class WireframeAPIService {
   }
 
   /**
-   * Fetches a single wireframe by ID
+   * Updates wireframe feedback
+   * @param wireframeId The ID of the wireframe to update
+   * @param feedback The feedback data
+   * @returns A promise that resolves with the updated wireframe
    */
-  async getWireframe(id: string): Promise<any> {
+  async updateWireframeFeedback(wireframeId: string, feedback: any) {
     try {
-      const response = await this.api.get<any>(`/api/wireframe/${id}`);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch wireframe');
-    }
-  }
-
-  /**
-   * Saves a wireframe to the server
-   */
-  async saveWireframe(
-    projectId: string,
-    prompt: string,
-    wireframeData: WireframeData,
-    params: any,
-    model?: string
-  ): Promise<any> {
-    try {
-      const response = await this.api.post<any>('/api/wireframe/save', {
-        projectId,
-        prompt,
-        wireframeData,
-        params,
-        model
+      const response = await this.api.post(`/api/wireframe/${wireframeId}/feedback`, {
+        feedback
       });
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to save wireframe');
+      throw new Error(error.response?.data?.message || 'Failed to update wireframe feedback');
     }
   }
 
   /**
    * Updates wireframe data
+   * @param wireframeId The ID of the wireframe to update
+   * @param data The updated data
+   * @returns A promise that resolves with the updated wireframe
    */
-  async updateWireframeData(
-    wireframeId: string,
-    wireframeData: WireframeData
-  ): Promise<any> {
+  async updateWireframeData(wireframeId: string, data: any) {
     try {
-      const response = await this.api.put<any>(`/api/wireframe/${wireframeId}`, {
-        wireframeData
-      });
+      const response = await this.api.put(`/api/wireframe/${wireframeId}`, data);
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to update wireframe data');
-    }
-  }
-
-  /**
-   * Gets the latest wireframe for a project
-   */
-  async getLatestWireframe(projectId: string): Promise<any> {
-    try {
-      const response = await this.api.get<any>(`/api/wireframe/latest/${projectId}`);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to fetch latest wireframe');
     }
   }
 }
 
 /**
  * Helper function to process layout information.
+ * @param layoutInfo The layout information to process.
+ * @returns The processed layout information.
  */
 const processLayout = (layoutInfo: any) => {
   // Make sure to have a default alignment property
@@ -193,11 +178,9 @@ const processLayout = (layoutInfo: any) => {
   
   return {
     type: layoutInfo.type || 'flex',
-    alignment: layoutInfo.alignment || 'center', // Add default alignment
-    tabletGrid: layoutInfo.tabletGrid // Keep other properties
+    alignment: layoutInfo.alignment || 'center',
+    tabletGrid: layoutInfo.tabletGrid || '' // Keep other properties with default
   };
 };
 
-// Create and export a default instance of the service
-const wireframeApiService = new WireframeAPIService();
-export default wireframeApiService;
+export default new WireframeAPIService();

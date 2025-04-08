@@ -14,7 +14,7 @@ export { wireframeApiService } from './wireframe-api';
 
 // Export wireframe types
 export * from './wireframe-types';
-export * from './wireframe-service-types';
+export type * from './wireframe-service-types';
 
 // Export wireframe version control
 export * from './version-control';

@@ -1,83 +1,130 @@
 
-import wireframeApiService from '../api/wireframe-api-service';
-import {
-  WireframeGenerationParams,
-  WireframeGenerationResult,
-  AIWireframe,
-  WireframeData
+import { v4 as uuidv4 } from 'uuid';
+import { 
+  WireframeGenerationParams, 
+  WireframeGenerationResult 
 } from '../wireframe-types';
-import { WireframeTemplateService } from '../templates/wireframe-template-service';
-import { WireframeVersionControlService } from '../version-control/wireframe-version-control-service';
+
+interface WireframeResult {
+  wireframe: any;
+  generationTime?: number;
+  model?: string;
+  usage?: {
+    total_tokens?: number;
+    completion_tokens?: number;
+    prompt_tokens?: number;
+  };
+  success: boolean;
+}
 
 /**
- * Service for wireframe generation functionality
+ * Service for generating wireframes
  */
-export const WireframeGeneratorService = {
+export class WireframeGeneratorService {
   /**
-   * Generate a new wireframe using the provided parameters
+   * Generate a wireframe based on a description
+   * @param params The wireframe generation parameters
+   * @returns Generated wireframe data
    */
-  generateWireframe: async (
-    params: WireframeGenerationParams
-  ): Promise<WireframeGenerationResult> => {
+  async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
     try {
-      // Apply industry templates if specified in params
-      if (params.industry) {
-        try {
-          const baseWireframe = WireframeTemplateService.getTemplatesForIndustry(params.industry);
-          
-          // Merge template with any custom parameters
-          params = {
-            ...params,
-            // Using industry data as a base
-            baseWireframe: baseWireframe
-          };
-        } catch (error) {
-          console.warn("Error applying industry template:", error);
-          // Continue without template if error occurs
+      console.log("Generating wireframe with params:", params);
+      const startTime = performance.now();
+      
+      // If there's a baseWireframe, use it as a starting point
+      let wireframeData = params.baseWireframe || {
+        id: uuidv4(),
+        title: params.pageType || 'New Wireframe',
+        description: params.description || 'Generated wireframe',
+        sections: [],
+        style: params.style || 'modern',
+        colorScheme: {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          background: '#ffffff'
+        },
+        typography: {
+          headings: 'Inter',
+          body: 'Roboto',
+          fontPairings: ['Inter', 'Roboto']
         }
-      }
+      };
       
-      // Call the API service to generate the wireframe
-      const result = await wireframeApiService.generateWireframe(params);
+      // TODO: This is where we would call the AI service to generate the wireframe
+      // Mock implementation for now
       
-      // Save the generated wireframe to the database if there's a project ID
-      if (params.projectId && result.wireframe) {
-        // Ensure the wireframe has a title (requirement for WireframeData in wireframe.d.ts)
-        const wireframeWithTitle: WireframeData = {
-          ...result.wireframe,
-          title: result.wireframe.title || "Untitled Wireframe"
-        };
-        
-        await wireframeApiService.saveWireframe(
-          params.projectId,
-          params.prompt || params.description, // Use prompt if available, otherwise use description
-          wireframeWithTitle,
-          params,
-          result.model || 'default'
-        );
-        
-        // If project is provided, create initial version in version control
-        try {
-          const lastWireframe = await wireframeApiService.getLatestWireframe(params.projectId);
-          
-          if (lastWireframe) {
-            await WireframeVersionControlService.createVersion(
-              lastWireframe.id,
-              wireframeWithTitle,
-              "Initial wireframe generation",
-              params.projectId // Using projectId instead of userId
-            );
+      // Add some default sections if no sections exist
+      if (!wireframeData.sections || wireframeData.sections.length === 0) {
+        wireframeData.sections = [
+          {
+            id: uuidv4(),
+            name: 'Hero Section',
+            sectionType: 'hero',
+            description: 'Main hero section'
+          },
+          {
+            id: uuidv4(),
+            name: 'Features Section',
+            sectionType: 'features',
+            description: 'Features showcase'
           }
-        } catch (error) {
-          console.error("Error creating initial wireframe version:", error);
-          // Continue even if version control fails
-        }
+        ];
       }
       
-      return result;
+      const endTime = performance.now();
+      const generationTime = (endTime - startTime) / 1000; // Convert to seconds
+      
+      return {
+        wireframe: wireframeData,
+        generationTime,
+        model: "mock-model",
+        usage: {
+          total_tokens: 1000,
+          completion_tokens: 500,
+          prompt_tokens: 500
+        },
+        success: true
+      };
     } catch (error) {
-      console.error("Error in wireframe service generateWireframe:", error);
+      console.error("Error generating wireframe:", error);
       throw error;
     }
-  },
-};
+  }
+  
+  /**
+   * Generate creative variations of an existing wireframe
+   * @param baseWireframe The base wireframe to generate variations from
+   * @param variationCount Number of variations to generate
+   * @returns Array of wireframe variations
+   */
+  async generateVariations(
+    baseWireframe: any, 
+    variationCount: number = 3
+  ): Promise<WireframeGenerationResult[]> {
+    // Create array to hold variations
+    const variations: WireframeGenerationResult[] = [];
+    
+    // Generate variations
+    for (let i = 0; i < variationCount; i++) {
+      // Deep clone the base wireframe
+      const clone = JSON.parse(JSON.stringify(baseWireframe));
+      
+      // Modify clone to create a variation
+      const variation = {
+        ...clone,
+        id: uuidv4(),
+        title: `${clone.title} - Variation ${i + 1}`
+      };
+      
+      variations.push({
+        wireframe: variation,
+        success: true
+      });
+    }
+    
+    return variations;
+  }
+}
+
+export const wireframeGenerator = new WireframeGeneratorService();

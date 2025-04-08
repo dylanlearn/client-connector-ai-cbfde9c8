@@ -84,7 +84,6 @@ const router = createBrowserRouter([
         element: (
           <AdvancedWireframeGenerator 
             projectId={demoProjectId} 
-            darkMode={false} 
             onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
             onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}
           />

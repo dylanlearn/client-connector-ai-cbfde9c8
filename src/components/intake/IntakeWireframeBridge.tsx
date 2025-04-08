@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { WireframeData, WireframeSection } from '@/types/wireframe';
+import { WireframeData, WireframeVersion } from '@/types/wireframe';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IntakeWireframeBridgeProps {
@@ -32,7 +32,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       } = intakeData;
       
       // Create sections based on business type and intake data
-      const sections: WireframeSection[] = generateSections(intakeData);
+      const sections = generateSections(intakeData);
       
       // Create the wireframe data structure
       const generatedWireframe: WireframeData = {
@@ -70,8 +70,8 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   };
   
   // Generate wireframe sections based on intake data
-  const generateSections = (data: any): WireframeSection[] => {
-    const sections: WireframeSection[] = [];
+  const generateSections = (data: any): any[] => {
+    const sections: any[] = [];
     
     // Always add a hero section
     sections.push({

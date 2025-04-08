@@ -1,4 +1,3 @@
-
 /**
  * Type definitions for wireframe version control
  */
@@ -19,6 +18,29 @@ export interface Wireframe {
   current_version_id?: string;
 }
 
+export interface WireframeSection {
+  id: string;
+  name: string;
+  sectionType: string;
+  description?: string;
+  components?: any[];
+  layout?: {
+    type: string;
+    direction?: string;
+    alignment?: string;
+    [key: string]: any;
+  };
+  layoutType?: string;
+  positionOrder?: number;
+  componentVariant?: string;
+  copySuggestions?: {
+    heading?: string;
+    subheading?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 export interface WireframeSourceData {
   title?: string;
   description?: string;
@@ -32,7 +54,7 @@ export interface WireframeSourceData {
 }
 
 export interface WireframeData {
-  id?: string; // Added id field to match WireframeProps
+  id: string; // Required id field
   title: string;
   description?: string;
   sections: any[];
@@ -50,7 +72,7 @@ export interface WireframeData {
     fontPairings?: string[];
   };
   designTokens?: Record<string, any>;
-  mobileConsiderations?: string;
+  mobileConsiderations?: string; // Add this field
   accessibilityNotes?: string;
   style?: string | object;
   pages?: any[];
@@ -76,6 +98,7 @@ export interface WireframeVersion {
   created_at: string;
   created_by?: string;
   sourceData?: WireframeSourceData;
+  version?: string; // Add this field for the version property
 }
 
 export interface WireframeVersionDiff {
