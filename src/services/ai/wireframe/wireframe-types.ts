@@ -50,8 +50,8 @@ export interface CopySuggestions {
 }
 
 export interface WireframeResult {
-  id: string; // Changed from optional to required
-  title?: string;
+  id: string; // Required
+  title: string; // Changed from optional to required
   description?: string;
   sections: WireframeSection[];
   colorScheme?: {

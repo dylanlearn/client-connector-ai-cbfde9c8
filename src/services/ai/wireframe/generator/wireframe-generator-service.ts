@@ -34,7 +34,7 @@ export class WireframeGeneratorService {
       // If there's a baseWireframe, use it as a starting point
       let wireframeData = params.baseWireframe || {
         id: uuidv4(), // Always ensure we have an ID
-        title: params.pageType || 'New Wireframe',
+        title: params.pageType || 'New Wireframe', // Ensure we always have a title
         description: params.description || 'Generated wireframe',
         sections: [],
         style: params.style || 'modern',
@@ -54,6 +54,11 @@ export class WireframeGeneratorService {
       // Ensure ID is set even if it's passed in the params
       if (!wireframeData.id) {
         wireframeData.id = uuidv4();
+      }
+      
+      // Ensure title is set even if it's passed in the params
+      if (!wireframeData.title) {
+        wireframeData.title = params.pageType || 'New Wireframe';
       }
       
       // TODO: This is where we would call the AI service to generate the wireframe

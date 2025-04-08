@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
@@ -138,7 +139,7 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
 
   const adaptWireframeForVisualizer = (data: any) => ({
     id: data.id || uuidv4(),
-    title: data.title || "Wireframe Preview",
+    title: data.title || "Wireframe Preview", // Ensure title is always provided
     description: data.description || "Generated wireframe",
     imageUrl: data.imageUrl || "/wireframes/default.jpg",
     sections: data.sections?.map((section: any, index: number) => ({

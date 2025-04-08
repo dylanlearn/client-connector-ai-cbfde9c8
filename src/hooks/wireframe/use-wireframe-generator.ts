@@ -46,8 +46,8 @@ export function useWireframeGenerator(
         return { 
           wireframe: {
             id: uuidv4(), // Ensure ID is set
+            title: "Error", // Ensure title is set
             sections: [],
-            title: "Error",
             description: "Failed to generate wireframe"
           },
           error: errorMsg 
@@ -57,6 +57,11 @@ export function useWireframeGenerator(
       // Ensure the wireframe has an ID
       if (!result.wireframe.id) {
         result.wireframe.id = uuidv4();
+      }
+      
+      // Ensure the wireframe has a title
+      if (!result.wireframe.title) {
+        result.wireframe.title = enhancedParams.pageType || "Generated Wireframe";
       }
 
       // Create the result object
@@ -78,8 +83,8 @@ export function useWireframeGenerator(
       return { 
         wireframe: {
           id: uuidv4(), // Ensure ID is set
+          title: "Error", // Ensure title is set
           sections: [],
-          title: "Error",
           description: "An error occurred"
         },
         error: errorMsg 
@@ -104,8 +109,8 @@ export function useWireframeGenerator(
         return { 
           wireframe: {
             id: uuidv4(), // Ensure ID is set
+            title: "Error", // Ensure title is set
             sections: [],
-            title: "Error",
             description: "No wireframe to generate variation from"
           },
           error: errorMsg 
@@ -134,8 +139,8 @@ export function useWireframeGenerator(
       return { 
         wireframe: {
           id: uuidv4(), // Ensure ID is set
+          title: "Error", // Ensure title is set
           sections: [],
-          title: "Error",
           description: "An error generating variation"
         },
         error: errorMsg 
