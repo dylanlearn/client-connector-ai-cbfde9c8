@@ -36,6 +36,13 @@ export interface MobileLayout {
   [key: string]: any;
 }
 
+// Tablet layout configuration
+export interface TabletLayout {
+  columns?: number;
+  spacing?: string;
+  [key: string]: any;
+}
+
 // Layout intelligence properties
 export interface OptimizationSuggestion {
   text: string;
@@ -61,6 +68,7 @@ export interface WireframeSection {
   copySuggestions?: CopySuggestions;
   designReasoning?: string;
   mobileLayout?: MobileLayout;
+  tabletLayout?: TabletLayout; // Added missing property
   animationSuggestions?: AnimationSuggestions;
   dynamicElements?: any;
   styleVariants?: any;
