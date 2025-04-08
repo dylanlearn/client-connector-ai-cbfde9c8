@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { 
@@ -53,8 +54,6 @@ export class WireframeAPIService {
 
   /**
    * Generates a wireframe based on the provided prompt.
-   * @param prompt The wireframe generation prompt.
-   * @returns A promise that resolves with the generated wireframe result.
    */
   async generateWireframe(prompt: WireframeGeneratorPrompt): Promise<WireframeResult> {
     try {
@@ -67,9 +66,6 @@ export class WireframeAPIService {
 
   /**
    * Generates a section based on the provided type and data.
-   * @param type The type of the section to generate.
-   * @param data The data to use for generating the section.
-   * @returns A promise that resolves with the generated wireframe section.
    */
   async generateSection(type: string, data?: any): Promise<WireframeSection> {
     try {
@@ -82,9 +78,6 @@ export class WireframeAPIService {
 
   /**
    * Enhances a wireframe based on the provided wireframe and prompt.
-   * @param wireframe The wireframe to enhance.
-   * @param prompt The prompt to use for enhancing the wireframe.
-   * @returns A promise that resolves with the enhanced wireframe result.
    */
   async enhanceWireframe(wireframe: WireframeResult, prompt?: string): Promise<WireframeResult> {
     try {
@@ -97,9 +90,6 @@ export class WireframeAPIService {
 
   /**
    * Generates variations of a section based on the provided section and count.
-   * @param section The section to generate variations for.
-   * @param count The number of variations to generate.
-   * @returns A promise that resolves with an array of generated wireframe sections.
    */
   async generateVariations(section: WireframeSection, count?: number): Promise<WireframeSection[]> {
     try {
@@ -112,8 +102,6 @@ export class WireframeAPIService {
   
   /**
    * Analyzes a wireframe for layout patterns and optimization opportunities.
-   * @param wireframeData The wireframe data to analyze.
-   * @returns A promise that resolves with the layout analysis result.
    */
   async analyzeLayout(wireframeData: WireframeData): Promise<any> {
     try {
@@ -123,12 +111,75 @@ export class WireframeAPIService {
       throw new Error(error.response?.data?.message || 'Failed to analyze layout');
     }
   }
+
+  /**
+   * Fetches a single wireframe by ID
+   */
+  async getWireframe(id: string): Promise<any> {
+    try {
+      const response = await this.api.get<any>(`/api/wireframe/${id}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch wireframe');
+    }
+  }
+
+  /**
+   * Saves a wireframe to the server
+   */
+  async saveWireframe(
+    projectId: string,
+    prompt: string,
+    wireframeData: WireframeData,
+    params: any,
+    model?: string
+  ): Promise<any> {
+    try {
+      const response = await this.api.post<any>('/api/wireframe/save', {
+        projectId,
+        prompt,
+        wireframeData,
+        params,
+        model
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to save wireframe');
+    }
+  }
+
+  /**
+   * Updates wireframe data
+   */
+  async updateWireframeData(
+    wireframeId: string,
+    wireframeData: WireframeData
+  ): Promise<any> {
+    try {
+      const response = await this.api.put<any>(`/api/wireframe/${wireframeId}`, {
+        wireframeData
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to update wireframe data');
+    }
+  }
+
+  /**
+   * Gets the latest wireframe for a project
+   */
+  async getLatestWireframe(projectId: string): Promise<any> {
+    try {
+      const response = await this.api.get<any>(`/api/wireframe/latest/${projectId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch latest wireframe');
+    }
+  }
 }
 
 /**
  * Helper function to process layout information.
- * @param layoutInfo The layout information to process.
- * @returns The processed layout information.
  */
 const processLayout = (layoutInfo: any) => {
   // Make sure to have a default alignment property
@@ -146,3 +197,7 @@ const processLayout = (layoutInfo: any) => {
     tabletGrid: layoutInfo.tabletGrid // Keep other properties
   };
 };
+
+// Create and export a default instance of the service
+const wireframeApiService = new WireframeAPIService();
+export default wireframeApiService;

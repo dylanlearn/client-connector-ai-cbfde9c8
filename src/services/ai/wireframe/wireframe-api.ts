@@ -4,7 +4,7 @@ import wireframeApiService from './api/wireframe-api-service';
 import { wireframeGenerator } from './api/wireframe-generator';
 
 export {
-  wireframeApiService as WireframeApiService,
+  wireframeApiService,
   wireframeGenerator,
 };
 

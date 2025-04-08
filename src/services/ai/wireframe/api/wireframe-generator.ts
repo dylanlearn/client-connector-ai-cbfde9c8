@@ -54,7 +54,6 @@ export const wireframeGenerator = {
           completion_tokens: number;
           prompt_tokens: number;
         };
-        creativityLevel?: number;
       }>('generation-api', {
         body: {
           action: 'generate-wireframe',
@@ -78,7 +77,6 @@ export const wireframeGenerator = {
         generationTime,
         model: data.model,
         usage: data.usage,
-        creativityLevel: data.creativityLevel || enhancedParams.creativityLevel,
         success: true
       };
     } catch (error) {

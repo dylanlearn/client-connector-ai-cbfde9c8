@@ -1,6 +1,12 @@
 
 import React from 'react';
-import { WireframeDataVisualizerProps } from './types';
+
+export interface WireframeDataVisualizerProps {
+  wireframeData: any;
+  darkMode?: boolean;
+  viewMode?: 'preview' | 'flowchart';
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+}
 
 const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
   wireframeData,
@@ -20,7 +26,7 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
       </div>
       
       <div className="space-y-4">
-        {wireframeData.sections?.map((section, index) => (
+        {wireframeData.sections?.map((section: any, index: number) => (
           <div key={section.id || index} className="border rounded-md p-4">
             <h3 className="font-medium">{section.name || `Section ${index + 1}`}</h3>
             <p className="text-sm">{section.description}</p>

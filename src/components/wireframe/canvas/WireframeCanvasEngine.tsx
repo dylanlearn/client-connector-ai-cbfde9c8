@@ -1,259 +1,179 @@
-import React, { useEffect, useRef, useState } from 'react';
+
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
-import { useWireframeStore } from '@/stores/wireframe-store';
-import { cn } from '@/lib/utils';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { useToast } from '@/hooks/use-toast';
-import { componentToFabricObject } from '../utils/fabric-converters';
-import CanvasControls from '../controls/CanvasControls';
-import { getDeviceStyles } from '../registry/component-types';
+import { useFabric } from '@/hooks/use-fabric';
+import { WireframeData, WireframeSection } from '@/types/wireframe';
+import { getDeviceStyles } from '@/components/wireframe/registry/component-types';
 
 interface WireframeCanvasEngineProps {
-  sections?: WireframeSection[];
-  darkMode?: boolean;
+  wireframeData: WireframeData;
+  editable?: boolean;
+  onCanvasReady?: (canvas: fabric.Canvas) => void;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
-  readOnly?: boolean;
-  onSectionSelect?: (sectionId: string) => void;
-  onSectionUpdate?: (section: WireframeSection) => void;
-  className?: string;
 }
 
 const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
-  sections = [],
-  darkMode = false,
-  deviceType = 'desktop',
-  readOnly = false,
-  onSectionSelect,
-  onSectionUpdate,
-  className
+  wireframeData,
+  editable = false,
+  onCanvasReady,
+  deviceType = 'desktop'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-  const { toast } = useToast();
-  const [zoom, setZoom] = useState(1);
-  const [showGrid, setShowGrid] = useState(true);
+  const { canvas, initializeFabric } = useFabric();
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
-  const applyDeviceSpecificStyles = (baseStyles, responsiveConfig, device) => {
-    return getDeviceStyles(
-      { ...baseStyles, ...(responsiveConfig ? responsiveConfig[device] || {} : {}) }, 
-      device
-    );
-  };
-
-  const getCanvasDimensions = () => {
-    switch (deviceType) {
-      case 'mobile':
-        return { width: 375, height: 667 };
-      case 'tablet':
-        return { width: 768, height: 1024 };
-      case 'desktop':
-      default:
-        return { width: 1280, height: 800 };
-    }
-  };
-
+  // Initialize the canvas
   useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    const dimensions = getCanvasDimensions();
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-      width: dimensions.width,
-      height: dimensions.height,
-      backgroundColor: darkMode ? '#1e293b' : '#ffffff',
-      selection: !readOnly,
-      preserveObjectStacking: true
-    });
-    
-    if (showGrid) {
-      createGrid(fabricCanvas, dimensions.width, dimensions.height);
+    if (canvasRef.current && !isInitialized) {
+      initializeFabric(canvasRef.current);
+      setIsInitialized(true);
     }
-
-    setCanvas(fabricCanvas);
-
+    
     return () => {
-      fabricCanvas.dispose();
+      if (canvas) {
+        canvas.dispose();
+      }
     };
-  }, [darkMode, deviceType, showGrid]);
+  }, [canvasRef, isInitialized, initializeFabric, canvas]);
 
-  const createGrid = (canvas: fabric.Canvas, width: number, height: number) => {
-    const gridSize = 20;
-    const gridColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+  // Render wireframe sections
+  const renderWireframe = useCallback(() => {
+    if (!canvas || !wireframeData || !wireframeData.sections) return;
     
-    canvas.getObjects().forEach(obj => {
-      if (obj.data?.type === 'grid') {
-        canvas.remove(obj);
-      }
-    });
-
-    for (let i = 0; i <= height; i += gridSize) {
-      const line = new fabric.Line([0, i, width, i], {
-        stroke: gridColor,
-        selectable: false,
-        excludeFromExport: true,
-        evented: false
-      });
-      line.set('data', { type: 'grid' });
-      canvas.add(line);
-    }
-
-    for (let i = 0; i <= width; i += gridSize) {
-      const line = new fabric.Line([i, 0, i, height], {
-        stroke: gridColor,
-        selectable: false,
-        excludeFromExport: true,
-        evented: false
-      });
-      line.set('data', { type: 'grid' });
-      canvas.add(line);
-    }
-
-    canvas.getObjects().forEach(obj => {
-      if (obj.data?.type === 'grid') {
-        canvas.sendToBack(obj);
-      }
-    });
+    canvas.clear();
+    let topPosition = 20;
     
-    canvas.renderAll();
-  };
+    wireframeData.sections.forEach((section, index) => {
+      if (!section) return;
 
-  const handleZoom = (newZoom: number) => {
-    if (!canvas) return;
-    
-    setZoom(newZoom);
-    canvas.setZoom(newZoom);
-    canvas.renderAll();
-  };
-
-  useEffect(() => {
-    if (!canvas) return;
-
-    canvas.getObjects().forEach(obj => {
-      if (obj.data?.type === 'section') {
-        canvas.remove(obj);
-      }
-    });
-
-    sections.forEach((section, index) => {
-      const fabricSection = componentToFabricObject(section, index, deviceType);
-      if (fabricSection) {
-        fabricSection.set('data', { 
-          type: 'section', 
-          sectionId: section.id 
-        });
-        
-        if (!readOnly) {
-          fabricSection.on('selected', () => {
-            setSelectedObject(fabricSection);
-            if (onSectionSelect && section.id) {
-              onSectionSelect(section.id);
-            }
-          });
-          
-          fabricSection.on('modified', () => {
-            if (onSectionUpdate && section.id) {
-              const updatedSection = {
-                ...section,
-                position: {
-                  x: fabricSection.left || 0,
-                  y: fabricSection.top || 0
-                },
-                dimensions: {
-                  width: fabricSection.getScaledWidth(),
-                  height: fabricSection.getScaledHeight()
-                }
-              };
-              onSectionUpdate(updatedSection);
-            }
-          });
-        } else {
-          fabricSection.selectable = false;
-          fabricSection.evented = false;
-        }
-        
-        canvas.add(fabricSection);
-      }
-    });
-
-    canvas.renderAll();
-  }, [canvas, sections, deviceType, readOnly]);
-
-  useEffect(() => {
-    if (!canvas) return;
-    canvas.setBackgroundColor(darkMode ? '#1e293b' : '#ffffff', () => {
-      canvas.renderAll();
+      // Get the height based on section type
+      const sectionHeight = getSectionHeight(section);
       
-      if (showGrid) {
-        createGrid(canvas, canvas.width || 0, canvas.height || 0);
+      // Create section container
+      const sectionRect = new fabric.Rect({
+        left: 20,
+        top: topPosition,
+        width: canvas.width! - 40,
+        height: sectionHeight,
+        fill: '#f9f9f9',
+        stroke: '#ddd',
+        strokeWidth: 1,
+        rx: 5,
+        ry: 5
+      });
+      
+      // Create section label
+      const sectionLabel = new fabric.Text(section.name || `Section ${index + 1}`, {
+        left: 30,
+        top: topPosition + 10,
+        fontSize: 14,
+        fontFamily: 'Arial'
+      });
+      
+      // Apply responsive styles based on device type
+      if (section.responsiveConfig) {
+        // Use the correct signature for getDeviceStyles
+        const styles = getDeviceStyles(section.baseStyles || {}, section.responsiveConfig || {}, deviceType);
+        
+        // Apply styles to section
+        // Implementation depends on styling structure
       }
+      
+      // Add section to canvas
+      canvas.add(sectionRect, sectionLabel);
+      
+      // Render components within section
+      if (section.components && Array.isArray(section.components)) {
+        renderComponents(section.components, topPosition + 40);
+      }
+      
+      topPosition += sectionHeight + 20;
     });
-  }, [darkMode, canvas, showGrid]);
-
-  useEffect(() => {
-    if (!canvas) return;
-    
-    const dimensions = getCanvasDimensions();
-    canvas.setWidth(dimensions.width);
-    canvas.setHeight(dimensions.height);
-    
-    if (showGrid) {
-      createGrid(canvas, dimensions.width, dimensions.height);
-    }
     
     canvas.renderAll();
-  }, [deviceType, canvas, showGrid]);
-
-  const toggleGrid = () => {
-    setShowGrid(!showGrid);
-    if (canvas) {
-      if (!showGrid) {
-        createGrid(canvas, canvas.width || 0, canvas.height || 0);
-      } else {
-        canvas.getObjects().forEach(obj => {
-          if (obj.data?.type === 'grid') {
-            canvas.remove(obj);
-          }
-        });
-        canvas.renderAll();
-      }
+    
+    if (onCanvasReady) onCanvasReady(canvas);
+  }, [canvas, wireframeData, deviceType, onCanvasReady]);
+  
+  // Utility function to get section height
+  const getSectionHeight = (section: WireframeSection): number => {
+    if (!section) return 100;
+    
+    switch (section.sectionType) {
+      case 'hero':
+        return 200;
+      case 'features':
+        return 300;
+      case 'testimonials':
+        return 250;
+      case 'cta':
+        return 150;
+      default:
+        return 200;
     }
   };
-
-  const handleResetZoom = () => {
-    handleZoom(1);
+  
+  // Render components within a section
+  const renderComponents = (components: any[], startY: number) => {
+    if (!canvas || !components.length) return;
+    
+    let componentY = startY;
+    
+    components.forEach((component, index) => {
+      if (!component) return;
+      
+      const componentRect = new fabric.Rect({
+        left: 40,
+        top: componentY,
+        width: canvas.width! - 80,
+        height: 50,
+        fill: '#ffffff',
+        stroke: '#eeeeee',
+        strokeWidth: 1,
+        rx: 3,
+        ry: 3
+      });
+      
+      const componentLabel = new fabric.Text(component.type || `Component ${index + 1}`, {
+        left: 50,
+        top: componentY + 15,
+        fontSize: 12,
+        fontFamily: 'Arial'
+      });
+      
+      canvas.add(componentRect, componentLabel);
+      componentY += 60;
+    });
   };
-
-  const handleZoomIn = () => {
-    handleZoom(Math.min(zoom + 0.1, 3));
-  };
-
-  const handleZoomOut = () => {
-    handleZoom(Math.max(zoom - 0.1, 0.5));
-  };
-
+  
+  // Update canvas when wireframeData changes
+  useEffect(() => {
+    if (isInitialized && canvas && wireframeData) {
+      renderWireframe();
+    }
+  }, [isInitialized, canvas, wireframeData, renderWireframe]);
+  
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (!canvas || !canvasRef.current) return;
+      
+      const parentWidth = canvasRef.current.parentElement?.clientWidth || 800;
+      canvas.setDimensions({ width: parentWidth, height: 600 });
+      renderWireframe();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [canvas, renderWireframe]);
+  
   return (
-    <div className={cn("wireframe-canvas-container", className)}>
-      {!readOnly && (
-        <CanvasControls
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onResetZoom={handleResetZoom}
-          onToggleGrid={toggleGrid}
-          showGrid={showGrid}
-          className="mb-2"
-        />
-      )}
-      
-      <div className={cn(
-        "relative border rounded-md overflow-hidden",
-        darkMode ? "border-gray-700" : "border-gray-200"
-      )}>
-        <canvas ref={canvasRef} />
-        
-        <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs">
-          {deviceType} • {Math.round(zoom * 100)}%
-        </div>
-      </div>
+    <div className="wireframe-canvas-container">
+      <canvas ref={canvasRef} />
     </div>
   );
 };

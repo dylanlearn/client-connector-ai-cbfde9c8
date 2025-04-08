@@ -1,61 +1,90 @@
-// Import the proper types from wireframe-types
-import { WireframeData, WireframeSection, WireframeVersion, VersionComparisonResult } from "@/services/ai/wireframe/wireframe-types";
+
+import { WireframeVersion, WireframeVersionDiff, WireframeCompareResult } from '@/types/wireframe';
+import { diff } from 'deep-object-diff';
 
 /**
- * Compare two wireframe versions to identify differences
+ * Service for comparing wireframe versions to identify differences
  */
-export const compareWireframeVersions = async (
-  version1: WireframeVersion | WireframeData,
-  version2: WireframeVersion | WireframeData
-): Promise<VersionComparisonResult> => {
-  const additions: any[] = [];
-  const deletions: any[] = [];
-  const modifications: any[] = [];
-
-  // Helper function to deeply compare two objects
-  const deepCompare = (obj1: any, obj2: any, path: string = '') => {
-    if (typeof obj1 !== 'object' || obj1 === null || typeof obj2 !== 'object' || obj2 === null) {
-      if (obj1 !== obj2) {
-        modifications.push({ path, value1: obj1, value2: obj2 });
-      }
-      return;
+export class VersionComparisonService {
+  /**
+   * Compare two wireframe versions to identify differences
+   */
+  static compareVersions(v1: WireframeVersion, v2: WireframeVersion): WireframeCompareResult {
+    // Basic validation
+    if (!v1 || !v2) {
+      throw new Error('Both versions must be provided for comparison');
     }
 
-    const keys1 = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
-
-    for (const key of keys1) {
-      const newPath = path ? `${path}.${key}` : key;
-
-      if (!(key in obj1)) {
-        additions.push({ path: newPath, value: obj2[key] });
-      } else if (!(key in obj2)) {
-        deletions.push({ path: newPath, value: obj1[key] });
-      } else {
-        deepCompare(obj1[key], obj2[key], newPath);
-      }
+    if (!v1.data || !v2.data) {
+      throw new Error('Both versions must have data for comparison');
     }
-  };
 
-  // Start the comparison from the root
-  deepCompare(version1, version2);
+    try {
+      // Compute the diff between the two versions
+      const differences = diff(v1.data, v2.data);
 
-  // Summarize the changes
-  let summary = '';
-  if (additions.length > 0) {
-    summary += `Added ${additions.length} items. `;
-  }
-  if (deletions.length > 0) {
-    summary += `Deleted ${deletions.length} items. `;
-  }
-  if (modifications.length > 0) {
-    summary += `Modified ${modifications.length} items. `;
+      // Track changes by type
+      const changes: Array<{
+        type: "added" | "removed" | "modified";
+        path: string;
+        values: [any, any];
+      }> = [];
+
+      // Process differences
+      Object.entries(differences).forEach(([key, value]) => {
+        // Determine change type
+        let changeType: "added" | "removed" | "modified" = "modified";
+        
+        if (!(key in v1.data)) {
+          changeType = "added";
+        } else if (!(key in v2.data)) {
+          changeType = "removed";
+        }
+
+        // Add to changes list
+        changes.push({
+          type: changeType,
+          path: key,
+          values: [v1.data[key], v2.data[key]]
+        });
+      });
+
+      // Generate summary
+      const summary = this.generateSummary(changes);
+
+      return {
+        changes,
+        summary
+      };
+    } catch (error) {
+      console.error('Error comparing wireframe versions:', error);
+      throw new Error('Failed to compare versions');
+    }
   }
 
-  // At the end of the function, return the comparison result with the correct structure:
-  return {
-    additions,
-    deletions,
-    modifications,
-    summary
-  };
-};
+  /**
+   * Generate a summary of the changes
+   */
+  private static generateSummary(changes: Array<{
+    type: "added" | "removed" | "modified";
+    path: string;
+    values: [any, any];
+  }>): string {
+    // Count changes by type
+    const added = changes.filter(change => change.type === "added").length;
+    const removed = changes.filter(change => change.type === "removed").length;
+    const modified = changes.filter(change => change.type === "modified").length;
+
+    // Generate summary text
+    if (changes.length === 0) {
+      return "No changes between versions";
+    }
+
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} addition${added !== 1 ? 's' : ''}`);
+    if (modified > 0) parts.push(`${modified} modification${modified !== 1 ? 's' : ''}`);
+    if (removed > 0) parts.push(`${removed} removal${removed !== 1 ? 's' : ''}`);
+
+    return `This version contains ${parts.join(', ')}`;
+  }
+}

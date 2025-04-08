@@ -1,219 +1,177 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
-import { IntakeFormData } from '@/types/intake-form';
-import { toast } from 'sonner';
-import WireframeFlow from '../wireframe/WireframeFlow';
-import { Loader2, ArrowRight, Check } from 'lucide-react';
-import { WireframeData } from '@/types/wireframe';
+import { WireframeData, WireframeSection } from '@/types/wireframe';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IntakeWireframeBridgeProps {
-  intakeData: IntakeFormData;
-  onComplete?: (wireframeData: WireframeData) => void;
+  intakeData: any;
+  onWireframeGenerated?: (wireframe: WireframeData) => void;
 }
 
 const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   intakeData,
-  onComplete
+  onWireframeGenerated
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [wireframeData, setWireframeData] = useState<WireframeData | null>(null);
-  const [showWireframeFlow, setShowWireframeFlow] = useState(false);
-  
-  const handleGenerateWireframes = async () => {
-    if (!intakeData.projectName || !intakeData.projectDescription) {
-      toast("Project information is incomplete", {
-        description: "Please complete the intake form with at least project name and description"
-      });
-      return;
-    }
-    
+  const [error, setError] = useState<string | null>(null);
+
+  const generateWireframe = async () => {
     setIsGenerating(true);
-    
+    setError(null);
+
     try {
-      // Simulate API call to generate wireframes
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Extract relevant information from intake data
+      const { 
+        businessName, 
+        primaryColor, 
+        secondaryColor,
+        businessType,
+        designPreferences = {},
+      } = intakeData;
       
+      // Create sections based on business type and intake data
+      const sections: WireframeSection[] = generateSections(intakeData);
+      
+      // Create the wireframe data structure
+      const generatedWireframe: WireframeData = {
+        id: uuidv4(), // Ensure ID is always provided
+        title: businessName || 'Wireframe Based on Intake Form',
+        description: `Wireframe for ${businessType || 'business'} website`,
+        sections,
+        layoutType: designPreferences.layoutStyle || 'standard',
+        colorScheme: {
+          primary: primaryColor || '#3b82f6',
+          secondary: secondaryColor || '#10b981',
+          accent: designPreferences.accentColor || '#f97316',
+          background: designPreferences.backgroundColor || '#ffffff',
+        },
+        typography: {
+          headings: designPreferences.headingFont || 'Inter',
+          body: designPreferences.bodyFont || 'Inter',
+          fontPairings: designPreferences.fontPairings || []
+        },
+        style: designPreferences.visualStyle || 'modern'
+      };
+      
+      setWireframeData(generatedWireframe);
+      
+      if (onWireframeGenerated) {
+        onWireframeGenerated(generatedWireframe);
+      }
+      
+    } catch (err) {
+      console.error("Error generating wireframe from intake data:", err);
+      setError("Failed to generate wireframe from intake data");
+    } finally {
       setIsGenerating(false);
-      setShowWireframeFlow(true);
-      
-      toast("Wireframe recommendations generated", {
-        description: "Based on your project requirements and design preferences"
+    }
+  };
+  
+  // Generate wireframe sections based on intake data
+  const generateSections = (data: any): WireframeSection[] => {
+    const sections: WireframeSection[] = [];
+    
+    // Always add a hero section
+    sections.push({
+      id: uuidv4(),
+      name: "Hero Section",
+      sectionType: "hero",
+      description: `Main hero section for ${data.businessName || 'the website'}`,
+      components: [
+        {
+          id: uuidv4(),
+          type: "heading",
+          content: data.mainHeading || data.businessName || "Welcome to our website"
+        },
+        {
+          id: uuidv4(),
+          type: "paragraph",
+          content: data.tagline || data.businessDescription || "We provide exceptional products and services"
+        },
+        {
+          id: uuidv4(),
+          type: "button",
+          content: data.ctaText || "Get Started"
+        }
+      ],
+      layout: {
+        type: "flex",
+        direction: "column",
+        alignment: "center"
+      },
+      positionOrder: 0
+    });
+    
+    // Add features section if available
+    if (data.features && Array.isArray(data.features)) {
+      sections.push({
+        id: uuidv4(),
+        name: "Features Section",
+        sectionType: "features",
+        description: "Highlighting key features and benefits",
+        components: data.features.map((feature: string, index: number) => ({
+          id: uuidv4(),
+          type: "feature",
+          content: feature
+        })),
+        layout: {
+          type: "grid",
+          columns: Math.min(data.features.length, 3)
+        },
+        positionOrder: 1
       });
-      
-    } catch (error) {
-      setIsGenerating(false);
-      toast("Failed to generate wireframes");
-      console.error(error);
     }
+    
+    // Add more sections based on business type
+    if (data.businessType === "ecommerce") {
+      sections.push({
+        id: uuidv4(),
+        name: "Product Showcase",
+        sectionType: "products",
+        description: "Featured products showcase",
+        components: [],
+        layout: { type: "grid", columns: 3 },
+        positionOrder: 2
+      });
+    }
+    
+    return sections;
   };
   
-  const handleWireframeSelected = (selectedWireframe: any) => {
-    // Convert the selected wireframe to WireframeData format
-    const wireframeData: WireframeData = {
-      id: selectedWireframe.id || uuidv4(), // Ensure we have an ID
-      title: selectedWireframe.title || 'Untitled Wireframe',
-      description: selectedWireframe.description || '',
-      sections: selectedWireframe.sections?.map((s: any) => ({
-        id: s.id || uuidv4(),
-        name: s.name || s.type || '',
-        sectionType: s.sectionType || s.type || 'section',
-        description: s.description || s.content || '',
-        componentVariant: s.componentVariant || 'default',
-        imageUrl: s.imageUrl || ''
-      })) || [],
-      colorScheme: {
-        primary: intakeData.primaryColor || '#3b82f6',
-        secondary: intakeData.secondaryColor || '#10b981',
-        accent: '#8b5cf6',
-        background: '#ffffff',
-        text: '#000000'
-      },
-      typography: {
-        headings: intakeData.fontStyle || 'modern',
-        body: 'sans-serif',
-        fontPairings: ['Inter', 'Roboto']
-      },
-      style: intakeData.designStyle || 'modern'
-    };
-    
-    setWireframeData(wireframeData);
-    
-    if (onComplete) {
-      onComplete(wireframeData);
+  // Helper to render status message
+  const renderStatus = () => {
+    if (isGenerating) {
+      return <p className="text-gray-500">Generating wireframe...</p>;
     }
+    
+    if (error) {
+      return <p className="text-red-500">{error}</p>;
+    }
+    
+    if (wireframeData) {
+      return <p className="text-green-500">Wireframe generated successfully!</p>;
+    }
+    
+    return null; // Return null instead of an empty string to fix the ReactNode error
   };
-  
-  // If wireframe selection is complete, show confirmation
-  if (wireframeData) {
-    return (
-      <Card className="w-full max-w-3xl mx-auto">
-        <CardHeader className="bg-green-50 dark:bg-green-900/20">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-green-100 dark:bg-green-800 rounded-full">
-              <Check className="h-4 w-4 text-green-600 dark:text-green-300" />
-            </div>
-            <CardTitle>Wireframe Selection Complete</CardTitle>
-          </div>
-          <CardDescription>
-            You&apos;ve successfully selected a wireframe design based on your project requirements
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-medium">{wireframeData.title}</h3>
-              <p className="text-muted-foreground">{wireframeData.description}</p>
-            </div>
-            
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-              {wireframeData.imageUrl && (
-                <img 
-                  src={wireframeData.imageUrl} 
-                  alt={wireframeData.title || 'Selected wireframe'} 
-                  className="w-full h-full object-cover" 
-                />
-              )}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="font-medium">Design Style</p>
-                <p className="text-muted-foreground capitalize">{wireframeData.style}</p>
-              </div>
-              <div>
-                <p className="font-medium">Typography</p>
-                <p className="text-muted-foreground capitalize">{wireframeData.typography?.headings}</p>
-              </div>
-              <div>
-                <p className="font-medium">Color Scheme</p>
-                <div className="flex gap-1 mt-1">
-                  <div className="h-4 w-4 rounded-full" style={{ backgroundColor: wireframeData.colorScheme?.primary }} />
-                  <div className="h-4 w-4 rounded-full" style={{ backgroundColor: wireframeData.colorScheme?.secondary }} />
-                  <div className="h-4 w-4 rounded-full" style={{ backgroundColor: wireframeData.colorScheme?.accent }} />
-                </div>
-              </div>
-              <div>
-                <p className="font-medium">Sections</p>
-                <p className="text-muted-foreground">{wireframeData.sections?.length || 0} sections included</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="bg-muted/30">
-          <div className="w-full text-center">
-            <Button>
-              Continue to Development
-            </Button>
-          </div>
-        </CardFooter>
-      </Card>
-    );
-  }
-  
-  // Show wireframe flow if generation is complete
-  if (showWireframeFlow) {
-    return <WireframeFlow onComplete={handleWireframeSelected} />;
-  }
-  
-  // Otherwise show the initial card to generate wireframes
+
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>Generate Wireframe Designs</CardTitle>
-        <CardDescription>
-          We&apos;ll create wireframe designs based on your project requirements and design preferences
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-muted p-4 rounded-lg">
-          <h3 className="font-medium mb-2">Project Summary</h3>
-          <dl className="space-y-2 text-sm">
-            <div className="grid grid-cols-3">
-              <dt className="font-medium">Project Name:</dt>
-              <dd className="col-span-2">{intakeData.projectName || 'Not specified'}</dd>
-            </div>
-            <div className="grid grid-cols-3">
-              <dt className="font-medium">Site Type:</dt>
-              <dd className="col-span-2 capitalize">{intakeData.siteType || 'Not specified'}</dd>
-            </div>
-            <div className="grid grid-cols-3">
-              <dt className="font-medium">Design Style:</dt>
-              <dd className="col-span-2 capitalize">{intakeData.designStyle || 'Not specified'}</dd>
-            </div>
-            <div className="grid grid-cols-3">
-              <dt className="font-medium">Priority:</dt>
-              <dd className="col-span-2 capitalize">{intakeData.conversionPriority || 'Not specified'}</dd>
-            </div>
-          </dl>
-        </div>
-        
-        <p className="text-muted-foreground text-sm">
-          Our AI will analyze your requirements and generate multiple wireframe options that match your design preferences
-          and conversion goals. You&apos;ll be able to select, customize, and provide feedback on the generated wireframes.
-        </p>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button 
-          onClick={handleGenerateWireframes} 
-          disabled={isGenerating}
-          size="lg"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating Wireframes...
-            </>
-          ) : (
-            <>
-              Generate Wireframe Designs
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
-      </CardFooter>
-    </Card>
+    <div className="intake-wireframe-bridge p-4">
+      <h3 className="text-lg font-medium mb-4">Generate Wireframe from Intake Data</h3>
+      
+      <div className="mb-4">
+        {renderStatus()}
+      </div>
+      
+      <Button 
+        onClick={generateWireframe} 
+        disabled={isGenerating || !intakeData}
+      >
+        {isGenerating ? "Generating..." : "Generate Wireframe"}
+      </Button>
+    </div>
   );
 };
 

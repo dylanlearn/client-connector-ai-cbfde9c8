@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,10 +37,8 @@ const WireframeVersionHistory: React.FC<WireframeVersionHistoryProps> = ({
   }, [projectId, wireframeId, loadWireframeVersions]);
 
   const handleVersionSelect = (versionId: string) => {
-    // Convert string to object with id property if needed
-    const versionIdObj = typeof versionId === 'string' ? { id: versionId } : versionId;
-    setSelectedVersion(versionIdObj.id);
-    onVersionSelect(versionIdObj.id);
+    setSelectedVersion(versionId);
+    onVersionSelect(versionId);
   };
 
   return (

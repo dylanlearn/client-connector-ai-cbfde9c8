@@ -11,7 +11,8 @@ export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenera
 // Only export specific functions from component-registry to avoid ambiguous exports
 export { 
   registerComponent,
-  getAllComponentDefinitions
+  getAllComponentDefinitions,
+  getComponentDefinition
 } from './registry/component-registry';
 
 // Export types from component-types using 'export type' syntax for isolatedModules

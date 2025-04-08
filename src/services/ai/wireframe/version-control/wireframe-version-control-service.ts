@@ -1,158 +1,148 @@
-import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeVersion } from '../wireframe-types';
+
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  WireframeVersionControlOptions, 
+  WireframeVersion,
+  WireframeData
+} from "@/types/wireframe";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Service for managing wireframe version control
  */
-export const WireframeVersionControlService = {
+export class WireframeVersionControlService {
   /**
-   * Create a new version of a wireframe
+   * Create a new version for a wireframe
    */
-  createVersion: async (
+  static async createVersion(
     wireframeId: string,
     data: WireframeData,
-    changeDescription: string,
-    userId?: string
-  ): Promise<WireframeVersion> => {
-    // Mocked implementation for now
-    console.log(`Creating version for wireframe ${wireframeId} by user ${userId || 'anonymous'}`);
-    
-    // Create a suitable mock version object
-    const version: WireframeVersion = {
-      id: uuidv4(),
-      wireframe_id: wireframeId,
-      version_number: 1, // Would normally be calculated
-      branch_name: 'main', // Default branch
-      is_current: true,
-      created_at: new Date().toISOString(),
-      created_by: userId,
-      change_description: changeDescription,
-      data: data || {}, // Ensure data is provided (non-optional in the target type)
-    };
-    
-    return version;
-  },
-  
-  /**
-   * Retrieves a wireframe version by its ID.
-   * @param versionId The ID of the wireframe version.
-   * @returns The wireframe version, or null if not found.
-   */
-  getWireframeVersion: async (versionId: string): Promise<WireframeVersion | null> => {
-    console.log(`Getting wireframe version ${versionId}`);
-    return null;
-  },
+    changeDescription?: string,
+    createdBy?: string
+  ): Promise<WireframeVersion | null> {
+    try {
+      if (!wireframeId || !data) {
+        throw new Error('Wireframe ID and data are required');
+      }
+
+      // Ensure we have valid data
+      const wireframeData: WireframeData = {
+        id: data.id || uuidv4(),
+        title: data.title || 'Untitled Wireframe',
+        sections: data.sections || [],
+        ...data
+      };
+
+      // Get the latest version number
+      const { data: latestVersions, error: fetchError } = await supabase
+        .from('wireframe_versions')
+        .select('version_number')
+        .eq('wireframe_id', wireframeId)
+        .eq('branch_name', 'main') // Default branch
+        .order('version_number', { ascending: false })
+        .limit(1);
+
+      if (fetchError) {
+        throw new Error(`Failed to fetch latest version: ${fetchError.message}`);
+      }
+
+      const versionNumber = latestVersions && latestVersions.length > 0
+        ? (latestVersions[0].version_number + 1)
+        : 1;
+
+      // Create the version record
+      const versionRecord = {
+        id: uuidv4(),
+        wireframe_id: wireframeId,
+        version_number: versionNumber,
+        branch_name: 'main', // Default branch
+        data: wireframeData,
+        is_current: true,
+        change_description: changeDescription || `Version ${versionNumber}`,
+        created_at: new Date().toISOString(),
+        created_by: createdBy
+      };
+
+      // Set all other versions to not be current
+      await supabase
+        .from('wireframe_versions')
+        .update({ is_current: false })
+        .eq('wireframe_id', wireframeId)
+        .eq('is_current', true);
+
+      // Insert the new version
+      const { data: insertedVersion, error: insertError } = await supabase
+        .from('wireframe_versions')
+        .insert(versionRecord)
+        .select();
+
+      if (insertError) {
+        throw new Error(`Failed to create version: ${insertError.message}`);
+      }
+
+      // Update the wireframe's current_version_id and version_count
+      const { error: updateError } = await supabase
+        .from('wireframes')
+        .update({
+          current_version_id: versionRecord.id,
+          version_count: versionNumber
+        })
+        .eq('id', wireframeId);
+
+      if (updateError) {
+        console.error(`Failed to update wireframe with version: ${updateError.message}`);
+        // Continue anyway, we don't want to fail the whole operation
+      }
+
+      return insertedVersion[0] as WireframeVersion;
+    } catch (error) {
+      console.error("Error creating wireframe version:", error);
+      return null;
+    }
+  }
 
   /**
-   * Retrieves all versions of a wireframe.
-   * @param wireframeId The ID of the wireframe.
-   * @returns An array of wireframe versions.
+   * Get all versions for a wireframe
    */
-  getWireframeVersions: async (wireframeId: string): Promise<WireframeVersion[]> => {
-    console.log(`Getting wireframe versions for wireframe ${wireframeId}`);
-    return [];
-  },
+  static async getVersions(wireframeId: string): Promise<WireframeVersion[]> {
+    try {
+      const { data, error } = await supabase
+        .from('wireframe_versions')
+        .select('*')
+        .eq('wireframe_id', wireframeId)
+        .order('version_number', { ascending: false });
+
+      if (error) {
+        throw new Error(`Failed to fetch wireframe versions: ${error.message}`);
+      }
+
+      return data as WireframeVersion[];
+    } catch (error) {
+      console.error("Error fetching wireframe versions:", error);
+      return [];
+    }
+  }
 
   /**
-   * Updates a wireframe version.
-   * @param versionId The ID of the wireframe version to update.
-   * @param data The updated data.
-   * @param userId The ID of the user updating the version.
-   * @returns The updated wireframe version, or null if the update fails.
+   * Get a specific version for a wireframe
    */
-  updateWireframeVersion: async (
-    versionId: string,
-    data: WireframeData,
-    userId: string
-  ): Promise<WireframeVersion | null> => {
-    console.log(`Updating wireframe version ${versionId} by user ${userId}`);
-    return null;
-  },
+  static async getVersion(versionId: string): Promise<WireframeVersion | null> {
+    try {
+      const { data, error } = await supabase
+        .from('wireframe_versions')
+        .select('*')
+        .eq('id', versionId)
+        .limit(1)
+        .single();
 
-  /**
-   * Restores a wireframe to a specific version.
-   * @param wireframeId The ID of the wireframe.
-   * @param versionId The ID of the version to restore to.
-   * @param userId The ID of the user restoring the version.
-   * @returns The restored wireframe version, or null if the restoration fails.
-   */
-  restoreWireframeVersion: async (
-    wireframeId: string,
-    versionId: string,
-    userId: string
-  ): Promise<WireframeVersion | null> => {
-    console.log(`Restoring wireframe ${wireframeId} to version ${versionId} by user ${userId}`);
-    return null;
-  },
+      if (error) {
+        throw new Error(`Failed to fetch wireframe version: ${error.message}`);
+      }
 
-  /**
-   * Compares two wireframe versions and returns the differences.
-   * @param versionId1 The ID of the first wireframe version.
-   * @param versionId2 The ID of the second wireframe version.
-   * @returns An object containing the differences between the two versions.
-   */
-  compareVersions: async (versionId1: string, versionId2: string): Promise<any> => {
-    console.log(`Comparing versions ${versionId1} and ${versionId2}`);
-    return null;
-  },
-
-  /**
-   * Get version history for a wireframe
-   */
-  getVersionHistory: async (wireframeId: string): Promise<any> => {
-    console.log(`Getting version history for wireframe ${wireframeId}`);
-    return null;
-  },
-
-  /**
-   * Create a branch from a version
-   */
-  createBranch: async (
-    versionId: string, 
-    branchName: string,
-    userId: string
-  ): Promise<any> => {
-    console.log(`Creating branch ${branchName} from version ${versionId} by user ${userId}`);
-    return null;
-  },
-
-  /**
-   * Get all branches for a wireframe
-   */
-  getBranches: async (wireframeId: string): Promise<any> => {
-    console.log(`Getting branches for wireframe ${wireframeId}`);
-    return null;
-  },
-
-  /**
-   * Merge a branch into the main branch
-   */
-  mergeBranch: async (
-    versionId: string,
-    userId: string
-  ): Promise<any> => {
-    console.log(`Merging branch from version ${versionId} by user ${userId}`);
-    return null;
-  },
-
-  /**
-   * Revert to a specific version
-   */
-  revertToVersion: async (
-    versionId: string,
-    userId: string
-  ): Promise<any> => {
-    console.log(`Reverting to version ${versionId} by user ${userId}`);
-    return null;
-  },
-
-  /**
-   * Deletes a wireframe version by its ID.
-   * @param versionId The ID of the wireframe version to delete.
-   * @returns True if the deletion was successful, false otherwise.
-   */
-  deleteWireframeVersion: async (versionId: string): Promise<boolean> => {
-    console.log(`Deleting wireframe version ${versionId}`);
-    return true;
+      return data as WireframeVersion;
+    } catch (error) {
+      console.error("Error fetching wireframe version:", error);
+      return null;
+    }
   }
 }

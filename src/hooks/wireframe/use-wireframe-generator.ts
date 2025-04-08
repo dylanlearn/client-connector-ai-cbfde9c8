@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import wireframeApiService from '@/services/ai/wireframe/api/wireframe-api-service';
+import { wireframeApiService } from '@/services/ai/wireframe';
 import type { 
   WireframeGenerationParams, 
   WireframeGenerationResult, 

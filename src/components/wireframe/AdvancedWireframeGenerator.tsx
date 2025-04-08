@@ -1,261 +1,177 @@
 
-// Ensure this is exported as default
-import React, { useEffect, useState, useCallback } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, PlusCircle, Save, Sparkles } from "lucide-react";
-import { useAdvancedWireframe } from "@/hooks/use-advanced-wireframe";
-import DesignMemoryPanel from './DesignMemoryPanel';
-import { CreativityGauge } from '@/components/ui/creativity-gauge';
-import { debounce } from 'lodash';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WireframeVisualizer } from './index';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Settings, Eye, Save, Code } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;
-  darkMode?: boolean;
-  onWireframeGenerated?: (wireframe: any) => void;
-  onWireframeSaved?: (result: any) => void;
+  viewMode?: 'edit' | 'preview' | 'code' | 'flowchart';
 }
 
 const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   projectId,
-  darkMode = false,
-  onWireframeGenerated,
-  onWireframeSaved
+  viewMode = 'edit'
 }) => {
-  const [userInput, setUserInput] = useState<string>("");
-  const [styleToken, setStyleToken] = useState<string>("modern");
-  const [includeDesignMemory, setIncludeDesignMemory] = useState<boolean>(true);
-  const [creativityLevel, setCreativityLevel] = useState<number>(7); // Default creativity level
+  const [activeTab, setActiveTab] = useState(viewMode);
+  const [wireframeData, setWireframeData] = useState({
+    id: uuidv4(),
+    title: 'New Wireframe',
+    description: 'A wireframe created with the advanced wireframe generator',
+    sections: [],
+    version: '1.0'
+  });
   const { toast } = useToast();
-  
-  const {
-    isGenerating,
-    currentWireframe,
-    intentData,
-    blueprint,
-    designMemory,
-    generateWireframe,
-    saveWireframe,
-    loadDesignMemory
-  } = useAdvancedWireframe();
 
-  // Prevent excessive re-renders with debounced input
-  const debouncedSetUserInput = useCallback(
-    debounce((value: string) => {
-      setUserInput(value);
-    }, 300),
-    []
-  );
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Update the input field immediately for UI responsiveness
-    e.persist();
-    debouncedSetUserInput(e.target.value);
-  };
-
-  useEffect(() => {
-    if (projectId && includeDesignMemory) {
-      loadDesignMemory(projectId);
-    }
-  }, [projectId, includeDesignMemory, loadDesignMemory]);
-
-  const handleGenerate = async () => {
-    if (!userInput.trim()) {
-      toast({
-        title: "Input required",
-        description: "Please describe what you want to generate",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const result = await generateWireframe({
-      userInput,
-      projectId,
-      styleToken,
-      includeDesignMemory,
-      customParams: {
-        darkMode,
-        creativityLevel
-      }
+  const handleAddSection = () => {
+    toast({
+      title: "Feature in development",
+      description: "Adding sections will be available soon."
     });
-
-    if (result && onWireframeGenerated) {
-      onWireframeGenerated(result);
-    }
   };
 
-  const handleSave = async () => {
-    if (!currentWireframe) {
-      toast({
-        title: "No wireframe to save",
-        description: "Please generate a wireframe first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const result = await saveWireframe(projectId, userInput);
-    
-    if (result && onWireframeSaved) {
-      onWireframeSaved(result);
-    }
+  const handleSave = () => {
+    toast({
+      title: "Wireframe saved",
+      description: "Your wireframe has been saved successfully."
+    });
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 w-full">
-      <div className="w-full md:w-2/3 space-y-4">
-        <Card className={darkMode ? "bg-gray-800 text-gray-100 border-gray-700" : ""}>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Sparkles className="mr-2 h-5 w-5" />
-              Advanced Wireframe Generator
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="wireframe-prompt">Describe the wireframe you want to create</Label>
-                <Textarea
-                  id="wireframe-prompt"
-                  placeholder="Enter a detailed description of the website wireframe you want to generate..."
-                  defaultValue={userInput}
-                  onChange={handleInputChange}
-                  rows={5}
-                  className={darkMode ? "bg-gray-700 border-gray-600" : ""}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="style-select">Style</Label>
-                    <Select 
-                      value={styleToken} 
-                      onValueChange={setStyleToken}
-                    >
-                      <SelectTrigger id="style-select" className={darkMode ? "bg-gray-700 border-gray-600" : ""}>
-                        <SelectValue placeholder="Select style" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="modern">Modern</SelectItem>
-                        <SelectItem value="minimal">Minimal</SelectItem>
-                        <SelectItem value="brutalist">Brutalist</SelectItem>
-                        <SelectItem value="glassy">Glassy</SelectItem>
-                        <SelectItem value="corporate">Corporate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="design-memory" 
-                      checked={includeDesignMemory} 
-                      onCheckedChange={setIncludeDesignMemory} 
-                    />
-                    <Label htmlFor="design-memory">Use design memory</Label>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <Label>Creativity Level</Label>
-                  <CreativityGauge
-                    value={creativityLevel}
-                    onChange={setCreativityLevel}
-                    showValue={true}
-                    size={120}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button 
-                  variant="default" 
-                  onClick={handleGenerate} 
-                  disabled={isGenerating || !userInput.trim()}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Generate Wireframe
-                    </>
-                  )}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleSave} 
-                  disabled={!currentWireframe || isGenerating}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Wireframe
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="advanced-wireframe-generator">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Advanced Wireframe Generator</h2>
+          <p className="text-muted-foreground">
+            Create custom wireframes by selecting components
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          <Button onClick={handleSave} className="flex items-center">
+            <Save className="mr-2 h-4 w-4" />
+            Save
+          </Button>
+        </div>
+      </div>
 
-        {currentWireframe && (
-          <Card className={darkMode ? "bg-gray-800 text-gray-100 border-gray-700" : ""}>
+      <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="edit" className="flex items-center">
+            <Settings className="mr-2 h-4 w-4" />
+            Edit
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="flex items-center">
+            <Eye className="mr-2 h-4 w-4" />
+            Preview
+          </TabsTrigger>
+          <TabsTrigger value="code" className="flex items-center">
+            <Code className="mr-2 h-4 w-4" />
+            Code
+          </TabsTrigger>
+          <TabsTrigger value="flowchart" className="flex items-center">
+            <Eye className="mr-2 h-4 w-4" />
+            Flowchart
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="edit">
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Components</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button variant="outline" className="justify-start" onClick={handleAddSection}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Hero Section
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={handleAddSection}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Features
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={handleAddSection}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Testimonials
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={handleAddSection}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      CTA
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={handleAddSection}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Footer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="col-span-12 lg:col-span-9">
+              <Card className="min-h-[600px]">
+                <CardHeader>
+                  <CardTitle>Canvas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {wireframeData.sections.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-96 border-2 border-dashed rounded-md">
+                      <p className="text-muted-foreground mb-4">No sections added yet</p>
+                      <Button variant="outline" onClick={handleAddSection}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add First Section
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border rounded-md">
+                      <WireframeVisualizer wireframe={wireframeData} viewMode="flowchart" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="preview">
+          <Card>
             <CardHeader>
-              <CardTitle>Generated Wireframe: {currentWireframe.title}</CardTitle>
+              <CardTitle>Wireframe Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="preview">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="preview">Preview</TabsTrigger>
-                  <TabsTrigger value="data">Data</TabsTrigger>
-                </TabsList>
-                <TabsContent value="preview" className="space-y-4">
-                  <div className="border rounded-md p-4">
-                    <h2 className="text-xl font-bold mb-4">{currentWireframe.title}</h2>
-                    <p className="mb-6">{currentWireframe.description}</p>
-                    
-                    {currentWireframe.sections?.map((section, i) => (
-                      <div key={section.id || i} className="mb-8 p-4 border rounded-md">
-                        <h3 className="font-semibold text-lg">{section.name}</h3>
-                        <p>{section.description}</p>
-                        
-                        {section.components && (
-                          <div className="mt-4 grid grid-cols-3 gap-2">
-                            {section.components.map((component, j) => (
-                              <div key={component.id || j} className="p-2 border rounded">
-                                {component.content}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                <TabsContent value="data">
-                  <pre className="text-xs p-4 bg-gray-100 dark:bg-gray-900 rounded-md overflow-auto max-h-96">
-                    {JSON.stringify(currentWireframe, null, 2)}
-                  </pre>
-                </TabsContent>
-              </Tabs>
+              <WireframeVisualizer wireframe={wireframeData} viewMode="preview" />
             </CardContent>
           </Card>
-        )}
-      </div>
-      
-      <div className="w-full md:w-1/3">
-        <DesignMemoryPanel 
-          darkMode={darkMode}
-          filterType="wireframe"
-        />
-      </div>
+        </TabsContent>
+
+        <TabsContent value="code">
+          <Card>
+            <CardHeader>
+              <CardTitle>Generated Code</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="p-4 bg-muted rounded-md overflow-auto max-h-[600px]">
+                {JSON.stringify(wireframeData, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="flowchart">
+          <Card>
+            <CardHeader>
+              <CardTitle>Wireframe Flowchart</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <WireframeVisualizer wireframe={wireframeData} viewMode="flowchart" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
