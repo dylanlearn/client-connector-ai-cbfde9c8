@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { ZoomIn, ZoomOut, RotateCcw, Grid, Magnet } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Grid3X3, ZoomIn, ZoomOut, RotateCcw, PanelLeft, Ruler } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CanvasControlsProps } from '../types';
 
 const CanvasControls: React.FC<CanvasControlsProps> = ({
@@ -12,88 +12,86 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
   onResetZoom,
   onToggleGrid,
   onToggleSnapToGrid,
-  showGrid = true,
-  snapToGrid = false,
+  showGrid,
+  snapToGrid,
   className
 }) => {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
+    <TooltipProvider>
+      <div className={cn("flex items-center gap-1 bg-background border rounded-md p-1", className)}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8" 
               onClick={onZoomIn}
+              className="h-8 w-8"
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Zoom In</TooltipContent>
+          <TooltipContent>Zoom in</TooltipContent>
         </Tooltip>
-
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8" 
               onClick={onZoomOut}
+              className="h-8 w-8"
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Zoom Out</TooltipContent>
+          <TooltipContent>Zoom out</TooltipContent>
         </Tooltip>
-
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8" 
               onClick={onResetZoom}
+              className="h-8 w-8"
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Reset Zoom</TooltipContent>
+          <TooltipContent>Reset zoom</TooltipContent>
         </Tooltip>
-      </div>
-
-      <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
+        
+        <div className="w-px h-6 bg-border mx-1" />
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
-              variant={showGrid ? "secondary" : "ghost"} 
+              variant={showGrid ? "secondary" : "ghost"}
               size="icon" 
-              className="h-8 w-8" 
               onClick={onToggleGrid}
+              className="h-8 w-8"
             >
-              <Grid3X3 className="h-4 w-4" />
+              <Grid className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Toggle Grid</TooltipContent>
+          <TooltipContent>Toggle grid</TooltipContent>
         </Tooltip>
-
-        {onToggleSnapToGrid && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant={snapToGrid ? "secondary" : "ghost"} 
-                size="icon" 
-                className="h-8 w-8" 
-                onClick={onToggleSnapToGrid}
-              >
-                <Ruler className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Snap to Grid</TooltipContent>
-          </Tooltip>
-        )}
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant={snapToGrid ? "secondary" : "ghost"}
+              size="icon" 
+              onClick={onToggleSnapToGrid}
+              className="h-8 w-8"
+            >
+              <Magnet className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Snap to grid</TooltipContent>
+        </Tooltip>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 

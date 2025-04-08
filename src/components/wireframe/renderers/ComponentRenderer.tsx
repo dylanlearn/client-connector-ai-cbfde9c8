@@ -1,136 +1,122 @@
 
 import React from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 import { cn } from '@/lib/utils';
-import { getDeviceStyles, styleOptionsToTailwind, deviceBreakpoints } from '../registry/component-types';
-import { getComponentDefinition } from '../registry/component-registry';
 
 interface ComponentRendererProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'flowchart';
+  viewMode?: 'preview' | 'flowchart' | 'edit';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
-  isSelected?: boolean;
-  onClick?: () => void;
+  className?: string;
 }
 
-const ComponentRenderer: React.FC<ComponentRendererProps> = ({ 
-  section, 
+const ComponentRenderer: React.FC<ComponentRendererProps> = ({
+  section,
   viewMode = 'preview',
   darkMode = false,
   deviceType = 'desktop',
-  isSelected = false,
-  onClick
+  className
 }) => {
-  // Get component definition from registry
-  const componentDef = getComponentDefinition(section.sectionType);
+  if (!section) return null;
   
-  // Default styles based on device type
-  const getDeviceSpecificStyles = () => {
-    const baseStyles = `p-4 rounded-md ${darkMode ? 'text-gray-200' : 'text-gray-800'}`;
+  // Get background color based on section type
+  const getBgColor = () => {
+    const baseColor = darkMode ? 'bg-slate-800' : 'bg-slate-100';
     
-    switch (deviceType) {
-      case 'mobile':
-        return `${baseStyles} text-sm`;
-      case 'tablet':
-        return `${baseStyles} text-base`;
-      case 'desktop':
+    switch (section.sectionType?.toLowerCase()) {
+      case 'hero':
+        return darkMode ? 'bg-blue-950' : 'bg-blue-50';
+      case 'features':
+        return darkMode ? 'bg-green-950' : 'bg-green-50';
+      case 'pricing':
+        return darkMode ? 'bg-purple-950' : 'bg-purple-50';
+      case 'testimonials':
+        return darkMode ? 'bg-yellow-950' : 'bg-yellow-50';
+      case 'cta':
+        return darkMode ? 'bg-red-950' : 'bg-red-50';
+      case 'footer':
+        return darkMode ? 'bg-gray-900' : 'bg-gray-100';
       default:
-        return `${baseStyles} text-base`;
+        return baseColor;
     }
   };
-
-  // Get component-specific responsive styles if available
-  const getComponentResponsiveStyles = () => {
-    if (!componentDef?.responsiveConfig) return '';
-    
-    const baseStyles = componentDef.baseStyles || {};
-    const responsiveConfig = componentDef.responsiveConfig || {};
-    
-    // Use the updated function with all three arguments
-    const deviceStylesObj = getDeviceStyles(baseStyles, responsiveConfig, deviceType);
-    return styleOptionsToTailwind(deviceStylesObj);
-  };
-
-  // Placeholder renderer for component types
-  const renderComponent = () => {
-    // Use flowchart mode for schematic view
-    if (viewMode === 'flowchart') {
-      return (
-        <div className={cn(
-          "p-3 border-2 border-dashed rounded-md",
-          darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-50 border-gray-300'
-        )}>
-          <div className="text-xs font-mono mb-1 opacity-70">
-            {section.sectionType}
-          </div>
-          <h3 className="font-medium text-sm">
-            {section.name || 'Untitled Section'}
-          </h3>
-        </div>
-      );
+  
+  // Get section height
+  const getHeight = () => {
+    if (section.dimensions?.height) {
+      return section.dimensions.height;
     }
     
-    // Regular preview rendering
-    return (
+    // Default heights based on section type
+    switch (section.sectionType?.toLowerCase()) {
+      case 'hero':
+        return deviceType === 'mobile' ? 400 : 500;
+      case 'features':
+        return deviceType === 'mobile' ? 600 : 400;
+      case 'pricing':
+        return deviceType === 'mobile' ? 800 : 500;
+      case 'footer':
+        return 200;
+      default:
+        return 300;
+    }
+  };
+  
+  return (
+    <div 
+      className={cn(
+        "section-renderer w-full rounded-md p-4",
+        getBgColor(),
+        className
+      )}
+      style={{ 
+        minHeight: getHeight()
+      }}
+    >
       <div className={cn(
-        getDeviceSpecificStyles(),
-        getComponentResponsiveStyles(),
-        darkMode ? 'bg-gray-800' : 'bg-gray-50',
-        'border',
-        darkMode ? 'border-gray-700' : 'border-gray-200',
-        isSelected ? 'ring-2 ring-primary' : ''
+        "section-content",
+        darkMode ? 'text-white' : 'text-gray-800'
       )}>
-        <h3 className={`font-medium mb-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-          {section.name || componentDef?.name || 'Section'}
-        </h3>
+        <h3 className="text-lg font-semibold">{section.name || section.sectionType}</h3>
         
-        {(section.description || componentDef?.description) && (
-          <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-            {section.description || componentDef?.description || 'No description'}
-          </p>
+        {section.description && (
+          <p className="text-sm opacity-70 mt-1">{section.description}</p>
         )}
         
-        {/* Render child components if they exist */}
+        {section.copySuggestions?.heading && (
+          <div className="mt-4 py-2 px-3 rounded bg-opacity-10 bg-black dark:bg-white dark:bg-opacity-10">
+            <h4 className="font-medium mb-1">{section.copySuggestions.heading}</h4>
+            {section.copySuggestions.subheading && (
+              <p className="text-sm opacity-80">{section.copySuggestions.subheading}</p>
+            )}
+          </div>
+        )}
+        
         {section.components && section.components.length > 0 && (
-          <div className={cn(
-            "grid gap-4",
-            {
-              "grid-cols-1": deviceType === 'mobile',
-              "grid-cols-2": deviceType === 'tablet',
-              "grid-cols-3": deviceType === 'desktop'
-            }
-          )}>
-            {section.components.map((component, i) => (
+          <div className="mt-4 grid gap-2">
+            {section.components.slice(0, 3).map((component, idx) => (
               <div 
-                key={component.id || `component-${i}`}
+                key={idx} 
                 className={cn(
-                  "p-3 rounded border",
-                  darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+                  "p-2 rounded",
+                  darkMode ? 'bg-gray-800' : 'bg-white',
+                  "border",
+                  darkMode ? 'border-gray-700' : 'border-gray-200'
                 )}
               >
-                {component.content || `Component ${i+1}`}
+                <span className="text-xs">{component.type || 'Component'}</span>
               </div>
             ))}
-          </div>
-        )}
-        
-        {/* Render variant-specific content */}
-        {section.componentVariant && componentDef?.variants && (
-          <div className="mt-2 text-sm text-muted-foreground">
-            Variant: {section.componentVariant}
+            
+            {section.components.length > 3 && (
+              <p className="text-xs opacity-70 mt-1">
+                +{section.components.length - 3} more components...
+              </p>
+            )}
           </div>
         )}
       </div>
-    );
-  };
-
-  return (
-    <div 
-      className="component-renderer"
-      onClick={onClick}
-    >
-      {renderComponent()}
     </div>
   );
 };

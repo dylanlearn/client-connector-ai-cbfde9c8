@@ -1,145 +1,171 @@
 
-import { useCallback, useState, useRef } from 'react';
-import { fabric } from 'fabric';
-import { WireframeCanvasConfig } from '@/services/ai/wireframe/wireframe-types';
+import { useState, useCallback, useRef, RefObject } from 'react';
 
-export interface CanvasInteractionsProps {
-  canvasRef: React.MutableRefObject<HTMLDivElement | null>;
-  initialConfig?: Partial<WireframeCanvasConfig>;
-  onConfigChange?: (config: Partial<WireframeCanvasConfig>) => void;
+interface Position {
+  x: number;
+  y: number;
 }
 
-export function useCanvasInteractions({
-  canvasRef,
+interface CanvasConfig {
+  zoom: number;
+  panOffset: Position;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+}
+
+interface UseCanvasInteractionsProps {
+  canvasRef: RefObject<HTMLDivElement>;
+  initialConfig?: Partial<CanvasConfig>;
+  onConfigChange?: (config: Partial<CanvasConfig>) => void;
+}
+
+export const useCanvasInteractions = ({ 
+  canvasRef, 
   initialConfig,
-  onConfigChange
-}: CanvasInteractionsProps) {
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [isSpacePressed, setIsSpacePressed] = useState<boolean>(false);
-  const [lastMousePosition, setLastMousePosition] = useState<{ x: number; y: number } | null>(null);
-  
-  // Default config
-  const defaultConfig: WireframeCanvasConfig = {
+  onConfigChange 
+}: UseCanvasInteractionsProps) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+
+  // Use defaults if not provided
+  const defaultConfig: CanvasConfig = {
     zoom: 1,
     panOffset: { x: 0, y: 0 },
     showGrid: true,
-    snapToGrid: false,
-    gridSize: 10
+    snapToGrid: true,
+    gridSize: 8
   };
-  
-  // Use provided initial config or default
-  const [config, setConfig] = useState<WireframeCanvasConfig>({
+
+  const [config, setConfig] = useState<CanvasConfig>({
     ...defaultConfig,
     ...initialConfig
   });
 
-  // Update the config and notify parent if needed
-  const updateConfig = useCallback((updates: Partial<WireframeCanvasConfig>) => {
+  // Update internal config and notify parent if callback provided
+  const updateConfig = useCallback((updates: Partial<CanvasConfig>) => {
     setConfig(prev => {
       const newConfig = { ...prev, ...updates };
+      
       if (onConfigChange) {
-        onConfigChange(newConfig);
+        onConfigChange(updates);
       }
+      
       return newConfig;
     });
   }, [onConfigChange]);
-  
-  // Handle mouse down for dragging the canvas
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only initiate drag if space is pressed (pan mode)
-    if (isSpacePressed && e.button === 0) {
+
+  // Handle mouse down for panning
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Only start dragging when space is pressed (pan mode)
+    if (isSpacePressed) {
       setIsDragging(true);
-      setLastMousePosition({ x: e.clientX, y: e.clientY });
-      e.preventDefault();
-    }
-  }, [isSpacePressed]);
-  
-  // Handle mouse move for dragging the canvas
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (isDragging && lastMousePosition) {
-      const dx = e.clientX - lastMousePosition.x;
-      const dy = e.clientY - lastMousePosition.y;
+      setLastPosition({ x: e.clientX, y: e.clientY });
       
-      updateConfig({
-        panOffset: {
-          x: config.panOffset.x + dx,
-          y: config.panOffset.y + dy
-        }
-      });
-      
-      setLastMousePosition({ x: e.clientX, y: e.clientY });
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = 'grabbing';
+      }
     }
-  }, [isDragging, lastMousePosition, config.panOffset, updateConfig]);
-  
-  // Handle mouse up to end dragging
-  const handleMouseUp = useCallback((e: MouseEvent) => {
+  }, [isSpacePressed, canvasRef]);
+
+  // Handle mouse move for panning
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+    if (!isDragging || !isSpacePressed) return;
+
+    const deltaX = e.clientX - lastPosition.x;
+    const deltaY = e.clientY - lastPosition.y;
+
+    setLastPosition({ x: e.clientX, y: e.clientY });
+
+    updateConfig({
+      panOffset: {
+        x: config.panOffset.x + deltaX,
+        y: config.panOffset.y + deltaY
+      }
+    });
+  }, [isDragging, isSpacePressed, lastPosition, config.panOffset, updateConfig]);
+
+  // Handle mouse up to stop panning
+  const handleMouseUp = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
-      setLastMousePosition(null);
-    }
-  }, [isDragging]);
-  
-  // Handle wheel event for zooming
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
       
-      const delta = e.deltaY;
-      const zoom = Math.min(Math.max(config.zoom - delta * 0.001, 0.5), 2);
-      
-      updateConfig({ zoom });
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = isSpacePressed ? 'grab' : 'default';
+      }
     }
+  }, [isDragging, isSpacePressed, canvasRef]);
+
+  // Handle wheel for zooming
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    // Determine zoom direction and speed
+    const zoomSpeed = 0.05;
+    const deltaZoom = e.deltaY < 0 ? zoomSpeed : -zoomSpeed;
+    
+    // Calculate new zoom (constrained between 0.1 and 3)
+    const newZoom = Math.max(0.1, Math.min(3, config.zoom + deltaZoom));
+    
+    updateConfig({ zoom: newZoom });
   }, [config.zoom, updateConfig]);
-  
-  // Handle key down events
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+
+  // Handle key press for space bar
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement> | KeyboardEvent) => {
+    // Space key for panning mode
     if (e.code === 'Space' && !isSpacePressed) {
       setIsSpacePressed(true);
       
-      if (document.body) {
-        document.body.style.cursor = 'grab';
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = isDragging ? 'grabbing' : 'grab';
       }
+      
+      // Prevent default space behavior (typically page scrolling)
+      e.preventDefault();
     }
-  }, [isSpacePressed]);
-  
-  // Handle key up events
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+  }, [isSpacePressed, isDragging, canvasRef]);
+
+  // Handle key release
+  const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLDivElement> | KeyboardEvent) => {
     if (e.code === 'Space') {
       setIsSpacePressed(false);
       
-      if (document.body) {
-        document.body.style.cursor = 'default';
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = 'default';
       }
     }
-  }, []);
+  }, [canvasRef]);
 
-  // Zoom control functions
+  // Zoom controls
   const zoomIn = useCallback(() => {
-    updateConfig({ zoom: Math.min(config.zoom + 0.1, 2) });
+    updateConfig({ zoom: Math.min(3, config.zoom + 0.1) });
   }, [config.zoom, updateConfig]);
-  
+
   const zoomOut = useCallback(() => {
-    updateConfig({ zoom: Math.max(config.zoom - 0.1, 0.5) });
+    updateConfig({ zoom: Math.max(0.1, config.zoom - 0.1) });
   }, [config.zoom, updateConfig]);
-  
+
   const resetZoom = useCallback(() => {
-    updateConfig({
+    updateConfig({ 
       zoom: 1,
       panOffset: { x: 0, y: 0 }
     });
   }, [updateConfig]);
-  
-  // Toggle grid display
+
+  // Grid controls
   const toggleGrid = useCallback(() => {
     updateConfig({ showGrid: !config.showGrid });
   }, [config.showGrid, updateConfig]);
-  
-  // Toggle snap to grid
+
   const toggleSnapToGrid = useCallback(() => {
     updateConfig({ snapToGrid: !config.snapToGrid });
   }, [config.snapToGrid, updateConfig]);
-  
+
   return {
+    config,
+    isDragging,
+    isSpacePressed,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
@@ -151,9 +177,6 @@ export function useCanvasInteractions({
     resetZoom,
     toggleGrid,
     toggleSnapToGrid,
-    isDragging,
-    isSpacePressed,
-    config,
     updateConfig
   };
-}
+};

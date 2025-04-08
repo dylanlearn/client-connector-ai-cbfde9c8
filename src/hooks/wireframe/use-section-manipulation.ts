@@ -1,133 +1,126 @@
 
 import { useState, useCallback } from 'react';
-import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
+import { useWireframeStore } from '@/stores/wireframe-store';
+import { WireframeSection } from '@/types/wireframe';
 
 interface SectionPosition {
-  top: number;
-  left: number;
+  [id: string]: {
+    x: number;
+    y: number;
+    originalX: number;
+    originalY: number;
+  };
 }
 
 export function useSectionManipulation() {
-  const wireframe = useWireframeStore(state => state.wireframe);
-  const activeSection = useWireframeStore(state => state.activeSection);
-  const updateSection = useWireframeStore(state => state.updateSection);
-  const setActiveSection = useWireframeStore(state => state.setActiveSection);
-  const canvasSettings = useWireframeStore(state => state.canvasSettings);
-  const saveStateForUndo = useWireframeStore(state => state.saveStateForUndo);
-  
+  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [draggingSection, setDraggingSection] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState<SectionPosition>({ top: 0, left: 0 });
-  const [sectionPositions, setSectionPositions] = useState<Record<string, SectionPosition>>({});
-  
-  // Select a section
+  const [sectionPositions, setSectionPositions] = useState<SectionPosition>({});
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const { wireframe, updateSection } = useWireframeStore();
+
+  // Select a section by ID
   const selectSection = useCallback((sectionId: string) => {
     setActiveSection(sectionId);
-  }, [setActiveSection]);
-  
+    useWireframeStore.getState().setActiveSection(sectionId);
+  }, []);
+
   // Start dragging a section
   const startDragSection = useCallback((sectionId: string, clientX: number, clientY: number) => {
     setDraggingSection(sectionId);
+    setDragStart({ x: clientX, y: clientY });
+
+    // Find current section
+    const section = wireframe.sections.find(s => s.id === sectionId);
     
-    // Get the section element
-    const sectionElement = document.getElementById(`section-${sectionId}`);
-    if (!sectionElement) return;
-    
-    // Calculate the offset from the mouse to the top-left of the section
-    const rect = sectionElement.getBoundingClientRect();
-    setDragOffset({
-      left: clientX - rect.left,
-      top: clientY - rect.top
-    });
-    
-    // Store the initial position
-    const currentPosition = sectionPositions[sectionId] || { top: rect.top, left: rect.left };
-    setSectionPositions({
-      ...sectionPositions,
-      [sectionId]: currentPosition
-    });
-    
-    // Select the section
-    selectSection(sectionId);
-    
-    // Prevent text selection during drag
-    document.body.style.userSelect = 'none';
-  }, [sectionPositions, selectSection]);
-  
-  // Update section position during drag
+    if (section) {
+      // Initialize position if it doesn't exist yet
+      const currentX = section.position?.x || 0;
+      const currentY = section.position?.y || 0;
+      
+      setSectionPositions(prev => ({
+        ...prev,
+        [sectionId]: {
+          x: currentX,
+          y: currentY,
+          originalX: currentX,
+          originalY: currentY
+        }
+      }));
+    }
+  }, [wireframe.sections]);
+
+  // Drag a section
   const dragSection = useCallback((clientX: number, clientY: number) => {
     if (!draggingSection) return;
     
-    const sectionElement = document.getElementById(`section-${draggingSection}`);
-    if (!sectionElement || !sectionElement.parentElement) return;
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
     
-    // Calculate new position
-    const parentRect = sectionElement.parentElement.getBoundingClientRect();
-    let newLeft = clientX - parentRect.left - dragOffset.left;
-    let newTop = clientY - parentRect.top - dragOffset.top;
+    // Get original positions
+    const originalPosition = sectionPositions[draggingSection] || { 
+      x: 0, y: 0, originalX: 0, originalY: 0 
+    };
     
-    // Apply snap to grid if enabled
-    if (canvasSettings.snapToGrid) {
-      const gridSize = canvasSettings.gridSize;
-      newLeft = Math.round(newLeft / gridSize) * gridSize;
-      newTop = Math.round(newTop / gridSize) * gridSize;
-    }
-    
-    // Update the section position
-    setSectionPositions({
-      ...sectionPositions,
-      [draggingSection]: {
-        left: newLeft,
-        top: newTop
+    // Update position with delta
+    setSectionPositions(prev => ({
+      ...prev,
+      [draggingSection as string]: {
+        ...originalPosition,
+        x: originalPosition.originalX + deltaX,
+        y: originalPosition.originalY + deltaY
       }
-    });
-    
-    // Apply the position to the element for immediate feedback
-    sectionElement.style.position = 'absolute';
-    sectionElement.style.left = `${newLeft}px`;
-    sectionElement.style.top = `${newTop}px`;
-  }, [draggingSection, dragOffset, sectionPositions, canvasSettings.snapToGrid, canvasSettings.gridSize]);
-  
-  // Stop dragging and save position
+    }));
+  }, [draggingSection, dragStart, sectionPositions]);
+
+  // Stop dragging and commit changes
   const stopDragSection = useCallback(() => {
-    if (!draggingSection) return;
-    
-    // Find the section in the wireframe
-    const section = wireframe.sections.find(section => section.id === draggingSection);
-    if (section) {
-      // Update the section position in the store
+    if (draggingSection && wireframe) {
       const position = sectionPositions[draggingSection];
       if (position) {
-        updateSection(draggingSection, {
-          styleProperties: {
-            ...section.styleProperties,
-            position: 'absolute',
-            left: position.left,
-            top: position.top
-          }
-        });
-        
-        // Save state for undo
-        saveStateForUndo();
+        // Update section in store with new position
+        const section = wireframe.sections.find(s => s.id === draggingSection);
+        if (section) {
+          updateSection(draggingSection, {
+            ...section,
+            position: {
+              x: position.x,
+              y: position.y
+            }
+          });
+        }
       }
     }
     
-    // Reset dragging state
     setDraggingSection(null);
-    document.body.style.userSelect = '';
-  }, [draggingSection, wireframe.sections, sectionPositions, updateSection, saveStateForUndo]);
-  
-  // Apply stored positions to sections (for rendering)
+  }, [draggingSection, sectionPositions, wireframe, updateSection]);
+
+  // Apply section positions to component styles
   const applySectionPositions = useCallback((section: WireframeSection) => {
-    const position = sectionPositions[section.id];
-    if (!position) return {};
+    const position = section.id && sectionPositions[section.id];
     
-    return {
-      position: 'absolute',
-      left: position.left,
-      top: position.top
-    };
-  }, [sectionPositions]);
-  
+    if (position) {
+      return {
+        position: 'absolute',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: draggingSection === section.id ? 'scale(1.02)' : undefined,
+        zIndex: draggingSection === section.id ? 10 : 1
+      };
+    } else if (section.position) {
+      // Use position from section if available
+      return {
+        position: 'absolute',
+        left: `${section.position.x}px`,
+        top: `${section.position.y}px`,
+      };
+    }
+    
+    // Default to static positioning if no position defined
+    return {};
+  }, [sectionPositions, draggingSection]);
+
   return {
     activeSection,
     draggingSection,

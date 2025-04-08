@@ -1,3 +1,4 @@
+
 /**
  * Type definitions for wireframe version control
  */
@@ -37,6 +38,14 @@ export interface WireframeSection {
     heading?: string;
     subheading?: string;
     [key: string]: any;
+  };
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  position?: {
+    x: number;
+    y: number;
   };
   [key: string]: any;
 }
