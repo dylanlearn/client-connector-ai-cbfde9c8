@@ -23,8 +23,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Columns, EyeIcon } from 'lucide-react';
 import AdvancedSectionEditDialog from './AdvancedSectionEditDialog';
+import SideBySidePreview from './SideBySidePreview';
+import { toast } from 'sonner';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -39,6 +41,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionName, setEditingSectionName] = useState('');
   const [editingSectionDescription, setEditingSectionDescription] = useState('');
+  const [previewMode, setPreviewMode] = useState(false);
   const { toast } = useToast();
   
   // Use the Zustand store for state management
@@ -187,10 +190,33 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     if (!editingSectionId) return null;
     return wireframe.sections.find(s => s.id === editingSectionId) || null;
   };
+  
+  // Handle Copy JSON
+  const handleCopyJson = () => {
+    navigator.clipboard.writeText(JSON.stringify(wireframe, null, 2));
+    toast.success("Wireframe JSON copied to clipboard");
+  };
+  
+  // Toggle preview mode
+  const togglePreviewMode = () => {
+    setPreviewMode(!previewMode);
+  };
 
-  return (
+  // Main editor content that will be wrapped by SideBySidePreview
+  const editorContent = (
     <div className="wireframe-editor">
       <WireframeToolbar onSave={saveWireframe} />
+      
+      <div className="flex justify-end my-4">
+        <Button 
+          onClick={togglePreviewMode} 
+          variant="outline" 
+          className="gap-2"
+        >
+          {previewMode ? <Columns className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+          {previewMode ? "Split View" : "Preview Mode"}
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
         <Tabs defaultValue="components" className="md:col-span-1">
@@ -311,6 +337,13 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         onUpdate={handleAdvancedSectionUpdate}
       />
     </div>
+  );
+
+  // Wrap editor content with SideBySidePreview if needed
+  return (
+    <SideBySidePreview previewMode={previewMode} togglePreviewMode={togglePreviewMode}>
+      {editorContent}
+    </SideBySidePreview>
   );
 };
 

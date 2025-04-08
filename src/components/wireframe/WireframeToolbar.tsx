@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWireframeStore } from '@/stores/wireframe-store';
+import { WireframeExportMenu } from './export/WireframeExportMenu';
 
 interface WireframeToolbarProps {
   onSave?: () => Promise<void>;
@@ -164,6 +165,9 @@ const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
 
       <div className="flex-1"></div>
 
+      {/* Export Menu */}
+      <WireframeExportMenu wireframeData={wireframe} buttonSize="sm" />
+      
       {/* Save */}
       <Tooltip>
         <TooltipTrigger asChild>
@@ -171,7 +175,7 @@ const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
             variant="default"
             size="sm"
             onClick={onSave}
-            className="ml-auto"
+            className="ml-2"
           >
             <Save className="h-4 w-4 mr-2" />
             Save

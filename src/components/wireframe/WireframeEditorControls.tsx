@@ -12,9 +12,11 @@ import {
   Save,
   Download,
   Copy,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
+import { PDFExportDialog } from '@/components/export/PDFExportDialog';
 
 interface WireframeEditorControlsProps {
   darkMode: boolean;
@@ -119,6 +121,20 @@ const WireframeEditorControls: React.FC<WireframeEditorControlsProps> = ({
             <Copy className="h-4 w-4 mr-1" /> Copy JSON
           </Button>
         )}
+        
+        <PDFExportDialog 
+          contentId="wireframe-canvas"
+          filename="wireframe-design"
+          trigger={
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="h-8"
+            >
+              <FileText className="h-4 w-4 mr-1" /> Export PDF
+            </Button>
+          }
+        />
         
         {onExport && (
           <Button 
