@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useComponentRegistry } from './registry/ComponentRegistration';
 import { getAllComponentDefinitions, createSectionInstance } from './registry/component-registry';
@@ -41,6 +42,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   const [editingSectionName, setEditingSectionName] = useState('');
   const [editingSectionDescription, setEditingSectionDescription] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const { toast: uiToast } = useToast();
   
   // Use the Zustand store for state management
@@ -85,8 +88,12 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         return;
       }
 
+      setIsSaving(true);
+      console.log("Saving wireframe with ID:", wireframe.id);
+
       // Create wireframe data with proper type alignment
       const wireframeData = {
+        id: wireframe.id, // Include ID if it exists for updates
         title: wireframe.title || "New Wireframe",
         description: wireframe.description || "Created with the Wireframe Editor",
         sections: wireframe.sections || []
@@ -99,16 +106,31 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         sections: wireframeData.sections
       });
 
+      // Update wireframe ID if it was a new wireframe
+      if (result && result.id && (!wireframe.id || wireframe.id !== result.id)) {
+        setWireframe({
+          ...wireframe,
+          id: result.id
+        });
+        console.log("Wireframe saved with new ID:", result.id);
+      }
+
+      setLastSaved(new Date());
       toast.success("Success", {
-        description: "Wireframe saved successfully"
+        description: "Wireframe saved successfully",
+        duration: 3000
       });
 
       return result;
     } catch (error) {
       console.error("Error saving wireframe:", error);
       toast.error("Error", {
-        description: "Failed to save wireframe. Please ensure you're logged in."
+        description: "Failed to save wireframe. Please ensure you're logged in.",
+        duration: 5000
       });
+      return null;
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -198,7 +220,14 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     <div className="wireframe-editor">
       <WireframeToolbar onSave={saveWireframe} />
       
-      <div className="flex justify-end my-4">
+      <div className="flex justify-between my-4">
+        <div>
+          {lastSaved && (
+            <p className="text-sm text-muted-foreground">
+              Last saved: {lastSaved.toLocaleTimeString()}
+            </p>
+          )}
+        </div>
         <Button 
           onClick={togglePreviewMode} 
           variant="outline" 
