@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast, Toast } from "@/hooks/use-toast";
 import { useWireframeGenerator } from "./wireframe/use-wireframe-generator";
 import { useWireframeStorage } from "./wireframe/use-wireframe-storage";
 import { useWireframeFeedback } from "./wireframe/use-wireframe-feedback";
