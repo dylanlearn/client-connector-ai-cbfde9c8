@@ -29,13 +29,17 @@ export function useWireframeSections() {
       return;
     }
     
-    addSection({
+    // Create a section object compatible with the wireframe-store WireframeSection type
+    const sectionToAdd: Omit<WireframeSection, 'id'> = {
       name: componentDef.name || 'New Section',
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
+      copySuggestions: [], // Ensure we use array type to match the store's definition
       ...newSectionData
-    });
+    };
+    
+    addSection(sectionToAdd);
     
     toast({
       title: "Section added",
@@ -46,7 +50,16 @@ export function useWireframeSections() {
   const handleUpdateSection = useCallback((sectionId: string, updates: Partial<WireframeSection>) => {
     if (!sectionId) return;
     
-    updateSection(sectionId, updates);
+    // Convert copySuggestions from possible object to array if needed
+    if (updates.copySuggestions && !Array.isArray(updates.copySuggestions)) {
+      const convertedUpdates = {
+        ...updates,
+        copySuggestions: [] // Convert to empty array if it's not an array
+      };
+      updateSection(sectionId, convertedUpdates);
+    } else {
+      updateSection(sectionId, updates);
+    }
   }, [updateSection]);
   
   const handleRemoveSection = useCallback((sectionId: string) => {
