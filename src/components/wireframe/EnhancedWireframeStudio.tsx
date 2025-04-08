@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -105,7 +104,6 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     const result = await generateWireframe(params);
     
     if (result && result.wireframe) {
-      // Extract layout analysis if it exists in the result
       if (enableLayoutIntelligence && result.layoutAnalysis) {
         setLayoutAnalysis(result.layoutAnalysis);
       }

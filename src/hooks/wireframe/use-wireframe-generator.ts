@@ -1,175 +1,174 @@
 
-import { useState, useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { wireframeGenerator } from '@/services/ai/wireframe/api/wireframe-generator';
+import { wireframeMemoryService } from '@/services/ai/wireframe/wireframe-memory-service';
+import { ToastProps } from '@/hooks/use-toast';
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,
   WireframeResult
-} from "@/services/ai/wireframe/wireframe-types";
-import { v4 as uuidv4 } from "uuid";
+} from '@/services/ai/wireframe/wireframe-types';
 
 export function useWireframeGenerator(
-  defaultCreativityLevel: number = 5,
-  setCurrentWireframe?: (wireframe: WireframeGenerationResult | null) => void,
-  externalToast?: any
+  creativityLevel: number = 7,
+  setCurrentWireframe: (wireframe: WireframeGenerationResult | null) => void,
+  toast: (props: ToastProps) => void
 ) {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
   
-  // Use provided toast function or default toast
-  const toastFn = externalToast || toast;
-
-  const generateWireframe = useCallback(
-    async (params: WireframeGenerationParams): Promise<WireframeGenerationResult | null> => {
-      setIsGenerating(true);
-      setError(null);
+  const generateWireframe = useCallback(async (params: WireframeGenerationParams) => {
+    setIsGenerating(true);
+    setError(null);
+    
+    try {
+      // Get design memory if available
+      const designMemory = params.projectId 
+        ? await wireframeMemoryService.getDesignMemory(params.projectId).catch(() => null)
+        : null;
       
-      try {
-        // Apply creativity level from params or default
-        const creativityLevel = params.creativityLevel || defaultCreativityLevel;
-        const enhancedCreativity = params.enhancedCreativity ?? creativityLevel > 7;
-        
-        toastFn({
-          title: "Generating wireframe",
-          description: enhancedCreativity 
-            ? "Creating a highly creative design..." 
-            : "Creating a structured wireframe...",
-        });
-        
-        const { data, error } = await supabase.functions.invoke("generate-wireframe", {
-          body: {
-            ...params,
-            // Ensure these are included even if not provided
-            creativityLevel,
-            enhancedCreativity
-          }
-        });
-        
-        if (error) {
-          console.error("Error calling wireframe generator:", error);
-          
-          const result: WireframeGenerationResult = {
-            wireframe: { 
-              id: uuidv4(),
-              title: "Error generating wireframe",
-              sections: [],
-              description: `Failed to generate: ${error.message}`,
-            },
-            error: error.message,
-            success: false // Add success flag
-          };
-          
-          if (setCurrentWireframe) {
-            setCurrentWireframe(result);
-          }
-          
-          return result;
-        }
-        
-        if (data?.success && data?.wireframe) {
-          console.log("Wireframe generated successfully:", data);
-          
-          // Ensure result has all required properties
-          const result: WireframeGenerationResult = {
-            wireframe: data.wireframe,
-            imageUrl: data.imageUrl,
-            success: true // Add success flag
-          };
-          
-          if (setCurrentWireframe) {
-            setCurrentWireframe(result);
-          }
-          
-          toastFn({
-            title: "Wireframe generated",
-            description: `Generated "${data.wireframe.title || 'Wireframe'}" successfully`,
-          });
-          
-          return result;
-        } else {
-          console.error("API error:", data?.error || "Unknown API error");
-          
-          const result: WireframeGenerationResult = {
-            wireframe: { 
-              id: uuidv4(),
-              title: "Error generating wireframe",
-              sections: [],
-              description: `Failed to generate: ${data?.error || "Unknown error"}`,
-            },
-            error: data?.error || "Unknown API error",
-            success: false // Add success flag
-          };
-          
-          if (setCurrentWireframe) {
-            setCurrentWireframe(result);
-          }
-          
-          toastFn({
-            title: "Generation failed",
-            description: data?.error || "Failed to generate wireframe",
-            variant: "destructive",
-          });
-          
-          return result;
-        }
-      } catch (err) {
-        console.error("Unexpected error in wireframe generation:", err);
-        setError(err instanceof Error ? err : new Error(String(err)));
-        
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        
-        const result: WireframeGenerationResult = {
-          wireframe: { 
-            id: uuidv4(),
-            title: "Error generating wireframe",
-            sections: [],
-            description: `Failed to generate: ${errorMessage}`,
-          },
-          error: errorMessage,
-          success: false // Add success flag
-        };
-        
-        if (setCurrentWireframe) {
-          setCurrentWireframe(result);
-        }
-        
-        toastFn({
-          title: "Generation failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        
-        return result;
-      } finally {
-        setIsGenerating(false);
-      }
-    },
-    [defaultCreativityLevel, toastFn, setCurrentWireframe]
-  );
-  
-  const generateCreativeVariation = useCallback(
-    async (originalWireframe: WireframeGenerationResult): Promise<WireframeGenerationResult | null> => {
-      if (!originalWireframe?.wireframe) return null;
-      
-      // Prepare params for variation generation
-      const variationParams: WireframeGenerationParams = {
-        description: `Create a creative variation of: ${originalWireframe.wireframe.description || originalWireframe.wireframe.title}`,
-        baseWireframe: originalWireframe.wireframe,
-        creativityLevel: Math.min((defaultCreativityLevel || 5) + 2, 10),
-        enhancedCreativity: true,
+      // Enhance params with design memory and creativity settings
+      const enhancedParams = {
+        ...params,
+        creativityLevel: params.creativityLevel ?? creativityLevel,
+        enhancedCreativity: params.enhancedCreativity ?? true
       };
       
-      return generateWireframe(variationParams);
-    },
-    [generateWireframe, defaultCreativityLevel]
-  );
-
+      if (designMemory) {
+        enhancedParams.stylePreferences = designMemory.stylePreferences;
+        // Additional logic for using design memory
+      }
+      
+      const result = await wireframeGenerator.generateWireframe(enhancedParams);
+      
+      if (!result?.wireframe) {
+        throw new Error("Failed to generate wireframe");
+      }
+      
+      setCurrentWireframe(result);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Wireframe generation error:", err);
+      setError(err instanceof Error ? err : new Error(errorMessage));
+      
+      // Provide a fallback wireframe with error information for graceful UI handling
+      const fallbackResult: WireframeGenerationResult = {
+        wireframe: {
+          id: uuidv4(),
+          title: "Error: Failed to generate wireframe",
+          sections: [],
+          description: `Error: ${errorMessage}`
+        },
+        error: errorMessage,
+        success: false // Set success to false
+      };
+      
+      setCurrentWireframe(fallbackResult);
+      
+      toast({
+        title: "Wireframe generation failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      return fallbackResult;
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [creativityLevel, setCurrentWireframe, toast]);
+  
+  const generateCreativeVariation = useCallback(async (
+    baseWireframe: WireframeGenerationResult
+  ) => {
+    try {
+      toast({
+        title: "Generating variation",
+        description: "Creating a creative variation of the wireframe..."
+      });
+      
+      if (!baseWireframe?.wireframe) {
+        throw new Error("No base wireframe provided for variation");
+      }
+      
+      const result = await generateWireframe({
+        baseWireframe: baseWireframe.wireframe,
+        description: `Create a more creative variation of the existing wireframe: ${baseWireframe.wireframe.title || ''}`,
+        style: baseWireframe.wireframe.style,
+        creativityLevel: Math.min(10, creativityLevel + 1), // Increase creativity
+        enhancedCreativity: true,
+        // Include any image URLs from the base wireframe
+        imageUrl: baseWireframe.imageUrl || baseWireframe.wireframe.imageUrl,
+        success: true // Set success to true
+      });
+      
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create variation";
+      console.error("Variation generation error:", err);
+      
+      toast({
+        title: "Variation generation failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
+      const fallbackResult: WireframeGenerationResult = {
+        wireframe: {
+          id: uuidv4(),
+          title: "Error: Failed to generate variation",
+          sections: [],
+          description: `Error: ${errorMessage}`
+        },
+        error: err instanceof Error ? err.message : String(err),
+        success: false // Set success to false
+      };
+      
+      return fallbackResult;
+    }
+  }, [generateWireframe, creativityLevel, toast]);
+  
+  const generateFromExample = useCallback(async (
+    examplePrompt: string
+  ) => {
+    try {
+      toast({
+        title: "Generating from example",
+        description: "Creating wireframe from example..."
+      });
+      
+      const result = await generateWireframe({
+        description: examplePrompt,
+        creativityLevel,
+        success: true // Set success to true
+      });
+      
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate from example";
+      
+      // Return a wireframe with error info
+      const fallbackResult: WireframeGenerationResult = {
+        wireframe: {
+          id: uuidv4(),
+          title: "Error: Generation from example failed",
+          sections: [],
+          description: `Error: ${errorMessage}`
+        },
+        error: errorMessage,
+        success: false // Set success to false
+      };
+      
+      return fallbackResult;
+    }
+  }, [generateWireframe, creativityLevel, toast]);
+  
   return {
     isGenerating,
     error,
     generateWireframe,
-    generateCreativeVariation,
+    generateCreativeVariation, 
+    generateFromExample
   };
 }

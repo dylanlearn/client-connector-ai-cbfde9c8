@@ -1,106 +1,175 @@
-import { WireframeGeneratorPrompt } from './wireframe-types';
+import { WireframeGenerationParams } from './wireframe-types';
 
-// Template definitions for different industries
-const ecommerceTemplate = {
-  title: "E-commerce Website Template",
-  sections: ["hero", "product-grid", "featured-products", "testimonials", "newsletter", "footer"],
-  components: ["header", "product-card", "cart", "search", "filters"],
-  features: (["product showcase", "shopping cart", "checkout flow", "product reviews"]).join(", "), // Convert to string
-  colorSchemes: (["blue-green", "black-white-accent", "brand-neutral"]).join(", "), // Convert to string
-  layoutOptions: (["grid", "masonry", "horizontal scroll"]).join(", "), // Convert to string
+// Industry-specific wireframe templates
+export const INDUSTRY_TEMPLATES: Record<string, Partial<WireframeGenerationParams>> = {
+  ecommerce: {
+    description: "E-commerce homepage with featured products, categories, and promotional sections",
+    pageType: "homepage",
+    style: "modern",
+    componentTypes: ["navigation", "hero", "productGrid", "categoryCards", "testimonials", "newsletter", "footer"],
+    colorScheme: {
+      primary: "#4F46E5",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["clean", "professional", "trustworthy"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  },
+  
+  saas: {
+    description: "SaaS product landing page with feature highlights, pricing plans, and conversion elements",
+    pageType: "landing",
+    style: "minimal",
+    componentTypes: ["navbar", "heroWithCta", "featureCards", "pricingTables", "testimonial", "faq", "footer"],
+    colorScheme: {
+      primary: "#2563EB",
+      secondary: "#8B5CF6",
+      accent: "#EC4899",
+      background: "#F9FAFB"
+    },
+    stylePreferences: ["modern", "professional", "tech-focused"],
+    colorTheme: "gradient",
+    complexity: "moderate"
+  },
+  
+  portfolio: {
+    description: "Creative portfolio showcasing projects, skills, and contact information",
+    pageType: "portfolio",
+    style: "creative",
+    componentTypes: ["headerMinimal", "projectShowcase", "skills", "biography", "contactForm", "socialLinks"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["artistic", "expressive", "personal"],
+    colorTheme: "vibrant",
+    complexity: "simple"
+  },
+  
+  agency: {
+    description: "Agency website with services, portfolio, team, and contact information",
+    pageType: "website",
+    style: "modern",
+    componentTypes: ["header", "serviceCard", "projectCard", "teamMember", "contactForm"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["professional", "dynamic", "interactive"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  },
+  
+  restaurant: {
+    description: "Restaurant website with menu, about, gallery, and contact information",
+    pageType: "website",
+    style: "modern",
+    componentTypes: ["header", "menuItem", "aboutSection", "imageGallery", "reservationForm"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["elegant", "interactive", "full-width"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  },
+  
+  realEstate: {
+    description: "Real estate website with properties, agents, testimonials, and contact information",
+    pageType: "website",
+    style: "modern",
+    componentTypes: ["header", "propertyCard", "agentProfile", "testimonialCard", "searchForm"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["modern", "interactive", "map-integration"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  },
+  
+  travel: {
+    description: "Travel agency website with destinations, tours, testimonials, and contact information",
+    pageType: "website",
+    style: "modern",
+    componentTypes: ["header", "destinationCard", "tourPackage", "testimonialCard", "bookingForm"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["vibrant", "interactive", "full-screen"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  },
+  
+  education: {
+    description: "Education website with courses, events, testimonials, and contact information",
+    pageType: "website",
+    style: "modern",
+    componentTypes: ["header", "courseCard", "eventItem", "testimonialCard", "applicationForm"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["grid-courses", "interactive", "event-timeline"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  },
+  
+  health: {
+    description: "Healthcare website with services, doctors, testimonials, and contact information",
+    pageType: "website",
+    style: "modern",
+    componentTypes: ["header", "serviceCard", "doctorProfile", "testimonialCard", "appointmentForm"],
+    colorScheme: {
+      primary: "#3B82F6",
+      secondary: "#10B981",
+      accent: "#F59E0B",
+      background: "#FFFFFF"
+    },
+    stylePreferences: ["clean-layout", "interactive", "service-blocks"],
+    colorTheme: "branded",
+    complexity: "moderate"
+  }
 };
 
-const portfolioTemplate = {
-  title: "Portfolio Website Template",
-  sections: ["hero", "projects", "about", "contact"],
-  components: ["header", "project-card", "gallery", "contact-form"],
-  features: (["project gallery", "about me", "contact form", "skills"]).join(", "), // Convert to string
-  colorSchemes: (["monochrome", "earthy", "dark-mode"]).join(", "), // Convert to string
-  layoutOptions: (["full-screen", "minimalist", "parallax"]).join(", "), // Convert to string
+// Legacy format templates - convert to proper WireframeGenerationParams
+const legacyTemplates: Record<string, any> = {
+  ecommerce: {
+    title: "E-commerce Store",
+    sections: ["header", "hero", "featured", "categories", "testimonials", "footer"],
+    components: ["navigation", "search", "cart", "product-grid", "newsletter"],
+    features: "Shopping cart functionality, product filters, and checkout process",
+    colorSchemes: "Professional blues or vibrant with accent colors for CTAs",
+    layoutOptions: "Grid-based with clear visual hierarchy and product showcases"
+  },
+  // ... other template entries
 };
 
-const saasTemplate = {
-  title: "SaaS Landing Page Template",
-  sections: ["hero", "features", "pricing", "testimonials", "cta", "footer"],
-  components: ["header", "feature-block", "pricing-table", "testimonial-card", "form"],
-  features: (["feature highlights", "pricing plans", "customer testimonials", "call to action"]).join(", "), // Convert to string
-  colorSchemes: (["gradient", "tech-blue", "clean-white"]).join(", "), // Convert to string
-  layoutOptions: (["single-page", "split-screen", "isometric"]).join(", "), // Convert to string
-};
+// Convert legacy templates to new format
+Object.entries(legacyTemplates).forEach(([key, value]) => {
+  if (!INDUSTRY_TEMPLATES[key]) {
+    INDUSTRY_TEMPLATES[key] = {
+      description: `${value.title} template with ${value.features}`,
+      componentTypes: value.components,
+      stylePreferences: [value.colorSchemes.split(" ")[0].toLowerCase()],
+      style: "modern"
+    };
+  }
+});
 
-const blogTemplate = {
-  title: "Blog Website Template",
-  sections: ["hero", "blog-posts", "categories", "newsletter", "footer"],
-  components: ["header", "blog-card", "category-list", "subscribe-form"],
-  features: (["blog posts", "category filters", "search", "comments"]).join(", "), // Convert to string
-  colorSchemes: (["light-theme", "vintage", "pastel"]).join(", "), // Convert to string
-  layoutOptions: (["list-view", "grid-view", "masonry-grid"]).join(", "), // Convert to string
-};
-
-const agencyTemplate = {
-  title: "Agency Website Template",
-  sections: ["hero", "services", "portfolio", "team", "contact", "footer"],
-  components: ["header", "service-card", "project-card", "team-member", "contact-form"],
-  features: (["service offerings", "portfolio showcase", "team bios", "contact form"]).join(", "), // Convert to string
-  colorSchemes: (["corporate", "bold-contrast", "modern-clean"]).join(", "), // Convert to string
-  layoutOptions: (["interactive", "dynamic", "grid-based"]).join(", "), // Convert to string
-};
-
-const restaurantTemplate = {
-  title: "Restaurant Website Template",
-  sections: ["hero", "menu", "about", "gallery", "contact", "footer"],
-  components: ["header", "menu-item", "about-section", "image-gallery", "reservation-form"],
-  features: (["menu display", "online ordering", "image gallery", "reservation form"]).join(", "), // Convert to string
-  colorSchemes: (["warm-tones", "rustic", "elegant"]).join(", "), // Convert to string
-  layoutOptions: (["parallax-scrolling", "full-width", "image-focused"]).join(", "), // Convert to string
-};
-
-const realEstateTemplate = {
-  title: "Real Estate Website Template",
-  sections: ["hero", "properties", "agents", "testimonials", "contact", "footer"],
-  components: ["header", "property-card", "agent-profile", "testimonial-card", "search-form"],
-  features: (["property listings", "agent profiles", "property search", "contact form"]).join(", "), // Convert to string
-  colorSchemes: (["neutral", "blue-accent", "modern-luxury"]).join(", "), // Convert to string
-  layoutOptions: (["map-integration", "carousel", "grid-listings"]).join(", "), // Convert to string
-};
-
-const travelTemplate = {
-  title: "Travel Agency Website Template",
-  sections: ["hero", "destinations", "tours", "testimonials", "contact", "footer"],
-  components: ["header", "destination-card", "tour-package", "testimonial-card", "booking-form"],
-  features: (["destination showcase", "tour packages", "booking form", "customer reviews"]).join(", "), // Convert to string
-  colorSchemes: (["vibrant", "ocean-blue", "nature-green"]).join(", "), // Convert to string
-  layoutOptions: (["full-screen", "interactive-map", "carousel-tours"]).join(", "), // Convert to string
-};
-
-const educationTemplate = {
-  title: "Education Website Template",
-  sections: ["hero", "courses", "events", "testimonials", "contact", "footer"],
-  components: ["header", "course-card", "event-item", "testimonial-card", "application-form"],
-  features: (["course listings", "event calendar", "student testimonials", "application form"]).join(", "), // Convert to string
-  colorSchemes: (["academic-blue", "bright-yellow", "clean-white"]).join(", "), // Convert to string
-  layoutOptions: (["grid-courses", "event-timeline", "interactive-campus"]).join(", "), // Convert to string
-};
-
-const healthTemplate = {
-  title: "Healthcare Website Template",
-  sections: ["hero", "services", "doctors", "testimonials", "contact", "footer"],
-  components: ["header", "service-card", "doctor-profile", "testimonial-card", "appointment-form"],
-  features: (["service offerings", "doctor profiles", "appointment booking", "patient testimonials"]).join(", "), // Convert to string
-  colorSchemes: (["medical-blue", "calm-green", "clean-white"]).join(", "), // Convert to string
-  layoutOptions: (["clean-layout", "service-blocks", "doctor-grid"]).join(", "), // Convert to string
-};
-
-// Map of industry to template
-export const industryTemplates: Record<string, Partial<WireframeGeneratorPrompt>> = {
-  "ecommerce": ecommerceTemplate,
-  "portfolio": portfolioTemplate,
-  "saas": saasTemplate,
-  "blog": blogTemplate,
-  "agency": agencyTemplate,
-  "restaurant": restaurantTemplate,
-  "real-estate": realEstateTemplate,
-  "travel": travelTemplate,
-  "education": educationTemplate,
-  "healthcare": healthTemplate,
-};
+export default INDUSTRY_TEMPLATES;

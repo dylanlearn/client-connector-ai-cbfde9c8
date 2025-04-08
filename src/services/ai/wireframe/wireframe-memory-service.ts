@@ -169,3 +169,6 @@ export class WireframeMemoryService {
 
 // Create a singleton instance to export
 export const wireframeMemoryService = new WireframeMemoryService();
+
+// Export types for use in hooks
+export type { DesignMemoryData, DesignMemoryResponse };

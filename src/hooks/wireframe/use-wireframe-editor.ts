@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { wireframeMemoryService } from '@/services/ai/wireframe/wireframe-memory-service';
 import { v4 as uuidv4 } from 'uuid';
 
-export function useWireframeEditor(projectId?: string) {
+export function useWireframeEditor(projectId: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [projectData, setProjectData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,37 +75,25 @@ export function useWireframeEditor(projectId?: string) {
   }, [projectId, toast]);
 
   // Save project changes
-  const saveProject = useCallback(async (updatedData: any) => {
+  const saveProject = useCallback(async (projectData: Partial<any>) => {
+    if (!projectId) return;
+    
     try {
-      if (!projectData?.id) return;
-      
-      const mergedData = {
-        ...projectData,
-        ...updatedData,
-        updatedAt: new Date().toISOString()
-      };
-      
-      await wireframeMemoryService.saveProject(mergedData);
-      setProjectData(mergedData);
-      
+      setIsLoading(true);
+      // Pass both projectId and projectData to saveProject
+      const result = await wireframeMemoryService.saveProject(projectId, projectData);
+      return result;
+    } catch (error) {
+      console.error("Error saving project data:", error);
       toast({
-        title: 'Saved',
-        description: 'Wireframe project saved successfully'
+        title: "Failed to save project",
+        description: String(error),
+        variant: "destructive",
       });
-      
-      return true;
-    } catch (err: any) {
-      console.error('Error saving wireframe project:', err);
-      
-      toast({
-        title: 'Save failed',
-        description: err.message || 'Failed to save wireframe project',
-        variant: 'destructive'
-      });
-      
-      return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [projectData, toast]);
+  }, [projectId, toast]);
 
   return {
     isLoading,

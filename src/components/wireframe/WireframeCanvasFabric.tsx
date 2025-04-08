@@ -1,3 +1,4 @@
+
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
@@ -74,8 +75,9 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
     toggleSnapToGrid,
     isDragging,
     isSpacePressed
-  } = useCanvasInteractions({ 
+  } = useCanvasInteractions({
     canvasRef: canvasContainerRef,
+    initialConfig: effectiveCanvasSettings,
     onConfigChange: (config) => {
       updateConfig(config);
       if (onUpdateCanvasSettings) {
@@ -196,14 +198,27 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   }, [wireframe, activeDevice, darkMode, showGrid]);
   
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    document.addEventListener('mouseup', handleMouseUp);
+    // Use correct type annotations for DOM event listeners
+    const handleDocMouseUp = (e: MouseEvent) => {
+      handleMouseUp(e);
+    };
+    
+    const handleDocKeyDown = (e: KeyboardEvent) => {
+      handleKeyDown(e);
+    };
+    
+    const handleDocKeyUp = (e: KeyboardEvent) => {
+      handleKeyUp(e);
+    };
+    
+    document.addEventListener('keydown', handleDocKeyDown);
+    document.addEventListener('keyup', handleDocKeyUp);
+    document.addEventListener('mouseup', handleDocMouseUp);
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('keydown', handleDocKeyDown);
+      document.removeEventListener('keyup', handleDocKeyUp);
+      document.removeEventListener('mouseup', handleDocMouseUp);
     };
   }, [handleKeyDown, handleKeyUp, handleMouseUp]);
   

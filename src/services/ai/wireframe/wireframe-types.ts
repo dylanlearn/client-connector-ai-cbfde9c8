@@ -1,4 +1,3 @@
-
 export interface WireframeGenerationParams {
   description?: string;
   pageType?: string;
@@ -25,6 +24,20 @@ export interface WireframeGenerationParams {
   prompt?: string;
   stylePreferences?: string[];
   enableLayoutIntelligence?: boolean;
+  customParams?: {
+    darkMode?: boolean;
+    targetIndustry?: string;
+    targetAudience?: string;
+    [key: string]: any;
+  };
+  // Additional fields for common params
+  dimensions?: { width?: number; height?: number };
+  title?: string;
+  sections?: string[];
+  components?: string[];
+  features?: string;
+  colorSchemes?: string;
+  layoutOptions?: string;
 }
 
 export interface WireframeGenerationResult {

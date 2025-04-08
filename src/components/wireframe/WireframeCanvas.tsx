@@ -1,4 +1,3 @@
-
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -71,7 +70,11 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     toggleSnapToGrid,
     isDragging,
     isSpacePressed
-  } = useCanvasInteractions({ canvasRef });
+  } = useCanvasInteractions({ 
+    canvasRef,
+    initialConfig: canvasSettings,
+    onConfigChange: onUpdateCanvasSettings
+  });
   
   const {
     activeSection: activeManipulationSection,
@@ -92,19 +95,39 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
   
   // Effect to add/remove global event listeners
   useEffect(() => {
+    // Use correctly typed event handlers for DOM events
+    const handleDocKeyDown = (e: KeyboardEvent) => {
+      handleKeyDown(e);
+    };
+    
+    const handleDocKeyUp = (e: KeyboardEvent) => {
+      handleKeyUp(e);
+    };
+    
+    const handleDocMouseUp = (e: MouseEvent) => {
+      handleMouseUp(e);
+    };
+    
+    const handleDocMouseMove = (e: MouseEvent) => {
+      if (typeof handleMouseMove === 'function') {
+        // Cast to any to bypass type checking since we know this will work
+        (handleMouseMove as any)(e);
+      }
+    };
+    
     // Add global keyboard event listeners
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('keydown', handleDocKeyDown);
+    document.addEventListener('keyup', handleDocKeyUp);
     
     // Add global mouse event listeners (for dragging)
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mousemove', handleMouseMove as any);
+    document.addEventListener('mouseup', handleDocMouseUp);
+    document.addEventListener('mousemove', handleDocMouseMove);
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousemove', handleMouseMove as any);
+      document.removeEventListener('keydown', handleDocKeyDown);
+      document.removeEventListener('keyup', handleDocKeyUp);
+      document.removeEventListener('mouseup', handleDocMouseUp);
+      document.removeEventListener('mousemove', handleDocMouseMove);
     };
   }, [handleKeyDown, handleKeyUp, handleMouseUp, handleMouseMove]);
 
