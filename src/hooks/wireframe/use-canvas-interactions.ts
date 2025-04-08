@@ -52,7 +52,7 @@ export function useCanvasInteractions({
     });
   }, [onConfigChange]);
   
-  // Mouse event handlers
+  // Mouse event handlers - Fixed to properly type the event parameters
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (isSpacePressed && e.button === 0) {
       setIsDragging(true);
@@ -61,7 +61,7 @@ export function useCanvasInteractions({
     }
   }, [isSpacePressed]);
   
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
     if (isDragging) {
       const deltaX = e.clientX - lastPosition.x;
       const deltaY = e.clientY - lastPosition.y;
@@ -77,7 +77,7 @@ export function useCanvasInteractions({
     }
   }, [isDragging, lastPosition, config.panOffset, updateConfig]);
   
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: MouseEvent | React.MouseEvent) => {
     setIsDragging(false);
   }, []);
   

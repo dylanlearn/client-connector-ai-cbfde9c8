@@ -103,7 +103,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     
     const handleDocMouseMove = (e: MouseEvent) => {
       if (typeof handleMouseMove === 'function') {
-        (handleMouseMove as any)(e);
+        handleMouseMove(e);
       }
     };
     
