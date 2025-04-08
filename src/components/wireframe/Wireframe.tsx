@@ -1,10 +1,18 @@
 
 import React, { useState } from 'react';
-import { WireframeProps as WireframeData } from './types';
+import { WireframeSection } from './types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 
 interface WireframeComponentProps {
-  wireframe: WireframeData;
+  wireframe: {
+    id?: string;
+    title?: string;
+    description?: string;
+    sections: WireframeSection[];
+    lastUpdated?: string;
+    imageUrl?: string;
+    version?: string;
+  };
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';

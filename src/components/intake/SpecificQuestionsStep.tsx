@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -37,21 +36,27 @@ const sampleWireframes = [
         name: "Hero Section", 
         description: "Bold, minimal hero with single CTA", 
         imageUrl: "/wireframes/sections/hero-1.jpg",
-        sectionType: "hero" 
+        sectionType: "hero",
+        componentVariant: "hero-centered",
+        data: {}
       },
       { 
         id: "features-1", 
         name: "Feature Grid", 
         description: "3-column feature highlights with icons", 
         imageUrl: "/wireframes/sections/features-1.jpg",
-        sectionType: "feature-grid" 
+        sectionType: "feature-grid",
+        componentVariant: "feature-grid",
+        data: {}
       },
       { 
         id: "testimonial-1", 
         name: "Testimonials", 
         description: "Customer quotes with avatars", 
         imageUrl: "/wireframes/sections/testimonials-1.jpg",
-        sectionType: "testimonial" 
+        sectionType: "testimonial",
+        componentVariant: "testimonial",
+        data: {}
       }
     ],
     version: "1.0",
@@ -68,14 +73,18 @@ const sampleWireframes = [
         name: "Product Grid", 
         description: "Dynamic product listing with filters", 
         imageUrl: "/wireframes/sections/products-1.jpg",
-        sectionType: "product-grid" 
+        sectionType: "product-grid",
+        componentVariant: "product-grid",
+        data: {}
       },
       { 
         id: "product-detail", 
         name: "Product Detail", 
         description: "Comprehensive product information", 
         imageUrl: "/wireframes/sections/product-detail-1.jpg",
-        sectionType: "product-detail" 
+        sectionType: "product-detail",
+        componentVariant: "product-detail",
+        data: {}
       }
     ],
     version: "1.0",
@@ -92,14 +101,18 @@ const sampleWireframes = [
         name: "Dashboard", 
         description: "User dashboard with key metrics", 
         imageUrl: "/wireframes/sections/dashboard-1.jpg",
-        sectionType: "dashboard" 
+        sectionType: "dashboard",
+        componentVariant: "dashboard",
+        data: {}
       },
       { 
         id: "features", 
         name: "Features Overview", 
         description: "Visual feature breakdown", 
         imageUrl: "/wireframes/sections/features-2.jpg",
-        sectionType: "feature-grid" 
+        sectionType: "feature-grid",
+        componentVariant: "feature-grid",
+        data: {}
       }
     ],
     version: "1.0",

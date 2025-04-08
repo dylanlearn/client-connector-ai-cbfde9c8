@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,21 +21,27 @@ const sampleWireframes = [
         name: "Hero Section", 
         description: "Bold, minimal hero with single CTA", 
         imageUrl: "/wireframes/sections/hero-1.jpg",
-        sectionType: "hero" 
+        sectionType: "hero",
+        componentVariant: "hero-centered",
+        data: {}
       },
       { 
         id: "features-1", 
         name: "Feature Grid", 
         description: "3-column feature highlights with icons", 
         imageUrl: "/wireframes/sections/features-1.jpg",
-        sectionType: "feature-grid" 
+        sectionType: "feature-grid",
+        componentVariant: "features-grid-001",
+        data: {}
       },
       { 
         id: "testimonial-1", 
         name: "Testimonials", 
         description: "Customer quotes with avatars", 
         imageUrl: "/wireframes/sections/testimonials-1.jpg",
-        sectionType: "testimonial" 
+        sectionType: "testimonial",
+        componentVariant: "testimonial-cards-001",
+        data: {}
       }
     ],
     version: "1.0",
@@ -53,21 +58,27 @@ const sampleWireframes = [
         name: "Product Gallery", 
         description: "Large product images with thumbnails", 
         imageUrl: "/wireframes/sections/product-1.jpg",
-        sectionType: "product-gallery" 
+        sectionType: "hero",
+        componentVariant: "hero-product-001",
+        data: {}
       },
       { 
         id: "product-info", 
         name: "Product Details", 
         description: "Pricing, options, and add to cart button", 
         imageUrl: "/wireframes/sections/product-2.jpg",
-        sectionType: "product-info" 
+        sectionType: "feature-grid",
+        componentVariant: "features-product-001",
+        data: {}
       },
       { 
         id: "reviews", 
         name: "Customer Reviews", 
         description: "Star ratings and detailed reviews", 
         imageUrl: "/wireframes/sections/reviews-1.jpg",
-        sectionType: "reviews" 
+        sectionType: "testimonial",
+        componentVariant: "testimonial-reviews-001",
+        data: {}
       }
     ],
     version: "1.2",
@@ -84,21 +95,27 @@ const sampleWireframes = [
         name: "Key Metrics", 
         description: "Important numbers and charts", 
         imageUrl: "/wireframes/sections/metrics-1.jpg",
-        sectionType: "metrics" 
+        sectionType: "hero",
+        componentVariant: "hero-metrics-001",
+        data: {}
       },
       { 
         id: "activity", 
         name: "Recent Activity", 
         description: "Timeline of user actions", 
         imageUrl: "/wireframes/sections/activity-1.jpg",
-        sectionType: "activity" 
+        sectionType: "blog",
+        componentVariant: "blog-timeline-001",
+        data: {}
       },
       { 
         id: "actions", 
         name: "Quick Actions", 
         description: "Common user tasks in card format", 
         imageUrl: "/wireframes/sections/actions-1.jpg",
-        sectionType: "actions" 
+        sectionType: "cta",
+        componentVariant: "cta-cards-001",
+        data: {}
       }
     ],
     version: "2.1",
