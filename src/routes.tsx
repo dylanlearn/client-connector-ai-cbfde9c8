@@ -1,3 +1,4 @@
+
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -21,6 +22,8 @@ import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import Analytics from "./pages/Analytics";
 import WireframeGenerator from "./pages/WireframeGenerator";
 import Clients from "./pages/Clients";
+import { v4 as uuidv4 } from 'uuid';
+import AdvancedWireframeGenerator from './components/wireframe/AdvancedWireframeGenerator';
 
 // Define type augmentation for window object
 interface WindowWithAdminRoutes extends Window {
@@ -57,7 +60,14 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
+        element: (
+          <AdvancedWireframeGenerator 
+            projectId={uuidv4()} 
+            darkMode={false} 
+            onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
+            onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}
+          />
+        ),
       },
       {
         path: '/dashboard',
