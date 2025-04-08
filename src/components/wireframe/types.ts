@@ -23,3 +23,39 @@ export interface WireframeRendererProps {
   onSectionClick?: (sectionId: string) => void;
   activeSection?: string | null;
 }
+
+// Additional props types needed by components
+export interface WireframeProps {
+  wireframeData: {
+    title?: string;
+    description?: string;
+    sections: WireframeSection[];
+  };
+  darkMode?: boolean;
+  viewMode?: 'preview' | 'flowchart';
+}
+
+export interface WireframeVisualizerProps {
+  wireframeData: {
+    title?: string;
+    description?: string;
+    sections: WireframeSection[];
+  };
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+}
+
+export interface SectionComponentProps {
+  section: WireframeSection;
+  darkMode?: boolean;
+  viewMode?: 'preview' | 'flowchart' | 'edit';
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+}
+
+export interface VariantComponentProps {
+  section: WireframeSection;
+  darkMode?: boolean;
+  viewMode?: 'preview' | 'flowchart' | 'edit';
+  variant?: string;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+}

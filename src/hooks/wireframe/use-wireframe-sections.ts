@@ -36,7 +36,7 @@ export function useWireframeSections() {
       description: componentDef.description || '',
       layoutType: 'default',
       // Initialize copySuggestions as an empty array to ensure proper typing
-      copySuggestions: [],
+      copySuggestions: [] as any[],
       ...newSectionData
     };
     
@@ -59,8 +59,8 @@ export function useWireframeSections() {
       normalizedUpdates.copySuggestions = Array.isArray(updates.copySuggestions)
         ? updates.copySuggestions
         : updates.copySuggestions
-          ? [updates.copySuggestions]
-          : [];
+          ? [updates.copySuggestions as any]
+          : [] as any[];
     }
     
     // Apply the normalized updates

@@ -1,193 +1,175 @@
 
 import { ComponentDefinition } from './component-registry';
 
+// Default set of components to register
 export const defaultComponents: ComponentDefinition[] = [
-  // Hero section component definition
   {
+    id: 'hero-section',
     type: 'hero',
     name: 'Hero Section',
-    description: 'Large banner section typically at the top of a page',
-    category: 'content',
-    icon: 'layout',
-    baseStyles: {
-      padding: '8',
-      layout: 'stack',
-      gap: '4'
-    },
-    responsiveConfig: {
-      desktop: {
-        padding: '8',
-        textSize: 'xl',
-        layout: 'row'
-      },
-      tablet: {
-        padding: '6',
-        textSize: 'lg',
-        layout: 'stack'
-      },
-      mobile: {
-        padding: '4',
-        textSize: 'base',
-        layout: 'stack'
-      }
-    },
+    description: 'Main hero section with title, subtitle and CTA',
+    category: 'layout',
+    tags: ['header', 'intro', 'banner'],
     variants: [
       {
         id: 'centered',
         name: 'Centered Hero',
-        description: 'Hero with centered content',
-        baseStyles: {
+        description: 'Centered text with button below',
+        defaultContent: {
+          title: 'Welcome to our platform',
+          subtitle: 'The best solution for your needs',
           alignment: 'center',
-          layout: 'stack'
+          ctaText: 'Get Started',
+          backgroundType: 'color'
         }
       },
       {
         id: 'split',
         name: 'Split Hero',
-        description: 'Hero with text on one side and image on other',
-        baseStyles: {
-          layout: 'row',
-          gap: '8'
-        },
-        responsiveConfig: {
-          mobile: {
-            layout: 'stack'
-          }
+        description: 'Text on left, image on right',
+        defaultContent: {
+          title: 'Transform your workflow',
+          subtitle: 'Powerful tools for modern teams',
+          alignment: 'left',
+          ctaText: 'Learn More',
+          backgroundType: 'image',
+          imagePosition: 'right'
         }
       }
     ],
-    fields: [
-      {
-        id: 'headline',
-        name: 'Headline',
-        type: 'text',
-        defaultValue: 'Main Headline'
-      },
-      {
-        id: 'subheading',
-        name: 'Subheading',
-        type: 'textarea',
-        defaultValue: 'Supporting subheading text goes here'
-      },
-      {
-        id: 'cta',
-        name: 'Call to Action',
-        type: 'text',
-        defaultValue: 'Get Started'
-      },
-      {
-        id: 'image',
-        name: 'Hero Image',
-        type: 'image'
-      }
-    ],
-    defaultData: {
-      name: 'Hero Section',
-      components: [
-        { id: 'headline', content: 'Main Headline' },
-        { id: 'subheading', content: 'Supporting subheading text' },
-        { id: 'cta', content: 'Get Started' }
-      ]
+    defaultProps: {
+      layout: 'centered',
+      height: 'medium'
     }
   },
-  
-  // Features grid component definition
   {
+    id: 'features-section',
     type: 'features',
-    name: 'Features Grid',
-    description: 'Grid of features or benefits',
+    name: 'Features Section',
+    description: 'Display product or service features',
     category: 'content',
-    icon: 'grid',
-    baseStyles: {
-      padding: '8',
-      layout: 'grid',
-      columns: 3,
-      gap: '6'
-    },
-    responsiveConfig: {
-      tablet: {
-        columns: 2
+    tags: ['features', 'benefits', 'grid'],
+    variants: [
+      {
+        id: 'grid',
+        name: 'Feature Grid',
+        description: '3x3 grid of features with icons',
+        defaultContent: {
+          title: 'Our Features',
+          subtitle: 'What makes us different',
+          features: [
+            { 
+              id: 'feature-1', 
+              type: 'feature',
+              content: 'Feature 1 description' 
+            },
+            { 
+              id: 'feature-2', 
+              type: 'feature',
+              content: 'Feature 2 description' 
+            },
+            { 
+              id: 'feature-3', 
+              type: 'feature',
+              content: 'Feature 3 description' 
+            }
+          ]
+        }
       },
-      mobile: {
-        columns: 1
+      {
+        id: 'list',
+        name: 'Feature List',
+        description: 'Vertical list of features with descriptions',
+        defaultContent: {
+          title: 'What We Offer',
+          subtitle: 'Discover our services',
+          features: [
+            { 
+              id: 'feature-1', 
+              type: 'feature',
+              content: 'Feature 1 with detailed explanation' 
+            },
+            { 
+              id: 'feature-2', 
+              type: 'feature',
+              content: 'Feature 2 with detailed explanation' 
+            },
+            { 
+              id: 'feature-3', 
+              type: 'feature',
+              content: 'Feature 3 with detailed explanation' 
+            }
+          ]
+        }
       }
-    },
+    ],
+    defaultProps: {
+      layout: 'grid',
+      columns: 3
+    }
+  },
+  {
+    id: 'testimonials-section',
+    type: 'testimonials',
+    name: 'Testimonials Section',
+    description: 'Display customer testimonials',
+    category: 'social-proof',
+    tags: ['reviews', 'quotes', 'customers'],
     variants: [
       {
         id: 'cards',
-        name: 'Feature Cards',
-        description: 'Features displayed as cards with icons'
-      },
-      {
-        id: 'minimal',
-        name: 'Minimal Features',
-        description: 'Simple list of features'
+        name: 'Testimonial Cards',
+        description: 'Grid of testimonial cards',
+        defaultContent: {
+          title: 'What Our Customers Say',
+          testimonials: [
+            { 
+              id: 'testimonial-1', 
+              type: 'testimonial',
+              content: 'Great product, highly recommend!' 
+            },
+            { 
+              id: 'testimonial-2', 
+              type: 'testimonial',
+              content: 'Changed how we work forever.' 
+            },
+            { 
+              id: 'testimonial-3', 
+              type: 'testimonial',
+              content: 'Best decision we ever made.' 
+            }
+          ]
+        }
       }
     ],
-    fields: [
-      {
-        id: 'sectionTitle',
-        name: 'Section Title',
-        type: 'text',
-        defaultValue: 'Features'
-      },
-      {
-        id: 'features',
-        name: 'Feature Items',
-        type: 'array'
-      }
-    ],
-    defaultData: {
-      name: 'Features Grid',
-      components: [
-        { id: 'feature-1', content: 'Feature 1' },
-        { id: 'feature-2', content: 'Feature 2' },
-        { id: 'feature-3', content: 'Feature 3' }
-      ]
+    defaultProps: {
+      layout: 'grid',
+      columns: 3
     }
   },
-  
-  // Navigation component
   {
-    type: 'navigation',
-    name: 'Navigation Bar',
-    description: 'Top navigation with menu items',
-    category: 'navigation',
-    icon: 'menu',
-    baseStyles: {
-      padding: '4',
-      layout: 'row'
-    },
+    id: 'cta-section',
+    type: 'cta',
+    name: 'Call to Action',
+    description: 'Prompt users to take action',
+    category: 'conversion',
+    tags: ['action', 'signup', 'download'],
     variants: [
       {
-        id: 'centered',
-        name: 'Centered Nav',
-        description: 'Navigation with centered items'
-      },
-      {
-        id: 'right-aligned',
-        name: 'Right-aligned Nav',
-        description: 'Navigation with items aligned to the right'
+        id: 'simple',
+        name: 'Simple CTA',
+        description: 'Centered CTA with title and button',
+        defaultContent: {
+          title: 'Ready to get started?',
+          subtitle: 'Join thousands of satisfied customers',
+          buttonText: 'Sign Up Now',
+          buttonVariant: 'primary'
+        }
       }
     ],
-    fields: [
-      {
-        id: 'logo',
-        name: 'Logo',
-        type: 'image'
-      },
-      {
-        id: 'menuItems',
-        name: 'Menu Items',
-        type: 'array'
-      }
-    ],
-    defaultData: {
-      name: 'Navigation',
-      components: [
-        { id: 'logo', content: 'Logo' },
-        { id: 'menu', content: 'Menu Items' }
-      ]
+    defaultProps: {
+      background: 'accent',
+      alignment: 'center'
     }
   }
 ];
