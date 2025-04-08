@@ -122,6 +122,10 @@ export interface AIWireframe {
   createdAt: string;
   updatedAt: string;
   preview?: string;
+  wireframe_data?: any;
+  data?: any;
+  sections?: any[];
+  project_id?: string;
 }
 
 export interface WireframeData {
@@ -130,6 +134,21 @@ export interface WireframeData {
   sections: WireframeSection[];
   style?: Record<string, any>;
   colorScheme?: Record<string, string>;
+  description?: string;
+  designTokens?: any;
+  mobileLayouts?: any;
+  styleVariants?: any;
+  designReasoning?: string;
+  animations?: any;
+  imageUrl?: string;
+  metadata?: any;
+  pages?: any[];
+  typography?: {
+    headings: string;
+    body: string;
+    fontPairings?: string[];
+    [key: string]: any;
+  };
 }
 
 export interface WireframeGenerationParams {
@@ -143,6 +162,13 @@ export interface WireframeGenerationParams {
   pages?: number;
   complexity?: string;
   baseWireframe?: WireframeResult;
+  industry?: string;
+  colorTheme?: string;
+  pageType?: string;
+  componentTypes?: string[];
+  moodboardSelections?: any[];
+  prompt?: string;
+  enableLayoutIntelligence?: boolean;
 }
 
 export interface WireframeGenerationResult {
@@ -152,6 +178,10 @@ export interface WireframeGenerationResult {
   totalTokens?: number;
   generations?: number;
   timeTaken?: number;
+  error?: string;
+  imageUrl?: string;
+  layoutAnalysis?: any;
+  success?: boolean;
 }
 
 export interface CopySuggestions {
@@ -168,6 +198,9 @@ export interface WireframeVersion {
   changes: string;
   data: WireframeData;
   createdAt: string;
+  change_description?: string;
+  version_number?: number;
+  created_at?: string;
 }
 
 export interface BranchInfo {
@@ -175,6 +208,9 @@ export interface BranchInfo {
   name: string;
   parentBranchId?: string;
   createdAt: string;
+  latestVersion?: string;
+  latest_version_id?: string;
+  versions?: WireframeVersion[];
 }
 
 export interface VersionComparisonResult {
@@ -182,5 +218,21 @@ export interface VersionComparisonResult {
   removed: string[];
   modified: string[];
   unchanged: string[];
+  additions?: string[];
 }
 
+// Helper function to convert AIWireframe to WireframeData
+export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeData {
+  return {
+    id: wireframe.id,
+    title: wireframe.title || '',
+    description: wireframe.description || '',
+    sections: (wireframe.sections || wireframe.wireframe?.sections || []),
+    colorScheme: wireframe.wireframe?.colorScheme || {},
+    style: wireframe.wireframe?.style || {},
+    // Include additional properties that might be needed
+    imageUrl: wireframe.preview || '',
+    designTokens: wireframe.wireframe?.designTokens,
+    designReasoning: wireframe.wireframe?.designReasoning
+  };
+}

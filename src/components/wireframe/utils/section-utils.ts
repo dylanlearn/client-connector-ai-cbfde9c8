@@ -2,59 +2,64 @@
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Get SEO-friendly slug for a section
+ * Utility functions for working with wireframe sections
  */
-export function getSectionSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
+
+/**
+ * Generate a unique ID for a section
+ */
+export function generateSectionId(): string {
+  return `section-${Math.random().toString(36).substring(2, 9)}`;
 }
 
 /**
- * Get a default section name based on type
+ * Deep clone a section to avoid reference issues
  */
-export function getDefaultSectionName(type: string, count?: number): string {
-  const suffix = count ? ` ${count}` : '';
+export function cloneSection(section: WireframeSection): WireframeSection {
+  return JSON.parse(JSON.stringify(section));
+}
+
+/**
+ * Calculate the default dimensions for a section based on its type
+ */
+export function getDefaultSectionDimensions(sectionType: string): { width: number; height: number } {
+  // Default dimensions for different section types
+  const dimensionsByType: Record<string, { width: number; height: number }> = {
+    hero: { width: 800, height: 400 },
+    features: { width: 800, height: 300 },
+    testimonials: { width: 800, height: 250 },
+    footer: { width: 800, height: 150 },
+    cta: { width: 800, height: 200 },
+    // Add more section types as needed
+  };
+
+  // Return specific dimensions if available, or default
+  return dimensionsByType[sectionType.toLowerCase()] || { width: 800, height: 250 };
+}
+
+/**
+ * Check if a section has valid position data
+ */
+export function hasValidPosition(section: WireframeSection): boolean {
+  return (
+    section.position !== undefined &&
+    typeof section.position.x === 'number' &&
+    typeof section.position.y === 'number'
+  );
+}
+
+/**
+ * Get the background color for a section based on its style properties
+ */
+export function getSectionBackgroundColor(section: WireframeSection): string {
+  if (!section.styleProperties) return '#ffffff';
   
-  switch (type) {
-    case 'hero':
-      return `Hero Section${suffix}`;
-    case 'feature-grid':
-      return `Features${suffix}`;
-    case 'testimonials':
-      return `Testimonials${suffix}`;
-    case 'pricing':
-      return `Pricing${suffix}`;
-    case 'faq':
-      return `FAQ${suffix}`;
-    case 'cta':
-      return `Call to Action${suffix}`;
-    case 'navigation':
-      return `Navigation${suffix}`;
-    case 'footer':
-      return `Footer${suffix}`;
-    case 'blog':
-      return `Blog Section${suffix}`;
-    case 'contact':
-      return `Contact${suffix}`;
+  switch (section.styleProperties.backgroundStyle) {
+    case 'dark':
+      return '#333333';
+    case 'accent':
+      return '#f0f9ff';
     default:
-      return `Section${suffix}`;
+      return '#ffffff';
   }
-}
-
-/**
- * Check if a section can be deleted (some sections may be required)
- */
-export function canDeleteSection(section: WireframeSection): boolean {
-  // Don't allow deleting navigation or footer when they're singleton sections
-  if (section.sectionType === 'navigation' && section.data?.isSingleton) {
-    return false;
-  }
-  
-  if (section.sectionType === 'footer' && section.data?.isSingleton) {
-    return false;
-  }
-  
-  return true;
 }
