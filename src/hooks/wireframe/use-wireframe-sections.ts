@@ -35,7 +35,7 @@ export function useWireframeSections() {
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
-      copySuggestions: [], // Empty array to satisfy WireframeSection type
+      copySuggestions: ([] as any[]), // Explicitly cast empty array to any[]
       ...newSectionData
     };
     
@@ -56,8 +56,8 @@ export function useWireframeSections() {
       const convertedUpdates = {
         ...updates,
         copySuggestions: Array.isArray(updates.copySuggestions) 
-          ? updates.copySuggestions 
-          : [updates.copySuggestions] // Convert object to array containing that object
+          ? updates.copySuggestions as any[] 
+          : ([updates.copySuggestions] as any[]) // Cast to any[] to match WireframeSection type
       };
       
       updateSection(sectionId, convertedUpdates);
