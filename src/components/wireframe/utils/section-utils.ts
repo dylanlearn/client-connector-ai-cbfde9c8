@@ -115,6 +115,6 @@ export function getDeviceSpecificStyles(
   return {
     ...baseStyles,
     ...(deviceType === 'tablet' ? section.responsiveConfig.tablet || {} : {}),
-    ...(deviceType === 'mobile' ? section.responsiveConfig.mobile || {})
+    ...(deviceType === 'mobile' ? section.responsiveConfig.mobile || {} : {})
   };
 }
