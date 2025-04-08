@@ -33,7 +33,7 @@ export interface StyleOption {
 export interface ComponentField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'select' | 'color' | 'boolean' | 'image' | 'richtext' | 'array' | 'object';
+  type: 'text' | 'number' | 'select' | 'color' | 'boolean' | 'image' | 'richtext' | 'array' | 'object' | 'textarea';
   default?: any;
   options?: Array<{ label: string; value: string | number | boolean }>;
   description?: string;
@@ -52,6 +52,7 @@ export interface ComponentField {
   when?: string;
   isEqual?: any;
   childFields?: ComponentField[]; // For array/object types
+  id?: string; // Adding id as an optional property
 }
 
 // Style configuration for components

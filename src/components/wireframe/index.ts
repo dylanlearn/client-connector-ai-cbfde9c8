@@ -20,8 +20,6 @@ export { default as ComponentRenderer } from './renderers/ComponentRenderer';
 export { JSONView } from './renderers/JSONView';
 
 // Utilities
-export * from './utils/wireframe-utils';
-export * from './utils/variant-utils';
 export * from './utils/fabric-converters';
 export * from './utils/section-utils';
 
