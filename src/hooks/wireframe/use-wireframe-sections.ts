@@ -35,7 +35,7 @@ export function useWireframeSections() {
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
-      copySuggestions: [] as any[], // Explicitly cast as any[] array type
+      copySuggestions: [], // Empty array to satisfy WireframeSection type
       ...newSectionData
     };
     
@@ -50,14 +50,16 @@ export function useWireframeSections() {
   const handleUpdateSection = useCallback((sectionId: string, updates: Partial<WireframeSection>) => {
     if (!sectionId) return;
     
-    // Convert copySuggestions from possible object to array if needed
-    if (updates.copySuggestions && !Array.isArray(updates.copySuggestions)) {
+    // Handle copySuggestions type conversion if needed
+    if (updates.copySuggestions) {
+      // Ensure copySuggestions is always an array as expected by the store
       const convertedUpdates = {
         ...updates,
-        copySuggestions: Object.keys(updates.copySuggestions).length > 0 
-          ? [updates.copySuggestions] as any[] // Convert to array with the object as its only item
-          : [] as any[] // Empty array if the object is empty
+        copySuggestions: Array.isArray(updates.copySuggestions) 
+          ? updates.copySuggestions 
+          : [updates.copySuggestions] // Convert object to array containing that object
       };
+      
       updateSection(sectionId, convertedUpdates);
     } else {
       updateSection(sectionId, updates);
