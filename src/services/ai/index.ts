@@ -5,6 +5,7 @@ export * from './ai-generator-service';
 export * from './ai-summary-service';
 export * from './ai-memory-service';
 export * from './ai-model-selector';
+export * from './ai-design-service';  // Re-add this export which was removed
 
 // Export nested service directories
 export * from './analytics';
