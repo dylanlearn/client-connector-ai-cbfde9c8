@@ -38,6 +38,10 @@ export interface WireframeGenerationParams {
   features?: string;
   colorSchemes?: string;
   layoutOptions?: string;
+  // Add imageUrl to fix the error in use-wireframe-generator.ts
+  imageUrl?: string;
+  // Add success property to fix error in use-wireframe-generator.ts
+  success?: boolean;
 }
 
 export interface WireframeGenerationResult {

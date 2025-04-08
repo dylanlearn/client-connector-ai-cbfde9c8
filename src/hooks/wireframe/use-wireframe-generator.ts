@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { wireframeGenerator } from '@/services/ai/wireframe/api/wireframe-generator';
 import { wireframeMemoryService } from '@/services/ai/wireframe/wireframe-memory-service';
-import { ToastProps } from '@/hooks/use-toast';
+import { Toast } from '@/hooks/use-toast'; // Change import type from ToastProps to Toast
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,
@@ -13,7 +13,7 @@ import {
 export function useWireframeGenerator(
   creativityLevel: number = 7,
   setCurrentWireframe: (wireframe: WireframeGenerationResult | null) => void,
-  toast: (props: ToastProps) => void
+  toast: (props: Toast) => void // Changed from ToastProps to Toast
 ) {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -98,9 +98,9 @@ export function useWireframeGenerator(
         style: baseWireframe.wireframe.style,
         creativityLevel: Math.min(10, creativityLevel + 1), // Increase creativity
         enhancedCreativity: true,
-        // Include any image URLs from the base wireframe
-        imageUrl: baseWireframe.imageUrl || baseWireframe.wireframe.imageUrl,
-        success: true // Set success to true
+        // Remove imageUrl from this object as it's not a valid property in WireframeGenerationParams
+        // and use it properly in the wireframe object if needed
+        imageUrl: baseWireframe.imageUrl || baseWireframe.wireframe.imageUrl
       });
       
       return result;
@@ -140,8 +140,9 @@ export function useWireframeGenerator(
       
       const result = await generateWireframe({
         description: examplePrompt,
-        creativityLevel,
-        success: true // Set success to true
+        creativityLevel
+        // Remove the success property as it's not a valid property for WireframeGenerationParams
+        // Success should be in the result, not in the params
       });
       
       return result;

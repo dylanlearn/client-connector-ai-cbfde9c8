@@ -1,15 +1,13 @@
-
 import { type ToastProps, type ToastActionElement } from "@/components/ui/toast";
 import React from "react";
 import { toast as sonnerToast } from "sonner";
 
-// Define the Toast type
+// Add this export or ensure it exists
 export type Toast = {
-  id: string;
-  title?: React.ReactNode;
-  description?: React.ReactNode;
-  action?: ToastActionElement;
-  variant?: "default" | "destructive";
+  title: string;
+  description?: string;
+  variant?: "default" | "destructive" | "success";
+  action?: React.ReactNode;
   duration?: number;
 };
 
