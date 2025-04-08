@@ -1,138 +1,112 @@
-import { AIWireframe, WireframeSection } from './wireframe-types';
+
+import { supabase } from "@/integrations/supabase/client";
+import { WireframeService } from "./wireframe-service";
+import { WireframeData } from "./wireframe-types";
+import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Interface for design memory data
+ * Design memory structure for projects
  */
 export interface DesignMemory {
   id?: string;
-  project_id: string;
-  blueprint_id?: string;
-  layout_patterns?: Record<string, any>;
-  style_preferences?: Record<string, any>;
-  component_preferences?: Record<string, any>;
-  wireframe_blueprints?: {
-    blueprint_data: any;
-  };
-  created_at?: string;
-  updated_at?: string;
+  projectId: string;
+  layoutPatterns?: any;
+  stylePreferences?: any;
+  componentPreferences?: any;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
- * Service class for advanced wireframe generator functionality
+ * Enhanced wireframe service with advanced capabilities
  */
 export class AdvancedWireframeService {
   /**
-   * Get available style modifiers for wireframes
+   * Save an advanced wireframe to the database
    */
-  static async getStyleModifiers(): Promise<any[]> {
-    // Mock data until backend is implemented
-    return [
-      { id: 'modern', name: 'Modern', description: 'Clean and contemporary style' },
-      { id: 'minimal', name: 'Minimalist', description: 'Simplified and elegant' },
-      { id: 'brutalist', name: 'Brutalist', description: 'Raw and unconventional' },
-      { id: 'glassy', name: 'Glassy', description: 'Transparent with blur effects' },
-      { id: 'corporate', name: 'Corporate', description: 'Professional and structured' }
-    ];
-  }
-
-  /**
-   * Get available component variants for wireframes
-   */
-  static async getComponentVariants(): Promise<any[]> {
-    // Mock data until backend is implemented
-    return [
-      { id: 'hero-centered', component_type: 'Hero', variant_name: 'Centered' },
-      { id: 'hero-split', component_type: 'Hero', variant_name: 'Split' },
-      { id: 'features-grid', component_type: 'Features', variant_name: 'Grid Layout' },
-      { id: 'features-list', component_type: 'Features', variant_name: 'List Layout' },
-      { id: 'nav-horizontal', component_type: 'Navigation', variant_name: 'Horizontal' },
-      { id: 'nav-vertical', component_type: 'Navigation', variant_name: 'Vertical Sidebar' },
-      { id: 'footer-simple', component_type: 'Footer', variant_name: 'Simple' },
-      { id: 'footer-expanded', component_type: 'Footer', variant_name: 'Expanded' }
-    ];
-  }
-
-  /**
-   * Generate a wireframe based on user inputs
-   */
-  static async generateWireframe(prompt: string, styleToken?: string): Promise<AIWireframe> {
-    // This would connect to an AI service in a real implementation
-    console.log('Generating wireframe with prompt:', prompt, 'and style:', styleToken);
-    
-    // Return a mock wireframe
-    return {
-      id: 'generated-wireframe-' + Date.now(),
-      title: 'Generated Wireframe',
-      description: 'Based on prompt: ' + prompt,
-      sections: [
-        {
-          id: 'section-1',
-          sectionType: 'hero',
-          name: 'Hero Section',
-          description: 'This is a hero section based on your prompt'
+  static async saveWireframe(
+    projectId: string,
+    prompt: string,
+    wireframeData: WireframeData,
+    intentData: any,
+    blueprint: any
+  ): Promise<WireframeData | null> {
+    try {
+      console.log("Saving advanced wireframe for project:", projectId);
+      
+      // Use the WireframeService to create/update the wireframe
+      const result = await WireframeService.createWireframe({
+        title: wireframeData.title || "Advanced Wireframe",
+        description: wireframeData.description || prompt || "Generated using advanced wireframe engine",
+        data: {
+          ...wireframeData,
+          projectId: projectId,
+          intent: intentData,
+          blueprint: blueprint,
+          generationType: "advanced"
         },
-        {
-          id: 'section-2',
-          sectionType: 'features',
-          name: 'Features Section',
-          components: [
-            { id: 'feature-1', type: 'feature-item', content: 'Feature 1', description: 'Description 1' },
-            { id: 'feature-2', type: 'feature-item', content: 'Feature 2', description: 'Description 2' },
-            { id: 'feature-3', type: 'feature-item', content: 'Feature 3', description: 'Description 3' }
-          ]
-        }
-      ],
-      // Add style property instead of styleToken to match the interface
-      wireframe_data: {
-        style: styleToken || 'modern',
-      }
-    };
+        sections: wireframeData.sections || []
+      });
+      
+      console.log("Advanced wireframe saved with ID:", result?.id);
+      return result;
+    } catch (error) {
+      console.error("Error saving advanced wireframe:", error);
+      throw new Error(`Failed to save advanced wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
-
-  /**
-   * Save a wireframe to the database
-   */
-  static async saveWireframe(projectId: string, prompt: string): Promise<any> {
-    console.log('Saving wireframe for project:', projectId, 'with prompt:', prompt);
-    
-    // This would save to a database in a real implementation
-    return {
-      id: 'saved-wireframe-' + Date.now(),
-      project_id: projectId,
-      prompt: prompt,
-      created_at: new Date().toISOString()
-    };
-  }
-
+  
   /**
    * Retrieve design memory for a project
    */
-  static async retrieveDesignMemory(projectId?: string): Promise<DesignMemory | null> {
-    console.log('Retrieving design memory for project:', projectId);
-    
-    if (!projectId) {
+  static async retrieveDesignMemory(projectId: string): Promise<DesignMemory | null> {
+    try {
+      console.log("Retrieving design memory for project:", projectId);
+      
+      // Query the database for design memory
+      const { data, error } = await supabase
+        .from('design_memory')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        // If the error is not found, return null without throwing
+        if (error.code === 'PGRST116') {
+          console.log("No design memory found for project:", projectId);
+          return null;
+        }
+        
+        console.error("Error retrieving design memory:", error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.log("No design memory found for project:", projectId);
+        return null;
+      }
+      
+      console.log("Design memory retrieved successfully for project:", projectId);
+      
+      // Map database fields to DesignMemory interface
+      return {
+        id: data.id,
+        projectId: data.project_id,
+        layoutPatterns: data.layout_patterns,
+        stylePreferences: data.style_preferences,
+        componentPreferences: data.component_preferences,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+    } catch (error) {
+      console.error("Error retrieving design memory:", error);
+      // Return null instead of throwing to handle missing tables gracefully
       return null;
     }
-    
-    // Mock implementation
-    return {
-      project_id: projectId,
-      layout_patterns: {
-        preferredLayout: 'grid',
-        spacing: 'comfortable'
-      },
-      style_preferences: {
-        colorScheme: 'light',
-        typography: 'modern'
-      },
-      component_preferences: {
-        headers: 'centered',
-        buttons: 'rounded'
-      },
-      created_at: new Date().toISOString()
-    };
   }
-
+  
   /**
    * Store design memory for a project
    */
@@ -142,18 +116,82 @@ export class AdvancedWireframeService {
     layoutPatterns: any,
     stylePreferences: any,
     componentPreferences: any
-  ): Promise<DesignMemory> {
-    console.log('Storing design memory for project:', projectId);
-    
-    // Mock implementation
-    return {
-      project_id: projectId,
-      blueprint_id: blueprintId,
-      layout_patterns: layoutPatterns,
-      style_preferences: stylePreferences,
-      component_preferences: componentPreferences,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+  ): Promise<string | null> {
+    try {
+      console.log("Storing design memory for project:", projectId);
+      
+      const memoryId = uuidv4();
+      
+      // Insert or update design memory
+      const { data, error } = await supabase
+        .from('design_memory')
+        .upsert({
+          id: memoryId,
+          project_id: projectId,
+          blueprint_id: blueprintId,
+          layout_patterns: layoutPatterns,
+          style_preferences: stylePreferences,
+          component_preferences: componentPreferences,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'project_id'
+        });
+      
+      if (error) {
+        console.error("Error storing design memory:", error);
+        throw error;
+      }
+      
+      console.log("Design memory stored successfully for project:", projectId);
+      return memoryId;
+    } catch (error) {
+      console.error("Error storing design memory:", error);
+      throw new Error(`Failed to store design memory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  /**
+   * Get available style modifiers
+   */
+  static async getStyleModifiers(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('style_modifiers')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error("Error retrieving style modifiers:", error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error("Error retrieving style modifiers:", error);
+      return [];
+    }
+  }
+  
+  /**
+   * Get available component variants
+   */
+  static async getComponentVariants(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('component_variants')
+        .select('*')
+        .order('component_type', 'variant_name');
+      
+      if (error) {
+        console.error("Error retrieving component variants:", error);
+        return [];
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error("Error retrieving component variants:", error);
+      return [];
+    }
   }
 }

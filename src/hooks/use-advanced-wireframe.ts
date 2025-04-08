@@ -17,6 +17,7 @@ export interface UseAdvancedWireframeParams {
     darkMode?: boolean;
     targetIndustry?: string;
     targetAudience?: string;
+    creativityLevel?: number;
     [key: string]: any;
   };
 }
@@ -35,6 +36,7 @@ export function useAdvancedWireframe() {
   const debouncedLoadMemory = useCallback(
     debounce(async (projectId: string) => {
       try {
+        console.log(`Loading design memory for project: ${projectId}`);
         const memory = await AdvancedWireframeService.retrieveDesignMemory(projectId);
         setDesignMemory(memory);
         return memory;
@@ -57,46 +59,69 @@ export function useAdvancedWireframe() {
         description: "Creating a highly structured design from your input...",
       });
       
-      // Call the generation-api with the advanced wireframe action
-      const { data, error } = await supabase.functions.invoke('generation-api', {
+      // Direct call to the generate-advanced-wireframe function
+      console.log("Calling generate-advanced-wireframe with params:", {
+        userInput: params.userInput.substring(0, 50) + "...",
+        projectId: params.projectId,
+        styleToken: params.styleToken,
+        includeDesignMemory: params.includeDesignMemory,
+        enableLayoutIntelligence: params.enableLayoutIntelligence || false
+      });
+      
+      const { data, error } = await supabase.functions.invoke('generate-advanced-wireframe', {
         body: {
-          action: 'generate-advanced-wireframe',
-          ...params,
-          enableLayoutIntelligence: params.enableLayoutIntelligence || false
+          userInput: params.userInput,
+          projectId: params.projectId,
+          styleToken: params.styleToken,
+          includeDesignMemory: params.includeDesignMemory,
+          customParams: params.customParams || {}
         }
       });
       
       if (error) {
+        console.error("Edge function error:", error);
         throw new Error(`Edge function error: ${error.message}`);
       }
       
-      if (!data || !data.wireframe) {
+      if (!data) {
+        console.error("No data returned from API");
+        throw new Error("No data returned from API");
+      }
+      
+      if (!data.success) {
+        console.error("API reported error:", data.error);
+        throw new Error(`API error: ${data.error || "Unknown error"}`);
+      }
+      
+      if (!data.wireframe) {
+        console.error("No wireframe data in response:", data);
         throw new Error("No wireframe data returned from API");
       }
       
       // Process the result
-      const result = data;
+      console.log("Wireframe generated successfully:", data.wireframe.title || "Untitled");
       
       // Ensure the wireframe has the correct type structure
-      if (result.wireframe) {
-        setCurrentWireframe(result.wireframe);
+      if (data.wireframe) {
+        setCurrentWireframe(data.wireframe);
         
         // Generate layout analysis if layout intelligence is enabled
-        if (params.enableLayoutIntelligence && result.wireframe) {
-          analyzeLayoutIntelligence(result.wireframe, params.customParams?.targetIndustry);
+        if (params.enableLayoutIntelligence && data.wireframe) {
+          analyzeLayoutIntelligence(data.wireframe, params.customParams?.targetIndustry);
         }
       }
-      setIntentData(result.intentData);
-      setBlueprint(result.blueprint);
+      setIntentData(data.intentData);
+      setBlueprint(data.blueprint);
       
       toast({
         title: "Wireframe generated",
-        description: `Generated "${result.wireframe?.title || 'New wireframe'}" successfully`,
+        description: `Generated "${data.wireframe?.title || 'New wireframe'}" successfully`,
       });
       
-      return result;
+      return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate wireframe";
+      console.error("Wireframe generation failed:", err);
       setError(err instanceof Error ? err : new Error(errorMessage));
       
       toast({
@@ -165,10 +190,13 @@ export function useAdvancedWireframe() {
         description: "Storing wireframe in your project...",
       });
       
-      // Fixed here - removing extra arguments
+      // Pass all necessary data to the saveWireframe function
       const result = await AdvancedWireframeService.saveWireframe(
         projectId,
-        prompt
+        prompt,
+        currentWireframe,
+        intentData,
+        blueprint
       );
       
       toast({
@@ -179,6 +207,7 @@ export function useAdvancedWireframe() {
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save wireframe";
+      console.error("Error saving wireframe:", err);
       
       toast({
         title: "Save failed",
@@ -226,6 +255,7 @@ export function useAdvancedWireframe() {
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to store design memory";
+      console.error("Error storing design memory:", err);
       
       toast({
         title: "Save failed",
