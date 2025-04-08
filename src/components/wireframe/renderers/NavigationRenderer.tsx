@@ -1,209 +1,149 @@
 
-import React from 'react';
-import { NavigationComponentProps } from '@/types/component-library';
+import React, { useState } from 'react';
 import { navigationVariants } from '@/data/component-library-variants-navigation';
-import { cn } from '@/lib/utils';
-import { Menu, Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { NavigationComponentProps } from '@/types/component-library';
+import { getBackgroundClass, getFlexAlignmentClass } from '../utils/variant-utils';
+import { VariantComponentProps } from '../types';
 
-interface NavigationRendererProps {
-  variant: string;
+interface NavigationRendererProps extends VariantComponentProps {
   data?: Partial<NavigationComponentProps>;
-  className?: string;
-  darkMode?: boolean;
 }
 
-export const NavigationRenderer: React.FC<NavigationRendererProps> = ({
-  variant = 'nav-startup-001',
-  data,
-  className,
+const NavigationRenderer: React.FC<NavigationRendererProps> = ({
+  variant,
+  viewMode = 'preview',
   darkMode = false,
+  data = {}
 }) => {
-  // Find the base variant configuration
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  
+  // Find the base variant from the library
   const baseVariant = navigationVariants.find(v => v.variant === variant) || navigationVariants[0];
   
-  // Merge provided data with base variant
-  const navigationData: NavigationComponentProps = {
-    ...baseVariant,
-    ...data,
-    variant: variant || baseVariant.variant,
-    links: data?.links || baseVariant.links,
-    cta: data?.cta || baseVariant.cta,
-    backgroundStyle: data?.backgroundStyle || baseVariant.backgroundStyle,
-    alignment: data?.alignment || baseVariant.alignment,
-  };
+  // Merge custom data with base variant
+  const {
+    logo,
+    links = baseVariant.links,
+    cta,
+    backgroundStyle = baseVariant.backgroundStyle,
+    alignment = baseVariant.alignment,
+    sticky = baseVariant.sticky,
+    hasSearch = baseVariant.hasSearch,
+    mobileMenuStyle = baseVariant.mobileMenuStyle,
+  } = { ...baseVariant, ...data };
 
-  // Determine background class based on style
-  const getBgClass = () => {
-    switch (navigationData.backgroundStyle) {
-      case 'dark': 
-        return 'bg-gray-900 text-white';
-      case 'light': 
-        return 'bg-white text-gray-800 border-b border-gray-200';
-      case 'glass': 
-        return 'bg-white/70 backdrop-blur-md text-gray-800 border-b border-gray-200/50';
-      case 'transparent': 
-        return 'bg-transparent text-gray-800';
-      case 'gradient':
-        return 'bg-gradient-to-r from-purple-500 to-blue-500 text-white';
-      case 'image':
-        return 'bg-gray-800 bg-opacity-75 text-white';
-      default:
-        return 'bg-white text-gray-800';
-    }
-  };
-  
-  // Determine alignment class for links
-  const getAlignmentClass = () => {
-    switch (navigationData.alignment) {
-      case 'left': return 'justify-start';
-      case 'center': return 'justify-center';
-      case 'right': return 'justify-end';
-      default: return 'justify-between';
-    }
-  };
-
-  // Mobile menu state
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  // Style classes
+  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
+  const flexAlignmentClass = getFlexAlignmentClass(alignment);
   
   return (
-    <div 
-      className={cn(
-        getBgClass(),
-        navigationData.sticky ? 'sticky top-0 z-50' : '',
-        className
-      )}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className={`navigation-component ${backgroundClass} py-4 px-4 sm:px-6 ${sticky ? 'sticky top-0 z-50' : ''}`}>
+      <div className="container mx-auto">
+        <div className={`flex items-center ${flexAlignmentClass}`}>
           {/* Logo */}
           <div className="flex-shrink-0">
-            {navigationData.logo ? (
-              <img 
-                src={navigationData.logo} 
-                alt="Logo" 
-                className="h-8 w-auto"
-              />
+            {logo ? (
+              <img src={logo} alt="Logo" className="h-8 w-auto" />
             ) : (
-              <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="text-xl font-bold">Logo</div>
             )}
           </div>
           
-          {/* Navigation Links - Desktop */}
-          <div className={`hidden md:flex items-center space-x-4 ${getAlignmentClass()}`}>
-            {navigationData.links?.map((link, idx) => (
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex space-x-8 ml-10">
+            {links.map((link, index) => (
               <a 
-                key={idx} 
-                href={link.url}
-                className={`px-3 py-2 rounded text-sm font-medium ${
-                  link.isPrimary 
-                    ? 'text-white bg-primary hover:bg-primary/90' 
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
+                key={index} 
+                href={link.url} 
+                className="text-current opacity-80 hover:opacity-100"
               >
                 {link.label}
               </a>
             ))}
-            
+          </nav>
+          
+          {/* Right Section: Search, CTA */}
+          <div className="flex items-center ml-auto">
             {/* Search */}
-            {navigationData.hasSearch && (
-              <div className="relative">
-                <div className="flex items-center">
-                  <Search className="h-5 w-5 text-gray-400" />
-                  <span className="sr-only">Search</span>
-                </div>
+            {hasSearch && (
+              <div className="mr-4">
+                {searchOpen ? (
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="px-3 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"
+                    />
+                    <button 
+                      onClick={() => setSearchOpen(false)}
+                      className="ml-2"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setSearchOpen(true)}>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                )}
               </div>
             )}
             
             {/* CTA Button */}
-            {navigationData.cta && (
-              <Button
-                asChild
-                variant={
-                  navigationData.backgroundStyle === 'dark' ||
-                  navigationData.backgroundStyle === 'gradient' ||
-                  navigationData.backgroundStyle === 'image'
-                    ? 'outline'
-                    : 'default'
-                }
-                className="ml-4"
-              >
-                <a href={navigationData.cta.url}>{navigationData.cta.label}</a>
-              </Button>
-            )}
-          </div>
-          
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Menu"
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Mobile menu drawer */}
-      {mobileMenuOpen && (
-        <div className={`md:hidden ${navigationData.mobileMenuStyle === 'overlay' ? 'fixed inset-0 z-50 bg-black/50' : 'relative'}`}>
-          <div className={`
-            ${navigationData.mobileMenuStyle === 'drawer' ? 'fixed inset-y-0 left-0 w-64' : 'relative w-full'} 
-            ${getBgClass()} p-4
-          `}>
-            {navigationData.mobileMenuStyle === 'drawer' && (
-              <div className="flex justify-end">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label="Close menu"
+            {cta && (
+              <div className="hidden md:block">
+                <a 
+                  href={cta.url} 
+                  className="px-4 py-2 bg-primary text-white rounded-md"
                 >
-                  <X className="h-5 w-5" />
-                </Button>
+                  {cta.label}
+                </a>
               </div>
             )}
             
-            <div className="space-y-2 pt-2 pb-4">
-              {navigationData.links?.map((link, idx) => (
-                <a
-                  key={idx}
-                  href={link.url}
-                  className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+            {/* Mobile Menu Button */}
+            <div className="md:hidden ml-4">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className={`md:hidden mt-4 py-4 ${mobileMenuStyle === 'overlay' ? 'absolute inset-x-0 top-full bg-white dark:bg-gray-800 shadow-lg' : ''}`}>
+            <nav className="flex flex-col space-y-4">
+              {links.map((link, index) => (
+                <a 
+                  key={index} 
+                  href={link.url} 
+                  className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                 >
                   {link.label}
                 </a>
               ))}
               
-              {/* Search */}
-              {navigationData.hasSearch && (
-                <div className="px-3 py-2">
-                  <div className="flex items-center px-2 py-1 border rounded-md">
-                    <Search className="h-4 w-4 text-gray-400" />
-                    <span className="ml-2 text-sm text-gray-500">Search...</span>
-                  </div>
-                </div>
+              {cta && (
+                <a 
+                  href={cta.url} 
+                  className="block px-4 py-2 bg-primary text-white rounded-md mt-2"
+                >
+                  {cta.label}
+                </a>
               )}
-              
-              {/* CTA Button */}
-              {navigationData.cta && (
-                <div className="px-3 pt-2">
-                  <Button
-                    asChild
-                    className="w-full"
-                  >
-                    <a href={navigationData.cta.url}>{navigationData.cta.label}</a>
-                  </Button>
-                </div>
-              )}
-            </div>
+            </nav>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </header>
   );
 };
 
