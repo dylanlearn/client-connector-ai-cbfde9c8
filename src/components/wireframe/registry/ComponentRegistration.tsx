@@ -1,34 +1,43 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
+import { registerComponent, getAllComponentDefinitions } from './component-registry';
 import { defaultComponents } from './default-components';
-import { registerComponent } from './component-registry';
 
-/**
- * Component that registers all default components
- * This should be mounted near the root of the application
- */
-export function ComponentRegistration() {
+interface ComponentRegistryContextType {
+  isRegistered: boolean;
+  components: any[];
+}
+
+const ComponentRegistryContext = createContext<ComponentRegistryContextType>({
+  isRegistered: false,
+  components: []
+});
+
+export const useComponentRegistry = () => useContext(ComponentRegistryContext);
+
+export const ComponentRegistration: React.FC = () => {
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [components, setComponents] = useState<any[]>([]);
+
   useEffect(() => {
     // Register all default components
     defaultComponents.forEach(component => {
       registerComponent(component);
     });
     
-    console.log('Registered default components:', defaultComponents.length);
+    // Get all registered components
+    const registeredComponents = getAllComponentDefinitions();
+    setComponents(registeredComponents);
+    setIsRegistered(true);
+    
+    console.info(`Registered ${registeredComponents.length} component types`);
   }, []);
-  
-  // This is a utility component that doesn't render anything
-  return null;
-}
 
-/**
- * Hook to ensure components are registered
- */
-export function useComponentRegistry() {
-  useEffect(() => {
-    // Register all default components if not already registered
-    defaultComponents.forEach(component => {
-      registerComponent(component);
-    });
-  }, []);
-}
+  return (
+    <ComponentRegistryContext.Provider value={{ isRegistered, components }}>
+      {/* This component doesn't render anything visible */}
+    </ComponentRegistryContext.Provider>
+  );
+};
+
+export default ComponentRegistration;

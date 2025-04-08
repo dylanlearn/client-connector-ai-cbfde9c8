@@ -1,61 +1,55 @@
 
 /**
- * Utility functions for handling component variants and styles
+ * Utility functions for handling component variants
  */
 
 /**
- * Get background class based on style and dark mode
+ * Get appropriate background class based on style and dark mode
  */
-export function getBackgroundClass(backgroundStyle?: string, darkMode: boolean = false): string {
-  if (darkMode) {
-    // Dark mode styles take precedence
+export const getBackgroundClass = (backgroundStyle?: string, darkMode?: boolean): string => {
+  if (backgroundStyle === 'primary') {
+    return darkMode ? 'bg-primary-900 text-white' : 'bg-primary-50 text-primary-900';
+  }
+  
+  if (backgroundStyle === 'dark') {
     return 'bg-gray-900 text-white';
   }
   
-  switch (backgroundStyle) {
-    case 'dark':
-      return 'bg-gray-900 text-white';
-    case 'light':
-      return 'bg-white text-gray-900';
-    case 'image':
-      return 'bg-gray-900 bg-opacity-60 text-white';
-    case 'gradient':
-      return 'bg-gradient-to-r from-primary/80 to-primary text-white';
-    default:
-      return 'bg-white text-gray-900';
+  if (backgroundStyle === 'light') {
+    return 'bg-gray-50 text-gray-900';
   }
-}
+  
+  return darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900';
+};
 
 /**
- * Get alignment class based on alignment string
+ * Get appropriate alignment class
  */
-export function getAlignmentClass(alignment: string): string {
+export const getAlignmentClass = (alignment: string): string => {
   switch (alignment) {
-    case 'left':
-      return 'text-left';
-    case 'right':
-      return 'text-right';
     case 'center':
       return 'text-center';
+    case 'right':
+      return 'text-right';
+    case 'left':
     default:
       return 'text-left';
   }
-}
+};
 
 /**
- * Generate grid columns class based on count
+ * Get grid column class based on column count
  */
-export function getGridColumns(count: number): string {
-  switch (count) {
-    case 1:
-      return 'grid-cols-1';
+export const getGridColumns = (columns: number): string => {
+  switch (columns) {
     case 2:
       return 'grid-cols-1 md:grid-cols-2';
     case 3:
       return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
     case 4:
       return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+    case 1:
     default:
-      return 'grid-cols-1 md:grid-cols-3';
+      return 'grid-cols-1';
   }
-}
+};
