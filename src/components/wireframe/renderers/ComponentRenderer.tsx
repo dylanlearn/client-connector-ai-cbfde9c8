@@ -18,11 +18,13 @@ interface ComponentRendererProps {
   darkMode?: boolean;
 }
 
-const ComponentRenderer: React.FC<ComponentRendererProps> = ({
+// Use React.memo to prevent unnecessary re-renders
+const ComponentRenderer: React.FC<ComponentRendererProps> = memo(({
   section,
   viewMode = 'preview',
   darkMode = false,
 }) => {
+  // Extract section type once to improve performance
   const { sectionType } = section;
   
   // Render different components based on section type
@@ -72,7 +74,9 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         </div>
       );
   }
-};
+});
+
+ComponentRenderer.displayName = 'ComponentRenderer';
 
 // Use memo to prevent unnecessary re-renders
-export default memo(ComponentRenderer);
+export default ComponentRenderer;

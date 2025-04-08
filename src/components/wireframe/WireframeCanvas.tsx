@@ -1,5 +1,5 @@
 
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import ComponentRenderer from './renderers/ComponentRenderer';
@@ -19,6 +19,36 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, class
     activeSection,
     hiddenSections
   } = useWireframeStore();
+  
+  // Memoize the section rendering to prevent excessive re-renders
+  const renderSection = useCallback((section, index) => {
+    // Skip rendering hidden sections
+    if (hiddenSections.includes(section.id)) return null;
+    
+    return (
+      <div 
+        key={section.id}
+        className={cn(
+          "wireframe-section relative mb-5 transition-all",
+          {
+            "ring-2 ring-primary ring-offset-2": highlightSections || section.id === activeSection,
+          }
+        )}
+        id={`section-${section.id}`}
+      >
+        {highlightSections && (
+          <div className="absolute top-0 left-0 bg-primary text-white text-xs px-2 py-1 rounded-br-md z-10">
+            {section.name}
+          </div>
+        )}
+        <ComponentRenderer 
+          section={section}
+          viewMode="preview" 
+          darkMode={darkMode} 
+        />
+      </div>
+    );
+  }, [hiddenSections, highlightSections, activeSection, darkMode]);
   
   return (
     <div 
@@ -45,32 +75,9 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, class
           }
         )}
       >
-        {wireframe.sections && wireframe.sections.map((section, index) => (
-          <div 
-            key={section.id}
-            className={cn(
-              "wireframe-section relative mb-5 transition-all",
-              {
-                "hidden": hiddenSections.includes(section.id),
-                "ring-2 ring-primary ring-offset-2": highlightSections || section.id === activeSection,
-              }
-            )}
-            id={`section-${section.id}`}
-          >
-            {highlightSections && (
-              <div className="absolute top-0 left-0 bg-primary text-white text-xs px-2 py-1 rounded-br-md z-10">
-                {section.name}
-              </div>
-            )}
-            <ComponentRenderer 
-              section={section}
-              viewMode="preview" 
-              darkMode={darkMode} 
-            />
-          </div>
-        ))}
-        
-        {(!wireframe.sections || wireframe.sections.length === 0) && (
+        {wireframe.sections && wireframe.sections.length > 0 ? (
+          wireframe.sections.map(renderSection)
+        ) : (
           <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-md">
             <p className="text-muted-foreground">
               Add sections to start building your wireframe

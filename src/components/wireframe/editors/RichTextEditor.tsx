@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, FormEvent, ClipboardEvent } from 'react';
+import React, { useState, useRef, useEffect, FormEvent, ClipboardEvent, useCallback, memo } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -7,7 +7,7 @@ interface RichTextEditorProps {
   minHeight?: string;
 }
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
+const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
   value,
   onChange,
   minHeight = "150px"
@@ -16,6 +16,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [isEmpty, setIsEmpty] = useState(!value || value === '');
   const editorRef = useRef<HTMLDivElement>(null);
   const ignoreNextInputRef = useRef(false);
+  const previousValueRef = useRef(value);
+  
+  // Debounce the onChange handler to prevent excessive updates
+  const debouncedOnChange = useCallback((content: string) => {
+    // Only update if the content actually changed
+    if (content !== previousValueRef.current) {
+      previousValueRef.current = content;
+      onChange(content);
+    }
+  }, [onChange]);
   
   // Set initial content and handle content updates from parent
   useEffect(() => {
@@ -25,12 +35,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         // Set the flag to ignore the next input event
         ignoreNextInputRef.current = true;
         editorRef.current.innerHTML = value;
+        previousValueRef.current = value;
       }
     }
   }, [value, isFocused]);
   
   // Handle input changes with debouncing to prevent freezing
-  const handleInput = (e: FormEvent<HTMLDivElement>) => {
+  const handleInput = useCallback((e: FormEvent<HTMLDivElement>) => {
     // Skip if this input event was triggered by our own content update
     if (ignoreNextInputRef.current) {
       ignoreNextInputRef.current = false;
@@ -40,22 +51,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const content = e.currentTarget.innerHTML;
     setIsEmpty(!content || content === '<br>' || content === '');
     
-    // Update the parent component with the new value
-    onChange(content);
-  };
+    // Update with debounced handler
+    debouncedOnChange(content);
+  }, [debouncedOnChange]);
   
   // Handle focus
-  const handleFocus = () => {
+  const handleFocus = useCallback(() => {
     setIsFocused(true);
-  };
+  }, []);
   
   // Handle blur
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     setIsFocused(false);
-  };
+  }, []);
   
   // Handle paste to strip formatting
-  const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
+  const handlePaste = useCallback((e: ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
     
     // Get plain text from clipboard
@@ -67,8 +78,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     // Update value (the execCommand will trigger the input event)
     if (editorRef.current) {
       setIsEmpty(!editorRef.current.textContent);
+      debouncedOnChange(editorRef.current.innerHTML);
     }
-  };
+  }, [debouncedOnChange]);
   
   return (
     <div 
@@ -97,6 +109,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
     </div>
   );
-};
+});
+
+RichTextEditor.displayName = 'RichTextEditor';
 
 export default RichTextEditor;
