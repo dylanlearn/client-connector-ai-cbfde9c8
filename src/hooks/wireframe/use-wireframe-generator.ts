@@ -1,9 +1,8 @@
-
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { wireframeGenerator } from '@/services/ai/wireframe/api/wireframe-generator';
 import { wireframeMemoryService } from '@/services/ai/wireframe/wireframe-memory-service';
-import { Toast } from '@/hooks/use-toast'; // Change import type from ToastProps to Toast
+import { Toast } from '@/hooks/use-toast';
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,
@@ -13,7 +12,7 @@ import {
 export function useWireframeGenerator(
   creativityLevel: number = 7,
   setCurrentWireframe: (wireframe: WireframeGenerationResult | null) => void,
-  toast: (props: Toast) => void // Changed from ToastProps to Toast
+  toast: (props: Toast) => string
 ) {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -92,16 +91,21 @@ export function useWireframeGenerator(
         throw new Error("No base wireframe provided for variation");
       }
       
-      const result = await generateWireframe({
+      // Create a clean params object without the imageUrl property which isn't part of WireframeGenerationParams
+      const params: WireframeGenerationParams = {
         baseWireframe: baseWireframe.wireframe,
         description: `Create a more creative variation of the existing wireframe: ${baseWireframe.wireframe.title || ''}`,
         style: baseWireframe.wireframe.style,
         creativityLevel: Math.min(10, creativityLevel + 1), // Increase creativity
-        enhancedCreativity: true,
-        // Remove imageUrl from this object as it's not a valid property in WireframeGenerationParams
-        // and use it properly in the wireframe object if needed
-        imageUrl: baseWireframe.imageUrl || baseWireframe.wireframe.imageUrl
-      });
+        enhancedCreativity: true
+      };
+      
+      // If we need to keep track of imageUrl, add it to the wireframe object after generation
+      const result = await generateWireframe(params);
+      
+      if (result && baseWireframe.imageUrl) {
+        result.imageUrl = baseWireframe.imageUrl;
+      }
       
       return result;
     } catch (err) {
@@ -138,12 +142,12 @@ export function useWireframeGenerator(
         description: "Creating wireframe from example..."
       });
       
-      const result = await generateWireframe({
+      const params: WireframeGenerationParams = {
         description: examplePrompt,
         creativityLevel
-        // Remove the success property as it's not a valid property for WireframeGenerationParams
-        // Success should be in the result, not in the params
-      });
+      };
+      
+      const result = await generateWireframe(params);
       
       return result;
     } catch (err) {

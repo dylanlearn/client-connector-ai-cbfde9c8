@@ -1,5 +1,5 @@
 
-import { type ToastProps, type ToastActionElement } from "@/components/ui/toast";
+import { type ToastActionElement } from "@/components/ui/toast";
 import React from "react";
 import { toast as sonnerToast } from "sonner";
 
@@ -19,7 +19,7 @@ export interface UseToastReturnType {
     title?: React.ReactNode;
     description?: React.ReactNode;
     action?: ToastActionElement;
-    variant?: "default" | "destructive";
+    variant?: "default" | "destructive" | "success";
     duration?: number;
   }) => string;
   toasts: Toast[];
@@ -47,7 +47,7 @@ export function useToast(): UseToastReturnType {
       title?: React.ReactNode;
       description?: React.ReactNode;
       action?: ToastActionElement;
-      variant?: "default" | "destructive";
+      variant?: "default" | "destructive" | "success";
       duration?: number;
     }) => {
       const id = Math.random().toString(36).substring(2, 9);
