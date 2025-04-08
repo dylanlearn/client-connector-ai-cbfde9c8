@@ -1,28 +1,32 @@
 
 import React from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff, Edit, Trash2, ArrowUp, ArrowDown, GripVertical, Settings } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { 
+  Pencil, 
+  Trash2, 
+  ChevronUp, 
+  ChevronDown, 
+  Eye, 
+  EyeOff, 
+  GripVertical, 
+  Code 
+} from 'lucide-react';
+import { DraggableProvided } from 'react-beautiful-dnd';
 
 interface SectionControlsProps {
   section: WireframeSection;
   sectionIndex: number;
   totalSections: number;
   isVisible: boolean;
-  provided?: any; // For drag-and-drop
+  provided: DraggableProvided;
   onEdit: () => void;
+  onAdvancedEdit: () => void;
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onToggleVisibility: () => void;
-  onAdvancedEdit?: () => void; // New handler for advanced editing
 }
 
 const SectionControls: React.FC<SectionControlsProps> = ({
@@ -32,144 +36,119 @@ const SectionControls: React.FC<SectionControlsProps> = ({
   isVisible,
   provided,
   onEdit,
+  onAdvancedEdit,
   onDelete,
   onMoveUp,
   onMoveDown,
-  onToggleVisibility,
-  onAdvancedEdit
+  onToggleVisibility
 }) => {
+  const isFirst = sectionIndex === 0;
+  const isLast = sectionIndex === totalSections - 1;
+
   return (
-    <div 
-      className={cn(
-        "border rounded-md p-2 bg-background transition-colors",
-        isVisible ? "border-input" : "border-dashed border-gray-300 opacity-70"
-      )}
-      ref={provided?.innerRef}
-      {...(provided?.draggableProps || {})}
+    <div
+      ref={provided.innerRef}
+      {...provided.draggableProps}
+      className="border rounded-md mb-2 bg-card"
     >
-      <div className="flex items-center gap-2">
-        {provided && (
-          <div 
-            {...provided.dragHandleProps} 
-            className="cursor-grab hover:bg-muted p-1 rounded-md transition-colors"
-            aria-label="Drag to reorder section"
-          >
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
-          </div>
-        )}
-        
-        <div className="flex-1">
-          <p className="font-medium text-sm">{section.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{section.sectionType}</p>
+      <div className="flex items-center p-3">
+        <div {...provided.dragHandleProps} className="mr-2">
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
         </div>
         
-        <div className="flex gap-1">
-          <TooltipProvider>
+        <div className="flex-grow">
+          <div className="flex items-center">
+            <span className="font-medium truncate max-w-[150px]">{section.name}</span>
+            <span className="ml-2 text-xs text-muted-foreground">({section.sectionType})</span>
+          </div>
+        </div>
+        
+        <TooltipProvider>
+          <div className="flex space-x-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="sm"
                   variant="ghost"
+                  size="icon"
                   onClick={onToggleVisibility}
-                  className="px-2 h-8"
+                  className="h-8 w-8"
                 >
-                  {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  {isVisible ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                {isVisible ? "Hide section" : "Show section"}
-              </TooltipContent>
+              <TooltipContent>{isVisible ? 'Hide' : 'Show'}</TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-          
-          {!provided && (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={onMoveUp}
-                      disabled={sectionIndex === 0}
-                      className="px-2 h-8"
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Move up</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={onMoveDown}
-                      disabled={sectionIndex === totalSections - 1}
-                      className="px-2 h-8"
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Move down</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </>
-          )}
-          
-          <TooltipProvider>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="sm"
                   variant="ghost"
+                  size="icon"
                   onClick={onEdit}
-                  className="px-2 h-8"
+                  className="h-8 w-8"
                 >
-                  <Edit className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Basic edit</TooltipContent>
+              <TooltipContent>Edit</TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-          
-          {onAdvancedEdit && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onAdvancedEdit}
-                    className="px-2 h-8 border-primary text-primary hover:bg-primary/10"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Advanced edit</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          
-          <TooltipProvider>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="sm"
                   variant="ghost"
+                  size="icon"
+                  onClick={onAdvancedEdit}
+                  className="h-8 w-8"
+                >
+                  <Code className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Advanced Edit</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={onDelete}
-                  className="px-2 h-8 text-destructive hover:text-destructive"
+                  className="h-8 w-8 text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Delete section</TooltipContent>
+              <TooltipContent>Delete</TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-        </div>
+          </div>
+        </TooltipProvider>
+      </div>
+      
+      <div className="border-t grid grid-cols-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="rounded-none border-r"
+          onClick={onMoveUp}
+          disabled={isFirst}
+        >
+          <ChevronUp className="h-3 w-3 mr-1" />
+          Up
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="rounded-none"
+          onClick={onMoveDown}
+          disabled={isLast}
+        >
+          <ChevronDown className="h-3 w-3 mr-1" />
+          Down
+        </Button>
       </div>
     </div>
   );

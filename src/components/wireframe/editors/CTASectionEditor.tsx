@@ -1,12 +1,12 @@
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import React, { useState } from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import RichTextEditor from './RichTextEditor';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface CTASectionEditorProps {
   section: WireframeSection;
@@ -14,179 +14,196 @@ interface CTASectionEditorProps {
 }
 
 const CTASectionEditor: React.FC<CTASectionEditorProps> = ({ section, onUpdate }) => {
+  // Extract section data
   const data = section.data || {};
   const {
-    headline = '',
-    subheadline = '',
-    ctaLabel = 'Get Started',
+    headline = 'Ready to Get Started?',
+    subheadline = 'Join thousands of satisfied customers using our platform',
+    ctaLabel = 'Sign Up Now',
     ctaUrl = '#',
-    secondaryCtaLabel = '',
+    secondaryCtaLabel = 'Learn More',
     secondaryCtaUrl = '#',
     backgroundStyle = 'primary',
     alignment = 'center',
-    testimonial = null
+    testimonial
   } = data;
-
-  const handleDataChange = (key: string, value: any) => {
-    const updatedData = { ...(section.data || {}), [key]: value };
+  
+  // State for active tab
+  const [activeTab, setActiveTab] = useState<string>('content');
+  
+  // Update section data
+  const updateData = (key: string, value: any) => {
+    const updatedData = { ...data, [key]: value };
     onUpdate({ data: updatedData });
   };
-
-  const handleTestimonialChange = (key: string, value: string) => {
+  
+  // Update testimonial data
+  const updateTestimonial = (field: string, value: string) => {
     const currentTestimonial = testimonial || { quote: '', author: '' };
-    const updatedTestimonial = { ...currentTestimonial, [key]: value };
-    handleDataChange('testimonial', updatedTestimonial);
+    
+    updateData('testimonial', {
+      ...currentTestimonial,
+      [field]: value
+    });
   };
 
   return (
-    <Tabs defaultValue="content" className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="content">Content</TabsTrigger>
-        <TabsTrigger value="style">Style & Layout</TabsTrigger>
-        <TabsTrigger value="testimonial">Testimonial</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="content" className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="headline">Headline</Label>
-          <Input 
-            id="headline" 
-            value={headline} 
-            onChange={(e) => handleDataChange('headline', e.target.value)} 
-            placeholder="Enter headline text"
-          />
-        </div>
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="ctas">Call to Actions</TabsTrigger>
+          <TabsTrigger value="style">Style & Layout</TabsTrigger>
+        </TabsList>
         
-        <div className="space-y-2">
-          <Label htmlFor="subheadline">Subheadline</Label>
-          <RichTextEditor
-            value={subheadline}
-            onChange={(value) => handleDataChange('subheadline', value)}
-            placeholder="Enter subheadline text"
-            minHeight="120px"
-          />
-        </div>
-        
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <h3 className="font-medium mb-2">Call to Action Buttons</h3>
+        <TabsContent value="content" className="space-y-4">
+          <div className="grid gap-4">
+            <div>
+              <Label>Headline</Label>
+              <Input
+                value={headline}
+                onChange={(e) => updateData('headline', e.target.value)}
+                placeholder="CTA Headline"
+              />
+            </div>
             
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ctaLabel">Primary Button Text</Label>
-                  <Input
-                    id="ctaLabel"
-                    value={ctaLabel}
-                    onChange={(e) => handleDataChange('ctaLabel', e.target.value)}
-                    placeholder="Get Started"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ctaUrl">Primary Button URL</Label>
-                  <Input
-                    id="ctaUrl"
-                    value={ctaUrl}
-                    onChange={(e) => handleDataChange('ctaUrl', e.target.value)}
-                    placeholder="#"
-                  />
-                </div>
+            <div>
+              <Label>Subheadline</Label>
+              <Textarea
+                value={subheadline}
+                onChange={(e) => updateData('subheadline', e.target.value)}
+                placeholder="Supporting text"
+                rows={2}
+              />
+            </div>
+            
+            <div className="border p-4 rounded-md">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium">Testimonial (Optional)</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => updateData('testimonial', testimonial ? undefined : { quote: '', author: '' })}
+                >
+                  {testimonial ? 'Remove' : 'Add'}
+                </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="secondaryCtaLabel">Secondary Button Text (Optional)</Label>
-                  <Input
-                    id="secondaryCtaLabel"
-                    value={secondaryCtaLabel}
-                    onChange={(e) => handleDataChange('secondaryCtaLabel', e.target.value)}
-                    placeholder="Learn More"
-                  />
+              {testimonial && (
+                <div className="space-y-3">
+                  <div>
+                    <Label>Quote</Label>
+                    <Textarea
+                      value={testimonial.quote}
+                      onChange={(e) => updateTestimonial('quote', e.target.value)}
+                      placeholder="Customer testimonial"
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Author</Label>
+                    <Input
+                      value={testimonial.author}
+                      onChange={(e) => updateTestimonial('author', e.target.value)}
+                      placeholder="Name, Role"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="secondaryCtaUrl">Secondary Button URL</Label>
-                  <Input
-                    id="secondaryCtaUrl"
-                    value={secondaryCtaUrl}
-                    onChange={(e) => handleDataChange('secondaryCtaUrl', e.target.value)}
-                    placeholder="#"
-                  />
-                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="ctas" className="space-y-4">
+          <div className="border p-4 rounded-md">
+            <h3 className="text-sm font-medium mb-3">Primary CTA</h3>
+            <div className="grid gap-3">
+              <div>
+                <Label>Button Text</Label>
+                <Input
+                  value={ctaLabel || ''}
+                  onChange={(e) => updateData('ctaLabel', e.target.value)}
+                  placeholder="Button text"
+                />
+              </div>
+              
+              <div>
+                <Label>URL</Label>
+                <Input
+                  value={ctaUrl || '#'}
+                  onChange={(e) => updateData('ctaUrl', e.target.value)}
+                  placeholder="https://example.com"
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="style" className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="backgroundStyle">Background Style</Label>
-            <Select 
-              value={backgroundStyle} 
-              onValueChange={(value) => handleDataChange('backgroundStyle', value)}
-            >
-              <SelectTrigger id="backgroundStyle">
-                <SelectValue placeholder="Select background style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="primary">Primary Color</SelectItem>
-                <SelectItem value="gradient">Gradient</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="alignment">Content Alignment</Label>
-            <Select 
-              value={alignment} 
-              onValueChange={(value) => handleDataChange('alignment', value)}
-            >
-              <SelectTrigger id="alignment">
-                <SelectValue placeholder="Select alignment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">Left</SelectItem>
-                <SelectItem value="center">Center</SelectItem>
-                <SelectItem value="right">Right</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="testimonial" className="space-y-4">
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <h3 className="font-medium mb-2">Featured Testimonial (Optional)</h3>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="testimonialQuote">Quote</Label>
-                <RichTextEditor
-                  value={testimonial?.quote || ''}
-                  onChange={(value) => handleTestimonialChange('quote', value)}
-                  placeholder="Enter testimonial quote"
-                  minHeight="100px"
+          <div className="border p-4 rounded-md">
+            <h3 className="text-sm font-medium mb-3">Secondary CTA</h3>
+            <div className="grid gap-3">
+              <div>
+                <Label>Button Text</Label>
+                <Input
+                  value={secondaryCtaLabel || ''}
+                  onChange={(e) => updateData('secondaryCtaLabel', e.target.value)}
+                  placeholder="Button text"
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="testimonialAuthor">Author</Label>
+              <div>
+                <Label>URL</Label>
                 <Input
-                  id="testimonialAuthor"
-                  value={testimonial?.author || ''}
-                  onChange={(e) => handleTestimonialChange('author', e.target.value)}
-                  placeholder="John Doe, CEO of Company"
+                  value={secondaryCtaUrl || '#'}
+                  onChange={(e) => updateData('secondaryCtaUrl', e.target.value)}
+                  placeholder="https://example.com"
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="style" className="space-y-4">
+          <div className="grid gap-4">
+            <div>
+              <Label>Background Style</Label>
+              <Select 
+                value={backgroundStyle}
+                onValueChange={(value) => updateData('backgroundStyle', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="primary">Primary</SelectItem>
+                  <SelectItem value="secondary">Secondary</SelectItem>
+                  <SelectItem value="gradient">Gradient</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Alignment</Label>
+              <Select 
+                value={alignment}
+                onValueChange={(value) => updateData('alignment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

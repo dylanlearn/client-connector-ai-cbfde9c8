@@ -1,150 +1,100 @@
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Bold, 
-  Italic, 
-  Underline, 
-  AlignLeft, 
-  AlignCenter, 
-  AlignRight, 
-  ListOrdered, 
-  List, 
-  Link, 
-  Image
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef, useEffect, FormEvent, ClipboardEvent } from 'react';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
   minHeight?: string;
 }
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = "Type your content here...",
-  className,
-  minHeight = "200px"
+  minHeight = "150px"
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [isEmpty, setIsEmpty] = useState(!value || value.trim() === '');
-
+  const [isEmpty, setIsEmpty] = useState(!value || value === '');
+  const editorRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
-    setIsEmpty(!value || value.trim() === '');
-  }, [value]);
-
-  const execCommand = (command: string, arg?: string) => {
-    document.execCommand(command, false, arg);
+    if (editorRef.current) {
+      // Set initial content
+      editorRef.current.innerHTML = value;
+    }
+  }, []);
+  
+  // Handle input changes
+  const handleInput = (e: FormEvent<HTMLDivElement>) => {
+    const content = e.currentTarget.innerHTML;
+    onChange(content);
+    setIsEmpty(!content || content === '<br>' || content === '');
+  };
+  
+  // Handle focus
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+  
+  // Handle blur
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+  
+  // Handle paste to strip formatting
+  const handlePaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
     
-    // Get the updated content from the editable div
-    const editableDiv = document.getElementById('rich-text-editor');
-    if (editableDiv) {
-      onChange(editableDiv.innerHTML);
+    // Get plain text from clipboard
+    const text = e.clipboardData.getData('text/plain');
+    
+    // Insert at cursor position
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      
+      const textNode = document.createTextNode(text);
+      range.insertNode(textNode);
+      
+      // Move cursor to end
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    
+    // Update value
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+      setIsEmpty(!editorRef.current.textContent);
     }
   };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
-  };
-
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const content = (e.target as HTMLDivElement).innerHTML;
-    onChange(content);
-    setIsEmpty(content.trim() === '' || content === '<br>');
-  };
-
+  
   return (
-    <div className={cn("rich-text-editor border rounded-md", className, {
-      "ring-2 ring-ring ring-offset-2": isFocused
-    })}>
-      <div className="toolbar bg-muted p-2 rounded-t-md flex flex-wrap gap-1 items-center">
-        <Toggle size="sm" aria-label="Bold" onPressedChange={() => execCommand('bold')}>
-          <Bold className="h-4 w-4" />
-        </Toggle>
-        <Toggle size="sm" aria-label="Italic" onPressedChange={() => execCommand('italic')}>
-          <Italic className="h-4 w-4" />
-        </Toggle>
-        <Toggle size="sm" aria-label="Underline" onPressedChange={() => execCommand('underline')}>
-          <Underline className="h-4 w-4" />
-        </Toggle>
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        <Toggle size="sm" aria-label="Align left" onPressedChange={() => execCommand('justifyLeft')}>
-          <AlignLeft className="h-4 w-4" />
-        </Toggle>
-        <Toggle size="sm" aria-label="Align center" onPressedChange={() => execCommand('justifyCenter')}>
-          <AlignCenter className="h-4 w-4" />
-        </Toggle>
-        <Toggle size="sm" aria-label="Align right" onPressedChange={() => execCommand('justifyRight')}>
-          <AlignRight className="h-4 w-4" />
-        </Toggle>
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        <Toggle size="sm" aria-label="Ordered list" onPressedChange={() => execCommand('insertOrderedList')}>
-          <ListOrdered className="h-4 w-4" />
-        </Toggle>
-        <Toggle size="sm" aria-label="Bullet list" onPressedChange={() => execCommand('insertUnorderedList')}>
-          <List className="h-4 w-4" />
-        </Toggle>
-
-        <Separator orientation="vertical" className="h-6 mx-1" />
-        
-        <Button 
-          size="sm" 
-          variant="ghost" 
-          onClick={() => {
-            const url = prompt('Enter link URL');
-            if (url) execCommand('createLink', url);
-          }}
-          className="h-8 w-8 p-0"
-          title="Insert link"
-        >
-          <Link className="h-4 w-4" />
-        </Button>
-        <Button 
-          size="sm" 
-          variant="ghost" 
-          onClick={() => {
-            const url = prompt('Enter image URL');
-            if (url) execCommand('insertImage', url);
-          }}
-          className="h-8 w-8 p-0"
-          title="Insert image"
-        >
-          <Image className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      <div className="relative">
-        <div
-          id="rich-text-editor"
-          contentEditable
-          dangerouslySetInnerHTML={{ __html: value }}
-          onInput={handleInput}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onPaste={handlePaste}
-          className={cn(
-            "p-3 outline-none overflow-auto",
-            isFocused ? "bg-background" : "bg-background"
-          )}
-          style={{ minHeight }}
-        />
-        {isEmpty && (
-          <div className="absolute top-0 left-0 p-3 pointer-events-none text-muted-foreground">
-            {placeholder}
+    <div 
+      className="relative border rounded-md shadow-sm transition-all overflow-hidden"
+    >
+      <div
+        className={`editor-container ${isFocused ? 'ring-2 ring-primary/50' : ''}`}
+      >
+        {isEmpty && !isFocused && (
+          <div 
+            className="absolute top-2 left-3 text-muted-foreground pointer-events-none"
+          >
+            Enter content here...
           </div>
         )}
+        <div
+          id={`rich-text-editor-${Math.random().toString(36).substring(2, 9)}`}
+          contentEditable={true}
+          dangerouslySetInnerHTML={{ __html: value }}
+          onInput={handleInput}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onPaste={handlePaste}
+          className="p-3 outline-none min-h-[150px] w-full"
+          style={{ minHeight }}
+        />
       </div>
     </div>
   );

@@ -1,14 +1,14 @@
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import RichTextEditor from './RichTextEditor';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ImageIcon, Link } from 'lucide-react';
 
 interface HeroSectionEditorProps {
   section: WireframeSection;
@@ -16,10 +16,11 @@ interface HeroSectionEditorProps {
 }
 
 const HeroSectionEditor: React.FC<HeroSectionEditorProps> = ({ section, onUpdate }) => {
+  // Extract section data
   const data = section.data || {};
   const {
-    headline = '',
-    subheadline = '',
+    headline = 'Your Headline Here',
+    subheadline = 'A brief supporting message to explain your value proposition',
     cta = { label: 'Get Started', url: '#' },
     ctaSecondary = { label: 'Learn More', url: '#' },
     backgroundStyle = 'light',
@@ -27,179 +28,183 @@ const HeroSectionEditor: React.FC<HeroSectionEditorProps> = ({ section, onUpdate
     image = '',
     mediaType = 'image'
   } = data;
-
-  const handleDataChange = (key: string, value: any) => {
-    const updatedData = { ...(section.data || {}), [key]: value };
+  
+  // State for active tab
+  const [activeTab, setActiveTab] = useState<string>('content');
+  
+  // Update section data
+  const updateData = (key: string, value: any) => {
+    const updatedData = { ...data, [key]: value };
     onUpdate({ data: updatedData });
   };
-
-  const handleCtaChange = (key: string, value: string) => {
-    const updatedCta = { ...cta, [key]: value };
-    handleDataChange('cta', updatedCta);
-  };
-
-  const handleCtaSecondaryChange = (key: string, value: string) => {
-    const updatedCtaSecondary = { ...ctaSecondary, [key]: value };
-    handleDataChange('ctaSecondary', updatedCtaSecondary);
+  
+  // Update CTA data
+  const updateCTA = (ctaType: 'primary' | 'secondary', field: string, value: string) => {
+    const ctaKey = ctaType === 'primary' ? 'cta' : 'ctaSecondary';
+    const currentCTA = ctaType === 'primary' ? cta : ctaSecondary;
+    
+    updateData(ctaKey, {
+      ...currentCTA,
+      [field]: value
+    });
   };
 
   return (
-    <Tabs defaultValue="content" className="w-full">
-      <TabsList className="mb-4">
-        <TabsTrigger value="content">Content</TabsTrigger>
-        <TabsTrigger value="style">Style & Layout</TabsTrigger>
-        <TabsTrigger value="media">Media</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="content" className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="headline">Headline</Label>
-          <Input 
-            id="headline" 
-            value={headline} 
-            onChange={(e) => handleDataChange('headline', e.target.value)} 
-            placeholder="Enter headline text"
-          />
-        </div>
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="ctas">Call to Actions</TabsTrigger>
+          <TabsTrigger value="style">Style & Media</TabsTrigger>
+        </TabsList>
         
-        <div className="space-y-2">
-          <Label htmlFor="subheadline">Subheadline</Label>
-          <RichTextEditor
-            value={subheadline}
-            onChange={(value) => handleDataChange('subheadline', value)}
-            placeholder="Enter subheadline text"
-            minHeight="120px"
-          />
-        </div>
-        
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <h3 className="font-medium mb-2">Call to Action Buttons</h3>
+        <TabsContent value="content" className="space-y-4">
+          <div className="grid gap-4">
+            <div>
+              <Label>Headline</Label>
+              <Input
+                value={headline}
+                onChange={(e) => updateData('headline', e.target.value)}
+                placeholder="Main headline"
+              />
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ctaLabel">Primary Button Text</Label>
+            <div>
+              <Label>Subheadline</Label>
+              <Textarea
+                value={subheadline}
+                onChange={(e) => updateData('subheadline', e.target.value)}
+                placeholder="Supporting text"
+                rows={3}
+              />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="ctas" className="space-y-4">
+          <div className="border p-3 rounded-md">
+            <h3 className="text-sm font-medium mb-3">Primary CTA</h3>
+            <div className="grid gap-3">
+              <div>
+                <Label>Button Text</Label>
                 <Input
-                  id="ctaLabel"
-                  value={cta.label}
-                  onChange={(e) => handleCtaChange('label', e.target.value)}
-                  placeholder="Get Started"
+                  value={cta?.label || ''}
+                  onChange={(e) => updateCTA('primary', 'label', e.target.value)}
+                  placeholder="Button text"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="ctaUrl">Primary Button URL</Label>
+              
+              <div>
+                <Label>URL</Label>
                 <Input
-                  id="ctaUrl"
-                  value={cta.url}
-                  onChange={(e) => handleCtaChange('url', e.target.value)}
-                  placeholder="#"
+                  value={cta?.url || '#'}
+                  onChange={(e) => updateCTA('primary', 'url', e.target.value)}
+                  placeholder="https://example.com"
                 />
               </div>
             </div>
-            
-            <Separator />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ctaSecondaryLabel">Secondary Button Text</Label>
-                <Input
-                  id="ctaSecondaryLabel"
-                  value={ctaSecondary.label}
-                  onChange={(e) => handleCtaSecondaryChange('label', e.target.value)}
-                  placeholder="Learn More"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ctaSecondaryUrl">Secondary Button URL</Label>
-                <Input
-                  id="ctaSecondaryUrl"
-                  value={ctaSecondary.url}
-                  onChange={(e) => handleCtaSecondaryChange('url', e.target.value)}
-                  placeholder="#"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="style" className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="backgroundStyle">Background Style</Label>
-            <Select 
-              value={backgroundStyle} 
-              onValueChange={(value) => handleDataChange('backgroundStyle', value)}
-            >
-              <SelectTrigger id="backgroundStyle">
-                <SelectValue placeholder="Select background style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="primary">Primary Color</SelectItem>
-                <SelectItem value="gradient">Gradient</SelectItem>
-                <SelectItem value="image">Image Background</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="alignment">Content Alignment</Label>
-            <Select 
-              value={alignment} 
-              onValueChange={(value) => handleDataChange('alignment', value)}
-            >
-              <SelectTrigger id="alignment">
-                <SelectValue placeholder="Select alignment" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">Left</SelectItem>
-                <SelectItem value="center">Center</SelectItem>
-                <SelectItem value="right">Right</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="border p-3 rounded-md">
+            <h3 className="text-sm font-medium mb-3">Secondary CTA</h3>
+            <div className="grid gap-3">
+              <div>
+                <Label>Button Text</Label>
+                <Input
+                  value={ctaSecondary?.label || ''}
+                  onChange={(e) => updateCTA('secondary', 'label', e.target.value)}
+                  placeholder="Button text"
+                />
+              </div>
+              
+              <div>
+                <Label>URL</Label>
+                <Input
+                  value={ctaSecondary?.url || '#'}
+                  onChange={(e) => updateCTA('secondary', 'url', e.target.value)}
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </TabsContent>
-      
-      <TabsContent value="media" className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="mediaType">Media Type</Label>
-          <Select 
-            value={mediaType} 
-            onValueChange={(value) => handleDataChange('mediaType', value)}
-          >
-            <SelectTrigger id="mediaType">
-              <SelectValue placeholder="Select media type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="image">Image</SelectItem>
-              <SelectItem value="video">Video</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        </TabsContent>
         
-        {mediaType !== 'none' && (
-          <div className="space-y-2">
-            <Label htmlFor="imageUrl">Media URL</Label>
-            <Input
-              id="imageUrl"
-              value={image}
-              onChange={(e) => handleDataChange('image', e.target.value)}
-              placeholder="Enter media URL"
-            />
-            {image && (
-              <div className="mt-2 border rounded-md p-2 bg-muted/30">
-                <p className="text-xs text-muted-foreground mb-1">Preview:</p>
-                <img src={image} alt="Preview" className="max-h-[150px] object-contain mx-auto" />
+        <TabsContent value="style" className="space-y-4">
+          <div className="grid gap-4">
+            <div>
+              <Label>Background Style</Label>
+              <Select 
+                value={backgroundStyle}
+                onValueChange={(value) => updateData('backgroundStyle', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="primary">Primary</SelectItem>
+                  <SelectItem value="secondary">Secondary</SelectItem>
+                  <SelectItem value="gradient">Gradient</SelectItem>
+                  <SelectItem value="image">Image Background</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Alignment</Label>
+              <Select 
+                value={alignment}
+                onValueChange={(value) => updateData('alignment', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="center">Center</SelectItem>
+                  <SelectItem value="right">Right</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Media Type</Label>
+              <Select 
+                value={mediaType}
+                onValueChange={(value) => updateData('mediaType', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Media</SelectItem>
+                  <SelectItem value="image">Image</SelectItem>
+                  <SelectItem value="video">Video</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {mediaType !== 'none' && (
+              <div>
+                <Label>{mediaType === 'image' ? 'Image URL' : 'Video URL'}</Label>
+                <div className="flex">
+                  <Input
+                    value={image}
+                    onChange={(e) => updateData('image', e.target.value)}
+                    placeholder={mediaType === 'image' ? "https://example.com/image.jpg" : "https://youtube.com/embed/xyz"}
+                    className="flex-1"
+                  />
+                  <Button variant="outline" size="icon" className="ml-2">
+                    {mediaType === 'image' ? <ImageIcon className="h-4 w-4" /> : <Link className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
-        )}
-      </TabsContent>
-    </Tabs>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
