@@ -1,5 +1,5 @@
 
-import { ComponentDefinition, ComponentVariant } from './component-types';
+import { ComponentDefinition, ComponentField } from './component-types';
 
 // Default hero component definition
 export const defaultHeroComponent: ComponentDefinition = {

@@ -1,7 +1,8 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// Replace process.env with import.meta.env for Vite
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /**
  * Service class for interacting with the Wireframe API.
@@ -157,6 +158,44 @@ export class WireframeAPIService {
       return response.data;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || 'Failed to update wireframe data');
+    }
+  }
+
+  /**
+   * Gets a wireframe by ID
+   * @param wireframeId The ID of the wireframe to get
+   * @returns A promise that resolves with the wireframe
+   */
+  async getWireframe(wireframeId: string) {
+    try {
+      const response = await this.api.get(`/api/wireframe/${wireframeId}`);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to get wireframe');
+    }
+  }
+
+  /**
+   * Saves a wireframe
+   * @param wireframeId The ID of the wireframe to save
+   * @param prompt The prompt used to generate the wireframe
+   * @param data The wireframe data
+   * @param params Additional parameters
+   * @param source The source of the wireframe
+   * @returns A promise that resolves with the saved wireframe
+   */
+  async saveWireframe(wireframeId: string, prompt: string, data: any, params: any = {}, source: string = 'ai-generated') {
+    try {
+      const response = await this.api.post(`/api/wireframe/save`, {
+        id: wireframeId,
+        prompt,
+        data,
+        params,
+        source
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to save wireframe');
     }
   }
 }
