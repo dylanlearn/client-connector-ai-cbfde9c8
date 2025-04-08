@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import ComponentRenderer from './renderers/ComponentRenderer';
 import { WireframeSectionRendererProps } from './types';
+import ComponentRenderer from './renderers/ComponentRenderer';
 
-const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
-  section,
+const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({ 
+  section, 
   viewMode = 'preview',
   darkMode = false,
   deviceType = 'desktop',
@@ -13,19 +12,17 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   onSectionClick,
   isSelected = false
 }) => {
-  const { id } = section;
-  
+  // Handle section click
   const handleClick = () => {
-    if (onSectionClick && id) {
-      onSectionClick(id);
+    if (onSectionClick && section.id) {
+      onSectionClick(section.id);
     }
   };
-
+  
   return (
     <div 
-      className={`wireframe-section relative ${darkMode ? 'dark' : ''}`}
+      className={`wireframe-section-renderer ${isSelected ? 'selected' : ''}`}
       onClick={handleClick}
-      data-section-index={sectionIndex}
     >
       <ComponentRenderer 
         section={section}
@@ -33,6 +30,7 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
         darkMode={darkMode}
         deviceType={deviceType}
         isSelected={isSelected}
+        onClick={handleClick}
       />
     </div>
   );

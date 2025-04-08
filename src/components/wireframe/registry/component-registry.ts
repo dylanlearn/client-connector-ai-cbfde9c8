@@ -14,6 +14,8 @@ export interface ComponentDefinition {
   variants?: ComponentVariant[];
   defaultProps?: Record<string, any>;
   responsiveOptions?: Record<string, any>;
+  baseStyles?: any;
+  responsiveConfig?: any;
 }
 
 // Define variant interface
@@ -23,6 +25,7 @@ export interface ComponentVariant {
   description?: string;
   previewImageUrl?: string;
   defaultContent?: any;
+  thumbnail?: string;
 }
 
 // Registry to store component definitions

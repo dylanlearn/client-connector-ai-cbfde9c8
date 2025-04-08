@@ -36,13 +36,21 @@ export interface WireframeProps {
 }
 
 export interface WireframeVisualizerProps {
-  wireframeData: {
+  wireframe: {
+    id?: string;
     title?: string;
     description?: string;
-    sections: WireframeSection[];
+    sections: any[];
+    imageUrl?: string;
+    version?: string;
+    lastUpdated?: string;
   };
+  viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (id: string) => void;
 }
 
 export interface SectionComponentProps {
@@ -58,4 +66,5 @@ export interface VariantComponentProps {
   viewMode?: 'preview' | 'flowchart' | 'edit';
   variant?: string;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  data?: any;
 }

@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { WireframeProps, WireframeVisualizerProps } from './types';
+import React from 'react';
+import { WireframeVisualizerProps } from './types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 import { Separator } from '@/components/ui/separator';
 

@@ -1,43 +1,16 @@
 
-import React, { useEffect, useState, createContext, useContext } from 'react';
-import { registerComponent, getAllComponentDefinitions, ComponentDefinition } from './component-registry';
-import { defaultComponents } from './default-components';
+import { useEffect } from 'react';
+import { initializeComponentRegistry } from './index';
 
-interface ComponentRegistryContextType {
-  isRegistered: boolean;
-  components: ComponentDefinition[];
+export function useComponentRegistry() {
+  useEffect(() => {
+    initializeComponentRegistry();
+  }, []);
 }
 
-const ComponentRegistryContext = createContext<ComponentRegistryContextType>({
-  isRegistered: false,
-  components: []
-});
-
-export const useComponentRegistry = () => useContext(ComponentRegistryContext);
-
-export const ComponentRegistration: React.FC = () => {
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [components, setComponents] = useState<ComponentDefinition[]>([]);
-
-  useEffect(() => {
-    // Register all default components
-    defaultComponents.forEach(component => {
-      registerComponent(component);
-    });
-    
-    // Get all registered components
-    const registeredComponents = getAllComponentDefinitions();
-    setComponents(registeredComponents);
-    setIsRegistered(true);
-    
-    console.info(`Registered ${registeredComponents.length} component types`);
-  }, []);
-
-  return (
-    <ComponentRegistryContext.Provider value={{ isRegistered, components }}>
-      {/* This component doesn't render anything visible */}
-    </ComponentRegistryContext.Provider>
-  );
+const ComponentRegistration = () => {
+  useComponentRegistry();
+  return null;
 };
 
-export default ComponentRegistration;
+export { ComponentRegistration };
