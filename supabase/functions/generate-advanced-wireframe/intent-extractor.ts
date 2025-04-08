@@ -1,104 +1,66 @@
 
-// Intent extractor module for the advanced wireframe generator
-import { OpenAI } from "https://deno.land/x/openai@v4.20.1/mod.ts";
+import { callOpenAI } from "./openai-client.ts";
 
-interface IntentData {
-  primaryPurpose: string;
-  targetAudience: string;
-  keyElements: string[];
-  suggestedLayout: string;
-  contentTypes: string[];
-  callToAction: string;
-  visualTone: string;
-  specialRequirements?: string[];
-  techStack?: string[];
-}
+/**
+ * Extract intent data from user input
+ */
+export async function extractIntent(userInput: string, styleToken?: string): Promise<any> {
+  if (!userInput || typeof userInput !== 'string') {
+    throw new Error('Valid user input is required for intent extraction');
+  }
 
-export async function extractIntent(userInput: string, styleToken?: string): Promise<IntentData> {
+  // Construct a prompt for the intent extraction
+  const prompt = `
+Extract the core intent from this wireframe description:
+
+"${userInput}"
+
+Analyze this input and extract:
+- purpose (what kind of website/application is needed)
+- target (target audience or users)
+- visualTone (design style preference, use "${styleToken || 'modern'}" if not specified)
+- content (key content sections/elements that need to be included)
+- specialRequirements (any unique or specific requirements mentioned)
+
+Return a JSON object with these extracted intent elements.
+`;
+
   try {
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    const response = await callOpenAI(prompt, {
+      systemMessage: 'You are an expert product designer who extracts user intent for digital products.',
+      temperature: 0.3, // Lower temperature for more deterministic results
+    });
     
-    if (!openAIApiKey) {
-      throw new Error("OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable in your Supabase project settings.");
+    // Try to parse the JSON response
+    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                      response.match(/\{[\s\S]*\}/);
+                      
+    if (!jsonMatch || !jsonMatch[0]) {
+      console.error("Failed to extract JSON from OpenAI response:", response);
+      throw new Error("Failed to extract intent from AI response");
     }
 
-    const openai = new OpenAI({
-      apiKey: openAIApiKey,
-    });
-
-    // Enhanced system prompt for better intent extraction
-    const systemPrompt = `You are a specialist in UI/UX design and web development requirements analysis.
-Your task is to extract key design intents from the user's description to guide the wireframe generation process.
-Return ONLY a JSON object with no additional text. The JSON should contain these fields:
-- primaryPurpose: The main goal of the page or application described
-- targetAudience: The intended users
-- keyElements: Array of key UI elements that must be included
-- suggestedLayout: A layout pattern recommendation (e.g., Z-pattern, F-pattern, cards, etc.)
-- contentTypes: Array of content types needed (e.g., text, images, videos, forms)
-- callToAction: Main CTA for the page
-- visualTone: Overall visual style (e.g., minimalist, bold, corporate, playful)
-- specialRequirements: Optional array of special requirements or constraints
-- techStack: Optional array of technology requirements if mentioned`;
-
-    // Add style token if provided
-    const userPrompt = styleToken 
-      ? `${userInput}\n\nPreferred visual style: ${styleToken}` 
-      : userInput;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.5,
-    });
-
-    // Get the assistant's message content
-    const assistantMessage = response.choices[0]?.message?.content;
-    
-    if (!assistantMessage) {
-      throw new Error("Failed to get a complete response from OpenAI");
-    }
-
-    console.log("Raw intent data:", assistantMessage);
-
-    // Parse the JSON response
+    let intentData;
     try {
-      const intentData = JSON.parse(assistantMessage) as IntentData;
-      return intentData;
+      intentData = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
     } catch (parseError) {
-      console.error("Failed to parse intent data JSON:", parseError);
-      console.log("Raw content that failed parsing:", assistantMessage);
-      
-      // Provide a simplified fallback
-      return {
-        primaryPurpose: "Website or application page",
-        targetAudience: "General users",
-        keyElements: ["Header", "Content section", "Footer"],
-        suggestedLayout: "Standard layout",
-        contentTypes: ["Text", "Images"],
-        callToAction: "Primary action",
-        visualTone: styleToken || "Modern"
-      };
+      console.error("Error parsing intent JSON:", parseError, "Raw JSON:", jsonMatch[0]);
+      throw new Error("Failed to parse intent data");
     }
+    
+    // Ensure we have the minimal required intent data
+    if (!intentData || !intentData.purpose) {
+      console.error("Invalid intent data structure:", intentData);
+      throw new Error("Invalid intent data structure: missing critical fields");
+    }
+    
+    // Set default values for missing fields
+    intentData.visualTone = intentData.visualTone || styleToken || 'modern';
+    intentData.content = intentData.content || [];
+    
+    return intentData;
   } catch (error) {
-    console.error("Error in extractIntent:", error);
-    
-    // Check for API key related errors
-    if (error.message && error.message.includes("API key")) {
-      throw error; // Rethrow API key errors for proper handling
-    }
-    
-    // Return fallback data for other errors
-    return {
-      primaryPurpose: "Website or application page",
-      targetAudience: "General users",
-      keyElements: ["Header", "Content section", "Footer"],
-      suggestedLayout: "Standard layout",
-      contentTypes: ["Text", "Images"],
-      callToAction: "Primary action",
-      visualTone: styleToken || "Modern"
-    };
+    console.error("Error extracting intent:", error);
+    throw new Error(`Failed to extract intent: ${error.message}`);
   }
 }

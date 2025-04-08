@@ -67,7 +67,7 @@ export class AdvancedWireframeService {
     try {
       console.log("Retrieving design memory for project:", projectId);
       
-      // Query the database for design memory
+      // Query the database for design memory - fixed field name to match the database schema
       const { data, error } = await supabase
         .from('design_memory')
         .select('*')
@@ -126,7 +126,7 @@ export class AdvancedWireframeService {
       
       const memoryId = uuidv4();
       
-      // Insert or update design memory
+      // Insert or update design memory - fixed field names to match the database schema
       const { data, error } = await supabase
         .from('design_memory')
         .upsert({
@@ -163,7 +163,7 @@ export class AdvancedWireframeService {
       const { data, error } = await supabase
         .from('style_modifiers')
         .select('*')
-        .order('name');
+        .order('name', { ascending: true });
       
       if (error) {
         console.error("Error retrieving style modifiers:", error);

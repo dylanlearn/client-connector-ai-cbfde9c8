@@ -1,202 +1,100 @@
 
-// Blueprint generator for the advanced wireframe generator
-import { OpenAI } from "https://deno.land/x/openai@v4.20.1/mod.ts";
+// Import callOpenAI from the OpenAI client
+import { callOpenAI } from "./openai-client.ts";
 
-export async function generateLayoutBlueprint(intentData: any): Promise<any> {
-  try {
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    
-    if (!openAIApiKey) {
-      throw new Error("OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable in your Supabase project settings.");
-    }
-
-    const openai = new OpenAI({
-      apiKey: openAIApiKey,
-    });
-
-    // Create a structured system prompt
-    const systemPrompt = `You are an expert UI architect specialized in converting design intents into practical layout blueprints.
-Based on the provided design intent data, create a JSON wireframe blueprint with the following structure:
-{
-  "layout": {
-    "type": "responsive",
-    "structure": "column/grid/combined/etc",
-    "sections": [
-      {
-        "id": "unique-id",
-        "type": "section-type",
-        "title": "Section Title",
-        "description": "What this section contains",
-        "elements": [
-          {
-            "type": "element-type",
-            "purpose": "What this element does",
-            "content": "Content description",
-            "props": { }
-          }
-        ],
-        "style": { "key properties like spacing, alignment" }
-      }
-    ]
-  },
-  "theme": {
-    "colorScheme": "light/dark/custom",
-    "typography": { "heading": "font-style", "body": "font-style" },
-    "spacing": "compact/comfortable/etc"
-  },
-  "responsive": {
-    "breakpoints": ["mobile", "tablet", "desktop"],
-    "mobileConsiderations": "Special handling for mobile"
-  },
-  "accessibility": {
-    "level": "AA",
-    "considerations": ["contrast", "keyboard navigation", etc]
-  }
+// Define the Intent interface
+interface Intent {
+  purpose: string;
+  target: string;
+  visualTone?: string;
+  content: string[];
+  layout?: string;
+  [key: string]: any;
 }
 
-Return ONLY the JSON with no additional text or explanations.`;
+// Define the Blueprint interface
+export interface Blueprint {
+  title?: string;
+  description?: string;
+  sections?: any[];
+  styleToken?: string;
+  [key: string]: any;
+}
 
-    // Convert intent data to string for the user message
-    const userMessage = JSON.stringify(intentData, null, 2);
+/**
+ * Generate a layout blueprint based on extracted intent data
+ */
+export async function generateLayoutBlueprint(intent: Intent): Promise<Blueprint> {
+  if (!intent || typeof intent !== 'object') {
+    throw new Error('Valid intent data is required for blueprint generation');
+  }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage }
-      ],
-      temperature: 0.3,
+  const { purpose, target, visualTone, content } = intent;
+
+  if (!purpose || !target || !content) {
+    throw new Error('Intent data is missing required fields');
+  }
+
+  // Construct a prompt for the layout blueprint generation
+  const prompt = `
+Generate a detailed wireframe layout blueprint for a ${purpose} website targeting ${target}.
+Visual tone: ${visualTone || 'modern and professional'}
+
+Content to include:
+${Array.isArray(content) ? content.map(c => `- ${c}`).join('\n') : ''}
+
+The blueprint should include:
+1. A title for the wireframe
+2. An overall description
+3. A detailed sections array with the following for each section:
+   - id (unique identifier)
+   - name (descriptive name)
+   - sectionType (e.g., hero, features, testimonials, contact)
+   - description (what this section contains/does)
+   - layout (visual structure description)
+
+Return ONLY a valid JSON object with these fields.
+`;
+
+  try {
+    const response = await callOpenAI(prompt, {
+      systemMessage: 'You are an expert UI architect who creates structured wireframe blueprints.',
+      temperature: 0.7,
     });
-
-    // Get the assistant's message content
-    const assistantMessage = response.choices[0]?.message?.content;
     
-    if (!assistantMessage) {
-      throw new Error("Failed to get a complete blueprint response from OpenAI");
+    // Try to parse the JSON response
+    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                      response.match(/\{[\s\S]*\}/);
+                      
+    if (!jsonMatch || !jsonMatch[0]) {
+      console.error("Failed to extract JSON from OpenAI response:", response);
+      throw new Error("Failed to extract blueprint from AI response");
     }
 
-    console.log("Raw blueprint data:", assistantMessage);
-
-    // Parse the JSON response
+    let blueprint;
     try {
-      const blueprint = JSON.parse(assistantMessage);
-      return blueprint;
+      blueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
     } catch (parseError) {
-      console.error("Failed to parse blueprint JSON:", parseError);
-      console.log("Raw content that failed parsing:", assistantMessage);
-      
-      // Return a basic fallback blueprint
-      return {
-        layout: {
-          type: "responsive",
-          structure: "column",
-          sections: [
-            {
-              id: "header-section",
-              type: "header",
-              title: "Header",
-              description: "Main navigation and branding",
-              elements: [
-                {
-                  type: "logo",
-                  purpose: "branding",
-                  content: "Brand logo"
-                },
-                {
-                  type: "navigation",
-                  purpose: "site navigation",
-                  content: "Main menu items"
-                }
-              ]
-            },
-            {
-              id: "main-content",
-              type: "content",
-              title: "Main Content",
-              description: "Primary content area",
-              elements: [
-                {
-                  type: "heading",
-                  purpose: "title",
-                  content: "Main heading"
-                },
-                {
-                  type: "paragraph",
-                  purpose: "description",
-                  content: "Content description"
-                }
-              ]
-            }
-          ]
-        },
-        theme: {
-          colorScheme: "light",
-          typography: {
-            heading: "sans-serif",
-            body: "sans-serif"
-          }
-        }
-      };
-    }
-  } catch (error) {
-    console.error("Error in generateLayoutBlueprint:", error);
-    
-    // Check for API key related errors
-    if (error.message && error.message.includes("API key")) {
-      throw error; // Rethrow API key errors for proper handling
+      console.error("Error parsing blueprint JSON:", parseError, "Raw JSON:", jsonMatch[0]);
+      throw new Error("Failed to parse blueprint data");
     }
     
-    // Return a basic fallback blueprint for other errors
-    return {
-      layout: {
-        type: "responsive",
-        structure: "column",
-        sections: [
-          {
-            id: "header-section",
-            type: "header",
-            title: "Header",
-            description: "Main navigation and branding",
-            elements: [
-              {
-                type: "logo",
-                purpose: "branding",
-                content: "Brand logo"
-              },
-              {
-                type: "navigation",
-                purpose: "site navigation",
-                content: "Main menu items"
-              }
-            ]
-          },
-          {
-            id: "main-content",
-            type: "content",
-            title: "Main Content",
-            description: "Primary content area",
-            elements: [
-              {
-                type: "heading",
-                purpose: "title",
-                content: "Main heading"
-              },
-              {
-                type: "paragraph",
-                purpose: "description",
-                content: "Content description"
-              }
-            ]
-          }
-        ]
-      },
-      theme: {
-        colorScheme: "light",
-        typography: {
-          heading: "sans-serif",
-          body: "sans-serif"
-        }
-      }
+    if (!blueprint || !blueprint.sections) {
+      console.error("Invalid blueprint data structure:", blueprint);
+      throw new Error("Invalid blueprint data structure");
+    }
+    
+    // Add any missing required fields
+    const enhancedBlueprint = {
+      title: blueprint.title || `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} Website Wireframe`,
+      description: blueprint.description || `A wireframe blueprint for a ${purpose} website targeting ${target}`,
+      styleToken: visualTone || 'modern',
+      sections: blueprint.sections || []
     };
+    
+    return enhancedBlueprint;
+  } catch (error) {
+    console.error("Error generating layout blueprint:", error);
+    throw new Error(`Failed to generate layout blueprint: ${error.message}`);
   }
 }

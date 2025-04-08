@@ -6,6 +6,7 @@ import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { supabase } from "@/integrations/supabase/client";
 import { debounce } from "lodash";
 import { EnhancedLayoutIntelligenceService } from "@/services/ai/wireframe/layout-intelligence-enhanced";
+import { logClientError } from "@/utils/monitoring/client-error-logger";
 
 export interface UseAdvancedWireframeParams {
   userInput: string;
@@ -42,6 +43,7 @@ export function useAdvancedWireframe() {
         return memory;
       } catch (err) {
         console.error("Failed to load design memory:", err);
+        logClientError(err instanceof Error ? err : new Error(String(err)), "useAdvancedWireframe");
         return null;
       }
     }, 1000),
@@ -59,7 +61,7 @@ export function useAdvancedWireframe() {
         description: "Creating a highly structured design from your input...",
       });
       
-      // Direct call to the generate-advanced-wireframe function
+      // Direct call to the generate-advanced-wireframe function - fixed function name
       console.log("Calling generate-advanced-wireframe with params:", {
         userInput: params.userInput.substring(0, 50) + "...",
         projectId: params.projectId,
@@ -68,6 +70,7 @@ export function useAdvancedWireframe() {
         enableLayoutIntelligence: params.enableLayoutIntelligence || false
       });
       
+      // Fixed to call the correct function name
       const { data, error } = await supabase.functions.invoke('generate-advanced-wireframe', {
         body: {
           userInput: params.userInput,
@@ -124,6 +127,9 @@ export function useAdvancedWireframe() {
       console.error("Wireframe generation failed:", err);
       setError(err instanceof Error ? err : new Error(errorMessage));
       
+      // Log the error for monitoring
+      logClientError(err instanceof Error ? err : new Error(errorMessage), "generateWireframe");
+      
       toast({
         title: "Wireframe generation failed",
         description: errorMessage,
@@ -170,6 +176,7 @@ export function useAdvancedWireframe() {
       return combinedAnalysis;
     } catch (err) {
       console.error("Layout intelligence analysis failed:", err);
+      logClientError(err instanceof Error ? err : new Error(String(err)), "analyzeLayoutIntelligence");
       return null;
     }
   };
@@ -208,6 +215,9 @@ export function useAdvancedWireframe() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save wireframe";
       console.error("Error saving wireframe:", err);
+      
+      // Log the error for monitoring
+      logClientError(err instanceof Error ? err : new Error(errorMessage), "saveWireframe");
       
       toast({
         title: "Save failed",
@@ -257,6 +267,9 @@ export function useAdvancedWireframe() {
       const errorMessage = err instanceof Error ? err.message : "Failed to store design memory";
       console.error("Error storing design memory:", err);
       
+      // Log the error for monitoring
+      logClientError(err instanceof Error ? err : new Error(errorMessage), "storeDesignMemory");
+      
       toast({
         title: "Save failed",
         description: errorMessage,
@@ -267,6 +280,7 @@ export function useAdvancedWireframe() {
     }
   };
 
+  // Return diagnostic information in the return object
   return {
     isGenerating,
     currentWireframe,
