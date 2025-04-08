@@ -36,7 +36,7 @@ const WireframeGenerator = () => {
         <TooltipProvider>
           <AdvancedWireframeGenerator 
             projectId={projectId}
-            viewMode="preview"
+            // viewMode property is now defined in the AdvancedWireframeGeneratorProps interface
           />
         </TooltipProvider>
       </div>

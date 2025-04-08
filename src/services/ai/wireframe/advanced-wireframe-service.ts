@@ -83,6 +83,7 @@ export class AdvancedWireframeService {
           ]
         }
       ],
+      // styleToken is a property on AIWireframe
       styleToken: styleToken || 'modern',
     };
   }
