@@ -33,7 +33,7 @@ export class WireframeGeneratorService {
       
       // If there's a baseWireframe, use it as a starting point
       let wireframeData = params.baseWireframe || {
-        id: uuidv4(),
+        id: uuidv4(), // Always ensure we have an ID
         title: params.pageType || 'New Wireframe',
         description: params.description || 'Generated wireframe',
         sections: [],
@@ -50,6 +50,11 @@ export class WireframeGeneratorService {
           fontPairings: ['Inter', 'Roboto']
         }
       };
+      
+      // Ensure ID is set even if it's passed in the params
+      if (!wireframeData.id) {
+        wireframeData.id = uuidv4();
+      }
       
       // TODO: This is where we would call the AI service to generate the wireframe
       // Mock implementation for now
@@ -113,7 +118,7 @@ export class WireframeGeneratorService {
       // Modify clone to create a variation
       const variation = {
         ...clone,
-        id: uuidv4(),
+        id: clone.id || uuidv4(), // Ensure ID is always present
         title: `${clone.title} - Variation ${i + 1}`
       };
       

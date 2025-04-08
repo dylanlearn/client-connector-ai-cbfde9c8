@@ -6,6 +6,7 @@ import type {
   WireframeGenerationResult, 
   WireframeResult
 } from '@/services/ai/wireframe/wireframe-types';
+import { v4 as uuidv4 } from 'uuid';
 
 // This hook provides wireframe generation functionality
 export function useWireframeGenerator(
@@ -44,12 +45,18 @@ export function useWireframeGenerator(
         if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
         return { 
           wireframe: {
+            id: uuidv4(), // Ensure ID is set
             sections: [],
             title: "Error",
             description: "Failed to generate wireframe"
           },
           error: errorMsg 
         };
+      }
+      
+      // Ensure the wireframe has an ID
+      if (!result.wireframe.id) {
+        result.wireframe.id = uuidv4();
       }
 
       // Create the result object
@@ -70,6 +77,7 @@ export function useWireframeGenerator(
       if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
       return { 
         wireframe: {
+          id: uuidv4(), // Ensure ID is set
           sections: [],
           title: "Error",
           description: "An error occurred"
@@ -95,6 +103,7 @@ export function useWireframeGenerator(
         if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
         return { 
           wireframe: {
+            id: uuidv4(), // Ensure ID is set
             sections: [],
             title: "Error",
             description: "No wireframe to generate variation from"
@@ -106,7 +115,12 @@ export function useWireframeGenerator(
       // Create our own implementation since the API service doesn't seem to have this method
       const variationParams: WireframeGenerationParams = {
         description: `Creative variation of "${currentWireframe.wireframe.title || 'Untitled Wireframe'}"`,
-        baseWireframe: currentWireframe.wireframe,
+        baseWireframe: {
+          ...currentWireframe.wireframe,
+          // Ensure the id and title fields are properly set for WireframeData
+          id: currentWireframe.wireframe.id || uuidv4(),
+          title: currentWireframe.wireframe.title || 'Untitled Wireframe'
+        },
         creativityLevel: creativityLevel,
         enhancedCreativity: true
       };
@@ -119,6 +133,7 @@ export function useWireframeGenerator(
       if (toast) toast({ title: "Error", description: errorMsg, variant: "destructive" });
       return { 
         wireframe: {
+          id: uuidv4(), // Ensure ID is set
           sections: [],
           title: "Error",
           description: "An error generating variation"

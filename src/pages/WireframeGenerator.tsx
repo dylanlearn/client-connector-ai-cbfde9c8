@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { v4 as uuidv4 } from 'uuid';
 
 const WireframeGenerator = () => {
   const [prompt, setPrompt] = useState<string>("");
@@ -136,7 +137,7 @@ Keep the layout grid-based and modular, and include notes for spacing, padding, 
   };
 
   const adaptWireframeForVisualizer = (data: any) => ({
-    id: data.id || "wireframe-preview",
+    id: data.id || uuidv4(),
     title: data.title || "Wireframe Preview",
     description: data.description || "Generated wireframe",
     imageUrl: data.imageUrl || "/wireframes/default.jpg",

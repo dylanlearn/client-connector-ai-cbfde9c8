@@ -1,3 +1,4 @@
+
 // Define all wireframe-related types and interfaces in one place for consistency
 
 export interface WireframeComponent {
@@ -49,6 +50,7 @@ export interface CopySuggestions {
 }
 
 export interface WireframeResult {
+  id: string; // Changed from optional to required
   title?: string;
   description?: string;
   sections: WireframeSection[];
@@ -69,7 +71,6 @@ export interface WireframeResult {
   style?: string;
   visualReferences?: string[];
   layoutType?: string;
-  id?: string;
   imageUrl?: string;
   [key: string]: any;
 }
