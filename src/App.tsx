@@ -1,51 +1,31 @@
 
-import React from 'react'
-import './App.css'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card } from '@/components/ui/card'
-import EnhancedWireframeStudio from './components/wireframe/EnhancedWireframeStudio'
-import ComponentLibraryInitializer from './components/wireframe/admin/ComponentLibraryInitializer'
-import FAQCTAInitializer from './components/wireframe/admin/FAQCTAInitializer'
-import NavFooterInitializer from './components/wireframe/admin/NavFooterInitializer'
+// If this file doesn't exist, it will be created
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
+import AdvancedWireframeGenerator from './components/wireframe/AdvancedWireframeGenerator';
+
+// Import other components as needed
 
 function App() {
+  // Generate a valid project ID for demonstration purposes
+  const demoProjectId = uuidv4();
+  
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Component Library & Wireframe Studio</h1>
-      
-      <Tabs defaultValue="wireframe" className="mb-8">
-        <TabsList>
-          <TabsTrigger value="wireframe">Wireframe Studio</TabsTrigger>
-          <TabsTrigger value="initialize">Initialize Components</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="wireframe">
-          <Card className="p-6">
-            <EnhancedWireframeStudio projectId="demo-project" />
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="initialize">
-          <Card className="p-6">
-            <h2 className="text-xl font-bold mb-4">Component Library Initialization</h2>
-            <div className="space-y-6">
-              <ComponentLibraryInitializer />
-              
-              <div className="my-4">
-                <h3 className="text-lg font-medium mb-2">FAQ & CTA Components</h3>
-                <FAQCTAInitializer />
-              </div>
-              
-              <div className="my-4">
-                <h3 className="text-lg font-medium mb-2">Navigation & Footer Components</h3>
-                <NavFooterInitializer />
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+    <Router>
+      <Routes>
+        <Route path="/" element={
+          <AdvancedWireframeGenerator 
+            projectId={demoProjectId} 
+            darkMode={false} 
+            onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
+            onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}
+          />
+        } />
+        {/* Add other routes as needed */}
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
