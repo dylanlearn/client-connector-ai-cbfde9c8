@@ -26,7 +26,8 @@ export const adaptSectionsWithMemoization = (() => {
   
   return (sections: WireframeSection[] = []): any[] => {
     // Create a cache key based on section IDs and modification timestamps if available
-    const cacheKey = sections.map(s => `${s.id}-${s.updatedAt || ''}`).join('|');
+    // Use optional chaining to safely access the property if it exists
+    const cacheKey = sections.map(s => `${s.id}-${s.positionOrder || ''}`).join('|');
     
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey);
