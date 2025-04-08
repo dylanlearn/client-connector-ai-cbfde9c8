@@ -10,151 +10,93 @@ const ContactSectionRenderer: React.FC<SectionComponentProps> = ({
 }) => {
   const { componentVariant, data = {} } = section;
   const {
-    headline,
-    subheadline,
+    title,
+    subtitle,
+    contactInfo = {},
     formFields = [],
-    ctaLabel,
-    showMap,
-    contactInfo,
-    socialLinks,
     backgroundStyle,
-    alignment
+    alignment,
+    mapEnabled
   } = data;
   
   // Style classes
   const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'left');
+  const alignmentClass = getAlignmentClass(alignment || 'center');
 
   return (
     <section className={`contact-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
       <div className={`container mx-auto ${alignmentClass}`}>
-        <div className="grid gap-12 md:grid-cols-2">
-          {/* Contact Form */}
-          <div className="contact-form">
-            {(headline || subheadline) && (
-              <div className="mb-8">
-                {headline && (
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-4">{headline}</h2>
-                )}
-                
-                {subheadline && (
-                  <p className="text-lg opacity-80">{subheadline}</p>
-                )}
-              </div>
+        {(title || subtitle) && (
+          <div className="section-header mb-12">
+            {title && (
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{title}</h2>
             )}
             
+            {subtitle && (
+              <p className="text-lg opacity-80 max-w-3xl mx-auto">{subtitle}</p>
+            )}
+          </div>
+        )}
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Contact Form */}
+          <div className="contact-form bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <form className="space-y-4">
-              {formFields.map((field, index) => (
-                <div key={index} className="form-field">
-                  <label className="block mb-1 font-medium text-sm">
+              {formFields.map((field: any, index: number) => (
+                <div key={index} className="form-group">
+                  <label className="block text-sm font-medium mb-1">
                     {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   
                   {field.type === 'textarea' ? (
-                    <textarea 
-                      name={field.name}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                    <textarea
+                      className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
                       rows={4}
-                    />
-                  ) : field.type === 'select' ? (
-                    <select
-                      name={field.name}
-                      required={field.required}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
-                    >
-                      <option value="">Select an option</option>
-                    </select>
-                  ) : (
-                    <input 
-                      type={field.type || 'text'} 
-                      name={field.name}
                       placeholder={field.placeholder}
-                      required={field.required}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800"
+                    />
+                  ) : (
+                    <input
+                      type={field.type || 'text'}
+                      className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                      placeholder={field.placeholder}
                     />
                   )}
                 </div>
               ))}
               
-              <button 
-                type="submit" 
-                className="px-6 py-3 bg-primary text-white rounded-md font-medium"
-              >
-                {ctaLabel || 'Submit'}
+              <button className="bg-primary hover:bg-primary-600 text-white px-4 py-2 rounded-md">
+                Submit
               </button>
             </form>
           </div>
           
-          {/* Contact Info & Map */}
+          {/* Contact Information */}
           <div className="contact-info">
-            {showMap && (
-              <div className="contact-map mb-8 h-64 bg-gray-300 dark:bg-gray-700 rounded-md overflow-hidden">
-                {/* Map would be embedded here - using placeholder */}
-                <div className="h-full w-full flex items-center justify-center">
-                  <p className="text-center text-gray-600 dark:text-gray-400">Map View</p>
-                </div>
+            {contactInfo.address && (
+              <div className="mb-6">
+                <h3 className="font-bold text-lg mb-2">Address</h3>
+                <p>{contactInfo.address}</p>
               </div>
             )}
             
-            {contactInfo && (
-              <div className="contact-details space-y-4">
-                <h3 className="text-xl font-semibold mb-4">Contact Information</h3>
-                
-                {contactInfo.address && (
-                  <div className="flex items-start">
-                    <div className="mr-3">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div>{contactInfo.address}</div>
-                  </div>
-                )}
-                
-                {contactInfo.phone && (
-                  <div className="flex items-center">
-                    <div className="mr-3">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    </div>
-                    <div>{contactInfo.phone}</div>
-                  </div>
-                )}
-                
-                {contactInfo.email && (
-                  <div className="flex items-center">
-                    <div className="mr-3">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>{contactInfo.email}</div>
-                  </div>
-                )}
+            {contactInfo.email && (
+              <div className="mb-6">
+                <h3 className="font-bold text-lg mb-2">Email</h3>
+                <p>{contactInfo.email}</p>
               </div>
             )}
             
-            {socialLinks && socialLinks.length > 0 && (
-              <div className="social-links mt-6">
-                <h4 className="font-medium mb-2">Connect With Us</h4>
-                <div className="flex gap-4">
-                  {socialLinks.map((social, index) => (
-                    <a 
-                      key={index}
-                      href={social.url}
-                      className="text-current opacity-80 hover:opacity-100"
-                      aria-label={social.platform}
-                    >
-                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-                        {social.platform.charAt(0)}
-                      </div>
-                    </a>
-                  ))}
+            {contactInfo.phone && (
+              <div className="mb-6">
+                <h3 className="font-bold text-lg mb-2">Phone</h3>
+                <p>{contactInfo.phone}</p>
+              </div>
+            )}
+            
+            {mapEnabled && (
+              <div className="mt-8">
+                <div className="h-64 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-500">Map Placeholder</span>
                 </div>
               </div>
             )}

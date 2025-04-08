@@ -1,26 +1,34 @@
 
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-
-export type { WireframeSection };
+import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeProps {
-  id?: string;
-  title?: string;
+  id: string;
+  title: string;
   description?: string;
-  sections: WireframeSection[];
+  sections: any[];
+  imageUrl?: string;
   lastUpdated?: string;
-  imageUrl?: string; // Added to match usage in components
-  version?: string; // Added to match sample data
-}
-
-export interface VariantComponentProps {
-  variant: string;
-  viewMode?: 'preview' | 'flowchart';
-  darkMode?: boolean;
 }
 
 export interface SectionComponentProps {
   section: WireframeSection;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
+  sectionIndex?: number;
+  data?: any;
+}
+
+export interface VariantComponentProps {
+  variant: string;
+  viewMode?: 'preview' | 'flowchart';
+  darkMode?: boolean;
+  data?: any;
+}
+
+export interface WireframeRendererProps {
+  wireframeData: WireframeData;
+  viewMode?: 'preview' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
 }
