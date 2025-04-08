@@ -67,7 +67,7 @@ export class AdvancedWireframeService {
     try {
       console.log("Retrieving design memory for project:", projectId);
       
-      // Query the database for design memory - fixed field name to match the database schema
+      // Query the database for design memory - using the correct column name
       const { data, error } = await supabase
         .from('design_memory')
         .select('*')
@@ -80,6 +80,12 @@ export class AdvancedWireframeService {
         // If the error is not found, return null without throwing
         if (error.code === 'PGRST116') {
           console.log("No design memory found for project:", projectId);
+          return null;
+        }
+        
+        // Check if the error is caused by the table not existing yet
+        if (error.code === '42P01') {
+          console.log("Design memory table does not exist yet.");
           return null;
         }
         
@@ -126,7 +132,7 @@ export class AdvancedWireframeService {
       
       const memoryId = uuidv4();
       
-      // Insert or update design memory - fixed field names to match the database schema
+      // Insert or update design memory - using the correct column names
       const { data, error } = await supabase
         .from('design_memory')
         .upsert({
@@ -185,7 +191,6 @@ export class AdvancedWireframeService {
       const { data, error } = await supabase
         .from('component_variants')
         .select('*')
-        // Fix the order parameter to use an object with ascending property
         .order('component_type', { ascending: true })
         .order('variant_name', { ascending: true });
       

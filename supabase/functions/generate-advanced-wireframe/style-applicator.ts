@@ -1,66 +1,65 @@
 
-import { Blueprint } from "./blueprint-generator.ts";
+// Import callOpenAI from the OpenAI client
 import { callOpenAI } from "./openai-client.ts";
 
 /**
- * Applies style modifiers to the wireframe
+ * Apply style modifiers to the wireframe
  */
-export async function applyStyleModifiers(wireframe: Blueprint, styleToken: string = 'modern'): Promise<Blueprint> {
-  if (!wireframe || typeof wireframe !== 'object') {
-    throw new Error('Valid wireframe data is required for style modification');
+export async function applyStyleModifiers(wireframe: any, styleToken: string = 'modern'): Promise<any> {
+  if (!wireframe || !wireframe.sections) {
+    throw new Error('Valid wireframe with sections is required for style modification');
   }
 
+  // Construct a prompt for style application
   const prompt = `
-Apply a unified visual style across this layout: ${styleToken}.
-Style options include: brutalist, soft, glassy, corporate, playful, editorial, tech-forward.
+Apply the "${styleToken}" style to this wireframe:
+${JSON.stringify(wireframe, null, 2)}
 
-Current wireframe: ${JSON.stringify(wireframe)}
+Enhance it with style properties:
+1. Update color schemes based on the "${styleToken}" style
+2. Add appropriate typography recommendations
+3. Enhance styling notes for components
+4. Add shadow and border recommendations
+5. Ensure visual style is consistent with "${styleToken}" aesthetics
 
-Adjust layout spacing, text hierarchy, borders, backgrounds, and shadows to match the style.
-Return the wireframe with style properties added to each section.
-
-For each section, add:
-- styleProperties (color scheme, spacing, typography, shadows, etc.)
-- visualPlaceholders (placeholder guidance for images, icons, etc.)
-- designTokens (specific CSS-like values that reflect the style)
-
-Return a JSON object with the original wireframe structure but with these style enhancements.
+Do not change the structure or components themselves, only enhance style properties.
+Return the complete wireframe with style enhancements applied.
 `;
 
   try {
     const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI stylist. Apply cohesive visual styles to wireframes.'
+      systemMessage: 'You are an expert UI stylist who applies beautiful and consistent visual styles to wireframes.',
+      temperature: 0.6,
     });
     
     // Try to parse the JSON response
     const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
                       response.match(/\{[\s\S]*\}/);
                       
-    if (jsonMatch && jsonMatch[0]) {
-      const styledWireframe = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
-      
-      // Add the style token to the wireframe
-      return {
-        ...styledWireframe,
-        styleToken: styleToken,
-        title: wireframe.title || `${styleToken.charAt(0).toUpperCase() + styleToken.slice(1)} Wireframe`,
-        description: wireframe.description || `A ${styleToken} style wireframe with multiple sections`
-      };
+    if (!jsonMatch || !jsonMatch[0]) {
+      console.error("Failed to extract JSON from OpenAI response:", response);
+      throw new Error("Failed to extract styled wireframe from AI response");
+    }
+
+    let styledWireframe;
+    try {
+      styledWireframe = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+    } catch (parseError) {
+      console.error("Error parsing styled wireframe JSON:", parseError, "Raw JSON:", jsonMatch[0]);
+      throw new Error("Failed to parse styled wireframe data");
     }
     
-    // If we can't parse the response, add minimal style information
-    return {
-      ...wireframe,
-      styleToken: styleToken,
-      title: wireframe.title || `${styleToken.charAt(0).toUpperCase() + styleToken.slice(1)} Wireframe`,
-      description: wireframe.description || `A ${styleToken} style wireframe with multiple sections`
-    };
+    if (!styledWireframe || !styledWireframe.sections) {
+      console.error("Invalid styled wireframe data structure:", styledWireframe);
+      throw new Error("Invalid styled wireframe data structure");
+    }
+    
+    // Ensure styleToken is carried forward
+    styledWireframe.styleToken = styleToken || wireframe.styleToken;
+    
+    return styledWireframe;
   } catch (error) {
-    console.error("Error parsing style modifiers:", error);
-    // Return original with minimal style information
-    return {
-      ...wireframe,
-      styleToken: styleToken
-    };
+    console.error("Error applying style modifiers:", error);
+    throw new Error(`Failed to apply style modifiers: ${error.message}`);
   }
 }

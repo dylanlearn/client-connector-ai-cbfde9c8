@@ -1,48 +1,34 @@
 
-import { Blueprint } from "./blueprint-generator.ts";
+// Import callOpenAI from the OpenAI client
 import { callOpenAI } from "./openai-client.ts";
 
 /**
- * Selects component variants for each section in the blueprint
+ * Select appropriate component variants based on the blueprint
  */
-export async function selectComponentVariants(blueprint: Blueprint): Promise<Blueprint> {
-  if (!blueprint) {
-    console.error("Blueprint is null or undefined");
-    throw new Error("Invalid blueprint: Blueprint data is missing");
+export async function selectComponentVariants(blueprint: any): Promise<any> {
+  if (!blueprint || !blueprint.sections) {
+    throw new Error('Valid blueprint with sections is required for component variant selection');
   }
 
-  if (!blueprint.sections || !Array.isArray(blueprint.sections)) {
-    console.error("Blueprint sections are invalid:", blueprint);
-    throw new Error("Invalid blueprint structure: Sections array is missing or not an array");
-  }
-  
-  if (blueprint.sections.length === 0) {
-    console.warn("Blueprint has no sections, returning original blueprint");
-    return blueprint;
-  }
-  
+  // Construct a prompt for component selection
   const prompt = `
-For each section in this layout blueprint, select the most appropriate component variant. Include variant type, layout notes, and tone guidance.
+Given this wireframe blueprint:
+${JSON.stringify(blueprint, null, 2)}
 
-Blueprint sections: ${JSON.stringify(blueprint.sections)}
+Enhance it with appropriate component variants by:
+1. Selecting an appropriate variant for each section
+2. Adding detailed design and layout notes
+3. Specifying responsive behaviors
+4. Adding appropriate style properties
+5. Including visual placeholders descriptions
 
-Example component types: Navbar, Hero, Sidebar, Feature Grid, Testimonials, Pricing Cards, Footer.
-Example variants: Transparent, Collapsible, Light/Dark, Overlay, Sticky, Split Grid.
-
-For each section, return:
-- sectionType (original type)
-- componentVariant (selected variant)
-- layoutNotes (specific layout guidance)
-- components (array of content components needed)
-- responsiveBehavior (how it should adapt)
-
-Return a JSON object with an updated "sections" array containing these enhanced sections.
+Return the enhanced wireframe with these additions.
 `;
 
   try {
-    console.log("Calling OpenAI for component variant selection");
     const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI component designer. Select appropriate component variants for wireframe sections.'
+      systemMessage: 'You are an expert UI designer who selects the best component variants for wireframes.',
+      temperature: 0.7,
     });
     
     // Try to parse the JSON response
@@ -54,30 +40,23 @@ Return a JSON object with an updated "sections" array containing these enhanced 
       throw new Error("Failed to extract component variants from AI response");
     }
 
-    let variantData;
+    let enhancedWireframe;
     try {
-      variantData = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      enhancedWireframe = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
     } catch (parseError) {
       console.error("Error parsing component variants JSON:", parseError, "Raw JSON:", jsonMatch[0]);
       throw new Error("Failed to parse component variants data");
     }
     
-    if (!variantData || !variantData.sections) {
-      console.error("Invalid component variants data structure:", variantData);
-      throw new Error("Invalid component variants data structure");
+    if (!enhancedWireframe || !enhancedWireframe.sections) {
+      console.error("Invalid enhanced wireframe data structure:", enhancedWireframe);
+      throw new Error("Invalid enhanced wireframe data structure");
     }
     
-    console.log(`Successfully selected variants for ${variantData.sections.length} sections`);
-    
-    // Merge the component variants back into the original blueprint
-    return {
-      ...blueprint,
-      sections: variantData.sections || blueprint.sections
-    };
+    console.log("Successfully selected variants for", enhancedWireframe.sections.length, "sections");
+    return enhancedWireframe;
   } catch (error) {
     console.error("Error selecting component variants:", error);
-    // Return original blueprint if variant selection fails
-    console.warn("Using original blueprint sections due to error in variant selection");
-    return blueprint;
+    throw new Error(`Failed to select component variants: ${error.message}`);
   }
 }
