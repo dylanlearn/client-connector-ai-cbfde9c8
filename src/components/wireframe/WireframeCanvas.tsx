@@ -1,4 +1,3 @@
-
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -50,13 +49,9 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     updateSection
   } = useWireframeStore();
   
-  // Use device type from props if provided, otherwise use from store
   const activeDevice = deviceType || storeActiveDevice;
-  
-  // Use canvas settings from props if provided, otherwise use from store
   const canvasSettings = propCanvasSettings || storeCanvasSettings;
   
-  // Set up canvas interaction hooks
   const {
     handleMouseDown,
     handleMouseMove,
@@ -87,16 +82,13 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     applySectionPositions
   } = useSectionManipulation();
 
-  // Effect to handle rendering state for performance feedback
   useEffect(() => {
     setIsRendering(true);
     const timer = setTimeout(() => setIsRendering(false), 100);
     return () => clearTimeout(timer);
   }, [wireframe, activeDevice, darkMode, showGrid]);
   
-  // Effect to add/remove global event listeners
   useEffect(() => {
-    // Use correctly typed event handlers for DOM events
     const handleDocKeyDown = (e: KeyboardEvent) => {
       handleKeyDown(e);
     };
@@ -111,16 +103,13 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     
     const handleDocMouseMove = (e: MouseEvent) => {
       if (typeof handleMouseMove === 'function') {
-        // Cast to any to bypass type checking since we know this will work
         (handleMouseMove as any)(e);
       }
     };
     
-    // Add global keyboard event listeners
     document.addEventListener('keydown', handleDocKeyDown);
     document.addEventListener('keyup', handleDocKeyUp);
     
-    // Add global mouse event listeners (for dragging)
     document.addEventListener('mouseup', handleDocMouseUp);
     document.addEventListener('mousemove', handleDocMouseMove);
     
@@ -132,21 +121,17 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     };
   }, [handleKeyDown, handleKeyUp, handleMouseUp, handleMouseMove]);
 
-  // Handle mouse events for section dragging
   const handleSectionMouseDown = useCallback((e: React.MouseEvent, sectionId: string) => {
     if (!editMode) return;
     
-    // If space is pressed, we're in pan mode, so don't start dragging
     if (isSpacePressed) return;
     
-    // Only handle left mouse button
     if (e.button === 0) {
-      e.stopPropagation(); // Prevent canvas drag
+      e.stopPropagation();
       startDragSection(sectionId, e.clientX, e.clientY);
     }
   }, [editMode, isSpacePressed, startDragSection]);
   
-  // Handle document mouse move (for section dragging)
   useEffect(() => {
     const handleDocMouseMove = (e: MouseEvent) => {
       if (draggingSection) {
@@ -171,14 +156,11 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     };
   }, [draggingSection, dragSection, stopDragSection]);
 
-  // Handle section actions
   const handleSectionEdit = useCallback((sectionId: string) => {
-    // This would typically open an edit dialog
     selectSection(sectionId);
   }, [selectSection]);
   
   const handleSectionDelete = useCallback((sectionId: string) => {
-    // Use the removeSection function from the store
     useWireframeStore.getState().removeSection(sectionId);
     
     toast({
@@ -188,13 +170,10 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
   }, [toast]);
   
   const handleSectionDuplicate = useCallback((sectionId: string) => {
-    // Find the section to duplicate
     const sectionToDuplicate = wireframe.sections.find(section => section.id === sectionId);
     if (sectionToDuplicate) {
-      // Create a copy without the id
       const { id, ...sectionData } = sectionToDuplicate;
       
-      // Add the duplicated section
       useWireframeStore.getState().addSection({
         ...sectionData,
         name: `${sectionData.name} (Copy)`, 
@@ -220,15 +199,11 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     }
   }, [wireframe.sections]);
   
-  // Memoize the section rendering to prevent excessive re-renders
   const renderSection = useCallback((section, index) => {
-    // Skip rendering hidden sections
     if (hiddenSections.includes(section.id)) return null;
     
-    // Get section style based on position
     const positionStyle = applySectionPositions(section);
     
-    // Get section style from properties
     const sectionStyleProps = section.styleProperties || {};
     
     return (
@@ -292,7 +267,6 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
   
   return (
     <div className="wireframe-canvas-container relative">
-      {/* Canvas Controls */}
       {editMode && (
         <CanvasControls
           onZoomIn={zoomIn}
@@ -304,7 +278,6 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
         />
       )}
       
-      {/* Canvas Area */}
       <div 
         id="wireframe-canvas"
         ref={canvasRef}
