@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bold, 
   Italic, 
@@ -33,6 +33,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   minHeight = "200px"
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(!value || value.trim() === '');
+
+  useEffect(() => {
+    setIsEmpty(!value || value.trim() === '');
+  }, [value]);
 
   const execCommand = (command: string, arg?: string) => {
     document.execCommand(command, false, arg);
@@ -48,6 +53,12 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     e.preventDefault();
     const text = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);
+  };
+
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const content = (e.target as HTMLDivElement).innerHTML;
+    onChange(content);
+    setIsEmpty(content.trim() === '' || content === '<br>');
   };
 
   return (
@@ -114,21 +125,27 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </Button>
       </div>
       
-      <div
-        id="rich-text-editor"
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: value }}
-        onInput={(e) => onChange((e.target as HTMLDivElement).innerHTML)}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onPaste={handlePaste}
-        className={cn(
-          "p-3 outline-none overflow-auto",
-          isFocused ? "bg-background" : "bg-background"
+      <div className="relative">
+        <div
+          id="rich-text-editor"
+          contentEditable
+          dangerouslySetInnerHTML={{ __html: value }}
+          onInput={handleInput}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onPaste={handlePaste}
+          className={cn(
+            "p-3 outline-none overflow-auto",
+            isFocused ? "bg-background" : "bg-background"
+          )}
+          style={{ minHeight }}
+        />
+        {isEmpty && (
+          <div className="absolute top-0 left-0 p-3 pointer-events-none text-muted-foreground">
+            {placeholder}
+          </div>
         )}
-        style={{ minHeight }}
-        placeholder={placeholder}
-      />
+      </div>
     </div>
   );
 };
