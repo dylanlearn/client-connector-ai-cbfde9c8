@@ -1,4 +1,3 @@
-
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
@@ -198,7 +197,6 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   }, [wireframe, activeDevice, darkMode, showGrid]);
   
   useEffect(() => {
-    // Use correct type annotations for DOM event listeners
     const handleDocMouseUp = (e: MouseEvent) => {
       handleMouseUp(e);
     };
