@@ -103,4 +103,6 @@ export interface FabricConverterOptions {
   showLabels?: boolean;
   fitToCanvas?: boolean;
   mode?: 'preview' | 'flowchart' | 'edit';
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  interactive?: boolean;
 }

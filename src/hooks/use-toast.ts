@@ -15,13 +15,7 @@ export type Toast = {
 
 // Define the return type for useToast
 export interface UseToastReturnType {
-  toast: (props: {
-    title?: React.ReactNode;
-    description?: React.ReactNode;
-    action?: ToastActionElement;
-    variant?: "default" | "destructive" | "success";
-    duration?: number;
-  }) => string;
+  toast: (props: Toast) => string;
   toasts: Toast[];
   dismiss: (toastId?: string) => void;
 }
@@ -43,13 +37,7 @@ export function useToast(): UseToastReturnType {
   }, []);
 
   const toast = React.useCallback(
-    (props: {
-      title?: React.ReactNode;
-      description?: React.ReactNode;
-      action?: ToastActionElement;
-      variant?: "default" | "destructive" | "success";
-      duration?: number;
-    }) => {
+    (props: Toast) => {
       const id = Math.random().toString(36).substring(2, 9);
       const newToast: Toast = {
         id,

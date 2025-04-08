@@ -22,7 +22,7 @@ export function useWireframeGeneration() {
     error,
     generateWireframe: generateWireframeBase,
     generateCreativeVariation 
-  } = useWireframeGenerator(creativityLevel, setCurrentWireframe, (props) => {
+  } = useWireframeGenerator(creativityLevel, setCurrentWireframe, (props: Toast) => {
     toast(props);
     return "";  // Return empty string to satisfy the return type
   });
@@ -30,7 +30,7 @@ export function useWireframeGeneration() {
   const {
     loadProjectWireframes,
     getWireframe
-  } = useWireframeStorage(setWireframes, (props) => {
+  } = useWireframeStorage(setWireframes, (props: Toast) => {
     toast(props);
     return "";  // Return empty string to satisfy the return type
   });
@@ -38,7 +38,7 @@ export function useWireframeGeneration() {
   const {
     provideFeedback,
     deleteWireframe
-  } = useWireframeFeedback(wireframes, setWireframes, (props) => {
+  } = useWireframeFeedback(wireframes, setWireframes, (props: Toast) => {
     toast(props);
     return "";  // Return empty string to satisfy the return type
   });
