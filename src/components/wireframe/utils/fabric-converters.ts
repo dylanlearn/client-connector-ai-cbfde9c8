@@ -29,7 +29,7 @@ export function componentToFabricObject(
     height: dimensions.height * scale
   };
   
-  // Basic Fabric object structure
+  // Basic Fabric object structure - return as a Record type for better compatibility
   return {
     type: 'wireframe-section',
     originX: 'left',
@@ -51,7 +51,7 @@ export function componentToFabricObject(
       componentVariant: section.componentVariant,
       deviceType
     }
-  };
+  } as Record<string, any>; // Cast to Record<string, any> to make it compatible with fabric.js
 }
 
 /**
@@ -68,7 +68,7 @@ export function wireframeComponentToFabric(
 ) {
   const { parentLeft = 0, parentTop = 0, scale = 1, interactive = true } = options || {};
   
-  // Basic component representation
+  // Basic component representation - return as a Record type for better compatibility
   return {
     type: 'wireframe-component',
     left: parentLeft + 10,
@@ -86,7 +86,7 @@ export function wireframeComponentToFabric(
       type: component.type,
       content: component.content
     }
-  };
+  } as Record<string, any>; // Cast to Record<string, any> to make it compatible with fabric.js
 }
 
 /**

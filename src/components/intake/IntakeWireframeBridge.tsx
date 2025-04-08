@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import WireframeFlow from '../wireframe/WireframeFlow';
 import { Loader2, ArrowRight, Check } from 'lucide-react';
 import { WireframeData } from '@/types/wireframe';
+import { v4 as uuidv4 } from 'uuid';
 
 interface IntakeWireframeBridgeProps {
   intakeData: IntakeFormData;
@@ -51,30 +52,30 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   const handleWireframeSelected = (selectedWireframe: any) => {
     // Convert the selected wireframe to WireframeData format
     const wireframeData: WireframeData = {
-      title: selectedWireframe.title,
-      description: selectedWireframe.description,
-      layoutType: intakeData.designStyle || 'modern',
+      id: selectedWireframe.id || uuidv4(), // Ensure we have an ID
+      title: selectedWireframe.title || 'Untitled Wireframe',
+      description: selectedWireframe.description || '',
+      sections: selectedWireframe.sections?.map((s: any) => ({
+        id: s.id || uuidv4(),
+        name: s.name || s.type || '',
+        sectionType: s.sectionType || s.type || 'section',
+        description: s.description || s.content || '',
+        componentVariant: s.componentVariant || 'default',
+        imageUrl: s.imageUrl || ''
+      })) || [],
       colorScheme: {
         primary: intakeData.primaryColor || '#3b82f6',
         secondary: intakeData.secondaryColor || '#10b981',
         accent: '#8b5cf6',
-        background: '#ffffff'
+        background: '#ffffff',
+        text: '#000000'
       },
       typography: {
         headings: intakeData.fontStyle || 'modern',
         body: 'sans-serif',
         fontPairings: ['Inter', 'Roboto']
       },
-      sections: selectedWireframe.sections?.map((s: any) => ({
-        id: s.id,
-        type: s.name,
-        content: s.description || '',
-        imageUrl: s.imageUrl || ''
-      })) || [],
-      mobileConsiderations: "Optimized for mobile viewing with responsive layout",
-      accessibilityNotes: "Follows WCAG guidelines for maximum accessibility",
-      imageUrl: selectedWireframe.imageUrl || '',
-      designReasoning: `This design was selected based on ${intakeData.conversionPriority || 'balanced'} priority and ${intakeData.designStyle || 'modern'} design style preferences.`
+      style: intakeData.designStyle || 'modern'
     };
     
     setWireframeData(wireframeData);
@@ -119,7 +120,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="font-medium">Design Style</p>
-                <p className="text-muted-foreground capitalize">{wireframeData.layoutType}</p>
+                <p className="text-muted-foreground capitalize">{wireframeData.style}</p>
               </div>
               <div>
                 <p className="font-medium">Typography</p>

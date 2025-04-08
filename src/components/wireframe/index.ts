@@ -1,30 +1,32 @@
 
-// Main wireframe components
-export { default as WireframeVisualizer } from './WireframeVisualizer';
-export { default as WireframeSectionRenderer } from './WireframeSectionRenderer';
-export { default as WireframeEditor } from './WireframeEditor';
-export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenerator';
-export { default as WireframeCanvas } from './WireframeCanvas';
-export { default as WireframeDataVisualizer } from './WireframeDataVisualizer';
-export { default as SideBySidePreview } from './SideBySidePreview';
+// Re-export specific types and functions without duplication
+export * from './renderers/ComponentRenderer';
+export * from './WireframeVisualizer';
+export * from './WireframeFlow';
+export * from './WireframeDataVisualizer';
+export * from './WireframeEditor';
+export * from './AdvancedWireframeGenerator';
 
-// Canvas components
-export { WireframeCanvasEngine } from './canvas';
+// Only export specific types from component-registry to avoid ambiguous exports
+export { 
+  registerComponent,
+  getComponentDefinition,
+  getComponentVariant,
+  getAllComponentDefinitions
+} from './registry/component-registry';
 
-// Registry and component management
-export * from './registry/component-registry';
-export * from './registry/component-types';
+// Export types from component-types directly
+export {
+  ComponentField,
+  ComponentVariant,
+  ComponentDefinition,
+  ComponentLibrary,
+  StyleConfig,
+  ResponsiveConfig,
+  deviceBreakpoints,
+  getDeviceStyles,
+  styleOptionsToTailwind
+} from './registry/component-types';
 
-// Renderers
-export { default as ComponentRenderer } from './renderers/ComponentRenderer';
-export { JSONView } from './renderers/JSONView';
-
-// Utilities
-export * from './utils/fabric-converters';
-export * from './utils/section-utils';
-
-// Type definitions
-export * from './types';
-
-// Controls
-export { default as CanvasControls } from './controls/CanvasControls';
+// Initialize the component registry
+export { initializeComponentRegistry } from './registry/register-components';

@@ -1,6 +1,5 @@
 
 // This file initializes and exports all component registry functions
-
 import { registerComponent } from './component-registry';
 import { heroComponents } from './components/hero-components';
 import { featureGridComponents } from './components/feature-grid-components';
@@ -13,9 +12,26 @@ import { navigationComponents } from './components/navigation-components';
 import { blogComponents } from './components/blog-components';
 import { contactComponents } from './components/contact-components';
 
-// Export all component definitions
-export * from './component-registry';
-export * from './component-types';
+// Export functions from component-registry
+export { 
+  registerComponent,
+  getComponentDefinition,
+  getComponentVariant,
+  getAllComponentDefinitions 
+} from './component-registry';
+
+// Export types from component-types
+export {
+  ComponentField,
+  ComponentVariant,
+  ComponentDefinition,
+  ComponentLibrary,
+  StyleConfig,
+  ResponsiveConfig,
+  deviceBreakpoints,
+  getDeviceStyles,
+  styleOptionsToTailwind
+} from './component-types';
 
 // Initialize registry by registering all component types
 export function initializeComponentRegistry() {
