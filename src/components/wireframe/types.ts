@@ -1,18 +1,22 @@
 
-import { ReactNode } from 'react';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeProps {
-  id: string;
-  title: string;
+  id?: string;
+  title?: string;
   description?: string;
-  sections: any[];
-  imageUrl?: string;
+  sections: WireframeSection[];
   lastUpdated?: string;
-  version?: string;
 }
 
-export interface SectionPreviewProps {
-  section: any;
+export interface VariantComponentProps {
+  variant: string;
+  viewMode?: 'preview' | 'flowchart';
+  darkMode?: boolean;
+}
+
+export interface SectionComponentProps {
+  section: WireframeSection;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
 }

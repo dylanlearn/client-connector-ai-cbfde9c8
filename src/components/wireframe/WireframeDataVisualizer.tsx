@@ -2,9 +2,8 @@
 import React from 'react';
 import { WireframeData } from '@/types/wireframe';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import HeroSectionRenderer from './renderers/HeroSectionRenderer';
+import WireframeSectionRenderer from './WireframeSectionRenderer';
 
 interface WireframeDataVisualizerProps {
   wireframeData: WireframeData;
@@ -14,6 +13,7 @@ interface WireframeDataVisualizerProps {
   showGrid?: boolean;
   highlightSections?: boolean;
   activeSection?: string | null;
+  onSectionClick?: (sectionId: string) => void;
 }
 
 export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
@@ -24,6 +24,7 @@ export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = (
   showGrid = false,
   highlightSections = false,
   activeSection = null,
+  onSectionClick,
 }) => {
   if (!wireframeData || !wireframeData.sections) {
     return (
@@ -48,7 +49,7 @@ export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = (
           return (
             <div 
               key={section.id} 
-              className={`wireframe-section relative ${
+              className={`wireframe-section-wrapper relative ${
                 showGrid ? 'col-span-12' : ''
               } ${
                 isActive ? 'ring-2 ring-primary' : ''
@@ -56,42 +57,18 @@ export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = (
                 highlightSections ? 'hover:ring-2 hover:ring-primary/50' : ''
               }`}
             >
-              {renderSection(section, viewMode, darkMode)}
+              <WireframeSectionRenderer 
+                section={section}
+                viewMode={viewMode}
+                darkMode={darkMode}
+                onSectionClick={onSectionClick ? () => onSectionClick(section.id!) : undefined}
+              />
             </div>
           );
         })}
       </div>
     </div>
   );
-};
-
-// Helper function to render the appropriate section based on section type
-const renderSection = (
-  section: WireframeSection, 
-  viewMode: 'preview' | 'flowchart',
-  darkMode: boolean
-) => {
-  switch (section.sectionType) {
-    case 'hero':
-      return (
-        <HeroSectionRenderer 
-          section={section}
-          viewMode={viewMode}
-          darkMode={darkMode}
-        />
-      );
-    // Add cases for other section types as you implement them
-    
-    default:
-      return (
-        <div className="border p-4 rounded-md">
-          <h3 className="font-medium">{section.name || section.sectionType}</h3>
-          <p className="text-sm text-muted-foreground">
-            {section.description || `Section type: ${section.sectionType}`}
-          </p>
-        </div>
-      );
-  }
 };
 
 export default WireframeDataVisualizer;
