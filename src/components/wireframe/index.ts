@@ -11,3 +11,7 @@ export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenera
 
 // Export registry components
 export { ComponentRegistration, useComponentRegistry } from './registry/ComponentRegistration';
+
+// Export canvas controls
+export { default as CanvasControls } from './controls/CanvasControls';
+export { default as SectionQuickActions } from './controls/SectionQuickActions';

@@ -5,83 +5,69 @@
 
 @layer base {
   :root {
-    --background: 260 20% 98%;
-    --foreground: 260 30% 15%;
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 260 30% 15%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 260 30% 15%;
+    --popover-foreground: 222.2 47.4% 11.2%;
 
-    --primary: 262 80% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 265 40% 96%;
-    --secondary-foreground: 262 80% 50%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 265 40% 96%;
-    --muted-foreground: 265 30% 40%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --accent: 265 40% 96%;
-    --accent-foreground: 262 80% 50%;
-
-    --destructive: 0 72% 51%;
+    --destructive: 0 100% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 265 30% 93%;
-    --input: 265 30% 93%;
-    --ring: 262 80% 50%;
+    --ring: 215 20.2% 65.1%;
 
-    --radius: 0.75rem;
-
-    --sidebar-background: 260 20% 99%;
-    --sidebar-foreground: 260 30% 25%;
-    --sidebar-primary: 262 80% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 265 40% 96%;
-    --sidebar-accent-foreground: 260 30% 25%;
-    --sidebar-border: 265 30% 93%;
-    --sidebar-ring: 262 80% 50%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 260 25% 10%;
-    --foreground: 260 20% 98%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
 
-    --card: 260 25% 12%;
-    --card-foreground: 260 20% 98%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
 
-    --popover: 260 25% 12%;
-    --popover-foreground: 260 20% 98%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
 
-    --primary: 262 80% 60%;
-    --primary-foreground: 260 20% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
 
-    --secondary: 260 25% 15%;
-    --secondary-foreground: 260 20% 98%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
 
-    --muted: 260 25% 15%;
-    --muted-foreground: 260 20% 70%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
 
-    --accent: 260 25% 15%;
-    --accent-foreground: 260 20% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
 
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 260 20% 98%;
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
 
-    --border: 260 25% 20%;
-    --input: 260 25% 20%;
-    --ring: 262 80% 60%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
 
-    --sidebar-background: 260 25% 12%;
-    --sidebar-foreground: 260 20% 90%;
-    --sidebar-primary: 262 80% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 25% 20%;
-    --sidebar-accent-foreground: 260 20% 90%;
-    --sidebar-border: 260 25% 25%;
-    --sidebar-ring: 262 80% 60%;
+    --ring: 216 34% 17%;
+
+    --radius: 0.5rem;
   }
 }
 
@@ -89,98 +75,22 @@
   * {
     @apply border-border;
   }
-
-  html, body {
-    @apply overflow-x-hidden;
-    width: 100%;
-    max-width: 100%;
-  }
-
   body {
-    @apply bg-background text-foreground font-raleway;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-@layer components {
-  .glass-card {
-    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
-  }
-  
-  .text-gradient {
-    @apply bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent;
-  }
-  
-  .text-gradient-secondary {
-    @apply bg-gradient-to-r from-[#3a8ef6] via-[#7b61ff] to-[#5f9df7] bg-clip-text text-transparent;
-  }
-  
-  .button-gradient {
-    @apply bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] text-white hover:shadow-lg transition-all duration-300;
-  }
-  
-  .button-gradient-secondary {
-    @apply bg-gradient-to-r from-[#3a8ef6] via-[#7b61ff] to-[#5f9df7] text-white hover:shadow-lg transition-all duration-300;
-  }
-  
-  .border-gradient {
-    @apply border-2 border-transparent bg-origin-border bg-clip-padding;
-    position: relative;
-  }
-  
-  .border-gradient::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(to right, #ee682b, #8439e9, #6142e7);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-  }
-  
-  .border-gradient-secondary::before {
-    background: linear-gradient(to right, #3a8ef6, #7b61ff, #5f9df7);
-  }
-  
-  .futuristic-input {
-    @apply bg-transparent border-b-2 border-primary/30 focus:border-primary px-0 py-2 transition-colors;
-  }
-  
-  .hover-card-animate {
-    @apply transition-all duration-300 hover:translate-y-[-5px] hover:shadow-lg;
-  }
-  
-  /* Responsive table utilities */
-  .table-responsive {
-    @apply w-full overflow-x-auto;
-  }
-  
-  .table-compact td,
-  .table-compact th {
-    @apply p-2;
-  }
-  
-  @media (max-width: 640px) {
-    .table-stack-sm {
-      @apply block;
-    }
-    
-    .table-stack-sm thead, 
-    .table-stack-sm tbody, 
-    .table-stack-sm tr {
-      @apply block w-full;
-    }
-    
-    .table-stack-sm td {
-      @apply block w-full text-left pl-[50%] relative;
-    }
-    
-    .table-stack-sm td::before {
-      content: attr(data-label);
-      @apply absolute left-4 font-medium text-muted-foreground;
-    }
-  }
+/* Grid pattern for wireframe canvas */
+.bg-grid-pattern {
+  background-size: 20px 20px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
 }
 
+.dark .bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
