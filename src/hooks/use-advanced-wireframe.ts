@@ -1,9 +1,10 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { supabase } from "@/integrations/supabase/client";
+import { debounce } from "lodash";
 
 export interface UseAdvancedWireframeParams {
   userInput: string;
@@ -24,6 +25,21 @@ export function useAdvancedWireframe() {
   const [designMemory, setDesignMemory] = useState<DesignMemory | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
+
+  // Debounce loadDesignMemory to prevent excessive calls
+  const debouncedLoadMemory = useCallback(
+    debounce(async (projectId: string) => {
+      try {
+        const memory = await AdvancedWireframeService.retrieveDesignMemory(projectId);
+        setDesignMemory(memory);
+        return memory;
+      } catch (err) {
+        console.error("Failed to load design memory:", err);
+        return null;
+      }
+    }, 1000),
+    []
+  );
 
   const generateWireframe = async (params: UseAdvancedWireframeParams) => {
     setIsGenerating(true);
@@ -124,21 +140,10 @@ export function useAdvancedWireframe() {
   };
   
   const loadDesignMemory = async (projectId?: string) => {
-    try {
-      const memory = await AdvancedWireframeService.retrieveDesignMemory(projectId);
-      setDesignMemory(memory);
-      return memory;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load design memory";
-      
-      toast({
-        title: "Error loading design memory",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      return null;
-    }
+    if (!projectId) return null;
+    
+    // Use the debounced version to prevent excessive calls
+    return debouncedLoadMemory(projectId);
   };
   
   const storeDesignMemory = async (
