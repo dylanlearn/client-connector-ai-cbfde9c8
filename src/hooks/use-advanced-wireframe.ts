@@ -5,14 +5,18 @@ import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { supabase } from "@/integrations/supabase/client";
 import { debounce } from "lodash";
+import { EnhancedLayoutIntelligenceService } from "@/services/ai/wireframe/layout-intelligence-enhanced";
 
 export interface UseAdvancedWireframeParams {
   userInput: string;
   projectId: string;
   styleToken: string;
   includeDesignMemory: boolean;
+  enableLayoutIntelligence?: boolean;
   customParams?: {
     darkMode?: boolean;
+    targetIndustry?: string;
+    targetAudience?: string;
     [key: string]: any;
   };
 }
@@ -23,6 +27,7 @@ export function useAdvancedWireframe() {
   const [intentData, setIntentData] = useState<any>(null);
   const [blueprint, setBlueprint] = useState<any>(null);
   const [designMemory, setDesignMemory] = useState<DesignMemory | null>(null);
+  const [layoutAnalysis, setLayoutAnalysis] = useState<any>(null);
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
@@ -44,6 +49,7 @@ export function useAdvancedWireframe() {
   const generateWireframe = async (params: UseAdvancedWireframeParams) => {
     setIsGenerating(true);
     setError(null);
+    setLayoutAnalysis(null);
     
     try {
       toast({
@@ -55,7 +61,8 @@ export function useAdvancedWireframe() {
       const { data, error } = await supabase.functions.invoke('generation-api', {
         body: {
           action: 'generate-advanced-wireframe',
-          ...params
+          ...params,
+          enableLayoutIntelligence: params.enableLayoutIntelligence || false
         }
       });
       
@@ -73,6 +80,11 @@ export function useAdvancedWireframe() {
       // Ensure the wireframe has the correct type structure
       if (result.wireframe) {
         setCurrentWireframe(result.wireframe);
+        
+        // Generate layout analysis if layout intelligence is enabled
+        if (params.enableLayoutIntelligence && result.wireframe) {
+          analyzeLayoutIntelligence(result.wireframe, params.customParams?.targetIndustry);
+        }
       }
       setIntentData(result.intentData);
       setBlueprint(result.blueprint);
@@ -99,6 +111,52 @@ export function useAdvancedWireframe() {
     }
   };
 
+  const analyzeLayoutIntelligence = async (wireframe: WireframeData, targetIndustry?: string) => {
+    try {
+      if (!wireframe) return;
+      
+      toast({
+        title: "Analyzing layout patterns",
+        description: "Generating layout intelligence insights...",
+      });
+      
+      // Create a temporary AIWireframe structure for analysis
+      const tempWireframe = {
+        id: 'temp-analysis',
+        title: wireframe.title,
+        description: wireframe.description,
+        sections: wireframe.sections || []
+      };
+      
+      // Get layout pattern recognition
+      const patternAnalysis = await EnhancedLayoutIntelligenceService.identifyLayoutPatterns(wireframe);
+      
+      // Get layout optimization suggestions
+      const optimizationAnalysis = await EnhancedLayoutIntelligenceService.getLayoutOptimizationSuggestions(
+        wireframe,
+        targetIndustry
+      );
+      
+      // Combine analyses
+      const combinedAnalysis = {
+        patterns: patternAnalysis,
+        optimization: optimizationAnalysis
+      };
+      
+      setLayoutAnalysis(combinedAnalysis);
+      
+      toast({
+        title: "Layout analysis complete",
+        description: `Identified ${patternAnalysis.detectedPatterns.length} layout patterns`,
+      });
+      
+      return combinedAnalysis;
+    } catch (err) {
+      console.error("Layout intelligence analysis failed:", err);
+      return null;
+    }
+  };
+
   const saveWireframe = async (projectId: string, prompt: string) => {
     if (!currentWireframe || !intentData || !blueprint) {
       toast({
@@ -117,7 +175,8 @@ export function useAdvancedWireframe() {
       
       const result = await AdvancedWireframeService.saveWireframe(
         projectId,
-        prompt
+        prompt,
+        layoutAnalysis
       );
       
       toast({
@@ -192,10 +251,12 @@ export function useAdvancedWireframe() {
     intentData,
     blueprint,
     designMemory,
+    layoutAnalysis,
     error,
     generateWireframe,
     saveWireframe,
     loadDesignMemory,
-    storeDesignMemory
+    storeDesignMemory,
+    analyzeLayoutIntelligence
   };
 }

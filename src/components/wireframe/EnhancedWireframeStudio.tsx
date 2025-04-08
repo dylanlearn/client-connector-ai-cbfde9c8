@@ -47,14 +47,18 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const [useDesignMemory, setUseDesignMemory] = useState(false);
   const [showMemoryPanel, setShowMemoryPanel] = useState(false);
   const [creativityLevel, setCreativityLevel] = useState(7);
+  const [enableLayoutIntelligence, setEnableLayoutIntelligence] = useState(true);
   const [selectedReference, setSelectedReference] = useState<DesignReference | null>(null);
   const [previewData, setPreviewData] = useState<WireframeData | null>(null);
   const [previewingWireframe, setPreviewingWireframe] = useState<WireframeData | null>(null);
+  const [targetIndustry, setTargetIndustry] = useState('');
+  const [targetAudience, setTargetAudience] = useState('');
   
   const {
     isGenerating,
     currentWireframe,
     wireframes,
+    layoutAnalysis,
     generateWireframe,
     generateCreativeVariation,
     provideFeedback,
@@ -84,7 +88,12 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       style: styleToken,
       enhancedCreativity: true, 
       creativityLevel: creativityLevel,
-      darkMode: darkMode
+      enableLayoutIntelligence: enableLayoutIntelligence,
+      customParams: {
+        darkMode: darkMode,
+        targetIndustry: targetIndustry || undefined,
+        targetAudience: targetAudience || undefined
+      }
     };
     
     if (useDesignMemory && selectedReference) {
@@ -166,6 +175,18 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     };
     
     setPreviewingWireframe(previewWireframe);
+  };
+  
+  const handleApplyPattern = async (pattern: string) => {
+    if (!currentWireframe?.wireframe) return;
+    
+    console.log(`Applying pattern: ${pattern}`);
+  };
+  
+  const handleApplySuggestion = async (suggestion: any) => {
+    if (!currentWireframe?.wireframe) return;
+    
+    console.log(`Applying suggestion for section: ${suggestion.section}`);
   };
   
   const styleOptions = [
@@ -252,13 +273,64 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="use-memory"
-                  checked={useDesignMemory}
-                  onCheckedChange={setUseDesignMemory}
-                />
-                <Label htmlFor="use-memory" className="cursor-pointer">Use Design Memory</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Target Industry (optional)</Label>
+                  <Select value={targetIndustry} onValueChange={setTargetIndustry}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any industry</SelectItem>
+                      <SelectItem value="ecommerce">E-commerce</SelectItem>
+                      <SelectItem value="saas">SaaS</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="healthcare">Healthcare</SelectItem>
+                      <SelectItem value="education">Education</SelectItem>
+                      <SelectItem value="travel">Travel & Hospitality</SelectItem>
+                      <SelectItem value="realEstate">Real Estate</SelectItem>
+                      <SelectItem value="creative">Creative Portfolio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Target Audience (optional)</Label>
+                  <Select value={targetAudience} onValueChange={setTargetAudience}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select audience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">General audience</SelectItem>
+                      <SelectItem value="youngAdults">Young Adults</SelectItem>
+                      <SelectItem value="professionals">Professionals</SelectItem>
+                      <SelectItem value="businesses">Businesses</SelectItem>
+                      <SelectItem value="seniors">Seniors</SelectItem>
+                      <SelectItem value="technical">Technical Users</SelectItem>
+                      <SelectItem value="creative">Creative Professionals</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="use-memory"
+                    checked={useDesignMemory}
+                    onCheckedChange={setUseDesignMemory}
+                  />
+                  <Label htmlFor="use-memory" className="cursor-pointer">Use Design Memory</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="layout-intelligence"
+                    checked={enableLayoutIntelligence}
+                    onCheckedChange={setEnableLayoutIntelligence}
+                  />
+                  <Label htmlFor="layout-intelligence" className="cursor-pointer">Enable Layout Intelligence</Label>
+                </div>
                 
                 <Button 
                   variant="outline" 
@@ -333,60 +405,71 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         
         <TabsContent value="preview" className="space-y-4 mt-2">
           {currentWireframe && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{currentWireframe.wireframe?.title || 'Generated Wireframe'}</CardTitle>
-                    <CardDescription>
-                      {currentWireframe.wireframe?.description || 'AI generated wireframe based on your requirements'}
-                    </CardDescription>
+            <>
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{currentWireframe.title || 'Generated Wireframe'}</CardTitle>
+                      <CardDescription>
+                        {currentWireframe.description || 'AI generated wireframe based on your requirements'}
+                      </CardDescription>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Badge variant="outline">{styleToken}</Badge>
+                      <Badge variant="secondary">Creativity: {creativityLevel}</Badge>
+                      {targetIndustry && <Badge variant="outline">{targetIndustry}</Badge>}
+                    </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <Badge variant="outline">{styleToken}</Badge>
-                    <Badge variant="secondary">Creativity: {creativityLevel}</Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {currentWireframe.wireframe ? (
-                  <div className="border rounded-md p-1 bg-background">
-                    <WireframeVisualizer 
-                      wireframe={{
-                        id: 'temp-id',
-                        title: currentWireframe.wireframe.title || 'Generated Wireframe',
-                        description: currentWireframe.wireframe.description || '',
-                        imageUrl: currentWireframe.wireframe.imageUrl,
-                        sections: adaptSectionsForVisualizer(currentWireframe.wireframe.sections),
-                        lastUpdated: new Date().toISOString()
-                      }}
-                      darkMode={darkMode}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
-                    <p className="text-muted-foreground">No preview available</p>
-                  </div>
-                )}
-              </CardContent>
-              
-              <CardFooter className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleGenerateVariation}
-                  disabled={isGenerating}
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Variation
-                </Button>
+                </CardHeader>
                 
-                <Button onClick={handleSaveToMemory}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save to Design Memory
-                </Button>
-              </CardFooter>
-            </Card>
+                <CardContent>
+                  {currentWireframe ? (
+                    <div className="border rounded-md p-1 bg-background">
+                      <WireframeVisualizer 
+                        wireframe={{
+                          id: 'temp-id',
+                          title: currentWireframe.title || 'Generated Wireframe',
+                          description: currentWireframe.description || '',
+                          imageUrl: currentWireframe.imageUrl,
+                          sections: adaptSectionsForVisualizer(currentWireframe.sections),
+                          lastUpdated: new Date().toISOString()
+                        }}
+                        darkMode={darkMode}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
+                      <p className="text-muted-foreground">No preview available</p>
+                    </div>
+                  )}
+                </CardContent>
+                
+                <CardFooter className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleGenerateVariation}
+                    disabled={isGenerating}
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Variation
+                  </Button>
+                  
+                  <Button onClick={handleSaveToMemory}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save to Design Memory
+                  </Button>
+                </CardFooter>
+              </Card>
+              
+              {enableLayoutIntelligence && layoutAnalysis && (
+                <LayoutIntelligencePanel 
+                  analysis={layoutAnalysis}
+                  onApplyPattern={handleApplyPattern}
+                  onApplySuggestion={handleApplySuggestion}
+                />
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

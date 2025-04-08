@@ -15,6 +15,10 @@ export const adaptSectionsForVisualizer = (sections: WireframeSection[] = []): a
       // Add other properties that might be needed by the visualizer
       componentVariant: section?.componentVariant || 'default',
       data: section?.data || {},
+      // Add layout intelligence properties
+      layoutScore: section?.layoutScore || null,
+      optimizationSuggestions: section?.optimizationSuggestions || [],
+      patternMatch: section?.patternMatch || null,
     }));
   } catch (err) {
     console.error('Error adapting sections for visualizer:', err);
@@ -63,3 +67,65 @@ export const adaptSectionsWithMemoization = (() => {
     }
   };
 })();
+
+/**
+ * Analyzes wireframe sections for layout patterns and optimization opportunities
+ * Enhances sections with layout intelligence insights
+ */
+export const enhanceSectionsWithLayoutIntelligence = async (
+  sections: WireframeSection[] = [],
+  patternDetection: boolean = false
+): Promise<any[]> => {
+  try {
+    // First adapt the sections normally
+    const adaptedSections = adaptSectionsForVisualizer(sections);
+    
+    if (!patternDetection) {
+      return adaptedSections;
+    }
+    
+    // Import dynamically to prevent circular dependencies
+    const { EnhancedLayoutIntelligenceService } = await import('@/services/ai/wireframe/layout-intelligence-enhanced');
+    
+    // Create a mock wireframe for analysis
+    const mockWireframe = {
+      id: 'temp-analysis',
+      sections: sections,
+      title: 'Layout Analysis',
+      description: 'Temporary wireframe for layout analysis'
+    };
+    
+    // Get layout analysis
+    const layoutAnalysis = await EnhancedLayoutIntelligenceService.analyzeLayout(mockWireframe);
+    
+    // Enhance sections with layout intelligence
+    return adaptedSections.map(section => {
+      const sectionSuggestions = layoutAnalysis.suggestions
+        .filter(s => s.sectionId === section.id);
+      
+      return {
+        ...section,
+        layoutScore: sectionSuggestions.length > 0 
+          ? Math.max(...sectionSuggestions.map(s => s.confidence))
+          : null,
+        optimizationSuggestions: sectionSuggestions.map(s => ({
+          text: s.improvement,
+          confidence: s.confidence,
+          conversionImpact: s.conversionImpact,
+          rationale: s.rationale
+        })),
+        detectedPatterns: layoutAnalysis.patterns.detected
+          .filter(pattern => sections.some(s => 
+            s.id === section.id && 
+            s.components?.some(c => 
+              c.type?.toLowerCase().includes(pattern.toLowerCase()) ||
+              c.content?.toLowerCase().includes(pattern.toLowerCase())
+            )
+          ))
+      };
+    });
+  } catch (err) {
+    console.error('Error enhancing sections with layout intelligence:', err);
+    return adaptSectionsForVisualizer(sections); // Fall back to regular adaptation
+  }
+};
