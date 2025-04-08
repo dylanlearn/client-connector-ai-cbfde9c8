@@ -22,7 +22,7 @@ import Analytics from "./pages/Analytics";
 import WireframeGenerator from "./pages/WireframeGenerator";
 import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
-import AdvancedWireframeGenerator from './components/wireframe/AdvancedWireframeGenerator';
+import { AdvancedWireframeGenerator } from '@/components/wireframe';
 
 // Define type augmentation for window object
 interface WindowWithAdminRoutes extends Window {
