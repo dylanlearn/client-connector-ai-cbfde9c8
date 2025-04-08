@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { 
   WireframeGenerationParams, 
@@ -37,7 +38,7 @@ export class WireframeGeneratorService {
         description: params.description || 'Generated wireframe',
         sections: [],
         style: params.style || 'modern',
-        colorScheme: {
+        colorScheme: params.colorScheme || {
           primary: '#3b82f6',
           secondary: '#10b981',
           accent: '#f59e0b',
@@ -70,13 +71,17 @@ export class WireframeGeneratorService {
             id: uuidv4(),
             name: 'Hero Section',
             sectionType: 'hero',
-            description: 'Main hero section'
+            description: 'Main hero section',
+            position: { x: 0, y: 0 },
+            dimensions: { width: 1140, height: 400 }
           },
           {
             id: uuidv4(),
             name: 'Features Section',
             sectionType: 'features',
-            description: 'Features showcase'
+            description: 'Features showcase',
+            position: { x: 0, y: 420 },
+            dimensions: { width: 1140, height: 300 }
           }
         ];
       }

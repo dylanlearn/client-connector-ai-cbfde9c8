@@ -1,32 +1,96 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
-import { useFabric } from '@/hooks/use-fabric';
-import { WireframeData, WireframeSection } from '@/types/wireframe';
-import { getDeviceStyles } from '@/components/wireframe/registry/component-types';
+import { WireframeData, WireframeSection, WireframeCanvasConfig } from '@/services/ai/wireframe/wireframe-types';
+import { componentToFabricObject } from '@/components/wireframe/utils/fabric-converters';
+import { useWireframeStore } from '@/stores/wireframe-store';
+import { useToast } from '@/hooks/use-toast';
 
 interface WireframeCanvasEngineProps {
   wireframeData: WireframeData;
   editable?: boolean;
   onCanvasReady?: (canvas: fabric.Canvas) => void;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  canvasConfig?: Partial<WireframeCanvasConfig>;
+  onCanvasConfigChange?: (config: Partial<WireframeCanvasConfig>) => void;
 }
 
 const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   wireframeData,
-  editable = false,
+  editable = true,
   onCanvasReady,
-  deviceType = 'desktop'
+  deviceType = 'desktop',
+  canvasConfig,
+  onCanvasConfigChange
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { canvas, initializeFabric } = useFabric();
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const saveStateForUndo = useWireframeStore(state => state.saveStateForUndo);
+  const { toast } = useToast();
+  
+  // Default canvas settings merged with provided config
+  const defaultConfig: WireframeCanvasConfig = {
+    zoom: 1,
+    panOffset: { x: 0, y: 0 },
+    showGrid: true,
+    snapToGrid: true,
+    gridSize: 8
+  };
+  
+  const config = { ...defaultConfig, ...canvasConfig };
 
   // Initialize the canvas
   useEffect(() => {
     if (canvasRef.current && !isInitialized) {
-      initializeFabric(canvasRef.current);
-      setIsInitialized(true);
+      try {
+        const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+          width: 1200,
+          height: 800,
+          backgroundColor: config.showGrid ? '#f8f8f8' : '#ffffff',
+          selection: editable,
+          preserveObjectStacking: true
+        });
+        
+        // Apply zoom and pan from config
+        fabricCanvas.setZoom(config.zoom);
+        fabricCanvas.absolutePan(new fabric.Point(config.panOffset.x, config.panOffset.y));
+        
+        // Handle selection events
+        fabricCanvas.on('selection:created', (e) => {
+          const selected = e.selected?.[0];
+          if (selected && selected.data) {
+            // Handle section selection
+            const sectionId = selected.data.id;
+            if (sectionId) {
+              useWireframeStore.getState().setActiveSection(sectionId);
+            }
+          }
+        });
+        
+        fabricCanvas.on('object:modified', () => {
+          // Save state for undo when objects are modified
+          saveStateForUndo();
+        });
+        
+        // Add grid if enabled
+        if (config.showGrid) {
+          renderGrid(fabricCanvas, config.gridSize);
+        }
+        
+        setCanvas(fabricCanvas);
+        setIsInitialized(true);
+        
+        if (onCanvasReady) {
+          onCanvasReady(fabricCanvas);
+        }
+      } catch (error) {
+        console.error("Error initializing fabric canvas:", error);
+        toast({
+          title: "Error",
+          description: "Failed to initialize canvas",
+          variant: "destructive"
+        });
+      }
     }
     
     return () => {
@@ -34,145 +98,172 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         canvas.dispose();
       }
     };
-  }, [canvasRef, isInitialized, initializeFabric, canvas]);
-
-  // Render wireframe sections
-  const renderWireframe = useCallback(() => {
-    if (!canvas || !wireframeData || !wireframeData.sections) return;
-    
-    canvas.clear();
-    let topPosition = 20;
-    
-    wireframeData.sections.forEach((section, index) => {
-      if (!section) return;
-
-      // Get the height based on section type
-      const sectionHeight = getSectionHeight(section);
-      
-      // Create section container
-      const sectionRect = new fabric.Rect({
-        left: 20,
-        top: topPosition,
-        width: canvas.width! - 40,
-        height: sectionHeight,
-        fill: '#f9f9f9',
-        stroke: '#ddd',
-        strokeWidth: 1,
-        rx: 5,
-        ry: 5
-      });
-      
-      // Create section label
-      const sectionLabel = new fabric.Text(section.name || `Section ${index + 1}`, {
-        left: 30,
-        top: topPosition + 10,
-        fontSize: 14,
-        fontFamily: 'Arial'
-      });
-      
-      // Apply responsive styles based on device type
-      if (section.responsiveConfig) {
-        // Use the correct signature for getDeviceStyles
-        const styles = getDeviceStyles(section.baseStyles || {}, section.responsiveConfig || {}, deviceType);
-        
-        // Apply styles to section
-        // Implementation depends on styling structure
-      }
-      
-      // Add section to canvas
-      canvas.add(sectionRect, sectionLabel);
-      
-      // Render components within section
-      if (section.components && Array.isArray(section.components)) {
-        renderComponents(section.components, topPosition + 40);
-      }
-      
-      topPosition += sectionHeight + 20;
-    });
-    
-    canvas.renderAll();
-    
-    if (onCanvasReady) onCanvasReady(canvas);
-  }, [canvas, wireframeData, deviceType, onCanvasReady]);
-  
-  // Utility function to get section height
-  const getSectionHeight = (section: WireframeSection): number => {
-    if (!section) return 100;
-    
-    switch (section.sectionType) {
-      case 'hero':
-        return 200;
-      case 'features':
-        return 300;
-      case 'testimonials':
-        return 250;
-      case 'cta':
-        return 150;
-      default:
-        return 200;
-    }
-  };
-  
-  // Render components within a section
-  const renderComponents = (components: any[], startY: number) => {
-    if (!canvas || !components.length) return;
-    
-    let componentY = startY;
-    
-    components.forEach((component, index) => {
-      if (!component) return;
-      
-      const componentRect = new fabric.Rect({
-        left: 40,
-        top: componentY,
-        width: canvas.width! - 80,
-        height: 50,
-        fill: '#ffffff',
-        stroke: '#eeeeee',
-        strokeWidth: 1,
-        rx: 3,
-        ry: 3
-      });
-      
-      const componentLabel = new fabric.Text(component.type || `Component ${index + 1}`, {
-        left: 50,
-        top: componentY + 15,
-        fontSize: 12,
-        fontFamily: 'Arial'
-      });
-      
-      canvas.add(componentRect, componentLabel);
-      componentY += 60;
-    });
-  };
+  }, [canvasRef, isInitialized, config.showGrid, config.zoom, 
+      config.panOffset, config.gridSize, editable, onCanvasReady, toast, saveStateForUndo]);
   
   // Update canvas when wireframeData changes
   useEffect(() => {
     if (isInitialized && canvas && wireframeData) {
       renderWireframe();
     }
-  }, [isInitialized, canvas, wireframeData, renderWireframe]);
+  }, [isInitialized, canvas, wireframeData, deviceType]);
+  
+  // Update grid when grid settings change
+  useEffect(() => {
+    if (canvas && isInitialized) {
+      canvas.clear();
+      
+      if (config.showGrid) {
+        renderGrid(canvas, config.gridSize);
+      }
+      
+      renderWireframe();
+    }
+  }, [config.showGrid, config.gridSize, isInitialized]);
+  
+  // Update zoom and pan when config changes
+  useEffect(() => {
+    if (canvas && isInitialized) {
+      canvas.setZoom(config.zoom);
+      canvas.absolutePan(new fabric.Point(config.panOffset.x, config.panOffset.y));
+      canvas.renderAll();
+    }
+  }, [config.zoom, config.panOffset, isInitialized]);
+  
+  // Render grid on canvas
+  const renderGrid = (canvas: fabric.Canvas, gridSize: number) => {
+    const width = canvas.getWidth();
+    const height = canvas.getHeight();
+    
+    // Create grid lines
+    for (let i = 0; i < width / gridSize; i++) {
+      const lineX = new fabric.Line([i * gridSize, 0, i * gridSize, height], {
+        stroke: '#e0e0e0',
+        selectable: false,
+        evented: false,
+        strokeWidth: 1
+      });
+      canvas.add(lineX);
+      lineX.sendToBack();
+    }
+    
+    for (let i = 0; i < height / gridSize; i++) {
+      const lineY = new fabric.Line([0, i * gridSize, width, i * gridSize], {
+        stroke: '#e0e0e0',
+        selectable: false,
+        evented: false,
+        strokeWidth: 1
+      });
+      canvas.add(lineY);
+      lineY.sendToBack();
+    }
+    
+    canvas.renderAll();
+  };
+  
+  // Render wireframe sections
+  const renderWireframe = useCallback(() => {
+    if (!canvas || !wireframeData || !wireframeData.sections) return;
+    
+    // Clear existing content but keep grid
+    const objects = canvas.getObjects();
+    const gridLines = objects.filter(obj => 
+      obj instanceof fabric.Line && 
+      obj.stroke === '#e0e0e0' && 
+      !obj.selectable
+    );
+    
+    canvas.clear();
+    
+    // Re-add grid lines if needed
+    if (config.showGrid && gridLines.length > 0) {
+      gridLines.forEach(line => canvas.add(line));
+    }
+    
+    // Add sections
+    wireframeData.sections.forEach((section: WireframeSection) => {
+      if (!section) return;
+      
+      // Convert section to fabric object
+      const fabricObject = componentToFabricObject(section, {
+        deviceType,
+        interactive: editable
+      });
+      
+      // Add to canvas
+      if (fabricObject) {
+        canvas.add(fabricObject as unknown as fabric.Object);
+        
+        // Add components if they exist
+        if (section.components && Array.isArray(section.components)) {
+          section.components.forEach(component => {
+            if (!component) return;
+            
+            // Use the wireframeComponentToFabric from fabric-converters.ts
+            const componentObj = fabric.util.object.clone(component);
+            
+            if (componentObj) {
+              canvas.add(componentObj as unknown as fabric.Object);
+            }
+          });
+        }
+      }
+    });
+    
+    canvas.renderAll();
+  }, [canvas, wireframeData, deviceType, editable, config.showGrid]);
   
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       if (!canvas || !canvasRef.current) return;
       
-      const parentWidth = canvasRef.current.parentElement?.clientWidth || 800;
-      canvas.setDimensions({ width: parentWidth, height: 600 });
-      renderWireframe();
+      const parentElement = canvasRef.current.parentElement;
+      if (!parentElement) return;
+      
+      const width = parentElement.clientWidth;
+      const height = 800; // Fixed height or make responsive
+      
+      canvas.setDimensions({ width, height });
+      
+      // Re-render grid and wireframe
+      if (config.showGrid) {
+        canvas.clear();
+        renderGrid(canvas, config.gridSize);
+        renderWireframe();
+      } else {
+        renderWireframe();
+      }
     };
     
     window.addEventListener('resize', handleResize);
-    handleResize();
+    handleResize(); // Initial resize
     
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [canvas, renderWireframe]);
+  }, [canvas, renderWireframe, config.showGrid, config.gridSize]);
+
+  // Set up snap to grid if enabled
+  useEffect(() => {
+    if (canvas && config.snapToGrid) {
+      canvas.on('object:moving', function(options) {
+        if (options.target) {
+          const target = options.target;
+          const gridSize = config.gridSize;
+          
+          // Round position to nearest grid
+          target.set({
+            left: Math.round(target.left! / gridSize) * gridSize,
+            top: Math.round(target.top! / gridSize) * gridSize
+          });
+        }
+      });
+    }
+  }, [canvas, config.snapToGrid, config.gridSize]);
   
   return (
-    <div className="wireframe-canvas-container">
+    <div className="wireframe-canvas-fabric-container w-full relative">
       <canvas ref={canvasRef} />
     </div>
   );

@@ -1,65 +1,120 @@
 
+import { v4 as uuidv4 } from 'uuid';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Utility functions for working with wireframe sections
+ * Get the default height for a section based on its type
  */
-
-/**
- * Generate a unique ID for a section
- */
-export function generateSectionId(): string {
-  return `section-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-/**
- * Deep clone a section to avoid reference issues
- */
-export function cloneSection(section: WireframeSection): WireframeSection {
-  return JSON.parse(JSON.stringify(section));
-}
-
-/**
- * Calculate the default dimensions for a section based on its type
- */
-export function getDefaultSectionDimensions(sectionType: string): { width: number; height: number } {
-  // Default dimensions for different section types
-  const dimensionsByType: Record<string, { width: number; height: number }> = {
-    hero: { width: 800, height: 400 },
-    features: { width: 800, height: 300 },
-    testimonials: { width: 800, height: 250 },
-    footer: { width: 800, height: 150 },
-    cta: { width: 800, height: 200 },
-    // Add more section types as needed
-  };
-
-  // Return specific dimensions if available, or default
-  return dimensionsByType[sectionType.toLowerCase()] || { width: 800, height: 250 };
-}
-
-/**
- * Check if a section has valid position data
- */
-export function hasValidPosition(section: WireframeSection): boolean {
-  return (
-    section.position !== undefined &&
-    typeof section.position.x === 'number' &&
-    typeof section.position.y === 'number'
-  );
-}
-
-/**
- * Get the background color for a section based on its style properties
- */
-export function getSectionBackgroundColor(section: WireframeSection): string {
-  if (!section.styleProperties) return '#ffffff';
-  
-  switch (section.styleProperties.backgroundStyle) {
-    case 'dark':
-      return '#333333';
-    case 'accent':
-      return '#f0f9ff';
+export function getSectionDefaultHeight(sectionType: string): number {
+  switch (sectionType) {
+    case 'hero':
+      return 400;
+    case 'features':
+      return 300;
+    case 'testimonials':
+      return 250;
+    case 'cta':
+      return 150;
+    case 'pricing':
+      return 400;
+    case 'contact':
+      return 300;
+    case 'footer':
+      return 200;
+    case 'navigation':
+      return 80;
     default:
-      return '#ffffff';
+      return 200;
   }
+}
+
+/**
+ * Get the default width for a section based on device type
+ */
+export function getSectionDefaultWidth(deviceType: 'desktop' | 'tablet' | 'mobile'): number {
+  switch (deviceType) {
+    case 'desktop':
+      return 1140;
+    case 'tablet':
+      return 720;
+    case 'mobile':
+      return 320;
+    default:
+      return 1140;
+  }
+}
+
+/**
+ * Create a new section with default values
+ */
+export function createDefaultSection(
+  sectionType: string,
+  options: Partial<WireframeSection> = {}
+): WireframeSection {
+  return {
+    id: uuidv4(),
+    name: getDefaultSectionName(sectionType),
+    sectionType,
+    description: `Default ${sectionType} section`,
+    dimensions: {
+      width: options.dimensions?.width || 1140,
+      height: options.dimensions?.height || getSectionDefaultHeight(sectionType)
+    },
+    position: options.position || { x: 0, y: 0 },
+    components: options.components || [],
+    ...options
+  };
+}
+
+/**
+ * Get the default name for a section based on its type
+ */
+export function getDefaultSectionName(sectionType: string): string {
+  // Capitalize first letter and convert camelCase to spaces
+  return sectionType
+    .replace(/([A-Z])/g, ' $1') // Insert space before capital letters
+    .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
+}
+
+/**
+ * Calculate section positions based on their order
+ */
+export function calculateSectionPositions(
+  sections: WireframeSection[],
+  startY: number = 0
+): Record<string, { top: number }> {
+  const positions: Record<string, { top: number }> = {};
+  let currentY = startY;
+  
+  sections.forEach(section => {
+    if (!section) return;
+    
+    positions[section.id] = { top: currentY };
+    currentY += (section.dimensions?.height || getSectionDefaultHeight(section.sectionType)) + 20;
+  });
+  
+  return positions;
+}
+
+/**
+ * Get device-specific styles for a section
+ */
+export function getDeviceSpecificStyles(
+  section: WireframeSection,
+  deviceType: 'desktop' | 'tablet' | 'mobile'
+): any {
+  if (!section.responsiveConfig) return section.styleProperties || {};
+  
+  const baseStyles = section.styleProperties || {};
+  
+  if (deviceType === 'desktop') {
+    return baseStyles;
+  }
+  
+  // Apply device-specific overrides
+  return {
+    ...baseStyles,
+    ...(deviceType === 'tablet' ? section.responsiveConfig.tablet || {} : {}),
+    ...(deviceType === 'mobile' ? section.responsiveConfig.mobile || {})
+  };
 }
