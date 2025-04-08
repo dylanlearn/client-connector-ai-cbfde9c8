@@ -2,8 +2,14 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff, Edit, Trash2, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
+import { Eye, EyeOff, Edit, Trash2, ArrowUp, ArrowDown, GripVertical, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SectionControlsProps {
   section: WireframeSection;
@@ -16,6 +22,7 @@ interface SectionControlsProps {
   onMoveUp: () => void;
   onMoveDown: () => void;
   onToggleVisibility: () => void;
+  onAdvancedEdit?: () => void; // New handler for advanced editing
 }
 
 const SectionControls: React.FC<SectionControlsProps> = ({
@@ -28,7 +35,8 @@ const SectionControls: React.FC<SectionControlsProps> = ({
   onDelete,
   onMoveUp,
   onMoveDown,
-  onToggleVisibility
+  onToggleVisibility,
+  onAdvancedEdit
 }) => {
   return (
     <div 
@@ -56,61 +64,111 @@ const SectionControls: React.FC<SectionControlsProps> = ({
         </div>
         
         <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onToggleVisibility}
-            className="px-2 h-8"
-            title={isVisible ? "Hide section" : "Show section"}
-          >
-            {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onToggleVisibility}
+                  className="px-2 h-8"
+                >
+                  {isVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isVisible ? "Hide section" : "Show section"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           
           {!provided && (
             <>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onMoveUp}
-                disabled={sectionIndex === 0}
-                className="px-2 h-8"
-                title="Move up"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={onMoveUp}
+                      disabled={sectionIndex === 0}
+                      className="px-2 h-8"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Move up</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onMoveDown}
-                disabled={sectionIndex === totalSections - 1}
-                className="px-2 h-8"
-                title="Move down"
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={onMoveDown}
+                      disabled={sectionIndex === totalSections - 1}
+                      className="px-2 h-8"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Move down</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </>
           )}
           
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onEdit}
-            className="px-2 h-8"
-            title="Edit section"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onEdit}
+                  className="px-2 h-8"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Basic edit</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onDelete}
-            className="px-2 h-8 text-destructive hover:text-destructive"
-            title="Delete section"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {onAdvancedEdit && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onAdvancedEdit}
+                    className="px-2 h-8 border-primary text-primary hover:bg-primary/10"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Advanced edit</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onDelete}
+                  className="px-2 h-8 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Delete section</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>

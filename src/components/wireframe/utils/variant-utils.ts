@@ -1,55 +1,110 @@
 
-/**
- * Utility functions for handling component variants
- */
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Get appropriate background class based on style and dark mode
+ * Get the background class based on backgroundStyle
  */
-export const getBackgroundClass = (backgroundStyle?: string, darkMode?: boolean): string => {
-  if (backgroundStyle === 'primary') {
-    return darkMode ? 'bg-primary-900 text-white' : 'bg-primary-50 text-primary-900';
-  }
+export function getBackgroundClass(backgroundStyle?: string | null, darkMode = false): string {
+  if (!backgroundStyle) return darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800';
   
-  if (backgroundStyle === 'dark') {
-    return 'bg-gray-900 text-white';
+  switch (backgroundStyle) {
+    case 'dark':
+      return 'bg-gray-900 text-gray-100';
+    case 'light':
+      return 'bg-white text-gray-800';
+    case 'primary':
+      return darkMode ? 
+        'bg-primary text-primary-foreground' : 
+        'bg-primary/10 text-primary-foreground/90';
+    case 'secondary':
+      return darkMode ? 
+        'bg-secondary text-secondary-foreground' : 
+        'bg-secondary/10 text-secondary-foreground/90';
+    case 'muted':
+      return 'bg-muted text-muted-foreground';
+    case 'gradient':
+      return 'bg-gradient-to-r from-primary/80 to-secondary/80 text-white';
+    case 'image':
+      return 'bg-cover bg-center text-white';
+    default:
+      return darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800';
   }
-  
-  if (backgroundStyle === 'light') {
-    return 'bg-gray-50 text-gray-900';
-  }
-  
-  return darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900';
-};
+}
 
 /**
- * Get appropriate alignment class
+ * Get the alignment class based on alignment string
  */
-export const getAlignmentClass = (alignment: string): string => {
+export function getAlignmentClass(alignment?: string): string {
+  if (!alignment) return 'text-center';
+  
   switch (alignment) {
+    case 'left':
+      return 'text-left';
     case 'center':
       return 'text-center';
     case 'right':
       return 'text-right';
-    case 'left':
     default:
-      return 'text-left';
+      return 'text-center';
   }
-};
+}
 
 /**
- * Get grid column class based on column count
+ * Get layout classes based on layout type
  */
-export const getGridColumns = (columns: number): string => {
-  switch (columns) {
-    case 2:
-      return 'grid-cols-1 md:grid-cols-2';
-    case 3:
-      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-    case 4:
-      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
-    case 1:
-    default:
-      return 'grid-cols-1';
+export function getLayoutClasses(layout?: string | { type: string; alignment: string }): string {
+  if (!layout) return 'grid grid-cols-1 md:grid-cols-3 gap-4';
+  
+  // Handle string layout types
+  if (typeof layout === 'string') {
+    switch (layout) {
+      case 'grid':
+        return 'grid grid-cols-1 md:grid-cols-3 gap-4';
+      case 'columns':
+        return 'grid grid-cols-1 md:grid-cols-2 gap-6';
+      case 'single':
+        return 'max-w-3xl mx-auto';
+      case 'full':
+        return 'w-full';
+      default:
+        return 'grid grid-cols-1 md:grid-cols-3 gap-4';
+    }
   }
-};
+  
+  // Handle object layout types
+  switch (layout.type) {
+    case 'grid':
+      return 'grid grid-cols-1 md:grid-cols-3 gap-4';
+    case 'columns':
+      return 'grid grid-cols-1 md:grid-cols-2 gap-6';
+    case 'asymmetric':
+      return 'grid grid-cols-1 md:grid-cols-3 gap-4 [&>*:first-child]:col-span-2';
+    default:
+      return 'grid grid-cols-1 md:grid-cols-3 gap-4';
+  }
+}
+
+/**
+ * Get image classes based on image variant
+ */
+export function getImageClasses(variant?: string): string {
+  if (!variant) return 'rounded-lg object-cover w-full h-full';
+  
+  switch (variant) {
+    case 'rounded':
+      return 'rounded-full object-cover w-full h-full';
+    case 'shadowed':
+      return 'rounded-lg shadow-xl object-cover w-full h-full';
+    case 'bordered':
+      return 'rounded-lg border-2 border-primary object-cover w-full h-full';
+    default:
+      return 'rounded-lg object-cover w-full h-full';
+  }
+}
+
+/**
+ * Get the appropriate component variant
+ */
+export function getComponentVariant(section: WireframeSection, defaultVariant: string = 'default'): string {
+  return section.componentVariant || defaultVariant;
+}

@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { GripVertical } from 'lucide-react';
+import AdvancedSectionEditDialog from './AdvancedSectionEditDialog';
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -34,6 +35,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
   useComponentRegistry();
   const [components, setComponents] = useState<any[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAdvancedEditDialogOpen, setIsAdvancedEditDialogOpen] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionName, setEditingSectionName] = useState('');
   const [editingSectionDescription, setEditingSectionDescription] = useState('');
@@ -128,6 +130,12 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
     }
   };
   
+  // Handle advanced edit dialog
+  const openAdvancedEditDialog = (sectionId: string) => {
+    setEditingSectionId(sectionId);
+    setIsAdvancedEditDialogOpen(true);
+  };
+  
   const saveEditSection = () => {
     if (editingSectionId) {
       updateSection(editingSectionId, {
@@ -142,6 +150,15 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         description: "Section details have been updated"
       });
     }
+  };
+
+  const handleAdvancedSectionUpdate = (sectionId: string, updates: Partial<WireframeSection>) => {
+    updateSection(sectionId, updates);
+    
+    toast({
+      title: "Section updated",
+      description: "Section content has been updated"
+    });
   };
 
   // Handle section deletion
@@ -163,6 +180,12 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
       title: "Sections reordered",
       description: "The wireframe sections have been reordered"
     });
+  };
+  
+  // Get the current editing section for advanced editor
+  const getEditingSection = () => {
+    if (!editingSectionId) return null;
+    return wireframe.sections.find(s => s.id === editingSectionId) || null;
   };
 
   return (
@@ -213,49 +236,19 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
                         {wireframe.sections.map((section, index) => (
                           <Draggable key={section.id} draggableId={section.id} index={index}>
                             {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className="border rounded-md p-2 bg-background hover:bg-accent/5 transition-colors"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div {...provided.dragHandleProps} className="cursor-grab">
-                                    <GripVertical className="h-5 w-5 text-muted-foreground" />
-                                  </div>
-                                  
-                                  <div className="flex-1" onClick={() => handleSelectSection(section.id)}>
-                                    <p className="font-medium">{section.name}</p>
-                                    <p className="text-xs text-muted-foreground">{section.sectionType}</p>
-                                  </div>
-                                  
-                                  <div className="flex gap-1">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => toggleSectionVisibility(section.id)}
-                                      className="px-2 h-8"
-                                    >
-                                      {hiddenSections.includes(section.id) ? 'Show' : 'Hide'}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => openEditDialog(section.id)}
-                                      className="px-2 h-8"
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleDeleteSection(section.id)}
-                                      className="px-2 h-8 text-destructive hover:text-destructive"
-                                    >
-                                      Delete
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
+                              <SectionControls
+                                section={section}
+                                sectionIndex={index}
+                                totalSections={wireframe.sections.length}
+                                isVisible={!hiddenSections.includes(section.id)}
+                                provided={provided}
+                                onEdit={() => openEditDialog(section.id)}
+                                onAdvancedEdit={() => openAdvancedEditDialog(section.id)}
+                                onDelete={() => handleDeleteSection(section.id)}
+                                onMoveUp={() => reorderSections(index, index - 1)}
+                                onMoveDown={() => reorderSections(index, index + 1)}
+                                onToggleVisibility={() => toggleSectionVisibility(section.id)}
+                              />
                             )}
                           </Draggable>
                         ))}
@@ -275,7 +268,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
         </div>
       </div>
       
-      {/* Edit Section Dialog */}
+      {/* Basic Edit Section Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -309,6 +302,14 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
           <Button onClick={saveEditSection} className="w-full">Save Changes</Button>
         </DialogContent>
       </Dialog>
+      
+      {/* Advanced Section Edit Dialog */}
+      <AdvancedSectionEditDialog
+        isOpen={isAdvancedEditDialogOpen}
+        onClose={() => setIsAdvancedEditDialogOpen(false)}
+        section={getEditingSection()}
+        onUpdate={handleAdvancedSectionUpdate}
+      />
     </div>
   );
 };
