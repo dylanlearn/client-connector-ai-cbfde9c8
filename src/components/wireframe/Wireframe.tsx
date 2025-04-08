@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { WireframeProps } from './types';
+import { WireframeProps as WireframeData } from './types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 
-interface WireframeProps {
-  wireframe: WireframeProps;
+interface WireframeComponentProps {
+  wireframe: WireframeData;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
@@ -12,7 +12,7 @@ interface WireframeProps {
   activeSection?: string | null;
 }
 
-export const Wireframe: React.FC<WireframeProps> = ({
+export const Wireframe: React.FC<WireframeComponentProps> = ({
   wireframe,
   viewMode = 'preview',
   darkMode = false,

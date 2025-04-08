@@ -86,14 +86,23 @@ export const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> =
       case 'footer':
         return <FooterSection 
           sectionIndex={0} 
-          data={data}
+          data={{
+            variant: componentVariant || 'footer-startup-001',
+            columns: data.columns || [],
+            ...data
+          }}
           variant={componentVariant}
         />;
         
       case 'contact':
         return <ContactSection 
           sectionIndex={0} 
-          data={data}
+          data={{
+            variant: componentVariant || 'contact-basic-001',
+            formFields: data.formFields || [],
+            ctaLabel: data.ctaLabel || 'Submit',
+            ...data
+          }}
           variant={componentVariant}
         />;
         

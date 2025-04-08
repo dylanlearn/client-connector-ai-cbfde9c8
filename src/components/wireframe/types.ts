@@ -7,6 +7,8 @@ export interface WireframeProps {
   description?: string;
   sections: WireframeSection[];
   lastUpdated?: string;
+  imageUrl?: string; // Added to match usage in components
+  version?: string; // Added to match sample data
 }
 
 export interface VariantComponentProps {

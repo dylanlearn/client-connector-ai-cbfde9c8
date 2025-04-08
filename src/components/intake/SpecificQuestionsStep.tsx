@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
@@ -31,9 +32,27 @@ const sampleWireframes = [
     description: "Clean, professional design with clear CTAs",
     imageUrl: "/wireframes/business-modern.jpg",
     sections: [
-      { id: "hero-1", name: "Hero Section", description: "Bold, minimal hero with single CTA", imageUrl: "/wireframes/sections/hero-1.jpg" },
-      { id: "features-1", name: "Feature Grid", description: "3-column feature highlights with icons", imageUrl: "/wireframes/sections/features-1.jpg" },
-      { id: "testimonial-1", name: "Testimonials", description: "Customer quotes with avatars", imageUrl: "/wireframes/sections/testimonials-1.jpg" }
+      { 
+        id: "hero-1", 
+        name: "Hero Section", 
+        description: "Bold, minimal hero with single CTA", 
+        imageUrl: "/wireframes/sections/hero-1.jpg",
+        sectionType: "hero" 
+      },
+      { 
+        id: "features-1", 
+        name: "Feature Grid", 
+        description: "3-column feature highlights with icons", 
+        imageUrl: "/wireframes/sections/features-1.jpg",
+        sectionType: "feature-grid" 
+      },
+      { 
+        id: "testimonial-1", 
+        name: "Testimonials", 
+        description: "Customer quotes with avatars", 
+        imageUrl: "/wireframes/sections/testimonials-1.jpg",
+        sectionType: "testimonial" 
+      }
     ],
     version: "1.0",
     lastUpdated: new Date().toLocaleDateString()
@@ -44,8 +63,20 @@ const sampleWireframes = [
     description: "Vibrant, image-focused product showcase",
     imageUrl: "/wireframes/ecommerce-bold.jpg",
     sections: [
-      { id: "product-grid", name: "Product Grid", description: "Dynamic product listing with filters", imageUrl: "/wireframes/sections/products-1.jpg" },
-      { id: "product-detail", name: "Product Detail", description: "Comprehensive product information", imageUrl: "/wireframes/sections/product-detail-1.jpg" }
+      { 
+        id: "product-grid", 
+        name: "Product Grid", 
+        description: "Dynamic product listing with filters", 
+        imageUrl: "/wireframes/sections/products-1.jpg",
+        sectionType: "product-grid" 
+      },
+      { 
+        id: "product-detail", 
+        name: "Product Detail", 
+        description: "Comprehensive product information", 
+        imageUrl: "/wireframes/sections/product-detail-1.jpg",
+        sectionType: "product-detail" 
+      }
     ],
     version: "1.0",
     lastUpdated: new Date().toLocaleDateString()
@@ -56,8 +87,20 @@ const sampleWireframes = [
     description: "Clean, functional interface for SaaS products",
     imageUrl: "/wireframes/saas-minimal.jpg",
     sections: [
-      { id: "dashboard", name: "Dashboard", description: "User dashboard with key metrics", imageUrl: "/wireframes/sections/dashboard-1.jpg" },
-      { id: "features", name: "Features Overview", description: "Visual feature breakdown", imageUrl: "/wireframes/sections/features-2.jpg" }
+      { 
+        id: "dashboard", 
+        name: "Dashboard", 
+        description: "User dashboard with key metrics", 
+        imageUrl: "/wireframes/sections/dashboard-1.jpg",
+        sectionType: "dashboard" 
+      },
+      { 
+        id: "features", 
+        name: "Features Overview", 
+        description: "Visual feature breakdown", 
+        imageUrl: "/wireframes/sections/features-2.jpg",
+        sectionType: "feature-grid" 
+      }
     ],
     version: "1.0",
     lastUpdated: new Date().toLocaleDateString()

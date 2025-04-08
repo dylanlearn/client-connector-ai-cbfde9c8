@@ -17,9 +17,27 @@ const sampleWireframes = [
     description: "A clean, conversion-focused landing page with bold calls-to-action",
     imageUrl: "/wireframes/landing-1.jpg",
     sections: [
-      { id: "hero-1", name: "Hero Section", description: "Bold, minimal hero with single CTA", imageUrl: "/wireframes/sections/hero-1.jpg" },
-      { id: "features-1", name: "Feature Grid", description: "3-column feature highlights with icons", imageUrl: "/wireframes/sections/features-1.jpg" },
-      { id: "testimonial-1", name: "Testimonials", description: "Customer quotes with avatars", imageUrl: "/wireframes/sections/testimonials-1.jpg" }
+      { 
+        id: "hero-1", 
+        name: "Hero Section", 
+        description: "Bold, minimal hero with single CTA", 
+        imageUrl: "/wireframes/sections/hero-1.jpg",
+        sectionType: "hero" 
+      },
+      { 
+        id: "features-1", 
+        name: "Feature Grid", 
+        description: "3-column feature highlights with icons", 
+        imageUrl: "/wireframes/sections/features-1.jpg",
+        sectionType: "feature-grid" 
+      },
+      { 
+        id: "testimonial-1", 
+        name: "Testimonials", 
+        description: "Customer quotes with avatars", 
+        imageUrl: "/wireframes/sections/testimonials-1.jpg",
+        sectionType: "testimonial" 
+      }
     ],
     version: "1.0",
     lastUpdated: "2023-04-01"
@@ -30,9 +48,27 @@ const sampleWireframes = [
     description: "High-conversion product display with social proof elements",
     imageUrl: "/wireframes/ecommerce-1.jpg",
     sections: [
-      { id: "product-hero", name: "Product Gallery", description: "Large product images with thumbnails", imageUrl: "/wireframes/sections/product-1.jpg" },
-      { id: "product-info", name: "Product Details", description: "Pricing, options, and add to cart button", imageUrl: "/wireframes/sections/product-2.jpg" },
-      { id: "reviews", name: "Customer Reviews", description: "Star ratings and detailed reviews", imageUrl: "/wireframes/sections/reviews-1.jpg" }
+      { 
+        id: "product-hero", 
+        name: "Product Gallery", 
+        description: "Large product images with thumbnails", 
+        imageUrl: "/wireframes/sections/product-1.jpg",
+        sectionType: "product-gallery" 
+      },
+      { 
+        id: "product-info", 
+        name: "Product Details", 
+        description: "Pricing, options, and add to cart button", 
+        imageUrl: "/wireframes/sections/product-2.jpg",
+        sectionType: "product-info" 
+      },
+      { 
+        id: "reviews", 
+        name: "Customer Reviews", 
+        description: "Star ratings and detailed reviews", 
+        imageUrl: "/wireframes/sections/reviews-1.jpg",
+        sectionType: "reviews" 
+      }
     ],
     version: "1.2",
     lastUpdated: "2023-03-15"
@@ -43,9 +79,27 @@ const sampleWireframes = [
     description: "User-friendly dashboard with key metrics and actions",
     imageUrl: "/wireframes/dashboard-1.jpg",
     sections: [
-      { id: "metrics", name: "Key Metrics", description: "Important numbers and charts", imageUrl: "/wireframes/sections/metrics-1.jpg" },
-      { id: "activity", name: "Recent Activity", description: "Timeline of user actions", imageUrl: "/wireframes/sections/activity-1.jpg" },
-      { id: "actions", name: "Quick Actions", description: "Common user tasks in card format", imageUrl: "/wireframes/sections/actions-1.jpg" }
+      { 
+        id: "metrics", 
+        name: "Key Metrics", 
+        description: "Important numbers and charts", 
+        imageUrl: "/wireframes/sections/metrics-1.jpg",
+        sectionType: "metrics" 
+      },
+      { 
+        id: "activity", 
+        name: "Recent Activity", 
+        description: "Timeline of user actions", 
+        imageUrl: "/wireframes/sections/activity-1.jpg",
+        sectionType: "activity" 
+      },
+      { 
+        id: "actions", 
+        name: "Quick Actions", 
+        description: "Common user tasks in card format", 
+        imageUrl: "/wireframes/sections/actions-1.jpg",
+        sectionType: "actions" 
+      }
     ],
     version: "2.1",
     lastUpdated: "2023-03-28"
