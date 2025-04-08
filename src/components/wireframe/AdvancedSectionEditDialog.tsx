@@ -10,9 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit, Eye, Code } from 'lucide-react';
+import { Edit, Eye, Code, Sparkles } from 'lucide-react';
 import SectionEditorFactory from './editors/SectionEditorFactory';
 import SectionEditorPreview from './SectionEditorPreview';
+import WireframeAISuggestions from './ai/WireframeAISuggestions';
 
 interface AdvancedSectionEditDialogProps {
   isOpen: boolean;
@@ -65,6 +66,10 @@ const AdvancedSectionEditDialog: React.FC<AdvancedSectionEditDialogProps> = ({
               <Code className="h-4 w-4" />
               JSON
             </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Suggestions
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="editor" className="py-4">
@@ -87,6 +92,10 @@ const AdvancedSectionEditDialog: React.FC<AdvancedSectionEditDialogProps> = ({
                 {JSON.stringify(section, null, 2)}
               </pre>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="ai" className="py-4">
+            <WireframeAISuggestions onClose={() => setActiveTab('editor')} />
           </TabsContent>
         </Tabs>
         

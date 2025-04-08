@@ -4,6 +4,7 @@ import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import HeroSectionEditor from './HeroSectionEditor';
 import CTASectionEditor from './CTASectionEditor';
 import FAQSectionEditor from './FAQSectionEditor';
+import TestimonialsSectionEditor from './TestimonialsSectionEditor';
 import RichTextEditor from './RichTextEditor';
 
 // Add more section editor imports as they're created
@@ -24,6 +25,9 @@ const SectionEditorFactory: React.FC<SectionEditorProps> = ({ section, onUpdate 
       
     case 'faq':
       return <FAQSectionEditor section={section} onUpdate={onUpdate} />;
+      
+    case 'testimonials':
+      return <TestimonialsSectionEditor section={section} onUpdate={onUpdate} />;
       
     // Add more section type cases as editors are implemented
       
