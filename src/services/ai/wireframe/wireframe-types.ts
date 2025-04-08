@@ -11,9 +11,8 @@ export interface WireframeSection {
   description?: string;
   data?: Record<string, any>;
   components?: any[];
-  copySuggestions?: string[];
+  copySuggestions?: string[] | { heading?: string; subheading?: string; cta?: string; [key: string]: any };
   
-  // Adding missing properties that fabric-converters.ts is referencing
   styleProperties?: {
     backgroundStyle?: string;
     spacing?: string;
@@ -28,6 +27,12 @@ export interface WireframeSection {
   dimensions?: {
     width: number;
     height: number;
+    [key: string]: any;
+  };
+  layoutType?: string;
+  layout?: {
+    type: string;
+    alignment: string;
     [key: string]: any;
   };
   [key: string]: any;
@@ -107,3 +112,75 @@ export interface WireframeConversionService {
   wireframeToImage(wireframe: WireframeResult): Promise<string>;
   wireframeToFigma(wireframe: WireframeResult): Promise<string>;
 }
+
+// Additional types needed by other components in the system
+export interface AIWireframe {
+  id: string;
+  title: string;
+  description: string;
+  wireframe: WireframeResult;
+  createdAt: string;
+  updatedAt: string;
+  preview?: string;
+}
+
+export interface WireframeData {
+  id: string;
+  title: string;
+  sections: WireframeSection[];
+  style?: Record<string, any>;
+  colorScheme?: Record<string, string>;
+}
+
+export interface WireframeGenerationParams {
+  description: string;
+  style?: string;
+  sections?: string[];
+  projectId?: string;
+  creativityLevel?: number;
+  enhancedCreativity?: boolean;
+  multiPageLayout?: boolean;
+  pages?: number;
+  complexity?: string;
+  baseWireframe?: WireframeResult;
+}
+
+export interface WireframeGenerationResult {
+  wireframe: WireframeResult;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  generations?: number;
+  timeTaken?: number;
+}
+
+export interface CopySuggestions {
+  heading?: string;
+  subheading?: string;
+  cta?: string;
+  [key: string]: any;
+}
+
+export interface WireframeVersion {
+  id: string;
+  wireframeId: string;
+  version: number;
+  changes: string;
+  data: WireframeData;
+  createdAt: string;
+}
+
+export interface BranchInfo {
+  id: string;
+  name: string;
+  parentBranchId?: string;
+  createdAt: string;
+}
+
+export interface VersionComparisonResult {
+  added: string[];
+  removed: string[];
+  modified: string[];
+  unchanged: string[];
+}
+
