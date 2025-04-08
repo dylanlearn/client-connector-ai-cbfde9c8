@@ -54,7 +54,7 @@ export function useWireframeSections() {
     if (updates.copySuggestions && !Array.isArray(updates.copySuggestions)) {
       const convertedUpdates = {
         ...updates,
-        copySuggestions: [] as any[] // Explicitly cast as any[] to match expected type
+        copySuggestions: ([] as any[]) // Force it to be an empty array with explicit casting
       };
       updateSection(sectionId, convertedUpdates);
     } else {
