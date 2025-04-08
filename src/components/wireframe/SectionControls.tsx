@@ -41,7 +41,11 @@ const SectionControls: React.FC<SectionControlsProps> = ({
     >
       <div className="flex items-center gap-2">
         {provided && (
-          <div {...provided.dragHandleProps} className="cursor-grab">
+          <div 
+            {...provided.dragHandleProps} 
+            className="cursor-grab hover:bg-muted p-1 rounded-md transition-colors"
+            aria-label="Drag to reorder section"
+          >
             <GripVertical className="h-5 w-5 text-muted-foreground" />
           </div>
         )}
