@@ -10,15 +10,7 @@ export interface WireframeVisualizerProps {
     title: string;
     description?: string;
     imageUrl?: string;
-    sections: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      imageUrl?: string;
-      sectionType: string; // Making this required to match WireframeSection type
-      componentVariant?: string;
-      data?: Record<string, any>;
-    }>;
+    sections: Array<WireframeSection>; // Use the correct type directly
     version?: string;
     lastUpdated?: string;
   };

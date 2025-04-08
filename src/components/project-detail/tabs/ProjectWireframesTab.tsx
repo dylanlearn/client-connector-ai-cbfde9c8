@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -56,7 +55,11 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
         Array.isArray(designRecommendations) && designRecommendations.length > 0 ? designRecommendations[0] : null
       );
       
-      // Now wireframeParams is properly of type WireframeGenerationParams
+      if (!wireframeParams.description) {
+        wireframeParams.description = intakeData.projectDescription || 
+                                     `Website for ${intakeData.projectName || 'client'}`;
+      }
+      
       const result = await generateWireframe(wireframeParams);
       
       if (result) {

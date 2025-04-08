@@ -127,4 +127,5 @@ export class WireframeGeneratorService {
   }
 }
 
+// Create a singleton instance to export
 export const wireframeGenerator = new WireframeGeneratorService();

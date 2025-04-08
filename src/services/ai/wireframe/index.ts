@@ -2,8 +2,9 @@
 // Main wireframe service
 export * from './wireframe-service';
 
-// Specialized wireframe services
-export * from './generator/wireframe-generator-service';
+// Specialized wireframe services - handle the WireframeGeneratorService ambiguity
+export { wireframeGenerator } from './generator/wireframe-generator-service';
+// Export other members except WireframeGeneratorService
 export * from './data/wireframe-data-service';
 export * from './feedback/wireframe-feedback-service';
 export * from './management/wireframe-management-service';
