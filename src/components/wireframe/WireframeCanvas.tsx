@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import ComponentRenderer from './renderers/ComponentRenderer';
@@ -9,7 +9,7 @@ interface WireframeCanvasProps {
   className?: string;
 }
 
-const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className }) => {
+const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ projectId, className }) => {
   const { 
     wireframe,
     activeDevice,
@@ -80,6 +80,8 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ projectId, className 
       </div>
     </div>
   );
-};
+});
+
+WireframeCanvas.displayName = 'WireframeCanvas';
 
 export default WireframeCanvas;

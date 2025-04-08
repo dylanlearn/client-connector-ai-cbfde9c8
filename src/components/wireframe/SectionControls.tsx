@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
@@ -29,7 +29,8 @@ interface SectionControlsProps {
   onToggleVisibility: () => void;
 }
 
-const SectionControls: React.FC<SectionControlsProps> = ({
+// Use React.memo to prevent unnecessary re-renders
+const SectionControls: React.FC<SectionControlsProps> = memo(({
   section,
   sectionIndex,
   totalSections,
@@ -152,6 +153,8 @@ const SectionControls: React.FC<SectionControlsProps> = ({
       </div>
     </div>
   );
-};
+});
+
+SectionControls.displayName = 'SectionControls';
 
 export default SectionControls;

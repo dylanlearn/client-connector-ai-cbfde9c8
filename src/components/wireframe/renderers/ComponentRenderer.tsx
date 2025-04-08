@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import HeroSectionRenderer from './HeroSectionRenderer';
 import TestimonialSectionRenderer from './TestimonialSectionRenderer';
@@ -11,7 +11,6 @@ import PricingSectionRenderer from './PricingSectionRenderer';
 import FooterSectionRenderer from './FooterSectionRenderer';
 import ContactSectionRenderer from './ContactSectionRenderer';
 import BlogSectionRenderer from './BlogSectionRenderer';
-import { SectionComponentProps } from '../types';
 
 interface ComponentRendererProps {
   section: WireframeSection;
@@ -75,4 +74,5 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   }
 };
 
-export default ComponentRenderer;
+// Use memo to prevent unnecessary re-renders
+export default memo(ComponentRenderer);
