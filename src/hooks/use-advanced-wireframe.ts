@@ -120,14 +120,6 @@ export function useAdvancedWireframe() {
         description: "Generating layout intelligence insights...",
       });
       
-      // Create a temporary AIWireframe structure for analysis
-      const tempWireframe = {
-        id: 'temp-analysis',
-        title: wireframe.title,
-        description: wireframe.description,
-        sections: wireframe.sections || []
-      };
-      
       // Get layout pattern recognition
       const patternAnalysis = await EnhancedLayoutIntelligenceService.identifyLayoutPatterns(wireframe);
       

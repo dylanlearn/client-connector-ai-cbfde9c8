@@ -21,9 +21,9 @@ export type {
   LandBookAnalysis, 
   LandBookPaginatedResult 
 } from './design/land-book/land-book-service';
-export type { 
+export type {
   PatternRecognitionResult, 
-  PatternFeatureVector, 
+  PatternFeatureVector,
   PatternRecognitionOptions 
 } from './design/pattern-recognition';
 export type { DesignInsight } from './design/types/design-insight-types';

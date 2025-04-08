@@ -9,6 +9,10 @@ export enum AIFeatureType {
   DesignRecommendation = 'design',
   Analysis = 'analysis',
   ContentOptimization = 'optimization',
+  ContentGeneration = 'content',
+  DataAnalytics = 'analytics',
+  Summarization = 'summary',
+  Conversation = 'conversation'
 }
 
 /**
@@ -17,6 +21,9 @@ export enum AIFeatureType {
 export interface PatternRecognitionOptions {
   maxResults?: number;
   industryContext?: string;
+  minConfidence?: number;
+  includeFeatureAnalysis?: boolean;
+  threshold?: number;
 }
 
 /**
@@ -44,6 +51,18 @@ export function selectModelForFeature(
       return 'gpt-4o';
       
     case AIFeatureType.ContentOptimization:
+      return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
+    
+    case AIFeatureType.ContentGeneration:
+      return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
+      
+    case AIFeatureType.DataAnalytics:
+      return 'gpt-4o';
+      
+    case AIFeatureType.Summarization:
+      return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
+      
+    case AIFeatureType.Conversation:
       return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
       
     default:

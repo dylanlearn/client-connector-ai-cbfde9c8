@@ -6,6 +6,23 @@ export interface PatternRecognitionResult {
   patternId: string;
   confidence: number;
   pattern: string; // The actual pattern name
+  matchedFeatures?: string[];
+  similarPatterns?: Array<{
+    patternId: string;
+    similarityScore: number;
+  }>;
+}
+
+/**
+ * Feature vector representation of a design pattern
+ */
+export interface PatternFeatureVector {
+  layoutType: number[];
+  colorContrast: number;
+  typographyScale: number[];
+  spacingDensity: number;
+  componentComplexity: number;
+  visualHierarchy: number[];
 }
 
 /**
@@ -14,6 +31,9 @@ export interface PatternRecognitionResult {
 export interface PatternRecognitionOptions {
   maxResults?: number;
   industryContext?: string;
+  minConfidence?: number;
+  includeFeatureAnalysis?: boolean;
+  threshold?: number;
 }
 
 /**
@@ -116,5 +136,50 @@ export class PatternRecognitionService {
     
     // Return requested number of recommendations (up to available)
     return recommendations.slice(0, count);
+  }
+
+  /**
+   * Extract features from a design memory entry for pattern matching
+   */
+  static extractFeaturesFromMemory(memory: any): PatternFeatureVector {
+    // In a real implementation, this would analyze the memory and extract features
+    return {
+      layoutType: [0.5, 0.5, 0.5],
+      colorContrast: 0.7,
+      typographyScale: [0.6, 0.7, 0.5],
+      spacingDensity: 0.5,
+      componentComplexity: 0.6,
+      visualHierarchy: [0.6, 0.5, 0.7]
+    };
+  }
+
+  /**
+   * Find similar patterns based on pattern ID
+   */
+  static findSimilarPatterns(patternId: string, limit: number = 3): Array<{
+    patternId: string,
+    similarityScore: number
+  }> {
+    // Mock implementation
+    return [
+      { patternId: 'heropattern', similarityScore: 0.8 },
+      { patternId: 'cardspattern', similarityScore: 0.7 },
+      { patternId: 'gridpattern', similarityScore: 0.6 }
+    ].slice(0, limit);
+  }
+
+  /**
+   * Learn from user feedback to improve pattern recognition
+   */
+  static learnFromFeedback(
+    recognizedPattern: PatternRecognitionResult,
+    actualPattern: string,
+    userFeedback: {
+      accuracy: number,
+      comments?: string
+    }
+  ): void {
+    // In a real implementation, this would adjust weights and thresholds
+    console.log(`Learning from feedback: ${actualPattern} with accuracy ${userFeedback.accuracy}`);
   }
 }

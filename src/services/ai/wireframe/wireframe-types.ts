@@ -166,6 +166,7 @@ export interface WireframeGenerationResult {
   title?: string; // Add missing properties
   description?: string;
   sections?: WireframeSection[];
+  layoutAnalysis?: any; // Add layout analysis property
   
   // Additional properties used in the codebase
   success?: boolean;

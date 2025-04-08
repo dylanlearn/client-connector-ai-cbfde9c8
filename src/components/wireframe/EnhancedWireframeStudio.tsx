@@ -105,7 +105,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     const result = await generateWireframe(params);
     
     if (result && result.wireframe) {
-      // Set the layout analysis if provided
+      // Extract layout analysis if it exists in the result
       if (enableLayoutIntelligence && result.layoutAnalysis) {
         setLayoutAnalysis(result.layoutAnalysis);
       }

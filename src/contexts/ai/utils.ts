@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from "uuid";
 import { AIMessage, AIAnalysis } from "@/types/ai";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +34,7 @@ export const generateAIResponse = async (
 ) => {
   try {
     // Use GPT-4o-mini for regular conversation
-    const model = selectModelForFeature(AIFeatureType.Conversation);
+    const model = selectModelForFeature(AIFeatureType.TextGeneration);
     
     const { data, error } = await supabase.functions.invoke("generate-with-openai", {
       body: {

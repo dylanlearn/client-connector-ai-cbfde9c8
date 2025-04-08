@@ -1,39 +1,8 @@
 
 import { WireframeSection, AIWireframe, WireframeData } from './wireframe-types';
 import { supabase } from "@/integrations/supabase/client";
-import { AIFeatureType, selectModelForFeature } from "../ai-model-selector";
-
-// Define missing interfaces
-interface PatternRecognitionOptions {
-  maxResults?: number;
-  industryContext?: string;
-}
-
-interface PatternRecognitionResult {
-  patternId: string;
-  confidence: number;
-  pattern: string; // The actual pattern name
-}
-
-/**
- * Basic PatternRecognitionService for layout pattern detection
- */
-export class PatternRecognitionService {
-  static identifyPattern(visualElements: Record<string, any>, options: PatternRecognitionOptions = {}): PatternRecognitionResult[] {
-    // Simple pattern recognition implementation
-    // In a real implementation, this would analyze the visual elements and identify patterns
-    
-    const patterns: PatternRecognitionResult[] = [
-      { patternId: 'zpattern', confidence: 0.85, pattern: 'Z-Pattern Layout' },
-      { patternId: 'fpattern', confidence: 0.75, pattern: 'F-Pattern Layout' },
-      { patternId: 'gridpattern', confidence: 0.92, pattern: 'Grid Layout' }
-    ];
-    
-    // Limit the number of results based on options
-    const maxResults = options.maxResults || patterns.length;
-    return patterns.slice(0, maxResults);
-  }
-}
+import { AIFeatureType, selectModelForFeature, PatternRecognitionOptions } from "../ai-model-selector";
+import { PatternRecognitionService, PatternRecognitionResult } from "../design/pattern-recognition";
 
 /**
  * Enhanced service for advanced layout intelligence capabilities
