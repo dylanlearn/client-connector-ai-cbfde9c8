@@ -31,6 +31,7 @@ export interface WireframeRendererProps {
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
 }
 
 export interface AdvancedWireframeGeneratorProps {
@@ -39,4 +40,22 @@ export interface AdvancedWireframeGeneratorProps {
   darkMode?: boolean;
   onWireframeGenerated?: (wireframe: AIWireframe) => void;
   onWireframeSaved?: (wireframe: AIWireframe) => void;
+}
+
+export interface WireframeVisualizerProps {
+  wireframe: WireframeProps;
+  viewMode?: 'preview' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (id: string) => void;
+}
+
+export interface WireframeSectionRendererProps {
+  section: WireframeSection;
+  viewMode?: 'preview' | 'flowchart';
+  darkMode?: boolean;
+  sectionIndex?: number;
+  onSectionClick?: (sectionId: string) => void;
 }

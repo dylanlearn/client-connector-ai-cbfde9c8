@@ -2,18 +2,13 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import ComponentRenderer from './renderers/ComponentRenderer';
+import { WireframeSectionRendererProps } from './types';
 
-interface WireframeSectionRendererProps {
-  section: WireframeSection;
-  viewMode?: 'preview' | 'flowchart';
-  darkMode?: boolean;
-  onSectionClick?: (sectionId: string) => void;
-}
-
-export const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
+const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  sectionIndex,
   onSectionClick,
 }) => {
   const { id } = section;
@@ -28,6 +23,7 @@ export const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> =
     <div 
       className={`wireframe-section relative ${darkMode ? 'dark' : ''}`}
       onClick={handleClick}
+      data-section-index={sectionIndex}
     >
       <ComponentRenderer 
         section={section}

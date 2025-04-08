@@ -2,31 +2,16 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
+import { WireframeVisualizerProps } from './types';
 
-interface WireframeComponentProps {
-  wireframe: {
-    id?: string;
-    title?: string;
-    description?: string;
-    sections: WireframeSection[];
-    lastUpdated?: string;
-    imageUrl?: string;
-    version?: string;
-  };
-  viewMode?: 'preview' | 'flowchart';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionClick?: (id: string) => void;
-  activeSection?: string | null;
-}
-
-export const Wireframe: React.FC<WireframeComponentProps> = ({
+const Wireframe: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
   darkMode = false,
   deviceType = 'desktop',
   onSectionClick,
   activeSection,
+  onSelect,
 }) => {
   if (!wireframe || !wireframe.sections || wireframe.sections.length === 0) {
     return (
@@ -36,6 +21,12 @@ export const Wireframe: React.FC<WireframeComponentProps> = ({
     );
   }
 
+  const handleClick = () => {
+    if (onSelect && wireframe.id) {
+      onSelect(wireframe.id);
+    }
+  };
+
   return (
     <div 
       className={`wireframe ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}
@@ -43,6 +34,7 @@ export const Wireframe: React.FC<WireframeComponentProps> = ({
         maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
         margin: '0 auto'
       }}
+      onClick={onSelect ? handleClick : undefined}
     >
       <div className="wireframe-sections">
         {wireframe.sections.map((section, index) => (
@@ -54,6 +46,7 @@ export const Wireframe: React.FC<WireframeComponentProps> = ({
               section={section}
               viewMode={viewMode}
               darkMode={darkMode}
+              sectionIndex={index}
               onSectionClick={onSectionClick}
             />
           </div>
