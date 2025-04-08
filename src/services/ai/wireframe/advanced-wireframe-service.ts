@@ -40,10 +40,14 @@ export class AdvancedWireframeService {
         description: wireframeData.description || prompt || "Generated using advanced wireframe engine",
         data: {
           ...wireframeData,
-          projectId: projectId,
-          intent: intentData,
-          blueprint: blueprint,
-          generationType: "advanced"
+          // Add project ID as metadata rather than directly on wireframeData
+          metadata: {
+            ...(wireframeData.metadata || {}),
+            projectId: projectId,
+            intent: intentData,
+            blueprint: blueprint,
+            generationType: "advanced"
+          }
         },
         sections: wireframeData.sections || []
       });
@@ -181,7 +185,9 @@ export class AdvancedWireframeService {
       const { data, error } = await supabase
         .from('component_variants')
         .select('*')
-        .order('component_type', 'variant_name');
+        // Fix the order parameter to use an object with ascending property
+        .order('component_type', { ascending: true })
+        .order('variant_name', { ascending: true });
       
       if (error) {
         console.error("Error retrieving component variants:", error);
