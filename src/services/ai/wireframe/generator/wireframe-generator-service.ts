@@ -1,5 +1,5 @@
 
-import { WireframeApiService } from '../api';
+import { WireframeApiService } from '../wireframe-api';
 import {
   WireframeGenerationParams,
   WireframeGenerationResult,

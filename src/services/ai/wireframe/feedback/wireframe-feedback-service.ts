@@ -1,5 +1,5 @@
 
-import { WireframeApiService } from '../api';
+import { WireframeApiService } from '../wireframe-api';
 
 /**
  * Service focused on wireframe feedback and ratings

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { WireframeApiService } from "./api/wireframe-api-service";
+import { WireframeApiService } from "./wireframe-api";
 import type { 
   WireframeGenerationParams, 
   WireframeData, 

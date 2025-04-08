@@ -19,10 +19,18 @@ export interface WireframeApiService {
     section: WireframeSection,
     targetDevice: 'desktop' | 'tablet' | 'mobile'
   ) => Promise<WireframeSection>;
+
+  // Additional methods used in codebase
+  getWireframe: (id: string) => Promise<any>;
+  generateWireframe: (params: any) => Promise<any>;
+  saveWireframe: (projectId: string, prompt: string, data: any, params: any, model?: string) => Promise<any>;
+  updateWireframeData: (id: string, data: any) => Promise<any>;
+  getLatestWireframe: (projectId: string) => Promise<any>;
+  updateWireframeFeedback: (wireframeId: string, feedback: string, rating?: number) => Promise<void>;
 }
 
 // Implementation of the wireframe API service with multi-device support
-export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
+class DeviceAdaptiveWireframeApiService implements WireframeApiService {
   async createWireframe(wireframeData: Partial<WireframeData>): Promise<WireframeData> {
     // Implement API call to create wireframe
     console.log('Creating wireframe', wireframeData);
@@ -68,9 +76,9 @@ export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
     for (const device of targetDevices) {
       // Create a device-specific adaptation
       const adaptedSections = await Promise.all(
-        originalWireframe.sections.map(section => 
+        originalWireframe.sections?.map(section => 
           this.adaptSectionForDevice(section, device)
-        )
+        ) || []
       );
       
       adaptations[device] = {
@@ -78,7 +86,11 @@ export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
         id: `${originalWireframe.id}-${device}`,
         title: `${originalWireframe.title} (${device})`,
         sections: adaptedSections,
-        deviceTarget: device
+        // Fixed: deviceTarget is not in the WireframeData type, use metadata instead
+        metadata: {
+          ...originalWireframe.metadata,
+          deviceType: device
+        }
       };
     }
     
@@ -93,7 +105,7 @@ export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
     // For now, return a simplified adaptation
     
     // Create a copy to avoid mutating the original
-    const adaptedSection = { ...section };
+    const adaptedSection: WireframeSection = { ...section };
     
     // Apply device-specific adaptations
     switch (targetDevice) {
@@ -106,7 +118,11 @@ export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
             mobileOptimized: true
           }));
         }
-        adaptedSection.mobileLayout = 'stacked';
+        // Fixed: assign correct type for mobileLayout
+        adaptedSection.mobileLayout = {
+          structure: 'stacked',
+          stackOrder: adaptedSection.components?.map(c => c.id) || []
+        };
         break;
         
       case 'tablet':
@@ -118,7 +134,10 @@ export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
             tabletOptimized: true
           }));
         }
-        adaptedSection.tabletLayout = 'grid-2';
+        // Fixed: add layout info to the existing layout property instead
+        adaptedSection.layout = typeof adaptedSection.layout === 'string' 
+          ? { type: adaptedSection.layout, tabletGrid: 'grid-2' }
+          : { ...adaptedSection.layout, tabletGrid: 'grid-2' };
         break;
         
       case 'desktop':
@@ -129,6 +148,44 @@ export class DeviceAdaptiveWireframeApiService implements WireframeApiService {
     
     return adaptedSection;
   }
+
+  // Implement additional methods used in codebase
+  async getWireframe(id: string): Promise<any> {
+    return this.getWireframeById(id);
+  }
+  
+  async generateWireframe(params: any): Promise<any> {
+    console.log('Generating wireframe with params', params);
+    return {
+      wireframe: {
+        id: 'generated-wireframe-id',
+        title: params.description ? `Wireframe for: ${params.description.substring(0, 20)}...` : 'Generated Wireframe',
+        description: params.description || '',
+        sections: []
+      }
+    };
+  }
+  
+  async saveWireframe(projectId: string, prompt: string, data: any, params: any, model: string = 'default'): Promise<any> {
+    console.log('Saving wireframe', { projectId, prompt, data, params, model });
+    return { ...data, id: data.id || 'saved-wireframe-id' };
+  }
+  
+  async updateWireframeData(id: string, data: any): Promise<any> {
+    console.log('Updating wireframe data', { id, data });
+    return { ...data, id };
+  }
+  
+  async getLatestWireframe(projectId: string): Promise<any> {
+    console.log('Getting latest wireframe for project', projectId);
+    return { id: 'latest-wireframe-id', project_id: projectId };
+  }
+  
+  async updateWireframeFeedback(wireframeId: string, feedback: string, rating?: number): Promise<void> {
+    console.log('Updating wireframe feedback', { wireframeId, feedback, rating });
+  }
 }
 
-export default new DeviceAdaptiveWireframeApiService();
+// Export a singleton instance
+const wireframeApiService = new DeviceAdaptiveWireframeApiService();
+export default wireframeApiService;
