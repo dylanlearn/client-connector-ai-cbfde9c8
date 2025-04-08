@@ -1,15 +1,16 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ComponentRegistration } from "@/components/wireframe/registry/ComponentRegistration";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { AdvancedWireframeGenerator } from "@/components/wireframe";
+import { v4 as uuidv4 } from "uuid";
 
 const WireframeGenerator = () => {
-  // Create a fixed demo project ID for this page
-  const demoProjectId = "demo-project";
+  // Use a real UUID for the project ID rather than a demo ID
+  const [projectId] = useState(() => uuidv4());
   
   return (
     <DashboardLayout>
@@ -34,7 +35,7 @@ const WireframeGenerator = () => {
         
         <TooltipProvider>
           <AdvancedWireframeGenerator 
-            projectId={demoProjectId}
+            projectId={projectId}
             viewMode="preview"
           />
         </TooltipProvider>
