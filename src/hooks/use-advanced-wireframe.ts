@@ -189,8 +189,8 @@ export function useAdvancedWireframe() {
     designMemory,
     error,
     generateWireframe,
-    saveWireframe: AdvancedWireframeService.saveWireframe,
-    loadDesignMemory: AdvancedWireframeService.retrieveDesignMemory,
-    storeDesignMemory: AdvancedWireframeService.storeDesignMemory
+    saveWireframe,
+    loadDesignMemory,
+    storeDesignMemory
   };
 }

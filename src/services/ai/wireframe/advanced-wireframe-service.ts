@@ -1,5 +1,22 @@
 
-import { AIWireframe } from './wireframe-types';
+import { AIWireframe, WireframeSection } from './wireframe-types';
+
+/**
+ * Interface for design memory data
+ */
+export interface DesignMemory {
+  id?: string;
+  project_id: string;
+  blueprint_id?: string;
+  layout_patterns?: Record<string, any>;
+  style_preferences?: Record<string, any>;
+  component_preferences?: Record<string, any>;
+  wireframe_blueprints?: {
+    blueprint_data: any;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
 
 /**
  * Service class for advanced wireframe generator functionality
@@ -51,13 +68,13 @@ export class AdvancedWireframeService {
       sections: [
         {
           id: 'section-1',
-          type: 'hero',
+          sectionType: 'hero',
           title: 'Hero Section',
           content: 'This is a hero section based on your prompt'
         },
         {
           id: 'section-2',
-          type: 'features',
+          sectionType: 'features',
           title: 'Features Section',
           items: [
             { title: 'Feature 1', description: 'Description 1' },
@@ -69,4 +86,73 @@ export class AdvancedWireframeService {
       styleToken: styleToken || 'modern',
     };
   }
+
+  /**
+   * Save a wireframe to the database
+   */
+  static async saveWireframe(projectId: string, prompt: string): Promise<any> {
+    console.log('Saving wireframe for project:', projectId, 'with prompt:', prompt);
+    
+    // This would save to a database in a real implementation
+    return {
+      id: 'saved-wireframe-' + Date.now(),
+      project_id: projectId,
+      prompt: prompt,
+      created_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Retrieve design memory for a project
+   */
+  static async retrieveDesignMemory(projectId?: string): Promise<DesignMemory | null> {
+    console.log('Retrieving design memory for project:', projectId);
+    
+    if (!projectId) {
+      return null;
+    }
+    
+    // Mock implementation
+    return {
+      project_id: projectId,
+      layout_patterns: {
+        preferredLayout: 'grid',
+        spacing: 'comfortable'
+      },
+      style_preferences: {
+        colorScheme: 'light',
+        typography: 'modern'
+      },
+      component_preferences: {
+        headers: 'centered',
+        buttons: 'rounded'
+      },
+      created_at: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Store design memory for a project
+   */
+  static async storeDesignMemory(
+    projectId: string,
+    blueprintId: string,
+    layoutPatterns: any,
+    stylePreferences: any,
+    componentPreferences: any
+  ): Promise<DesignMemory> {
+    console.log('Storing design memory for project:', projectId);
+    
+    // Mock implementation
+    return {
+      project_id: projectId,
+      blueprint_id: blueprintId,
+      layout_patterns: layoutPatterns,
+      style_preferences: stylePreferences,
+      component_preferences: componentPreferences,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+  }
 }
+
