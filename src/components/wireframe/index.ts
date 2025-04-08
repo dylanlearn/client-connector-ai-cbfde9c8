@@ -7,6 +7,7 @@ export { default as WireframeCanvas } from './WireframeCanvas';
 export { default as WireframeSectionRenderer } from './WireframeSectionRenderer';
 export { default as WireframeRenderer } from './WireframeRenderer';
 export { default as WireframeEditorControls } from './WireframeEditorControls';
+export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenerator';
 
 // Export registry components
 export { ComponentRegistration, useComponentRegistry } from './registry/ComponentRegistration';
