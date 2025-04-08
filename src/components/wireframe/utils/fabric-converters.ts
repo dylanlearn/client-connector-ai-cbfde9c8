@@ -140,3 +140,110 @@ export function wireframeToFabricCanvas(
     canvas.zoomToFit();
   }
 }
+
+/**
+ * Convert a component to a fabric object
+ * This is needed by WireframeCanvasEngine.tsx
+ */
+export function componentToFabricObject(
+  section: WireframeSection,
+  index: number,
+  deviceType: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): fabric.Object {
+  // Create a group to represent the component
+  const group = new fabric.Group([], {
+    id: section.id,
+    objectType: 'wireframe-section',
+    sectionType: section.sectionType,
+    hasControls: true,
+    hasBorders: true,
+    selectable: true,
+  });
+
+  // Default dimensions based on device type
+  let defaultWidth = 800;
+  let defaultHeight = 200;
+  
+  switch (deviceType) {
+    case 'mobile':
+      defaultWidth = 350;
+      break;
+    case 'tablet':
+      defaultWidth = 600;
+      break;
+    case 'desktop':
+    default:
+      defaultWidth = 800;
+      break;
+  }
+
+  // Background color based on style properties or use a default
+  const backgroundColor = section.styleProperties?.backgroundStyle === 'dark' 
+    ? '#333333' 
+    : section.styleProperties?.backgroundStyle === 'accent'
+      ? '#f0f9ff'
+      : '#f8f8f8';
+
+  // Create the background rectangle
+  const background = new fabric.Rect({
+    fill: backgroundColor,
+    width: section.dimensions?.width || defaultWidth,
+    height: section.dimensions?.height || defaultHeight,
+    rx: 4,
+    ry: 4,
+    stroke: '#e0e0e0',
+    strokeWidth: 1,
+  });
+  
+  // Add the background to the group
+  group.addWithUpdate(background);
+  
+  // Add section name as a text object
+  const title = new fabric.Text(section.name || 'Section', {
+    fontSize: deviceType === 'mobile' ? 14 : 18,
+    fontWeight: 'bold',
+    fill: section.styleProperties?.backgroundStyle === 'dark' ? '#ffffff' : '#333333',
+    left: 15,
+    top: 15,
+  });
+  
+  group.addWithUpdate(title);
+  
+  // Add section type as a smaller text
+  const typeLabel = new fabric.Text(section.sectionType || 'Unknown Type', {
+    fontSize: deviceType === 'mobile' ? 10 : 12,
+    fill: '#666666',
+    left: 15,
+    top: title.height || 20 + 20,
+  });
+  
+  group.addWithUpdate(typeLabel);
+  
+  // If the section has description, add it
+  if (section.description) {
+    const description = new fabric.Text(
+      section.description.length > 50 
+        ? section.description.substring(0, 50) + '...' 
+        : section.description, 
+      {
+        fontSize: deviceType === 'mobile' ? 10 : 12,
+        fill: section.styleProperties?.backgroundStyle === 'dark' ? '#cccccc' : '#666666',
+        left: 15,
+        top: (title.height || 20) + (typeLabel.height || 15) + 25,
+      }
+    );
+    
+    group.addWithUpdate(description);
+  }
+  
+  // If not positioned, stack sections vertically
+  if (!section.position) {
+    group.set('top', index * (section.dimensions?.height || defaultHeight) + (index * 20));
+    group.set('left', 20);
+  } else {
+    group.set('top', section.position.y);
+    group.set('left', section.position.x);
+  }
+  
+  return group;
+}
