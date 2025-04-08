@@ -35,7 +35,7 @@ export function useWireframeSections() {
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
-      // Properly normalize copySuggestions as an array
+      // Initialize copySuggestions as an empty array to ensure proper typing
       copySuggestions: [],
       ...newSectionData
     };
@@ -51,24 +51,20 @@ export function useWireframeSections() {
   const handleUpdateSection = useCallback((sectionId: string, updates: Partial<WireframeSection>) => {
     if (!sectionId) return;
     
-    // Handle copySuggestions type conversion if needed
+    // Create a new updates object with normalized copySuggestions if present
+    const normalizedUpdates = { ...updates };
+    
     if ('copySuggestions' in updates) {
       // Normalize copySuggestions to always be an array
-      const normalized = Array.isArray(updates.copySuggestions)
+      normalizedUpdates.copySuggestions = Array.isArray(updates.copySuggestions)
         ? updates.copySuggestions
         : updates.copySuggestions
           ? [updates.copySuggestions]
           : [];
-      
-      const convertedUpdates = {
-        ...updates,
-        copySuggestions: normalized
-      };
-      
-      updateSection(sectionId, convertedUpdates);
-    } else {
-      updateSection(sectionId, updates);
     }
+    
+    // Apply the normalized updates
+    updateSection(sectionId, normalizedUpdates);
   }, [updateSection]);
   
   const handleRemoveSection = useCallback((sectionId: string) => {
