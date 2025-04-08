@@ -14,7 +14,7 @@ import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-ty
 import { Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeProps } from '@/components/wireframe/types';
-import { adaptSectionsForVisualizer } from '@/components/wireframe/EnhancedWireframeStudio';
+import { adaptSectionsForVisualizer } from '@/components/wireframe/utils/wireframe-adapter';
 
 interface WireframeGeneratorProps {
   projectId: string;

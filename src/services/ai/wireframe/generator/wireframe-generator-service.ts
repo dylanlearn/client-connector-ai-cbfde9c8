@@ -42,10 +42,16 @@ export const WireframeGeneratorService = {
       
       // Save the generated wireframe to the database if there's a project ID
       if (params.projectId && result.wireframe) {
+        // Ensure the wireframe has a title (requirement for WireframeData in wireframe.d.ts)
+        const wireframeWithTitle: WireframeData = {
+          ...result.wireframe,
+          title: result.wireframe.title || "Untitled Wireframe"
+        };
+        
         await WireframeApiService.saveWireframe(
           params.projectId,
           params.prompt || params.description, // Use prompt if available, otherwise use description
-          result.wireframe,
+          wireframeWithTitle,
           params,
           result.model || 'default'
         );
@@ -57,7 +63,7 @@ export const WireframeGeneratorService = {
           if (lastWireframe) {
             await WireframeVersionControlService.createVersion(
               lastWireframe.id,
-              result.wireframe,
+              wireframeWithTitle,
               "Initial wireframe generation",
               params.projectId // Using projectId instead of userId
             );

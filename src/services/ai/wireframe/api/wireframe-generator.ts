@@ -76,7 +76,6 @@ export const wireframeGenerator = {
       return {
         wireframe: data.wireframe,
         generationTime,
-        usedModels: data.model ? [data.model] : undefined,
         model: data.model,
         usage: data.usage,
         creativityLevel: data.creativityLevel || enhancedParams.creativityLevel,

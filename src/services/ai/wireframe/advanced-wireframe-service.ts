@@ -1,4 +1,3 @@
-
 import { AIWireframe, WireframeSection } from './wireframe-types';
 
 /**
@@ -83,8 +82,10 @@ export class AdvancedWireframeService {
           ]
         }
       ],
-      // styleToken is a property on AIWireframe
-      styleToken: styleToken || 'modern',
+      // Add style property instead of styleToken to match the interface
+      wireframe_data: {
+        style: styleToken || 'modern',
+      }
     };
   }
 

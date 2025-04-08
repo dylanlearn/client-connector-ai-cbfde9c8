@@ -69,7 +69,7 @@ export interface WireframeVersion {
   wireframe_id: string;
   version_number: number;
   branch_name: string;
-  data: Record<string, any>;
+  data: Record<string, any>; // Made required
   parent_version_id?: string;
   is_current: boolean;
   change_description?: string;

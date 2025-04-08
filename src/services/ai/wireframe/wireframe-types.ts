@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 
 // Component within a wireframe section
@@ -76,6 +77,8 @@ export interface WireframeData {
   layoutType?: string; // Used in several components
   style?: string | object; // Used for styling
   pages?: any[]; // For multi-page wireframes
+  mobileConsiderations?: string; // Added property
+  accessibilityNotes?: string; // Added property
   colorScheme?: {
     primary: string;
     secondary: string;
@@ -109,6 +112,7 @@ export interface AIWireframe {
   animations?: any;
   image_url?: string;
   wireframe_data?: WireframeData; // Added to fix references
+  styleToken?: string; // Added missing property
 }
 
 export interface WireframeGenerationParams {
@@ -143,6 +147,9 @@ export interface WireframeGenerationResult {
   success?: boolean;
   generationTime?: number;
   model?: string;
+  usedModels?: string[]; // Added property
+  usage?: any; // Added property
+  creativityLevel?: number; // Added property
 }
 
 // Add version control related interfaces
@@ -171,6 +178,7 @@ export interface VersionComparisonResult {
   deletions: any[];
   modifications: any[];
   summary: string;
+  differences?: any[]; // Added missing property
 }
 
 // Helper function to convert WireframeData to AIWireframe format
@@ -184,7 +192,8 @@ export function wireframeDataToAIWireframe(data: WireframeData, projectId?: stri
     sections: data.sections || [],
     updated_at: data.lastUpdated,
     image_url: data.imageUrl,
-    wireframe_data: data // Add the wireframe_data property
+    wireframe_data: data, // Add the wireframe_data property
+    styleToken: data.style as string // Map style to styleToken
   };
 }
 
@@ -195,6 +204,7 @@ export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeDat
     return {
       ...wireframe.wireframe_data,
       id: wireframe.id,
+      title: wireframe.title || "Untitled Wireframe", // Make sure title exists
       lastUpdated: wireframe.updated_at || new Date().toISOString()
     };
   }
@@ -202,7 +212,7 @@ export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeDat
   // Otherwise build from other properties
   return {
     id: wireframe.id,
-    title: wireframe.title || wireframe.description || "Untitled Wireframe",
+    title: wireframe.title || "Untitled Wireframe", // Make sure title exists
     description: wireframe.description || "",
     sections: wireframe.sections || [],
     imageUrl: wireframe.image_url || "",

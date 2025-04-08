@@ -1,100 +1,61 @@
-
-import fastDiff from 'fast-diff';
-import { WireframeVersion, VersionComparisonResult } from "@/services/ai/wireframe/wireframe-types";
+// Import the proper types from wireframe-types
+import { WireframeData, WireframeSection, WireframeVersion, VersionComparisonResult } from "@/services/ai/wireframe/wireframe-types";
 
 /**
- * Service for comparing wireframe versions and identifying differences.
+ * Compare two wireframe versions to identify differences
  */
-export const versionComparisonService = {
-  /**
-   * Compares two wireframe data objects and returns a summary of the differences.
-   * @param older The older wireframe data object.
-   * @param newer The newer wireframe data object.
-   * @returns A VersionComparisonResult object containing the differences and a summary.
-   */
-  compareWireframeData: (older: any, newer: any): VersionComparisonResult => {
-    const detectedDifferences: any[] = [];
+export const compareWireframeVersions = async (
+  version1: WireframeVersion | WireframeData,
+  version2: WireframeVersion | WireframeData
+): Promise<VersionComparisonResult> => {
+  const additions: any[] = [];
+  const deletions: any[] = [];
+  const modifications: any[] = [];
 
-    // Function to recursively compare objects and identify differences
-    const findDifferences = (olderObj: any, newerObj: any, path: string = "") => {
-      for (const key in newerObj) {
-        if (newerObj.hasOwnProperty(key)) {
-          const currentPath = path ? `${path}.${key}` : key;
-
-          if (olderObj && olderObj.hasOwnProperty(key)) {
-            if (typeof newerObj[key] === 'object' && newerObj[key] !== null && typeof olderObj[key] === 'object' && olderObj[key] !== null) {
-              // Recursively compare nested objects
-              findDifferences(olderObj[key], newerObj[key], currentPath);
-            } else if (olderObj[key] !== newerObj[key]) {
-              // Value has changed
-              detectedDifferences.push({
-                path: currentPath,
-                oldValue: olderObj[key],
-                newValue: newerObj[key],
-                type: 'modified'
-              });
-            }
-          } else {
-            // Key is new
-            detectedDifferences.push({
-              path: currentPath,
-              oldValue: undefined,
-              newValue: newerObj[key],
-              type: 'added'
-            });
-          }
-        }
+  // Helper function to deeply compare two objects
+  const deepCompare = (obj1: any, obj2: any, path: string = '') => {
+    if (typeof obj1 !== 'object' || obj1 === null || typeof obj2 !== 'object' || obj2 === null) {
+      if (obj1 !== obj2) {
+        modifications.push({ path, value1: obj1, value2: obj2 });
       }
+      return;
+    }
 
-      // Check for removed keys
-      for (const key in olderObj) {
-        if (olderObj.hasOwnProperty(key) && !newerObj.hasOwnProperty(key)) {
-          const currentPath = path ? `${path}.${key}` : key;
-          detectedDifferences.push({
-            path: currentPath,
-            oldValue: olderObj[key],
-            newValue: undefined,
-            type: 'removed'
-          });
-        }
+    const keys1 = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+
+    for (const key of keys1) {
+      const newPath = path ? `${path}.${key}` : key;
+
+      if (!(key in obj1)) {
+        additions.push({ path: newPath, value: obj2[key] });
+      } else if (!(key in obj2)) {
+        deletions.push({ path: newPath, value: obj1[key] });
+      } else {
+        deepCompare(obj1[key], obj2[key], newPath);
       }
-    };
+    }
+  };
 
-    findDifferences(older, newer, "");
+  // Start the comparison from the root
+  deepCompare(version1, version2);
 
-    const generateSummary = (differences: any[]): string => {
-      if (differences.length === 0) {
-        return "No significant changes detected.";
-      }
-
-      const changeCounts = {
-        added: 0,
-        modified: 0,
-        removed: 0
-      };
-
-      differences.forEach(diff => {
-        changeCounts[diff.type]++;
-      });
-
-      return `Detected ${differences.length} changes: ${changeCounts.added} added, ${changeCounts.modified} modified, ${changeCounts.removed} removed.`;
-    };
-    
-    return {
-      differences: detectedDifferences,
-      summary: generateSummary(detectedDifferences),
-      changes: detectedDifferences // Add changes property for compatibility
-    };
-  },
-
-  /**
-   * Generates a detailed text diff between two strings.
-   * @param olderText The older text.
-   * @param newerText The newer text.
-   * @returns An array of diff segments.
-   */
-  generateTextDiff: (olderText: string, newerText: string): any[] => {
-    // Using 'any[]' to resolve type incompatibilities with fast-diff
-    return fastDiff(olderText, newerText);
+  // Summarize the changes
+  let summary = '';
+  if (additions.length > 0) {
+    summary += `Added ${additions.length} items. `;
   }
+  if (deletions.length > 0) {
+    summary += `Deleted ${deletions.length} items. `;
+  }
+  if (modifications.length > 0) {
+    summary += `Modified ${modifications.length} items. `;
+  }
+
+  // At the end of the function, return the comparison result with the correct structure:
+  return {
+    additions,
+    deletions,
+    modifications,
+    summary
+  };
 };

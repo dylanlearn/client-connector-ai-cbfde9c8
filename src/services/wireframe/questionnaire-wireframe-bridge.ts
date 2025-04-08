@@ -7,9 +7,7 @@ import { IntakeFormData } from '@/types/intake-form';
  */
 export const questionnaireWireframeBridge = {
   /**
-   * Transforms questionnaire data into a structured wireframe format.
-   * @param questionnaireData - The data collected from the questionnaire.
-   * @returns A WireframeData object representing the structured wireframe.
+   * Transforms questionnaire data into wireframe structure
    */
   transform: (questionnaireData: any): WireframeData => {
     // Extract relevant information from the questionnaire data
@@ -120,9 +118,7 @@ export const questionnaireWireframeBridge = {
           body: bodyFont
         }
       },
-      // Define style as string instead of object
       style: "standard",
-      // Add these fields as they now exist in both WireframeData interfaces
       mobileConsiderations: "Responsive design with mobile-first approach.",
       accessibilityNotes: "Ensure all elements meet WCAG 2.1 AA standards."
     };
@@ -184,7 +180,7 @@ export const questionnaireWireframeBridge = {
     designRecommendation?: any
   ): WireframeGenerationParams => {
     const promptText = `Create a wireframe for ${intakeData.projectName || 'a website'} focused on ${intakeData.siteType || 'general use'}`;
-    const stylePreferences = intakeData.designStyle || 'modern';
+    const stylePreference = intakeData.designStyle || 'modern';
 
     // Create components with proper IDs
     const components: WireframeComponent[] = [
@@ -214,8 +210,8 @@ export const questionnaireWireframeBridge = {
       description: `Generate wireframe for ${intakeData.projectName || "a new project"}: ${intakeData.projectDescription || ""}`,
       projectId: intakeData.formId,
       industry: intakeData.siteType || "business",
-      style: stylePreferences,
-      stylePreferences: [stylePreferences],
+      style: stylePreference,
+      stylePreferences: [stylePreference],
       enhancedCreativity: true,
       creativityLevel: 8,
       complexity: 'moderate' as 'simple' | 'moderate' | 'complex',
