@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeProps } from '@/components/wireframe/types';
 import { adaptSectionsForVisualizer } from '@/components/wireframe/utils/wireframe-adapter';
+import { CreativityGauge } from '@/components/ui/creativity-gauge';
 
 interface WireframeGeneratorProps {
   projectId: string;

@@ -1,17 +1,18 @@
 
-import React, { useEffect, useState } from 'react';
-import { useToast } from "@/components/ui/use-toast";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, PlusCircle, Save, Sparkles, RefreshCw } from "lucide-react";
+import { Loader2, PlusCircle, Save, Sparkles } from "lucide-react";
 import { useAdvancedWireframe } from "@/hooks/use-advanced-wireframe";
 import DesignMemoryPanel from './DesignMemoryPanel';
+import { CreativityGauge } from '@/components/ui/creativity-gauge';
+import { debounce } from 'lodash';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;
@@ -29,6 +30,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   const [userInput, setUserInput] = useState<string>("");
   const [styleToken, setStyleToken] = useState<string>("modern");
   const [includeDesignMemory, setIncludeDesignMemory] = useState<boolean>(true);
+  const [creativityLevel, setCreativityLevel] = useState<number>(7); // Default creativity level
   const { toast } = useToast();
   
   const {
@@ -41,6 +43,20 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     saveWireframe,
     loadDesignMemory
   } = useAdvancedWireframe();
+
+  // Prevent excessive re-renders with debounced input
+  const debouncedSetUserInput = useCallback(
+    debounce((value: string) => {
+      setUserInput(value);
+    }, 300),
+    []
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Update the input field immediately for UI responsiveness
+    e.persist();
+    debouncedSetUserInput(e.target.value);
+  };
 
   useEffect(() => {
     if (projectId && includeDesignMemory) {
@@ -64,7 +80,8 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       styleToken,
       includeDesignMemory,
       customParams: {
-        darkMode
+        darkMode,
+        creativityLevel
       }
     });
 
@@ -107,40 +124,52 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                 <Textarea
                   id="wireframe-prompt"
                   placeholder="Enter a detailed description of the website wireframe you want to generate..."
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
+                  defaultValue={userInput}
+                  onChange={handleInputChange}
                   rows={5}
                   className={darkMode ? "bg-gray-700 border-gray-600" : ""}
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="style-select">Style</Label>
-                  <Select 
-                    value={styleToken} 
-                    onValueChange={setStyleToken}
-                  >
-                    <SelectTrigger id="style-select" className={darkMode ? "bg-gray-700 border-gray-600" : ""}>
-                      <SelectValue placeholder="Select style" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="modern">Modern</SelectItem>
-                      <SelectItem value="minimal">Minimal</SelectItem>
-                      <SelectItem value="brutalist">Brutalist</SelectItem>
-                      <SelectItem value="glassy">Glassy</SelectItem>
-                      <SelectItem value="corporate">Corporate</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="style-select">Style</Label>
+                    <Select 
+                      value={styleToken} 
+                      onValueChange={setStyleToken}
+                    >
+                      <SelectTrigger id="style-select" className={darkMode ? "bg-gray-700 border-gray-600" : ""}>
+                        <SelectValue placeholder="Select style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="modern">Modern</SelectItem>
+                        <SelectItem value="minimal">Minimal</SelectItem>
+                        <SelectItem value="brutalist">Brutalist</SelectItem>
+                        <SelectItem value="glassy">Glassy</SelectItem>
+                        <SelectItem value="corporate">Corporate</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="design-memory" 
+                      checked={includeDesignMemory} 
+                      onCheckedChange={setIncludeDesignMemory} 
+                    />
+                    <Label htmlFor="design-memory">Use design memory</Label>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="design-memory" 
-                    checked={includeDesignMemory} 
-                    onCheckedChange={setIncludeDesignMemory} 
+                <div className="space-y-4">
+                  <Label>Creativity Level</Label>
+                  <CreativityGauge
+                    value={creativityLevel}
+                    onChange={setCreativityLevel}
+                    showValue={true}
+                    size={120}
                   />
-                  <Label htmlFor="design-memory">Use design memory</Label>
                 </div>
               </div>
               
