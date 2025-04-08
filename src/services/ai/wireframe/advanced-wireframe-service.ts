@@ -76,10 +76,10 @@ export class AdvancedWireframeService {
           id: 'section-2',
           sectionType: 'features',
           name: 'Features Section',
-          items: [
-            { title: 'Feature 1', description: 'Description 1' },
-            { title: 'Feature 2', description: 'Description 2' },
-            { title: 'Feature 3', description: 'Description 3' }
+          components: [
+            { id: 'feature-1', type: 'feature-item', content: 'Feature 1', description: 'Description 1' },
+            { id: 'feature-2', type: 'feature-item', content: 'Feature 2', description: 'Description 2' },
+            { id: 'feature-3', type: 'feature-item', content: 'Feature 3', description: 'Description 3' }
           ]
         }
       ],
