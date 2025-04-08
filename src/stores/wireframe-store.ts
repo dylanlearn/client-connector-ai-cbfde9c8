@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,6 +15,8 @@ export interface WireframeSection {
   copySuggestions?: any[];
   mobileLayout?: any;
   animationSuggestions?: any[];
+  dimensions?: { width: number; height: number }; // Adding dimensions property to match
+  position?: { x: number, y: number }; // Adding position property to be consistent
 }
 
 export interface WireframeState {
