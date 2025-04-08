@@ -2,21 +2,30 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
+import { getDeviceStyles, styleOptionsToTailwind, deviceBreakpoints } from '../registry/component-types';
+import { getComponentDefinition } from '../registry/component-registry';
 
 interface ComponentRendererProps {
   section: WireframeSection;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
 const ComponentRenderer: React.FC<ComponentRendererProps> = ({ 
   section, 
   viewMode = 'preview',
   darkMode = false,
-  deviceType = 'desktop'
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  // Apply device-specific styling
+  // Get component definition from registry
+  const componentDef = getComponentDefinition(section.sectionType);
+  
+  // Default styles based on device type
   const getDeviceSpecificStyles = () => {
     const baseStyles = `p-4 rounded-md ${darkMode ? 'text-gray-200' : 'text-gray-800'}`;
     
@@ -31,24 +40,55 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     }
   };
 
+  // Get component-specific responsive styles if available
+  const getComponentResponsiveStyles = () => {
+    if (!componentDef?.responsiveConfig) return '';
+    
+    const baseStyles = componentDef.baseStyles || {};
+    const responsiveConfig = componentDef.responsiveConfig || {};
+    
+    const deviceStyles = getDeviceStyles(baseStyles, responsiveConfig, deviceType);
+    return styleOptionsToTailwind(deviceStyles);
+  };
+
   // Placeholder renderer for component types
   const renderComponent = () => {
-    // This is a simplified renderer - in a real app, you'd map section.sectionType
-    // to specific component renderers based on the type
+    // Use flowchart mode for schematic view
+    if (viewMode === 'flowchart') {
+      return (
+        <div className={cn(
+          "p-3 border-2 border-dashed rounded-md",
+          darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-50 border-gray-300'
+        )}>
+          <div className="text-xs font-mono mb-1 opacity-70">
+            {section.sectionType}
+          </div>
+          <h3 className="font-medium text-sm">
+            {section.name || 'Untitled Section'}
+          </h3>
+        </div>
+      );
+    }
+    
+    // Regular preview rendering
     return (
       <div className={cn(
         getDeviceSpecificStyles(),
+        getComponentResponsiveStyles(),
         darkMode ? 'bg-gray-800' : 'bg-gray-50',
         'border',
-        darkMode ? 'border-gray-700' : 'border-gray-200'
+        darkMode ? 'border-gray-700' : 'border-gray-200',
+        isSelected ? 'ring-2 ring-primary' : ''
       )}>
         <h3 className={`font-medium mb-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-          {section.name}
+          {section.name || componentDef?.name || 'Section'}
         </h3>
         
-        <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-          {section.description || 'No description'}
-        </p>
+        {(section.description || componentDef?.description) && (
+          <p className={`mb-4 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+            {section.description || componentDef?.description || 'No description'}
+          </p>
+        )}
         
         {/* Render child components if they exist */}
         {section.components && section.components.length > 0 && (
@@ -73,12 +113,22 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
             ))}
           </div>
         )}
+        
+        {/* Render variant-specific content */}
+        {section.componentVariant && componentDef?.variants && (
+          <div className="mt-2 text-sm text-muted-foreground">
+            Variant: {section.componentVariant}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="component-renderer">
+    <div 
+      className="component-renderer"
+      onClick={onClick}
+    >
       {renderComponent()}
     </div>
   );

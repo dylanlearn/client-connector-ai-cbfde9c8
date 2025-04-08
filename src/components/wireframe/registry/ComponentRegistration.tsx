@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState, createContext, useContext } from 'react';
-import { registerComponent, getAllComponentDefinitions } from './component-registry';
+import { registerComponent, getAllComponentDefinitions, ComponentDefinition } from './component-registry';
 import { defaultComponents } from './default-components';
 
 interface ComponentRegistryContextType {
   isRegistered: boolean;
-  components: any[];
+  components: ComponentDefinition[];
 }
 
 const ComponentRegistryContext = createContext<ComponentRegistryContextType>({
@@ -17,7 +17,7 @@ export const useComponentRegistry = () => useContext(ComponentRegistryContext);
 
 export const ComponentRegistration: React.FC = () => {
   const [isRegistered, setIsRegistered] = useState(false);
-  const [components, setComponents] = useState<any[]>([]);
+  const [components, setComponents] = useState<ComponentDefinition[]>([]);
 
   useEffect(() => {
     // Register all default components

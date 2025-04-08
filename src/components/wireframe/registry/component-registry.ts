@@ -1,5 +1,5 @@
-
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { ComponentStyleOptions, ResponsiveConfig } from './component-types';
 
 export interface ComponentField {
   id: string;
@@ -21,6 +21,8 @@ export interface ComponentVariant {
   name: string;
   description?: string;
   thumbnail?: string;
+  baseStyles?: ComponentStyleOptions;
+  responsiveConfig?: ResponsiveConfig;
 }
 
 export interface ComponentDefinition {
@@ -31,6 +33,8 @@ export interface ComponentDefinition {
   icon?: string;
   variants: ComponentVariant[];
   fields: ComponentField[];
+  baseStyles?: ComponentStyleOptions;
+  responsiveConfig?: ResponsiveConfig;
   defaultData: Partial<WireframeSection>;
 }
 
@@ -41,7 +45,27 @@ const componentRegistry: Record<string, ComponentDefinition> = {};
  * Register a new component type
  */
 export const registerComponent = (definition: ComponentDefinition): void => {
+  // Ensure the definition has the required fields
+  if (!definition.variants || !Array.isArray(definition.variants) || definition.variants.length === 0) {
+    console.warn(`Component definition for ${definition.type} must have at least one variant`);
+    definition.variants = [{
+      id: 'default',
+      name: 'Default'
+    }];
+  }
+  
+  // If baseStyles is not defined, create default
+  if (!definition.baseStyles) {
+    definition.baseStyles = {
+      padding: '4',
+      layout: 'stack',
+      gap: '4'
+    };
+  }
+  
+  // Register the component
   componentRegistry[definition.type] = definition;
+  console.log(`Registered component: ${definition.name} (${definition.type})`);
 };
 
 /**
@@ -89,6 +113,25 @@ export const createSectionInstance = (componentType: string, variantId?: string)
   return {
     ...definition.defaultData,
     sectionType: componentType,
-    componentVariant: variant?.id
+    componentVariant: variant?.id,
+    // Always ensure copySuggestions is initialized as an array
+    copySuggestions: []
   };
+};
+
+// Utility to get responsive config for a component and variant
+export const getComponentResponsiveConfig = (componentType: string, variantId?: string): ResponsiveConfig | undefined => {
+  const component = getComponentDefinition(componentType);
+  if (!component) return undefined;
+  
+  // If a variant is specified and has responsive config, use that
+  if (variantId) {
+    const variant = component.variants.find(v => v.id === variantId);
+    if (variant?.responsiveConfig) {
+      return variant.responsiveConfig;
+    }
+  }
+  
+  // Otherwise fall back to component-level responsive config
+  return component.responsiveConfig;
 };

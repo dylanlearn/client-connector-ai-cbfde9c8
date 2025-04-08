@@ -1,18 +1,26 @@
 
 import React, { useEffect, useState } from 'react';
-import { getAllComponentDefinitions } from './component-registry';
-import { ComponentDefinition } from './component-registry';
+import { getAllComponentDefinitions, ComponentDefinition } from './component-registry';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Card,
+  CardContent,
+  CardFooter
+} from '@/components/ui/card';
+import { getSectionIcon } from '../utils/sectionUtils';
 
 interface WireframeComponentRegistryProps {
   onComponentSelect?: (componentType: string, variant?: string) => void;
   filter?: string;
   darkMode?: boolean;
+  selectedCategory?: string;
 }
 
 const WireframeComponentRegistry: React.FC<WireframeComponentRegistryProps> = ({
   onComponentSelect,
   filter,
-  darkMode = false
+  darkMode = false,
+  selectedCategory
 }) => {
   const [components, setComponents] = useState<ComponentDefinition[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -21,14 +29,22 @@ const WireframeComponentRegistry: React.FC<WireframeComponentRegistryProps> = ({
     // Get all component definitions
     const definitions = getAllComponentDefinitions();
     
-    // Filter components if a filter is provided
-    const filteredComponents = filter 
-      ? definitions.filter(def => 
-          def.type.includes(filter) || 
-          def.name.toLowerCase().includes(filter.toLowerCase()) || 
-          def.category.includes(filter)
-        )
-      : definitions;
+    // Filter components if a filter or category is provided
+    let filteredComponents = definitions;
+    
+    if (filter) {
+      filteredComponents = filteredComponents.filter(def => 
+        def.type.includes(filter) || 
+        def.name.toLowerCase().includes(filter.toLowerCase()) || 
+        def.category.includes(filter)
+      );
+    }
+    
+    if (selectedCategory) {
+      filteredComponents = filteredComponents.filter(def => 
+        def.category === selectedCategory
+      );
+    }
     
     // Extract unique categories
     const uniqueCategories = Array.from(
@@ -37,7 +53,7 @@ const WireframeComponentRegistry: React.FC<WireframeComponentRegistryProps> = ({
     
     setComponents(filteredComponents);
     setCategories(uniqueCategories);
-  }, [filter]);
+  }, [filter, selectedCategory]);
 
   return (
     <div className={`wireframe-component-registry ${darkMode ? 'dark' : ''}`}>
@@ -50,27 +66,41 @@ const WireframeComponentRegistry: React.FC<WireframeComponentRegistryProps> = ({
             {components
               .filter(comp => comp.category === category)
               .map(component => (
-                <div
+                <Card
                   key={component.type}
-                  className="border rounded-md p-3 hover:bg-muted cursor-pointer"
+                  className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => onComponentSelect?.(component.type, component.variants[0]?.id)}
                 >
-                  <div className="flex items-center">
-                    {component.icon && (
-                      <div className="mr-2 text-muted-foreground">
-                        {/* Render icon if available */}
+                  <CardContent className="p-0">
+                    <div className="p-4 border-b">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">
+                          {getSectionIcon(component.type)}
+                        </span>
+                        <h4 className="font-medium">{component.name}</h4>
                       </div>
-                    )}
-                    <div>
-                      <h4 className="font-medium">{component.name}</h4>
-                      {component.variants.length > 1 && (
-                        <p className="text-xs text-muted-foreground">
-                          {component.variants.length} variants available
+                      {component.description && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {component.description}
                         </p>
                       )}
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                  {component.variants.length > 0 && (
+                    <CardFooter className="p-3 pt-2 flex flex-wrap gap-1">
+                      {component.variants.map((variant, i) => (
+                        <Badge key={variant.id} variant="outline" className="text-xs">
+                          {variant.name}
+                        </Badge>
+                      )).slice(0, 3)}
+                      {component.variants.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{component.variants.length - 3} more
+                        </Badge>
+                      )}
+                    </CardFooter>
+                  )}
+                </Card>
               ))}
           </div>
         </div>

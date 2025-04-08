@@ -8,8 +8,10 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
   sectionIndex,
   onSectionClick,
+  isSelected = false
 }) => {
   const { id } = section;
   
@@ -29,6 +31,8 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
         section={section}
         viewMode={viewMode}
         darkMode={darkMode}
+        deviceType={deviceType}
+        isSelected={isSelected}
       />
     </div>
   );
