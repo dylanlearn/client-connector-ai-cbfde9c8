@@ -4,15 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-
-interface WireframeDataVisualizerProps {
-  wireframeData: any;
-  darkMode?: boolean;
-}
+import { WireframeDataVisualizerProps } from './types';
 
 const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
   wireframeData,
-  darkMode = false
+  darkMode = false,
+  viewMode = 'preview',
+  deviceType = 'desktop'
 }) => {
   if (!wireframeData) {
     return (
@@ -64,6 +62,20 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
                   <div>
                     <h3 className="text-sm font-medium text-muted-foreground">Last Updated</h3>
                     <p>{wireframeData.lastUpdated}</p>
+                  </div>
+                )}
+
+                {deviceType && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Device Type</h3>
+                    <p className="capitalize">{deviceType}</p>
+                  </div>
+                )}
+
+                {viewMode && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">View Mode</h3>
+                    <p className="capitalize">{viewMode}</p>
                   </div>
                 )}
               </div>

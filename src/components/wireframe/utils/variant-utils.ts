@@ -1,86 +1,91 @@
 
 /**
- * Get the appropriate background class based on the specified style and dark mode
+ * Utility functions for handling component variants and styling
  */
-export const getBackgroundClass = (backgroundStyle?: string, darkMode = false): string => {
-  // Default background classes
-  const defaultLight = 'bg-white text-gray-900';
-  const defaultDark = 'bg-gray-900 text-white';
-  
-  // If dark mode is forced, use dark theme
-  if (darkMode) {
-    return defaultDark;
-  }
-  
-  // Select background class based on style
-  switch (backgroundStyle) {
-    case 'light':
-      return defaultLight;
-    case 'dark':
-      return defaultDark;
-    case 'primary':
-      return 'bg-primary text-white';
-    case 'secondary':
-      return 'bg-secondary text-secondary-foreground';
-    case 'muted':
-      return 'bg-muted text-muted-foreground';
-    case 'accent':
-      return 'bg-accent text-accent-foreground';
-    case 'gray':
-      return 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white';
-    case 'gradient':
-      return 'bg-gradient-to-r from-primary to-primary/60 text-white';
-    default:
-      return defaultLight;
-  }
-};
 
-/**
- * Get the appropriate alignment class
- */
-export const getAlignmentClass = (alignment: string): string => {
+// Get background class based on style and dark mode
+export function getBackgroundClass(backgroundStyle: string = 'light', darkMode: boolean = false): string {
+  if (darkMode) {
+    // In dark mode
+    switch (backgroundStyle) {
+      case 'dark':
+        return 'bg-gray-900 text-gray-100';
+      case 'gradient':
+        return 'bg-gradient-to-br from-gray-800 to-gray-950 text-gray-100';
+      case 'image':
+        return 'bg-gray-900 text-gray-100 bg-opacity-90';
+      case 'light':
+      default:
+        return 'bg-gray-800 text-gray-100';
+    }
+  } else {
+    // In light mode
+    switch (backgroundStyle) {
+      case 'dark':
+        return 'bg-gray-900 text-gray-100';
+      case 'gradient':
+        return 'bg-gradient-to-br from-primary-50 to-primary-200 text-gray-900';
+      case 'image':
+        return 'bg-gray-50 text-gray-900';
+      case 'light':
+      default:
+        return 'bg-white text-gray-900';
+    }
+  }
+}
+
+// Get text alignment class
+export function getAlignmentClass(alignment: string = 'center'): string {
   switch (alignment) {
     case 'left':
       return 'text-left';
-    case 'center':
-      return 'text-center';
     case 'right':
       return 'text-right';
+    case 'center':
     default:
-      return 'text-left';
+      return 'text-center';
   }
-};
+}
 
-/**
- * Get the spacing class based on the size
- */
-export const getSpacingClass = (size?: 'small' | 'medium' | 'large'): string => {
+// Get spacing class based on size
+export function getSpacingClass(size: string = 'medium'): string {
   switch (size) {
     case 'small':
       return 'py-8';
-    case 'medium':
-      return 'py-12';
     case 'large':
-      return 'py-16';
+      return 'py-20';
+    case 'medium':
     default:
       return 'py-12';
   }
-};
+}
 
-/**
- * Get responsive width class based on width setting
- */
-export const getWidthClass = (width?: 'narrow' | 'normal' | 'wide' | 'full'): string => {
+// Get grid columns class based on count
+export function getGridColumnsClass(columns: number = 3): string {
+  switch (columns) {
+    case 1:
+      return 'grid-cols-1';
+    case 2:
+      return 'grid-cols-1 md:grid-cols-2';
+    case 4:
+      return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+    case 3:
+    default:
+      return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  }
+}
+
+// Generate responsive width class
+export function getResponsiveWidthClass(width: string = 'full'): string {
   switch (width) {
     case 'narrow':
-      return 'max-w-2xl mx-auto';
-    case 'normal':
-      return 'max-w-4xl mx-auto';
+      return 'w-full max-w-md mx-auto';
+    case 'medium':
+      return 'w-full max-w-2xl mx-auto';
     case 'wide':
-      return 'max-w-6xl mx-auto';
+      return 'w-full max-w-4xl mx-auto';
     case 'full':
-      return 'w-full';
     default:
-      return 'max-w-4xl mx-auto';
+      return 'w-full';
   }
-};
+}

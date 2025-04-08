@@ -68,3 +68,10 @@ export interface VariantComponentProps {
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   data?: any;
 }
+
+export interface WireframeDataVisualizerProps {
+  wireframeData: any;
+  darkMode?: boolean;
+  viewMode?: 'preview' | 'flowchart';
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+}

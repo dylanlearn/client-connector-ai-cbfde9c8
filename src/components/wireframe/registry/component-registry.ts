@@ -4,7 +4,7 @@ import { WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 
 // Define component definition interface
 export interface ComponentDefinition {
-  id: string;
+  id?: string;
   type: string;
   name: string;
   description?: string;
@@ -12,7 +12,9 @@ export interface ComponentDefinition {
   tags?: string[];
   icon?: string;
   variants?: ComponentVariant[];
+  fields?: any[]; // Added fields property
   defaultProps?: Record<string, any>;
+  defaultData?: any; // Added defaultData property
   responsiveOptions?: Record<string, any>;
   baseStyles?: any;
   responsiveConfig?: any;
