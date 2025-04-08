@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useComponentRegistry } from './registry/ComponentRegistration';
 import { getAllComponentDefinitions, createSectionInstance } from './registry/component-registry';
@@ -282,7 +281,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId }) => {
 
         {/* Canvas Area */}
         <div className="md:col-span-3">
-          <WireframeCanvas projectId={projectId} className="min-h-[600px]" />
+          <WireframeCanvas projectId={projectId} className="min-h-[600px]" onSectionClick={handleSelectSection} />
         </div>
       </div>
       

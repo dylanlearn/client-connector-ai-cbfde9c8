@@ -6,12 +6,18 @@ interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   minHeight?: string;
+  placeholder?: string;
+  className?: string;
+  debounceTime?: number;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
   value,
   onChange,
-  minHeight = "150px"
+  minHeight = "150px",
+  placeholder = "Enter content here...",
+  className = "",
+  debounceTime = 250
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isEmpty, setIsEmpty] = useState(!value || value === '');
@@ -27,8 +33,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
         previousValueRef.current = content;
         onChange(content);
       }
-    }, 250),
-    [onChange]
+    }, debounceTime),
+    [onChange, debounceTime]
   );
   
   // Set initial content and handle content updates from parent
@@ -40,6 +46,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
         ignoreNextInputRef.current = true;
         editorRef.current.innerHTML = value;
         previousValueRef.current = value;
+        
+        // Update empty state
+        setIsEmpty(!value || value === '' || value === '<br>');
       }
     }
   }, [value, isFocused]);
@@ -97,7 +106,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
   
   return (
     <div 
-      className="relative border rounded-md shadow-sm transition-all overflow-hidden"
+      className={`relative border rounded-md shadow-sm transition-all overflow-hidden ${className}`}
     >
       <div
         className={`editor-container ${isFocused ? 'ring-2 ring-primary/50' : ''}`}
@@ -106,7 +115,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = memo(({
           <div 
             className="absolute top-2 left-3 text-muted-foreground pointer-events-none"
           >
-            Enter content here...
+            {placeholder}
           </div>
         )}
         <div
