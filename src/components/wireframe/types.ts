@@ -1,5 +1,5 @@
 
-import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection, WireframeData, AIWireframe } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeProps {
   id: string;
@@ -31,4 +31,12 @@ export interface WireframeRendererProps {
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
+}
+
+export interface AdvancedWireframeGeneratorProps {
+  projectId: string;
+  viewMode?: 'preview' | 'flowchart';
+  darkMode?: boolean;
+  onWireframeGenerated?: (wireframe: AIWireframe) => void;
+  onWireframeSaved?: (wireframe: AIWireframe) => void;
 }

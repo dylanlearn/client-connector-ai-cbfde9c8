@@ -1,26 +1,32 @@
 
 import React from 'react';
-import { AdvancedWireframeGenerator as ProjectAdvancedWireframeGenerator } from '@/components/project-detail/components/AI/WireframeGenerator';
+import AdvancedWireframeGeneratorComponent from '@/components/project-detail/components/AI/WireframeGenerator';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
+  onWireframeGenerated?: (wireframe: any) => void;
+  onWireframeSaved?: (wireframe: any) => void;
 }
 
 const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   projectId,
   viewMode = 'preview',
-  darkMode = false
+  darkMode = false,
+  onWireframeGenerated,
+  onWireframeSaved
 }) => {
   // Ensure we always have a valid UUID
   const validProjectId = projectId || uuidv4();
   
   return (
-    <ProjectAdvancedWireframeGenerator 
+    <AdvancedWireframeGeneratorComponent 
       projectId={validProjectId}
       darkMode={darkMode}
+      onWireframeGenerated={onWireframeGenerated}
+      onWireframeSaved={onWireframeSaved}
     />
   );
 };

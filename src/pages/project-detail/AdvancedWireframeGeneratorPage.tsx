@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdvancedWireframeGenerator } from '@/components/wireframe';
@@ -9,6 +10,7 @@ import { HelpText } from '@/components/ui/help-text';
 import { AdvancedWireframeService } from '@/services/ai/wireframe/advanced-wireframe-service';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { AIWireframe } from '@/services/ai/wireframe/wireframe-types';
 
 const AdvancedWireframeGeneratorPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -90,8 +92,8 @@ const AdvancedWireframeGeneratorPage = () => {
           {projectId ? (
             <AdvancedWireframeGenerator
               projectId={projectId}
-              onWireframeGenerated={refreshWireframes}
-              onWireframeSaved={refreshWireframes}
+              onWireframeGenerated={(wireframe: AIWireframe) => refreshWireframes()}
+              onWireframeSaved={(wireframe: AIWireframe) => refreshWireframes()}
               darkMode={darkModeEnabled}
             />
           ) : (
