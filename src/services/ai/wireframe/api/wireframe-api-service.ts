@@ -117,7 +117,7 @@ class DeviceAdaptiveWireframeApiService implements WireframeApiService {
             mobileOptimized: true
           }));
         }
-        // Use the correct type for mobileLayout
+        // Adding a proper mobileLayout property as an object
         adaptedSection.mobileLayout = {
           structure: 'stacked',
           stackOrder: adaptedSection.components?.map(c => c.id) || []
@@ -137,6 +137,12 @@ class DeviceAdaptiveWireframeApiService implements WireframeApiService {
         adaptedSection.layout = typeof adaptedSection.layout === 'string' 
           ? { type: adaptedSection.layout, tabletGrid: 'grid-2' }
           : { ...adaptedSection.layout, tabletGrid: 'grid-2' };
+        
+        // Add tablet-specific layout (adding to adaptedSection object, not to layout)
+        adaptedSection.tabletLayout = {
+          columns: 2,
+          spacing: 'medium'
+        };
         break;
         
       case 'desktop':

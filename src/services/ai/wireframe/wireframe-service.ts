@@ -5,9 +5,7 @@ import type {
   WireframeGenerationParams, 
   WireframeData, 
   WireframeSection,
-  AIWireframe,
-  wireframeDataToAIWireframe,
-  aiWireframeToWireframeData
+  AIWireframe
 } from "./wireframe-types";
 import { v4 as uuidv4 } from 'uuid';
 
