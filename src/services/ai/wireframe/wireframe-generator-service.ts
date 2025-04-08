@@ -1,9 +1,8 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult 
-} from '../wireframe-types';
+} from './wireframe-types';
 
 interface WireframeResult {
   wireframe: any;

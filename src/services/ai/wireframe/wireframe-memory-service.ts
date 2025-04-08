@@ -1,6 +1,25 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+
+export interface DesignMemoryResponse {
+  id: string;
+  project_id: string;
+  user_id: string;
+  blueprint_id?: string;
+  layout_patterns?: any;
+  style_preferences?: any;
+  component_preferences?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DesignMemoryData {
+  projectId: string;
+  blueprintId?: string;
+  layoutPatterns?: any;
+  stylePreferences?: any;
+  componentPreferences?: any;
+}
 
 class WireframeMemoryService {
   /**
@@ -10,7 +29,6 @@ class WireframeMemoryService {
    */
   async getProject(projectId: string) {
     try {
-      // Use maybeSingle instead of single to avoid the error when no rows are returned
       const { data, error } = await supabase
         .from('wireframe_projects')
         .select('*')
@@ -21,7 +39,6 @@ class WireframeMemoryService {
         throw error;
       }
       
-      // If no data is found, return null so we can create a default project
       if (!data) {
         return null;
       }
@@ -42,21 +59,18 @@ class WireframeMemoryService {
     try {
       const { id, ...projectDetails } = projectData;
       
-      // If there's no ID, generate one
       const projectId = id || uuidv4();
       
-      // Ensure we have the necessary fields
       const dataToSave = {
         id: projectId,
         title: projectDetails.title || 'Untitled Project',
         description: projectDetails.description || '',
         settings: projectDetails.settings || {},
         updated_at: new Date().toISOString(),
-        user_id: projectDetails.user_id || null, // Get from auth if available
+        user_id: projectDetails.user_id || null,
         ...projectDetails
       };
       
-      // Use upsert to either insert or update based on the ID
       const { data, error } = await supabase
         .from('wireframe_projects')
         .upsert(dataToSave, { onConflict: 'id' })
@@ -134,6 +148,103 @@ class WireframeMemoryService {
       return data;
     } catch (error) {
       console.error('Error storing project memory:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get design memory for a project
+   * @param projectId The project ID
+   * @returns The design memory
+   */
+  async getDesignMemory(projectId: string): Promise<DesignMemoryResponse | null> {
+    try {
+      const { data, error } = await supabase
+        .from('wireframe_design_memory')
+        .select('*')
+        .eq('project_id', projectId)
+        .maybeSingle();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching design memory:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Store design memory for a project
+   * @param data The design memory data
+   * @returns The stored design memory
+   */
+  async storeDesignMemory(data: DesignMemoryData): Promise<DesignMemoryResponse> {
+    try {
+      const { projectId, ...memoryDetails } = data;
+      
+      const dataToSave = {
+        project_id: projectId,
+        blueprint_id: memoryDetails.blueprintId,
+        layout_patterns: memoryDetails.layoutPatterns,
+        style_preferences: memoryDetails.stylePreferences,
+        component_preferences: memoryDetails.componentPreferences,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data: savedData, error } = await supabase
+        .from('wireframe_design_memory')
+        .insert(dataToSave)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return savedData;
+    } catch (error) {
+      console.error('Error storing design memory:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update design memory
+   * @param params The update parameters
+   * @returns The updated design memory
+   */
+  async updateDesignMemory(params: { 
+    memoryId: string; 
+    updates: Partial<Omit<DesignMemoryData, 'projectId'>>
+  }): Promise<DesignMemoryResponse> {
+    try {
+      const { memoryId, updates } = params;
+      
+      const updateData = {
+        blueprint_id: updates.blueprintId,
+        layout_patterns: updates.layoutPatterns,
+        style_preferences: updates.stylePreferences,
+        component_preferences: updates.componentPreferences,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data: updatedData, error } = await supabase
+        .from('wireframe_design_memory')
+        .update(updateData)
+        .eq('id', memoryId)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      return updatedData;
+    } catch (error) {
+      console.error('Error updating design memory:', error);
       throw error;
     }
   }

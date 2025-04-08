@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  WireframeMemoryService, 
+  wireframeMemoryService,
   DesignMemoryResponse,
   DesignMemoryData
 } from '@/services/ai/wireframe/wireframe-memory-service';
@@ -28,7 +28,7 @@ export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
     setError(null);
     
     try {
-      const memory = await WireframeMemoryService.getDesignMemory(projectId);
+      const memory = await wireframeMemoryService.getDesignMemory(projectId);
       setDesignMemory(memory);
       return memory;
     } catch (err: any) {
@@ -66,13 +66,13 @@ export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
       // Check if we already have a design memory for this project
       if (designMemory?.id) {
         // Update existing entry
-        const result = await WireframeMemoryService.updateDesignMemory({
+        const result = await wireframeMemoryService.updateDesignMemory({
           memoryId: designMemory.id,
           updates: {
-            blueprint_id: memoryData.blueprintId,
-            layout_patterns: memoryData.layoutPatterns,
-            style_preferences: memoryData.stylePreferences,
-            component_preferences: memoryData.componentPreferences
+            blueprintId: memoryData.blueprintId,
+            layoutPatterns: memoryData.layoutPatterns,
+            stylePreferences: memoryData.stylePreferences,
+            componentPreferences: memoryData.componentPreferences
           }
         });
         
@@ -80,7 +80,7 @@ export function useDesignMemory({ projectId }: UseDesignMemoryProps = {}) {
         return result;
       } else {
         // Create new entry
-        const result = await WireframeMemoryService.storeDesignMemory({
+        const result = await wireframeMemoryService.storeDesignMemory({
           projectId: effectiveProjectId,
           blueprintId: memoryData.blueprintId,
           layoutPatterns: memoryData.layoutPatterns,
