@@ -1,23 +1,27 @@
 
-import wireframeApiService from '../api/wireframe-api-service';
+import { wireframeApiService } from '../api/wireframe-api-service';
 
 /**
- * Service focused on wireframe feedback and ratings
+ * Service class for handling wireframe feedback.
  */
-export const WireframeFeedbackService = {
+export class WireframeFeedbackService {
   /**
-   * Update wireframe feedback and rating
+   * Submits feedback for a wireframe.
+   * @param wireframeId The ID of the wireframe to provide feedback for.
+   * @param feedback The feedback to submit.
+   * @returns A promise that resolves when the feedback has been submitted.
    */
-  updateWireframeFeedback: async (
-    wireframeId: string,
-    feedback: string,
-    rating?: number
-  ): Promise<void> => {
+  async submitFeedback(wireframeId: string, feedback: any) {
     try {
-      await wireframeApiService.updateWireframeFeedback(wireframeId, feedback, rating);
+      return await wireframeApiService.updateWireframeFeedback(wireframeId, feedback);
     } catch (error) {
-      console.error("Error in wireframe service updateWireframeFeedback:", error);
+      console.error('Failed to submit wireframe feedback:', error);
       throw error;
     }
   }
-};
+
+  // Additional methods for feedback analysis, etc. can be added here
+}
+
+export const wireframeFeedbackService = new WireframeFeedbackService();
+export default wireframeFeedbackService;

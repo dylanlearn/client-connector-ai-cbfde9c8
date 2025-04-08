@@ -1,125 +1,99 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { fabric } from 'fabric';
 
-interface UseFabricOptions {
-  width?: number;
-  height?: number;
-  backgroundColor?: string;
-  onObjectSelected?: (obj: fabric.Object | null) => void;
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
-}
-
-export function useFabric({
-  width = 800,
-  height = 600,
-  backgroundColor = '#ffffff',
-  onObjectSelected,
-  onCanvasReady
-}: UseFabricOptions = {}) {
-  const fabricRef = useRef<fabric.Canvas | null>(null);
-  const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+export function useFabric() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
 
-  // Initialize fabric canvas
   useEffect(() => {
-    if (!canvasElRef.current) return;
-    
-    // Clean up any existing canvas
-    if (fabricRef.current) {
-      fabricRef.current.dispose();
-    }
-    
-    // Create new fabric canvas
-    const canvas = new fabric.Canvas(canvasElRef.current, {
-      width,
-      height,
-      backgroundColor,
-      preserveObjectStacking: true,
-      selection: true,
-      renderOnAddRemove: true
-    });
-    
-    fabricRef.current = canvas;
-    
-    // Set up selection events
-    canvas.on('selection:created', (e) => {
-      setSelectedObject(e.selected ? e.selected[0] : null);
-      if (onObjectSelected) {
-        onObjectSelected(e.selected ? e.selected[0] : null);
-      }
-    });
-    
-    canvas.on('selection:updated', (e) => {
-      setSelectedObject(e.selected ? e.selected[0] : null);
-      if (onObjectSelected) {
-        onObjectSelected(e.selected ? e.selected[0] : null);
-      }
-    });
-    
-    canvas.on('selection:cleared', () => {
-      setSelectedObject(null);
-      if (onObjectSelected) {
-        onObjectSelected(null);
-      }
-    });
+    // Initialize Fabric canvas
+    const initializeFabric = () => {
+      if (!canvasRef.current) return;
+      
+      // Create new canvas instance
+      const canvas = new fabric.Canvas(canvasRef.current, {
+        backgroundColor: '#ffffff',
+        preserveObjectStacking: true,
+        selection: true
+      });
 
-    // Call onCanvasReady if provided
-    if (onCanvasReady) {
-      onCanvasReady(canvas);
-    }
-    
-    return () => {
-      canvas.dispose();
+      // Set up event handlers
+      canvas.on('selection:created', (e) => {
+        setSelectedObject(e.selected?.[0] || null);
+      });
+
+      canvas.on('selection:updated', (e) => {
+        setSelectedObject(e.selected?.[0] || null);
+      });
+
+      canvas.on('selection:cleared', () => {
+        setSelectedObject(null);
+      });
+
+      setFabricCanvas(canvas);
+      return canvas;
     };
-  }, [width, height, backgroundColor, onObjectSelected, onCanvasReady]);
 
-  // Method to add objects to canvas
+    const canvas = initializeFabric();
+    
+    // Cleanup on unmount
+    return () => {
+      if (fabricCanvas) {
+        fabricCanvas.dispose();
+      }
+    };
+  }, []);
+
+  // Add object to canvas
   const addObject = (obj: fabric.Object) => {
-    if (!fabricRef.current) return;
-    fabricRef.current.add(obj);
-    fabricRef.current.renderAll();
+    if (!fabricCanvas) return;
+    fabricCanvas.add(obj);
+    fabricCanvas.renderAll();
   };
 
-  // Method to remove objects from canvas
+  // Remove object from canvas
   const removeObject = (obj: fabric.Object) => {
-    if (!fabricRef.current) return;
-    fabricRef.current.remove(obj);
-    fabricRef.current.renderAll();
+    if (!fabricCanvas) return;
+    fabricCanvas.remove(obj);
+    fabricCanvas.renderAll();
   };
 
-  // Method to clear canvas
+  // Clear all objects from canvas
   const clearCanvas = () => {
-    if (!fabricRef.current) return;
-    fabricRef.current.clear();
-    fabricRef.current.setBackgroundColor(backgroundColor, () => {
-      fabricRef.current?.renderAll();
-    });
+    if (!fabricCanvas) return;
+    fabricCanvas.clear();
+    fabricCanvas.backgroundColor = '#ffffff';
+    fabricCanvas.renderAll();
   };
 
-  // Method to save canvas as JSON
+  // Save canvas as JSON
   const saveCanvasAsJSON = () => {
-    if (!fabricRef.current) return null;
-    return fabricRef.current.toJSON();
+    if (!fabricCanvas) return null;
+    return fabricCanvas.toJSON();
   };
 
-  // Method to load canvas from JSON
+  // Load canvas from JSON
   const loadCanvasFromJSON = (json: any) => {
-    if (!fabricRef.current) return;
-    fabricRef.current.loadFromJSON(json, () => {
-      fabricRef.current?.renderAll();
+    if (!fabricCanvas) return;
+    fabricCanvas.loadFromJSON(json, () => {
+      fabricCanvas.renderAll();
     });
   };
 
   return {
-    canvasRef: canvasElRef,
-    fabricCanvas: fabricRef.current,
+    canvasRef,
+    fabricCanvas,
     selectedObject,
     addObject,
     removeObject,
     clearCanvas,
     saveCanvasAsJSON,
-    loadCanvasFromJSON
+    loadCanvasFromJSON,
+    // Also expose these for WireframeCanvasEngine
+    canvas: fabricCanvas,
+    initializeFabric
   };
 }
 

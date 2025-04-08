@@ -1,3 +1,3 @@
 
 // Export main API service
-export * from './wireframe-api-service';
+export { wireframeApiService, default as wireframeApi } from './wireframe-api-service';

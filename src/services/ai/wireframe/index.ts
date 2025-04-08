@@ -10,7 +10,7 @@ export * from './management/wireframe-management-service';
 export * from './templates/wireframe-template-service';
 
 // Export wireframe API service
-export { wireframeApiService } from './api/wireframe-api-service';
+export { wireframeApiService, default as wireframeApi } from './api/wireframe-api-service';
 
 // Export wireframe types
 export * from './wireframe-types';

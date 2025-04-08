@@ -222,4 +222,8 @@ const processLayout = (layoutInfo: any) => {
   };
 };
 
-export default new WireframeAPIService();
+// Create a singleton instance to export
+export const wireframeApiService = new WireframeAPIService();
+
+// Export default instance
+export default wireframeApiService;
