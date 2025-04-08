@@ -1,29 +1,53 @@
 
 /**
- * Utility to determine which OpenAI model to use based on feature type
+ * Enum for AI feature types to select the appropriate model
  */
 export enum AIFeatureType {
-  DataAnalytics = 'data_analytics',
-  DesignRecommendation = 'design_recommendation',
-  ContentGeneration = 'content_generation',
-  Summarization = 'summarization',
-  Conversation = 'conversation'
+  TextGeneration = 'text',
+  ImageGeneration = 'image',
+  CodeGeneration = 'code',
+  DesignRecommendation = 'design',
+  Analysis = 'analysis',
+  ContentOptimization = 'optimization',
 }
 
 /**
- * Selects the appropriate AI model based on feature importance and complexity
+ * Interface for pattern recognition options
  */
-export const selectModelForFeature = (featureType: AIFeatureType): string => {
-  // Use GPT-4o for all data analytics and important creative tasks
+export interface PatternRecognitionOptions {
+  maxResults?: number;
+  industryContext?: string;
+}
+
+/**
+ * Selects the appropriate AI model based on feature type and complexity
+ */
+export function selectModelForFeature(
+  featureType: AIFeatureType,
+  complexity: 'low' | 'medium' | 'high' = 'medium'
+): string {
+  // Map feature types to models based on complexity
   switch (featureType) {
-    case AIFeatureType.DataAnalytics:
+    case AIFeatureType.TextGeneration:
+      return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
+      
+    case AIFeatureType.ImageGeneration:
+      return 'dalle-3';
+      
+    case AIFeatureType.CodeGeneration:
+      return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
+      
     case AIFeatureType.DesignRecommendation:
-    case AIFeatureType.ContentGeneration:
-      return 'gpt-4o'; // Use full GPT-4o for important features
-    
-    case AIFeatureType.Summarization:
-    case AIFeatureType.Conversation:
+      return complexity === 'low' ? 'gpt-4o-mini' : 'gpt-4o';
+      
+    case AIFeatureType.Analysis:
+      return 'gpt-4o';
+      
+    case AIFeatureType.ContentOptimization:
+      return complexity === 'high' ? 'gpt-4o' : 'gpt-4o-mini';
+      
     default:
-      return 'gpt-4o-mini'; // Use GPT-4o-mini for simpler tasks
+      // Default to a reasonable model
+      return 'gpt-4o-mini';
   }
-};
+}

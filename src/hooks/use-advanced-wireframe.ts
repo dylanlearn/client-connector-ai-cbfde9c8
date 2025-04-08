@@ -176,6 +176,7 @@ export function useAdvancedWireframe() {
       const result = await AdvancedWireframeService.saveWireframe(
         projectId,
         prompt,
+        currentWireframe,
         layoutAnalysis
       );
       

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +14,7 @@ import { useDesignReferences } from '@/hooks/use-design-references';
 import { Loader2, Wand2, ScrollText, LayoutPanelTop, Save, Sparkles } from 'lucide-react';
 import { WireframeVisualizer, WireframeDataVisualizer } from '@/components/wireframe';
 import DesignMemoryPanel from './DesignMemoryPanel';
+import LayoutIntelligencePanel from './LayoutIntelligencePanel';
 import { DesignReference } from '@/services/ai/design/design-memory-reference-service';
 import { WireframeGenerationParams, WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
@@ -53,12 +55,12 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const [previewingWireframe, setPreviewingWireframe] = useState<WireframeData | null>(null);
   const [targetIndustry, setTargetIndustry] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
+  const [layoutAnalysis, setLayoutAnalysis] = useState<any>(null);
   
   const {
     isGenerating,
     currentWireframe,
     wireframes,
-    layoutAnalysis,
     generateWireframe,
     generateCreativeVariation,
     provideFeedback,
@@ -102,11 +104,16 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     
     const result = await generateWireframe(params);
     
-    if (result && onWireframeGenerated) {
-      onWireframeGenerated();
-    }
-    
-    if (result) {
+    if (result && result.wireframe) {
+      // Set the layout analysis if provided
+      if (enableLayoutIntelligence && result.layoutAnalysis) {
+        setLayoutAnalysis(result.layoutAnalysis);
+      }
+      
+      if (onWireframeGenerated) {
+        onWireframeGenerated();
+      }
+      
       setActiveTab('preview');
     }
   };
@@ -404,15 +411,15 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         </TabsContent>
         
         <TabsContent value="preview" className="space-y-4 mt-2">
-          {currentWireframe && (
+          {currentWireframe && currentWireframe.wireframe && (
             <>
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>{currentWireframe.title || 'Generated Wireframe'}</CardTitle>
+                      <CardTitle>{currentWireframe.wireframe.title || 'Generated Wireframe'}</CardTitle>
                       <CardDescription>
-                        {currentWireframe.description || 'AI generated wireframe based on your requirements'}
+                        {currentWireframe.wireframe.description || 'AI generated wireframe based on your requirements'}
                       </CardDescription>
                     </div>
                     <div className="flex space-x-2">
@@ -424,15 +431,15 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 </CardHeader>
                 
                 <CardContent>
-                  {currentWireframe ? (
+                  {currentWireframe.wireframe ? (
                     <div className="border rounded-md p-1 bg-background">
                       <WireframeVisualizer 
                         wireframe={{
                           id: 'temp-id',
-                          title: currentWireframe.title || 'Generated Wireframe',
-                          description: currentWireframe.description || '',
-                          imageUrl: currentWireframe.imageUrl,
-                          sections: adaptSectionsForVisualizer(currentWireframe.sections),
+                          title: currentWireframe.wireframe.title || 'Generated Wireframe',
+                          description: currentWireframe.wireframe.description || '',
+                          imageUrl: currentWireframe.wireframe.imageUrl,
+                          sections: adaptSectionsForVisualizer(currentWireframe.wireframe.sections),
                           lastUpdated: new Date().toISOString()
                         }}
                         darkMode={darkMode}

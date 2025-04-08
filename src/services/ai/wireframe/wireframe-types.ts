@@ -36,6 +36,14 @@ export interface MobileLayout {
   [key: string]: any;
 }
 
+// Layout intelligence properties
+export interface OptimizationSuggestion {
+  text: string;
+  confidence: number;
+  conversionImpact?: 'high' | 'medium' | 'low';
+  rationale?: string;
+}
+
 export interface WireframeSection {
   id: string;
   name: string;
@@ -60,6 +68,12 @@ export interface WireframeSection {
   data?: any; // For section-specific data
   componentVariant?: string; // For component variants
   order?: number; // For ordering sections
+  
+  // Layout intelligence properties
+  layoutScore?: number;
+  optimizationSuggestions?: OptimizationSuggestion[];
+  patternMatch?: string | null;
+  detectedPatterns?: string[];
 }
 
 export interface WireframeData {
@@ -90,6 +104,12 @@ export interface WireframeData {
     headings: string;
     body: string;
     fontPairings?: string[];
+  };
+  metadata?: {
+    industry?: string;
+    audience?: string;
+    purpose?: string;
+    [key: string]: any;
   };
 }
 
@@ -129,6 +149,7 @@ export interface WireframeGenerationParams {
   multiPageLayout?: boolean;
   pages?: number;
   baseWireframe?: any;
+  enableLayoutIntelligence?: boolean; // Add layout intelligence flag
   
   // Additional properties used in the codebase
   industry?: string;
@@ -142,6 +163,9 @@ export interface WireframeGenerationResult {
   wireframe?: WireframeData;
   imageUrl?: string;
   error?: string;
+  title?: string; // Add missing properties
+  description?: string;
+  sections?: WireframeSection[];
   
   // Additional properties used in the codebase
   success?: boolean;
