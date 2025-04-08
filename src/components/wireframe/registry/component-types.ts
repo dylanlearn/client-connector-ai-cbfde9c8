@@ -1,5 +1,19 @@
 
-// Utility functions for responsive design in component registry
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+
+// Supported component types
+export type ComponentType = 
+  | 'hero'
+  | 'navigation'
+  | 'feature-grid'
+  | 'testimonials'
+  | 'pricing'
+  | 'cta'
+  | 'faq'
+  | 'footer'
+  | 'blog'
+  | 'contact'
+  | 'custom';
 
 // Device breakpoints
 export const deviceBreakpoints = {
@@ -8,98 +22,123 @@ export const deviceBreakpoints = {
   desktop: 1024
 };
 
-// Get styles for specific device type
+// Style option for tailwind classes
+export interface StyleOption {
+  label: string;
+  value: string;
+  tailwindClass: string;
+}
+
+// Component field definition for property editors
+export interface ComponentField {
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'select' | 'color' | 'boolean' | 'image' | 'richtext' | 'array' | 'object';
+  default?: any;
+  options?: Array<{ label: string; value: string | number | boolean }>;
+  description?: string;
+  validation?: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+    pattern?: string;
+    minLength?: number;
+    maxLength?: number;
+  };
+  conditional?: {
+    field: string;
+    value: any;
+  };
+  when?: string;
+  isEqual?: any;
+  childFields?: ComponentField[]; // For array/object types
+}
+
+// Style configuration for components
+export interface StyleConfig {
+  backgrounds?: Array<StyleOption>;
+  spacing?: Array<StyleOption>;
+  layouts?: Array<StyleOption>;
+  colors?: Array<StyleOption>;
+  typography?: Array<StyleOption>;
+  borders?: Array<StyleOption>;
+  shadows?: Array<StyleOption>;
+}
+
+// Responsive configuration for a component
+export interface ResponsiveConfig {
+  mobile?: {
+    [key: string]: any;
+  };
+  tablet?: {
+    [key: string]: any;
+  };
+  desktop?: {
+    [key: string]: any;
+  };
+}
+
+// Helper function to get device-specific styles
 export function getDeviceStyles(
   baseStyles: Record<string, any>,
-  responsiveConfig: Record<string, any>,
-  deviceType: 'mobile' | 'tablet' | 'desktop' = 'desktop'
+  responsiveConfig: ResponsiveConfig,
+  deviceType: 'desktop' | 'tablet' | 'mobile'
 ): Record<string, any> {
-  // Start with base styles
-  let deviceStyles = { ...baseStyles };
-  
-  // Apply device-specific overrides
-  if (responsiveConfig && responsiveConfig[deviceType]) {
-    deviceStyles = {
-      ...deviceStyles,
-      ...responsiveConfig[deviceType]
-    };
-  }
-  
-  return deviceStyles;
+  const deviceStyles = responsiveConfig[deviceType] || {};
+  return { ...baseStyles, ...deviceStyles };
 }
 
-// Convert style object to Tailwind classes
+// Convert style options to Tailwind classes
 export function styleOptionsToTailwind(styleOptions: Record<string, any>): string {
-  const classes: string[] = [];
-  
-  // Map style options to Tailwind classes
-  if (styleOptions.padding) classes.push(`p-${styleOptions.padding}`);
-  if (styleOptions.margin) classes.push(`m-${styleOptions.margin}`);
-  if (styleOptions.backgroundColor) classes.push(`bg-${styleOptions.backgroundColor}`);
-  if (styleOptions.textColor) classes.push(`text-${styleOptions.textColor}`);
-  if (styleOptions.fontSize) classes.push(`text-${styleOptions.fontSize}`);
-  if (styleOptions.fontWeight) classes.push(`font-${styleOptions.fontWeight}`);
-  if (styleOptions.borderRadius) classes.push(`rounded-${styleOptions.borderRadius}`);
-  if (styleOptions.width) classes.push(`w-${styleOptions.width}`);
-  if (styleOptions.height) classes.push(`h-${styleOptions.height}`);
-  if (styleOptions.display) classes.push(`${styleOptions.display}`);
-  if (styleOptions.flexDirection) classes.push(`flex-${styleOptions.flexDirection}`);
-  if (styleOptions.justifyContent) classes.push(`justify-${styleOptions.justifyContent}`);
-  if (styleOptions.alignItems) classes.push(`items-${styleOptions.alignItems}`);
-  if (styleOptions.gap) classes.push(`gap-${styleOptions.gap}`);
-  
+  let classes: string[] = [];
+
+  // Process each style option
+  Object.keys(styleOptions).forEach(key => {
+    const option = styleOptions[key];
+    if (typeof option === 'string' && option.includes('tw-')) {
+      // If the option is a string with "tw-" prefix, extract the class
+      classes.push(option.replace('tw-', ''));
+    } else if (typeof option === 'object' && option?.tailwindClass) {
+      // If the option is an object with a tailwindClass property
+      classes.push(option.tailwindClass);
+    }
+  });
+
   return classes.join(' ');
 }
 
-export interface ComponentField {
-  id: string;
-  name: string;
-  type: string;
-  description?: string;
-  options?: { label: string; value: string | number | boolean }[];
-  defaultValue: any;
-  validation?: any;
-}
-
-// Add utility functions for variant handling
-export function getVariantOptions(type: string): { label: string; value: string }[] {
-  // This would normally come from a database or configuration
-  // For now, return a static list based on type
-  switch (type) {
+// Get interactive properties for a component
+export function getInteractiveProperties(section: WireframeSection): Record<string, any> {
+  const { data = {}, sectionType } = section;
+  
+  // Default interactive properties
+  const defaultProps = {
+    isInteractive: false,
+    hoverEffect: 'none',
+    clickAction: 'none'
+  };
+  
+  // Return component-specific interactive properties based on section type
+  switch (sectionType) {
+    case 'cta':
+      return {
+        ...defaultProps,
+        isInteractive: true,
+        clickAction: 'navigate'
+      };
+    case 'navigation':
+      return {
+        ...defaultProps,
+        isInteractive: true,
+        hoverEffect: 'highlight'
+      };
     case 'hero':
-      return [
-        { label: 'Centered', value: 'centered' },
-        { label: 'Split', value: 'split' },
-        { label: 'Overlay', value: 'overlay' }
-      ];
-    case 'feature':
-      return [
-        { label: 'Grid', value: 'grid' },
-        { label: 'List', value: 'list' },
-        { label: 'Cards', value: 'cards' }
-      ];
+      return {
+        ...defaultProps,
+        hasAnimation: data.hasAnimation || false,
+        animationType: data.animationType || 'fade'
+      };
     default:
-      return [];
+      return defaultProps;
   }
-}
-
-// Convert component data to tailwind classes
-export function componentDataToClasses(componentType: string, data: any): string {
-  const classes: string[] = [];
-  
-  // Base styles for all components
-  classes.push('relative');
-  
-  // Apply styles based on component type and data
-  if (componentType === 'hero') {
-    if (data.size === 'large') classes.push('py-20');
-    else if (data.size === 'medium') classes.push('py-12');
-    else classes.push('py-8');
-    
-    if (data.background === 'dark') classes.push('bg-gray-900 text-white');
-    else if (data.background === 'light') classes.push('bg-white text-gray-900');
-    else if (data.background === 'gradient') classes.push('bg-gradient-to-r from-primary to-primary/70 text-white');
-  }
-  
-  return classes.join(' ');
 }

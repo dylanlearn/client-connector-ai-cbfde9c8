@@ -1,6 +1,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
+import { ComponentField, StyleConfig, ResponsiveConfig } from './component-types';
 
 // Define component definition interface
 export interface ComponentDefinition {
@@ -12,12 +13,22 @@ export interface ComponentDefinition {
   tags?: string[];
   icon?: string;
   variants?: ComponentVariant[];
-  fields?: any[]; // Added fields property
+  fields?: ComponentField[]; // Field definitions for property editors
   defaultProps?: Record<string, any>;
-  defaultData?: any; // Added defaultData property
+  defaultData?: any; // Default component data
   responsiveOptions?: Record<string, any>;
   baseStyles?: any;
-  responsiveConfig?: any;
+  responsiveConfig?: ResponsiveConfig;
+  styleConfig?: StyleConfig; // Style configuration
+  editorConfig?: {
+    defaultWidth?: number;
+    defaultHeight?: number;
+    minWidth?: number;
+    minHeight?: number;
+    aspectRatio?: number | null;
+    resizable?: boolean;
+    movable?: boolean;
+  };
 }
 
 // Define variant interface
@@ -39,7 +50,18 @@ export function registerComponent(component: ComponentDefinition): void {
     component.id = uuidv4();
   }
   
+  // Ensure fields array exists
+  if (!component.fields) {
+    component.fields = [];
+  }
+  
+  // Ensure variants array exists
+  if (!component.variants) {
+    component.variants = [];
+  }
+  
   componentRegistry[component.type] = component;
+  console.log(`Registered component: ${component.name} (${component.type})`);
 }
 
 // Get a component definition by type
@@ -99,16 +121,62 @@ export function createSectionInstance(componentType: string, variantId?: string)
     variant = definition.variants.find((v) => v.id === variantId);
   }
   
+  // Create section data from default data
+  const defaultData = definition.defaultData || {};
+  
   // Create basic section data
   const section = {
+    id: uuidv4(),
     name: definition.name,
     description: definition.description || '',
     sectionType: componentType,
     componentVariant: variantId,
     // Ensure copySuggestions is always an array
     copySuggestions: [] as any[],
-    components: [createComponentInstance(componentType, variantId)]
+    data: { ...defaultData, ...(variant?.defaultContent || {}) },
+    components: [createComponentInstance(componentType, variantId)],
+    // Add position and dimension information for canvas
+    position: { x: 50, y: 50 },
+    dimensions: { 
+      width: definition.editorConfig?.defaultWidth || 800, 
+      height: definition.editorConfig?.defaultHeight || 200 
+    },
+    // Add style properties
+    styleProperties: {
+      backgroundStyle: 'light',
+      spacing: 'medium',
+      alignment: 'center'
+    }
   };
   
   return section;
+}
+
+// Get field definition for a component type
+export function getComponentFields(type: string): ComponentField[] {
+  const definition = getComponentDefinition(type);
+  if (!definition || !definition.fields) {
+    return [];
+  }
+  return definition.fields;
+}
+
+// Get style config for a component type
+export function getComponentStyleConfig(type: string): StyleConfig | undefined {
+  const definition = getComponentDefinition(type);
+  return definition?.styleConfig;
+}
+
+// Update component registry with enhanced properties
+export function enhanceComponentRegistry(enhancements: Record<string, Partial<ComponentDefinition>>): void {
+  // Loop through enhancements and update registry
+  Object.keys(enhancements).forEach(type => {
+    const definition = componentRegistry[type];
+    if (definition) {
+      componentRegistry[type] = {
+        ...definition,
+        ...enhancements[type]
+      };
+    }
+  });
 }

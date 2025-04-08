@@ -75,3 +75,32 @@ export interface WireframeDataVisualizerProps {
   viewMode?: 'preview' | 'flowchart';
   deviceType?: 'desktop' | 'tablet' | 'mobile';
 }
+
+// Canvas related types
+export interface CanvasControlsProps {
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  onToggleGrid?: () => void;
+  onToggleSnapToGrid?: () => void;
+  showGrid?: boolean;
+  snapToGrid?: boolean;
+  className?: string;
+}
+
+export interface WireframeCanvasEngineProps {
+  sections?: WireframeSection[];
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  readOnly?: boolean;
+  onSectionSelect?: (sectionId: string) => void;
+  onSectionUpdate?: (section: WireframeSection) => void;
+  className?: string;
+}
+
+export interface FabricConverterOptions {
+  enableEditing?: boolean;
+  showLabels?: boolean;
+  fitToCanvas?: boolean;
+  mode?: 'preview' | 'flowchart' | 'edit';
+}
