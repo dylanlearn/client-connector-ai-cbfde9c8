@@ -11,7 +11,7 @@ import PricingSectionRenderer from './PricingSectionRenderer';
 import FooterSectionRenderer from './FooterSectionRenderer';
 import ContactSectionRenderer from './ContactSectionRenderer';
 import BlogSectionRenderer from './BlogSectionRenderer';
-import { VariantComponentProps } from '../types';
+import { SectionComponentProps } from '../types';
 
 interface ComponentRendererProps {
   section: WireframeSection;
@@ -34,6 +34,7 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
     case 'testimonial':
       return <TestimonialSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} />;
       
+    case 'feature':
     case 'feature-grid':
       return <FeatureSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} />;
       
@@ -44,7 +45,12 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       return <CTASectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} />;
       
     case 'navigation':
-      return <NavigationRenderer variant={section.componentVariant || 'nav-startup-001'} viewMode={viewMode} darkMode={darkMode} />;
+      return <NavigationRenderer 
+        variant={section.componentVariant || 'nav-startup-001'} 
+        viewMode={viewMode} 
+        darkMode={darkMode} 
+        data={section.data} 
+      />;
       
     case 'pricing':
       return <PricingSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} />;

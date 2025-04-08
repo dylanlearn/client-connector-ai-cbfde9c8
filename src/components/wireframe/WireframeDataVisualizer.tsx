@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { WireframeData } from '@/types/wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
@@ -43,12 +43,12 @@ export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = (
       }}
     >
       <div className={`wireframe-sections ${showGrid ? 'grid grid-cols-12 gap-4' : ''}`}>
-        {wireframeData.sections.map((section: WireframeSection) => {
+        {wireframeData.sections.map((section: WireframeSection, index: number) => {
           const isActive = activeSection === section.id;
           
           return (
             <div 
-              key={section.id} 
+              key={section.id || `section-${index}`} 
               className={`wireframe-section-wrapper relative ${
                 showGrid ? 'col-span-12' : ''
               } ${
@@ -61,7 +61,8 @@ export const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = (
                 section={section}
                 viewMode={viewMode}
                 darkMode={darkMode}
-                onSectionClick={onSectionClick ? () => onSectionClick(section.id!) : undefined}
+                sectionIndex={index}
+                onSectionClick={onSectionClick}
               />
             </div>
           );

@@ -10,15 +10,19 @@ const NavigationRenderer: React.FC<VariantComponentProps> = ({
 }) => {
   const {
     logo,
-    brandName,
-    links = [],
-    cta,
+    brandName = 'Brand Name',
+    links = [
+      { label: 'Features', url: '#' },
+      { label: 'Pricing', url: '#' },
+      { label: 'About', url: '#' }
+    ],
+    cta = { label: 'Get Started', url: '#' },
     isSticky = false,
     hasSearch = false
   } = data;
 
   // Determine if this is a light or dark variant based on component variant or dark mode
-  const isLightVariant = variant?.includes('light') && !darkMode;
+  const isLightVariant = !variant?.includes('dark') && !darkMode;
   
   // Style classes based on variant 
   const navClasses = `px-4 sm:px-6 lg:px-8 py-4 ${isSticky ? 'sticky top-0 z-50' : ''} ${

@@ -16,6 +16,7 @@ export interface SectionComponentProps {
   darkMode?: boolean;
   sectionIndex?: number;
   data?: any;
+  onSectionClick?: (sectionId: string) => void;
 }
 
 export interface VariantComponentProps {
