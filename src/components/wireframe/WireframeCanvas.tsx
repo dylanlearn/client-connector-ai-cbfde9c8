@@ -9,13 +9,23 @@ interface WireframeCanvasProps {
   className?: string;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
+  canvasSettings?: {
+    zoom: number;
+    panOffset: { x: number, y: number };
+    showGrid: boolean;
+    snapToGrid: boolean;
+    gridSize: number;
+  };
+  onUpdateCanvasSettings?: (updates: any) => void;
 }
 
 const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ 
   projectId, 
   className,
   deviceType,
-  onSectionClick 
+  onSectionClick,
+  canvasSettings: propCanvasSettings,
+  onUpdateCanvasSettings
 }) => {
   const [isRendering, setIsRendering] = useState(false);
   
@@ -26,11 +36,15 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     showGrid,
     highlightSections,
     activeSection,
-    hiddenSections
+    hiddenSections,
+    canvasSettings: storeCanvasSettings
   } = useWireframeStore();
   
   // Use device type from props if provided, otherwise use from store
   const activeDevice = deviceType || storeActiveDevice;
+  
+  // Use canvas settings from props if provided, otherwise use from store
+  const canvasSettings = propCanvasSettings || storeCanvasSettings;
   
   // Effect to handle rendering state for performance feedback
   useEffect(() => {
@@ -78,7 +92,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
         "wireframe-canvas bg-background border rounded-md overflow-hidden transition-all duration-300",
         darkMode ? "dark bg-slate-900" : "bg-white",
         {
-          "grid bg-grid-pattern": showGrid,
+          "grid bg-grid-pattern": showGrid || canvasSettings?.showGrid,
           "p-4": activeDevice === 'desktop',
           "max-w-3xl mx-auto p-4": activeDevice === 'tablet',
           "max-w-sm mx-auto p-2": activeDevice === 'mobile',
@@ -86,6 +100,10 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
         },
         className
       )}
+      style={{
+        zoom: canvasSettings?.zoom || 1,
+        transform: `translate(${canvasSettings?.panOffset?.x || 0}px, ${canvasSettings?.panOffset?.y || 0}px)`
+      }}
     >
       <div 
         className={cn(

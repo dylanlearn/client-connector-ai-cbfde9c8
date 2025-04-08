@@ -38,12 +38,19 @@ export interface WireframeState {
 }
 
 interface WireframeStoreState {
+  // Core wireframe data
   wireframe: WireframeState;
+  
+  // UI state
   activeSection: string | null;
   activeComponentId: string | null;
   hiddenSections: string[];
+  
+  // History for undo/redo
   undoStack: WireframeState[];
   redoStack: WireframeState[];
+  
+  // Canvas display settings
   canvasSettings: {
     zoom: number;
     panOffset: { x: number, y: number };
@@ -52,8 +59,15 @@ interface WireframeStoreState {
     gridSize: number;
   };
   
+  // UI preferences
+  activeDevice: 'desktop' | 'tablet' | 'mobile';
+  darkMode: boolean;
+  showGrid: boolean;
+  highlightSections: boolean;
+  
   // Actions
   setWireframe: (wireframe: Partial<WireframeState>) => void;
+  updateWireframe: (updates: Partial<WireframeState>) => void;
   addSection: (section: Omit<WireframeSection, 'id'>) => void;
   updateSection: (sectionId: string, updates: Partial<WireframeSection>) => void;
   removeSection: (sectionId: string) => void;
@@ -62,6 +76,12 @@ interface WireframeStoreState {
   setActiveComponent: (componentId: string | null) => void;
   toggleSectionVisibility: (sectionId: string) => void;
   updateCanvasSettings: (updates: Partial<WireframeStoreState['canvasSettings']>) => void;
+  
+  // Device and display toggles
+  setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
+  toggleDarkMode: () => void;
+  toggleShowGrid: () => void;
+  toggleHighlightSections: () => void;
   
   // Undo/Redo
   saveStateForUndo: () => void;
@@ -88,12 +108,28 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
     snapToGrid: true,
     gridSize: 8,
   },
+  
+  // UI preferences with defaults
+  activeDevice: 'desktop',
+  darkMode: false,
+  showGrid: true,
+  highlightSections: false,
 
   setWireframe: (wireframe) => {
     set((state) => ({
       wireframe: {
         ...state.wireframe,
         ...wireframe,
+      },
+    }));
+  },
+  
+  updateWireframe: (updates) => {
+    set((state) => ({
+      wireframe: {
+        ...state.wireframe,
+        ...updates,
+        lastUpdated: new Date().toISOString(),
       },
     }));
   },
@@ -243,6 +279,29 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
         ...updates,
       },
     }));
+  },
+  
+  // New UI state management functions
+  setActiveDevice: (device) => {
+    set({ activeDevice: device });
+  },
+  
+  toggleDarkMode: () => {
+    set((state) => ({ darkMode: !state.darkMode }));
+  },
+  
+  toggleShowGrid: () => {
+    set((state) => ({ 
+      showGrid: !state.showGrid,
+      canvasSettings: {
+        ...state.canvasSettings,
+        showGrid: !state.showGrid
+      }
+    }));
+  },
+  
+  toggleHighlightSections: () => {
+    set((state) => ({ highlightSections: !state.highlightSections }));
   },
 
   saveStateForUndo: () => {

@@ -7,6 +7,7 @@ import {
 } from '@/services/ai/wireframe/wireframe-memory-service';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseDesignMemoryProps {
   projectId?: string;

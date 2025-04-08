@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { useWireframeStore } from '@/stores/wireframe-store';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
 import { createSectionInstance, getComponentDefinition } from '@/components/wireframe/registry/component-registry';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,7 +29,13 @@ export function useWireframeSections() {
       return;
     }
     
-    addSection(newSectionData);
+    addSection({
+      name: componentDef.name || 'New Section',
+      sectionType: componentType,
+      description: componentDef.description || '',
+      layoutType: 'default',
+      ...newSectionData
+    });
     
     toast({
       title: "Section added",
