@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWireframeGenerator } from "./wireframe/use-wireframe-generator";
@@ -16,23 +15,32 @@ export function useWireframeGeneration() {
   const [currentWireframe, setCurrentWireframe] = useState<WireframeGenerationResult | null>(null);
   const { toast } = useToast();
 
-  // Use the extracted hooks
+  // Use the extracted hooks with properly typed toast function
   const { 
     isGenerating, 
     error,
     generateWireframe: generateWireframeBase,
     generateCreativeVariation 
-  } = useWireframeGenerator(creativityLevel, setCurrentWireframe, toast);
+  } = useWireframeGenerator(creativityLevel, setCurrentWireframe, (props) => {
+    toast(props);
+    return "";  // Return empty string to satisfy the return type
+  });
 
   const {
     loadProjectWireframes,
     getWireframe
-  } = useWireframeStorage(setWireframes, toast);
+  } = useWireframeStorage(setWireframes, (props) => {
+    toast(props);
+    return "";  // Return empty string to satisfy the return type
+  });
 
   const {
     provideFeedback,
     deleteWireframe
-  } = useWireframeFeedback(wireframes, setWireframes, toast);
+  } = useWireframeFeedback(wireframes, setWireframes, (props) => {
+    toast(props);
+    return "";  // Return empty string to satisfy the return type
+  });
 
   // Wrap the generateWireframe function to handle different param formats
   const generateWireframe = useCallback(async (

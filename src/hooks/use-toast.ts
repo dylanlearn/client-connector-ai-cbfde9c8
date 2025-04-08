@@ -1,13 +1,15 @@
+
 import { type ToastProps, type ToastActionElement } from "@/components/ui/toast";
 import React from "react";
 import { toast as sonnerToast } from "sonner";
 
-// Add this export or ensure it exists
+// Define the Toast type with correct properties
 export type Toast = {
-  title: string;
-  description?: string;
+  id?: string;
+  title: React.ReactNode;
+  description?: React.ReactNode;
   variant?: "default" | "destructive" | "success";
-  action?: React.ReactNode;
+  action?: ToastActionElement;
   duration?: number;
 };
 
@@ -51,7 +53,7 @@ export function useToast(): UseToastReturnType {
       const id = Math.random().toString(36).substring(2, 9);
       const newToast: Toast = {
         id,
-        title: props.title,
+        title: props.title || "",
         description: props.description,
         action: props.action,
         variant: props.variant,

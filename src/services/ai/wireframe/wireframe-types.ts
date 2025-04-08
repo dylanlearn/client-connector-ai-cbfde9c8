@@ -10,7 +10,6 @@ export interface WireframeGenerationParams {
     accent: string;
     background: string;
   };
-  // Add missing properties referenced in codebase
   projectId?: string;
   creativityLevel?: number;
   enhancedCreativity?: boolean;
@@ -30,7 +29,6 @@ export interface WireframeGenerationParams {
     targetAudience?: string;
     [key: string]: any;
   };
-  // Additional fields for common params
   dimensions?: { width?: number; height?: number };
   title?: string;
   sections?: string[];
@@ -38,9 +36,7 @@ export interface WireframeGenerationParams {
   features?: string;
   colorSchemes?: string;
   layoutOptions?: string;
-  // Add imageUrl to fix the error in use-wireframe-generator.ts
   imageUrl?: string;
-  // Add success property to fix error in use-wireframe-generator.ts
   success?: boolean;
 }
 
@@ -54,7 +50,6 @@ export interface WireframeGenerationResult {
     prompt_tokens?: number;
   };
   success: boolean;
-  // Add missing properties referenced in codebase
   error?: string;
   imageUrl?: string;
   layoutAnalysis?: any;
@@ -74,7 +69,6 @@ export interface WireframeSection {
     tablet?: any;
     mobile?: any;
   };
-  // Add missing properties referenced in codebase
   layoutType?: string;
   data?: any;
   copySuggestions?: {
@@ -147,7 +141,6 @@ export interface WireframeCanvasConfig {
   gridSize: number;
 }
 
-// Add missing interfaces referenced in other files
 export interface AIWireframe {
   id: string;
   title?: string;
@@ -213,10 +206,8 @@ export interface WireframeResult {
   [key: string]: any;
 }
 
-// Add an alias for WireframeGenerationParams as WireframeGeneratorPrompt for backward compatibility
 export type WireframeGeneratorPrompt = WireframeGenerationParams;
 
-// Helper function to convert AIWireframe to WireframeData
 export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeData | null {
   if (!wireframe) return null;
   
