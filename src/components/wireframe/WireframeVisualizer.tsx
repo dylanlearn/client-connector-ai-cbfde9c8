@@ -1,83 +1,61 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { WireframeProps } from './types';
-import { getSectionComponent, processSectionData } from './utils/section-utils';
+import WireframeSectionRenderer from './WireframeSectionRenderer';
+import { Separator } from '@/components/ui/separator';
 
 interface WireframeVisualizerProps {
   wireframe: WireframeProps;
   viewMode?: 'preview' | 'flowchart';
   darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSelect?: (id: string) => void;
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
 }
 
 export const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
   viewMode = 'preview',
   darkMode = false,
-  deviceType = 'desktop',
-  onSelect,
+  onSectionClick,
+  activeSection = null,
 }) => {
-  if (!wireframe || !wireframe.sections || wireframe.sections.length === 0) {
+  if (!wireframe || !wireframe.sections) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-gray-500">No wireframe data available to display</p>
+      <div className="p-6 text-center">
+        <div className="text-lg font-medium mb-2">No wireframe data available</div>
+        <p className="text-muted-foreground">Please generate a wireframe first</p>
       </div>
     );
   }
 
-  // Add click handler for the wireframe if onSelect is provided
-  const handleWireframeClick = () => {
-    if (onSelect && wireframe.id) {
-      onSelect(wireframe.id);
-    }
-  };
-
   return (
-    <div 
-      className={`wireframe-visualizer ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}
-      style={{ 
-        maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
-        margin: deviceType !== 'desktop' ? '0 auto' : undefined
-      }}
-      onClick={onSelect ? handleWireframeClick : undefined}
-    >
+    <div className={`wireframe-visualizer ${darkMode ? 'dark' : ''}`}>
       <div className="wireframe-header p-4 border-b">
-        <h2 className="text-xl font-bold">{wireframe.title || 'Untitled Wireframe'}</h2>
-        {wireframe.description && <p className="text-sm text-gray-500">{wireframe.description}</p>}
-        {wireframe.lastUpdated && (
-          <p className="text-xs text-gray-500 mt-1">Last updated: {new Date(wireframe.lastUpdated).toLocaleString()}</p>
+        <h1 className="text-xl font-bold">{wireframe.title}</h1>
+        {wireframe.description && (
+          <p className="text-muted-foreground mt-1">{wireframe.description}</p>
         )}
       </div>
       
-      <div className="wireframe-body">
-        {wireframe.sections.map((section, index) => {
-          const SectionComponent = getSectionComponent(section);
-          
-          if (!SectionComponent) {
-            // Fallback for unknown section types
-            return (
-              <div key={`section-${index}`} className="border p-4 m-4">
-                <p>Unknown section type: {section.sectionType || 'undefined'}</p>
-              </div>
-            );
-          }
-          
-          // Process section data for the specific component type
-          const processedData = processSectionData(section);
-          
-          // Render the appropriate section component
-          return (
-            <div key={`section-${index}`} className="section-wrapper">
-              <SectionComponent 
-                sectionIndex={index}
-                data={processedData}
+      <div className="wireframe-sections">
+        {wireframe.sections.map((section, index) => (
+          <React.Fragment key={section.id || index}>
+            <div
+              className={`wireframe-section relative ${
+                activeSection === section.id ? 'ring-2 ring-primary' : ''
+              }`}
+              onClick={() => onSectionClick && section.id && onSectionClick(section.id)}
+            >
+              <WireframeSectionRenderer 
+                section={section}
                 viewMode={viewMode}
                 darkMode={darkMode}
+                sectionIndex={index}
               />
             </div>
-          );
-        })}
+            {index < wireframe.sections.length - 1 && <Separator className="my-2" />}
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );

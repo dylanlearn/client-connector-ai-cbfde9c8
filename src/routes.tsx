@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -41,6 +40,28 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// Generate a stable UUID for demo purposes (it will be consistent between renders)
+const getDemoProjectId = (): string => {
+  // We could use localStorage to keep this consistent across sessions
+  const storedId = typeof localStorage !== 'undefined' ? localStorage.getItem('demoProjectId') : null;
+  
+  if (storedId) {
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(storedId)) {
+      return storedId;
+    }
+  }
+  
+  const newId = uuidv4();
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('demoProjectId', newId);
+  }
+  return newId;
+};
+
+const demoProjectId = getDemoProjectId();
+
 const router = createBrowserRouter([
   {
     path: "/design-process",
@@ -62,7 +83,7 @@ const router = createBrowserRouter([
         path: '/',
         element: (
           <AdvancedWireframeGenerator 
-            projectId={uuidv4()} 
+            projectId={demoProjectId} 
             darkMode={false} 
             onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
             onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}

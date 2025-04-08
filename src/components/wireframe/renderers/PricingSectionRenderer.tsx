@@ -13,7 +13,6 @@ const PricingSectionRenderer: React.FC<SectionComponentProps> = ({
     title,
     description,
     plans = [],
-    mediaType,
     backgroundStyle,
     alignment
   } = data;
@@ -37,65 +36,60 @@ const PricingSectionRenderer: React.FC<SectionComponentProps> = ({
           </div>
         )}
         
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
-          {plans.map((plan, index) => {
-            const isPopular = plan.badge === 'Most Popular';
-            
-            return (
-              <div 
-                key={index}
-                className={`pricing-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border ${
-                  isPopular ? 'border-primary' : 'border-gray-200 dark:border-gray-700'
-                }`}
-              >
-                {plan.badge && (
-                  <div className="badge mb-4">
-                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                      isPopular ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-700'
-                    }`}>
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-                
-                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                
-                {plan.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{plan.description}</p>
-                )}
-                
-                <div className="price-container my-6">
-                  <span className="text-3xl font-bold">{plan.price}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {plans.map((plan: any, index: number) => (
+            <div 
+              key={index}
+              className={`pricing-plan rounded-lg p-6 ${
+                plan.featured 
+                  ? 'border-2 border-primary shadow-lg' 
+                  : 'border border-gray-200 dark:border-gray-700'
+              }`}
+            >
+              {plan.badge && (
+                <div className="inline-block px-3 py-1 text-xs font-semibold bg-primary text-white rounded-full mb-4">
+                  {plan.badge}
                 </div>
-                
-                {plan.features && plan.features.length > 0 && (
-                  <ul className="features-list space-y-2 mb-6">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                
-                {plan.cta && (
-                  <a 
-                    href={plan.cta.url} 
-                    className={`block w-full py-2 px-4 text-center rounded-md font-medium ${
-                      isPopular 
-                        ? 'bg-primary hover:bg-primary-600 text-white' 
-                        : 'border border-primary text-primary hover:bg-primary-50'
-                    }`}
-                  >
-                    {plan.cta.label}
-                  </a>
+              )}
+              
+              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+              
+              <div className="price-container mb-4">
+                <span className="text-3xl font-bold">{plan.price}</span>
+                {plan.interval && (
+                  <span className="text-sm opacity-80">/{plan.interval}</span>
                 )}
               </div>
-            );
-          })}
+              
+              {plan.description && (
+                <p className="mb-6 opacity-80">{plan.description}</p>
+              )}
+              
+              <ul className="space-y-2 mb-6">
+                {plan.features?.map((feature: string, i: number) => (
+                  <li key={i} className="flex items-center">
+                    <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              
+              {plan.cta && (
+                <a 
+                  href={plan.cta.url || '#'}
+                  className={`block w-full py-2 px-4 text-center rounded-md ${
+                    plan.featured
+                      ? 'bg-primary hover:bg-primary-600 text-white'
+                      : 'border border-primary text-primary hover:bg-primary hover:text-white'
+                  }`}
+                >
+                  {plan.cta.label || 'Choose Plan'}
+                </a>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -10,186 +10,101 @@ const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
 }) => {
   const { componentVariant, data = {} } = section;
   const {
-    title,
-    subtitle,
+    headline,
+    description,
     posts = [],
-    layout = 'grid',
-    featuredPost,
+    layoutStyle = 'grid',
     backgroundStyle,
     alignment,
-    postsPerRow = 3
+    showCategories,
+    showAuthors
   } = data;
   
   // Style classes
   const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'center');
+  const alignmentClass = getAlignmentClass(alignment || 'left');
   
-  // Grid columns
-  const gridCols = postsPerRow === 1 ? 'grid-cols-1' : 
-                   postsPerRow === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                   'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+  // Layout specific classes
+  const layoutClass = layoutStyle === 'list' 
+    ? 'space-y-8' 
+    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
 
   return (
     <section className={`blog-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
       <div className={`container mx-auto ${alignmentClass}`}>
-        {(title || subtitle) && (
+        {(headline || description) && (
           <div className="section-header mb-12">
-            {title && (
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{title}</h2>
+            {headline && (
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{headline}</h2>
             )}
             
-            {subtitle && (
-              <p className="text-lg opacity-80 max-w-3xl mx-auto">{subtitle}</p>
+            {description && (
+              <p className="text-lg opacity-80 max-w-3xl mx-auto">{description}</p>
             )}
           </div>
         )}
         
-        {/* Featured Post */}
-        {featuredPost && (
-          <div className="featured-post mb-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="featured-image">
-                <div className="aspect-video bg-gray-200 rounded-lg overflow-hidden">
-                  {featuredPost.image ? (
-                    <img 
-                      src={featuredPost.image} 
-                      alt={featuredPost.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      Featured Image
-                    </div>
-                  )}
+        <div className={layoutClass}>
+          {posts.map((post: any, index: number) => (
+            <div 
+              key={index}
+              className={`blog-post ${
+                layoutStyle === 'list' 
+                  ? 'flex flex-col md:flex-row gap-6' 
+                  : ''
+              }`}
+            >
+              {/* Post Image */}
+              {post.image && (
+                <div className={`blog-post-image ${layoutStyle === 'list' ? 'md:w-1/3' : 'mb-4'}`}>
+                  <img 
+                    src={post.image} 
+                    alt={post.title}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
                 </div>
-              </div>
+              )}
               
-              <div className="featured-content flex flex-col justify-center">
-                {featuredPost.category && (
-                  <div className="category mb-2">
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-primary/10 text-primary rounded-full">
-                      {featuredPost.category}
+              {/* Post Content */}
+              <div className={layoutStyle === 'list' && post.image ? 'md:w-2/3' : ''}>
+                {/* Category & Date */}
+                <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
+                  {showCategories && post.category && (
+                    <span className="bg-primary/10 text-primary px-2 py-1 rounded">
+                      {post.category}
                     </span>
-                  </div>
-                )}
-                
-                <h3 className="text-2xl font-bold mb-4">{featuredPost.title}</h3>
-                
-                <p className="opacity-80 mb-4">{featuredPost.excerpt}</p>
-                
-                <div className="meta flex items-center text-sm opacity-70 mb-4">
-                  {featuredPost.author && (
-                    <span className="mr-4">{featuredPost.author}</span>
                   )}
                   
-                  {featuredPost.date && (
-                    <span>{featuredPost.date}</span>
+                  {post.date && (
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {post.date}
+                    </span>
                   )}
                 </div>
                 
-                <a href={featuredPost.url || '#'} className="inline-flex items-center font-medium text-primary">
-                  Read more
-                  <svg className="w-4 h-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </a>
+                {/* Title */}
+                <h3 className="text-xl font-bold mb-2">
+                  <a href={post.url || '#'} className="hover:text-primary">
+                    {post.title}
+                  </a>
+                </h3>
+                
+                {/* Summary */}
+                {post.summary && (
+                  <p className="opacity-80 mb-4">{post.summary}</p>
+                )}
+                
+                {/* Author */}
+                {showAuthors && post.author && (
+                  <div className="flex items-center mt-4">
+                    <div className="w-8 h-8 rounded-full bg-gray-300 mr-3"></div>
+                    <span className="text-sm">{post.author}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
-        
-        {/* Posts Grid/List */}
-        {layout === 'grid' ? (
-          <div className={`grid ${gridCols} gap-8`}>
-            {posts.map((post: any, index: number) => (
-              <div key={index} className="blog-card bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md">
-                {post.image && (
-                  <div className="post-image aspect-video">
-                    <img 
-                      src={post.image} 
-                      alt={post.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className="p-6">
-                  {post.category && (
-                    <div className="category mb-2">
-                      <span className="inline-block px-2 py-1 text-xs font-semibold bg-primary/10 text-primary rounded-full">
-                        {post.category}
-                      </span>
-                    </div>
-                  )}
-                  
-                  <h3 className="font-bold text-xl mb-3">{post.title}</h3>
-                  
-                  <p className="opacity-80 mb-4">{post.excerpt}</p>
-                  
-                  <div className="meta flex items-center text-sm opacity-70 mb-4">
-                    {post.author && (
-                      <span className="mr-4">{post.author}</span>
-                    )}
-                    
-                    {post.date && (
-                      <span>{post.date}</span>
-                    )}
-                  </div>
-                  
-                  <a href={post.url || '#'} className="inline-flex items-center font-medium text-primary">
-                    Read more
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {posts.map((post: any, index: number) => (
-              <div key={index} className="blog-item border-b pb-8 last:border-b-0 last:pb-0">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {post.image && (
-                    <div className="post-image">
-                      <img 
-                        src={post.image} 
-                        alt={post.title}
-                        className="w-full h-48 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                  
-                  <div className={post.image ? 'md:col-span-2' : 'md:col-span-3'}>
-                    <div className="flex items-center justify-between mb-2">
-                      {post.category && (
-                        <span className="inline-block px-2 py-1 text-xs font-semibold bg-primary/10 text-primary rounded-full">
-                          {post.category}
-                        </span>
-                      )}
-                      
-                      {post.date && (
-                        <span className="text-sm opacity-70">{post.date}</span>
-                      )}
-                    </div>
-                    
-                    <h3 className="font-bold text-xl mb-3">{post.title}</h3>
-                    
-                    <p className="opacity-80 mb-4">{post.excerpt}</p>
-                    
-                    <div className="flex justify-between items-center">
-                      {post.author && (
-                        <span className="text-sm opacity-70">{post.author}</span>
-                      )}
-                      
-                      <a href={post.url || '#'} className="inline-flex items-center font-medium text-primary">
-                        Read more
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </section>
   );

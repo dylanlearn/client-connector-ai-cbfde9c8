@@ -106,7 +106,7 @@ export interface AIWireframe {
   created_at?: string;
   updated_at?: string;
   prompt?: string;
-  generation_params?: any; // Added this property to fix the error
+  generation_params?: any; // Added this property to fix the type error
 }
 
 export interface WireframePage {

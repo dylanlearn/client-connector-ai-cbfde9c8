@@ -1,36 +1,35 @@
 
 /**
- * Get the appropriate background class based on the style
+ * Utility functions for handling component variants and styles
+ */
+
+/**
+ * Get background class based on style and dark mode
  */
 export function getBackgroundClass(backgroundStyle?: string, darkMode: boolean = false): string {
-  if (!backgroundStyle) {
-    return darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900';
+  if (darkMode) {
+    // Dark mode styles take precedence
+    return 'bg-gray-900 text-white';
   }
   
   switch (backgroundStyle) {
-    case 'primary':
-      return 'bg-primary text-primary-foreground';
-    case 'secondary':
-      return 'bg-secondary text-secondary-foreground';
-    case 'muted':
-      return 'bg-muted text-muted-foreground';
-    case 'accent':
-      return 'bg-accent text-accent-foreground';
     case 'dark':
       return 'bg-gray-900 text-white';
     case 'light':
-      return 'bg-gray-50 text-gray-900';
+      return 'bg-white text-gray-900';
+    case 'image':
+      return 'bg-gray-900 bg-opacity-60 text-white';
     case 'gradient':
-      return 'bg-gradient-to-r from-primary to-purple-600 text-white';
+      return 'bg-gradient-to-r from-primary/80 to-primary text-white';
     default:
-      return darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900';
+      return 'bg-white text-gray-900';
   }
 }
 
 /**
- * Get the appropriate alignment class
+ * Get alignment class based on alignment string
  */
-export function getAlignmentClass(alignment?: string): string {
+export function getAlignmentClass(alignment: string): string {
   switch (alignment) {
     case 'left':
       return 'text-left';
@@ -38,9 +37,25 @@ export function getAlignmentClass(alignment?: string): string {
       return 'text-right';
     case 'center':
       return 'text-center';
-    case 'justify':
-      return 'text-justify';
     default:
-      return 'text-center';
+      return 'text-left';
+  }
+}
+
+/**
+ * Generate grid columns class based on count
+ */
+export function getGridColumns(count: number): string {
+  switch (count) {
+    case 1:
+      return 'grid-cols-1';
+    case 2:
+      return 'grid-cols-1 md:grid-cols-2';
+    case 3:
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+    case 4:
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+    default:
+      return 'grid-cols-1 md:grid-cols-3';
   }
 }
