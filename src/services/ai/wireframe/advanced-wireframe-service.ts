@@ -69,13 +69,13 @@ export class AdvancedWireframeService {
         {
           id: 'section-1',
           sectionType: 'hero',
-          title: 'Hero Section',
-          content: 'This is a hero section based on your prompt'
+          name: 'Hero Section',
+          description: 'This is a hero section based on your prompt'
         },
         {
           id: 'section-2',
           sectionType: 'features',
-          title: 'Features Section',
+          name: 'Features Section',
           items: [
             { title: 'Feature 1', description: 'Description 1' },
             { title: 'Feature 2', description: 'Description 2' },
@@ -155,4 +155,3 @@ export class AdvancedWireframeService {
     };
   }
 }
-
