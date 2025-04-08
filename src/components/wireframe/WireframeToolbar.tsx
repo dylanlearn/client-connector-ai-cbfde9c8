@@ -38,7 +38,7 @@ const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
   const [isSaving, setIsSaving] = useState(false);
   const { 
     wireframe, 
-    setWireframe, 
+    updateWireframe,
     activeDevice, 
     setActiveDevice,
     darkMode,
@@ -61,7 +61,7 @@ const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
   };
   
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setWireframe({ title: e.target.value });
+    updateWireframe({ title: e.target.value });
   };
   
   const handleCopyJson = () => {
