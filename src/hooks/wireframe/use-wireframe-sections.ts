@@ -35,7 +35,7 @@ export function useWireframeSections() {
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
-      // Always ensure copySuggestions is an array
+      // Properly normalize copySuggestions as an array
       copySuggestions: [],
       ...newSectionData
     };
