@@ -52,7 +52,7 @@ export function useCanvasInteractions({
     });
   }, [onConfigChange]);
   
-  // Mouse event handlers - Fixed to properly type the event parameters
+  // Mouse event handlers with proper TypeScript types
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (isSpacePressed && e.button === 0) {
       setIsDragging(true);

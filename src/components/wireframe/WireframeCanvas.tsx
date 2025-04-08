@@ -1,3 +1,4 @@
+
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -65,7 +66,8 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     toggleGrid,
     toggleSnapToGrid,
     isDragging,
-    isSpacePressed
+    isSpacePressed,
+    config
   } = useCanvasInteractions({ 
     canvasRef,
     initialConfig: canvasSettings,
@@ -102,9 +104,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     };
     
     const handleDocMouseMove = (e: MouseEvent) => {
-      if (typeof handleMouseMove === 'function') {
-        handleMouseMove(e);
-      }
+      handleMouseMove(e);
     };
     
     document.addEventListener('keydown', handleDocKeyDown);
