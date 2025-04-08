@@ -35,7 +35,7 @@ export function useWireframeSections() {
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
-      copySuggestions: [], // Ensure we use array type to match the store's definition
+      copySuggestions: [] as any[], // Explicitly cast as any[] to match the store's definition
       ...newSectionData
     };
     
@@ -54,7 +54,7 @@ export function useWireframeSections() {
     if (updates.copySuggestions && !Array.isArray(updates.copySuggestions)) {
       const convertedUpdates = {
         ...updates,
-        copySuggestions: [] // Convert to empty array if it's not an array
+        copySuggestions: [] as any[] // Explicitly cast as any[] to match expected type
       };
       updateSection(sectionId, convertedUpdates);
     } else {
