@@ -35,7 +35,8 @@ export function useWireframeSections() {
       sectionType: componentType,
       description: componentDef.description || '',
       layoutType: 'default',
-      copySuggestions: ([] as any[]), // Explicitly cast empty array to any[]
+      // Always ensure copySuggestions is an array
+      copySuggestions: [],
       ...newSectionData
     };
     
@@ -51,13 +52,17 @@ export function useWireframeSections() {
     if (!sectionId) return;
     
     // Handle copySuggestions type conversion if needed
-    if (updates.copySuggestions) {
-      // Ensure copySuggestions is always an array as expected by the store
+    if ('copySuggestions' in updates) {
+      // Normalize copySuggestions to always be an array
+      const normalized = Array.isArray(updates.copySuggestions)
+        ? updates.copySuggestions
+        : updates.copySuggestions
+          ? [updates.copySuggestions]
+          : [];
+      
       const convertedUpdates = {
         ...updates,
-        copySuggestions: Array.isArray(updates.copySuggestions) 
-          ? updates.copySuggestions as any[] 
-          : ([updates.copySuggestions] as any[]) // Cast to any[] to match WireframeSection type
+        copySuggestions: normalized
       };
       
       updateSection(sectionId, convertedUpdates);
