@@ -54,6 +54,11 @@ export function useWireframeGeneration() {
       description: params.description || "New wireframe generation",
     };
     
+    // Ensure style is a string if it's an object
+    if (generationParams.style && typeof generationParams.style === 'object') {
+      generationParams.style = JSON.stringify(generationParams.style);
+    }
+    
     // Handle params object directly
     return generateWireframeBase(generationParams);
   }, [generateWireframeBase, creativityLevel]);

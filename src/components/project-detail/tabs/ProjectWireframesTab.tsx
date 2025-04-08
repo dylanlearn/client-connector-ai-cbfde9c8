@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,10 +61,13 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
                                      `Website for ${intakeData.projectName || 'client'}`;
       }
       
+      // Extract only the needed properties for WireframeGenerationParams
+      // and ensure style is a string
       const generationParams = {
-        ...wireframeParams,
         description: wireframeParams.description || "New website wireframe",
-        projectId: project.id
+        projectId: project.id,
+        style: typeof wireframeParams.style === 'string' ? wireframeParams.style : JSON.stringify(wireframeParams.style),
+        sections: wireframeParams.sections
       };
       
       const result = await generateWireframe(generationParams);
