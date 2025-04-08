@@ -3,6 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { WireframeData, WireframeSection, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Helper function to validate UUID format
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
 /**
  * Service for wireframe management in the application
  */
@@ -12,6 +18,12 @@ export const WireframeService = {
    */
   getProjectWireframes: async (projectId: string) => {
     try {
+      // Validate project ID format
+      if (!isValidUUID(projectId)) {
+        console.warn(`Project ID is not a valid UUID: ${projectId}. Returning empty array.`);
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('wireframes')
         .select('*')

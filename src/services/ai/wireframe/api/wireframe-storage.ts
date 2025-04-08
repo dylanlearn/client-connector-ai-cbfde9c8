@@ -5,6 +5,13 @@ import {
   AIWireframe
 } from "../wireframe-types";
 import { wireframeSections } from "./wireframe-sections";
+import { v4 as uuidv4 } from 'uuid';
+
+// Helper function to validate UUID format
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
 
 /**
  * Service for wireframe storage and retrieval operations
@@ -21,6 +28,9 @@ export const wireframeStorage = {
     model: string
   ): Promise<AIWireframe> => {
     try {
+      // Ensure projectId is a valid UUID
+      const validProjectId = isValidUUID(projectId) ? projectId : uuidv4();
+      
       // Extract main wireframe data
       const { 
         title, 
@@ -41,7 +51,7 @@ export const wireframeStorage = {
       const { data, error } = await supabase
         .from('ai_wireframes')
         .insert({
-          project_id: projectId,
+          project_id: validProjectId,
           prompt: prompt,
           description: description || title,
           design_tokens: designTokens as any,
@@ -80,6 +90,12 @@ export const wireframeStorage = {
    */
   getProjectWireframes: async (projectId: string): Promise<AIWireframe[]> => {
     try {
+      // Ensure projectId is a valid UUID
+      if (!isValidUUID(projectId)) {
+        console.warn(`Invalid UUID format for project ID: ${projectId}. Returning empty array.`);
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('ai_wireframes')
         .select('*')
