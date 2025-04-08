@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWireframeGenerator } from "./wireframe/use-wireframe-generator";
 import { useWireframeStorage } from "./wireframe/use-wireframe-storage";
@@ -47,8 +47,15 @@ export function useWireframeGeneration() {
         creativityLevel
       });
     }
+    
+    // Ensure description property exists (it's required)
+    const generationParams: WireframeGenerationParams = {
+      ...params,
+      description: params.description || "New wireframe generation",
+    };
+    
     // Handle params object directly
-    return generateWireframeBase(params);
+    return generateWireframeBase(generationParams);
   }, [generateWireframeBase, creativityLevel]);
 
   return {

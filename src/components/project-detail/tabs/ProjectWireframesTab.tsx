@@ -60,7 +60,13 @@ const ProjectWireframesTab: React.FC<ProjectWireframesTabProps> = ({ project }) 
                                      `Website for ${intakeData.projectName || 'client'}`;
       }
       
-      const result = await generateWireframe(wireframeParams);
+      const generationParams = {
+        ...wireframeParams,
+        description: wireframeParams.description || "New website wireframe",
+        projectId: project.id
+      };
+      
+      const result = await generateWireframe(generationParams);
       
       if (result) {
         loadProjectWireframes(project.id);
