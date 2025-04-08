@@ -132,7 +132,7 @@ export class LayoutIntelligenceService {
     conversionFocus?: string;
   }>> {
     try {
-      const model = selectModelForFeature(AIFeatureType.WireframeGeneration);
+      const model = selectModelForFeature(AIFeatureType.DesignRecommendation);
       const { data, error } = await supabase.functions.invoke('generation-api', {
         body: {
           action: 'suggest-layouts',

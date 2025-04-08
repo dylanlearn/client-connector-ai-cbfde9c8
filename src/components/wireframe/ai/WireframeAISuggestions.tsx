@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { LayoutIntelligenceService } from '@/services/ai/wireframe/layout-intelligence-service';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection, AIWireframe } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeAISuggestionsProps {
   projectId?: string;
@@ -136,7 +136,17 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
     setIsLoading(true);
     
     try {
-      const analysis = await LayoutIntelligenceService.analyzeLayout(wireframe);
+      // Convert WireframeData to AIWireframe for the analysis function
+      const wireframeForAnalysis: AIWireframe = {
+        id: wireframe.id || `temp-${Date.now()}`, // Ensure we have an ID
+        title: wireframe.title,
+        description: wireframe.description,
+        sections: wireframe.sections || [],
+        // Include other required properties of AIWireframe
+        project_id: projectId
+      };
+      
+      const analysis = await LayoutIntelligenceService.analyzeLayout(wireframeForAnalysis);
       
       // Show results and update the UI
       toast({
@@ -179,7 +189,7 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [wireframe, toast]);
+  }, [wireframe, toast, projectId]);
   
   // Generate suggestions on initial render
   React.useEffect(() => {
