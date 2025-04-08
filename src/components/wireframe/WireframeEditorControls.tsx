@@ -13,10 +13,13 @@ import {
   Download,
   Copy,
   Eye,
-  FileText
+  FileText,
+  RotateCcw,
+  Laptop
 } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { PDFExportDialog } from '@/components/export/PDFExportDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface WireframeEditorControlsProps {
   darkMode: boolean;
@@ -30,6 +33,7 @@ interface WireframeEditorControlsProps {
   onSave?: () => void;
   onExport?: () => void;
   onCopyJson?: () => void;
+  onRotateDevice?: () => void;
 }
 
 const WireframeEditorControls: React.FC<WireframeEditorControlsProps> = ({
@@ -43,7 +47,8 @@ const WireframeEditorControls: React.FC<WireframeEditorControlsProps> = ({
   onHighlightSectionsToggle,
   onSave,
   onExport,
-  onCopyJson
+  onCopyJson,
+  onRotateDevice
 }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 p-2 border rounded-md bg-background">
@@ -96,6 +101,17 @@ const WireframeEditorControls: React.FC<WireframeEditorControlsProps> = ({
           >
             <Eye className="h-4 w-4" />
           </Toggle>
+          
+          {onRotateDevice && (
+            <Toggle
+              size="sm"
+              aria-label="Rotate device"
+              onPressedChange={onRotateDevice}
+              disabled={deviceType === 'desktop'}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Toggle>
+          )}
         </div>
       </div>
       
@@ -137,14 +153,30 @@ const WireframeEditorControls: React.FC<WireframeEditorControlsProps> = ({
         />
         
         {onExport && (
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={onExport} 
-            className="h-8"
-          >
-            <Download className="h-4 w-4 mr-1" /> Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8"
+              >
+                <Download className="h-4 w-4 mr-1" /> Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Export options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onExport}>
+                <FileText className="h-4 w-4 mr-2" /> Export as PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExport}>
+                <FileText className="h-4 w-4 mr-2" /> Export as SVG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExport}>
+                <FileText className="h-4 w-4 mr-2" /> Export as HTML
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </div>

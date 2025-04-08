@@ -3,30 +3,34 @@ import React, { memo, useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import ComponentRenderer from './renderers/ComponentRenderer';
-import { toast } from 'sonner';
 
 interface WireframeCanvasProps {
   projectId?: string;
   className?: string;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
 }
 
 const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({ 
   projectId, 
   className,
+  deviceType,
   onSectionClick 
 }) => {
   const [isRendering, setIsRendering] = useState(false);
   
   const { 
     wireframe,
-    activeDevice,
+    activeDevice: storeActiveDevice,
     darkMode,
     showGrid,
     highlightSections,
     activeSection,
     hiddenSections
   } = useWireframeStore();
+  
+  // Use device type from props if provided, otherwise use from store
+  const activeDevice = deviceType || storeActiveDevice;
   
   // Effect to handle rendering state for performance feedback
   useEffect(() => {
@@ -60,11 +64,12 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
         <ComponentRenderer 
           section={section}
           viewMode="preview" 
-          darkMode={darkMode} 
+          darkMode={darkMode}
+          deviceType={activeDevice}
         />
       </div>
     );
-  }, [hiddenSections, highlightSections, activeSection, darkMode, onSectionClick]);
+  }, [hiddenSections, highlightSections, activeSection, darkMode, onSectionClick, activeDevice]);
   
   return (
     <div 
