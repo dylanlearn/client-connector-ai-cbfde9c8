@@ -9,6 +9,8 @@ interface ComponentRendererProps {
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   className?: string;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
 const ComponentRenderer: React.FC<ComponentRendererProps> = ({
@@ -16,7 +18,9 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   viewMode = 'preview',
   darkMode = false,
   deviceType = 'desktop',
-  className
+  className,
+  isSelected = false,
+  onClick
 }) => {
   if (!section) return null;
   
@@ -68,11 +72,15 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
       className={cn(
         "section-renderer w-full rounded-md p-4",
         getBgColor(),
+        {
+          "ring-2 ring-primary": isSelected
+        },
         className
       )}
       style={{ 
         minHeight: getHeight()
       }}
+      onClick={onClick}
     >
       <div className={cn(
         "section-content",

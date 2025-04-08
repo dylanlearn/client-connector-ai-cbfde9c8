@@ -1,5 +1,5 @@
 
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 
 export interface WireframeSectionRendererProps {
   section: WireframeSection;

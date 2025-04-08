@@ -2,7 +2,7 @@
 import React from 'react';
 import ComponentRenderer from './renderers/ComponentRenderer';
 import { cn } from '@/lib/utils';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 
 export interface WireframeVisualizerProps {
   wireframe: {
@@ -55,22 +55,30 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
       </div>
       
       <div className="space-y-4">
-        {wireframe.sections?.map((section) => (
-          <div 
-            key={section.id} 
-            className="wireframe-section"
-            onClick={() => onSelect && onSelect(section.id)}
-          >
-            <ComponentRenderer 
-              section={section}
-              viewMode={viewMode}
-              darkMode={darkMode}
-              deviceType={deviceType}
-              isSelected={false}
-              onClick={() => onSelect && onSelect(section.id)}
-            />
-          </div>
-        ))}
+        {wireframe.sections?.map((section) => {
+          const handleClick = () => {
+            if (onSelect && section.id) {
+              onSelect(section.id);
+            }
+          };
+          
+          return (
+            <div 
+              key={section.id} 
+              className="wireframe-section"
+              onClick={handleClick}
+            >
+              <ComponentRenderer 
+                section={section}
+                viewMode={viewMode}
+                darkMode={darkMode}
+                deviceType={deviceType}
+                isSelected={false}
+                onClick={handleClick}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {wireframe.version && (

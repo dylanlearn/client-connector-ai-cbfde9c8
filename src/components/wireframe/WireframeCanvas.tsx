@@ -1,3 +1,4 @@
+
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -327,8 +328,8 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
           height: editMode ? '600px' : 'auto',
           minHeight: '200px'
         }}
-        onMouseDown={(e) => handleMouseDown(e)}
-        onWheel={(e) => handleWheel(e)}
+        onMouseDown={handleMouseDown}
+        onWheel={handleWheel}
       >
         <div 
           className={cn(
