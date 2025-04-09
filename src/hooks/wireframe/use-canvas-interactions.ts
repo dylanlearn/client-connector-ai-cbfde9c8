@@ -1,65 +1,49 @@
 
-import { useState, useEffect, useCallback, RefObject } from 'react';
+import { useCallback, useState, useEffect, RefObject } from 'react';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 
-interface CanvasConfig {
-  zoom?: number;
-  panOffset?: { x: number; y: number };
-  showGrid?: boolean;
-  snapToGrid?: boolean;
-  gridSize?: number;
-  gridType?: 'lines' | 'dots' | 'columns';
-  snapTolerance?: number;
-  showSmartGuides?: boolean;
-}
-
-interface CanvasPosition {
-  x: number;
-  y: number;
-}
-
-interface GuidelinePosition {
-  position: number;
-  orientation: 'horizontal' | 'vertical';
-}
-
-interface UseCanvasInteractionsProps {
+interface UseCanvasInteractionsOptions {
   canvasRef: RefObject<HTMLDivElement>;
-  initialConfig?: CanvasConfig;
-  onConfigChange?: (config: CanvasConfig) => void;
+  initialConfig?: Partial<WireframeCanvasConfig>;
+  onConfigChange?: (config: Partial<WireframeCanvasConfig>) => void;
 }
 
 export function useCanvasInteractions({
   canvasRef,
-  initialConfig = {},
+  initialConfig,
   onConfigChange
-}: UseCanvasInteractionsProps) {
+}: UseCanvasInteractionsOptions) {
   const [isDragging, setIsDragging] = useState(false);
-  const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [guidelines, setGuidelines] = useState<GuidelinePosition[]>([]);
-  
-  // Initialize with default config values
-  const [config, setConfig] = useState<CanvasConfig>({
-    zoom: initialConfig.zoom || 1,
-    panOffset: initialConfig.panOffset || { x: 0, y: 0 },
-    showGrid: initialConfig.showGrid ?? true,
-    snapToGrid: initialConfig.snapToGrid ?? true,
-    gridSize: initialConfig.gridSize || 10,
-    gridType: initialConfig.gridType || 'lines',
-    snapTolerance: initialConfig.snapTolerance || 5,
-    showSmartGuides: initialConfig.showSmartGuides ?? true
+  const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+  const [config, setConfig] = useState<WireframeCanvasConfig>({
+    width: 1200,
+    height: 800,
+    zoom: initialConfig?.zoom || 1,
+    panOffset: initialConfig?.panOffset || { x: 0, y: 0 },
+    showGrid: initialConfig?.showGrid !== undefined ? initialConfig.showGrid : true,
+    snapToGrid: initialConfig?.snapToGrid !== undefined ? initialConfig.snapToGrid : true,
+    gridSize: initialConfig?.gridSize || 10,
+    gridType: initialConfig?.gridType || 'lines',
+    snapTolerance: initialConfig?.snapTolerance || 5,
+    backgroundColor: initialConfig?.backgroundColor || '#ffffff',
+    showSmartGuides: initialConfig?.showSmartGuides !== undefined ? initialConfig.showSmartGuides : true,
+    showRulers: initialConfig?.showRulers !== undefined ? initialConfig.showRulers : true,
+    rulerSize: initialConfig?.rulerSize || 20
   });
-  
-  // Update local config when initialConfig changes
+
+  // Update internal config when external config changes
   useEffect(() => {
-    setConfig(prevConfig => ({
-      ...prevConfig,
-      ...initialConfig
-    }));
+    if (initialConfig) {
+      setConfig(prev => ({
+        ...prev,
+        ...initialConfig
+      }));
+    }
   }, [initialConfig]);
-  
-  // Handle config changes and notify parent
-  const updateConfig = useCallback((updates: Partial<CanvasConfig>) => {
+
+  // Update external config when internal config changes
+  const updateConfig = useCallback((updates: Partial<WireframeCanvasConfig>) => {
     setConfig(prev => {
       const newConfig = { ...prev, ...updates };
       if (onConfigChange) {
@@ -68,232 +52,109 @@ export function useCanvasInteractions({
       return newConfig;
     });
   }, [onConfigChange]);
-  
-  // Mouse event handlers with proper TypeScript types
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+
+  // Handle mouse down for panning
+  const handleMouseDown = useCallback((e: React.MouseEvent | MouseEvent) => {
     if (isSpacePressed && e.button === 0) {
       setIsDragging(true);
       setLastPosition({ x: e.clientX, y: e.clientY });
+      
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = 'grabbing';
+      }
+      
       e.preventDefault();
     }
-  }, [isSpacePressed]);
-  
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+  }, [isSpacePressed, canvasRef]);
+
+  // Handle mouse move for panning
+  const handleMouseMove = useCallback((e: React.MouseEvent | MouseEvent) => {
     if (isDragging) {
       const deltaX = e.clientX - lastPosition.x;
       const deltaY = e.clientY - lastPosition.y;
       
       updateConfig({
         panOffset: {
-          x: (config.panOffset?.x || 0) + deltaX,
-          y: (config.panOffset?.y || 0) + deltaY
+          x: config.panOffset.x + deltaX,
+          y: config.panOffset.y + deltaY
         }
       });
       
       setLastPosition({ x: e.clientX, y: e.clientY });
+      e.preventDefault();
     }
   }, [isDragging, lastPosition, config.panOffset, updateConfig]);
-  
+
+  // Handle mouse up to end panning
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-  
-  // Keyboard event handlers
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.code === 'Space' && !e.repeat) {
-      setIsSpacePressed(true);
-    }
-  }, []);
-  
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    if (e.code === 'Space') {
-      setIsSpacePressed(false);
+    if (isDragging) {
       setIsDragging(false);
+      
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = isSpacePressed ? 'grab' : 'default';
+      }
     }
-  }, []);
-  
-  // Zoom handling
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+  }, [isDragging, isSpacePressed, canvasRef]);
+
+  // Handle wheel for zooming
+  const handleWheel = useCallback((e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Math.max(0.1, Math.min((config.zoom || 1) + delta, 3));
       
-      updateConfig({ zoom: newZoom });
+      const delta = e.deltaY;
+      const zoom = Math.min(5, Math.max(0.1, config.zoom + (delta > 0 ? -0.1 : 0.1)));
+      
+      updateConfig({ zoom });
     }
   }, [config.zoom, updateConfig]);
+
+  // Handle keyboard events
+  const handleKeyDown = useCallback((e: React.KeyboardEvent | KeyboardEvent) => {
+    if (e.code === 'Space' && !e.repeat) {
+      setIsSpacePressed(true);
+      
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = isDragging ? 'grabbing' : 'grab';
+      }
+      
+      e.preventDefault();
+    }
+  }, [isDragging, canvasRef]);
+
+  const handleKeyUp = useCallback((e: React.KeyboardEvent | KeyboardEvent) => {
+    if (e.code === 'Space') {
+      setIsSpacePressed(false);
+      
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = 'default';
+      }
+      
+      e.preventDefault();
+    }
+  }, [canvasRef]);
   
-  // Utility functions
+  // Zoom utility functions
   const zoomIn = useCallback(() => {
-    updateConfig({ zoom: Math.min((config.zoom || 1) + 0.1, 3) });
+    updateConfig({ zoom: Math.min(5, config.zoom + 0.1) });
   }, [config.zoom, updateConfig]);
   
   const zoomOut = useCallback(() => {
-    updateConfig({ zoom: Math.max(0.1, (config.zoom || 1) - 0.1) });
+    updateConfig({ zoom: Math.max(0.1, config.zoom - 0.1) });
   }, [config.zoom, updateConfig]);
   
   const resetZoom = useCallback(() => {
     updateConfig({ zoom: 1, panOffset: { x: 0, y: 0 } });
   }, [updateConfig]);
   
+  // Grid utility functions
   const toggleGrid = useCallback(() => {
-    updateConfig({ showGrid: !(config.showGrid || false) });
+    updateConfig({ showGrid: !config.showGrid });
   }, [config.showGrid, updateConfig]);
   
   const toggleSnapToGrid = useCallback(() => {
-    updateConfig({ snapToGrid: !(config.snapToGrid || false) });
+    updateConfig({ snapToGrid: !config.snapToGrid });
   }, [config.snapToGrid, updateConfig]);
-  
-  const toggleSmartGuides = useCallback(() => {
-    updateConfig({ showSmartGuides: !(config.showSmartGuides || false) });
-  }, [config.showSmartGuides, updateConfig]);
-  
-  const setGridType = useCallback((gridType: CanvasConfig['gridType']) => {
-    updateConfig({ gridType });
-  }, [updateConfig]);
-  
-  const setGridSize = useCallback((gridSize: number) => {
-    updateConfig({ gridSize });
-  }, [updateConfig]);
-  
-  const setSnapTolerance = useCallback((snapTolerance: number) => {
-    updateConfig({ snapTolerance });
-  }, [updateConfig]);
-  
-  // Smart guide utilities
-  const calculateGuidelines = useCallback((elements: DOMRect[], currentElement: DOMRect) => {
-    const newGuidelines: GuidelinePosition[] = [];
-    const tolerance = config.snapTolerance || 5;
-    
-    // Check horizontal alignments (tops, centers, bottoms)
-    elements.forEach(rect => {
-      // Top alignment
-      if (Math.abs(rect.top - currentElement.top) <= tolerance) {
-        newGuidelines.push({
-          position: rect.top,
-          orientation: 'horizontal'
-        });
-      }
-      
-      // Center alignment
-      const rectCenterY = rect.top + rect.height / 2;
-      const currentCenterY = currentElement.top + currentElement.height / 2;
-      if (Math.abs(rectCenterY - currentCenterY) <= tolerance) {
-        newGuidelines.push({
-          position: rectCenterY,
-          orientation: 'horizontal'
-        });
-      }
-      
-      // Bottom alignment
-      if (Math.abs((rect.top + rect.height) - (currentElement.top + currentElement.height)) <= tolerance) {
-        newGuidelines.push({
-          position: rect.top + rect.height,
-          orientation: 'horizontal'
-        });
-      }
-      
-      // Similar checks for vertical alignments (lefts, centers, rights)
-      if (Math.abs(rect.left - currentElement.left) <= tolerance) {
-        newGuidelines.push({
-          position: rect.left,
-          orientation: 'vertical'
-        });
-      }
-      
-      const rectCenterX = rect.left + rect.width / 2;
-      const currentCenterX = currentElement.left + currentElement.width / 2;
-      if (Math.abs(rectCenterX - currentCenterX) <= tolerance) {
-        newGuidelines.push({
-          position: rectCenterX,
-          orientation: 'vertical'
-        });
-      }
-      
-      if (Math.abs((rect.left + rect.width) - (currentElement.left + currentElement.width)) <= tolerance) {
-        newGuidelines.push({
-          position: rect.left + rect.width,
-          orientation: 'vertical'
-        });
-      }
-    });
-    
-    setGuidelines(newGuidelines);
-    return newGuidelines;
-  }, [config.snapTolerance]);
-  
-  // Snapping functionality
-  const snapToGridPosition = useCallback((position: CanvasPosition): CanvasPosition => {
-    if (!config.snapToGrid || !config.gridSize) return position;
-    
-    const gridSize = config.gridSize;
-    return {
-      x: Math.round(position.x / gridSize) * gridSize,
-      y: Math.round(position.y / gridSize) * gridSize
-    };
-  }, [config.snapToGrid, config.gridSize]);
-  
-  const snapToGuideline = useCallback((position: CanvasPosition, rect: DOMRect): CanvasPosition => {
-    if (!config.showSmartGuides || guidelines.length === 0) return position;
-    
-    let newPosition = { ...position };
-    const tolerance = config.snapTolerance || 5;
-    
-    // Check for horizontal guidelines
-    const horizontalGuidelines = guidelines.filter(g => g.orientation === 'horizontal');
-    for (const guide of horizontalGuidelines) {
-      // Snap top
-      if (Math.abs(guide.position - position.y) <= tolerance) {
-        newPosition.y = guide.position;
-        break;
-      }
-      
-      // Snap center
-      const centerY = position.y + rect.height / 2;
-      if (Math.abs(guide.position - centerY) <= tolerance) {
-        newPosition.y = guide.position - rect.height / 2;
-        break;
-      }
-      
-      // Snap bottom
-      const bottom = position.y + rect.height;
-      if (Math.abs(guide.position - bottom) <= tolerance) {
-        newPosition.y = guide.position - rect.height;
-        break;
-      }
-    }
-    
-    // Check for vertical guidelines
-    const verticalGuidelines = guidelines.filter(g => g.orientation === 'vertical');
-    for (const guide of verticalGuidelines) {
-      // Snap left
-      if (Math.abs(guide.position - position.x) <= tolerance) {
-        newPosition.x = guide.position;
-        break;
-      }
-      
-      // Snap center
-      const centerX = position.x + rect.width / 2;
-      if (Math.abs(guide.position - centerX) <= tolerance) {
-        newPosition.x = guide.position - rect.width / 2;
-        break;
-      }
-      
-      // Snap right
-      const right = position.x + rect.width;
-      if (Math.abs(guide.position - right) <= tolerance) {
-        newPosition.x = guide.position - rect.width;
-        break;
-      }
-    }
-    
-    return newPosition;
-  }, [guidelines, config.showSmartGuides, config.snapTolerance]);
-  
-  const clearGuidelines = useCallback(() => {
-    setGuidelines([]);
-  }, []);
-  
+
   return {
     handleMouseDown,
     handleMouseMove,
@@ -306,17 +167,9 @@ export function useCanvasInteractions({
     resetZoom,
     toggleGrid,
     toggleSnapToGrid,
-    toggleSmartGuides,
-    setGridType,
-    setGridSize,
-    setSnapTolerance,
-    calculateGuidelines,
-    snapToGridPosition,
-    snapToGuideline,
-    clearGuidelines,
     isDragging,
     isSpacePressed,
     config,
-    guidelines
+    updateConfig
   };
 }

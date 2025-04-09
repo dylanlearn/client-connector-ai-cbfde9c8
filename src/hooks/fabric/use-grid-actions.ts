@@ -6,32 +6,42 @@ export function useGridActions(
   updateConfig: (config: Partial<WireframeCanvasConfig>) => void,
   canvasConfig: WireframeCanvasConfig
 ) {
-  // Grid management
+  // Toggle grid visibility
   const toggleGrid = useCallback(() => {
     updateConfig({ showGrid: !canvasConfig.showGrid });
-  }, [canvasConfig.showGrid, updateConfig]);
+  }, [updateConfig, canvasConfig.showGrid]);
   
+  // Toggle snap to grid
   const toggleSnapToGrid = useCallback(() => {
     updateConfig({ snapToGrid: !canvasConfig.snapToGrid });
-  }, [canvasConfig.snapToGrid, updateConfig]);
+  }, [updateConfig, canvasConfig.snapToGrid]);
   
+  // Set grid size
   const setGridSize = useCallback((size: number) => {
     updateConfig({ gridSize: size });
   }, [updateConfig]);
   
-  const changeGridType = useCallback((type: "lines" | "dots" | "columns") => {
+  // Change grid type (lines, dots, etc.)
+  const setGridType = useCallback((type: 'lines' | 'dots' | 'grid') => {
     updateConfig({ gridType: type });
   }, [updateConfig]);
   
+  // Set grid color
+  const setGridColor = useCallback((color: string) => {
+    updateConfig({ gridColor: color });
+  }, [updateConfig]);
+  
+  // Set snap tolerance
   const setSnapTolerance = useCallback((tolerance: number) => {
     updateConfig({ snapTolerance: tolerance });
   }, [updateConfig]);
-
+  
   return {
     toggleGrid,
     toggleSnapToGrid,
     setGridSize,
-    changeGridType,
+    setGridType,
+    setGridColor,
     setSnapTolerance
   };
 }

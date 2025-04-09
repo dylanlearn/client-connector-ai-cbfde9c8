@@ -1,4 +1,5 @@
 
+// Update the existing file to enhance history management and fix any issues
 import { useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 
@@ -99,7 +100,39 @@ export default function useCanvasHistory({
     if (canvas && saveInitialState && history.length === 0) {
       saveHistoryState('Initial state');
     }
-  }, [canvas, saveInitialState, history.length, saveHistoryState]);
+    
+    // Setup canvas event listeners for auto-save
+    if (canvas) {
+      const handleObjectModified = () => {
+        if (!isHistoryAction) {
+          saveHistoryState('Object modified');
+        }
+      };
+      
+      const handleObjectAdded = (e: any) => {
+        // Don't save history for temporary objects
+        if (e.target && !e.target.temporary && !isHistoryAction) {
+          saveHistoryState('Object added');
+        }
+      };
+      
+      const handleObjectRemoved = () => {
+        if (!isHistoryAction) {
+          saveHistoryState('Object removed');
+        }
+      };
+      
+      canvas.on('object:modified', handleObjectModified);
+      canvas.on('object:added', handleObjectAdded);
+      canvas.on('object:removed', handleObjectRemoved);
+      
+      return () => {
+        canvas.off('object:modified', handleObjectModified);
+        canvas.off('object:added', handleObjectAdded);
+        canvas.off('object:removed', handleObjectRemoved);
+      };
+    }
+  }, [canvas, saveInitialState, history.length, saveHistoryState, isHistoryAction]);
   
   // Track whether undo/redo are available
   const canUndo = currentIndex > 0;
