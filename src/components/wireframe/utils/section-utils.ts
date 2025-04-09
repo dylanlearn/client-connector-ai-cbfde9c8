@@ -41,14 +41,21 @@ export function getResponsiveLayout(
   };
   
   // Get base layout
-  const baseLayout = section.layout ? {
-    layout: (section.layout.type || 'flex') as 'flex' | 'grid' | 'stack' | 'columns',
-    alignItems: (section.layout.alignment || 'center') as 'start' | 'center' | 'end' | 'stretch',
-    justifyContent: (section.layout.justifyContent || 'between') as 'start' | 'center' | 'end' | 'between' | 'around',
-    columns: section.layout.columns || 1,
-    gap: section.layout.gap || 16,
-    wrap: section.layout.wrap !== false
-  } : defaultLayout;
+  let baseLayout: ResponsiveLayoutSettings;
+  
+  if (section.layout) {
+    // Convert the generic section layout to ResponsiveLayoutSettings format
+    baseLayout = {
+      layout: ((section.layout.type || 'flex') as 'flex' | 'grid' | 'stack' | 'columns'),
+      alignItems: ((section.layout.alignment || 'center') as 'start' | 'center' | 'end' | 'stretch'),
+      justifyContent: ((section.layout.justifyContent || 'between') as 'start' | 'center' | 'end' | 'between' | 'around'),
+      columns: section.layout.columns || 1,
+      gap: section.layout.gap || 16,
+      wrap: section.layout.wrap !== false
+    };
+  } else {
+    baseLayout = defaultLayout;
+  }
   
   // Apply device-specific overrides if available
   if (section.responsive && section.responsive[device]?.layout) {
@@ -56,9 +63,9 @@ export function getResponsiveLayout(
       ...baseLayout,
       ...section.responsive[device].layout,
       // Ensure proper type casting for these properties
-      layout: (section.responsive[device].layout?.layout || baseLayout.layout) as 'flex' | 'grid' | 'stack' | 'columns',
-      alignItems: (section.responsive[device].layout?.alignItems || baseLayout.alignItems) as 'start' | 'center' | 'end' | 'stretch',
-      justifyContent: (section.responsive[device].layout?.justifyContent || baseLayout.justifyContent) as 'start' | 'center' | 'end' | 'between' | 'around'
+      layout: (section.responsive[device].layout?.layout || baseLayout.layout),
+      alignItems: (section.responsive[device].layout?.alignItems || baseLayout.alignItems),
+      justifyContent: (section.responsive[device].layout?.justifyContent || baseLayout.justifyContent)
     };
   }
   
@@ -112,7 +119,7 @@ export function getResponsiveContent(section: AdaptiveWireframeSection, device: 
 export function createResponsiveVariation(
   section: AdaptiveWireframeSection, 
   device: DeviceType, 
-  updates: Partial<AdaptiveWireframeSection>
+  updates: Partial<AdaptiveWireframeSection['responsive'][DeviceType]>
 ): AdaptiveWireframeSection {
   const newSection = { ...section };
   
@@ -188,18 +195,20 @@ export function createGridSection(columns: number): AdaptiveWireframeSection {
  * Make a section fully responsive
  */
 export function makeFullyResponsive(section: AdaptiveWireframeSection): AdaptiveWireframeSection {
-  const responsive: AdaptiveWireframeSection['responsive'] = {
-    desktop: {
-      layout: getResponsiveLayout(section, 'desktop')
-    },
-    tablet: {
-      layout: getResponsiveLayout(section, 'tablet')
-    },
-    mobile: {
-      layout: getResponsiveLayout(section, 'mobile')
-    }
-  };
+  // Create a correctly typed responsive object
+  const responsive: AdaptiveWireframeSection['responsive'] = {};
   
+  // Get layout for each device type
+  const desktopLayout = getResponsiveLayout(section, 'desktop');
+  const tabletLayout = getResponsiveLayout(section, 'tablet');
+  const mobileLayout = getResponsiveLayout(section, 'mobile');
+  
+  // Apply layout settings to responsive object
+  responsive['desktop'] = { layout: { ...desktopLayout } };
+  responsive['tablet'] = { layout: { ...tabletLayout } };
+  responsive['mobile'] = { layout: { ...mobileLayout } };
+  
+  // Return the updated section
   return {
     ...section,
     responsive
