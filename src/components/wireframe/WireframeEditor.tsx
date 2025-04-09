@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
+import WireframeFeedbackProcessor from './feedback/WireframeFeedbackProcessor'; // Import our new component
 
 interface WireframeEditorProps {
   projectId?: string;
@@ -19,7 +20,17 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeD
   const { isLoading, projectData, error, saveProject } = useWireframeEditor(projectId);
   
   // Use provided wireframe data if available, otherwise use data from the hook
-  const displayData = wireframeData || projectData;
+  const [displayData, setDisplayData] = useState<WireframeData | undefined>(wireframeData || projectData);
+
+  // Update displayData when wireframeData or projectData changes
+  useEffect(() => {
+    setDisplayData(wireframeData || projectData);
+  }, [wireframeData, projectData]);
+  
+  // Handle wireframe updates from feedback processor
+  const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
+    setDisplayData(updatedWireframe);
+  };
 
   if (isLoading && !wireframeData) {
     return (
@@ -58,6 +69,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeD
           <TabsList>
             <TabsTrigger value="canvas">Canvas</TabsTrigger>
             <TabsTrigger value="components">Components</TabsTrigger>
+            <TabsTrigger value="feedback">Feedback</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="export">Export</TabsTrigger>
           </TabsList>
@@ -103,6 +115,38 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeD
                   <p className="text-sm text-muted-foreground">{section.sectionType}</p>
                 </div>
               ))}
+            </div>
+          </Card>
+        </TabsContent>
+        
+        {/* New Feedback Tab */}
+        <TabsContent value="feedback" className="m-0">
+          <Card className="border rounded-md p-4">
+            <h2 className="text-lg font-medium mb-4">Feedback-Driven Updates</h2>
+            
+            <div className="space-y-6">
+              <p className="text-muted-foreground">
+                Describe changes you'd like to make to the wireframe in natural language. 
+                The system will interpret your feedback and automatically update the wireframe.
+              </p>
+              
+              <WireframeFeedbackProcessor 
+                wireframeId={displayData.id}
+                onWireframeUpdate={handleWireframeUpdate}
+                createNewVersion={false}
+              />
+              
+              <Alert variant="default" className="bg-blue-50 text-blue-700 border-blue-200">
+                <AlertTitle>How to provide effective feedback</AlertTitle>
+                <AlertDescription className="text-sm">
+                  <ul className="list-disc pl-5 space-y-1 mt-2">
+                    <li>Be specific about which section you want to modify (e.g., "hero", "pricing", etc.)</li>
+                    <li>Clearly state your intent: add, remove, change styling, or modify layout</li>
+                    <li>Describe the visual properties you want to change: colors, spacing, alignment</li>
+                    <li>Reference specific elements by name: buttons, headings, cards, etc.</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
             </div>
           </Card>
         </TabsContent>

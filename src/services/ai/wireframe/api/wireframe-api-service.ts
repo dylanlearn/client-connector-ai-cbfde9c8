@@ -1,228 +1,199 @@
-import axios from 'axios';
 
-// Replace process.env with import.meta.env for Vite
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  WireframeData, 
+  WireframeGenerationParams,
+  AIWireframe
+} from "../wireframe-types";
 
 /**
- * Service class for interacting with the Wireframe API.
+ * API service for wireframe operations
  */
-export class WireframeAPIService {
-  private api = axios.create({
-    baseURL: API_BASE_URL,
-    timeout: 10000,
-    headers: {
-      'Content-Type': 'application/json'
+class WireframeApiService {
+  /**
+   * Get a wireframe by ID
+   */
+  async getWireframe(wireframeId: string): Promise<AIWireframe | null> {
+    try {
+      const { data, error } = await supabase
+        .from('wireframes')
+        .select('*')
+        .eq('id', wireframeId)
+        .single();
+      
+      if (error) throw error;
+      
+      return data as AIWireframe;
+    } catch (error) {
+      console.error('Error getting wireframe:', error);
+      throw error;
     }
-  });
+  }
   
-  constructor() {
-    // Add a response interceptor to handle errors
-    this.api.interceptors.response.use(
-      response => response,
-      error => {
-        console.error('API Error:', error);
-        
-        // Conditionally log the request and response data
-        if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.log(error.response.data);
-          console.log(error.response.status);
-          console.log(error.response.headers);
-        } else if (error.request) {
-          // The request was made but no response was received
-          // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-          // http.ClientRequest in node.js
-          console.log(error.request);
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.log('Error', error.message);
-        }
-        
-        return Promise.reject(error);
+  /**
+   * Save a wireframe
+   */
+  async saveWireframe(
+    wireframeId: string, 
+    prompt: string, 
+    wireframeData: any,
+    params: Record<string, any> = {},
+    source: string = 'ai-generated'
+  ): Promise<AIWireframe> {
+    try {
+      const { data, error } = await supabase
+        .from('wireframes')
+        .upsert({
+          id: wireframeId,
+          prompt,
+          data: wireframeData,
+          title: wireframeData.title || 'Untitled Wireframe',
+          description: wireframeData.description || '',
+          sections: wireframeData.sections || [],
+          generation_params: params,
+          source
+        }, {
+          onConflict: 'id'
+        })
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      
+      return data as AIWireframe;
+    } catch (error) {
+      console.error('Error saving wireframe:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update a wireframe's data
+   */
+  async updateWireframeData(
+    wireframeId: string, 
+    wireframeData: WireframeData
+  ): Promise<AIWireframe | null> {
+    try {
+      const { data, error } = await supabase
+        .from('wireframes')
+        .update({
+          data: wireframeData,
+          title: wireframeData.title || undefined,
+          description: wireframeData.description || undefined,
+          sections: wireframeData.sections || [],
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', wireframeId)
+        .select('*')
+        .single();
+      
+      if (error) throw error;
+      
+      return data as AIWireframe;
+    } catch (error) {
+      console.error('Error updating wireframe:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Update wireframe feedback
+   */
+  async updateWireframeFeedback(
+    wireframeId: string,
+    feedback: any
+  ): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('wireframe_feedback')
+        .insert({
+          wireframe_id: wireframeId,
+          feedback,
+          created_at: new Date().toISOString()
+        });
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating wireframe feedback:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Create a new version of a wireframe
+   */
+  async createWireframeVersion(
+    wireframeId: string,
+    wireframeData: WireframeData,
+    options: {
+      description?: string;
+      userId?: string;
+    } = {}
+  ): Promise<{
+    success: boolean;
+    version_id: string;
+  }> {
+    try {
+      // Generate a version ID
+      const versionId = crypto.randomUUID();
+      
+      const { error } = await supabase
+        .from('wireframe_versions')
+        .insert({
+          id: versionId,
+          wireframe_id: wireframeId,
+          data: wireframeData,
+          description: options.description || 'New version',
+          created_by: options.userId || null,
+          is_current: true
+        });
+      
+      if (error) throw error;
+      
+      // Set all other versions as not current
+      const { error: updateError } = await supabase
+        .from('wireframe_versions')
+        .update({ is_current: false })
+        .eq('wireframe_id', wireframeId)
+        .neq('id', versionId);
+      
+      if (updateError) {
+        console.warn('Error updating other versions:', updateError);
       }
-    );
-  }
-
-  /**
-   * Generates a wireframe based on the provided prompt.
-   * @param prompt The wireframe generation prompt.
-   * @returns A promise that resolves with the generated wireframe result.
-   */
-  async generateWireframe(prompt: any) {
-    try {
-      const response = await this.api.post('/api/wireframe/generate', prompt);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to generate wireframe');
+      
+      return {
+        success: true,
+        version_id: versionId
+      };
+    } catch (error) {
+      console.error('Error creating wireframe version:', error);
+      throw error;
     }
   }
-
+  
   /**
-   * Updates wireframe feedback
-   * @param wireframeId The ID of the wireframe to update
-   * @param feedback The feedback data
-   * @returns A promise that resolves with the updated wireframe
+   * Get versions of a wireframe
    */
-  async updateWireframeFeedback(wireframeId: string, feedback: any) {
+  async getWireframeVersions(wireframeId: string): Promise<any[]> {
     try {
-      const response = await this.api.post(`/api/wireframe/${wireframeId}/feedback`, {
-        feedback
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to update wireframe feedback');
-    }
-  }
-
-  /**
-   * Generates a section based on the provided type and data.
-   * @param type The type of the section to generate.
-   * @param data The data to use for generating the section.
-   * @returns A promise that resolves with the generated wireframe section.
-   */
-  async generateSection(type: string, data: any) {
-    try {
-      const response = await this.api.post(`/api/wireframe/section/generate`, {
-        type,
-        data
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to generate section');
-    }
-  }
-
-  /**
-   * Enhances a wireframe based on the provided wireframe and prompt.
-   * @param wireframe The wireframe to enhance.
-   * @param prompt The prompt to use for enhancing the wireframe.
-   * @returns A promise that resolves with the enhanced wireframe result.
-   */
-  async enhanceWireframe(wireframe: any, prompt: string) {
-    try {
-      const response = await this.api.post('/api/wireframe/enhance', {
-        wireframe,
-        prompt
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to enhance wireframe');
-    }
-  }
-
-  /**
-   * Generates variations of a section based on the provided section and count.
-   * @param section The section to generate variations for.
-   * @param count The number of variations to generate.
-   * @returns A promise that resolves with an array of generated wireframe sections.
-   */
-  async generateVariations(section: any, count: number) {
-    try {
-      const response = await this.api.post('/api/wireframe/section/variations', {
-        section,
-        count
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to generate variations');
-    }
-  }
-
-  /**
-   * Analyzes a wireframe for layout patterns and optimization opportunities.
-   * @param wireframeData The wireframe data to analyze.
-   * @returns A promise that resolves with the layout analysis result.
-   */
-  async analyzeLayout(wireframeData: any) {
-    try {
-      const response = await this.api.post('/api/wireframe/analyze/layout', {
-        wireframeData
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to analyze layout');
-    }
-  }
-
-  /**
-   * Updates wireframe data
-   * @param wireframeId The ID of the wireframe to update
-   * @param data The updated data
-   * @returns A promise that resolves with the updated wireframe
-   */
-  async updateWireframeData(wireframeId: string, data: any) {
-    try {
-      const response = await this.api.put(`/api/wireframe/${wireframeId}`, data);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to update wireframe data');
-    }
-  }
-
-  /**
-   * Gets a wireframe by ID
-   * @param wireframeId The ID of the wireframe to get
-   * @returns A promise that resolves with the wireframe
-   */
-  async getWireframe(wireframeId: string) {
-    try {
-      const response = await this.api.get(`/api/wireframe/${wireframeId}`);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to get wireframe');
-    }
-  }
-
-  /**
-   * Saves a wireframe
-   * @param wireframeId The ID of the wireframe to save
-   * @param prompt The prompt used to generate the wireframe
-   * @param data The wireframe data
-   * @param params Additional parameters
-   * @param source The source of the wireframe
-   * @returns A promise that resolves with the saved wireframe
-   */
-  async saveWireframe(wireframeId: string, prompt: string, data: any, params: any = {}, source: string = 'ai-generated') {
-    try {
-      const response = await this.api.post(`/api/wireframe/save`, {
-        id: wireframeId,
-        prompt,
-        data,
-        params,
-        source
-      });
-      return response.data;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to save wireframe');
+      const { data, error } = await supabase
+        .from('wireframe_versions')
+        .select('*')
+        .eq('wireframe_id', wireframeId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error getting wireframe versions:', error);
+      throw error;
     }
   }
 }
 
-/**
- * Helper function to process layout information.
- * @param layoutInfo The layout information to process.
- * @returns The processed layout information.
- */
-const processLayout = (layoutInfo: any) => {
-  // Make sure to have a default alignment property
-  if (layoutInfo.type === 'grid') {
-    return {
-      type: layoutInfo.type,
-      tabletGrid: layoutInfo.tabletGrid || '1fr 1fr',
-      alignment: layoutInfo.alignment || 'center' // Add default alignment
-    };
-  }
-  
-  return {
-    type: layoutInfo.type || 'flex',
-    alignment: layoutInfo.alignment || 'center',
-    tabletGrid: layoutInfo.tabletGrid || '' // Keep other properties with default
-  };
-};
-
-// Create a singleton instance to export
-export const wireframeApiService = new WireframeAPIService();
-
-// Export default instance
+export const wireframeApiService = new WireframeApiService();
 export default wireframeApiService;

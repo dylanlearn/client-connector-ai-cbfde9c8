@@ -4,6 +4,10 @@ import { WireframeData, WireframeSection, WireframeCanvasConfig } from '@/servic
 import { componentToFabricObject } from '@/components/wireframe/utils/fabric-converters';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { MessageSquarePlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import WireframeFeedbackProcessor from '../feedback/WireframeFeedbackProcessor';
 
 interface WireframeCanvasEngineProps {
   wireframeData: WireframeData;
@@ -12,6 +16,7 @@ interface WireframeCanvasEngineProps {
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   canvasConfig?: Partial<WireframeCanvasConfig>;
   onCanvasConfigChange?: (config: Partial<WireframeCanvasConfig>) => void;
+  onWireframeUpdate?: (wireframe: WireframeData) => void;
 }
 
 const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
@@ -20,11 +25,13 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   onCanvasReady,
   deviceType = 'desktop',
   canvasConfig,
-  onCanvasConfigChange
+  onCanvasConfigChange,
+  onWireframeUpdate
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [feedbackOpen, setFeedbackOpen] = useState<boolean>(false);
   const saveStateForUndo = useWireframeStore(state => state.saveStateForUndo);
   const { toast } = useToast();
   
@@ -129,6 +136,14 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
       canvas.renderAll();
     }
   }, [config.zoom, config.panOffset, isInitialized]);
+  
+  // Handle wireframe update from feedback
+  const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
+    if (onWireframeUpdate) {
+      onWireframeUpdate(updatedWireframe);
+      setFeedbackOpen(false);
+    }
+  };
   
   // Render grid on canvas
   const renderGrid = (canvas: fabric.Canvas, gridSize: number) => {
@@ -265,6 +280,31 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   return (
     <div className="wireframe-canvas-fabric-container w-full relative">
       <canvas ref={canvasRef} />
+      
+      {/* Feedback button overlay */}
+      {editable && wireframeData?.id && (
+        <div className="absolute bottom-4 right-4">
+          <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="flex items-center gap-2 shadow-md"
+                variant="default"
+                size="sm"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                Add Feedback
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[550px]">
+              <WireframeFeedbackProcessor
+                wireframeId={wireframeData.id}
+                onWireframeUpdate={handleWireframeUpdate}
+                createNewVersion={false}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
     </div>
   );
 };
