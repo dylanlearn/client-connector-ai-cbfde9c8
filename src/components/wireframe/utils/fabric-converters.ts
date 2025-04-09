@@ -193,7 +193,8 @@ export function renderSectionToFabric(
     showGrid = false,
     gridSize = 10,
     deviceType = 'desktop',
-    interactive = true
+    interactive = true,
+    showBorders = true
   } = options;
   
   // Basic rendering - expand as needed
