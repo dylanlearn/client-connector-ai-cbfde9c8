@@ -24,13 +24,13 @@ export function useCanvasActions(
   const clearCanvas = useCallback(() => {
     if (!fabricCanvas) return;
     fabricCanvas.clear();
-    fabricCanvas.backgroundColor = '#ffffff';
+    fabricCanvas.backgroundColor = canvasConfig.backgroundColor;
     fabricCanvas.renderAll();
-  }, [fabricCanvas]);
+  }, [fabricCanvas, canvasConfig.backgroundColor]);
 
   const saveCanvasAsJSON = useCallback(() => {
     if (!fabricCanvas) return null;
-    return fabricCanvas.toJSON();
+    return fabricCanvas.toJSON(['id', 'name', 'data']);
   }, [fabricCanvas]);
 
   const loadCanvasFromJSON = useCallback((json: any) => {

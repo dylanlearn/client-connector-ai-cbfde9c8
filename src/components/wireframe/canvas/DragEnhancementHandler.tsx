@@ -1,379 +1,511 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
+import { cn } from '@/lib/utils';
 import { AlignmentGuide, DropZoneIndicator } from '@/components/wireframe/utils/types';
 
 interface DragEnhancementHandlerProps {
   canvas: fabric.Canvas | null;
-  showSmartGuides?: boolean;
+  snapToGrid?: boolean;
+  gridSize?: number;
+  snapToObjects?: boolean;
   snapTolerance?: number;
-  onDragStart?: (target: fabric.Object) => void;
-  onDragMove?: (target: fabric.Object, guides: AlignmentGuide[]) => void;
-  onDragEnd?: (target: fabric.Object) => void;
+  showSmartGuides?: boolean;
+  className?: string;
 }
+
+// Guide colors
+const GUIDE_COLORS = {
+  edge: '#2196F3',
+  center: '#FF4081',
+  distribution: '#4CAF50',
+  boundary: '#FFC107'
+};
 
 const DragEnhancementHandler: React.FC<DragEnhancementHandlerProps> = ({
   canvas,
+  snapToGrid = true,
+  gridSize = 10,
+  snapToObjects = true,
+  snapTolerance = 5,
   showSmartGuides = true,
-  snapTolerance = 10,
-  onDragStart,
-  onDragMove,
-  onDragEnd
+  className
 }) => {
-  const overlayRef = useRef<HTMLCanvasElement | null>(null);
-  const guidesRef = useRef<AlignmentGuide[]>([]);
-  const isDraggingRef = useRef<boolean>(false);
+  const [guideLines, setGuideLines] = useState<AlignmentGuide[]>([]);
+  const [dropZones, setDropZones] = useState<DropZoneIndicator[]>([]);
+  const [activeDragObject, setActiveDragObject] = useState<fabric.Object | null>(null);
   
-  // Initialize overlay canvas for guides visualization
+  const guideLineRefs = useRef<Map<string, fabric.Line>>(new Map());
+  const guideLabelRefs = useRef<Map<string, fabric.Text>>(new Map());
+  const dropZoneRefs = useRef<Map<string, fabric.Rect>>(new Map());
+  
+  // Clean up guidelines and drop zones when component unmounts
+  useEffect(() => {
+    return () => {
+      if (canvas) {
+        clearGuides();
+        clearDropZones();
+      }
+    };
+  }, []);
+  
+  // Set up drag events when canvas changes
   useEffect(() => {
     if (!canvas) return;
     
-    const setupDragHandlers = () => {
-      // Object move events
-      canvas.on('object:moving', (e) => {
-        if (!e.target || !showSmartGuides) return;
-        
-        if (!isDraggingRef.current) {
-          isDraggingRef.current = true;
-          if (onDragStart) onDragStart(e.target);
-        }
-        
-        // Find other objects (excluding the one being dragged)
-        const otherObjects = canvas.getObjects().filter(obj => obj !== e.target);
-        
-        // Generate guides
-        generateAlignmentGuides(e.target, otherObjects, canvas);
-        
-        if (onDragMove) onDragMove(e.target, guidesRef.current);
-      });
+    const handleObjectMoving = (e: fabric.IEvent) => {
+      const target = e.target;
+      if (!target) return;
       
-      // End of dragging
-      canvas.on('mouse:up', () => {
-        if (isDraggingRef.current) {
-          isDraggingRef.current = false;
-          guidesRef.current = [];
-          clearGuides();
-          
-          const activeObject = canvas.getActiveObject();
-          if (activeObject && onDragEnd) onDragEnd(activeObject);
-        }
-      });
+      setActiveDragObject(target);
+      
+      if (snapToGrid) {
+        snapToGridLines(target);
+      }
+      
+      if (snapToObjects && showSmartGuides) {
+        const guides = generateObjectGuidelines(target);
+        updateGuidelines(guides);
+        snapToGuidelines(target, guides);
+      }
+      
+      // Update drop zones for the current dragged object
+      updateDropZones(target);
     };
     
-    setupDragHandlers();
+    const handleObjectModified = () => {
+      clearGuides();
+      clearDropZones();
+      setActiveDragObject(null);
+    };
     
-    // Setup overlay canvas
-    const canvasEl = canvas.getElement().parentNode;
-    if (canvasEl && !overlayRef.current) {
-      const overlay = document.createElement('canvas');
-      overlay.width = canvas.getWidth();
-      overlay.height = canvas.getHeight();
-      overlay.style.position = 'absolute';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.pointerEvents = 'none';
-      overlay.style.zIndex = '10';
-      canvasEl.appendChild(overlay);
-      overlayRef.current = overlay;
-    }
+    const handleSelectionCleared = () => {
+      clearGuides();
+      clearDropZones();
+      setActiveDragObject(null);
+    };
     
-    // Make sure we adjust overlay size when canvas size changes
-    const resizeObserver = new ResizeObserver(() => {
-      if (overlayRef.current && canvas) {
-        overlayRef.current.width = canvas.getWidth();
-        overlayRef.current.height = canvas.getHeight();
-      }
-    });
+    const handleDragStart = (e: fabric.IEvent) => {
+      const target = e.target;
+      if (!target) return;
+      
+      // Pre-generate drop zones for this object
+      generateDropZones(target);
+    };
     
-    if (canvas.getElement()) {
-      resizeObserver.observe(canvas.getElement());
-    }
+    const handleDragEnd = () => {
+      clearGuides();
+      clearDropZones();
+      setActiveDragObject(null);
+    };
+    
+    canvas.on('object:moving', handleObjectMoving);
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('selection:cleared', handleSelectionCleared);
+    canvas.on('mouse:down', handleDragStart);
+    canvas.on('mouse:up', handleDragEnd);
     
     return () => {
-      canvas.off('object:moving');
-      canvas.off('mouse:up');
-      
-      if (canvas.getElement()) {
-        resizeObserver.unobserve(canvas.getElement());
-      }
-      
-      if (overlayRef.current && overlayRef.current.parentNode) {
-        overlayRef.current.parentNode.removeChild(overlayRef.current);
-      }
+      canvas.off('object:moving', handleObjectMoving);
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('selection:cleared', handleSelectionCleared);
+      canvas.off('mouse:down', handleDragStart);
+      canvas.off('mouse:up', handleDragEnd);
     };
-  }, [canvas, showSmartGuides, snapTolerance, onDragStart, onDragMove, onDragEnd]);
+  }, [canvas, snapToGrid, gridSize, snapToObjects, snapTolerance, showSmartGuides]);
   
-  // Generate alignment guides
-  const generateAlignmentGuides = (
-    target: fabric.Object,
-    otherObjects: fabric.Object[],
-    canvas: fabric.Canvas
-  ) => {
-    if (!target || !canvas || !overlayRef.current) return;
+  // Clear all visible guide lines
+  const clearGuides = () => {
+    if (!canvas) return;
     
-    // Clear previous guides
-    clearGuides();
+    guideLineRefs.current.forEach((line) => {
+      canvas.remove(line);
+    });
     
+    guideLabelRefs.current.forEach((text) => {
+      canvas.remove(text);
+    });
+    
+    guideLineRefs.current.clear();
+    guideLabelRefs.current.clear();
+    setGuideLines([]);
+  };
+  
+  // Clear all visible drop zones
+  const clearDropZones = () => {
+    if (!canvas) return;
+    
+    dropZoneRefs.current.forEach((rect) => {
+      canvas.remove(rect);
+    });
+    
+    dropZoneRefs.current.clear();
+    setDropZones([]);
+  };
+  
+  // Snap an object to the grid
+  const snapToGridLines = (target: fabric.Object) => {
+    if (!canvas) return;
+    
+    const grid = gridSize;
+    
+    // Snap to nearest grid point
+    if (target.left) {
+      target.left = Math.round(target.left / grid) * grid;
+    }
+    
+    if (target.top) {
+      target.top = Math.round(target.top / grid) * grid;
+    }
+  };
+  
+  // Generate alignment guidelines for an object relative to other objects
+  const generateObjectGuidelines = (target: fabric.Object): AlignmentGuide[] => {
+    if (!canvas) return [];
+    
+    const allObjects = canvas.getObjects().filter(obj => obj !== target);
     const guides: AlignmentGuide[] = [];
     
-    // Target object bounds
-    const targetBounds = getObjectBounds(target);
+    const targetBounds = {
+      left: target.left || 0,
+      top: target.top || 0,
+      right: (target.left || 0) + (target.width || 0) * (target.scaleX || 1),
+      bottom: (target.top || 0) + (target.height || 0) * (target.scaleY || 1),
+      centerX: (target.left || 0) + ((target.width || 0) * (target.scaleX || 1)) / 2,
+      centerY: (target.top || 0) + ((target.height || 0) * (target.scaleY || 1)) / 2
+    };
     
-    // Check alignment with each other object
-    otherObjects.forEach(obj => {
+    allObjects.forEach(obj => {
       if (!obj.visible) return;
       
-      const objBounds = getObjectBounds(obj);
+      const objBounds = {
+        left: obj.left || 0,
+        top: obj.top || 0,
+        right: (obj.left || 0) + (obj.width || 0) * (obj.scaleX || 1),
+        bottom: (obj.top || 0) + (obj.height || 0) * (obj.scaleY || 1),
+        centerX: (obj.left || 0) + ((obj.width || 0) * (obj.scaleX || 1)) / 2,
+        centerY: (obj.top || 0) + ((obj.height || 0) * (obj.scaleY || 1)) / 2
+      };
       
-      // Horizontal alignments
-      // Top edge alignment
-      if (Math.abs(targetBounds.top - objBounds.top) < snapTolerance) {
-        guides.push({
-          position: objBounds.top,
-          orientation: 'horizontal',
-          type: 'edge',
-          label: `Top: ${Math.round(objBounds.top)}px`,
-          strength: 10
-        });
-        
-        // Snap to guide if close enough
-        if (Math.abs(targetBounds.top - objBounds.top) < snapTolerance / 2) {
-          target.set('top', objBounds.top);
-        }
-      }
-      
-      // Middle alignment
-      if (Math.abs(targetBounds.centerY - objBounds.centerY) < snapTolerance) {
-        guides.push({
-          position: objBounds.centerY,
-          orientation: 'horizontal',
-          type: 'center',
-          label: `Middle: ${Math.round(objBounds.centerY)}px`,
-          strength: 8
-        });
-        
-        // Snap to guide if close enough
-        if (Math.abs(targetBounds.centerY - objBounds.centerY) < snapTolerance / 2) {
-          target.set('top', objBounds.centerY - targetBounds.height / 2);
-        }
-      }
-      
-      // Bottom edge alignment
-      if (Math.abs(targetBounds.bottom - objBounds.bottom) < snapTolerance) {
-        guides.push({
-          position: objBounds.bottom,
-          orientation: 'horizontal',
-          type: 'edge',
-          label: `Bottom: ${Math.round(objBounds.bottom)}px`,
-          strength: 10
-        });
-        
-        // Snap to guide if close enough
-        if (Math.abs(targetBounds.bottom - objBounds.bottom) < snapTolerance / 2) {
-          target.set('top', objBounds.bottom - targetBounds.height);
-        }
-      }
-      
-      // Vertical alignments
-      // Left edge alignment
+      // Vertical alignment - left edges
       if (Math.abs(targetBounds.left - objBounds.left) < snapTolerance) {
         guides.push({
           position: objBounds.left,
           orientation: 'vertical',
           type: 'edge',
-          label: `Left: ${Math.round(objBounds.left)}px`,
-          strength: 10
+          strength: 10,
+          label: `Left: ${Math.round(objBounds.left)}`
         });
-        
-        // Snap to guide if close enough
-        if (Math.abs(targetBounds.left - objBounds.left) < snapTolerance / 2) {
-          target.set('left', objBounds.left);
-        }
       }
       
-      // Center alignment
-      if (Math.abs(targetBounds.centerX - objBounds.centerX) < snapTolerance) {
-        guides.push({
-          position: objBounds.centerX,
-          orientation: 'vertical',
-          type: 'center',
-          label: `Center: ${Math.round(objBounds.centerX)}px`,
-          strength: 8
-        });
-        
-        // Snap to guide if close enough
-        if (Math.abs(targetBounds.centerX - objBounds.centerX) < snapTolerance / 2) {
-          target.set('left', objBounds.centerX - targetBounds.width / 2);
-        }
-      }
-      
-      // Right edge alignment
+      // Vertical alignment - right edges
       if (Math.abs(targetBounds.right - objBounds.right) < snapTolerance) {
         guides.push({
           position: objBounds.right,
           orientation: 'vertical',
           type: 'edge',
-          label: `Right: ${Math.round(objBounds.right)}px`,
-          strength: 10
+          strength: 10,
+          label: `Right: ${Math.round(objBounds.right)}`
+        });
+      }
+      
+      // Vertical alignment - centers
+      if (Math.abs(targetBounds.centerX - objBounds.centerX) < snapTolerance) {
+        guides.push({
+          position: objBounds.centerX,
+          orientation: 'vertical',
+          type: 'center',
+          strength: 8,
+          label: `CenterX: ${Math.round(objBounds.centerX)}`
+        });
+      }
+      
+      // Horizontal alignment - top edges
+      if (Math.abs(targetBounds.top - objBounds.top) < snapTolerance) {
+        guides.push({
+          position: objBounds.top,
+          orientation: 'horizontal',
+          type: 'edge',
+          strength: 10,
+          label: `Top: ${Math.round(objBounds.top)}`
+        });
+      }
+      
+      // Horizontal alignment - bottom edges
+      if (Math.abs(targetBounds.bottom - objBounds.bottom) < snapTolerance) {
+        guides.push({
+          position: objBounds.bottom,
+          orientation: 'horizontal',
+          type: 'edge',
+          strength: 10,
+          label: `Bottom: ${Math.round(objBounds.bottom)}`
+        });
+      }
+      
+      // Horizontal alignment - centers
+      if (Math.abs(targetBounds.centerY - objBounds.centerY) < snapTolerance) {
+        guides.push({
+          position: objBounds.centerY,
+          orientation: 'horizontal',
+          type: 'center',
+          strength: 8,
+          label: `CenterY: ${Math.round(objBounds.centerY)}`
+        });
+      }
+    });
+    
+    return guides;
+  };
+  
+  // Snap object to existing guidelines
+  const snapToGuidelines = (target: fabric.Object, guides: AlignmentGuide[]) => {
+    if (!canvas || !guides.length) return;
+    
+    // Calculate target bounds
+    const targetWidth = (target.width || 0) * (target.scaleX || 1);
+    const targetHeight = (target.height || 0) * (target.scaleY || 1);
+    
+    // Find the strongest vertical guide
+    const verticalGuides = guides.filter(g => g.orientation === 'vertical');
+    if (verticalGuides.length > 0) {
+      const strongestVGuide = verticalGuides.reduce((prev, curr) => 
+        (curr.strength || 0) > (prev.strength || 0) ? curr : prev
+      );
+      
+      // Apply the vertical snap
+      if (strongestVGuide.type === 'edge') {
+        target.left = strongestVGuide.position;
+      } else if (strongestVGuide.type === 'center') {
+        target.left = strongestVGuide.position - targetWidth / 2;
+      }
+    }
+    
+    // Find the strongest horizontal guide
+    const horizontalGuides = guides.filter(g => g.orientation === 'horizontal');
+    if (horizontalGuides.length > 0) {
+      const strongestHGuide = horizontalGuides.reduce((prev, curr) => 
+        (curr.strength || 0) > (prev.strength || 0) ? curr : prev
+      );
+      
+      // Apply the horizontal snap
+      if (strongestHGuide.type === 'edge') {
+        target.top = strongestHGuide.position;
+      } else if (strongestHGuide.type === 'center') {
+        target.top = strongestHGuide.position - targetHeight / 2;
+      }
+    }
+  };
+  
+  // Update the visible guidelines
+  const updateGuidelines = (guides: AlignmentGuide[]) => {
+    if (!canvas) return;
+    
+    // Clear old guides
+    clearGuides();
+    setGuideLines(guides);
+    
+    // Create new guidelines
+    guides.forEach((guide) => {
+      const guideId = `${guide.orientation}-${guide.position}-${guide.type}`;
+      
+      // Create guide line
+      const canvasWidth = canvas.getWidth();
+      const canvasHeight = canvas.getHeight();
+      
+      let line: fabric.Line;
+      if (guide.orientation === 'horizontal') {
+        line = new fabric.Line([0, guide.position, canvasWidth, guide.position], {
+          stroke: guide.type === 'center' ? GUIDE_COLORS.center : GUIDE_COLORS.edge,
+          strokeDashArray: [5, 5],
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          temporary: true
+        });
+      } else {
+        line = new fabric.Line([guide.position, 0, guide.position, canvasHeight], {
+          stroke: guide.type === 'center' ? GUIDE_COLORS.center : GUIDE_COLORS.edge,
+          strokeDashArray: [5, 5],
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          temporary: true
+        });
+      }
+      
+      canvas.add(line);
+      canvas.bringToFront(line);
+      guideLineRefs.current.set(guideId, line);
+      
+      // Add label if specified
+      if (guide.label) {
+        const labelX = guide.orientation === 'vertical' ? guide.position + 5 : 10;
+        const labelY = guide.orientation === 'horizontal' ? guide.position - 20 : 10;
+        
+        const text = new fabric.Text(guide.label, {
+          left: labelX,
+          top: labelY,
+          fontSize: 12,
+          fontFamily: 'Arial',
+          fill: guide.type === 'center' ? GUIDE_COLORS.center : GUIDE_COLORS.edge,
+          backgroundColor: 'rgba(255,255,255,0.7)',
+          padding: 2,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          temporary: true
         });
         
-        // Snap to guide if close enough
-        if (Math.abs(targetBounds.right - objBounds.right) < snapTolerance / 2) {
-          target.set('left', objBounds.right - targetBounds.width);
-        }
+        canvas.add(text);
+        canvas.bringToFront(text);
+        guideLabelRefs.current.set(`label-${guideId}`, text);
       }
     });
     
-    // Grid guides (snap to grid)
-    if (canvas && canvas._objects[0] && (canvas._objects[0] as any).isGrid) {
-      const gridSize = (canvas._objects[0] as any).gridSize || 10;
-      
-      // Horizontal grid lines
-      const topGrid = Math.round(targetBounds.top / gridSize) * gridSize;
-      const centerYGrid = Math.round(targetBounds.centerY / gridSize) * gridSize;
-      const bottomGrid = Math.round(targetBounds.bottom / gridSize) * gridSize;
-      
-      if (Math.abs(targetBounds.top - topGrid) < snapTolerance) {
-        guides.push({
-          position: topGrid,
-          orientation: 'horizontal',
-          type: 'grid',
-          strength: 5
-        });
-      }
-      
-      if (Math.abs(targetBounds.centerY - centerYGrid) < snapTolerance) {
-        guides.push({
-          position: centerYGrid,
-          orientation: 'horizontal',
-          type: 'grid',
-          strength: 5
-        });
-      }
-      
-      if (Math.abs(targetBounds.bottom - bottomGrid) < snapTolerance) {
-        guides.push({
-          position: bottomGrid,
-          orientation: 'horizontal',
-          type: 'grid',
-          strength: 5
-        });
-      }
-      
-      // Vertical grid lines
-      const leftGrid = Math.round(targetBounds.left / gridSize) * gridSize;
-      const centerXGrid = Math.round(targetBounds.centerX / gridSize) * gridSize;
-      const rightGrid = Math.round(targetBounds.right / gridSize) * gridSize;
-      
-      if (Math.abs(targetBounds.left - leftGrid) < snapTolerance) {
-        guides.push({
-          position: leftGrid,
-          orientation: 'vertical',
-          type: 'grid',
-          strength: 5
-        });
-      }
-      
-      if (Math.abs(targetBounds.centerX - centerXGrid) < snapTolerance) {
-        guides.push({
-          position: centerXGrid,
-          orientation: 'vertical',
-          type: 'grid',
-          strength: 5
-        });
-      }
-      
-      if (Math.abs(targetBounds.right - rightGrid) < snapTolerance) {
-        guides.push({
-          position: rightGrid,
-          orientation: 'vertical',
-          type: 'grid',
-          strength: 5
-        });
-      }
-    }
-    
-    guidesRef.current = guides;
-    
-    // Render guides
-    renderGuides(guides);
+    canvas.renderAll();
   };
   
-  // Render guides on overlay canvas
-  const renderGuides = (guides: AlignmentGuide[]) => {
-    if (!overlayRef.current) return;
+  // Generate drop zones for a dragged object
+  const generateDropZones = (target: fabric.Object) => {
+    if (!canvas) return;
     
-    const ctx = overlayRef.current.getContext('2d');
-    if (!ctx) return;
+    const canvasObjects = canvas.getObjects().filter(obj => 
+      obj !== target && (obj.type !== 'line' && obj.type !== 'text')
+    );
     
-    // Clear canvas
-    ctx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height);
+    const zones: DropZoneIndicator[] = [];
     
-    guides.forEach(guide => {
-      // Choose color based on guide type
-      ctx.strokeStyle = 
-        guide.type === 'center' ? '#2196f3' : 
-        guide.type === 'grid' ? '#9e9e9e' : 
-        '#e91e63';
+    canvasObjects.forEach(obj => {
+      if ((obj as any).temporary) return;
       
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+      const objLeft = obj.left || 0;
+      const objTop = obj.top || 0;
+      const objWidth = (obj.width || 0) * (obj.scaleX || 1);
+      const objHeight = (obj.height || 0) * (obj.scaleY || 1);
       
-      ctx.beginPath();
+      // Create drop zones around an object
+      const margin = 10;
       
-      if (guide.orientation === 'horizontal') {
-        ctx.moveTo(0, guide.position);
-        ctx.lineTo(overlayRef.current!.width, guide.position);
-      } else {
-        ctx.moveTo(guide.position, 0);
-        ctx.lineTo(guide.position, overlayRef.current!.height);
-      }
+      // Top drop zone
+      zones.push({
+        id: `top-${obj.data?.id || Math.random().toString(36)}`,
+        rect: {
+          left: objLeft - margin,
+          top: objTop - objHeight - margin,
+          width: objWidth + margin * 2,
+          height: objHeight
+        },
+        active: false,
+        type: 'top'
+      });
       
-      ctx.stroke();
+      // Bottom drop zone
+      zones.push({
+        id: `bottom-${obj.data?.id || Math.random().toString(36)}`,
+        rect: {
+          left: objLeft - margin,
+          top: objTop + objHeight + margin,
+          width: objWidth + margin * 2,
+          height: objHeight
+        },
+        active: false,
+        type: 'bottom'
+      });
       
-      // Draw label if available
-      if (guide.label) {
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.font = '10px sans-serif';
-        ctx.fillText(
-          guide.label,
-          guide.orientation === 'vertical' ? guide.position + 5 : 5,
-          guide.orientation === 'horizontal' ? guide.position - 5 : 15
-        );
-      }
+      // Left drop zone
+      zones.push({
+        id: `left-${obj.data?.id || Math.random().toString(36)}`,
+        rect: {
+          left: objLeft - objWidth - margin,
+          top: objTop - margin,
+          width: objWidth,
+          height: objHeight + margin * 2
+        },
+        active: false,
+        type: 'left'
+      });
+      
+      // Right drop zone
+      zones.push({
+        id: `right-${obj.data?.id || Math.random().toString(36)}`,
+        rect: {
+          left: objLeft + objWidth + margin,
+          top: objTop - margin,
+          width: objWidth,
+          height: objHeight + margin * 2
+        },
+        active: false,
+        type: 'right'
+      });
     });
-  };
-  
-  // Clear guides from overlay
-  const clearGuides = () => {
-    if (!overlayRef.current) return;
     
-    const ctx = overlayRef.current.getContext('2d');
-    if (ctx) {
-      ctx.clearRect(0, 0, overlayRef.current.width, overlayRef.current.height);
-    }
+    setDropZones(zones);
   };
   
-  // Helper to get object bounds
-  const getObjectBounds = (obj: fabric.Object) => {
-    const left = obj.left || 0;
-    const top = obj.top || 0;
-    const width = (obj.width || 0) * (obj.scaleX || 1);
-    const height = (obj.height || 0) * (obj.scaleY || 1);
+  // Update drop zones when object is being dragged
+  const updateDropZones = (target: fabric.Object) => {
+    if (!canvas || !dropZones.length) return;
     
-    return {
-      left,
-      top,
-      width,
-      height,
-      right: left + width,
-      bottom: top + height,
-      centerX: left + width / 2,
-      centerY: top + height / 2
-    };
+    // Calculate target bounds
+    const targetLeft = target.left || 0;
+    const targetTop = target.top || 0;
+    const targetWidth = (target.width || 0) * (target.scaleX || 1);
+    const targetHeight = (target.height || 0) * (target.scaleY || 1);
+    const targetRight = targetLeft + targetWidth;
+    const targetBottom = targetTop + targetHeight;
+    
+    // Clear existing drop zone visuals
+    clearDropZones();
+    
+    // Update drop zones
+    const updatedZones = dropZones.map(zone => {
+      const zoneRect = zone.rect;
+      
+      // Check if target is overlapping with drop zone
+      const isOverlapping = (
+        targetRight > zoneRect.left &&
+        targetLeft < zoneRect.left + zoneRect.width &&
+        targetBottom > zoneRect.top &&
+        targetTop < zoneRect.top + zoneRect.height
+      );
+      
+      // If overlapping, show drop zone visual
+      if (isOverlapping) {
+        const dropZone = new fabric.Rect({
+          left: zoneRect.left,
+          top: zoneRect.top,
+          width: zoneRect.width,
+          height: zoneRect.height,
+          fill: 'rgba(66, 133, 244, 0.2)',
+          stroke: 'rgba(66, 133, 244, 0.8)',
+          strokeWidth: 2,
+          strokeDashArray: [5, 5],
+          rx: 5,
+          ry: 5,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          temporary: true
+        });
+        
+        canvas.add(dropZone);
+        canvas.sendToBack(dropZone);
+        dropZoneRefs.current.set(zone.id, dropZone);
+        
+        return { ...zone, active: true };
+      }
+      
+      return { ...zone, active: false };
+    });
+    
+    setDropZones(updatedZones);
+    canvas.renderAll();
   };
   
-  return null; // This component doesn't render anything visible
+  // This component doesn't render anything visible
+  return null;
 };
 
 export default DragEnhancementHandler;

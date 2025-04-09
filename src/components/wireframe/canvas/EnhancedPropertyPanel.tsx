@@ -1,19 +1,29 @@
 
 import React, { useState, useEffect } from 'react';
 import { fabric } from 'fabric';
+import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { 
+  AlignCenter, 
+  AlignLeft, 
+  AlignRight, 
+  Bold, 
+  Copy, 
+  Italic, 
+  Layers, 
+  Lock, 
+  Palette, 
+  Trash, 
+  Underline 
+} from 'lucide-react';
 
 interface EnhancedPropertyPanelProps {
   selectedObject: fabric.Object | null;
   canvas: fabric.Canvas | null;
-  onUpdate?: () => void;
   className?: string;
   onSaveHistoryState?: (description: string) => void;
 }
@@ -21,497 +31,435 @@ interface EnhancedPropertyPanelProps {
 const EnhancedPropertyPanel: React.FC<EnhancedPropertyPanelProps> = ({
   selectedObject,
   canvas,
-  onUpdate,
   className,
   onSaveHistoryState
 }) => {
+  const [objectType, setObjectType] = useState<string>('');
   const [position, setPosition] = useState({ left: 0, top: 0 });
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [angle, setAngle] = useState(0);
-  const [opacity, setOpacity] = useState(100);
-  const [fill, setFill] = useState('#ffffff');
+  const [rotation, setRotation] = useState(0);
+  const [fill, setFill] = useState('#000000');
   const [stroke, setStroke] = useState('#000000');
-  const [strokeWidth, setStrokeWidth] = useState(1);
-  const [locked, setLocked] = useState(false);
+  const [strokeWidth, setStrokeWidth] = useState(0);
+  const [opacity, setOpacity] = useState(1);
+  const [textProps, setTextProps] = useState({
+    text: '',
+    fontSize: 16,
+    fontFamily: 'Arial',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    textAlign: 'left',
+    lineHeight: 1.16,
+    underline: false
+  });
 
-  // Update local state when selected object changes
+  // Update panel state when selected object changes
   useEffect(() => {
-    if (!selectedObject) return;
-    
+    if (!selectedObject) {
+      return;
+    }
+
+    // Determine object type
+    if (selectedObject instanceof fabric.Text) {
+      setObjectType('text');
+    } else if (selectedObject instanceof fabric.Image) {
+      setObjectType('image');
+    } else if (selectedObject instanceof fabric.Rect) {
+      setObjectType('rectangle');
+    } else if (selectedObject instanceof fabric.Circle) {
+      setObjectType('circle');
+    } else if (selectedObject instanceof fabric.Path) {
+      setObjectType('path');
+    } else if (selectedObject instanceof fabric.Group) {
+      setObjectType('group');
+    } else {
+      setObjectType('unknown');
+    }
+
+    // Set position and size
     setPosition({
       left: Math.round(selectedObject.left || 0),
-      top: Math.round(selectedObject.top || 0),
+      top: Math.round(selectedObject.top || 0)
     });
-    
-    // Check if object is a group with scaleX/scaleY applied
-    let width = selectedObject.width || 0;
-    let height = selectedObject.height || 0;
-    
-    if (selectedObject.scaleX) {
-      width *= selectedObject.scaleX;
-    }
-    
-    if (selectedObject.scaleY) {
-      height *= selectedObject.scaleY;
-    }
-    
+
     setSize({
-      width: Math.round(width),
-      height: Math.round(height),
+      width: Math.round(selectedObject.width || 0) * (selectedObject.scaleX || 1),
+      height: Math.round(selectedObject.height || 0) * (selectedObject.scaleY || 1)
     });
-    
-    setAngle(selectedObject.angle || 0);
-    setOpacity(Math.round((selectedObject.opacity || 1) * 100));
-    setFill(selectedObject.fill?.toString() || '#ffffff');
+
+    // Set style properties
+    setRotation(selectedObject.angle || 0);
+    setFill(selectedObject.fill?.toString() || '#000000');
     setStroke(selectedObject.stroke?.toString() || '#000000');
-    setStrokeWidth(selectedObject.strokeWidth || 1);
-    setLocked(!!selectedObject.lockMovementX && !!selectedObject.lockMovementY);
-    
+    setStrokeWidth(selectedObject.strokeWidth || 0);
+    setOpacity(selectedObject.opacity || 1);
+
+    // Set text-specific properties
+    if (selectedObject instanceof fabric.Text) {
+      setTextProps({
+        text: selectedObject.text || '',
+        fontSize: selectedObject.fontSize || 16,
+        fontFamily: selectedObject.fontFamily || 'Arial',
+        fontWeight: selectedObject.fontWeight || 'normal',
+        fontStyle: selectedObject.fontStyle || 'normal',
+        textAlign: selectedObject.textAlign || 'left',
+        lineHeight: selectedObject.lineHeight || 1.16,
+        underline: selectedObject.underline || false
+      });
+    }
   }, [selectedObject]);
 
-  const saveState = (description: string) => {
+  // Handle property changes
+  const handlePositionChange = (property: 'left' | 'top', value: number) => {
+    if (!selectedObject || !canvas) return;
+    
+    selectedObject.set(property, value);
+    canvas.renderAll();
+    
+    setPosition(prev => ({ ...prev, [property]: value }));
     if (onSaveHistoryState) {
-      onSaveHistoryState(description);
+      onSaveHistoryState(`Changed ${property} to ${value}`);
     }
   };
-  
-  // Handle position changes
-  const handlePositionChange = (axis: 'left' | 'top', value: number) => {
+
+  const handleSizeChange = (property: 'width' | 'height', value: number) => {
     if (!selectedObject || !canvas) return;
     
-    const newPosition = { ...position, [axis]: value };
-    setPosition(newPosition);
-    
-    selectedObject.set(axis, value);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-  };
-  
-  const handlePositionChangeComplete = () => {
-    saveState('Position changed');
-  };
-  
-  // Handle size changes
-  const handleSizeChange = (dimension: 'width' | 'height', value: number) => {
-    if (!selectedObject || !canvas) return;
-    
-    const newSize = { ...size, [dimension]: value };
-    setSize(newSize);
-    
-    // Scale the object instead of directly setting width/height
-    if (dimension === 'width' && selectedObject.width) {
-      selectedObject.scaleX = value / selectedObject.width;
+    if (property === 'width') {
+      selectedObject.set('scaleX', value / (selectedObject.width || 1));
+    } else {
+      selectedObject.set('scaleY', value / (selectedObject.height || 1));
     }
     
-    if (dimension === 'height' && selectedObject.height) {
-      selectedObject.scaleY = value / selectedObject.height;
-    }
+    canvas.renderAll();
+    setSize(prev => ({ ...prev, [property]: value }));
     
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
+    if (onSaveHistoryState) {
+      onSaveHistoryState(`Changed ${property} to ${value}`);
+    }
   };
-  
-  const handleSizeChangeComplete = () => {
-    saveState('Size changed');
-  };
-  
-  // Handle rotation changes
-  const handleAngleChange = (value: number) => {
+
+  const handleRotationChange = (value: number) => {
     if (!selectedObject || !canvas) return;
     
-    setAngle(value);
     selectedObject.set('angle', value);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
+    canvas.renderAll();
+    setRotation(value);
+    
+    if (onSaveHistoryState) {
+      onSaveHistoryState(`Changed rotation to ${value}`);
+    }
   };
-  
-  const handleAngleChangeComplete = () => {
-    saveState('Rotation changed');
-  };
-  
-  // Handle opacity changes
-  const handleOpacityChange = (value: number) => {
+
+  const handleStyleChange = (property: 'fill' | 'stroke' | 'strokeWidth' | 'opacity', value: any) => {
     if (!selectedObject || !canvas) return;
     
-    setOpacity(value);
-    selectedObject.set('opacity', value / 100);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
+    selectedObject.set(property, value);
+    canvas.renderAll();
+    
+    if (property === 'fill') setFill(value);
+    if (property === 'stroke') setStroke(value);
+    if (property === 'strokeWidth') setStrokeWidth(value);
+    if (property === 'opacity') setOpacity(value);
+    
+    if (onSaveHistoryState) {
+      onSaveHistoryState(`Changed ${property} to ${value}`);
+    }
   };
-  
-  const handleOpacityChangeComplete = () => {
-    saveState('Opacity changed');
+
+  const handleTextChange = (property: keyof typeof textProps, value: any) => {
+    if (!selectedObject || !canvas || !(selectedObject instanceof fabric.Text)) return;
+    
+    selectedObject.set(property, value);
+    canvas.renderAll();
+    
+    setTextProps(prev => ({ ...prev, [property]: value }));
+    
+    if (onSaveHistoryState) {
+      onSaveHistoryState(`Changed text ${property} to ${value}`);
+    }
   };
-  
-  // Handle fill color changes
-  const handleFillChange = (value: string) => {
+
+  const handleDuplicateObject = () => {
     if (!selectedObject || !canvas) return;
     
-    setFill(value);
-    selectedObject.set('fill', value);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-    saveState('Fill color changed');
-  };
-  
-  // Handle stroke color changes
-  const handleStrokeChange = (value: string) => {
-    if (!selectedObject || !canvas) return;
-    
-    setStroke(value);
-    selectedObject.set('stroke', value);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-    saveState('Stroke color changed');
-  };
-  
-  // Handle stroke width changes
-  const handleStrokeWidthChange = (value: number) => {
-    if (!selectedObject || !canvas) return;
-    
-    setStrokeWidth(value);
-    selectedObject.set('strokeWidth', value);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-  };
-  
-  const handleStrokeWidthChangeComplete = () => {
-    saveState('Stroke width changed');
-  };
-  
-  // Handle lock/unlock
-  const handleLockedChange = (locked: boolean) => {
-    if (!selectedObject || !canvas) return;
-    
-    setLocked(locked);
-    selectedObject.set({
-      lockMovementX: locked,
-      lockMovementY: locked,
-      lockRotation: locked,
-      lockScalingX: locked,
-      lockScalingY: locked,
+    selectedObject.clone((cloned: fabric.Object) => {
+      cloned.set({
+        left: (cloned.left || 0) + 20,
+        top: (cloned.top || 0) + 20,
+        evented: true,
+      });
+      
+      canvas.add(cloned);
+      canvas.setActiveObject(cloned);
+      canvas.renderAll();
+      
+      if (onSaveHistoryState) {
+        onSaveHistoryState('Duplicated object');
+      }
     });
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-    saveState(locked ? 'Object locked' : 'Object unlocked');
   };
-  
-  // Handle object deletion
-  const handleDelete = () => {
+
+  const handleDeleteObject = () => {
     if (!selectedObject || !canvas) return;
     
     canvas.remove(selectedObject);
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-    saveState('Object deleted');
-  };
-  
-  // Handle moving object forward/backward
-  const handleReorder = (direction: 'forward' | 'backward' | 'front' | 'back') => {
-    if (!selectedObject || !canvas) return;
+    canvas.renderAll();
     
-    switch (direction) {
-      case 'forward':
-        selectedObject.bringForward();
-        break;
-      case 'backward':
-        selectedObject.sendBackwards();
-        break;
-      case 'front':
-        selectedObject.bringToFront();
-        break;
-      case 'back':
-        selectedObject.sendToBack();
-        break;
+    if (onSaveHistoryState) {
+      onSaveHistoryState('Deleted object');
     }
-    
-    canvas.requestRenderAll();
-    if (onUpdate) onUpdate();
-    saveState(`Moved object ${direction}`);
   };
-  
+
   if (!selectedObject) {
     return (
-      <div className={cn("p-4 bg-card border rounded-md shadow-sm", className)}>
-        <p className="text-muted-foreground text-center py-6">No object selected</p>
-        <p className="text-xs text-muted-foreground text-center">Select an object to edit its properties</p>
+      <div className={cn("p-4 text-center text-muted-foreground", className)}>
+        <Layers className="w-12 h-12 mx-auto opacity-20 mb-2" />
+        <p>Select an object to edit its properties</p>
       </div>
     );
   }
-  
+
   return (
-    <div className={cn("p-4 bg-card border rounded-md shadow-sm", className)}>
-      <h3 className="font-medium text-lg mb-4">Object Properties</h3>
-      
-      <Tabs defaultValue="position" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="position">Position</TabsTrigger>
-          <TabsTrigger value="appearance">Style</TabsTrigger>
-          <TabsTrigger value="transform">Transform</TabsTrigger>
-          <TabsTrigger value="actions">Actions</TabsTrigger>
+    <div className={cn("p-4 overflow-auto h-full", className)}>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-medium">
+          {objectType.charAt(0).toUpperCase() + objectType.slice(1)} Properties
+        </h3>
+        <div className="flex space-x-1">
+          <Button variant="ghost" size="icon" onClick={handleDuplicateObject} title="Duplicate">
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={handleDeleteObject} title="Delete">
+            <Trash className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="position">
+        <TabsList className="w-full mb-4">
+          <TabsTrigger value="position" className="flex-1">Position</TabsTrigger>
+          <TabsTrigger value="style" className="flex-1">Style</TabsTrigger>
+          {objectType === 'text' && (
+            <TabsTrigger value="text" className="flex-1">Text</TabsTrigger>
+          )}
         </TabsList>
-        
+
         <TabsContent value="position" className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="positionX">X Position</Label>
+              <Label htmlFor="position-x">X Position</Label>
               <Input
-                id="positionX"
+                id="position-x"
                 type="number"
                 value={position.left}
                 onChange={(e) => handlePositionChange('left', Number(e.target.value))}
-                onBlur={() => handlePositionChangeComplete()}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="positionY">Y Position</Label>
+              <Label htmlFor="position-y">Y Position</Label>
               <Input
-                id="positionY"
+                id="position-y"
                 type="number"
                 value={position.top}
                 onChange={(e) => handlePositionChange('top', Number(e.target.value))}
-                onBlur={() => handlePositionChangeComplete()}
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="width">Width</Label>
+              <Label htmlFor="size-width">Width</Label>
               <Input
-                id="width"
+                id="size-width"
                 type="number"
                 value={size.width}
                 onChange={(e) => handleSizeChange('width', Number(e.target.value))}
-                onBlur={() => handleSizeChangeComplete()}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="height">Height</Label>
+              <Label htmlFor="size-height">Height</Label>
               <Input
-                id="height"
+                id="size-height"
                 type="number"
                 value={size.height}
                 onChange={(e) => handleSizeChange('height', Number(e.target.value))}
-                onBlur={() => handleSizeChangeComplete()}
               />
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="locked"
-              checked={locked}
-              onCheckedChange={handleLockedChange}
-            />
-            <Label htmlFor="locked">Lock position and size</Label>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="appearance" className="space-y-4">
-          <div className="space-y-2">
-            <Label>Fill Color</Label>
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-10 h-10 p-0 rounded border"
-                  >
-                    <div 
-                      className="w-full h-full rounded-sm" 
-                      style={{ backgroundColor: fill }}
-                    />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="grid gap-2">
-                    <div className="grid grid-cols-8 gap-1">
-                      {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'].map(color => (
-                        <Button
-                          key={color}
-                          variant="outline"
-                          className="w-8 h-8 p-0 rounded-md"
-                          onClick={() => handleFillChange(color)}
-                        >
-                          <div 
-                            className="w-full h-full rounded-sm" 
-                            style={{ backgroundColor: color }}
-                          />
-                        </Button>
-                      ))}
-                    </div>
-                    <Input
-                      value={fill}
-                      onChange={(e) => handleFillChange(e.target.value)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Input
-                value={fill}
-                onChange={(e) => handleFillChange(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Stroke Color</Label>
-            <div className="flex items-center gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-10 h-10 p-0 rounded border"
-                  >
-                    <div 
-                      className="w-full h-full rounded-sm" 
-                      style={{ backgroundColor: stroke }}
-                    />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="grid gap-2">
-                    <div className="grid grid-cols-8 gap-1">
-                      {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'].map(color => (
-                        <Button
-                          key={color}
-                          variant="outline"
-                          className="w-8 h-8 p-0 rounded-md"
-                          onClick={() => handleStrokeChange(color)}
-                        >
-                          <div 
-                            className="w-full h-full rounded-sm" 
-                            style={{ backgroundColor: color }}
-                          />
-                        </Button>
-                      ))}
-                    </div>
-                    <Input
-                      value={stroke}
-                      onChange={(e) => handleStrokeChange(e.target.value)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Input
-                value={stroke}
-                onChange={(e) => handleStrokeChange(e.target.value)}
-              />
-            </div>
-          </div>
-          
+
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Label>Stroke Width: {strokeWidth}px</Label>
+              <Label htmlFor="rotation">Rotation ({rotation}°)</Label>
             </div>
             <Slider
+              id="rotation"
+              min={0}
+              max={360}
+              step={1}
+              value={[rotation]}
+              onValueChange={(values) => handleRotationChange(values[0])}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="style" className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fill-color">Fill Color</Label>
+              <div className="flex">
+                <Input
+                  id="fill-color"
+                  type="color"
+                  value={fill}
+                  onChange={(e) => handleStyleChange('fill', e.target.value)}
+                  className="w-12 p-1 h-10"
+                />
+                <Input
+                  type="text"
+                  value={fill}
+                  onChange={(e) => handleStyleChange('fill', e.target.value)}
+                  className="flex-1 ml-2"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stroke-color">Stroke Color</Label>
+              <div className="flex">
+                <Input
+                  id="stroke-color"
+                  type="color"
+                  value={stroke}
+                  onChange={(e) => handleStyleChange('stroke', e.target.value)}
+                  className="w-12 p-1 h-10"
+                />
+                <Input
+                  type="text"
+                  value={stroke}
+                  onChange={(e) => handleStyleChange('stroke', e.target.value)}
+                  className="flex-1 ml-2"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="stroke-width">Stroke Width</Label>
+            <Slider
+              id="stroke-width"
               min={0}
               max={20}
               step={1}
               value={[strokeWidth]}
-              onValueChange={(value) => handleStrokeWidthChange(value[0])}
-              onValueCommit={() => handleStrokeWidthChangeComplete()}
-              className="py-2"
+              onValueChange={(values) => handleStyleChange('strokeWidth', values[0])}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Opacity: {opacity}%</Label>
+            <div className="text-xs text-right text-muted-foreground">
+              {strokeWidth}px
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="opacity">Opacity</Label>
             <Slider
+              id="opacity"
               min={0}
-              max={100}
-              step={1}
+              max={1}
+              step={0.01}
               value={[opacity]}
-              onValueChange={(value) => handleOpacityChange(value[0])}
-              onValueCommit={() => handleOpacityChangeComplete()}
-              className="py-2"
+              onValueChange={(values) => handleStyleChange('opacity', values[0])}
             />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="transform" className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Rotation: {angle}°</Label>
+            <div className="text-xs text-right text-muted-foreground">
+              {Math.round(opacity * 100)}%
             </div>
-            <Slider
-              min={0}
-              max={359}
-              step={1}
-              value={[angle]}
-              onValueChange={(value) => handleAngleChange(value[0])}
-              onValueCommit={() => handleAngleChangeComplete()}
-              className="py-2"
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                handleAngleChange((angle + 90) % 360);
-                handleAngleChangeComplete();
-              }}
-            >
-              Rotate +90°
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                handleAngleChange((angle - 90 + 360) % 360);
-                handleAngleChangeComplete();
-              }}
-            >
-              Rotate -90°
-            </Button>
           </div>
         </TabsContent>
-        
-        <TabsContent value="actions" className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReorder('forward')}
-            >
-              Bring Forward
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReorder('backward')}
-            >
-              Send Backward
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReorder('front')}
-            >
-              Bring to Front
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleReorder('back')}
-            >
-              Send to Back
-            </Button>
-          </div>
-          
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={handleDelete}
-          >
-            Delete Object
-          </Button>
-        </TabsContent>
+
+        {objectType === 'text' && (
+          <TabsContent value="text" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="text-content">Text Content</Label>
+              <Input
+                id="text-content"
+                value={textProps.text}
+                onChange={(e) => handleTextChange('text', e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="font-size">Font Size</Label>
+                <Input
+                  id="font-size"
+                  type="number"
+                  value={textProps.fontSize}
+                  onChange={(e) => handleTextChange('fontSize', Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="font-family">Font Family</Label>
+                <select
+                  id="font-family"
+                  className="w-full border border-input rounded-md h-10 px-3"
+                  value={textProps.fontFamily}
+                  onChange={(e) => handleTextChange('fontFamily', e.target.value)}
+                >
+                  <option value="Arial">Arial</option>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Courier New">Courier New</option>
+                  <option value="Verdana">Verdana</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex space-x-2 justify-between">
+              <Button
+                variant={textProps.fontWeight === 'bold' ? 'secondary' : 'outline'} 
+                size="icon" 
+                onClick={() => handleTextChange('fontWeight', textProps.fontWeight === 'bold' ? 'normal' : 'bold')}
+              >
+                <Bold className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={textProps.fontStyle === 'italic' ? 'secondary' : 'outline'} 
+                size="icon" 
+                onClick={() => handleTextChange('fontStyle', textProps.fontStyle === 'italic' ? 'normal' : 'italic')}
+              >
+                <Italic className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={textProps.underline ? 'secondary' : 'outline'} 
+                size="icon" 
+                onClick={() => handleTextChange('underline', !textProps.underline)}
+              >
+                <Underline className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={textProps.textAlign === 'left' ? 'secondary' : 'outline'} 
+                size="icon" 
+                onClick={() => handleTextChange('textAlign', 'left')}
+              >
+                <AlignLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={textProps.textAlign === 'center' ? 'secondary' : 'outline'} 
+                size="icon" 
+                onClick={() => handleTextChange('textAlign', 'center')}
+              >
+                <AlignCenter className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={textProps.textAlign === 'right' ? 'secondary' : 'outline'} 
+                size="icon" 
+                onClick={() => handleTextChange('textAlign', 'right')}
+              >
+                <AlignRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
