@@ -10,12 +10,11 @@ export {
   type DeviceDimensions 
 } from './DeviceInfo';
 
-// Export responsive utilities
+// Export responsive utilities from responsive-utils
 export {
   type ResponsiveOptions,
   type BreakpointKey,
   BREAKPOINT_VALUES,
-  getBreakpointFromWidth,
   getBreakpointForDevice,
   getResponsiveStyles,
   isFluidLayout,
@@ -33,6 +32,4 @@ export {
   TAILWIND_BREAKPOINTS,
   calculateColumnPositions,
   calculateGridPositions,
-  generateSnapGuidelines,
 } from '../utils/grid-utils';
-

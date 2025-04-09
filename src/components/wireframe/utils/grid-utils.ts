@@ -2,8 +2,15 @@
 import { GridBreakpoint } from '../canvas/EnhancedGridSystem';
 import { ResponsiveOptions } from './responsive-utils';
 
-// Export the GridBreakpoint interface
-export { GridBreakpoint };
+// Export the GridBreakpoint interface with proper syntax for isolatedModules
+export type { GridBreakpoint };
+
+// Define GridGuideline interface
+export interface GridGuideline {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'center' | 'edge' | 'distribution';
+}
 
 export interface GridConfig {
   visible: boolean;
@@ -307,4 +314,3 @@ export function getBreakpointFromWidth(width: number, breakpoints: GridBreakpoin
   
   return null; // No matching breakpoint
 }
-
