@@ -80,4 +80,6 @@ export interface VariantComponentProps {
   viewMode?: 'preview' | 'edit' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  variant?: string; // Added missing property
+  data?: any; // Added missing property
 }

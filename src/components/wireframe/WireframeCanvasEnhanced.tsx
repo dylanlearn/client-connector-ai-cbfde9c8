@@ -349,33 +349,7 @@ const WireframeCanvasEnhanced = memo(({
   
   // Apply styles safely for CSS properties
   const applySectionStyle = (section: WireframeSection) => {
-    const position = section.id && sectionPositions[section.id];
-    
-    if (position) {
-      return {
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: position.width ? `${position.width}px` : undefined,
-        height: position.height ? `${position.height}px` : undefined,
-        transform: position.rotation ? `rotate(${position.rotation}deg)` : 
-          draggingSection === section.id ? 'scale(1.02)' : undefined,
-        zIndex: (draggingSection === section.id || resizingSection === section.id || activeSection === section.id) ? 10 : 1
-      } as React.CSSProperties;
-    } else if (section.position) {
-      // Use position from section if available
-      return {
-        position: 'absolute',
-        left: `${section.position.x}px`,
-        top: `${section.position.y}px`,
-        width: section.dimensions?.width ? `${section.dimensions.width}px` : undefined,
-        height: section.dimensions?.height ? `${section.dimensions.height}px` : undefined,
-        transform: section.styleProperties?.rotation ? `rotate(${section.styleProperties.rotation}deg)` : undefined
-      } as React.CSSProperties;
-    }
-    
-    // Default to empty object for static positioning
-    return {} as React.CSSProperties;
+    return applySectionPositions(section);
   };
 
   // Render the sections and their controls
