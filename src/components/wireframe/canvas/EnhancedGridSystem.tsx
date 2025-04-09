@@ -1,30 +1,38 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { TAILWIND_BREAKPOINTS, calculateColumnPositions, calculateGridPositions } from '../utils/grid-utils';
 
-export type GridType = 'lines' | 'dots' | 'columns';
+export type GridType = 'lines' | 'dots' | 'columns' | 'bootstrap' | 'tailwind' | 'custom';
+
+export interface GridBreakpoint {
+  name: string;
+  width: number;
+  color?: string;
+}
+
+export interface GridGuideline {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'center' | 'edge' | 'distribution';
+}
 
 export interface EnhancedGridSystemProps {
   canvasWidth: number;
   canvasHeight: number;
   gridSize: number;
   gridType: GridType;
-  guidelines?: Array<{
-    position: number;
-    orientation: 'horizontal' | 'vertical';
-    type: 'center' | 'edge' | 'distribution';
-  }>;
+  guidelines?: GridGuideline[];
   darkMode?: boolean;
   visible?: boolean;
   columns?: number;
   gutter?: number;
   className?: string;
-  breakpoints?: Array<{
-    name: string; 
-    width: number;
-    color?: string;
-  }>;
+  breakpoints?: GridBreakpoint[];
   showBreakpoints?: boolean;
+  opacity?: number;
+  color?: string;
+  onBreakpointClick?: (breakpoint: GridBreakpoint) => void;
 }
 
 const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
@@ -38,17 +46,38 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
   columns = 12,
   gutter = 24,
   className,
-  breakpoints = [
-    { name: 'sm', width: 640, color: '#9333ea' },
-    { name: 'md', width: 768, color: '#2563eb' },
-    { name: 'lg', width: 1024, color: '#059669' },
-    { name: 'xl', width: 1280, color: '#d97706' },
-    { name: '2xl', width: 1536, color: '#dc2626' }
-  ],
-  showBreakpoints = true
+  breakpoints = TAILWIND_BREAKPOINTS,
+  showBreakpoints = true,
+  opacity = 0.15,
+  color,
+  onBreakpointClick
 }) => {
   const gridCanvasRef = useRef<HTMLCanvasElement>(null);
   const guidelinesCanvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Calculate grid colors based on theme
+  const gridColor = useMemo(() => {
+    return color || (darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)');
+  }, [color, darkMode]);
+  
+  // Calculate margin gutters for column grids
+  const margins = useMemo(() => {
+    // For column-based grids, add margins on the sides
+    if (['columns', 'bootstrap', 'tailwind'].includes(gridType)) {
+      return gridType === 'bootstrap' ? 15 : (gridType === 'tailwind' ? 16 : gutter / 2);
+    }
+    return 0;
+  }, [gridType, gutter]);
+  
+  // Calculate column positions
+  const columnPositions = useMemo(() => {
+    if (['columns', 'bootstrap', 'tailwind'].includes(gridType)) {
+      // Adjust canvas width to account for margins
+      const adjustedWidth = canvasWidth - (margins * 2);
+      return calculateColumnPositions(adjustedWidth, columns, gutter);
+    }
+    return [];
+  }, [canvasWidth, columns, gutter, gridType, margins]);
 
   // Draw the grid
   useEffect(() => {
@@ -66,7 +95,8 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
     // Set grid styles
-    ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    ctx.strokeStyle = gridColor;
+    ctx.fillStyle = gridColor;
     ctx.lineWidth = 1;
 
     if (gridType === 'dots') {
@@ -80,56 +110,90 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
       }
     } else if (gridType === 'lines') {
       // Draw lines
-      for (let x = 0; x <= canvasWidth; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvasHeight);
-        ctx.stroke();
-      }
-
-      for (let y = 0; y <= canvasHeight; y += gridSize) {
+      const horizontalLines = calculateGridPositions(canvasHeight, gridSize);
+      const verticalLines = calculateGridPositions(canvasWidth, gridSize);
+      
+      // Draw horizontal lines
+      horizontalLines.forEach(y => {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvasWidth, y);
         ctx.stroke();
-      }
-    } else if (gridType === 'columns') {
-      // Draw column layout
-      const availableWidth = canvasWidth;
-      const totalGutterWidth = gutter * (columns - 1);
-      const columnWidth = (availableWidth - totalGutterWidth) / columns;
+      });
       
-      // Draw columns
-      let currentX = 0;
+      // Draw vertical lines
+      verticalLines.forEach(x => {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+      });
+    } else if (['columns', 'bootstrap', 'tailwind'].includes(gridType)) {
+      // Draw column layout with the correct margin offset
+      columnPositions.forEach((position, index) => {
+        // Skip the last position (right edge)
+        if (index < columnPositions.length - 1) {
+          const colLeft = position + margins;
+          const colWidth = columnPositions[index + 1] - position - gutter;
+          
+          // Draw column background
+          ctx.fillStyle = darkMode 
+            ? `rgba(255, 255, 255, ${opacity / 2})`  
+            : `rgba(0, 0, 50, ${opacity / 2})`;
+          ctx.fillRect(colLeft, 0, colWidth, canvasHeight);
+          
+          // Draw column borders
+          ctx.strokeStyle = darkMode 
+            ? `rgba(255, 255, 255, ${opacity * 1.5})`
+            : `rgba(0, 0, 0, ${opacity * 1.5})`;
+          
+          // Left border
+          ctx.beginPath();
+          ctx.moveTo(colLeft, 0);
+          ctx.lineTo(colLeft, canvasHeight);
+          ctx.stroke();
+          
+          // Right border
+          ctx.beginPath();
+          ctx.moveTo(colLeft + colWidth, 0);
+          ctx.lineTo(colLeft + colWidth, canvasHeight);
+          ctx.stroke();
+        }
+      });
       
-      for (let i = 0; i < columns; i++) {
-        // Draw column background
-        ctx.fillStyle = darkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)';
-        ctx.fillRect(currentX, 0, columnWidth, canvasHeight);
-        
-        // Draw column borders
-        ctx.strokeStyle = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        ctx.beginPath();
-        ctx.moveTo(currentX, 0);
-        ctx.lineTo(currentX, canvasHeight);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(currentX + columnWidth, 0);
-        ctx.lineTo(currentX + columnWidth, canvasHeight);
-        ctx.stroke();
-        
-        // Move to next column
-        currentX += columnWidth + gutter;
-      }
+      // Draw container boundaries with more prominence
+      const containerLeft = margins;
+      const containerRight = canvasWidth - margins;
+      
+      ctx.strokeStyle = darkMode 
+        ? `rgba(255, 255, 255, ${opacity * 2})` 
+        : `rgba(0, 0, 0, ${opacity * 2})`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      
+      // Left container boundary
+      ctx.beginPath();
+      ctx.moveTo(containerLeft, 0);
+      ctx.lineTo(containerLeft, canvasHeight);
+      ctx.stroke();
+      
+      // Right container boundary
+      ctx.beginPath();
+      ctx.moveTo(containerRight, 0);
+      ctx.lineTo(containerRight, canvasHeight);
+      ctx.stroke();
+      
+      ctx.setLineDash([]);
     }
     
     // Draw breakpoints if enabled
     if (showBreakpoints) {
-      breakpoints.forEach(breakpoint => {
-        if (breakpoint.width > canvasWidth) return;
+      const applicableBreakpoints = breakpoints.filter(bp => bp.width < canvasWidth);
+      
+      applicableBreakpoints.forEach(breakpoint => {
+        const bpColor = breakpoint.color || '#2563eb';
         
-        ctx.strokeStyle = breakpoint.color || '#2563eb';
+        ctx.strokeStyle = bpColor;
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         
@@ -141,12 +205,31 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
         
         // Add breakpoint label
         ctx.font = '10px Arial';
-        ctx.fillStyle = breakpoint.color || '#2563eb';
+        ctx.fillStyle = bpColor;
         ctx.fillText(breakpoint.name, breakpoint.width + 5, 15);
+        
+        // Add a clickable area if callback provided
+        if (onBreakpointClick) {
+          const area = document.createElement('div');
+          area.style.position = 'absolute';
+          area.style.left = `${breakpoint.width - 5}px`;
+          area.style.top = '0';
+          area.style.width = '10px';
+          area.style.height = '30px';
+          area.style.cursor = 'pointer';
+          area.title = `${breakpoint.name} (${breakpoint.width}px)`;
+          area.onclick = () => onBreakpointClick(breakpoint);
+          
+          // Append to parent container
+          if (canvas.parentNode) {
+            canvas.parentNode.appendChild(area);
+          }
+        }
       });
     }
 
-  }, [canvasWidth, canvasHeight, gridSize, gridType, visible, darkMode, columns, gutter, breakpoints, showBreakpoints]);
+  }, [canvasWidth, canvasHeight, gridSize, gridType, visible, darkMode, columns, gutter, 
+      breakpoints, showBreakpoints, gridColor, opacity, columnPositions, margins, onBreakpointClick]);
 
   // Draw the guidelines
   useEffect(() => {
@@ -213,6 +296,16 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
         ref={guidelinesCanvasRef}
         className="absolute top-0 left-0 w-full h-full"
       />
+      
+      {/* Grid type indicator */}
+      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm text-xs px-2 py-1 rounded-md text-muted-foreground">
+        {gridType === 'lines' && 'Grid Lines'}
+        {gridType === 'dots' && 'Grid Dots'}
+        {gridType === 'columns' && `${columns}-Column Grid`}
+        {gridType === 'bootstrap' && 'Bootstrap Grid'}
+        {gridType === 'tailwind' && 'Tailwind Grid'}
+        {gridType === 'custom' && 'Custom Grid'}
+      </div>
     </div>
   );
 };
