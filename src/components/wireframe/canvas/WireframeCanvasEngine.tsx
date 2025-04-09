@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
-import { WireframeData, WireframeSection, WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+import { WireframeData, WireframeSection } from '@/types/wireframe';
 import { componentToFabricObject } from '@/components/wireframe/utils/fabric-converters';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useToast } from '@/hooks/use-toast';

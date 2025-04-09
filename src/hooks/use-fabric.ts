@@ -27,13 +27,13 @@ export function useFabric(options: UseFabricOptions = {}) {
     height: initialConfig.height || storeCanvasSettings.height || 800,
     zoom: initialConfig.zoom || storeCanvasSettings.zoom || 1,
     panOffset: initialConfig.panOffset || storeCanvasSettings.panOffset || { x: 0, y: 0 },
-    showGrid: initialConfig.showGrid !== undefined ? initialConfig.showGrid : storeCanvasSettings.showGrid,
-    snapToGrid: initialConfig.snapToGrid !== undefined ? initialConfig.snapToGrid : storeCanvasSettings.snapToGrid,
+    showGrid: initialConfig.showGrid !== undefined ? initialConfig.showGrid : storeCanvasSettings.showGrid !== undefined ? storeCanvasSettings.showGrid : true,
+    snapToGrid: initialConfig.snapToGrid !== undefined ? initialConfig.snapToGrid : storeCanvasSettings.snapToGrid !== undefined ? storeCanvasSettings.snapToGrid : true,
     gridSize: initialConfig.gridSize || storeCanvasSettings.gridSize || 8,
     backgroundColor: initialConfig.backgroundColor || storeCanvasSettings.backgroundColor || '#ffffff',
     gridType: initialConfig.gridType || storeCanvasSettings.gridType || 'lines',
     snapTolerance: initialConfig.snapTolerance || storeCanvasSettings.snapTolerance || 5,
-    showSmartGuides: initialConfig.showSmartGuides || storeCanvasSettings.showSmartGuides || false
+    showSmartGuides: initialConfig.showSmartGuides !== undefined ? initialConfig.showSmartGuides : storeCanvasSettings.showSmartGuides !== undefined ? storeCanvasSettings.showSmartGuides : false
   });
 
   // Update canvas config and persist if needed
