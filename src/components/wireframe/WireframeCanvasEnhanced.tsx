@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { WireframeSection } from '@/types/wireframe';
 import { fabric } from 'fabric';
@@ -35,7 +34,6 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
   const [selectedSection, setSelectedSection] = useState<WireframeSection | null>(null);
   const [guidelines, setGuidelines] = useState<{ position: number; orientation: 'horizontal' | 'vertical' }[]>([]);
   
-  // Initialize the canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -46,7 +44,6 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
       selection: editable
     });
     
-    // Setup event listeners
     fabricCanvas.on('selection:created', (e) => {
       const selected = e.selected?.[0];
       if (selected && selected.data) {
@@ -68,12 +65,10 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
       }
     });
     
-    // Add grid if enabled
     if (showGrid) {
       // Grid will be rendered as SVG overlay
     }
     
-    // Set canvas and clean up on unmount
     setCanvas(fabricCanvas);
     
     return () => {
@@ -81,14 +76,11 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
     };
   }, [width, height, editable, onSectionSelect]);
   
-  // Render sections when they change
   useEffect(() => {
     if (!canvas) return;
     
-    // Clear canvas
     canvas.clear();
     
-    // Render each section
     sections.forEach(section => {
       const fabricObject = componentToFabricObject(section, {
         deviceType,
@@ -100,11 +92,9 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
       }
     });
     
-    // Render all
     canvas.renderAll();
   }, [canvas, sections, deviceType, editable]);
   
-  // Set up snap to grid and alignment guides
   useEffect(() => {
     if (!canvas || !snapToGrid) return;
     
@@ -114,7 +104,6 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
       const activeObj = e.target;
       
       if (snapToGrid) {
-        // Round to nearest grid size (assuming a grid size of 10)
         const gridSize = 10;
         activeObj.set({
           left: Math.round(activeObj.left! / gridSize) * gridSize,
@@ -122,13 +111,11 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
         });
       }
       
-      // Check for alignment with other objects
       if (activeObj.data && sections.length > 1) {
         const activeSectionId = activeObj.data.id;
         const activeSection = sections.find(s => s.id === activeSectionId);
         
         if (activeSection) {
-          // Get guides
           const alignmentGuides = findAlignmentGuides(activeSection, sections);
           setGuidelines(alignmentGuides);
         }
@@ -142,7 +129,6 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
     };
   }, [canvas, sections, snapToGrid]);
   
-  // Clear guidelines when not moving
   useEffect(() => {
     if (!canvas) return;
     
@@ -161,7 +147,6 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
     <div className="wireframe-canvas-enhanced relative w-full h-full">
       <canvas ref={canvasRef} className="absolute top-0 left-0" />
       
-      {/* Grid System Overlay */}
       {showGrid && (
         <GridSystem
           canvasWidth={width}
@@ -173,7 +158,6 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
         />
       )}
       
-      {/* Guidelines Overlay */}
       {guidelines.length > 0 && (
         <svg
           className="absolute top-0 left-0 pointer-events-none"

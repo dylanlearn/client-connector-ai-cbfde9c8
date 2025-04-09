@@ -5,7 +5,6 @@ export * from './canvas-serialization';
 
 // Export from section-utils but rename the one that causes the conflict
 export {
-  AdaptiveWireframeSection,
   getResponsiveLayout,
   isSectionVisibleOnDevice,
   getResponsiveContent,
