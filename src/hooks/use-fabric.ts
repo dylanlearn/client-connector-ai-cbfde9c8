@@ -22,6 +22,8 @@ export function useFabric(options: UseFabricOptions = {}) {
   
   // Define the canvas configuration
   const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
+    width: initialConfig.width || storeCanvasSettings.width || 1200,
+    height: initialConfig.height || storeCanvasSettings.height || 800,
     zoom: initialConfig.zoom || storeCanvasSettings.zoom || 1,
     panOffset: initialConfig.panOffset || storeCanvasSettings.panOffset || { x: 0, y: 0 },
     showGrid: initialConfig.showGrid !== undefined ? initialConfig.showGrid : storeCanvasSettings.showGrid,

@@ -157,10 +157,13 @@ export class WireframeMemoryService {
     return {
       id: data.id,
       projectId: data.project_id,
-      blueprintId: data.blueprint_id,
-      layoutPatterns: data.layout_patterns,
-      stylePreferences: data.style_preferences,
-      componentPreferences: data.component_preferences,
+      data: {
+        projectId: data.project_id,
+        blueprintId: data.blueprint_id,
+        layoutPatterns: data.layout_patterns,
+        stylePreferences: data.style_preferences,
+        componentPreferences: data.component_preferences
+      },
       createdAt: data.created_at,
       updatedAt: data.updated_at
     };

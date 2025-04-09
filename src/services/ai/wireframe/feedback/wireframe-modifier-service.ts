@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { DesignFeedbackInterpretation } from './feedback-interpreter-service';
 import { 
@@ -274,25 +273,38 @@ export class WireframeModifierService {
     targetSections.forEach(section => {
       let modified = false;
       
+      // Ensure section.layout is an object, not a string
+      if (typeof section.layout === 'string') {
+        section.layout = { 
+          type: section.layout, 
+          direction: 'column',
+          alignment: section.layout === 'centered' ? 'center' : 'flex-start'
+        };
+      } else if (!section.layout) {
+        section.layout = { type: 'flex', direction: 'column' };
+      }
+      
       // Process each suggested change
       interpretation.suggestedChanges.forEach(change => {
-        if (!section.layout) section.layout = { type: 'flex', direction: 'column' };
-        
         switch (change.property) {
           case 'alignment':
             // Update alignment properties in layout
-            section.layout.justifyContent = change.value === 'center' ? 'center' : 
-                                           change.value === 'left' ? 'flex-start' : 
-                                           change.value === 'right' ? 'flex-end' : 
-                                           'flex-start';
-            modified = true;
+            if (typeof section.layout === 'object') {
+              section.layout.justifyContent = change.value === 'center' ? 'center' : 
+                                             change.value === 'left' ? 'flex-start' : 
+                                             change.value === 'right' ? 'flex-end' : 
+                                             'flex-start';
+              modified = true;
+            }
             break;
           
           case 'direction':
           case 'orientation':
             // Update flex direction
-            section.layout.direction = change.value === 'horizontal' ? 'row' : 'column';
-            modified = true;
+            if (typeof section.layout === 'object') {
+              section.layout.direction = change.value === 'horizontal' ? 'row' : 'column';
+              modified = true;
+            }
             break;
           
           default:

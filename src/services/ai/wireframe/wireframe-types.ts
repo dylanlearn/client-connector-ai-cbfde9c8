@@ -1,4 +1,3 @@
-
 export interface WireframeGenerationParams {
   description?: string;
   prompt?: string;
@@ -159,6 +158,7 @@ export interface WireframeCanvasConfig {
   gridSize?: number;
   backgroundColor?: string;
   zoom?: number;
+  panOffset?: { x: number, y: number };
   [key: string]: any;
 }
 
@@ -172,7 +172,7 @@ export interface DesignMemoryData {
   [key: string]: any;
 }
 
-// Added DesignMemoryResponse interface
+// Updated DesignMemoryResponse interface
 export interface DesignMemoryResponse {
   id: string;
   projectId: string;

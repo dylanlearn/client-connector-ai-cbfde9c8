@@ -37,6 +37,8 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   
   // Default canvas settings merged with provided config
   const defaultConfig: WireframeCanvasConfig = {
+    width: 1200,
+    height: 800,
     zoom: 1,
     panOffset: { x: 0, y: 0 },
     showGrid: true,
@@ -198,6 +200,19 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     // Add sections
     wireframeData.sections.forEach((section: WireframeSection) => {
       if (!section) return;
+      
+      // Handle the case where section.layout might be a string
+      if (typeof section.layout === 'string') {
+        // Convert string layout to object format
+        section = {
+          ...section,
+          layout: {
+            type: section.layout,
+            direction: 'column',
+            alignment: 'center'
+          }
+        };
+      }
       
       // Convert section to fabric object
       const fabricObject = componentToFabricObject(section, {
