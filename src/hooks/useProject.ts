@@ -3,24 +3,25 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from './use-toast';
 
-export interface Project {
+// Mock project type
+interface Project {
   id: string;
-  title: string;
+  name: string;
   description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  status?: string;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
 }
 
-export const useProject = () => {
-  const [project, setProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function useProject() {
   const { projectId } = useParams<{ projectId: string }>();
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchProject = async () => {
+    async function loadProject() {
       if (!projectId) {
         setIsLoading(false);
         return;
@@ -30,42 +31,40 @@ export const useProject = () => {
       setError(null);
 
       try {
-        // Mock project data
-        const mockProject: Project = {
+        // Mock API call
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Create mock project data
+        const projectData: Project = {
           id: projectId,
-          title: `Project ${projectId.substring(0, 8)}`,
+          name: `Project ${projectId.slice(0, 5)}`,
           description: 'This is a sample project description',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           status: 'active'
         };
-
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        setProject(mockProject);
+        
+        setProject(projectData);
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to fetch project');
-        setError(error);
+        console.error('Error loading project:', err);
+        setError('Failed to load project data');
         toast({
           title: 'Error',
-          description: 'Failed to load project details',
-          variant: 'destructive',
+          description: 'Failed to load project data',
+          variant: 'destructive'
         });
       } finally {
         setIsLoading(false);
       }
-    };
+    }
 
-    fetchProject();
+    loadProject();
   }, [projectId, toast]);
 
   return {
     project,
     isLoading,
     error,
-    setProject
+    projectId
   };
-};
-
-export default useProject;
+}

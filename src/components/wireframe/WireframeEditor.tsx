@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock data type
@@ -66,8 +66,12 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
     });
   };
 
-  const handleSectionSelect = (section: WireframeSection) => {
-    setSelectedSection(section);
+  // This now accepts a sectionId instead of section object
+  const handleSectionSelect = (sectionId: string) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+      setSelectedSection(section);
+    }
   };
 
   const handleSectionMove = (section: WireframeSection, x: number, y: number) => {

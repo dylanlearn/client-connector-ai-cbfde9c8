@@ -7,13 +7,29 @@ import { useIntakeForm } from '@/hooks/use-intake-form';
 import { QuestionItem } from './QuestionItem';
 import { FormField } from '@/components/ui/form';
 import { WireframeVisualizer } from '@/components/wireframe';
+import { IntakeFormData } from '@/types/intake-form';
 
-const SpecificQuestionsStep: React.FC = () => {
+interface SpecificQuestionsStepProps {
+  formData?: IntakeFormData;
+  updateFormData?: (data: Partial<IntakeFormData>) => any;
+  onNext?: () => void;
+  onPrevious?: () => void;
+}
+
+const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
+  formData,
+  updateFormData,
+  onNext,
+  onPrevious
+}) => {
   const { formState } = useFormContext();
   const { getSpecificQuestionsByType, intakeData } = useIntakeForm();
   
   // Get questions based on the selected business type
   const questions = getSpecificQuestionsByType();
+  
+  // Use either passed in formData or intakeData from the hook
+  const displayData = formData || intakeData;
   
   return (
     <div className="space-y-6">
@@ -47,19 +63,43 @@ const SpecificQuestionsStep: React.FC = () => {
       </Card>
       
       {/* Preview section */}
-      {intakeData && Object.keys(intakeData).length > 0 && (
+      {displayData && Object.keys(displayData).length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-medium mb-4">Preview</h3>
           <Separator className="mb-6" />
           <WireframeVisualizer 
             wireframeData={{
-              title: intakeData.projectName || "Business Preview",
-              description: intakeData.projectDescription || "Based on your inputs",
+              title: displayData.projectName || displayData.businessName || "Business Preview",
+              description: displayData.projectDescription || displayData.businessDescription || "Based on your inputs",
               sections: []
             }}
             preview={true}
           />
         </Card>
+      )}
+
+      {/* Navigation buttons would be here, if needed */}
+      {(onNext || onPrevious) && (
+        <div className="flex justify-between pt-4">
+          {onPrevious && (
+            <button 
+              type="button"
+              className="px-4 py-2 border rounded-md hover:bg-gray-100" 
+              onClick={onPrevious}
+            >
+              Previous
+            </button>
+          )}
+          {onNext && (
+            <button
+              type="button"
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+              onClick={onNext}
+            >
+              Next
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 import { Button } from '@/components/ui/button';
 import { Laptop, Smartphone } from 'lucide-react';
 
 export interface WireframeVisualizerProps {
-  wireframeData: any;
+  wireframeData?: any;
   wireframe?: any; // Add wireframe as optional prop for backward compatibility
   title?: string;
   description?: string;

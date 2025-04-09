@@ -1,22 +1,21 @@
 
 import React from 'react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { FormItem } from '@/components/ui/form';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-export interface Question {
+// Define the question item type
+interface Question {
   id: string;
   question: string;
-  type: 'text' | 'textarea' | 'checkbox' | 'radio' | 'select';
-  required?: boolean;
-  options?: { label: string; value: string }[];
+  type: string;
+  required: boolean;
 }
 
 interface QuestionItemProps {
   question: Question;
-  fieldValue?: any;
+  fieldValue: any;
   onChange: (value: any) => void;
 }
 
@@ -25,57 +24,63 @@ export const QuestionItem: React.FC<QuestionItemProps> = ({
   fieldValue,
   onChange
 }) => {
-  const renderInputByType = () => {
+  // Handle different input types
+  const renderInputField = () => {
     switch (question.type) {
-      case 'textarea':
-        return (
-          <Textarea
-            id={`question-${question.id}`}
-            value={fieldValue || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Type your answer here"
-            className="w-full"
-          />
-        );
       case 'checkbox':
         return (
           <div className="flex items-center space-x-2">
-            <Checkbox
-              id={`question-${question.id}`}
-              checked={fieldValue || false}
+            <Checkbox 
+              id={question.id} 
+              checked={!!fieldValue}
               onCheckedChange={onChange}
             />
-            <Label htmlFor={`question-${question.id}`}>Yes</Label>
+            <Label htmlFor={question.id} className="text-sm font-medium">
+              {question.question}
+              {question.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
           </div>
         );
+      
+      case 'textarea':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor={question.id} className="text-sm font-medium">
+              {question.question}
+              {question.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Textarea 
+              id={question.id}
+              placeholder={`Enter ${question.question.toLowerCase()}`}
+              value={fieldValue || ''}
+              onChange={(e) => onChange(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+        );
+      
+      case 'text':
       default:
         return (
-          <Input
-            id={`question-${question.id}`}
-            type="text"
-            value={fieldValue || ''}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Type your answer here"
-            className="w-full"
-          />
+          <div className="space-y-2">
+            <Label htmlFor={question.id} className="text-sm font-medium">
+              {question.question}
+              {question.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            <Input 
+              id={question.id}
+              placeholder={`Enter ${question.question.toLowerCase()}`}
+              value={fieldValue || ''}
+              onChange={(e) => onChange(e.target.value)}
+            />
+          </div>
         );
     }
   };
 
   return (
-    <FormItem className="space-y-2">
-      <div className="flex flex-col">
-        <Label 
-          htmlFor={`question-${question.id}`}
-          className="text-base font-medium"
-        >
-          {question.question}
-          {question.required && <span className="text-destructive ml-1">*</span>}
-        </Label>
-        {renderInputByType()}
-      </div>
-    </FormItem>
+    <div className="question-item py-2">
+      {renderInputField()}
+    </div>
   );
 };
-
-export default QuestionItem;

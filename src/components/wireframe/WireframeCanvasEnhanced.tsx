@@ -1,9 +1,17 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
+
+// Extended WireframeSection interface to include missing properties
+interface ExtendedWireframeSection extends WireframeSection {
+  backgroundColor?: string;
+  textAlign?: string;
+  padding?: string;
+  gap?: string;
+}
 
 export interface WireframeCanvasEnhancedProps {
-  sections: WireframeSection[];
+  sections: (WireframeSection | ExtendedWireframeSection)[];
   width?: number;
   height?: number;
   editable?: boolean;
@@ -13,6 +21,8 @@ export interface WireframeCanvasEnhancedProps {
   responsiveMode?: boolean;
   onSectionSelect?: (sectionId: string) => void;
   onSectionUpdate?: (section: WireframeSection) => void;
+  onSectionMove?: (section: WireframeSection, x: number, y: number) => void;
+  onSectionResize?: (section: WireframeSection, width: number, height: number) => void;
 }
 
 export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
@@ -25,7 +35,9 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
   deviceType = 'desktop',
   responsiveMode = false,
   onSectionSelect,
-  onSectionUpdate
+  onSectionUpdate,
+  onSectionMove,
+  onSectionResize
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
@@ -60,15 +72,17 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
     }
 
     return sections.map((section) => {
+      const extendedSection = section as ExtendedWireframeSection;
+      
       // Determine section style
       const sectionStyle: React.CSSProperties = {
         position: 'relative',
         marginBottom: '20px',
         border: selectedSection === section.id ? '2px dashed blue' : '1px solid #e5e7eb',
-        backgroundColor: section.backgroundColor || '#ffffff',
-        textAlign: (section.textAlign as any) || 'left',
-        padding: section.padding || '20px',
-        gap: section.gap || '10px',
+        backgroundColor: extendedSection.backgroundColor || '#ffffff',
+        textAlign: (extendedSection.textAlign as any) || 'left',
+        padding: extendedSection.padding || '20px',
+        gap: extendedSection.gap || '10px',
       };
 
       // Add specific styles based on section type
