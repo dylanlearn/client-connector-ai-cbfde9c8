@@ -52,12 +52,12 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
           width: `${section.dimensions?.width || 300}px`,
           height: `${section.dimensions?.height || 200}px`,
           cursor: editable ? 'pointer' : 'default',
+          // These were causing type errors - use proper CSS property types
+          textAlign: section.style?.textAlign as any || 'left',
+          padding: section.style?.padding || '16px',
+          gap: section.style?.gap || undefined,
+          backgroundColor: section.style?.backgroundColor || 'transparent'
         };
-        
-        // If section.style exists, merge it into sectionStyle
-        if (section.style) {
-          Object.assign(sectionStyle, section.style);
-        }
         
         return (
           <div

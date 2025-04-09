@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export interface AdvancedWireframeGeneratorProps {
   projectId?: string;
+  intakeData?: any;
   onWireframeGenerated?: (wireframe: any) => void;
   onWireframeSaved?: (wireframe: any) => void;
   viewMode?: 'editor' | 'preview';
@@ -23,6 +23,7 @@ export interface AdvancedWireframeGeneratorProps {
 
 const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   projectId,
+  intakeData,
   onWireframeGenerated,
   onWireframeSaved,
   viewMode = 'editor'
@@ -37,7 +38,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const { toast } = useToast();
   
-  // Use the actual advanced wireframe hook
   const { 
     isGenerating, 
     currentWireframe, 
@@ -49,13 +49,17 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   } = useAdvancedWireframe();
 
   useEffect(() => {
-    // Initialize project name if project ID is provided
     if (projectId) {
       setProjectName(`Project-${projectId.substring(0, 8)}`);
     }
-  }, [projectId]);
+    
+    if (intakeData) {
+      const description = intakeData.businessDescription || intakeData.projectDescription || '';
+      setPrompt(description);
+      setProjectName(intakeData.businessName || intakeData.projectName || projectName);
+    }
+  }, [projectId, intakeData, projectName]);
 
-  // Set wireframe name from generated wireframe
   useEffect(() => {
     if (currentWireframe?.title) {
       setWireframeName(currentWireframe.title);
@@ -91,7 +95,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
         onWireframeGenerated(result.wireframe);
       }
       
-      // Switch to editor tab after successful generation
       setActiveTab('editor');
     }
   };
@@ -106,7 +109,6 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       return;
     }
     
-    // Use the actual save function from the hook
     const savedWireframe = await saveWireframe(
       projectId || uuidv4(),
       prompt
