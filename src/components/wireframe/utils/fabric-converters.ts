@@ -2,6 +2,8 @@
 import { fabric } from 'fabric';
 import { WireframeSection } from '@/types/wireframe';
 import { AdaptiveWireframeSection } from './section-types';
+import { DeviceType } from './responsive-utils';
+import { SectionRenderingOptions } from './types';
 
 /**
  * Convert a WireframeSection to a Fabric.js object
@@ -58,6 +60,9 @@ export function fabricObjectToSection(obj: fabric.Object): AdaptiveWireframeSect
   // Update position and dimensions
   return {
     ...existingData,
+    id: existingData.id || `section-${Date.now()}`,
+    name: existingData.name || 'Unnamed Section',
+    sectionType: existingData.sectionType || 'generic',
     position: {
       x: obj.left || 0,
       y: obj.top || 0
@@ -67,4 +72,64 @@ export function fabricObjectToSection(obj: fabric.Object): AdaptiveWireframeSect
       height: obj.height || 100
     }
   };
+}
+
+/**
+ * Convert a component to a Fabric.js object with rendering options
+ */
+export function componentToFabricObject(
+  component: WireframeSection | any, 
+  options?: SectionRenderingOptions
+): fabric.Object {
+  // Default rendering options
+  const { deviceType = 'desktop', interactive = true } = options || {};
+  
+  // Base position and dimensions
+  const left = component.position?.x || 0;
+  const top = component.position?.y || 0;
+  const width = component.dimensions?.width || 200;
+  const height = component.dimensions?.height || 100;
+  
+  // Create the main component rectangle
+  const rect = new fabric.Rect({
+    left,
+    top,
+    width,
+    height,
+    fill: component.backgroundColor || 'rgba(240, 240, 240, 0.5)',
+    stroke: '#888',
+    strokeWidth: 1,
+    rx: 5,
+    ry: 5,
+    hasControls: interactive,
+    selectable: interactive,
+    lockRotation: true,
+    data: {
+      id: component.id,
+      type: 'component',
+      componentType: component.sectionType
+    }
+  });
+  
+  // Create component label
+  const label = new fabric.Text(component.name || 'Component', {
+    left: left + 10,
+    top: top + 10,
+    fontSize: 14,
+    fill: '#333',
+    selectable: false
+  });
+  
+  // Group the elements
+  const group = new fabric.Group([rect, label], {
+    hasControls: interactive,
+    selectable: interactive,
+    data: {
+      id: component.id,
+      type: 'component',
+      componentType: component.sectionType
+    }
+  });
+  
+  return group;
 }

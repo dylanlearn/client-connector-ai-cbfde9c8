@@ -21,4 +21,6 @@ export interface SectionRenderingOptions {
   scale?: number;
   responsiveDevice?: DeviceType;
   preview?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  interactive?: boolean;
 }
