@@ -44,15 +44,31 @@ export function getResponsiveLayout(
   let baseLayout: ResponsiveLayoutSettings;
   
   if (section.layout) {
-    // Convert the generic section layout to ResponsiveLayoutSettings format
-    baseLayout = {
-      layout: ((section.layout.type || 'flex') as 'flex' | 'grid' | 'stack' | 'columns'),
-      alignItems: ((section.layout.alignment || 'center') as 'start' | 'center' | 'end' | 'stretch'),
-      justifyContent: ((section.layout.justifyContent || 'between') as 'start' | 'center' | 'end' | 'between' | 'around'),
-      columns: section.layout.columns || 1,
-      gap: section.layout.gap || 16,
-      wrap: section.layout.wrap !== false
-    };
+    if (typeof section.layout === 'string') {
+      // Convert string layout to ResponsiveLayoutSettings format
+      baseLayout = {
+        layout: (section.layout === 'grid' ? 'grid' : 
+                section.layout === 'stack' ? 'stack' : 
+                section.layout === 'columns' ? 'columns' : 'flex') as 'flex' | 'grid' | 'stack' | 'columns',
+        alignItems: (section.layout === 'centered' ? 'center' : 'start') as 'start' | 'center' | 'end' | 'stretch',
+        justifyContent: (section.layout === 'centered' ? 'center' : 
+                        section.layout === 'right' ? 'end' : 
+                        section.layout === 'between' ? 'between' : 'start') as 'start' | 'center' | 'end' | 'between' | 'around',
+        columns: 1,
+        gap: 16,
+        wrap: true
+      };
+    } else {
+      // Convert the object layout to ResponsiveLayoutSettings format
+      baseLayout = {
+        layout: ((section.layout.type || 'flex') as 'flex' | 'grid' | 'stack' | 'columns'),
+        alignItems: ((section.layout.alignment || 'center') as 'start' | 'center' | 'end' | 'stretch'),
+        justifyContent: ((section.layout.justifyContent || 'between') as 'start' | 'center' | 'end' | 'between' | 'around'),
+        columns: section.layout.columns || 1,
+        gap: section.layout.gap || 16,
+        wrap: section.layout.wrap !== false
+      };
+    }
   } else {
     baseLayout = defaultLayout;
   }
@@ -223,10 +239,17 @@ export function getResponsiveTailwindClasses(section: AdaptiveWireframeSection):
   let classes = '';
   
   // Layout type
-  if (section.layout?.type === 'grid') {
+  if (typeof section.layout === 'object' && section.layout?.type === 'grid') {
     classes += 'grid ';
-  } else if (section.layout?.type === 'flex') {
+  } else if (typeof section.layout === 'object' && section.layout?.type === 'flex') {
     classes += 'flex ';
+  } else if (typeof section.layout === 'string') {
+    // Handle string layout
+    if (section.layout === 'grid') {
+      classes += 'grid ';
+    } else if (section.layout === 'flex') {
+      classes += 'flex ';
+    }
   }
   
   // Handle responsive variations

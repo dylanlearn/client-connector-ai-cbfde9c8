@@ -29,8 +29,12 @@ export interface WireframeSection {
     type: string;
     direction?: string;
     alignment?: string;
+    justifyContent?: string;
+    columns?: number;
+    gap?: number;
+    wrap?: boolean;
     [key: string]: any;
-  } | string; // Add string as a potential type for layout
+  } | string; // Added string as a potential type for layout
   layoutType?: string;
   positionOrder?: number;
   componentVariant?: string;
@@ -164,4 +168,19 @@ export interface WireframeHistoryState {
   versions: WireframeVersion[];
   branches: WireframeBranch[];
   current?: WireframeVersion;
+}
+
+export interface WireframeCanvasConfig {
+  width: number;
+  height: number;
+  showGrid?: boolean;
+  snapToGrid?: boolean;
+  gridSize?: number;
+  backgroundColor?: string;
+  zoom?: number;
+  panOffset?: { x: number, y: number };
+  gridType?: 'lines' | 'dots' | 'columns';
+  snapTolerance?: number;
+  showSmartGuides?: boolean;
+  [key: string]: any;
 }

@@ -1,7 +1,8 @@
+
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { WireframeCanvasConfig } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeCanvasConfig } from '@/types/wireframe';
 
 interface UseFabricOptions {
   persistConfig?: boolean;
@@ -28,7 +29,10 @@ export function useFabric(options: UseFabricOptions = {}) {
     showGrid: initialConfig.showGrid !== undefined ? initialConfig.showGrid : storeCanvasSettings.showGrid,
     snapToGrid: initialConfig.snapToGrid !== undefined ? initialConfig.snapToGrid : storeCanvasSettings.snapToGrid,
     gridSize: initialConfig.gridSize || storeCanvasSettings.gridSize || 8,
-    backgroundColor: initialConfig.backgroundColor || storeCanvasSettings.backgroundColor || '#ffffff'
+    backgroundColor: initialConfig.backgroundColor || storeCanvasSettings.backgroundColor || '#ffffff',
+    gridType: initialConfig.gridType || storeCanvasSettings.gridType || 'lines',
+    snapTolerance: initialConfig.snapTolerance || storeCanvasSettings.snapTolerance || 5,
+    showSmartGuides: initialConfig.showSmartGuides || storeCanvasSettings.showSmartGuides || false
   });
 
   // Initialize Fabric canvas
