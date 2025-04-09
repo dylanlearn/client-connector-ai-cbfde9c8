@@ -7,7 +7,7 @@ import { GridConfig, DEFAULT_GRID_CONFIG, GridBreakpoint } from '@/components/wi
 import { calculateColumnPositions, calculateGridPositions } from '@/components/wireframe/utils/grid-utils';
 import { useTheme } from '@/hooks/use-theme';
 
-export type GridType = 'bootstrap' | 'tailwind' | 'custom' | 'lines' | 'dots' | 'columns';
+export type GridType = 'lines' | 'dots' | 'columns' | 'custom';
 
 interface EnhancedGridSystemProps {
   /**
@@ -100,7 +100,7 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
   const handleBreakpointClick = (breakpoint: GridBreakpoint) => {
     if (onConfigChange) {
       onConfigChange({
-        type: 'tailwind'
+        type: 'columns' // Changed from 'tailwind' to 'columns' to match allowed types
       });
     }
   };

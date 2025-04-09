@@ -1,3 +1,4 @@
+
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -175,20 +176,20 @@ export function useFabric(options: UseFabricOptions = {}) {
       // Apply alignment guides if enabled
       if (canvasConfig.showSmartGuides) {
         const allObjects = canvas.getObjects().filter(obj => obj !== activeObject);
-        const newGuides = findAlignmentGuides(activeObject, allObjects, canvasConfig.snapTolerance);
+        const newGuidelines = findAlignmentGuides(activeObject, allObjects, canvasConfig.snapTolerance);
         
         // Set guides for rendering
-        setGuides(newGuides);
+        setGuides(newGuidelines);
         
         // Apply snapping
-        if (newGuides.length > 0) {
-          snapObjectToGuides(activeObject, newGuides, canvas);
+        if (newGuidelines.length > 0) {
+          snapObjectToGuides(activeObject, newGuidelines, canvas);
           
           // Visual feedback for snap
           const bounds = getObjectBounds(activeObject);
           
           // Flash indicator at snap points
-          newGuides.forEach(guide => {
+          newGuidelines.forEach(guide => {
             const indicator = new fabric.Circle({
               left: guide.orientation === 'vertical' ? guide.position - guideVisualization.snapIndicatorSize/2 : bounds.centerX - guideVisualization.snapIndicatorSize/2,
               top: guide.orientation === 'horizontal' ? guide.position - guideVisualization.snapIndicatorSize/2 : bounds.centerY - guideVisualization.snapIndicatorSize/2,

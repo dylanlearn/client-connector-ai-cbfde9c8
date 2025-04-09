@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
-import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+import { WireframeCanvasConfig, SectionRenderingOptions } from '@/components/wireframe/utils/types';
 import { WireframeData, WireframeSection } from '@/types/wireframe';
 import { componentToFabricObject } from '@/components/wireframe/utils/fabric-converters';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -200,10 +200,17 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         };
       }
       
-      const fabricObject = componentToFabricObject(normalizedSection, {
+      // Create complete rendering options with all required properties
+      const renderOptions: SectionRenderingOptions = {
+        showBorders: true,
+        showLabels: true,
+        showComponentOutlines: true,
+        highlightOnHover: true,
         deviceType,
         interactive: editable
-      });
+      };
+      
+      const fabricObject = componentToFabricObject(normalizedSection, renderOptions);
       
       if (fabricObject) {
         canvas.add(fabricObject as unknown as fabric.Object);

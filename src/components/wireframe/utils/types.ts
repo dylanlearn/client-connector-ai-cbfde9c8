@@ -75,4 +75,5 @@ export interface LayerInfo {
   locked: boolean;
   zIndex: number;
   parentId?: string;
+  isExpanded?: boolean; // Added isExpanded property
 }

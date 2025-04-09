@@ -1,5 +1,7 @@
 
 import { DeviceType } from './responsive-utils';
+import { fabric } from 'fabric';
+import { GridGuideline } from './types';
 
 export interface GridBreakpoint {
   name: string;
@@ -137,4 +139,92 @@ export function calculateColumnPositions(
   }
   
   return positions;
+}
+
+// Add the missing function for generating snap guidelines
+export function generateSnapGuidelines(
+  allObjects: fabric.Object[],
+  activeObject: fabric.Object,
+  snapThreshold: number = 10
+): GridGuideline[] {
+  const guidelines: GridGuideline[] = [];
+
+  // Get active object bounds
+  const activeBounds = {
+    left: activeObject.left || 0,
+    top: activeObject.top || 0,
+    right: (activeObject.left || 0) + (activeObject.getScaledWidth() || 0),
+    bottom: (activeObject.top || 0) + (activeObject.getScaledHeight() || 0),
+    centerX: (activeObject.left || 0) + (activeObject.getScaledWidth() || 0) / 2,
+    centerY: (activeObject.top || 0) + (activeObject.getScaledHeight() || 0) / 2
+  };
+
+  // Check against each other object
+  allObjects.forEach((obj) => {
+    if (obj === activeObject) return;
+
+    const objBounds = {
+      left: obj.left || 0,
+      top: obj.top || 0,
+      right: (obj.left || 0) + (obj.getScaledWidth() || 0),
+      bottom: (obj.top || 0) + (obj.getScaledHeight() || 0),
+      centerX: (obj.left || 0) + (obj.getScaledWidth() || 0) / 2,
+      centerY: (obj.top || 0) + (obj.getScaledHeight() || 0) / 2
+    };
+
+    // Horizontal alignments
+    if (Math.abs(activeBounds.left - objBounds.left) < snapThreshold) {
+      guidelines.push({
+        position: objBounds.left,
+        orientation: 'vertical',
+        type: 'edge'
+      });
+    }
+
+    if (Math.abs(activeBounds.right - objBounds.right) < snapThreshold) {
+      guidelines.push({
+        position: objBounds.right,
+        orientation: 'vertical',
+        type: 'edge'
+      });
+    }
+
+    if (Math.abs(activeBounds.centerX - objBounds.centerX) < snapThreshold) {
+      guidelines.push({
+        position: objBounds.centerX,
+        orientation: 'vertical',
+        type: 'center'
+      });
+    }
+
+    // Vertical alignments
+    if (Math.abs(activeBounds.top - objBounds.top) < snapThreshold) {
+      guidelines.push({
+        position: objBounds.top,
+        orientation: 'horizontal',
+        type: 'edge'
+      });
+    }
+
+    if (Math.abs(activeBounds.bottom - objBounds.bottom) < snapThreshold) {
+      guidelines.push({
+        position: objBounds.bottom,
+        orientation: 'horizontal',
+        type: 'edge'
+      });
+    }
+
+    if (Math.abs(activeBounds.centerY - objBounds.centerY) < snapThreshold) {
+      guidelines.push({
+        position: objBounds.centerY,
+        orientation: 'horizontal',
+        type: 'center'
+      });
+    }
+
+    // Distribution guidelines (equal spacing)
+    // This is a simplified version, you can extend it as needed
+  });
+
+  return guidelines;
 }

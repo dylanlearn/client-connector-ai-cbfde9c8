@@ -1,5 +1,5 @@
+
 import { useState, useCallback } from 'react';
-import { GridType } from '@/components/wireframe/canvas/EnhancedGridSystem';
 import { 
   GridConfig, 
   DEFAULT_GRID_CONFIG, 
@@ -71,8 +71,8 @@ export function useGridSystem(options: UseGridSystemOptions = {}) {
     updateGridConfig({ showBreakpoints: !gridConfig.showBreakpoints });
   }, [gridConfig.showBreakpoints, updateGridConfig]);
   
-  // Change grid type
-  const changeGridType = useCallback((type: GridType) => {
+  // Change grid type - making sure we only use allowed values
+  const changeGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
     updateGridConfig({ type });
   }, [updateGridConfig]);
   
