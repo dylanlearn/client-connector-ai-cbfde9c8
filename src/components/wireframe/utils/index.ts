@@ -6,7 +6,6 @@ export * from './canvas-serialization';
 // Export from section-utils but rename the one that causes the conflict
 export {
   AdaptiveWireframeSection,
-  ResponsiveLayoutSettings,
   getResponsiveLayout,
   isSectionVisibleOnDevice,
   getResponsiveContent,
@@ -21,6 +20,10 @@ export {
   // Rename to avoid conflict with getResponsiveStyles from responsive-utils
   getResponsiveStyles as getSectionResponsiveStyles
 } from './section-utils';
+
+// Export types with 'export type' syntax to fix the isolatedModules error
+export type { ResponsiveLayoutSettings } from './section-utils';
+export type { AdaptiveWireframeSection } from './section-utils';
 
 // Export from responsive-utils
 export * from './responsive-utils';
