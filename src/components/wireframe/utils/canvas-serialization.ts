@@ -1,229 +1,173 @@
 
 import { fabric } from 'fabric';
-import { v4 as uuidv4 } from 'uuid';
-import { WireframeSection } from '@/types/wireframe';
-// Remove the incorrect import and create a simple conversion function instead
+import { WireframeCanvasConfig } from './types';
 
 /**
- * Canvas serialization format
+ * Serializes a Fabric.js canvas state to JSON
  */
-export interface SerializedCanvas {
-  id: string;
-  name?: string;
-  version: string;
-  objects: any[];
-  background?: string;
-  width: number;
-  height: number;
-  grid?: {
-    enabled: boolean;
-    size: number;
-    type: string;
-  };
-  viewport?: {
-    zoom: number;
-    pan: { x: number, y: number };
-  };
-  metadata?: Record<string, any>;
-  timestamp: number;
-}
-
-/**
- * Serialize a Fabric.js canvas to JSON
- */
-export function serializeCanvas(canvas: fabric.Canvas, metadata?: Record<string, any>): SerializedCanvas {
-  if (!canvas) throw new Error('Canvas is required for serialization');
+export function serializeCanvas(
+  canvas: fabric.Canvas, 
+  includeConfig: boolean = true,
+  config?: WireframeCanvasConfig
+): string {
+  if (!canvas) return '';
   
-  const viewportTransform = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-  
-  return {
-    id: metadata?.id || uuidv4(),
-    name: metadata?.name || 'Untitled Canvas',
-    version: '1.0',
-    objects: canvas.toJSON(['id', 'name', 'type', 'sectionType', 'data']).objects || [],
-    background: canvas.backgroundColor as string,
-    width: canvas.width || 0,
-    height: canvas.height || 0,
-    viewport: {
-      zoom: viewportTransform[0],
-      pan: { x: viewportTransform[4], y: viewportTransform[5] }
-    },
-    metadata: metadata || {},
-    timestamp: Date.now()
-  };
-}
-
-/**
- * Deserialize JSON to a Fabric.js canvas
- */
-export function deserializeCanvas(canvas: fabric.Canvas, serialized: SerializedCanvas): void {
-  if (!canvas || !serialized) return;
-  
-  // Clear canvas first
-  canvas.clear();
-  
-  // Set canvas properties
-  canvas.backgroundColor = serialized.background || '#ffffff';
-  
-  // Load objects from JSON
-  canvas.loadFromJSON({ objects: serialized.objects }, () => {
-    canvas.renderAll();
+  try {
+    const canvasJSON = canvas.toJSON(['id', 'name', 'data']);
     
-    // Apply viewport transform
-    if (serialized.viewport) {
-      canvas.setZoom(serialized.viewport.zoom);
-      canvas.absolutePan(new fabric.Point(serialized.viewport.pan.x, serialized.viewport.pan.y));
+    if (includeConfig && config) {
+      return JSON.stringify({
+        canvas: canvasJSON,
+        config
+      });
     }
-  });
-}
-
-/**
- * Create a snapshot of the canvas state
- */
-export function createCanvasSnapshot(canvas: fabric.Canvas, metadata?: Record<string, any>): SerializedCanvas {
-  return serializeCanvas(canvas, {
-    ...metadata,
-    snapshotTime: new Date().toISOString()
-  });
-}
-
-/**
- * Restore a canvas from a snapshot
- */
-export function restoreCanvasSnapshot(canvas: fabric.Canvas, snapshot: SerializedCanvas): void {
-  deserializeCanvas(canvas, snapshot);
-}
-
-/**
- * Convert Fabric.js canvas to wireframe sections
- */
-export function canvasToWireframeSections(canvas: fabric.Canvas): WireframeSection[] {
-  if (!canvas) return [];
-  
-  const objects = canvas.getObjects();
-  const sections: WireframeSection[] = [];
-  
-  objects.forEach(obj => {
-    if (!obj.data || obj.data.type !== 'section') return;
     
-    // Simple conversion from fabric object to wireframe section
-    const section: WireframeSection = {
-      id: obj.data.id || uuidv4(),
-      name: obj.data.name || 'Untitled Section',
-      sectionType: obj.data.sectionType || 'generic',
-      position: {
-        x: obj.left || 0,
-        y: obj.top || 0
-      },
-      dimensions: {
-        width: obj.width || 200,
-        height: obj.height || 100
-      }
-    };
+    return JSON.stringify(canvasJSON);
+  } catch (error) {
+    console.error('Error serializing canvas:', error);
+    return '';
+  }
+}
+
+/**
+ * Deserializes a JSON string to restore a Fabric.js canvas state
+ */
+export function deserializeCanvas(
+  canvas: fabric.Canvas,
+  serializedData: string,
+  onComplete?: () => void
+): WireframeCanvasConfig | null {
+  if (!canvas || !serializedData) return null;
+  
+  try {
+    const data = JSON.parse(serializedData);
     
-    sections.push(section);
-  });
-  
-  return sections;
+    // Check if the data includes both canvas and config
+    if (data.canvas && data.config) {
+      // Load the canvas objects
+      canvas.loadFromJSON(data.canvas, () => {
+        if (onComplete) onComplete();
+      });
+      
+      // Return the config
+      return data.config;
+    } else {
+      // Assume it's just canvas data
+      canvas.loadFromJSON(data, () => {
+        if (onComplete) onComplete();
+      });
+      
+      return null;
+    }
+  } catch (error) {
+    console.error('Error deserializing canvas:', error);
+    return null;
+  }
 }
 
 /**
- * Calculate the bounding box of all objects on canvas
+ * Export canvas as an image data URL
  */
-export function getCanvasBoundingBox(canvas: fabric.Canvas): { x: number, y: number, width: number, height: number } | null {
-  if (!canvas) return null;
+export function exportCanvasAsImage(
+  canvas: fabric.Canvas,
+  format: 'png' | 'jpeg' | 'webp' = 'png',
+  quality: number = 1,
+  multiplier: number = 1
+): string {
+  if (!canvas) return '';
   
-  const objects = canvas.getObjects();
-  if (objects.length === 0) return null;
-  
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  
-  objects.forEach(obj => {
-    const bound = obj.getBoundingRect(true, true);
-    minX = Math.min(minX, bound.left);
-    minY = Math.min(minY, bound.top);
-    maxX = Math.max(maxX, bound.left + bound.width);
-    maxY = Math.max(maxY, bound.top + bound.height);
-  });
-  
-  return {
-    x: minX,
-    y: minY,
-    width: maxX - minX,
-    height: maxY - minY
-  };
-}
-
-/**
- * Center content on the canvas
- */
-export function centerCanvasContent(canvas: fabric.Canvas): void {
-  const boundingBox = getCanvasBoundingBox(canvas);
-  if (!boundingBox || !canvas.width || !canvas.height) return;
-  
-  const centerX = (canvas.width - boundingBox.width) / 2 - boundingBox.x;
-  const centerY = (canvas.height - boundingBox.height) / 2 - boundingBox.y;
-  
-  canvas.getObjects().forEach(obj => {
-    obj.set({
-      left: obj.left! + centerX,
-      top: obj.top! + centerY
-    });
-  });
-  
-  canvas.renderAll();
-}
-
-/**
- * Export canvas as image data URL
- */
-export function exportCanvasAsImage(canvas: fabric.Canvas, format: 'png' | 'jpeg' = 'png', quality = 1): string {
   return canvas.toDataURL({
-    format: format,
-    quality: quality,
-    multiplier: 2
+    format,
+    quality,
+    multiplier
   });
 }
 
 /**
- * Create undo/redo history stack
+ * Save canvas state to localStorage
  */
-export function createHistoryStack(maxSize = 30): {
-  push: (state: SerializedCanvas) => void,
-  undo: () => SerializedCanvas | null,
-  redo: () => SerializedCanvas | null,
-  canUndo: () => boolean,
-  canRedo: () => boolean
-} {
-  const undoStack: SerializedCanvas[] = [];
-  const redoStack: SerializedCanvas[] = [];
+export function saveCanvasToLocalStorage(
+  canvas: fabric.Canvas,
+  key: string,
+  config?: WireframeCanvasConfig
+): boolean {
+  if (!canvas || !key) return false;
   
-  return {
-    push: (state: SerializedCanvas) => {
-      undoStack.push({...state});
-      if (undoStack.length > maxSize) {
-        undoStack.shift();
-      }
-      // Clear redo stack when new state is pushed
-      redoStack.length = 0;
-    },
-    undo: () => {
-      const state = undoStack.pop();
-      if (state) {
-        redoStack.push(state);
-        return undoStack[undoStack.length - 1] || null;
-      }
-      return null;
-    },
-    redo: () => {
-      const state = redoStack.pop();
-      if (state) {
-        undoStack.push(state);
-        return state;
-      }
-      return null;
-    },
-    canUndo: () => undoStack.length > 1,
-    canRedo: () => redoStack.length > 0
-  };
+  try {
+    const serializedData = serializeCanvas(canvas, true, config);
+    localStorage.setItem(key, serializedData);
+    return true;
+  } catch (error) {
+    console.error('Error saving canvas to localStorage:', error);
+    return false;
+  }
+}
+
+/**
+ * Load canvas state from localStorage
+ */
+export function loadCanvasFromLocalStorage(
+  canvas: fabric.Canvas,
+  key: string,
+  onComplete?: () => void
+): WireframeCanvasConfig | null {
+  if (!canvas || !key) return null;
+  
+  try {
+    const serializedData = localStorage.getItem(key);
+    if (!serializedData) return null;
+    
+    return deserializeCanvas(canvas, serializedData, onComplete);
+  } catch (error) {
+    console.error('Error loading canvas from localStorage:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a downloadable file from canvas data
+ */
+export function downloadCanvasData(
+  canvas: fabric.Canvas, 
+  filename: string = 'canvas-data.json',
+  includeConfig: boolean = true,
+  config?: WireframeCanvasConfig
+): void {
+  if (!canvas) return;
+  
+  try {
+    const serializedData = serializeCanvas(canvas, includeConfig, config);
+    const blob = new Blob([serializedData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error downloading canvas data:', error);
+  }
+}
+
+/**
+ * Create a downloadable image from canvas
+ */
+export function downloadCanvasImage(
+  canvas: fabric.Canvas, 
+  filename: string = 'canvas-image.png',
+  format: 'png' | 'jpeg' | 'webp' = 'png'
+): void {
+  if (!canvas) return;
+  
+  try {
+    const dataUrl = exportCanvasAsImage(canvas, format);
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    link.click();
+  } catch (error) {
+    console.error('Error downloading canvas image:', error);
+  }
 }

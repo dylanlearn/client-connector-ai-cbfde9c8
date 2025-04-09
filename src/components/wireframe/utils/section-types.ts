@@ -1,27 +1,26 @@
 
-import { WireframeSection } from '@/types/wireframe';
-import { DeviceType } from './responsive-utils';
+export type ResponsiveLayoutSettings = {
+  device: 'desktop' | 'tablet' | 'mobile';
+  columns: number;
+  breakpoint: number;
+};
 
-// Define the ResponsiveLayoutSettings type
-export interface ResponsiveLayoutSettings {
-  layout: 'flex' | 'grid' | 'stack' | 'columns';
-  alignItems: 'start' | 'center' | 'end' | 'stretch';
-  justifyContent: 'start' | 'center' | 'end' | 'between' | 'around';
-  columns?: number;
-  gap?: number;
-  wrap?: boolean;
-  autoRows?: boolean;
-  rowHeight?: number | string;
-}
-
-// Define the AdaptiveWireframeSection type
-export interface AdaptiveWireframeSection extends WireframeSection {
-  responsive?: {
-    [key in DeviceType]?: {
-      layout?: Partial<ResponsiveLayoutSettings>;
-      visible?: boolean;
-      content?: any;
-      styles?: Record<string, any>;
-    };
+export interface AdaptiveWireframeSection {
+  id: string;
+  visible: {
+    desktop: boolean;
+    tablet: boolean;
+    mobile: boolean;
   };
+  layout: {
+    desktop: any;
+    tablet?: any;
+    mobile?: any;
+  };
+  dimensions: {
+    desktop: { width: number; height: number };
+    tablet?: { width: number; height: number };
+    mobile?: { width: number; height: number };
+  };
+  [key: string]: any;
 }

@@ -1,333 +1,196 @@
-import { fabric } from 'fabric';
+
 import { AlignmentGuide } from './types';
 
 /**
- * Calculate bounds for all sections in the wireframe
+ * Calculate bounds for all sections to help with alignment
  */
-export function calculateSectionsBounds(sections: fabric.Object[]): {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
+export function calculateSectionsBounds(sections: any[]): {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
   width: number;
   height: number;
+  center: { x: number; y: number };
 } {
-  if (!sections || sections.length === 0) {
-    return { minX: 0, maxX: 0, minY: 0, maxY: 0, width: 0, height: 0 };
+  if (!sections || !sections.length) {
+    return {
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      center: { x: 0, y: 0 }
+    };
   }
   
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
+  // Initialize bounds with first section
+  let left = sections[0].position?.x || 0;
+  let right = (sections[0].position?.x || 0) + (sections[0].dimensions?.width || 0);
+  let top = sections[0].position?.y || 0;
+  let bottom = (sections[0].position?.y || 0) + (sections[0].dimensions?.height || 0);
   
+  // Find min and max boundaries
   sections.forEach((section) => {
-    if (!section) return;
+    const sectionLeft = section.position?.x || 0;
+    const sectionRight = (section.position?.x || 0) + (section.dimensions?.width || 0);
+    const sectionTop = section.position?.y || 0;
+    const sectionBottom = (section.position?.y || 0) + (section.dimensions?.height || 0);
     
-    const left = section.left || 0;
-    const top = section.top || 0;
-    const width = section.width || 0;
-    const height = section.height || 0;
-    const scaleX = section.scaleX || 1;
-    const scaleY = section.scaleY || 1;
-    
-    const scaledWidth = width * scaleX;
-    const scaledHeight = height * scaleY;
-    
-    const right = left + scaledWidth;
-    const bottom = top + scaledHeight;
-    
-    minX = Math.min(minX, left);
-    maxX = Math.max(maxX, right);
-    minY = Math.min(minY, top);
-    maxY = Math.max(maxY, bottom);
+    left = Math.min(left, sectionLeft);
+    right = Math.max(right, sectionRight);
+    top = Math.min(top, sectionTop);
+    bottom = Math.max(bottom, sectionBottom);
   });
   
+  // Calculate width, height, and center
+  const width = right - left;
+  const height = bottom - top;
+  const center = {
+    x: left + width / 2,
+    y: top + height / 2
+  };
+  
   return {
-    minX,
-    maxX,
-    minY,
-    maxY,
-    width: maxX - minX,
-    height: maxY - minY
+    left,
+    right,
+    top,
+    bottom,
+    width,
+    height,
+    center
   };
 }
 
 /**
- * Find alignment guides between sections
+ * Find alignment guides for a section being moved
  */
 export function findAlignmentGuides(
-  activeSection: fabric.Object,
-  allSections: fabric.Object[],
-  tolerance: number = 10
+  activeSection: any,
+  allSections: any[],
+  threshold: number = 10
 ): AlignmentGuide[] {
-  if (!activeSection) return [];
+  if (!activeSection || !allSections || !allSections.length) {
+    return [];
+  }
   
   const guides: AlignmentGuide[] = [];
-  const otherSections = allSections.filter(section => section !== activeSection);
+  const otherSections = allSections.filter(section => section.id !== activeSection.id);
   
-  // Get active section bounds
-  const activeLeft = activeSection.left || 0;
-  const activeTop = activeSection.top || 0;
-  const activeWidth = (activeSection.width || 0) * (activeSection.scaleX || 1);
-  const activeHeight = (activeSection.height || 0) * (activeSection.scaleY || 1);
-  const activeRight = activeLeft + activeWidth;
-  const activeBottom = activeTop + activeHeight;
+  const activeLeft = activeSection.position?.x || 0;
+  const activeRight = activeLeft + (activeSection.dimensions?.width || 0);
+  const activeTop = activeSection.position?.y || 0;
+  const activeBottom = activeTop + (activeSection.dimensions?.height || 0);
+  const activeWidth = activeSection.dimensions?.width || 0;
+  const activeHeight = activeSection.dimensions?.height || 0;
   const activeCenterX = activeLeft + activeWidth / 2;
   const activeCenterY = activeTop + activeHeight / 2;
   
-  // For each other section, check for alignments
+  // Global page center and edges
+  const globalBounds = calculateSectionsBounds(allSections);
+  
+  // Add guides for centering within the page
+  const pageCenterX = globalBounds.center.x;
+  if (Math.abs(activeCenterX - pageCenterX) < threshold) {
+    guides.push({
+      position: pageCenterX,
+      orientation: 'vertical',
+      type: 'center',
+      label: 'Page Center',
+      strength: 3 // High priority
+    });
+  }
+  
+  // Check alignment with other sections
   otherSections.forEach(section => {
-    if (!section) return;
+    const sectionLeft = section.position?.x || 0;
+    const sectionRight = sectionLeft + (section.dimensions?.width || 0);
+    const sectionTop = section.position?.y || 0;
+    const sectionBottom = sectionTop + (section.dimensions?.height || 0);
+    const sectionWidth = section.dimensions?.width || 0;
+    const sectionHeight = section.dimensions?.height || 0;
+    const sectionCenterX = sectionLeft + sectionWidth / 2;
+    const sectionCenterY = sectionTop + sectionHeight / 2;
     
-    const left = section.left || 0;
-    const top = section.top || 0;
-    const width = (section.width || 0) * (section.scaleX || 1);
-    const height = (section.height || 0) * (section.scaleY || 1);
-    const right = left + width;
-    const bottom = top + height;
-    const centerX = left + width / 2;
-    const centerY = top + height / 2;
-    
-    // Check for horizontal alignment
-    // Left edges
-    if (Math.abs(activeLeft - left) < tolerance) {
+    // Left edge alignment
+    if (Math.abs(activeLeft - sectionLeft) < threshold) {
       guides.push({
-        position: left,
+        position: sectionLeft,
         orientation: 'vertical',
         type: 'edge',
-        strength: 1 - Math.abs(activeLeft - left) / tolerance
+        label: `Left edge (${section.name})`,
+        strength: 2
       });
     }
     
-    // Right edges
-    if (Math.abs(activeRight - right) < tolerance) {
+    // Right edge alignment
+    if (Math.abs(activeRight - sectionRight) < threshold) {
       guides.push({
-        position: right,
+        position: sectionRight,
         orientation: 'vertical',
         type: 'edge',
-        strength: 1 - Math.abs(activeRight - right) / tolerance
+        label: `Right edge (${section.name})`,
+        strength: 2
       });
     }
     
-    // Centers X
-    if (Math.abs(activeCenterX - centerX) < tolerance) {
+    // Center X alignment
+    if (Math.abs(activeCenterX - sectionCenterX) < threshold) {
       guides.push({
-        position: centerX,
+        position: sectionCenterX,
         orientation: 'vertical',
         type: 'center',
-        strength: 1 - Math.abs(activeCenterX - centerX) / tolerance
+        label: `Center (${section.name})`,
+        strength: 3
       });
     }
     
-    // Check for vertical alignment
-    // Top edges
-    if (Math.abs(activeTop - top) < tolerance) {
+    // Top edge alignment
+    if (Math.abs(activeTop - sectionTop) < threshold) {
       guides.push({
-        position: top,
+        position: sectionTop,
         orientation: 'horizontal',
         type: 'edge',
-        strength: 1 - Math.abs(activeTop - top) / tolerance
+        label: `Top edge (${section.name})`,
+        strength: 2
       });
     }
     
-    // Bottom edges
-    if (Math.abs(activeBottom - bottom) < tolerance) {
+    // Bottom edge alignment
+    if (Math.abs(activeBottom - sectionBottom) < threshold) {
       guides.push({
-        position: bottom,
+        position: sectionBottom,
         orientation: 'horizontal',
         type: 'edge',
-        strength: 1 - Math.abs(activeBottom - bottom) / tolerance
+        label: `Bottom edge (${section.name})`,
+        strength: 2
       });
     }
     
-    // Centers Y
-    if (Math.abs(activeCenterY - centerY) < tolerance) {
+    // Center Y alignment
+    if (Math.abs(activeCenterY - sectionCenterY) < threshold) {
       guides.push({
-        position: centerY,
+        position: sectionCenterY,
         orientation: 'horizontal',
         type: 'center',
-        strength: 1 - Math.abs(activeCenterY - centerY) / tolerance
+        label: `Middle (${section.name})`,
+        strength: 3
       });
     }
     
-    // Check for spacing
-    // Equal horizontal spacing
-    if (Math.abs(activeLeft - right) < tolerance) {
+    // Equal spacing (more advanced - vertical)
+    if (Math.abs(activeTop - sectionBottom) < threshold) {
       guides.push({
-        position: right,
-        orientation: 'vertical',
-        type: 'distribution',
-        strength: 1 - Math.abs(activeLeft - right) / tolerance
-      });
-    }
-    
-    if (Math.abs(activeRight - left) < tolerance) {
-      guides.push({
-        position: left,
-        orientation: 'vertical',
-        type: 'distribution',
-        strength: 1 - Math.abs(activeRight - left) / tolerance
-      });
-    }
-    
-    // Equal vertical spacing
-    if (Math.abs(activeTop - bottom) < tolerance) {
-      guides.push({
-        position: bottom,
+        position: sectionBottom,
         orientation: 'horizontal',
         type: 'distribution',
-        strength: 1 - Math.abs(activeTop - bottom) / tolerance
-      });
-    }
-    
-    if (Math.abs(activeBottom - top) < tolerance) {
-      guides.push({
-        position: top,
-        orientation: 'horizontal',
-        type: 'distribution',
-        strength: 1 - Math.abs(activeBottom - top) / tolerance
+        label: `Snap to (${section.name}) bottom`,
+        strength: 1
       });
     }
   });
   
-  // Sort guides by strength (strongest first)
+  // Sort by strength
   return guides.sort((a, b) => (b.strength || 0) - (a.strength || 0));
-}
-
-/**
- * Highlight selected object with visual indicators
- */
-export function highlightSelectedSection(
-  canvas: fabric.Canvas, 
-  selectedObject: fabric.Object | null,
-  color: string = '#4285f4'
-): void {
-  if (!canvas) return;
-  
-  // Remove all existing highlights
-  const existingHighlights = canvas.getObjects().filter(obj => (obj as any)._isHighlight);
-  existingHighlights.forEach(obj => canvas.remove(obj));
-  
-  if (!selectedObject) return;
-  
-  // Get object bounds
-  const left = selectedObject.left || 0;
-  const top = selectedObject.top || 0;
-  const width = (selectedObject.width || 0) * (selectedObject.scaleX || 1);
-  const height = (selectedObject.height || 0) * (selectedObject.scaleY || 1);
-  
-  // Create border highlight
-  const border = new fabric.Rect({
-    left: left - 2,
-    top: top - 2,
-    width: width + 4,
-    height: height + 4,
-    fill: 'transparent',
-    stroke: color,
-    strokeWidth: 2,
-    strokeDashArray: [5, 5],
-    selectable: false,
-    evented: false
-  });
-  (border as any)._isHighlight = true;
-  
-  // Create corner handles
-  const handleSize = 8;
-  const handles = [
-    // Top left
-    new fabric.Rect({
-      left: left - handleSize / 2,
-      top: top - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Top right
-    new fabric.Rect({
-      left: left + width - handleSize / 2,
-      top: top - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Bottom left
-    new fabric.Rect({
-      left: left - handleSize / 2,
-      top: top + height - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Bottom right
-    new fabric.Rect({
-      left: left + width - handleSize / 2,
-      top: top + height - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Middle top
-    new fabric.Rect({
-      left: left + width / 2 - handleSize / 2,
-      top: top - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Middle right
-    new fabric.Rect({
-      left: left + width - handleSize / 2,
-      top: top + height / 2 - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Middle bottom
-    new fabric.Rect({
-      left: left + width / 2 - handleSize / 2,
-      top: top + height - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    }),
-    // Middle left
-    new fabric.Rect({
-      left: left - handleSize / 2,
-      top: top + height / 2 - handleSize / 2,
-      width: handleSize,
-      height: handleSize,
-      fill: color,
-      selectable: false,
-      evented: false
-    })
-  ];
-  
-  // Add highlighting elements to canvas
-  canvas.add(border);
-  handles.forEach(handle => {
-    (handle as any)._isHighlight = true;
-    canvas.add(handle);
-  });
-  
-  // Make sure highlights are behind the selected object
-  border.moveTo(0);
-  handles.forEach(handle => handle.moveTo(1));
-  selectedObject.moveTo(handles.length + 1);
-  
-  canvas.renderAll();
 }

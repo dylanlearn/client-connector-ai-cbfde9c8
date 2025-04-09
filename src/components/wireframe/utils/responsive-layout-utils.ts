@@ -1,208 +1,216 @@
 
-import { DeviceType } from './responsive-utils';
-import { ResponsiveLayoutSettings, AdaptiveWireframeSection } from './section-types';
+import { WireframeCanvasConfig } from './types';
 
-/**
- * Get responsive layout settings for a section based on device type
- */
-export function getResponsiveLayout(
-  section: AdaptiveWireframeSection, 
-  device: DeviceType
-): ResponsiveLayoutSettings {
-  const defaultLayout: ResponsiveLayoutSettings = {
-    layout: 'flex',
-    alignItems: 'center',
-    justifyContent: 'between',
-    wrap: true
+export type ResponsiveLayoutSettings = {
+  device: 'desktop' | 'tablet' | 'mobile';
+  columns: number;
+  breakpoint: number;
+};
+
+export interface AdaptiveWireframeSection {
+  id: string;
+  visible: {
+    desktop: boolean;
+    tablet: boolean;
+    mobile: boolean;
   };
+  layout: {
+    desktop: any;
+    tablet?: any;
+    mobile?: any;
+  };
+  dimensions: {
+    desktop: { width: number; height: number };
+    tablet?: { width: number; height: number };
+    mobile?: { width: number; height: number };
+  };
+  [key: string]: any;
+}
+
+// Responsive layout utility functions
+export function getResponsiveLayout(
+  section: any,
+  device: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): any {
+  if (!section) return null;
   
-  // Get base layout
-  let baseLayout: ResponsiveLayoutSettings;
-  
-  if (section.layout) {
-    if (typeof section.layout === 'string') {
-      // Convert string layout to ResponsiveLayoutSettings format
-      baseLayout = {
-        layout: (section.layout === 'grid' ? 'grid' : 
-                section.layout === 'stack' ? 'stack' : 
-                section.layout === 'columns' ? 'columns' : 'flex') as 'flex' | 'grid' | 'stack' | 'columns',
-        alignItems: (section.layout === 'centered' ? 'center' : 'start') as 'start' | 'center' | 'end' | 'stretch',
-        justifyContent: (section.layout === 'centered' ? 'center' : 
-                        section.layout === 'right' ? 'end' : 
-                        section.layout === 'between' ? 'between' : 'start') as 'start' | 'center' | 'end' | 'between' | 'around',
-        columns: 1,
-        gap: 16,
-        wrap: true
-      };
-    } else {
-      // Convert the object layout to ResponsiveLayoutSettings format
-      baseLayout = {
-        layout: ((section.layout.type || 'flex') as 'flex' | 'grid' | 'stack' | 'columns'),
-        alignItems: ((section.layout.alignment || 'center') as 'start' | 'center' | 'end' | 'stretch'),
-        justifyContent: ((section.layout.justifyContent || 'between') as 'start' | 'center' | 'end' | 'between' | 'around'),
-        columns: section.layout.columns || 1,
-        gap: section.layout.gap || 16,
-        wrap: section.layout.wrap !== false
-      };
+  if (section.layout && typeof section.layout === 'object') {
+    // If it's an adaptive section with device-specific layouts
+    if (section.layout[device]) {
+      return section.layout[device];
     }
-  } else {
-    baseLayout = defaultLayout;
+    // Fallback to desktop layout if specific device layout not found
+    return section.layout.desktop || section.layout;
   }
   
-  // Apply device-specific overrides if available
-  if (section.responsive && section.responsive[device]?.layout) {
+  // Return the layout as-is if it's not device-specific
+  return section.layout;
+}
+
+export function isSectionVisibleOnDevice(
+  section: any,
+  device: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): boolean {
+  if (!section) return false;
+  
+  // If the section has a visibility object, check it
+  if (section.visible && typeof section.visible === 'object') {
+    return section.visible[device] !== false; // Default to true if not specified
+  }
+  
+  // If no visibility config, assume visible
+  return true;
+}
+
+export function getResponsiveContent(
+  content: any,
+  device: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): any {
+  if (!content) return null;
+  
+  if (content[device]) {
+    return content[device];
+  }
+  
+  // Fallback to desktop or the content itself
+  return content.desktop || content;
+}
+
+export function getResponsiveStyles(
+  styles: any,
+  device: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): any {
+  if (!styles) return {};
+  
+  // Check for device-specific styles
+  if (styles[device]) {
     return {
-      ...baseLayout,
-      ...section.responsive[device].layout,
-      // Ensure proper type casting for these properties
-      layout: (section.responsive[device].layout?.layout || baseLayout.layout),
-      alignItems: (section.responsive[device].layout?.alignItems || baseLayout.alignItems),
-      justifyContent: (section.responsive[device].layout?.justifyContent || baseLayout.justifyContent)
+      ...styles.base, // Apply base styles if they exist
+      ...styles[device] // Override with device-specific styles
     };
   }
   
-  // Device-specific defaults if no explicit settings
-  switch (device) {
-    case 'mobile':
-      return {
-        ...baseLayout,
-        // On mobile, prefer stack layout with full width columns
-        layout: 'stack',
-        columns: 1
-      };
-    case 'tablet':
-      return {
-        ...baseLayout,
-        // On tablet, reduce columns
-        columns: Math.min(baseLayout.columns || 2, 2)
-      };
-    case 'desktop':
-    default:
-      return baseLayout;
-  }
+  // Return base styles or the styles object itself
+  return styles.base || styles;
 }
 
-/**
- * Check if section is visible on the specified device
- */
-export function isSectionVisibleOnDevice(section: AdaptiveWireframeSection, device: DeviceType): boolean {
-  if (!section.responsive) return true;
+export function getResponsiveTailwindClasses(
+  classes: string,
+  device: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): string {
+  if (!classes) return '';
   
-  return section.responsive[device]?.visible !== false;
-}
-
-/**
- * Get device-specific content for a section
- */
-export function getResponsiveContent(section: AdaptiveWireframeSection, device: DeviceType): any {
-  if (!section.responsive || !section.responsive[device]?.content) {
-    return section.content || {};
-  }
-  
-  return {
-    ...section.content,
-    ...section.responsive[device].content
+  const classesByDevice = {
+    desktop: [],
+    tablet: [],
+    mobile: []
   };
+  
+  // Parse classes and categorize them
+  classes.split(' ').forEach(cls => {
+    if (cls.startsWith('md:') || cls.startsWith('lg:') || cls.startsWith('xl:')) {
+      classesByDevice.desktop.push(cls);
+    } else if (cls.startsWith('sm:')) {
+      classesByDevice.tablet.push(cls);
+    } else {
+      // Base classes apply to all devices
+      classesByDevice.desktop.push(cls);
+      classesByDevice.tablet.push(cls);
+      classesByDevice.mobile.push(cls);
+    }
+  });
+  
+  return classesByDevice[device].join(' ');
 }
 
-/**
- * Get responsive styles for a section
- */
-export function getResponsiveStyles(
-  section: AdaptiveWireframeSection, 
-  device: DeviceType
-): Record<string, any> {
-  if (!section.responsive || !section.responsive[device]?.styles) {
-    return section.styleProperties || {};
-  }
-  
-  return {
-    ...section.styleProperties,
-    ...section.responsive[device].styles
-  };
-}
-
-/**
- * Convert responsive settings to Tailwind classes
- */
-export function getResponsiveTailwindClasses(section: AdaptiveWireframeSection): string {
-  // Base classes
-  let classes = '';
-  
-  // Layout type
-  if (typeof section.layout === 'object' && section.layout?.type === 'grid') {
-    classes += 'grid ';
-  } else if (typeof section.layout === 'object' && section.layout?.type === 'flex') {
-    classes += 'flex ';
-  } else if (typeof section.layout === 'string') {
-    // Handle string layout
-    if (section.layout === 'grid') {
-      classes += 'grid ';
-    } else if (section.layout === 'flex') {
-      classes += 'flex ';
-    }
-  }
-  
-  // Handle responsive variations
-  if (section.responsive) {
-    if (section.responsive.mobile?.layout?.layout === 'stack') {
-      classes += 'flex-col sm:flex-row ';
-    }
-    
-    if (section.responsive.tablet?.layout?.columns) {
-      classes += `md:grid-cols-${section.responsive.tablet.layout.columns} `;
-    }
-    
-    if (section.responsive.desktop?.layout?.columns) {
-      classes += `lg:grid-cols-${section.responsive.desktop.layout.columns} `;
-    }
-  }
-  
-  return classes.trim();
-}
-
-/**
- * Create a responsive variation of a section for a specific device
- */
 export function createResponsiveVariation(
-  section: AdaptiveWireframeSection, 
-  device: DeviceType, 
-  updates: Partial<AdaptiveWireframeSection['responsive'][DeviceType]>
+  section: any,
+  device: 'desktop' | 'tablet' | 'mobile',
+  overrides: any = {}
 ): AdaptiveWireframeSection {
-  const newSection = { ...section };
+  if (!section) return {} as AdaptiveWireframeSection;
   
-  if (!newSection.responsive) {
-    newSection.responsive = {};
-  }
-  
-  newSection.responsive[device] = {
-    ...newSection.responsive[device],
-    ...updates
+  // Start with a basic adaptive section
+  const adaptiveSection: Partial<AdaptiveWireframeSection> = {
+    id: section.id,
+    name: section.name,
+    sectionType: section.sectionType,
+    visible: {
+      desktop: true,
+      tablet: true,
+      mobile: true
+    },
+    layout: {
+      desktop: section.layout || {}
+    },
+    dimensions: {
+      desktop: section.dimensions || { width: 1200, height: 600 }
+    }
   };
   
-  return newSection;
+  // Add device-specific variations
+  if (device === 'tablet') {
+    adaptiveSection.layout = {
+      ...adaptiveSection.layout,
+      tablet: {
+        ...adaptiveSection.layout?.desktop,
+        // Default tablet modifications
+        columns: 8,
+        ...overrides.layout
+      }
+    };
+    
+    adaptiveSection.dimensions = {
+      ...adaptiveSection.dimensions,
+      tablet: {
+        width: 768,
+        height: adaptiveSection.dimensions?.desktop?.height || 600,
+        ...overrides.dimensions
+      }
+    };
+  }
+  
+  if (device === 'mobile') {
+    adaptiveSection.layout = {
+      ...adaptiveSection.layout,
+      mobile: {
+        ...adaptiveSection.layout?.desktop,
+        // Default mobile modifications
+        columns: 4,
+        ...overrides.layout
+      }
+    };
+    
+    adaptiveSection.dimensions = {
+      ...adaptiveSection.dimensions,
+      mobile: {
+        width: 375,
+        height: adaptiveSection.dimensions?.desktop?.height || 600,
+        ...overrides.dimensions
+      }
+    };
+  }
+  
+  return adaptiveSection as AdaptiveWireframeSection;
 }
 
-/**
- * Make a section fully responsive
- */
-export function makeFullyResponsive(section: AdaptiveWireframeSection): AdaptiveWireframeSection {
-  // Create a correctly typed responsive object
-  const responsive: AdaptiveWireframeSection['responsive'] = {};
+export function makeFullyResponsive(wireframeData: any): any {
+  if (!wireframeData || !wireframeData.sections) return wireframeData;
   
-  // Get layout for each device type
-  const desktopLayout = getResponsiveLayout(section, 'desktop');
-  const tabletLayout = getResponsiveLayout(section, 'tablet');
-  const mobileLayout = getResponsiveLayout(section, 'mobile');
+  const responsiveSections = wireframeData.sections.map((section: any) => {
+    // Skip if section is already responsive
+    if (
+      section.layout && 
+      (section.layout.desktop || section.layout.tablet || section.layout.mobile)
+    ) {
+      return section;
+    }
+    
+    return createResponsiveVariation(section, 'desktop');
+  });
   
-  // Apply layout settings to responsive object
-  responsive['desktop'] = { layout: { ...desktopLayout } };
-  responsive['tablet'] = { layout: { ...tabletLayout } };
-  responsive['mobile'] = { layout: { ...mobileLayout } };
-  
-  // Return the updated section
   return {
-    ...section,
-    responsive
+    ...wireframeData,
+    sections: responsiveSections
   };
 }

@@ -1,143 +1,181 @@
 
 /**
- * Responsive utilities for wireframe components
+ * Utility functions for responsive design
  */
+import { TAILWIND_BREAKPOINTS } from './grid-utils';
 
-export type DeviceType = 'mobile' | 'tablet' | 'desktop';
-export type BreakpointKey = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-
-export interface ResponsiveOptions {
-  device: DeviceType | string;
-  width: number;
+/**
+ * Determine device type based on width
+ */
+export function getDeviceTypeFromWidth(width: number): 'mobile' | 'tablet' | 'desktop' {
+  if (width < TAILWIND_BREAKPOINTS.sm) return 'mobile';
+  if (width < TAILWIND_BREAKPOINTS.lg) return 'tablet';
+  return 'desktop';
 }
 
-export const DEFAULT_DEVICE_WIDTHS = {
-  mobile: 375,
-  tablet: 768,
-  desktop: 1200
-};
-
-export const BREAKPOINT_VALUES = {
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536
-};
-
-export const getResponsiveClasses = (device: string): string => {
-  switch (device) {
-    case 'mobile':
-      return 'w-full max-w-[375px]';
-    case 'tablet':
-      return 'w-full max-w-[768px]';
-    case 'desktop':
-    default:
-      return 'w-full';
+/**
+ * Get the device-specific value from a responsive object
+ */
+export function getResponsiveValue<T>(
+  responsiveObj: { 
+    desktop?: T; 
+    tablet?: T; 
+    mobile?: T;
+    [key: string]: T | undefined;
+  } | T,
+  device: 'desktop' | 'tablet' | 'mobile'
+): T | undefined {
+  // If not an object, return as is
+  if (typeof responsiveObj !== 'object' || responsiveObj === null) {
+    return responsiveObj as T;
   }
-};
-
-export const getDeviceFromWidth = (width: number): DeviceType => {
-  if (width < 640) return 'mobile';
-  if (width < 1024) return 'tablet';
-  return 'desktop';
-};
-
-export const shouldShowOnDevice = (
-  visibilityConfig: { mobile?: boolean; tablet?: boolean; desktop?: boolean } | undefined,
-  device: string
-): boolean => {
-  if (!visibilityConfig) return true;
   
-  switch (device) {
-    case 'mobile':
-      return visibilityConfig.mobile !== false;
-    case 'tablet':
-      return visibilityConfig.tablet !== false;
-    case 'desktop':
-    default:
-      return visibilityConfig.desktop !== false;
-  }
-};
-
-export const getMediaQueryForDevice = (device: string): string => {
-  switch (device) {
-    case 'mobile':
-      return '@media (max-width: 639px)';
-    case 'tablet':
-      return '@media (min-width: 640px) and (max-width: 1023px)';
-    case 'desktop':
-    default:
-      return '@media (min-width: 1024px)';
-  }
-};
-
-// Add missing functions for responsive utils
-export const getBreakpointForDevice = (device: DeviceType): BreakpointKey => {
-  switch (device) {
-    case 'mobile':
-      return 'sm';
-    case 'tablet':
-      return 'md';
-    case 'desktop':
-      return 'lg';
-    default:
-      return 'lg';
-  }
-};
-
-export const getResponsiveStyles = (device: DeviceType, baseStyles: Record<string, any> = {}): Record<string, any> => {
-  // This function returns responsive styles based on device type
-  const deviceSpecificStyles = {
-    ...baseStyles,
-    // Add device-specific style overrides
-    ...(device === 'mobile' ? { width: '100%', maxWidth: '375px' } : {}),
-    ...(device === 'tablet' ? { width: '100%', maxWidth: '768px' } : {}),
-    ...(device === 'desktop' ? { width: '100%' } : {})
+  // If it has device-specific keys
+  const objWithDeviceKeys = responsiveObj as { 
+    desktop?: T; 
+    tablet?: T;
+    mobile?: T; 
   };
   
-  return deviceSpecificStyles;
-};
-
-export const isFluidLayout = (layoutType: string): boolean => {
-  return ['fluid', 'responsive', 'adaptive'].includes(layoutType);
-};
-
-export const getResponsiveGridColumns = (device: DeviceType, defaultColumns: number = 12): number => {
-  switch (device) {
-    case 'mobile':
-      return 4;
-    case 'tablet':
-      return 8;
-    case 'desktop':
-      return defaultColumns;
-    default:
-      return defaultColumns;
+  if (
+    'desktop' in objWithDeviceKeys || 
+    'tablet' in objWithDeviceKeys || 
+    'mobile' in objWithDeviceKeys
+  ) {
+    // Return device-specific value or fallback
+    return (
+      objWithDeviceKeys[device] || 
+      objWithDeviceKeys.desktop || 
+      objWithDeviceKeys.tablet || 
+      objWithDeviceKeys.mobile
+    );
   }
-};
+  
+  // Return as-is if not a responsive object
+  return responsiveObj as T;
+}
 
-export const getResponsiveGutterSize = (device: DeviceType, defaultGutter: number = 16): number => {
-  switch (device) {
-    case 'mobile':
-      return 8;
-    case 'tablet':
-      return 12;
-    case 'desktop':
-      return defaultGutter;
-    default:
-      return defaultGutter;
+/**
+ * Calculate responsive dimensions based on container width
+ */
+export function calculateResponsiveDimensions(
+  baseWidth: number,
+  baseHeight: number,
+  containerWidth: number,
+  maintainAspectRatio: boolean = true
+): { width: number; height: number } {
+  if (containerWidth >= baseWidth) {
+    // No need to resize
+    return { width: baseWidth, height: baseHeight };
   }
-};
+  
+  // Calculate new width (constrained by container)
+  const width = Math.min(baseWidth, containerWidth);
+  
+  // Calculate new height
+  let height = baseHeight;
+  if (maintainAspectRatio) {
+    const aspectRatio = baseWidth / baseHeight;
+    height = width / aspectRatio;
+  }
+  
+  return { width, height };
+}
 
-export const responsiveTailwindClasses = (device: DeviceType): string => {
+/**
+ * Apply responsive modifications to a component
+ */
+export function makeComponentResponsive(
+  component: any,
+  device: 'desktop' | 'tablet' | 'mobile'
+): any {
+  if (!component) return component;
+  
+  // Start with a clone of the component
+  const responsiveComponent = { ...component };
+  
+  // Apply device-specific adjustments
   switch (device) {
-    case 'mobile':
-      return 'w-full px-4';
     case 'tablet':
-      return 'w-full max-w-3xl px-6';
-    case 'desktop':
-      return 'w-full max-w-7xl px-8';
+      // For tablets, adjust font sizes and paddings
+      if (responsiveComponent.style) {
+        responsiveComponent.style = {
+          ...responsiveComponent.style,
+          fontSize: scaleValue(responsiveComponent.style.fontSize, 0.9),
+          padding: scaleValue(responsiveComponent.style.padding, 0.9),
+          margin: scaleValue(responsiveComponent.style.margin, 0.9)
+        };
+      }
+      break;
+      
+    case 'mobile':
+      // For mobile, make more significant adjustments
+      if (responsiveComponent.style) {
+        responsiveComponent.style = {
+          ...responsiveComponent.style,
+          fontSize: scaleValue(responsiveComponent.style.fontSize, 0.8),
+          padding: scaleValue(responsiveComponent.style.padding, 0.8),
+          margin: scaleValue(responsiveComponent.style.margin, 0.7)
+        };
+      }
+      
+      // Stack items for mobile
+      if (responsiveComponent.layout && responsiveComponent.layout.type === 'flex') {
+        responsiveComponent.layout.direction = 'column';
+      }
+      break;
+      
     default:
-      return 'w-full';
+      // Desktop uses default values
+      break;
   }
-};
+  
+  return responsiveComponent;
+}
+
+/**
+ * Scale a CSS value by a factor
+ */
+function scaleValue(value: string | number | undefined, factor: number): string | number | undefined {
+  if (value === undefined) return undefined;
+  
+  // Handle numeric values
+  if (typeof value === 'number') {
+    return value * factor;
+  }
+  
+  // Handle string values with units
+  if (typeof value === 'string') {
+    // Parse values like '10px', '1.5rem', etc.
+    const match = value.match(/^([\d.]+)([a-z%]+)$/);
+    if (match) {
+      const numValue = parseFloat(match[1]);
+      const unit = match[2];
+      return `${(numValue * factor).toFixed(2)}${unit}`;
+    }
+    
+    // Handle space-separated values like padding: '10px 20px'
+    if (value.includes(' ')) {
+      return value.split(' ')
+        .map(part => scaleValue(part, factor))
+        .join(' ');
+    }
+  }
+  
+  return value;
+}
+
+/**
+ * Convert px value to rem value
+ */
+export function pxToRem(px: number, baseSize: number = 16): string {
+  return `${(px / baseSize).toFixed(3)}rem`;
+}
+
+/**
+ * Convert rem value to px value
+ */
+export function remToPx(rem: number | string, baseSize: number = 16): number {
+  const remValue = typeof rem === 'string' ? parseFloat(rem) : rem;
+  return remValue * baseSize;
+}

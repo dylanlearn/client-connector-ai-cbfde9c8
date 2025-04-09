@@ -1,173 +1,118 @@
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { v4 as uuidv4 } from 'uuid';
+
+interface HistoryState {
+  json: string;
+  name: string;
+  timestamp: number;
+}
 
 interface UseCanvasHistoryOptions {
   canvas: fabric.Canvas | null;
   maxHistorySteps?: number;
-  debounceMs?: number;
   saveInitialState?: boolean;
-}
-
-interface HistoryEntry {
-  id: string;
-  state: string;
-  timestamp: number;
-  description: string;
 }
 
 export default function useCanvasHistory({
   canvas,
-  maxHistorySteps = 30,
-  debounceMs = 500,
-  saveInitialState = true
+  maxHistorySteps = 50,
+  saveInitialState = false
 }: UseCanvasHistoryOptions) {
-  const [historyStack, setHistoryStack] = useState<HistoryEntry[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const [canUndo, setCanUndo] = useState<boolean>(false);
-  const [canRedo, setCanRedo] = useState<boolean>(false);
-  
-  const pendingSaveRef = useRef<NodeJS.Timeout | null>(null);
-  const ignoreChanges = useRef<boolean>(false);
-  
-  // Initialize history with current canvas state
-  useEffect(() => {
-    if (canvas && saveInitialState) {
-      saveHistoryState('Initial state');
-    }
-  }, [canvas, saveInitialState]);
-  
-  // Update undo/redo availability
-  useEffect(() => {
-    setCanUndo(historyIndex > 0);
-    setCanRedo(historyIndex < historyStack.length - 1);
-  }, [historyIndex, historyStack.length]);
-  
-  // Set up canvas event listeners
-  useEffect(() => {
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(-1);
+  const [isHistoryAction, setIsHistoryAction] = useState<boolean>(false);
+
+  // Save the current state to history
+  const saveHistoryState = useCallback((name: string = 'Canvas state') => {
     if (!canvas) return;
     
-    const handleObjectModified = () => {
-      if (ignoreChanges.current) return;
-      debounceSaveHistory('Object modified');
-    };
+    const canvasJSON = JSON.stringify(canvas.toJSON(['id', 'name', 'data']));
     
-    const handleObjectAdded = (e: fabric.IEvent) => {
-      if (ignoreChanges.current) return;
-      
-      // Skip temporary objects like selection borders
-      if ((e.target as any)?.temporary) return;
-      
-      debounceSaveHistory('Object added');
-    };
-    
-    const handleObjectRemoved = () => {
-      if (ignoreChanges.current) return;
-      debounceSaveHistory('Object removed');
-    };
-    
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
-    
-    return () => {
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
-    };
-  }, [canvas]);
-  
-  const debounceSaveHistory = useCallback((description: string) => {
-    if (pendingSaveRef.current) {
-      clearTimeout(pendingSaveRef.current);
-    }
-    
-    pendingSaveRef.current = setTimeout(() => {
-      saveHistoryState(description);
-      pendingSaveRef.current = null;
-    }, debounceMs);
-  }, [debounceMs]);
-  
-  const saveHistoryState = useCallback((description: string = 'Canvas state') => {
-    if (!canvas) return;
-    
-    const state = JSON.stringify(canvas.toJSON(['id', 'name', 'data']));
-    const entry: HistoryEntry = {
-      id: uuidv4(),
-      state,
-      timestamp: Date.now(),
-      description
-    };
-    
-    setHistoryStack(prevStack => {
-      // If we're not at the end of the stack, remove future states
-      const newStack = prevStack.slice(0, historyIndex + 1);
+    setHistory(prevHistory => {
+      // Get the current history up to currentIndex
+      const newHistory = prevHistory.slice(0, currentIndex + 1);
       
       // Add new state
-      const updatedStack = [...newStack, entry];
+      newHistory.push({
+        json: canvasJSON,
+        name,
+        timestamp: Date.now()
+      });
       
-      // Limit stack size
-      if (updatedStack.length > maxHistorySteps) {
-        return updatedStack.slice(updatedStack.length - maxHistorySteps);
+      // Limit history size
+      if (newHistory.length > maxHistorySteps) {
+        return newHistory.slice(newHistory.length - maxHistorySteps);
       }
       
-      return updatedStack;
+      return newHistory;
     });
     
-    setHistoryIndex(prev => {
-      const newIndex = Math.min(prev + 1, maxHistorySteps - 1);
-      return newIndex;
+    setCurrentIndex(prevIndex => {
+      const newIndex = prevIndex + 1;
+      return Math.min(newIndex, maxHistorySteps - 1);
     });
-  }, [canvas, historyIndex, maxHistorySteps]);
+  }, [canvas, currentIndex, maxHistorySteps]);
   
+  // Undo the last action
   const undo = useCallback(() => {
-    if (!canvas || !canUndo) return;
+    if (!canvas || currentIndex <= 0) return;
     
-    const newIndex = historyIndex - 1;
-    const entry = historyStack[newIndex];
+    setIsHistoryAction(true);
     
-    if (entry) {
-      ignoreChanges.current = true;
-      
-      canvas.loadFromJSON(JSON.parse(entry.state), () => {
+    const newIndex = currentIndex - 1;
+    const stateToRestore = history[newIndex];
+    
+    if (stateToRestore) {
+      canvas.loadFromJSON(JSON.parse(stateToRestore.json), () => {
         canvas.renderAll();
-        ignoreChanges.current = false;
-        setHistoryIndex(newIndex);
+        setCurrentIndex(newIndex);
+        setIsHistoryAction(false);
       });
+    } else {
+      setIsHistoryAction(false);
     }
-  }, [canvas, canUndo, historyIndex, historyStack]);
+  }, [canvas, currentIndex, history]);
   
+  // Redo the last undone action
   const redo = useCallback(() => {
-    if (!canvas || !canRedo) return;
+    if (!canvas || currentIndex >= history.length - 1) return;
     
-    const newIndex = historyIndex + 1;
-    const entry = historyStack[newIndex];
+    setIsHistoryAction(true);
     
-    if (entry) {
-      ignoreChanges.current = true;
-      
-      canvas.loadFromJSON(JSON.parse(entry.state), () => {
+    const newIndex = currentIndex + 1;
+    const stateToRestore = history[newIndex];
+    
+    if (stateToRestore) {
+      canvas.loadFromJSON(JSON.parse(stateToRestore.json), () => {
         canvas.renderAll();
-        ignoreChanges.current = false;
-        setHistoryIndex(newIndex);
+        setCurrentIndex(newIndex);
+        setIsHistoryAction(false);
       });
+    } else {
+      setIsHistoryAction(false);
     }
-  }, [canvas, canRedo, historyIndex, historyStack]);
+  }, [canvas, currentIndex, history]);
   
-  const clearHistory = useCallback(() => {
-    setHistoryStack([]);
-    setHistoryIndex(-1);
-  }, []);
+  // Initialize with canvas
+  useEffect(() => {
+    if (canvas && saveInitialState && history.length === 0) {
+      saveHistoryState('Initial state');
+    }
+  }, [canvas, saveInitialState, history.length, saveHistoryState]);
+  
+  // Track whether undo/redo are available
+  const canUndo = currentIndex > 0;
+  const canRedo = currentIndex < history.length - 1;
   
   return {
-    canUndo,
-    canRedo,
+    history,
+    currentIndex,
+    saveHistoryState,
     undo,
     redo,
-    clearHistory,
-    saveHistoryState,
-    historyStack,
-    historyIndex
+    canUndo,
+    canRedo,
+    isHistoryAction
   };
 }

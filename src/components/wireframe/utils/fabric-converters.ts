@@ -1,3 +1,4 @@
+
 import { fabric } from 'fabric';
 import { SectionRenderingOptions } from './types';
 
@@ -76,7 +77,7 @@ export function objectToFabric(obj: Record<string, any>): fabric.Object {
       blur: obj.shadow.blur,
       offsetX: obj.shadow.offsetX,
       offsetY: obj.shadow.offsetY
-    }) : null
+    }) : undefined
   });
   
   // Add more object types and property assignments as needed
