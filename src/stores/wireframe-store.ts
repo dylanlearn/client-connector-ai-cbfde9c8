@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,8 +16,8 @@ export interface WireframeSection {
   copySuggestions?: any[];
   mobileLayout?: any;
   animationSuggestions?: any[];
-  dimensions?: { width: number; height: number }; // Adding dimensions property to match
-  position?: { x: number, y: number }; // Adding position property to be consistent
+  dimensions?: { width: number; height: number }; 
+  position?: { x: number, y: number }; 
 }
 
 export interface WireframeState {
@@ -46,6 +47,7 @@ interface WireframeStoreState {
   activeSection: string | null;
   activeComponentId: string | null;
   hiddenSections: string[];
+  selectedElements: string[];
   
   // History for undo/redo
   undoStack: WireframeState[];
@@ -58,6 +60,9 @@ interface WireframeStoreState {
     showGrid: boolean;
     snapToGrid: boolean;
     gridSize: number;
+    gridType: 'lines' | 'dots' | 'columns';
+    snapTolerance: number;
+    showSmartGuides: boolean;
   };
   
   // UI preferences
@@ -77,6 +82,15 @@ interface WireframeStoreState {
   setActiveComponent: (componentId: string | null) => void;
   toggleSectionVisibility: (sectionId: string) => void;
   updateCanvasSettings: (updates: Partial<WireframeStoreState['canvasSettings']>) => void;
+  
+  // Selection management
+  selectElement: (elementId: string) => void;
+  deselectElement: (elementId: string) => void;
+  clearSelection: () => void;
+  
+  // Layout management
+  applyGridLayout: (columns: number, gapSize: number) => void;
+  redistributeSections: () => void;
   
   // Device and display toggles
   setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
@@ -100,6 +114,7 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
   activeSection: null,
   activeComponentId: null,
   hiddenSections: [],
+  selectedElements: [],
   undoStack: [],
   redoStack: [],
   canvasSettings: {
@@ -108,6 +123,9 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
     showGrid: true,
     snapToGrid: true,
     gridSize: 8,
+    gridType: 'lines',
+    snapTolerance: 5,
+    showSmartGuides: true,
   },
   
   // UI preferences with defaults
@@ -197,6 +215,9 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
       // Also remove from hiddenSections if it's there
       const hiddenSections = state.hiddenSections.filter(id => id !== sectionId);
       
+      // Remove from selectedElements if it's there
+      const selectedElements = state.selectedElements.filter(id => id !== sectionId);
+      
       return {
         wireframe: {
           ...state.wireframe,
@@ -207,6 +228,7 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
         redoStack: [],
         activeSection,
         hiddenSections,
+        selectedElements,
       };
     });
   },
@@ -282,7 +304,147 @@ export const useWireframeStore = create<WireframeStoreState>((set, get) => ({
     }));
   },
   
-  // New UI state management functions
+  // Element selection management
+  selectElement: (elementId) => {
+    set(state => {
+      if (state.selectedElements.includes(elementId)) return state;
+      
+      return {
+        selectedElements: [...state.selectedElements, elementId]
+      };
+    });
+  },
+  
+  deselectElement: (elementId) => {
+    set(state => ({
+      selectedElements: state.selectedElements.filter(id => id !== elementId)
+    }));
+  },
+  
+  clearSelection: () => {
+    set({ selectedElements: [] });
+  },
+  
+  // Layout management
+  applyGridLayout: (columns = 3, gapSize = 16) => {
+    set(state => {
+      // Save current state for undo
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
+      
+      const { sections } = state.wireframe;
+      const { gridSize } = state.canvasSettings;
+      
+      let rowHeight = 0;
+      let currentRow = 0;
+      let currentColumn = 0;
+      
+      const updatedSections = sections.map((section, index) => {
+        // If we've reached the max columns, move to next row
+        if (currentColumn >= columns) {
+          currentColumn = 0;
+          currentRow++;
+        }
+        
+        // Calculate position based on grid coordinates
+        const padding = gridSize * 2;
+        const availableWidth = (1200 - (padding * 2)); // Assuming canvas width
+        const columnWidth = (availableWidth - (gapSize * (columns - 1))) / columns;
+        
+        const x = padding + (currentColumn * (columnWidth + gapSize));
+        const y = padding + (currentRow * (rowHeight + gapSize));
+        
+        // Update for next iteration
+        currentColumn++;
+        
+        // Adjust height for the current section
+        const height = section.dimensions?.height || 200;
+        rowHeight = Math.max(rowHeight, height);
+        
+        // Return updated section
+        return {
+          ...section,
+          position: { x, y },
+          dimensions: {
+            width: columnWidth,
+            height
+          }
+        };
+      });
+      
+      return {
+        wireframe: {
+          ...state.wireframe,
+          sections: updatedSections,
+          lastUpdated: new Date().toISOString(),
+        },
+        undoStack,
+        redoStack: [],
+      };
+    });
+  },
+  
+  redistributeSections: () => {
+    set(state => {
+      // Save current state for undo
+      const undoStack = [...state.undoStack, { ...state.wireframe }];
+      
+      const { sections } = state.wireframe;
+      
+      if (sections.length === 0) {
+        return { undoStack };
+      }
+      
+      const padding = 20;
+      const canvasWidth = 1200; // Assuming fixed canvas width
+      const canvasHeight = 800; // Assuming fixed canvas height
+      
+      // Calculate total height of all sections
+      const totalHeight = sections.reduce((sum, section) => 
+        sum + (section.dimensions?.height || 200), 0);
+      
+      // Add spacing between sections
+      const totalSpacing = (sections.length - 1) * padding;
+      
+      // Available height
+      const availableHeight = canvasHeight - (padding * 2);
+      
+      // Scale factor if total height exceeds available height
+      const scale = Math.min(1, availableHeight / (totalHeight + totalSpacing));
+      
+      // Position sections one after another vertically
+      let currentY = padding;
+      
+      const updatedSections = sections.map(section => {
+        const height = (section.dimensions?.height || 200) * scale;
+        const width = Math.min(canvasWidth - (padding * 2), section.dimensions?.width || canvasWidth - (padding * 2));
+        
+        // Center horizontally
+        const x = (canvasWidth - width) / 2;
+        const y = currentY;
+        
+        // Update Y for next section
+        currentY += height + padding;
+        
+        return {
+          ...section,
+          position: { x, y },
+          dimensions: { width, height }
+        };
+      });
+      
+      return {
+        wireframe: {
+          ...state.wireframe,
+          sections: updatedSections,
+          lastUpdated: new Date().toISOString(),
+        },
+        undoStack,
+        redoStack: [],
+      };
+    });
+  },
+  
+  // UI state management functions
   setActiveDevice: (device) => {
     set({ activeDevice: device });
   },

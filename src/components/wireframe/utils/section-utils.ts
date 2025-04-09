@@ -1,120 +1,215 @@
-
-import { v4 as uuidv4 } from 'uuid';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 
 /**
- * Get the default height for a section based on its type
+ * Gets the nearest grid position for coordinates
  */
-export function getSectionDefaultHeight(sectionType: string): number {
-  switch (sectionType) {
-    case 'hero':
-      return 400;
-    case 'features':
-      return 300;
-    case 'testimonials':
-      return 250;
-    case 'cta':
-      return 150;
-    case 'pricing':
-      return 400;
-    case 'contact':
-      return 300;
-    case 'footer':
-      return 200;
-    case 'navigation':
-      return 80;
-    default:
-      return 200;
-  }
-}
-
-/**
- * Get the default width for a section based on device type
- */
-export function getSectionDefaultWidth(deviceType: 'desktop' | 'tablet' | 'mobile'): number {
-  switch (deviceType) {
-    case 'desktop':
-      return 1140;
-    case 'tablet':
-      return 720;
-    case 'mobile':
-      return 320;
-    default:
-      return 1140;
-  }
-}
-
-/**
- * Create a new section with default values
- */
-export function createDefaultSection(
-  sectionType: string,
-  options: Partial<WireframeSection> = {}
-): WireframeSection {
+export const getGridPosition = (x: number, y: number, gridSize: number): { x: number, y: number } => {
   return {
-    id: uuidv4(),
-    name: getDefaultSectionName(sectionType),
-    sectionType,
-    description: `Default ${sectionType} section`,
-    dimensions: {
-      width: options.dimensions?.width || 1140,
-      height: options.dimensions?.height || getSectionDefaultHeight(sectionType)
-    },
-    position: options.position || { x: 0, y: 0 },
-    components: options.components || [],
-    ...options
+    x: Math.round(x / gridSize) * gridSize,
+    y: Math.round(y / gridSize) * gridSize
   };
-}
+};
 
 /**
- * Get the default name for a section based on its type
+ * Calculate bounding boxes for a collection of sections
  */
-export function getDefaultSectionName(sectionType: string): string {
-  // Capitalize first letter and convert camelCase to spaces
-  return sectionType
-    .replace(/([A-Z])/g, ' $1') // Insert space before capital letters
-    .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
-}
+export const calculateSectionBounds = (sections: WireframeSection[]): Array<{ id: string, bounds: DOMRect }> => {
+  return sections.map(section => {
+    const el = document.getElementById(`section-${section.id}`);
+    return {
+      id: section.id,
+      bounds: el ? el.getBoundingClientRect() : new DOMRect(0, 0, 0, 0)
+    };
+  }).filter(item => item.bounds.width > 0 && item.bounds.height > 0);
+};
 
 /**
- * Calculate section positions based on their order
+ * Find alignment guides for a section relative to others
  */
-export function calculateSectionPositions(
-  sections: WireframeSection[],
-  startY: number = 0
-): Record<string, { top: number }> {
-  const positions: Record<string, { top: number }> = {};
-  let currentY = startY;
+export const findAlignmentGuides = (
+  activeId: string,
+  activeBounds: DOMRect,
+  allBounds: Array<{ id: string, bounds: DOMRect }>,
+  tolerance: number = 5
+): Array<{ position: number, orientation: 'horizontal' | 'vertical' }> => {
+  const guides: Array<{ position: number, orientation: 'horizontal' | 'vertical' }> = [];
   
-  sections.forEach(section => {
-    if (!section) return;
+  // Skip if no active bounds
+  if (!activeBounds || !activeId) return guides;
+  
+  // Other sections to compare against
+  const otherBounds = allBounds.filter(b => b.id !== activeId);
+  
+  // Check for horizontal alignments (top, middle, bottom)
+  otherBounds.forEach(({ bounds }) => {
+    // Top edge alignment
+    if (Math.abs(bounds.top - activeBounds.top) <= tolerance) {
+      guides.push({
+        position: bounds.top,
+        orientation: 'horizontal'
+      });
+    }
     
-    positions[section.id] = { top: currentY };
-    currentY += (section.dimensions?.height || getSectionDefaultHeight(section.sectionType)) + 20;
+    // Middle alignment
+    const boundsMiddle = bounds.top + bounds.height / 2;
+    const activeMiddle = activeBounds.top + activeBounds.height / 2;
+    if (Math.abs(boundsMiddle - activeMiddle) <= tolerance) {
+      guides.push({
+        position: boundsMiddle,
+        orientation: 'horizontal'
+      });
+    }
+    
+    // Bottom alignment
+    const boundsBottom = bounds.top + bounds.height;
+    const activeBottom = activeBounds.top + activeBounds.height;
+    if (Math.abs(boundsBottom - activeBottom) <= tolerance) {
+      guides.push({
+        position: boundsBottom,
+        orientation: 'horizontal'
+      });
+    }
+    
+    // Check for vertical alignments (left, center, right)
+    // Left edge alignment
+    if (Math.abs(bounds.left - activeBounds.left) <= tolerance) {
+      guides.push({
+        position: bounds.left,
+        orientation: 'vertical'
+      });
+    }
+    
+    // Center alignment
+    const boundsCenter = bounds.left + bounds.width / 2;
+    const activeCenter = activeBounds.left + activeBounds.width / 2;
+    if (Math.abs(boundsCenter - activeCenter) <= tolerance) {
+      guides.push({
+        position: boundsCenter,
+        orientation: 'vertical'
+      });
+    }
+    
+    // Right alignment
+    const boundsRight = bounds.left + bounds.width;
+    const activeRight = activeBounds.left + activeBounds.width;
+    if (Math.abs(boundsRight - activeRight) <= tolerance) {
+      guides.push({
+        position: boundsRight,
+        orientation: 'vertical'
+      });
+    }
   });
   
-  return positions;
-}
+  return guides;
+};
 
 /**
- * Get device-specific styles for a section
+ * Apply a grid layout to sections
  */
-export function getDeviceSpecificStyles(
-  section: WireframeSection,
-  deviceType: 'desktop' | 'tablet' | 'mobile'
-): any {
-  if (!section.responsiveConfig) return section.styleProperties || {};
+export const applyGridLayout = (
+  sections: WireframeSection[], 
+  columns: number = 3, 
+  gridSize: number = 8,
+  gapSize: number = 16
+): WireframeSection[] => {
+  let rowHeight = 0;
+  let currentRow = 0;
+  let currentColumn = 0;
   
-  const baseStyles = section.styleProperties || {};
-  
-  if (deviceType === 'desktop') {
-    return baseStyles;
+  return sections.map((section, index) => {
+    // If we've reached the max columns, move to next row
+    if (currentColumn >= columns) {
+      currentColumn = 0;
+      currentRow++;
+    }
+    
+    // Calculate position based on grid coordinates
+    const padding = gridSize * 2;
+    const availableWidth = (columns * gridSize * 20) - (padding * 2);
+    const columnWidth = (availableWidth - (gapSize * (columns - 1))) / columns;
+    
+    const x = padding + (currentColumn * (columnWidth + gapSize));
+    const y = padding + (currentRow * (rowHeight + gapSize));
+    
+    // Update for next iteration
+    currentColumn++;
+    
+    // Adjust height for the current section
+    const height = section.dimensions?.height || 200;
+    rowHeight = Math.max(rowHeight, height);
+    
+    // Return updated section
+    return {
+      ...section,
+      position: { x, y },
+      dimensions: {
+        width: columnWidth,
+        height
+      }
+    };
+  });
+};
+
+/**
+ * Generate a random color based on a seed string
+ */
+export const stringToColor = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
   
-  // Apply device-specific overrides
-  return {
-    ...baseStyles,
-    ...(deviceType === 'tablet' ? section.responsiveConfig.tablet || {} : {}),
-    ...(deviceType === 'mobile' ? section.responsiveConfig.mobile || {} : {})
-  };
-}
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += ('00' + value.toString(16)).substr(-2);
+  }
+  
+  return color;
+};
+
+/**
+ * Redistribute sections to fill available space
+ */
+export const redistributeSections = (
+  sections: WireframeSection[],
+  canvasWidth: number,
+  canvasHeight: number,
+  padding: number = 20
+): WireframeSection[] => {
+  if (sections.length === 0) return [];
+  
+  // Calculate total height of all sections
+  const totalHeight = sections.reduce((sum, section) => 
+    sum + (section.dimensions?.height || 200), 0);
+  
+  // Add spacing between sections
+  const totalSpacing = (sections.length - 1) * padding;
+  
+  // Available height
+  const availableHeight = canvasHeight - (padding * 2);
+  
+  // Scale factor if total height exceeds available height
+  const scale = Math.min(1, availableHeight / (totalHeight + totalSpacing));
+  
+  // Position sections one after another vertically
+  let currentY = padding;
+  
+  return sections.map(section => {
+    const height = (section.dimensions?.height || 200) * scale;
+    const width = Math.min(canvasWidth - (padding * 2), section.dimensions?.width || canvasWidth - (padding * 2));
+    
+    // Center horizontally
+    const x = (canvasWidth - width) / 2;
+    const y = currentY;
+    
+    // Update Y for next section
+    currentY += height + padding;
+    
+    return {
+      ...section,
+      position: { x, y },
+      dimensions: { width, height }
+    };
+  });
+};
