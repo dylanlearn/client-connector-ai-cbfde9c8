@@ -1,11 +1,7 @@
 
 import React from 'react';
-import { CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ExternalLink } from 'lucide-react';
-import DeviceControls from './DeviceControls';
 import { DeviceType } from './DeviceInfo';
+import DeviceControls from './DeviceControls';
 
 interface PreviewHeaderProps {
   activeDevice: DeviceType;
@@ -23,18 +19,8 @@ const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   formatDimensions
 }) => {
   return (
-    <div className="pb-3 border-b">
-      <div className="flex justify-between items-center">
-        <CardTitle className="text-lg font-medium">
-          Multi-Device Preview
-        </CardTitle>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <ExternalLink className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+    <div className="flex items-center justify-between p-3 border-b bg-card">
+      <h3 className="text-lg font-medium">Device Preview</h3>
       
       <DeviceControls 
         activeDevice={activeDevice}

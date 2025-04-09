@@ -1,28 +1,36 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { GuidelineProps } from '../types';
+
+export type GridType = 'lines' | 'dots' | 'columns';
+
+interface GuidelineProps {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+}
 
 interface GridSystemProps {
   canvasWidth: number;
   canvasHeight: number;
   gridSize: number;
-  gridType: 'lines' | 'dots' | 'columns';
-  guidelines?: {
-    position: number;
-    orientation: 'horizontal' | 'vertical';
-  }[];
+  gridType: GridType;
+  guidelines?: GuidelineProps[];
   darkMode?: boolean;
+  visible?: boolean;
 }
 
-const GridSystem = ({
+const GridSystem: React.FC<GridSystemProps> = ({
   canvasWidth,
   canvasHeight,
   gridSize,
   gridType,
   guidelines = [],
-  darkMode = false
-}: GridSystemProps) => {
+  darkMode = false,
+  visible = true
+}) => {
+  // If grid is not visible, don't render anything
+  if (!visible) return null;
+  
   const renderGridLines = () => {
     const lines = [];
     
@@ -117,8 +125,9 @@ const GridSystem = ({
   return (
     <svg
       className={cn(
-        "absolute top-0 left-0 w-full h-full pointer-events-none z-0",
-        darkMode ? "text-gray-700" : "text-gray-300"
+        "absolute top-0 left-0 w-full h-full pointer-events-none z-0 transition-opacity",
+        darkMode ? "text-gray-700" : "text-gray-300",
+        visible ? "opacity-100" : "opacity-0"
       )}
       width={canvasWidth}
       height={canvasHeight}

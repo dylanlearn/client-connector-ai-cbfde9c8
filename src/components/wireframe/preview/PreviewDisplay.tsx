@@ -1,19 +1,14 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import WireframeCanvas from '../WireframeCanvas';
-import WireframeSectionRenderer from '../WireframeSectionRenderer';
-
-interface DeviceDimension {
-  width: string;
-  height: string;
-  label: string;
-}
+import Wireframe from '../Wireframe';
+import { DeviceDimensions, DeviceType } from './DeviceInfo';
 
 interface PreviewDisplayProps {
-  currentDimensions: DeviceDimension;
+  currentDimensions: DeviceDimensions;
   darkMode: boolean;
-  wireframe: any;
+  wireframe: any; // Using any for now, should be replaced with proper wireframe type
   deviceType: 'mobile' | 'tablet' | 'desktop';
   onSectionClick?: (sectionId: string) => void;
 }
@@ -25,54 +20,41 @@ const PreviewDisplay: React.FC<PreviewDisplayProps> = ({
   deviceType,
   onSectionClick
 }) => {
-  // Handle section click
-  const handleSectionClick = (sectionId: string) => {
-    if (onSectionClick) {
-      onSectionClick(sectionId);
-    }
-  };
-  
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Optionally add device-specific behaviors here
+    // For example, mobile-specific touch events
+  }, [deviceType]);
+
   return (
-    <div
+    <div 
+      ref={previewRef}
       className={cn(
-        "flex items-center justify-center transition-all duration-300 overflow-hidden", 
-        darkMode ? "bg-gray-900" : "bg-white",
-        "border rounded-md shadow-sm"
+        "preview-container transition-all duration-300 overflow-hidden border rounded-lg",
+        darkMode ? "bg-gray-900" : "bg-white"
       )}
       style={{
-        width: currentDimensions.width,
-        height: currentDimensions.height,
+        width: `${currentDimensions.width}px`,
+        height: `${currentDimensions.height}px`,
         maxHeight: '80vh'
       }}
     >
-      <div className="w-full h-full overflow-auto">
-        <WireframeCanvas
-          className="border-0 shadow-none"
-          deviceType={deviceType}
-          onSectionClick={handleSectionClick}
-        >
-          {wireframe && wireframe.sections && (
-            <div className="p-4">
-              {wireframe.sections.map((section, index) => (
-                <div 
-                  key={section.id || `section-${index}`} 
-                  className="mb-4"
-                  onClick={() => onSectionClick && section.id && onSectionClick(section.id)}
-                >
-                  <WireframeSectionRenderer
-                    section={section}
-                    viewMode="preview"
-                    darkMode={darkMode}
-                    deviceType={deviceType}
-                    sectionIndex={index}
-                    onSectionClick={onSectionClick}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </WireframeCanvas>
-      </div>
+      <WireframeCanvas
+        deviceType={deviceType}
+        darkMode={darkMode}
+        onSectionClick={onSectionClick}
+      >
+        {wireframe && (
+          <Wireframe
+            wireframe={wireframe}
+            viewMode="preview"
+            darkMode={darkMode}
+            deviceType={deviceType}
+            onSectionClick={onSectionClick}
+          />
+        )}
+      </WireframeCanvas>
     </div>
   );
 };

@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { DEVICE_DIMENSIONS, DeviceType } from './preview/DeviceInfo';
+import { DeviceType, DEVICE_DIMENSIONS } from './preview/DeviceInfo';
 import PreviewHeader from './preview/PreviewHeader';
 import PreviewDisplay from './preview/PreviewDisplay';
 
@@ -12,13 +12,16 @@ interface ResponsivePreviewProps {
   onSectionClick?: (sectionId: string) => void;
 }
 
-const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSectionClick }) => {
+const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ 
+  className,
+  onSectionClick
+}) => {
   const [activeDevice, setActiveDevice] = useState<DeviceType>('desktop');
   const [isRotated, setIsRotated] = useState(false);
   const { darkMode, wireframe } = useWireframeStore();
   
   // Handle device rotation
-  const handleRotate = () => {
+  const handleRotate = useCallback(() => {
     setIsRotated(!isRotated);
     
     // Switch between portrait and landscape modes
@@ -31,22 +34,22 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
     } else if (activeDevice === 'tabletLandscape' && isRotated) {
       setActiveDevice('tablet');
     }
-  };
+  }, [activeDevice, isRotated]);
   
   // Handle device change
-  const handleDeviceChange = (device: DeviceType) => {
+  const handleDeviceChange = useCallback((device: DeviceType) => {
     setActiveDevice(device);
     setIsRotated(device === 'mobileLandscape' || device === 'tabletLandscape');
-  };
+  }, []);
   
   // Get current dimensions
   const currentDimensions = DEVICE_DIMENSIONS[activeDevice];
   
   // Format device dimensions for display
-  const formatDimensions = () => {
+  const formatDimensions = useCallback(() => {
     const { width, height } = currentDimensions;
     return `${width} × ${height}`;
-  };
+  }, [currentDimensions]);
 
   // Handle section click
   const handleSectionClick = (sectionId: string) => {
@@ -56,11 +59,11 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
   };
   
   // Determine device type for rendering
-  const getDeviceType = (): 'mobile' | 'tablet' | 'desktop' => {
+  const getDeviceType = useCallback((): 'mobile' | 'tablet' | 'desktop' => {
     if (activeDevice.includes('mobile')) return 'mobile';
     if (activeDevice.includes('tablet')) return 'tablet';
     return 'desktop';
-  };
+  }, [activeDevice]);
   
   return (
     <Card className={cn("shadow-md overflow-hidden", className)}>
