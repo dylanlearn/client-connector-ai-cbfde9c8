@@ -1,3 +1,4 @@
+
 // Define types for grid system
 import { fabric } from 'fabric';
 
@@ -11,7 +12,6 @@ export interface GridConfig {
   marginSize: number;
   showBreakpoints: boolean;
   breakpoints: GridBreakpoint[];
-  // Add the missing gutter property
   gutter?: number;
 }
 

@@ -38,7 +38,7 @@ export {
 // Export from responsive-utils
 export * from './responsive-utils';
 
-// Export grid utilities - explicitly re-export getObjectBounds from grid-utils to avoid ambiguity
+// Export grid utilities - explicitly re-export from grid-utils
 export {
   generateSnapGuidelines,
   createCanvasGrid,
