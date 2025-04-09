@@ -84,7 +84,6 @@ export interface WireframeData {
   [key: string]: any;
 }
 
-// Added WireframeSection interface
 export interface WireframeSection {
   id: string;
   name: string;
@@ -129,7 +128,6 @@ export interface WireframeSection {
   [key: string]: any;
 }
 
-// Added WireframeComponent interface
 export interface WireframeComponent {
   id: string;
   type: string;
@@ -140,7 +138,6 @@ export interface WireframeComponent {
   [key: string]: any;
 }
 
-// Added CopySuggestions interface
 export interface CopySuggestions {
   heading?: string;
   subheading?: string;
@@ -149,7 +146,6 @@ export interface CopySuggestions {
   [key: string]: any;
 }
 
-// Added WireframeCanvasConfig interface
 export interface WireframeCanvasConfig {
   width: number;
   height: number;
@@ -159,10 +155,12 @@ export interface WireframeCanvasConfig {
   backgroundColor?: string;
   zoom?: number;
   panOffset?: { x: number, y: number };
+  gridType?: 'lines' | 'dots' | 'columns';
+  snapTolerance?: number;
+  showSmartGuides?: boolean;
   [key: string]: any;
 }
 
-// Added DesignMemoryData interface
 export interface DesignMemoryData {
   colorPalettes?: any[];
   fontPairings?: any[];
@@ -172,7 +170,6 @@ export interface DesignMemoryData {
   [key: string]: any;
 }
 
-// Updated DesignMemoryResponse interface
 export interface DesignMemoryResponse {
   id: string;
   projectId: string;
@@ -181,7 +178,6 @@ export interface DesignMemoryResponse {
   updatedAt: string;
 }
 
-// Added WireframeVersion interface
 export interface WireframeVersion {
   id: string;
   wireframe_id: string;
@@ -197,7 +193,6 @@ export interface WireframeVersion {
   version?: string;
 }
 
-// Added BranchInfo interface
 export interface BranchInfo {
   name: string;
   description?: string;
@@ -208,12 +203,10 @@ export interface BranchInfo {
   createdBy?: string;
 }
 
-// Added WireframeResult interface for backward compatibility
 export interface WireframeResult extends WireframeGenerationResult {
   // This ensures WireframeResult has at least the same properties as WireframeGenerationResult
 }
 
-// Helper function to convert AIWireframe to WireframeData
 export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeData {
   return {
     id: wireframe.id,

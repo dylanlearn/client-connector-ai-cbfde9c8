@@ -30,7 +30,7 @@ export interface WireframeSection {
     direction?: string;
     alignment?: string;
     [key: string]: any;
-  };
+  } | string; // Add string as a potential type for layout
   layoutType?: string;
   positionOrder?: number;
   componentVariant?: string;

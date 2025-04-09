@@ -43,7 +43,8 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     panOffset: { x: 0, y: 0 },
     showGrid: true,
     snapToGrid: true,
-    gridSize: 8
+    gridSize: 8,
+    backgroundColor: '#ffffff'
   };
   
   const config = { ...defaultConfig, ...canvasConfig };
@@ -201,21 +202,21 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     wireframeData.sections.forEach((section: WireframeSection) => {
       if (!section) return;
       
+      // Create a copy with the layout in the correct format
+      const normalizedSection = {...section};
+      
       // Handle the case where section.layout might be a string
-      if (typeof section.layout === 'string') {
+      if (typeof normalizedSection.layout === 'string') {
         // Convert string layout to object format
-        section = {
-          ...section,
-          layout: {
-            type: section.layout,
-            direction: 'column',
-            alignment: 'center'
-          }
+        normalizedSection.layout = {
+          type: normalizedSection.layout,
+          direction: 'column',
+          alignment: 'center'
         };
       }
       
       // Convert section to fabric object
-      const fabricObject = componentToFabricObject(section, {
+      const fabricObject = componentToFabricObject(normalizedSection, {
         deviceType,
         interactive: editable
       });
@@ -225,8 +226,8 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         canvas.add(fabricObject as unknown as fabric.Object);
         
         // Add components if they exist
-        if (section.components && Array.isArray(section.components)) {
-          section.components.forEach(component => {
+        if (normalizedSection.components && Array.isArray(normalizedSection.components)) {
+          normalizedSection.components.forEach(component => {
             if (!component) return;
             
             // Use the wireframeComponentToFabric from fabric-converters.ts

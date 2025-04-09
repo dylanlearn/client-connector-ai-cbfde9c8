@@ -1,4 +1,3 @@
-
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -28,7 +27,8 @@ export function useFabric(options: UseFabricOptions = {}) {
     panOffset: initialConfig.panOffset || storeCanvasSettings.panOffset || { x: 0, y: 0 },
     showGrid: initialConfig.showGrid !== undefined ? initialConfig.showGrid : storeCanvasSettings.showGrid,
     snapToGrid: initialConfig.snapToGrid !== undefined ? initialConfig.snapToGrid : storeCanvasSettings.snapToGrid,
-    gridSize: initialConfig.gridSize || storeCanvasSettings.gridSize || 8
+    gridSize: initialConfig.gridSize || storeCanvasSettings.gridSize || 8,
+    backgroundColor: initialConfig.backgroundColor || storeCanvasSettings.backgroundColor || '#ffffff'
   });
 
   // Initialize Fabric canvas
