@@ -31,7 +31,7 @@ export function useGridSystem(options: UseGridSystemOptions = {}) {
   
   // Get responsive grid config based on current options
   const responsiveGridConfig = responsiveMode 
-    ? getResponsiveGridConfig(gridConfig, responsiveOptions)
+    ? getResponsiveGridConfig(responsiveOptions.width, gridConfig)
     : gridConfig;
   
   // Update grid config

@@ -18,8 +18,8 @@ export interface GridConfig {
 export interface GridBreakpoint {
   name: string;
   minWidth: number;
-  width: number; // Added width property
-  color?: string; // Added color property
+  width: number;
+  color?: string;
   columns?: number;
   gutterSize?: number;
   marginSize?: number;
