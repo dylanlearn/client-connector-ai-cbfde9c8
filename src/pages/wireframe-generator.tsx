@@ -7,6 +7,8 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { AdvancedWireframeGenerator } from "@/components/wireframe";
 import { v4 as uuidv4 } from "uuid";
+import WireframeTest from "@/components/wireframe/WireframeTest";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WireframeGenerator = () => {
   // Use a real UUID for the project ID rather than a demo ID
@@ -33,12 +35,25 @@ const WireframeGenerator = () => {
           </AlertDescription>
         </Alert>
         
-        <TooltipProvider>
-          <AdvancedWireframeGenerator 
-            projectId={projectId}
-            // viewMode property is now defined in the AdvancedWireframeGeneratorProps interface
-          />
-        </TooltipProvider>
+        <Tabs defaultValue="generator">
+          <TabsList className="mb-4">
+            <TabsTrigger value="generator">Wireframe Generator</TabsTrigger>
+            <TabsTrigger value="test">Wireframe Test</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="generator">
+            <TooltipProvider>
+              <AdvancedWireframeGenerator 
+                projectId={projectId}
+                viewMode="editor"
+              />
+            </TooltipProvider>
+          </TabsContent>
+          
+          <TabsContent value="test">
+            <WireframeTest />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

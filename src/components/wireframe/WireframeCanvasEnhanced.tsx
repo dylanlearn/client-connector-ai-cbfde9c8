@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useCanvasInteractions } from '@/hooks/wireframe/use-canvas-interactions';
 import { useSectionManipulation } from '@/hooks/wireframe/use-section-manipulation';
-import { WireframeSection } from '@/stores/wireframe-store'; // Use the type from the store
+import { WireframeSection } from '@/types/wireframe';
 import { componentToFabricObject, fabricObjectToComponent } from './utils/fabric-converters';
 import { calculateSectionBounds, findAlignmentGuides } from './utils/section-utils';
 import CanvasControls from './controls/CanvasControls';
@@ -93,7 +93,6 @@ const WireframeCanvasEnhanced = memo(({
     applySectionPositions
   } = useSectionManipulation();
   
-  // Initialize fabric canvas
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
@@ -107,13 +106,11 @@ const WireframeCanvasEnhanced = memo(({
     
     setFabricCanvas(canvas);
     
-    // Clean up
     return () => {
       canvas.dispose();
     };
   }, [canvasSize.width, canvasSize.height, darkMode]);
   
-  // Update canvas when sections change
   useEffect(() => {
     if (!fabricCanvas) return;
     
@@ -121,7 +118,6 @@ const WireframeCanvasEnhanced = memo(({
     
     fabricCanvas.clear();
     
-    // Render each section
     wireframe.sections.forEach((section: WireframeSection) => {
       const fabricObject = componentToFabricObject(section, {
         deviceType: activeDevice,
@@ -139,7 +135,6 @@ const WireframeCanvasEnhanced = memo(({
         
         fabricObject.on('moving', (e) => {
           if (config.showSmartGuides) {
-            // Calculate guides for alignment
             const bounds = calculateSectionBounds(wireframe.sections);
             const activeBounds = bounds.find(b => b.id === section.id)?.bounds;
             
@@ -159,7 +154,6 @@ const WireframeCanvasEnhanced = memo(({
         fabricObject.on('moved', () => {
           const updatedComponent = fabricObjectToComponent(fabricObject);
           if (updatedComponent && updatedComponent.id) {
-            // Cast the updatedComponent to store's WireframeSection type
             const update = {
               ...updatedComponent,
               copySuggestions: Array.isArray(updatedComponent.copySuggestions) 
@@ -175,7 +169,6 @@ const WireframeCanvasEnhanced = memo(({
           }
         });
         
-        // Set element opacity based on active selection
         if (activeSection === section.id) {
           fabricObject.set({
             borderColor: '#2563eb',
@@ -191,7 +184,6 @@ const WireframeCanvasEnhanced = memo(({
     setIsRendering(false);
   }, [wireframe.sections, activeDevice, darkMode, fabricCanvas, editMode, selectSection, onSectionClick, activeSection, config.showSmartGuides, config.snapTolerance]);
   
-  // Apply canvas settings
   useEffect(() => {
     if (!fabricCanvas) return;
     
@@ -205,7 +197,6 @@ const WireframeCanvasEnhanced = memo(({
       config.panOffset.y
     ]);
     
-    // Apply snap to grid
     if (config.snapToGrid) {
       fabricCanvas.on('object:moving', function(options) {
         if (options.target) {
@@ -239,7 +230,6 @@ const WireframeCanvasEnhanced = memo(({
     fabricCanvas.renderAll();
   }, [fabricCanvas, config.zoom, config.panOffset, config.snapToGrid, config.gridSize]);
   
-  // Event handlers
   useEffect(() => {
     const handleDocKeyDown = (e: KeyboardEvent) => {
       handleKeyDown(e);
@@ -291,7 +281,6 @@ const WireframeCanvasEnhanced = memo(({
     manipulationActiveSection
   ]);
   
-  // Handle section mouse events
   const handleSectionMouseDown = useCallback((e: React.MouseEvent, sectionId: string) => {
     if (!editMode) return;
     
@@ -304,7 +293,6 @@ const WireframeCanvasEnhanced = memo(({
     }
   }, [editMode, isSpacePressed, selectSection, startDragSection]);
   
-  // Handle resize start
   const handleResizeStart = useCallback((direction: string, e: React.MouseEvent) => {
     if (!manipulationActiveSection) return;
     
@@ -312,7 +300,6 @@ const WireframeCanvasEnhanced = memo(({
     startResizeSection(manipulationActiveSection, direction, e.clientX, e.clientY);
   }, [manipulationActiveSection, startResizeSection]);
   
-  // Handle rotate start
   const handleRotateStart = useCallback((e: React.MouseEvent) => {
     if (!manipulationActiveSection) return;
     
@@ -320,7 +307,6 @@ const WireframeCanvasEnhanced = memo(({
     startRotateSection(manipulationActiveSection, e.clientX, e.clientY);
   }, [manipulationActiveSection, startRotateSection]);
   
-  // Apply different grid layouts
   const handleApplyGridLayout = useCallback((columns: number) => {
     applyGridLayout(columns, config.gridSize * 2);
     
@@ -330,7 +316,6 @@ const WireframeCanvasEnhanced = memo(({
     });
   }, [applyGridLayout, config.gridSize, toast]);
   
-  // Handle canvas resize on mount and window resize
   useEffect(() => {
     const updateCanvasSize = () => {
       if (!canvasRef.current) return;
@@ -347,12 +332,10 @@ const WireframeCanvasEnhanced = memo(({
     };
   }, []);
   
-  // Apply styles safely for CSS properties
   const applySectionStyle = (section: WireframeSection) => {
     return applySectionPositions(section);
   };
 
-  // Render the sections and their controls
   const renderSections = useCallback(() => {
     return wireframe.sections.map(section => {
       const isActive = section.id === activeSection;
@@ -398,7 +381,6 @@ const WireframeCanvasEnhanced = memo(({
             </div>
             
             <div className="p-4">
-              {/* Section content here based on section type */}
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 {section.sectionType} section
               </div>
@@ -507,7 +489,6 @@ const WireframeCanvasEnhanced = memo(({
         onWheel={handleWheel}
         onClick={() => selectSection(null)}
       >
-        {/* Grid system */}
         {config.showGrid && (
           <GridSystem
             canvasWidth={canvasSize.width}
@@ -519,7 +500,6 @@ const WireframeCanvasEnhanced = memo(({
           />
         )}
         
-        {/* Alternative DOM-based section rendering */}
         <div className="sections-container relative" style={{
           transform: `scale(${config.zoom}) translate(${config.panOffset.x / config.zoom}px, ${config.panOffset.y / config.zoom}px)`,
           transformOrigin: '0 0'
@@ -527,7 +507,6 @@ const WireframeCanvasEnhanced = memo(({
           {renderSections()}
         </div>
         
-        {/* Fabric.js canvas for advanced vector graphics */}
         <canvas 
           ref={fabricCanvasRef} 
           className="absolute top-0 left-0 pointer-events-none"
@@ -535,7 +514,7 @@ const WireframeCanvasEnhanced = memo(({
       </div>
     </div>
   );
-}); 
+});
 
 WireframeCanvasEnhanced.displayName = 'WireframeCanvasEnhanced';
 

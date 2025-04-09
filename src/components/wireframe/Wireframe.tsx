@@ -37,7 +37,7 @@ const Wireframe: React.FC<WireframeProps> = ({
       onClick={onSelect ? handleClick : undefined}
     >
       <div className="wireframe-sections">
-        {wireframe.sections.map((section, index) => (
+        {wireframe.sections.map((section: WireframeSection, index: number) => (
           <div 
             key={section.id || `section-${index}`} 
             className={`mb-0 ${activeSection === section.id ? 'ring-2 ring-primary' : ''}`}
