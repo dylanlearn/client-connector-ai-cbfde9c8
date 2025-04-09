@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Code } from 'lucide-react';
 
-interface WireframeDataVisualizerProps {
+export interface WireframeDataVisualizerProps {
   wireframeData: any;
   title?: string;
 }

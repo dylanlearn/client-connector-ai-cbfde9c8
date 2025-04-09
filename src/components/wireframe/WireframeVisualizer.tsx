@@ -6,7 +6,7 @@ import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { Button } from '@/components/ui/button';
 import { Laptop, Smartphone } from 'lucide-react';
 
-interface WireframeVisualizerProps {
+export interface WireframeVisualizerProps {
   wireframeData: any;
   title?: string;
   description?: string;

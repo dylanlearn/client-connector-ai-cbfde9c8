@@ -1,119 +1,168 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { useToast } from '@/hooks/use-toast';
+
+// Mock data type
+interface WireframeData {
+  id?: string;
+  title?: string;
+  description?: string;
+  sections: WireframeSection[];
+}
 
 interface WireframeEditorProps {
   projectId?: string;
   wireframeData?: WireframeData;
+  onUpdate?: (updatedData: WireframeData) => void;
 }
 
 const WireframeEditor: React.FC<WireframeEditorProps> = ({
   projectId,
-  wireframeData
+  wireframeData,
+  onUpdate
 }) => {
   const [sections, setSections] = useState<WireframeSection[]>([]);
   const [selectedSection, setSelectedSection] = useState<WireframeSection | null>(null);
   const [canvasWidth, setCanvasWidth] = useState(1200);
-  const [canvasHeight, setCanvasHeight] = useState(800);
-  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [showGrid, setShowGrid] = useState(true);
-  const [snapToGrid, setSnapToGrid] = useState(true);
-  
+  const [canvasHeight, setCanvasHeight] = useState(1600);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
   useEffect(() => {
     if (wireframeData?.sections) {
       setSections(wireframeData.sections);
     }
   }, [wireframeData]);
-  
-  const handleSectionClick = (sectionId: string) => {
-    const section = sections.find(s => s.id === sectionId);
-    if (section) {
-      setSelectedSection(section);
+
+  const handleAddSection = () => {
+    const newSection: WireframeSection = {
+      id: `section-${Date.now()}`,
+      name: `Section ${sections.length + 1}`,
+      sectionType: 'container',
+      position: { x: 100, y: 100 },
+      dimensions: { width: 400, height: 200 },
+      components: []
+    };
+
+    setSections([...sections, newSection]);
+    toast({
+      title: "Section added",
+      description: `Added ${newSection.name}`
+    });
+  };
+
+  const handleDeleteSection = () => {
+    if (!selectedSection) return;
+
+    const updatedSections = sections.filter(section => section.id !== selectedSection.id);
+    setSections(updatedSections);
+    setSelectedSection(null);
+    toast({
+      title: "Section deleted",
+      description: `Deleted ${selectedSection.name}`
+    });
+  };
+
+  const handleSectionSelect = (section: WireframeSection) => {
+    setSelectedSection(section);
+  };
+
+  const handleSectionMove = (section: WireframeSection, x: number, y: number) => {
+    const updatedSections = sections.map(s => {
+      if (s.id === section.id) {
+        return {
+          ...s,
+          position: { x, y }
+        };
+      }
+      return s;
+    });
+    
+    setSections(updatedSections);
+  };
+
+  const handleSectionResize = (section: WireframeSection, width: number, height: number) => {
+    const updatedSections = sections.map(s => {
+      if (s.id === section.id) {
+        return {
+          ...s,
+          dimensions: { width, height }
+        };
+      }
+      return s;
+    });
+    
+    setSections(updatedSections);
+  };
+
+  const handleSave = () => {
+    if (onUpdate) {
+      const updatedWireframe = {
+        ...(wireframeData || {}),
+        sections,
+        lastUpdated: new Date().toISOString()
+      };
+      onUpdate(updatedWireframe as WireframeData);
     }
+    
+    toast({
+      title: "Changes saved",
+      description: "Your wireframe has been updated"
+    });
   };
-  
-  const handleSectionChange = (updatedSection: WireframeSection) => {
-    setSections(prevSections => 
-      prevSections.map(section => 
-        section.id === updatedSection.id ? updatedSection : section
-      )
-    );
-  };
-  
+
   return (
-    <div className="wireframe-editor p-4">
-      <div className="flex justify-between mb-4">
-        <h2 className="text-xl font-bold">Wireframe Editor</h2>
-        
+    <div className="wireframe-editor space-y-4">
+      <div className="flex justify-between items-center">
         <div className="space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setDeviceType('desktop')}
-          >
-            Desktop
+          <Button onClick={handleAddSection} variant="secondary">
+            Add Section
           </Button>
           <Button 
+            onClick={handleDeleteSection} 
             variant="outline" 
-            size="sm"
-            onClick={() => setDeviceType('tablet')}
+            disabled={!selectedSection}
           >
-            Tablet
+            Delete Section
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setDeviceType('mobile')}
-          >
-            Mobile
-          </Button>
+        </div>
+        <Button onClick={handleSave}>Save Changes</Button>
+      </div>
+      
+      <div className="border rounded-md overflow-auto" style={{ height: '600px' }}>
+        <div className="relative" style={{ width: canvasWidth, height: canvasHeight }}>
+          <WireframeCanvasEnhanced 
+            sections={sections}
+            width={canvasWidth}
+            height={canvasHeight}
+            editable={true}
+            showGrid={true}
+            snapToGrid={true}
+            deviceType="desktop"
+            onSectionSelect={handleSectionSelect}
+            onSectionMove={handleSectionMove}
+            onSectionResize={handleSectionResize}
+          />
         </div>
       </div>
       
-      <Tabs defaultValue="canvas">
-        <TabsList>
-          <TabsTrigger value="canvas">Canvas</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="canvas" className="mt-2">
-          <div className="border rounded-md overflow-hidden" style={{ height: '600px' }}>
-            <WireframeCanvasEnhanced
-              sections={sections}
-              width={canvasWidth}
-              height={canvasHeight}
-              editable={true}
-              showGrid={showGrid}
-              snapToGrid={snapToGrid}
-              deviceType={deviceType}
-              onSectionClick={handleSectionClick}
-              onSectionChange={handleSectionChange}
-            />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="preview" className="mt-2">
-          <div className="border rounded-md overflow-hidden" style={{ height: '600px' }}>
-            <WireframeCanvasEnhanced
-              sections={sections}
-              width={canvasWidth}
-              height={canvasHeight}
-              editable={false}
-              showGrid={false}
-              snapToGrid={false}
-              deviceType={deviceType}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
-      
       {selectedSection && (
-        <div className="mt-4 p-4 border rounded-md">
-          <h3 className="font-medium mb-2">Edit Section: {selectedSection.name}</h3>
-          {/* Section editor controls would go here */}
+        <div className="p-4 border rounded-md bg-muted/30">
+          <h3 className="font-medium mb-2">Section Properties: {selectedSection.name}</h3>
+          <div className="text-sm">
+            <p>Type: {selectedSection.sectionType}</p>
+            <p>Position: x={selectedSection.position?.x || 0}, y={selectedSection.position?.y || 0}</p>
+            <p>Size: {selectedSection.dimensions?.width || 0}x{selectedSection.dimensions?.height || 0}</p>
+          </div>
+        </div>
+      )}
+      
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-50">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
       )}
     </div>

@@ -11,3 +11,11 @@ export { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
 
 // Types
 export * from './types';
+
+// Props types for components
+export type { 
+  WireframeVisualizerProps 
+} from './WireframeVisualizer';
+export type { 
+  WireframeDataVisualizerProps 
+} from './WireframeDataVisualizer';
