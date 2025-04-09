@@ -42,6 +42,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
 }) => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(layer.name);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleRenameStart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -79,15 +80,35 @@ const LayerItem: React.FC<LayerItemProps> = ({
     onDrop();
   };
 
+  // Generate type-specific icon or color
+  const getTypeIndicator = () => {
+    switch (layer.type) {
+      case 'section':
+        return <div className="w-2 h-2 rounded-full bg-blue-500" />;
+      case 'group':
+        return <div className="w-2 h-2 rounded-full bg-purple-500" />;
+      case 'text':
+        return <div className="w-2 h-2 rounded-full bg-green-500" />;
+      case 'image':
+        return <div className="w-2 h-2 rounded-full bg-amber-500" />;
+      case 'shape':
+        return <div className="w-2 h-2 rounded-full bg-red-500" />;
+      default:
+        return <div className="w-2 h-2 rounded-full bg-gray-400" />;
+    }
+  };
+
   return (
     <div
       className={cn(
-        'flex items-center px-1 py-1.5 rounded-sm border border-transparent',
+        'flex items-center px-1 py-1.5 rounded-sm border border-transparent group',
         isSelected && 'bg-accent text-accent-foreground border-accent',
         isDragging && 'opacity-50',
-        !isSelected && 'hover:bg-accent/50'
+        !isSelected && 'hover:bg-accent/50',
       )}
       onClick={onSelect}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       draggable
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
@@ -95,25 +116,29 @@ const LayerItem: React.FC<LayerItemProps> = ({
       style={{ paddingLeft: `${(layer.parentId ? 24 : 8)}px` }}
     >
       {/* Expand/collapse button (for groups) */}
-      {layer.type === 'group' && (
+      {layer.type === 'group' ? (
         <Button variant="ghost" size="icon" className="h-4 w-4 mr-1">
           {layer.isExpanded ? 
             <ChevronDown className="h-3.5 w-3.5" /> : 
             <ChevronRight className="h-3.5 w-3.5" />
           }
         </Button>
+      ) : (
+        <div className="h-4 w-4 mr-1 flex items-center justify-center">
+          {getTypeIndicator()}
+        </div>
       )}
 
       {/* Layer visibility toggle */}
       <Button 
         variant="ghost" 
         size="icon" 
-        className="h-5 w-5 mr-1"
+        className={cn("h-5 w-5 mr-1", !layer.visible && "text-muted-foreground")}
         onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
       >
         {layer.visible ? 
           <Eye className="h-3.5 w-3.5" /> : 
-          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+          <EyeOff className="h-3.5 w-3.5" />
         }
       </Button>
 
@@ -121,12 +146,12 @@ const LayerItem: React.FC<LayerItemProps> = ({
       <Button 
         variant="ghost" 
         size="icon" 
-        className="h-5 w-5 mr-1.5"
+        className={cn("h-5 w-5 mr-1.5", layer.locked && "text-orange-500")}
         onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
       >
         {layer.locked ? 
           <Lock className="h-3.5 w-3.5" /> : 
-          <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
+          <Unlock className="h-3.5 w-3.5 opacity-50" />
         }
       </Button>
 
@@ -143,33 +168,49 @@ const LayerItem: React.FC<LayerItemProps> = ({
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <div className="text-sm truncate" onDoubleClick={handleRenameStart}>
-            {layer.name}
+          <div 
+            className="text-sm truncate flex items-center gap-2" 
+            onDoubleClick={handleRenameStart}
+          >
+            <span className="truncate">{layer.name}</span>
+            {layer.locked && <span className="text-xs text-muted-foreground">(locked)</span>}
           </div>
         )}
       </div>
 
-      {/* Layer actions menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Edit className="h-3.5 w-3.5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={handleRenameStart}>Rename</DropdownMenuItem>
-          <DropdownMenuItem onClick={onDuplicate}>Duplicate</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onDelete} className="text-destructive">
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Layer actions menu - Only visible when hovered or selected */}
+      <div className={cn("flex opacity-0", (isHovered || isSelected) && "opacity-100")}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-5 w-5"
+          onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+          title="Duplicate"
+        >
+          <Copy className="h-3 w-3" />
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-5 w-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={handleRenameStart}>Rename</DropdownMenuItem>
+            <DropdownMenuItem onClick={onDuplicate}>Duplicate</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="text-destructive">
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 };

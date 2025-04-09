@@ -3,6 +3,8 @@ import { DeviceType } from './responsive-utils';
 
 // Canvas configuration interface
 export interface WireframeCanvasConfig {
+  width: number;
+  height: number;
   zoom: number;
   panOffset: { x: number; y: number; };
   showGrid: boolean;
@@ -11,8 +13,6 @@ export interface WireframeCanvasConfig {
   gridType: "lines" | "dots" | "columns";
   snapTolerance: number;
   showSmartGuides: boolean;
-  width: number;
-  height: number;
   backgroundColor: string;
 }
 

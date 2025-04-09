@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { 
   Grid, ZoomIn, ZoomOut, Home, 
   GridIcon, ArrowUpDown, Columns, Rows,
-  LucideIcon, Magnet, Rulers
+  LucideIcon, Magnet, Ruler
 } from 'lucide-react';
 import {
   Tooltip,
@@ -239,7 +239,7 @@ const EnhancedCanvasControls: React.FC<EnhancedCanvasControlsProps> = ({
               className="h-8 w-8"
               onClick={onToggleGuides}
             >
-              <Rulers className="h-4 w-4" />
+              <Ruler className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Smart guides</TooltipContent>

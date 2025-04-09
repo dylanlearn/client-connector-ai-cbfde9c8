@@ -7,7 +7,7 @@ import { UseFabricOptions } from '@/types/fabric-canvas';
 import { useCanvasInitialization } from './fabric/use-canvas-initialization';
 import { useCanvasActions } from './fabric/use-canvas-actions';
 import { useGridActions } from './fabric/use-grid-actions';
-import { findAlignmentGuides, snapObjectToGuides } from '@/components/wireframe/utils/alignment-guides';
+import { findAlignmentGuides, snapObjectToGuides, renderAlignmentGuides, highlightObjectBoundary } from '@/components/wireframe/utils/alignment-guides';
 
 export function useFabric(options: UseFabricOptions = {}) {
   const { persistConfig = true, initialConfig = {} } = options;
@@ -102,10 +102,28 @@ export function useFabric(options: UseFabricOptions = {}) {
           if (canvasConfig.showSmartGuides && newGuides.length > 0) {
             snapObjectToGuides(activeObject, newGuides, canvas);
           }
+          
+          // Highlight the object being moved for better visibility
+          highlightObjectBoundary(activeObject, canvas);
         });
         
         canvas.on('object:modified', () => {
           setGuides([]);
+          // Remove all highlights
+          const highlights = canvas.getObjects().filter(obj => (obj as any).isHighlight);
+          highlights.forEach(h => canvas.remove(h));
+        });
+        
+        // Add custom rendering of guides
+        canvas.on('after:render', () => {
+          if (guides.length > 0 && canvas.contextTop) {
+            renderAlignmentGuides(
+              canvas.contextTop, 
+              canvas.width || 1200, 
+              canvas.height || 800, 
+              guides
+            );
+          }
         });
       }
     }

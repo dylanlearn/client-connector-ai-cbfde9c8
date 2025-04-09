@@ -112,7 +112,7 @@ export function findAlignmentGuides(
       });
     }
     
-    // Equal distribution
+    // Equal spacing - horizontal
     if (Math.abs(activeBounds.left - targetBounds.right) <= snapTolerance) {
       guides.push({
         position: targetBounds.right,
@@ -122,6 +122,7 @@ export function findAlignmentGuides(
       });
     }
     
+    // Equal spacing - vertical
     if (Math.abs(activeBounds.top - targetBounds.bottom) <= snapTolerance) {
       guides.push({
         position: targetBounds.bottom,
@@ -201,6 +202,9 @@ export function renderAlignmentGuides(
 ): void {
   if (!ctx) return;
   
+  // Apply some global settings for all guides
+  ctx.save();
+  
   guides.forEach(guide => {
     // Set line style based on guide type
     ctx.strokeStyle = guide.type === 'center' ? '#0066ff' : 
@@ -208,7 +212,9 @@ export function renderAlignmentGuides(
     ctx.lineWidth = 1;
     ctx.setLineDash(guide.type === 'distribution' ? [4, 4] : []);
     
+    // Draw the guide line
     ctx.beginPath();
+    
     if (guide.orientation === 'horizontal') {
       ctx.moveTo(0, guide.position);
       ctx.lineTo(canvasWidth, guide.position);
@@ -216,7 +222,146 @@ export function renderAlignmentGuides(
       ctx.moveTo(guide.position, 0);
       ctx.lineTo(guide.position, canvasHeight);
     }
+    
     ctx.stroke();
-    ctx.setLineDash([]);
+    
+    // Draw emphasis at ends or decorations
+    if (guide.type === 'center') {
+      // Add arrow indicators for center lines
+      const arrowSize = 4;
+      
+      if (guide.orientation === 'horizontal') {
+        // Left arrow
+        ctx.beginPath();
+        ctx.moveTo(arrowSize, guide.position - arrowSize);
+        ctx.lineTo(0, guide.position);
+        ctx.lineTo(arrowSize, guide.position + arrowSize);
+        ctx.stroke();
+        
+        // Right arrow
+        ctx.beginPath();
+        ctx.moveTo(canvasWidth - arrowSize, guide.position - arrowSize);
+        ctx.lineTo(canvasWidth, guide.position);
+        ctx.lineTo(canvasWidth - arrowSize, guide.position + arrowSize);
+        ctx.stroke();
+      } else {
+        // Top arrow
+        ctx.beginPath();
+        ctx.moveTo(guide.position - arrowSize, arrowSize);
+        ctx.lineTo(guide.position, 0);
+        ctx.lineTo(guide.position + arrowSize, arrowSize);
+        ctx.stroke();
+        
+        // Bottom arrow
+        ctx.beginPath();
+        ctx.moveTo(guide.position - arrowSize, canvasHeight - arrowSize);
+        ctx.lineTo(guide.position, canvasHeight);
+        ctx.lineTo(guide.position + arrowSize, canvasHeight - arrowSize);
+        ctx.stroke();
+      }
+    }
   });
+  
+  ctx.restore(); // Restore original context settings
+}
+
+/**
+ * Create placement guides for canvas
+ */
+export function createCanvasGuides(
+  canvas: fabric.Canvas, 
+  gridSize: number, 
+  columns: number = 12,
+  margin: number = 20
+): AlignmentGuide[] {
+  if (!canvas) return [];
+  
+  const guides: AlignmentGuide[] = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  
+  // Create horizontal guides (rows)
+  for (let y = margin; y < height - margin; y += gridSize) {
+    guides.push({
+      position: y,
+      orientation: 'horizontal',
+      type: 'edge',
+      strength: 0.5
+    });
+  }
+  
+  // Create vertical guides (columns)
+  const columnWidth = (width - margin * 2) / columns;
+  for (let i = 0; i <= columns; i++) {
+    const x = margin + i * columnWidth;
+    guides.push({
+      position: x,
+      orientation: 'vertical',
+      type: 'edge',
+      strength: 0.8 // Stronger for columns
+    });
+  }
+  
+  // Add center guides
+  guides.push({
+    position: width / 2,
+    orientation: 'vertical',
+    type: 'center',
+    strength: 1 // Strongest for center
+  });
+  
+  guides.push({
+    position: height / 2,
+    orientation: 'horizontal',
+    type: 'center',
+    strength: 1 // Strongest for center
+  });
+  
+  return guides;
+}
+
+/**
+ * Highlight object boundaries
+ */
+export function highlightObjectBoundary(
+  obj: fabric.Object,
+  canvas: fabric.Canvas,
+  color: string = '#4285f4'
+): void {
+  if (!obj || !canvas) return;
+  
+  const bounds = getObjectBounds(obj);
+  
+  // Create or update highlight rectangle
+  let highlight = canvas.getObjects().find(o => (o as any).isHighlight && (o as any).targetId === obj.id) as fabric.Rect | undefined;
+  
+  if (!highlight) {
+    highlight = new fabric.Rect({
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height,
+      fill: 'transparent',
+      stroke: color,
+      strokeWidth: 1,
+      strokeDashArray: [3, 3],
+      selectable: false,
+      evented: false
+    });
+    
+    // Add custom properties
+    (highlight as any).isHighlight = true;
+    (highlight as any).targetId = obj.id;
+    
+    canvas.add(highlight);
+  } else {
+    highlight.set({
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height
+    });
+  }
+  
+  canvas.renderAll();
 }
