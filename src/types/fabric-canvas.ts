@@ -1,6 +1,6 @@
 
 import { fabric } from 'fabric';
-import { WireframeCanvasConfig } from './wireframe';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 
 export interface UseFabricOptions {
   persistConfig?: boolean;

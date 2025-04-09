@@ -1,7 +1,6 @@
 
 import { useCallback } from 'react';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import { GridType } from '@/components/wireframe/canvas/EnhancedGridSystem';
 
 export function useGridActions(
   updateConfig: (config: Partial<WireframeCanvasConfig>) => void,
@@ -20,8 +19,8 @@ export function useGridActions(
     updateConfig({ gridSize: size });
   }, [updateConfig]);
   
-  const changeGridType = useCallback((type: GridType) => {
-    updateConfig({ gridType: type as any });
+  const changeGridType = useCallback((type: "lines" | "dots" | "columns") => {
+    updateConfig({ gridType: type });
   }, [updateConfig]);
   
   const setSnapTolerance = useCallback((tolerance: number) => {
