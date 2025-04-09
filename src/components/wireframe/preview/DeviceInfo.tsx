@@ -49,4 +49,3 @@ export const DEVICE_DIMENSIONS: Record<DeviceType, DeviceDimensions> = {
     description: "Small mobile device in portrait orientation"
   }
 };
-

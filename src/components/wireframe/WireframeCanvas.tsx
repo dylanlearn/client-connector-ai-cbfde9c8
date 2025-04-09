@@ -44,16 +44,6 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({
     }
   };
 
-  // Handle section click
-  const handleSectionClick = (sectionId: string) => {
-    selectSection(sectionId);
-    
-    // If a callback was provided for section clicks, call it
-    if (onSectionClick) {
-      onSectionClick(sectionId);
-    }
-  };
-
   // Update canvas size on mount and window resize
   useEffect(() => {
     const updateCanvasSize = () => {
@@ -70,6 +60,16 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({
       window.removeEventListener('resize', updateCanvasSize);
     };
   }, []);
+
+  // Function to handle section click that will be passed to children
+  const handleSectionClick = (sectionId: string) => {
+    selectSection(sectionId);
+    
+    // Call the external onSectionClick handler if provided
+    if (onSectionClick) {
+      onSectionClick(sectionId);
+    }
+  };
 
   return (
     <div
@@ -98,11 +98,12 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({
         }}
       >
         {React.Children.map(children, child => {
-          // Pass handleSectionClick to wireframe children
+          // Pass handleSectionClick to Wireframe children
           if (React.isValidElement(child)) {
+            // Clone the element with the additional prop
             return React.cloneElement(child, {
               onSectionClick: handleSectionClick
-            });
+            } as {});
           }
           return child;
         })}

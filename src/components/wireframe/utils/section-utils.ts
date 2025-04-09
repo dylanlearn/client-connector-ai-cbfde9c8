@@ -138,3 +138,89 @@ export const hasResponsiveVariations = (section: WireframeSection): boolean => {
   const responsiveTypes = ['header', 'hero', 'features', 'footer', 'gallery', 'testimonials'];
   return responsiveTypes.includes(section.sectionType);
 };
+
+/**
+ * Calculate bounds for each section
+ * Used for alignment guides and snapping
+ */
+export const calculateSectionBounds = (sections: WireframeSection[]) => {
+  return sections.map(section => {
+    const { position, dimensions } = section;
+    
+    if (!position || !dimensions) {
+      return {
+        id: section.id,
+        bounds: { top: 0, left: 0, right: 0, bottom: 0, centerX: 0, centerY: 0 }
+      };
+    }
+    
+    const { x, y } = position;
+    const { width, height } = dimensions;
+    
+    const left = x;
+    const top = y;
+    const right = x + width;
+    const bottom = y + height;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    
+    return {
+      id: section.id,
+      bounds: { top, left, right, bottom, centerX, centerY }
+    };
+  });
+};
+
+/**
+ * Find alignment guides for a section compared to other sections
+ * Used for smart guides when moving or resizing sections
+ */
+export const findAlignmentGuides = (
+  activeSectionId: string,
+  activeBounds: { top: number; left: number; right: number; bottom: number; centerX: number; centerY: number },
+  allBounds: Array<{ id: string; bounds: typeof activeBounds }>,
+  tolerance: number = 5
+) => {
+  const guides: Array<{ position: number; orientation: 'horizontal' | 'vertical' }> = [];
+  
+  // Skip if no active bounds
+  if (!activeBounds) {
+    return guides;
+  }
+  
+  // Compare with all other section bounds
+  allBounds.forEach(({ id, bounds }) => {
+    // Skip self
+    if (id === activeSectionId || !bounds) {
+      return;
+    }
+    
+    // Check for horizontal alignments (top, center, bottom)
+    if (Math.abs(activeBounds.top - bounds.top) <= tolerance) {
+      guides.push({ position: bounds.top, orientation: 'horizontal' });
+    }
+    
+    if (Math.abs(activeBounds.centerY - bounds.centerY) <= tolerance) {
+      guides.push({ position: bounds.centerY, orientation: 'horizontal' });
+    }
+    
+    if (Math.abs(activeBounds.bottom - bounds.bottom) <= tolerance) {
+      guides.push({ position: bounds.bottom, orientation: 'horizontal' });
+    }
+    
+    // Check for vertical alignments (left, center, right)
+    if (Math.abs(activeBounds.left - bounds.left) <= tolerance) {
+      guides.push({ position: bounds.left, orientation: 'vertical' });
+    }
+    
+    if (Math.abs(activeBounds.centerX - bounds.centerX) <= tolerance) {
+      guides.push({ position: bounds.centerX, orientation: 'vertical' });
+    }
+    
+    if (Math.abs(activeBounds.right - bounds.right) <= tolerance) {
+      guides.push({ position: bounds.right, orientation: 'vertical' });
+    }
+  });
+  
+  return guides;
+};

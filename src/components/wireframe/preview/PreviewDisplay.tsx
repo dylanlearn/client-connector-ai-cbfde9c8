@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import WireframeCanvas from '../WireframeCanvas';
 import Wireframe from '../Wireframe';
-import { DeviceDimensions, DeviceType } from './DeviceInfo';
+import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions } from './DeviceInfo';
 
 interface PreviewDisplayProps {
   currentDimensions: DeviceDimensions;
