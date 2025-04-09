@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import WireframeCanvas from './WireframeCanvas';
+import Wireframe from './Wireframe';
 import { cn } from '@/lib/utils';
 import { ArrowLeftRight, Maximize2, Minimize2, RefreshCw, Smartphone, Monitor, Tablet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -155,11 +156,15 @@ const SideBySidePreview: React.FC<SideBySidePreviewProps> = ({
                 </Button>
               </div>
             </div>
-            <WireframeCanvas 
-              key={`preview-${lastUpdate}`}
-              className="border rounded-md shadow-sm" 
-              onSectionClick={handleSectionClick}
-            />
+            <WireframeCanvas key={`preview-${lastUpdate}`} className="border rounded-md shadow-sm">
+              {wireframe && <Wireframe 
+                wireframe={wireframe} 
+                viewMode="preview" 
+                deviceType={activeDevice}
+                onSectionClick={handleSectionClick} 
+                activeSection={activeSection}
+              />}
+            </WireframeCanvas>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>

@@ -9,7 +9,8 @@ const WireframeCanvas = ({
   className,
   deviceType = 'desktop',
   editable = true,
-  darkMode = false
+  darkMode = false,
+  onSectionClick
 }) => {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const { 

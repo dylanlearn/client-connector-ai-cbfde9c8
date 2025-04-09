@@ -24,7 +24,7 @@ export interface SectionQuickActionsProps {
 
 export interface WireframeSectionRendererProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'edit' | 'flowchart';
+  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   sectionIndex?: number;
@@ -34,7 +34,7 @@ export interface WireframeSectionRendererProps {
 
 export interface WireframeRendererProps {
   wireframeData: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart';
+  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
@@ -48,7 +48,7 @@ export interface GuidelineProps {
 
 export interface WireframeProps {
   wireframe: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart';
+  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
@@ -58,7 +58,7 @@ export interface WireframeProps {
 
 export interface WireframeVisualizerProps {
   wireframe: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart';
+  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
@@ -68,7 +68,7 @@ export interface WireframeVisualizerProps {
 
 export interface SectionComponentProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'edit' | 'flowchart';
+  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   isSelected?: boolean;
@@ -77,9 +77,9 @@ export interface SectionComponentProps {
 
 export interface VariantComponentProps {
   component: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart';
+  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
-  variant?: string; // Added missing property
-  data?: any; // Added missing property
+  variant?: string;
+  data?: any;
 }

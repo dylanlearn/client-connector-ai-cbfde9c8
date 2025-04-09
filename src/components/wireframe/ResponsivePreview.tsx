@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import WireframeCanvas from './WireframeCanvas';
+import WireframeSectionRenderer from './WireframeSectionRenderer';
 import { useWireframeStore } from '@/stores/wireframe-store';
 
 const DEVICE_DIMENSIONS = {
@@ -169,8 +170,31 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
                 ? 'mobile' 
                 : activeDevice.includes('tablet') ? 'tablet' : 'desktop'
               }
-              onSectionClick={onSectionClick}
-            />
+            >
+              {wireframe && wireframe.sections && (
+                <div className="p-4">
+                  {wireframe.sections.map((section, index) => (
+                    <div 
+                      key={section.id || `section-${index}`} 
+                      className="mb-4"
+                      onClick={() => onSectionClick && section.id && onSectionClick(section.id)}
+                    >
+                      <WireframeSectionRenderer
+                        section={section}
+                        viewMode="preview"
+                        darkMode={darkMode}
+                        deviceType={activeDevice.includes('mobile') 
+                          ? 'mobile' 
+                          : activeDevice.includes('tablet') ? 'tablet' : 'desktop'
+                        }
+                        sectionIndex={index}
+                        onSectionClick={onSectionClick}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </WireframeCanvas>
           </div>
         </div>
       </CardContent>
