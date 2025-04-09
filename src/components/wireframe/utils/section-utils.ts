@@ -1,4 +1,3 @@
-
 import { WireframeSection } from '@/types/wireframe';
 
 export interface SectionBounds {
@@ -10,6 +9,12 @@ export interface SectionBounds {
   height: number;
   centerX: number;
   centerY: number;
+  id?: string; // Add id to relate bounds to a section
+}
+
+export interface SectionBoundsWithId {
+  id: string;
+  bounds: SectionBounds;
 }
 
 export interface AlignmentGuide {
@@ -44,40 +49,46 @@ export const calculateSectionBounds = (section: WireframeSection): SectionBounds
 };
 
 /**
+ * Calculate bounds for an array of sections
+ */
+export const calculateSectionsBounds = (sections: WireframeSection[]): SectionBoundsWithId[] => {
+  return sections.map(section => ({
+    id: section.id,
+    bounds: calculateSectionBounds(section)
+  }));
+};
+
+/**
  * Find alignment guides between the active section and other sections
  */
 export const findAlignmentGuides = (
-  activeSection: WireframeSection,
-  allSections: WireframeSection[],
+  activeSectionId: string,
+  activeBounds: SectionBounds,
+  allBounds: SectionBoundsWithId[],
   tolerance: number = 5
-): AlignmentGuide[] => {
-  if (!activeSection || allSections.length <= 1) return [];
+): Array<{position: number, orientation: 'horizontal' | 'vertical'}> => {
+  if (!activeSectionId || allBounds.length <= 1) return [];
   
-  const activeBounds = calculateSectionBounds(activeSection);
-  const guides: AlignmentGuide[] = [];
+  const guides: Array<{position: number, orientation: 'horizontal' | 'vertical'}> = [];
   
   // Filter out the active section
-  const otherSections = allSections.filter(section => section.id !== activeSection.id);
+  const otherBounds = allBounds.filter(item => item.id !== activeSectionId);
   
-  otherSections.forEach(section => {
-    const bounds = calculateSectionBounds(section);
+  otherBounds.forEach(item => {
+    const bounds = item.bounds;
     
     // Center alignments
     if (Math.abs(activeBounds.centerX - bounds.centerX) <= tolerance) {
       guides.push({
         position: bounds.centerX,
-        orientation: 'vertical',
-        type: 'center',
-        sections: [section.id, activeSection.id]
+        orientation: 'vertical'
       });
     }
     
     if (Math.abs(activeBounds.centerY - bounds.centerY) <= tolerance) {
       guides.push({
         position: bounds.centerY,
-        orientation: 'horizontal',
-        type: 'center',
-        sections: [section.id, activeSection.id]
+        orientation: 'horizontal'
       });
     }
     
@@ -85,57 +96,59 @@ export const findAlignmentGuides = (
     if (Math.abs(activeBounds.left - bounds.left) <= tolerance) {
       guides.push({
         position: bounds.left,
-        orientation: 'vertical',
-        type: 'edge',
-        sections: [section.id, activeSection.id]
+        orientation: 'vertical'
       });
     }
     
     if (Math.abs(activeBounds.right - bounds.right) <= tolerance) {
       guides.push({
         position: bounds.right,
-        orientation: 'vertical',
-        type: 'edge',
-        sections: [section.id, activeSection.id]
+        orientation: 'vertical'
       });
     }
     
     if (Math.abs(activeBounds.top - bounds.top) <= tolerance) {
       guides.push({
         position: bounds.top,
-        orientation: 'horizontal',
-        type: 'edge',
-        sections: [section.id, activeSection.id]
+        orientation: 'horizontal'
       });
     }
     
     if (Math.abs(activeBounds.bottom - bounds.bottom) <= tolerance) {
       guides.push({
         position: bounds.bottom,
-        orientation: 'horizontal',
-        type: 'edge',
-        sections: [section.id, activeSection.id]
+        orientation: 'horizontal'
       });
     }
   });
   
   // Add distribution guides (equal spacing between 3+ elements)
-  if (allSections.length >= 3) {
+  if (allBounds.length >= 3) {
     // Horizontal distribution
-    const sortedHorizontal = [...allSections].sort((a, b) => 
-      (a.position?.x || 0) - (b.position?.x || 0)
-    );
+    const sortedHorizontal = [...allBounds].sort((a, b) => {
+      const sectionA = allBounds.find(item => item.id === a.id)?.bounds;
+      const sectionB = allBounds.find(item => item.id === b.id)?.bounds;
+      
+      if (!sectionA || !sectionB) return 0;
+      
+      return sectionA.left - sectionB.left;
+    });
     
     // Vertical distribution
-    const sortedVertical = [...allSections].sort((a, b) => 
-      (a.position?.y || 0) - (b.position?.y || 0)
-    );
+    const sortedVertical = [...allBounds].sort((a, b) => {
+      const sectionA = allBounds.find(item => item.id === a.id)?.bounds;
+      const sectionB = allBounds.find(item => item.id === b.id)?.bounds;
+      
+      if (!sectionA || !sectionB) return 0;
+      
+      return sectionA.top - sectionB.top;
+    });
     
     // Calculate distribution guides for horizontal
     for (let i = 1; i < sortedHorizontal.length - 1; i++) {
-      const prev = calculateSectionBounds(sortedHorizontal[i-1]);
-      const curr = calculateSectionBounds(sortedHorizontal[i]);
-      const next = calculateSectionBounds(sortedHorizontal[i+1]);
+      const prev = sortedHorizontal[i-1].bounds;
+      const curr = sortedHorizontal[i].bounds;
+      const next = sortedHorizontal[i+1].bounds;
       
       const gap1 = curr.left - prev.right;
       const gap2 = next.left - curr.right;
@@ -143,18 +156,16 @@ export const findAlignmentGuides = (
       if (Math.abs(gap1 - gap2) <= tolerance) {
         guides.push({
           position: curr.centerX,
-          orientation: 'vertical',
-          type: 'distribution',
-          sections: [sortedHorizontal[i-1].id, sortedHorizontal[i].id, sortedHorizontal[i+1].id]
+          orientation: 'vertical'
         });
       }
     }
     
     // Calculate distribution guides for vertical
     for (let i = 1; i < sortedVertical.length - 1; i++) {
-      const prev = calculateSectionBounds(sortedVertical[i-1]);
-      const curr = calculateSectionBounds(sortedVertical[i]);
-      const next = calculateSectionBounds(sortedVertical[i+1]);
+      const prev = sortedVertical[i-1].bounds;
+      const curr = sortedVertical[i].bounds;
+      const next = sortedVertical[i+1].bounds;
       
       const gap1 = curr.top - prev.bottom;
       const gap2 = next.top - curr.bottom;
@@ -162,9 +173,7 @@ export const findAlignmentGuides = (
       if (Math.abs(gap1 - gap2) <= tolerance) {
         guides.push({
           position: curr.centerY,
-          orientation: 'horizontal',
-          type: 'distribution',
-          sections: [sortedVertical[i-1].id, sortedVertical[i].id, sortedVertical[i+1].id]
+          orientation: 'horizontal'
         });
       }
     }

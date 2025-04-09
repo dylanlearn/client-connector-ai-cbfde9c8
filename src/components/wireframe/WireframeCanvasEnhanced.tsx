@@ -6,7 +6,7 @@ import { useCanvasInteractions } from '@/hooks/wireframe/use-canvas-interactions
 import { useSectionManipulation } from '@/hooks/wireframe/use-section-manipulation';
 import { WireframeSection } from '@/types/wireframe';
 import { componentToFabricObject, fabricObjectToComponent } from './utils/fabric-converters';
-import { calculateSectionBounds, findAlignmentGuides } from './utils/section-utils';
+import { calculateSectionsBounds, findAlignmentGuides } from './utils/section-utils';
 import CanvasControls from './controls/CanvasControls';
 import ResizeHandles from './controls/ResizeHandles';
 import GridSystem from './canvas/GridSystem';
@@ -135,13 +135,13 @@ const WireframeCanvasEnhanced = memo(({
         
         fabricObject.on('moving', (e) => {
           if (config.showSmartGuides) {
-            const bounds = calculateSectionBounds(wireframe.sections);
-            const activeBounds = bounds.find(b => b.id === section.id)?.bounds;
+            const bounds = calculateSectionsBounds(wireframe.sections);
+            const activeBound = bounds.find(b => b.id === section.id);
             
-            if (activeBounds) {
+            if (activeBound && activeBound.bounds) {
               const guides = findAlignmentGuides(
                 section.id,
-                activeBounds,
+                activeBound.bounds,
                 bounds,
                 config.snapTolerance
               );

@@ -49,3 +49,10 @@ export const DEVICE_DIMENSIONS: Record<DeviceType, DeviceDimensions> = {
     description: "Small mobile device in portrait orientation"
   }
 };
+
+// Map DeviceType to simplified device type for compatibility with existing components
+export const mapDeviceType = (deviceType: DeviceType): 'desktop' | 'tablet' | 'mobile' => {
+  if (deviceType.includes('tablet')) return 'tablet';
+  if (deviceType.includes('mobile')) return 'mobile';
+  return 'desktop';
+};

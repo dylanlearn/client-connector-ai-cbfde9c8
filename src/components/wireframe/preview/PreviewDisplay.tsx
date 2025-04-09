@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import WireframeCanvas from '../WireframeCanvas';
 import Wireframe from '../Wireframe';
-import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions } from './DeviceInfo';
+import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions, mapDeviceType } from './DeviceInfo';
 
 interface PreviewDisplayProps {
   currentDimensions: DeviceDimensions;
@@ -27,6 +27,9 @@ const PreviewDisplay: React.FC<PreviewDisplayProps> = ({
     // For example, mobile-specific touch events
   }, [deviceType]);
 
+  // Map the extended device type to the simplified type expected by WireframeCanvas
+  const simplifiedDeviceType = mapDeviceType(deviceType);
+
   return (
     <div 
       ref={previewRef}
@@ -41,7 +44,7 @@ const PreviewDisplay: React.FC<PreviewDisplayProps> = ({
       }}
     >
       <WireframeCanvas
-        deviceType={deviceType}
+        deviceType={simplifiedDeviceType}
         darkMode={darkMode}
         onSectionClick={onSectionClick}
       >
@@ -50,7 +53,7 @@ const PreviewDisplay: React.FC<PreviewDisplayProps> = ({
             wireframe={wireframe}
             viewMode="preview"
             darkMode={darkMode}
-            deviceType={deviceType}
+            deviceType={simplifiedDeviceType}
             onSectionClick={onSectionClick}
           />
         )}
