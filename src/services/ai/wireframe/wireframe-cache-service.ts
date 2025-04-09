@@ -1,4 +1,4 @@
-import { WireframeGenerationParams } from "../wireframe-types";
+import { WireframeGenerationParams } from "./wireframe-types";
 
 const cache = new Map<string, any>();
 

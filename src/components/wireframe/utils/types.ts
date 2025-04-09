@@ -1,5 +1,3 @@
-
-
 import { DeviceType } from './responsive-utils';
 
 // Canvas configuration interface
@@ -45,4 +43,3 @@ export interface LayerInfo {
   parentId?: string; // For grouped layers
   isExpanded?: boolean; // For group open/closed state
 }
-

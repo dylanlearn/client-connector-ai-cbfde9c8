@@ -1,4 +1,3 @@
-
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 
 export interface WireframeGenerationParams {
@@ -199,15 +198,24 @@ export interface BranchInfo {
 
 export interface DesignMemoryData {
   projectId: string;
-  designs: any[];
-  preferences: Record<string, any>;
-  insights: Record<string, any>;
+  blueprintId?: string;
+  layoutPatterns?: any;
+  stylePreferences?: any;
+  componentPreferences?: any;
+  designs?: any[];
+  preferences?: Record<string, any>;
+  insights?: Record<string, any>;
 }
 
 export interface DesignMemoryResponse {
-  memory: DesignMemoryData;
-  recommendations: any[];
+  id?: string;
+  projectId?: string;
+  data: DesignMemoryData;
+  memory?: DesignMemoryData;
+  recommendations?: any[];
   success: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Helper function to convert AIWireframe to WireframeData

@@ -165,7 +165,8 @@ export class WireframeMemoryService {
         componentPreferences: data.component_preferences
       },
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      success: true
     };
   }
 }
