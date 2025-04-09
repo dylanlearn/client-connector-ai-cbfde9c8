@@ -28,7 +28,7 @@ export function useGridActions(
   
   // Set grid color
   const setGridColor = useCallback((color: string) => {
-    updateConfig({ gridColor: color } as Partial<WireframeCanvasConfig>);
+    updateConfig({ gridColor: color });
   }, [updateConfig]);
   
   // Set snap tolerance

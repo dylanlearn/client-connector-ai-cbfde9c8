@@ -6,8 +6,9 @@ type Theme = "dark" | "light" | "system";
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
-  enableSystem?: boolean;
+  storageKey?: string;
   attribute?: string;
+  enableSystem?: boolean;
   disableTransitionOnChange?: boolean;
 };
 
@@ -16,70 +17,45 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void;
 };
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-};
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
+  undefined
+);
 
 export function ThemeProvider({
   children,
   defaultTheme = "system",
+  storageKey = "ui-theme",
+  attribute = "data-theme",
   enableSystem = true,
-  attribute = "class",
   disableTransitionOnChange = false,
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("theme") as Theme) || defaultTheme
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
 
   useEffect(() => {
     const root = window.document.documentElement;
 
-    const applyTheme = (targetTheme: string) => {
-      if (attribute === "class") {
-        root.classList.remove("light", "dark");
-        
-        if (targetTheme !== "system") {
-          root.classList.add(targetTheme);
-        }
-      } else {
-        root.setAttribute(attribute, targetTheme);
-      }
-    };
-
     if (disableTransitionOnChange) {
-      document.documentElement.classList.add("disable-transition");
-      requestAnimationFrame(() => {
-        document.documentElement.classList.remove("disable-transition");
-      });
+      root.classList.add("[&_*]:!transition-none");
+      window.setTimeout(() => {
+        root.classList.remove("[&_*]:!transition-none");
+      }, 1);
     }
 
     if (theme === "system" && enableSystem) {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      applyTheme(prefersDark ? "dark" : "light");
-    } else {
-      applyTheme(theme);
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+
+      root.setAttribute(attribute, systemTheme);
+      return;
     }
 
-    // Add listener for system preference changes
-    if (enableSystem) {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handleChange = () => {
-        if (theme === "system") {
-          applyTheme(mediaQuery.matches ? "dark" : "light");
-        }
-      };
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-  }, [theme, attribute, enableSystem, disableTransitionOnChange]);
-
-  // Save theme to localStorage
-  useEffect(() => {
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    root.setAttribute(attribute, theme);
+    localStorage.setItem(storageKey, theme);
+  }, [theme, attribute, enableSystem, disableTransitionOnChange, storageKey]);
 
   return (
     <ThemeProviderContext.Provider value={{ theme, setTheme }}>
@@ -88,10 +64,12 @@ export function ThemeProvider({
   );
 }
 
-export const useTheme = () => {
+export function useTheme() {
   const context = useContext(ThemeProviderContext);
+
   if (context === undefined) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
+
   return context;
-};
+}

@@ -1,62 +1,83 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export const LandingPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-12">
-      {/* Hero Section */}
-      <div className="flex flex-col items-center text-center py-16">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">Design Better. Build Faster.</h1>
-        <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl">
-          Create stunning wireframes and prototypes with our intuitive design tools.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button asChild size="lg">
-            <Link to="/register">Get Started</Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild>
-            <Link to="/docs">Learn More</Link>
-          </Button>
+    <div className="py-12">
+      <div className="container mx-auto px-4">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            Design Better, Faster, Together
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+            Our all-in-one design platform helps teams create stunning wireframes,
+            prototypes, and design systems with powerful collaboration tools.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
+              <Link to="/register">Get Started Free</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link to="/wireframe-studio">Try Design Studio</Link>
+            </Button>
+          </div>
         </div>
-      </div>
-      
-      {/* Features Section */}
-      <div className="py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="bg-primary/10 p-4 rounded-full mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        
+        {/* Features Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          <div className="p-6 bg-card rounded-lg shadow-sm">
+            <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Responsive Design</h3>
-            <p className="text-muted-foreground">Design once and ensure perfect responsiveness across all devices.</p>
+            <h3 className="text-xl font-semibold mb-2">Flexible Wireframing</h3>
+            <p className="text-muted-foreground">
+              Create wireframes quickly with our intuitive drag-and-drop interface 
+              and extensive component library.
+            </p>
           </div>
           
-          <div className="flex flex-col items-center text-center">
-            <div className="bg-primary/10 p-4 rounded-full mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          <div className="p-6 bg-card rounded-lg shadow-sm">
+            <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Wireframe Studio</h3>
-            <p className="text-muted-foreground">Create interactive wireframes with drag-and-drop simplicity.</p>
+            <h3 className="text-xl font-semibold mb-2">Real-time Collaboration</h3>
+            <p className="text-muted-foreground">
+              Work together with your team in real-time, with commenting, 
+              version history, and shared design systems.
+            </p>
           </div>
           
-          <div className="flex flex-col items-center text-center">
-            <div className="bg-primary/10 p-4 rounded-full mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          <div className="p-6 bg-card rounded-lg shadow-sm">
+            <div className="w-12 h-12 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Secure Collaboration</h3>
-            <p className="text-muted-foreground">Work together with your team in real-time with secure access controls.</p>
+            <h3 className="text-xl font-semibold mb-2">AI-Powered Design</h3>
+            <p className="text-muted-foreground">
+              Let our AI assist you with generating wireframes, suggesting improvements, 
+              and optimizing your designs.
+            </p>
           </div>
+        </div>
+        
+        {/* CTA Section */}
+        <div className="bg-primary/10 rounded-lg p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to start designing?</h2>
+          <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+            Join thousands of designers and teams who are creating amazing
+            wireframes and prototypes with our platform.
+          </p>
+          <Button size="lg" asChild>
+            <Link to="/register">Sign Up For Free</Link>
+          </Button>
         </div>
       </div>
     </div>

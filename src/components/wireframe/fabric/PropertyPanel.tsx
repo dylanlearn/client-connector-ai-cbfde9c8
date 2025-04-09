@@ -155,9 +155,9 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           <div>
             <Label htmlFor="fill">Fill Color</Label>
             <div className="flex items-center gap-2 mt-1">
-              <div
-                className="w-8 h-8 rounded border"
-                style={{ background: properties.fill }}
+              <ColorPicker
+                color={properties.fill}
+                onChange={(color) => handleChange('fill', color)}
               />
               <Input
                 id="fill"
@@ -171,9 +171,9 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           <div>
             <Label htmlFor="stroke">Stroke Color</Label>
             <div className="flex items-center gap-2 mt-1">
-              <div
-                className="w-8 h-8 rounded border"
-                style={{ background: properties.stroke }}
+              <ColorPicker
+                color={properties.stroke}
+                onChange={(color) => handleChange('stroke', color)}
               />
               <Input
                 id="stroke"

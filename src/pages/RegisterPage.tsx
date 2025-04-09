@@ -7,11 +7,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 
 const RegisterPage: React.FC = () => {
-  const { signUp } = useAuth();
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic registration handling
+    // Registration handling
   };
 
   return (
@@ -23,7 +21,7 @@ const RegisterPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
-            <Input id="name" type="text" placeholder="Full name" required />
+            <Input id="name" placeholder="Your name" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -32,6 +30,10 @@ const RegisterPage: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" placeholder="Password" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Input id="confirm-password" type="password" placeholder="Confirm password" required />
           </div>
           <Button type="submit" className="w-full">Register</Button>
         </form>

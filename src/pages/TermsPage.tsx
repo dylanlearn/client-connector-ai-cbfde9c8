@@ -3,62 +3,72 @@ import React from 'react';
 
 export const TermsPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Terms of Service</h1>
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-4xl mx-auto prose dark:prose-invert">
+        <h1>Terms of Service</h1>
+        <p className="lead">Last updated: April 9, 2025</p>
         
-        <div className="prose prose-lg max-w-none">
-          <p>
-            Last Updated: April 9, 2025
-          </p>
-          
-          <h2>1. Acceptance of Terms</h2>
-          <p>
-            By accessing or using our services, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing our services.
-          </p>
-          
-          <h2>2. Use License</h2>
-          <p>
-            Permission is granted to temporarily use our services for personal, non-commercial purposes. This is the grant of a license, not a transfer of title, and under this license you may not:
-          </p>
-          <ul>
-            <li>Modify or copy the materials</li>
-            <li>Use the materials for any commercial purpose</li>
-            <li>Attempt to decompile or reverse engineer any software contained in our services</li>
-            <li>Remove any copyright or other proprietary notations from the materials</li>
-            <li>Transfer the materials to another person or "mirror" the materials on any other server</li>
-          </ul>
-          
-          <h2>3. Disclaimer</h2>
-          <p>
-            Our services are provided "as is". We make no warranties, expressed or implied, and hereby disclaim and negate all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
-          </p>
-          
-          <h2>4. Limitations</h2>
-          <p>
-            In no event shall we or our suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use our services, even if we or an authorized representative has been notified orally or in writing of the possibility of such damage.
-          </p>
-          
-          <h2>5. Accuracy of Materials</h2>
-          <p>
-            The materials appearing in our services could include technical, typographical, or photographic errors. We do not warrant that any of the materials are accurate, complete, or current. We may make changes to the materials at any time without notice.
-          </p>
-          
-          <h2>6. Links</h2>
-          <p>
-            We have not reviewed all of the sites linked to our services and are not responsible for the contents of any such linked site. The inclusion of any link does not imply endorsement by us of the site. Use of any such linked website is at the user's own risk.
-          </p>
-          
-          <h2>7. Modifications</h2>
-          <p>
-            We may revise these terms of service at any time without notice. By using our services, you are agreeing to be bound by the then current version of these terms of service.
-          </p>
-          
-          <h2>8. Governing Law</h2>
-          <p>
-            These terms and conditions are governed by and construed in accordance with the laws of our jurisdiction and you irrevocably submit to the exclusive jurisdiction of the courts in that location.
-          </p>
-        </div>
+        <h2>1. Introduction</h2>
+        <p>
+          Welcome to our wireframing and design platform. These Terms of Service ("Terms") govern your use of our website, 
+          services, and applications (collectively, the "Service"). By accessing or using the Service, you agree to be bound 
+          by these Terms. If you disagree with any part of the Terms, you may not access the Service.
+        </p>
+        
+        <h2>2. Accounts</h2>
+        <p>
+          When you create an account with us, you must provide accurate, complete, and current information. You are responsible 
+          for safeguarding the password and for all activities that occur under your account. You agree not to disclose your 
+          password to any third party. You must notify us immediately upon becoming aware of any breach of security or unauthorized 
+          use of your account.
+        </p>
+        
+        <h2>3. Content</h2>
+        <p>
+          Our Service allows you to post, link, store, share and otherwise make available certain information, text, graphics, 
+          videos, or other material ("Content"). You are responsible for the Content that you post on or through the Service, 
+          including its legality, reliability, and appropriateness.
+        </p>
+        <p>
+          By posting Content on or through the Service, you represent and warrant that: (i) the Content is yours (you own it) 
+          or you have the right to use it and grant us the rights and license as provided in these Terms, and (ii) the posting 
+          of your Content on or through the Service does not violate the privacy rights, publicity rights, copyrights, contract 
+          rights or any other rights of any person.
+        </p>
+        
+        <h2>4. Use License</h2>
+        <p>
+          We grant you a limited, non-exclusive, non-transferable, revocable license to use the Service as authorized in these Terms.
+        </p>
+        
+        <h2>5. Prohibited Uses</h2>
+        <p>You may use the Service only for lawful purposes and in accordance with these Terms. You agree not to use the Service:</p>
+        <ul>
+          <li>In any way that violates any applicable national or international law or regulation.</li>
+          <li>For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way.</li>
+          <li>To transmit, or procure the sending of, any advertising or promotional material, including any "junk mail", 
+              "chain letter", "spam", or any other similar solicitation.</li>
+          <li>To impersonate or attempt to impersonate the Company, a Company employee, another user, or any other person or entity.</li>
+        </ul>
+        
+        <h2>6. Limitation Of Liability</h2>
+        <p>
+          In no event shall we, nor our directors, employees, partners, agents, suppliers, or affiliates, be liable for any 
+          indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, 
+          use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.
+        </p>
+        
+        <h2>7. Changes</h2>
+        <p>
+          We reserve the right, at our sole discretion, to modify or replace these Terms at any time. What constitutes a material 
+          change will be determined at our sole discretion. By continuing to access or use our Service after those revisions 
+          become effective, you agree to be bound by the revised terms.
+        </p>
+        
+        <h2>8. Contact Us</h2>
+        <p>
+          If you have any questions about these Terms, please contact us at legal@example.com.
+        </p>
       </div>
     </div>
   );

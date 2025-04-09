@@ -1,109 +1,85 @@
 
 import React from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export const HelpPage: React.FC = () => {
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Help Center</h1>
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold mb-6">Help & Support</h1>
+        <p className="text-lg text-muted-foreground mb-8">
+          Find answers to common questions and get support for any issues.
+        </p>
         
-        <div className="bg-card rounded-lg border p-6 mb-8">
+        <div className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Frequently Asked Questions</h2>
-          
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium">How do I create a new project?</h3>
-              <p className="text-muted-foreground mt-1">
-                To create a new project, log in to your account, navigate to the dashboard, and click the "New Project" button. From there, you can choose a template or start from scratch.
-              </p>
-            </div>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1">
+              <AccordionTrigger>How do I create a new project?</AccordionTrigger>
+              <AccordionContent>
+                To create a new project, log in to your account and click on the "New Project" button 
+                on your dashboard. You'll be prompted to select a template or start from scratch, 
+                add a project name, and then you'll be taken to the design canvas.
+              </AccordionContent>
+            </AccordionItem>
             
-            <div>
-              <h3 className="text-lg font-medium">Can I collaborate with my team?</h3>
-              <p className="text-muted-foreground mt-1">
-                Yes, our platform supports real-time collaboration. You can invite team members to your projects from the project settings page and work together simultaneously.
-              </p>
-            </div>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>How do I invite team members to collaborate?</AccordionTrigger>
+              <AccordionContent>
+                Open your project and click on the "Share" button in the top right corner. 
+                Enter the email addresses of team members you want to invite and select their 
+                permission level. They'll receive an email invitation to join your project.
+              </AccordionContent>
+            </AccordionItem>
             
-            <div>
-              <h3 className="text-lg font-medium">How do I export my designs?</h3>
-              <p className="text-muted-foreground mt-1">
-                You can export your designs by opening the project and clicking the "Export" button in the top-right corner. We support various formats including PNG, PDF, and HTML.
-              </p>
-            </div>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>Can I export my designs?</AccordionTrigger>
+              <AccordionContent>
+                Yes! You can export your designs in various formats including PNG, JPG, PDF, 
+                and SVG. Simply select the elements you want to export, click on the "Export" 
+                button in the toolbar, and choose your preferred format and settings.
+              </AccordionContent>
+            </AccordionItem>
             
-            <div>
-              <h3 className="text-lg font-medium">Is there a free trial available?</h3>
-              <p className="text-muted-foreground mt-1">
-                Yes, we offer a free plan with limited features. You can also start a 14-day trial of our Pro plan to access all features.
-              </p>
-            </div>
-          </div>
+            <AccordionItem value="item-4">
+              <AccordionTrigger>How does the AI design feature work?</AccordionTrigger>
+              <AccordionContent>
+                Our AI design assistant can help generate wireframes based on your project requirements. 
+                Simply describe what you're looking for, and the AI will create a starting point that you 
+                can then customize and refine to match your vision.
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="item-5">
+              <AccordionTrigger>What is the difference between the subscription plans?</AccordionTrigger>
+              <AccordionContent>
+                Our plans differ in the number of projects you can create, team collaboration features, 
+                access to advanced tools like design systems, AI features, and priority support. 
+                Visit our pricing page for a detailed comparison of all features included in each plan.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
         
-        <div className="bg-card rounded-lg border p-6 mb-8">
+        <div className="bg-card border rounded-lg p-6 mb-12">
           <h2 className="text-2xl font-bold mb-4">Contact Support</h2>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground mb-6">
             Can't find what you're looking for? Our support team is here to help.
           </p>
-          
-          <form className="space-y-4">
-            <div>
-              <label htmlFor="subject" className="block text-sm font-medium mb-1">Subject</label>
-              <input type="text" id="subject" className="w-full px-3 py-2 border rounded-md" placeholder="Help with..." />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Email Support</h3>
+              <p className="text-muted-foreground mb-2">For general inquiries and help:</p>
+              <a href="mailto:support@example.com" className="text-primary hover:underline">
+                support@example.com
+              </a>
             </div>
-            
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium mb-1">Message</label>
-              <textarea id="message" rows={4} className="w-full px-3 py-2 border rounded-md" placeholder="Describe your issue..."></textarea>
-            </div>
-            
-            <button type="submit" className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
-              Submit Request
-            </button>
-          </form>
-        </div>
-        
-        <div className="bg-card rounded-lg border p-6">
-          <h2 className="text-2xl font-bold mb-4">Video Tutorials</h2>
-          <div className="space-y-4">
-            <div className="bg-muted rounded-md p-4 flex gap-4 items-center">
-              <div className="bg-primary/20 rounded-md p-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium">Getting Started Guide</h3>
-                <p className="text-sm text-muted-foreground">Learn the basics of our platform in 5 minutes</p>
-              </div>
-            </div>
-            
-            <div className="bg-muted rounded-md p-4 flex gap-4 items-center">
-              <div className="bg-primary/20 rounded-md p-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium">Advanced Wireframing</h3>
-                <p className="text-sm text-muted-foreground">Master wireframing techniques with our advanced tutorial</p>
-              </div>
-            </div>
-            
-            <div className="bg-muted rounded-md p-4 flex gap-4 items-center">
-              <div className="bg-primary/20 rounded-md p-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium">Collaboration Features</h3>
-                <p className="text-sm text-muted-foreground">Learn how to collaborate effectively with your team</p>
-              </div>
+            <div className="border rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Live Chat</h3>
+              <p className="text-muted-foreground mb-2">Available Monday-Friday, 9am-5pm EST</p>
+              <button className="text-primary hover:underline">
+                Start Chat
+              </button>
             </div>
           </div>
         </div>

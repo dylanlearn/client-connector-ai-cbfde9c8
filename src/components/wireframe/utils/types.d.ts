@@ -12,7 +12,7 @@ export interface WireframeCanvasConfig {
   snapTolerance: number;
   backgroundColor: string;
   showSmartGuides: boolean;
-  gridColor?: string;
+  gridColor: string;
   showRulers?: boolean;
   rulerSize?: number;
   rulerColor?: string;
@@ -27,4 +27,3 @@ export interface SectionRenderingOptions {
   gridSize: number;
   showBorders: boolean;
 }
-
