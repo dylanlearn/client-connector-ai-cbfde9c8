@@ -1,277 +1,224 @@
 
 import { fabric } from 'fabric';
 import { WireframeSection } from '@/types/wireframe';
+import { getResponsiveLayout, isSectionVisibleOnDevice } from './section-utils';
 
-interface FabricConversionOptions {
+interface ConversionOptions {
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   interactive?: boolean;
-  darkMode?: boolean;
+  scale?: number;
 }
 
-/**
- * Converts a wireframe section to a Fabric.js object
- */
+// Default styles for different section types
+const getSectionTypeStyles = (sectionType: string): { fill: string; stroke: string } => {
+  switch (sectionType.toLowerCase()) {
+    case 'navigation':
+    case 'nav':
+      return { fill: '#E5F2FF', stroke: '#90CAF9' };
+    case 'hero':
+      return { fill: '#E3F2FD', stroke: '#64B5F6' };
+    case 'features':
+    case 'feature':
+      return { fill: '#E8F5E9', stroke: '#81C784' };
+    case 'testimonials':
+    case 'testimonial':
+      return { fill: '#FFF8E1', stroke: '#FFD54F' };
+    case 'pricing':
+      return { fill: '#F3E5F5', stroke: '#BA68C8' };
+    case 'cta':
+      return { fill: '#FFEBEE', stroke: '#EF5350' };
+    case 'footer':
+      return { fill: '#ECEFF1', stroke: '#B0BEC5' };
+    default:
+      return { fill: '#F5F5F5', stroke: '#BDBDBD' };
+  }
+};
+
+// Function to convert a wireframe section to a Fabric.js object
 export const componentToFabricObject = (
-  section: WireframeSection, 
-  options: FabricConversionOptions = {}
+  section: WireframeSection,
+  options: ConversionOptions = { deviceType: 'desktop', interactive: true }
 ): fabric.Object | null => {
-  const { deviceType = 'desktop', interactive = true, darkMode = false } = options;
+  const { deviceType = 'desktop', interactive = true } = options;
+  
+  // Check if this section should be visible on this device type
+  if (!isSectionVisibleOnDevice(section, deviceType)) {
+    console.log(`Section ${section.id} (${section.sectionType}) not visible on ${deviceType}`);
+    return null;
+  }
+  
+  // Get dimensions and position with defaults
+  const width = section.dimensions?.width || 800;
+  const height = section.dimensions?.height || 200;
+  const left = section.position?.x || 0;
+  const top = section.position?.y || 0;
+  
+  // Get styles based on section type
+  const { fill, stroke } = getSectionTypeStyles(section.sectionType);
   
   try {
-    // Get appropriate width based on device type
-    let width = 800;
-    if (deviceType === 'tablet') width = 600;
-    if (deviceType === 'mobile') width = 320;
-    
-    // Use section dimensions if available
-    const sectionWidth = section.dimensions?.width || width - 40;
-    const sectionHeight = section.dimensions?.height || 200;
-    
-    // Create background rectangle
-    const rect = new fabric.Rect({
-      width: sectionWidth,
-      height: sectionHeight,
-      fill: darkMode ? '#2d3748' : '#f9f9f9',
-      stroke: darkMode ? '#4a5568' : '#ddd',
-      strokeWidth: 1,
-      rx: 5,
-      ry: 5
-    });
-    
-    // Create section name text
-    const text = new fabric.Text(section.name || 'Unnamed Section', {
-      fontSize: 14,
-      fontFamily: 'sans-serif',
-      fill: darkMode ? '#e2e8f0' : '#333',
-      top: 10,
-      left: 10
-    });
-    
-    // Create section content based on section type
-    let contentObjects: fabric.Object[] = [];
-    
-    switch(section.sectionType) {
-      case 'header':
-        contentObjects = createHeaderContent(section, darkMode);
-        break;
-      case 'hero':
-        contentObjects = createHeroContent(section, darkMode);
-        break;
-      case 'features':
-        contentObjects = createFeaturesContent(section, darkMode);
-        break;
-      case 'footer':
-        contentObjects = createFooterContent(section, darkMode);
-        break;
-      default:
-        // Generic placeholder
-        contentObjects = [
-          new fabric.Text('Section Content', {
-            fontSize: 16,
-            fontFamily: 'sans-serif',
-            fill: darkMode ? '#e2e8f0' : '#666',
-            top: 40,
-            left: 10
-          })
-        ];
-    }
-    
-    // Group all objects together
-    const group = new fabric.Group([rect, text, ...contentObjects], {
-      left: section.position?.x || 20,
-      top: section.position?.y || 20,
+    // Create the main section container as a group
+    const sectionGroup = new fabric.Group([], {
+      left,
+      top,
+      width,
+      height,
+      data: { id: section.id, type: section.sectionType },
       selectable: interactive,
       hasControls: interactive,
       hasBorders: interactive,
-      subTargetCheck: true,
-      data: {
-        id: section.id,
-        type: 'section',
-        sectionType: section.sectionType
-      }
+      lockScalingX: !interactive,
+      lockScalingY: !interactive,
+      lockRotation: true,
     });
     
-    // Apply any rotation if present
-    if (section.styleProperties?.rotation) {
-      group.rotate(section.styleProperties.rotation);
+    // Create and add the background rectangle
+    const background = new fabric.Rect({
+      left: 0,
+      top: 0,
+      width,
+      height,
+      fill,
+      stroke,
+      strokeWidth: 1,
+      rx: 4,
+      ry: 4,
+      selectable: false,
+    });
+    sectionGroup.addWithUpdate(background);
+    
+    // Add section title
+    const title = new fabric.Text(section.name || section.sectionType, {
+      left: 10,
+      top: 10,
+      fontSize: 16,
+      fontFamily: 'Arial',
+      fontWeight: 'bold',
+      fill: '#333333',
+      selectable: false,
+    });
+    sectionGroup.addWithUpdate(title);
+    
+    // If we have components in the section, visualize them
+    if (section.components && section.components.length > 0) {
+      const componentHeight = Math.min(80, (height - 50) / section.components.length);
+      
+      section.components.forEach((component, index) => {
+        const compLeft = 10;
+        const compTop = 40 + (index * (componentHeight + 5));
+        const compWidth = width - 20;
+        
+        const compBox = new fabric.Rect({
+          left: compLeft,
+          top: compTop,
+          width: compWidth,
+          height: componentHeight,
+          fill: '#FFFFFF',
+          stroke: '#DDDDDD',
+          strokeWidth: 1,
+          rx: 2,
+          ry: 2,
+          selectable: false,
+        });
+        
+        const compText = new fabric.Text(component.type || `Component ${index + 1}`, {
+          left: compLeft + 5,
+          top: compTop + 5,
+          fontSize: 12,
+          fontFamily: 'Arial',
+          fill: '#666666',
+          selectable: false,
+        });
+        
+        sectionGroup.addWithUpdate(compBox);
+        sectionGroup.addWithUpdate(compText);
+      });
     }
     
-    return group;
+    // Add copy suggestions if available
+    if (section.copySuggestions) {
+      let yPos = height - 65;
+      
+      if (typeof section.copySuggestions === 'object') {
+        if (section.copySuggestions.heading) {
+          const headingText = new fabric.Text(`H: ${section.copySuggestions.heading.substring(0, 20)}${section.copySuggestions.heading.length > 20 ? '...' : ''}`, {
+            left: 10,
+            top: yPos,
+            fontSize: 12,
+            fontFamily: 'Arial',
+            fill: '#666666',
+            selectable: false,
+          });
+          sectionGroup.addWithUpdate(headingText);
+          yPos += 18;
+        }
+        
+        if (section.copySuggestions.subheading) {
+          const subheadingText = new fabric.Text(`S: ${section.copySuggestions.subheading.substring(0, 20)}${section.copySuggestions.subheading.length > 20 ? '...' : ''}`, {
+            left: 10,
+            top: yPos,
+            fontSize: 10,
+            fontFamily: 'Arial',
+            fill: '#888888',
+            selectable: false,
+          });
+          sectionGroup.addWithUpdate(subheadingText);
+          yPos += 15;
+        }
+      }
+    }
+    
+    // Add device type indicator
+    if (deviceType !== 'desktop') {
+      const deviceBadge = new fabric.Text(deviceType.toUpperCase(), {
+        left: width - 70,
+        top: 10,
+        fontSize: 10,
+        fontFamily: 'Arial',
+        fill: '#FFFFFF',
+        backgroundColor: deviceType === 'mobile' ? '#FF5722' : '#2196F3',
+        padding: 3,
+        selectable: false,
+      });
+      sectionGroup.addWithUpdate(deviceBadge);
+    }
+    
+    return sectionGroup;
   } catch (error) {
-    console.error('Error converting component to Fabric object:', error);
+    console.error(`Error creating fabric object for section ${section.id}:`, error);
     return null;
   }
 };
 
-// Helper functions to create content for different section types
-function createHeaderContent(section: WireframeSection, darkMode: boolean): fabric.Object[] {
-  const logo = new fabric.Text('LOGO', {
-    fontSize: 18,
-    fontWeight: 'bold',
-    fontFamily: 'sans-serif',
-    fill: darkMode ? '#e2e8f0' : '#333',
-    top: 20,
-    left: 20
-  });
-  
-  const nav = new fabric.Group([
-    new fabric.Text('Home', { fontSize: 14, fill: darkMode ? '#e2e8f0' : '#333' }),
-    new fabric.Text('About', { fontSize: 14, fill: darkMode ? '#e2e8f0' : '#333', left: 60 }),
-    new fabric.Text('Services', { fontSize: 14, fill: darkMode ? '#e2e8f0' : '#333', left: 120 }),
-    new fabric.Text('Contact', { fontSize: 14, fill: darkMode ? '#e2e8f0' : '#333', left: 180 })
-  ], {
-    top: 20,
-    left: 120
-  });
-  
-  return [logo, nav];
-}
-
-function createHeroContent(section: WireframeSection, darkMode: boolean): fabric.Object[] {
-  const heading = new fabric.Text(section.copySuggestions?.heading || 'Hero Heading', {
-    fontSize: 24,
-    fontWeight: 'bold',
-    fontFamily: 'sans-serif',
-    fill: darkMode ? '#e2e8f0' : '#333',
-    top: 50,
-    left: 20
-  });
-  
-  const subheading = new fabric.Text(section.copySuggestions?.subheading || 'Subheading text goes here', {
-    fontSize: 16,
-    fontFamily: 'sans-serif',
-    fill: darkMode ? '#a0aec0' : '#666',
-    top: 90,
-    left: 20
-  });
-  
-  const button = new fabric.Rect({
-    width: 120,
-    height: 40,
-    fill: '#3b82f6',
-    rx: 4,
-    ry: 4,
-    top: 130,
-    left: 20
-  });
-  
-  const buttonText = new fabric.Text('Get Started', {
-    fontSize: 14,
-    fontWeight: 'bold',
-    fontFamily: 'sans-serif',
-    fill: '#ffffff',
-    top: 143,
-    left: 40
-  });
-  
-  const imageRect = new fabric.Rect({
-    width: 200,
-    height: 150,
-    fill: darkMode ? '#4a5568' : '#e2e8f0',
-    top: 50,
-    left: 300,
-    rx: 4,
-    ry: 4
-  });
-  
-  return [heading, subheading, button, buttonText, imageRect];
-}
-
-function createFeaturesContent(section: WireframeSection, darkMode: boolean): fabric.Object[] {
-  const objects: fabric.Object[] = [];
-  
-  // Create 3 feature boxes
-  for (let i = 0; i < 3; i++) {
-    const boxLeft = 20 + i * 140;
-    
-    const box = new fabric.Rect({
-      width: 120,
-      height: 100,
-      fill: darkMode ? '#4a5568' : '#f3f4f6',
-      stroke: darkMode ? '#64748b' : '#e5e7eb',
-      strokeWidth: 1,
-      rx: 4,
-      ry: 4,
-      top: 50,
-      left: boxLeft
-    });
-    
-    const icon = new fabric.Circle({
-      radius: 15,
-      fill: '#3b82f6',
-      top: 60,
-      left: boxLeft + 20
-    });
-    
-    const title = new fabric.Text(`Feature ${i+1}`, {
-      fontSize: 14,
-      fontWeight: 'bold',
-      fontFamily: 'sans-serif',
-      fill: darkMode ? '#e2e8f0' : '#333',
-      top: 100,
-      left: boxLeft + 10
-    });
-    
-    objects.push(box, icon, title);
-  }
-  
-  return objects;
-}
-
-function createFooterContent(section: WireframeSection, darkMode: boolean): fabric.Object[] {
-  const copyright = new fabric.Text('© 2025 Company Name', {
-    fontSize: 12,
-    fontFamily: 'sans-serif',
-    fill: darkMode ? '#a0aec0' : '#666',
-    top: 20,
-    left: 20
-  });
-  
-  const links = new fabric.Group([
-    new fabric.Text('Privacy', { fontSize: 12, fill: darkMode ? '#e2e8f0' : '#333' }),
-    new fabric.Text('Terms', { fontSize: 12, fill: darkMode ? '#e2e8f0' : '#333', left: 70 }),
-    new fabric.Text('Contact', { fontSize: 12, fill: darkMode ? '#e2e8f0' : '#333', left: 130 })
-  ], {
-    top: 20,
-    left: 300
-  });
-  
-  return [copyright, links];
-}
-
-/**
- * Converts Fabric.js object states back to wireframe sections
- */
-export const fabricObjectToComponent = (
-  fabricObject: fabric.Object
-): Partial<WireframeSection> | null => {
-  if (!fabricObject || !fabricObject.data) return null;
-  
-  const data = fabricObject.data as any;
-  
-  if (data.type !== 'section') return null;
-  
-  // Extract position and dimensions
-  const position = {
-    x: fabricObject.left || 0,
-    y: fabricObject.top || 0
+// Helper function to convert section display options to Fabric.js options
+export const getSectionDisplayOptions = (
+  section: WireframeSection,
+  deviceType: 'desktop' | 'tablet' | 'mobile' = 'desktop'
+): { width: number; height: number; left: number; top: number } => {
+  // Default values
+  const defaults = {
+    width: deviceType === 'desktop' ? 1200 : deviceType === 'tablet' ? 768 : 375,
+    height: 400,
+    left: 0,
+    top: 0
   };
   
-  const dimensions = {
-    width: fabricObject.getScaledWidth(),
-    height: fabricObject.getScaledHeight()
-  };
+  // Get section's own dimensions if available
+  const width = section.dimensions?.width || defaults.width;
+  const height = section.dimensions?.height || defaults.height;
+  const left = section.position?.x || defaults.left;
+  const top = section.position?.y || defaults.top;
   
-  // Extract any rotation
-  const styleProperties = fabricObject.angle 
-    ? { rotation: fabricObject.angle }
-    : undefined;
+  // For responsive modes, adjust width based on device
+  const responsiveWidth = 
+    deviceType === 'desktop' ? width :
+    deviceType === 'tablet' ? Math.min(width, 768) :
+    Math.min(width, 375);
   
   return {
-    id: data.id,
-    sectionType: data.sectionType,
-    position,
-    dimensions,
-    styleProperties
+    width: deviceType !== 'desktop' ? responsiveWidth : width,
+    height,
+    left,
+    top
   };
 };

@@ -2,11 +2,22 @@
 import { useState, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
-import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
+import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
 import { supabase } from "@/integrations/supabase/client";
 import { debounce } from "lodash";
 import { EnhancedLayoutIntelligenceService } from "@/services/ai/wireframe/layout-intelligence-enhanced";
 import { logClientError } from "@/utils/monitoring/client-error-logger";
+
+// Required section types for a complete wireframe
+const REQUIRED_SECTION_TYPES = [
+  'navigation',
+  'hero', 
+  'features', 
+  'testimonials', 
+  'pricing', 
+  'cta', 
+  'footer'
+];
 
 export interface UseAdvancedWireframeParams {
   userInput: string;
@@ -33,6 +44,28 @@ export function useAdvancedWireframe() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
+  // Validate that a wireframe has all required sections
+  const validateWireframe = (wireframe: WireframeData): { isValid: boolean; missingSections: string[] } => {
+    if (!wireframe || !wireframe.sections || wireframe.sections.length === 0) {
+      return { isValid: false, missingSections: REQUIRED_SECTION_TYPES };
+    }
+
+    const generatedSectionTypes = wireframe.sections.map(section => 
+      section.sectionType.toLowerCase()
+    );
+    
+    const missingSections = REQUIRED_SECTION_TYPES.filter(
+      requiredType => !generatedSectionTypes.some(generatedType => 
+        generatedType.includes(requiredType)
+      )
+    );
+    
+    return { 
+      isValid: missingSections.length === 0,
+      missingSections 
+    };
+  };
+  
   // Debounce loadDesignMemory to prevent excessive calls
   const debouncedLoadMemory = useCallback(
     debounce(async (projectId: string) => {
@@ -61,7 +94,7 @@ export function useAdvancedWireframe() {
         description: "Creating a highly structured design from your input...",
       });
       
-      // Direct call to the generate-advanced-wireframe function - fixed function name
+      // Direct call to the generate-advanced-wireframe function
       console.log("Calling generate-advanced-wireframe with params:", {
         userInput: params.userInput.substring(0, 50) + "...",
         projectId: params.projectId,
@@ -70,7 +103,6 @@ export function useAdvancedWireframe() {
         enableLayoutIntelligence: params.enableLayoutIntelligence || false
       });
       
-      // Fixed to call the correct function name
       const { data, error } = await supabase.functions.invoke('generate-advanced-wireframe', {
         body: {
           userInput: params.userInput,
@@ -101,18 +133,31 @@ export function useAdvancedWireframe() {
         throw new Error("No wireframe data returned from API");
       }
       
+      // Validate the wireframe has all required sections
+      const validationResult = validateWireframe(data.wireframe);
+      if (!validationResult.isValid) {
+        console.warn(`Warning: Wireframe is missing some sections: ${validationResult.missingSections.join(', ')}`);
+        toast({
+          title: "Wireframe generated with warnings",
+          description: `Some sections are missing: ${validationResult.missingSections.join(', ')}`,
+          variant: "warning",
+        });
+      }
+      
       // Process the result
       console.log("Wireframe generated successfully:", data.wireframe.title || "Untitled");
       
       // Ensure the wireframe has the correct type structure
       if (data.wireframe) {
-        setCurrentWireframe(data.wireframe);
+        const wireframeWithPositions = ensureSectionPositions(data.wireframe);
+        setCurrentWireframe(wireframeWithPositions);
         
         // Generate layout analysis if layout intelligence is enabled
-        if (params.enableLayoutIntelligence && data.wireframe) {
-          analyzeLayoutIntelligence(data.wireframe, params.customParams?.targetIndustry);
+        if (params.enableLayoutIntelligence && wireframeWithPositions) {
+          analyzeLayoutIntelligence(wireframeWithPositions, params.customParams?.targetIndustry);
         }
       }
+      
       setIntentData(data.intentData);
       setBlueprint(data.blueprint);
       
@@ -140,6 +185,43 @@ export function useAdvancedWireframe() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Ensure all sections have proper position and dimensions
+  const ensureSectionPositions = (wireframe: WireframeData): WireframeData => {
+    if (!wireframe.sections) return wireframe;
+    
+    const updatedSections = wireframe.sections.map((section, index) => {
+      // If section doesn't have position or dimensions, add default values
+      if (!section.position) {
+        section.position = { x: 0, y: index * 600 };
+      }
+      
+      if (!section.dimensions) {
+        // Set different default heights based on section type
+        const getDefaultHeight = () => {
+          switch(section.sectionType.toLowerCase()) {
+            case 'hero': return 500;
+            case 'features': return 600;
+            case 'testimonials': return 400;
+            case 'pricing': return 700;
+            case 'cta': return 300;
+            case 'footer': return 400;
+            case 'navigation': return 100;
+            default: return 400;
+          }
+        };
+        
+        section.dimensions = { width: 1200, height: getDefaultHeight() };
+      }
+      
+      return section;
+    });
+    
+    return {
+      ...wireframe,
+      sections: updatedSections
+    };
   };
 
   const analyzeLayoutIntelligence = async (wireframe: WireframeData, targetIndustry?: string) => {

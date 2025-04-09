@@ -11,6 +11,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Required section types that should be present in a complete wireframe
+const REQUIRED_SECTION_TYPES = [
+  'navigation',
+  'hero', 
+  'features', 
+  'testimonials', 
+  'pricing', 
+  'cta', 
+  'footer'
+];
+
 // Main function to handle the intent extraction and wireframe generation
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -72,23 +83,105 @@ serve(async (req) => {
     
     // Step 1: Extract intent from user input
     console.log("Starting intent extraction...");
-    const intentData = await extractIntent(userInput, styleToken);
-    console.log("Intent extraction completed");
+    let intentData;
+    try {
+      intentData = await extractIntent(userInput, styleToken);
+      console.log("Intent extraction completed successfully");
+    } catch (error) {
+      console.error("Error during intent extraction:", error);
+      throw new Error(`Intent extraction failed: ${error.message}`);
+    }
     
     // Step 2: Generate layout blueprint
     console.log("Starting blueprint generation...");
-    const blueprint = await generateLayoutBlueprint(intentData);
-    console.log("Layout blueprint generation completed");
+    let blueprint;
+    try {
+      blueprint = await generateLayoutBlueprint(intentData);
+      console.log("Layout blueprint generation completed successfully");
+    } catch (error) {
+      console.error("Error during blueprint generation:", error);
+      throw new Error(`Blueprint generation failed: ${error.message}`);
+    }
     
     // Step 3: Select component variants
     console.log("Starting component variant selection...");
-    const wireframeWithComponents = await selectComponentVariants(blueprint);
-    console.log("Component variant selection completed");
+    let wireframeWithComponents;
+    try {
+      wireframeWithComponents = await selectComponentVariants(blueprint);
+      console.log("Component variant selection completed successfully");
+    } catch (error) {
+      console.error("Error during component variant selection:", error);
+      throw new Error(`Component variant selection failed: ${error.message}`);
+    }
 
     // Step 4: Apply style modifiers
     console.log("Starting style modification...");
-    const finalWireframe = await applyStyleModifiers(wireframeWithComponents, styleToken || intentData.visualTone);
-    console.log("Style modification completed");
+    let finalWireframe;
+    try {
+      finalWireframe = await applyStyleModifiers(wireframeWithComponents, styleToken || intentData.visualTone);
+      console.log("Style modification completed successfully");
+    } catch (error) {
+      console.error("Error during style modification:", error);
+      throw new Error(`Style modification failed: ${error.message}`);
+    }
+    
+    // Validate the wireframe to ensure it has all required sections
+    if (!finalWireframe.sections || finalWireframe.sections.length === 0) {
+      console.error("Wireframe generation failed: No sections were generated");
+      throw new Error("Wireframe generation failed: No sections were generated");
+    }
+    
+    // Check which required sections are missing
+    const generatedSectionTypes = finalWireframe.sections.map(section => section.sectionType.toLowerCase());
+    const missingSectionTypes = REQUIRED_SECTION_TYPES.filter(
+      requiredType => !generatedSectionTypes.some(generatedType => 
+        generatedType.includes(requiredType)
+      )
+    );
+    
+    if (missingSectionTypes.length > 0) {
+      console.warn(`Warning: Some required section types are missing: ${missingSectionTypes.join(', ')}`);
+      // Add missing sections with basic structure
+      for (const missingSectionType of missingSectionTypes) {
+        console.log(`Adding missing section type: ${missingSectionType}`);
+        finalWireframe.sections.push({
+          id: crypto.randomUUID(),
+          name: `${missingSectionType.charAt(0).toUpperCase() + missingSectionType.slice(1)} Section`,
+          sectionType: missingSectionType,
+          description: `Auto-generated ${missingSectionType} section`,
+          components: [],
+          layout: {
+            type: missingSectionType === 'features' ? 'grid' : 'flex',
+            alignment: 'center',
+            justifyContent: 'between'
+          },
+          position: {
+            x: 0,
+            y: finalWireframe.sections.length * 200
+          },
+          dimensions: {
+            width: 1200,
+            height: missingSectionType === 'hero' ? 500 : 400
+          }
+        });
+      }
+    }
+    
+    // Sort sections according to conventional order
+    const sectionOrderMap = {};
+    REQUIRED_SECTION_TYPES.forEach((type, index) => {
+      sectionOrderMap[type] = index;
+    });
+    
+    finalWireframe.sections.sort((a, b) => {
+      const typeA = a.sectionType.toLowerCase();
+      const typeB = b.sectionType.toLowerCase();
+      
+      const orderA = REQUIRED_SECTION_TYPES.findIndex(type => typeA.includes(type));
+      const orderB = REQUIRED_SECTION_TYPES.findIndex(type => typeB.includes(type));
+      
+      return orderA - orderB;
+    });
     
     console.log("Advanced wireframe generation successful");
     return new Response(

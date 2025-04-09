@@ -8,8 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import WireframeEditor from './WireframeEditor';
-import { Loader2, Save, FileDown, Upload, ArrowRight, Code } from 'lucide-react';
+import { Loader2, Save, FileDown, Upload, ArrowRight, Code, Smartphone, Laptop } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
+import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export interface AdvancedWireframeGeneratorProps {
   projectId?: string;
@@ -24,12 +27,26 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   onWireframeSaved,
   viewMode = 'editor'
 }) => {
-  const [activeTab, setActiveTab] = useState<string>('editor');
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('generator');
   const [prompt, setPrompt] = useState<string>("");
   const [projectName, setProjectName] = useState<string>("");
+  const [styleToken, setStyleToken] = useState<string>("modern");
+  const [includeDesignMemory, setIncludeDesignMemory] = useState<boolean>(true);
+  const [wireframeName, setWireframeName] = useState<string>("");
+  const [wireframeDescription, setWireframeDescription] = useState<string>("");
+  const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const { toast } = useToast();
+  
+  // Use the actual advanced wireframe hook
+  const { 
+    isGenerating, 
+    currentWireframe, 
+    intentData, 
+    blueprint,
+    generateWireframe,
+    saveWireframe,
+    error
+  } = useAdvancedWireframe();
 
   useEffect(() => {
     // Initialize project name if project ID is provided
@@ -38,7 +55,15 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     }
   }, [projectId]);
 
-  const handleGenerateWireframe = () => {
+  // Set wireframe name from generated wireframe
+  useEffect(() => {
+    if (currentWireframe?.title) {
+      setWireframeName(currentWireframe.title);
+      setWireframeDescription(currentWireframe.description || prompt);
+    }
+  }, [currentWireframe, prompt]);
+
+  const handleGenerateWireframe = async () => {
     if (!prompt.trim()) {
       toast({
         title: "Input required",
@@ -48,72 +73,94 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
       return;
     }
 
-    setIsGenerating(true);
+    const params = {
+      userInput: prompt,
+      projectId: projectId || uuidv4(),
+      styleToken,
+      includeDesignMemory,
+      customParams: {
+        darkMode: false,
+        creativityLevel: 8
+      }
+    };
+
+    const result = await generateWireframe(params);
     
-    // Simulate wireframe generation (replace with actual API call)
-    setTimeout(() => {
-      const mockWireframe = {
-        id: uuidv4(),
-        title: projectName || "Generated Wireframe",
-        description: prompt,
-        sections: [
-          {
-            id: uuidv4(),
-            name: "Hero Section",
-            sectionType: "hero",
-            description: "Main hero section"
-          },
-          {
-            id: uuidv4(),
-            name: "Features Section",
-            sectionType: "features",
-            description: "Features overview"
-          }
-        ],
-        createdAt: new Date().toISOString()
-      };
-      
-      setIsGenerating(false);
-      toast({
-        title: "Wireframe generated",
-        description: "Your wireframe has been created successfully"
-      });
-      
+    if (result?.wireframe) {
       if (onWireframeGenerated) {
-        onWireframeGenerated(mockWireframe);
+        onWireframeGenerated(result.wireframe);
       }
       
-      // Switch to editor tab
+      // Switch to editor tab after successful generation
       setActiveTab('editor');
-    }, 1500);
+    }
   };
   
-  const handleSaveWireframe = () => {
-    toast({
-      title: "Wireframe saved",
-      description: "Your wireframe has been saved successfully"
-    });
-    
-    if (onWireframeSaved) {
-      onWireframeSaved({
-        id: uuidv4(),
-        title: projectName,
-        description: prompt
+  const handleSaveWireframe = async () => {
+    if (!currentWireframe) {
+      toast({
+        title: "No wireframe to save",
+        description: "Please generate a wireframe first",
+        variant: "destructive"
       });
+      return;
+    }
+    
+    // Use the actual save function from the hook
+    const savedWireframe = await saveWireframe(
+      projectId || uuidv4(),
+      prompt
+    );
+    
+    if (savedWireframe && onWireframeSaved) {
+      onWireframeSaved(savedWireframe);
     }
   };
   
   const handleExport = () => {
-    setIsExporting(true);
-    
-    // Simulate export (replace with actual export logic)
-    setTimeout(() => {
-      setIsExporting(false);
+    if (!currentWireframe) {
       toast({
-        title: "Export completed",
-        description: "Wireframe has been exported successfully"
+        title: "Nothing to export",
+        description: "Please generate a wireframe first",
+        variant: "destructive"
       });
-    }, 1000);
+      return;
+    }
+    
+    const wireframeJson = JSON.stringify(currentWireframe, null, 2);
+    const blob = new Blob([wireframeJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wireframe-${wireframeName || 'untitled'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export completed",
+      description: "Wireframe JSON has been exported successfully"
+    });
+  };
+
+  const renderCodePreview = () => {
+    if (!currentWireframe) {
+      return (
+        <div className="flex items-center justify-center h-64 bg-muted/50 rounded-md">
+          <p className="text-muted-foreground">No wireframe data to show</p>
+        </div>
+      );
+    }
+    
+    return (
+      <pre className="p-4 bg-muted/50 rounded-md overflow-auto max-h-[500px]">
+        <code className="text-xs font-mono">
+          {JSON.stringify(currentWireframe, null, 2)}
+        </code>
+      </pre>
+    );
   };
 
   return (
@@ -124,26 +171,30 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
           <p className="text-muted-foreground">Create and customize wireframes for your project</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSaveWireframe}>
+          <Button 
+            variant="outline" 
+            onClick={handleSaveWireframe} 
+            disabled={!currentWireframe || isGenerating}
+          >
             <Save className="w-4 h-4 mr-2" />
             Save
           </Button>
-          <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <FileDown className="w-4 h-4 mr-2" />
-            )}
+          <Button 
+            variant="outline" 
+            onClick={handleExport}
+            disabled={!currentWireframe || isGenerating}
+          >
+            <FileDown className="w-4 h-4 mr-2" />
             Export
           </Button>
         </div>
       </div>
       
-      <Tabs defaultValue="editor" value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="generator" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="generator">Generator</TabsTrigger>
-          <TabsTrigger value="editor">Editor</TabsTrigger>
-          <TabsTrigger value="code">Code</TabsTrigger>
+          <TabsTrigger value="editor" disabled={!currentWireframe}>Editor</TabsTrigger>
+          <TabsTrigger value="code" disabled={!currentWireframe}>Code</TabsTrigger>
         </TabsList>
         
         <TabsContent value="generator">
@@ -166,6 +217,22 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
               </div>
               
               <div className="space-y-2">
+                <Label htmlFor="styleToken">Style Preference</Label>
+                <select
+                  id="styleToken"
+                  value={styleToken}
+                  onChange={(e) => setStyleToken(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                >
+                  <option value="modern">Modern</option>
+                  <option value="minimalist">Minimalist</option>
+                  <option value="corporate">Corporate</option>
+                  <option value="playful">Playful</option>
+                  <option value="tech">Tech</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="prompt">Description</Label>
                 <Textarea 
                   id="prompt" 
@@ -175,6 +242,13 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                   rows={6}
                 />
               </div>
+              
+              {error && (
+                <Alert variant="destructive">
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error.message}</AlertDescription>
+                </Alert>
+              )}
             </CardContent>
             <CardFooter>
               <Button 
@@ -199,7 +273,67 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
         </TabsContent>
         
         <TabsContent value="editor" className="min-h-[500px]">
-          <WireframeEditor projectId={projectId} />
+          {currentWireframe ? (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>{wireframeName || "New Wireframe"}</CardTitle>
+                      <CardDescription>{wireframeDescription}</CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant={devicePreview === 'desktop' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setDevicePreview('desktop')}
+                      >
+                        <Laptop className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant={devicePreview === 'tablet' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setDevicePreview('tablet')}
+                      >
+                        <Smartphone className="h-4 w-4 rotate-90" />
+                      </Button>
+                      <Button 
+                        variant={devicePreview === 'mobile' ? 'default' : 'outline'} 
+                        size="sm" 
+                        onClick={() => setDevicePreview('mobile')}
+                      >
+                        <Smartphone className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="relative border rounded-md overflow-hidden" style={{ 
+                    height: '600px',
+                    width: devicePreview === 'desktop' ? '100%' : devicePreview === 'tablet' ? '768px' : '375px',
+                    margin: devicePreview !== 'desktop' ? '0 auto' : undefined
+                  }}>
+                    <WireframeCanvasEnhanced 
+                      sections={currentWireframe.sections}
+                      width={devicePreview === 'desktop' ? 1200 : devicePreview === 'tablet' ? 768 : 375}
+                      height={2000}
+                      editable={false}
+                      showGrid={true}
+                      snapToGrid={true}
+                      deviceType={devicePreview}
+                      responsiveMode={devicePreview !== 'desktop'}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <WireframeEditor projectId={projectId} wireframeData={currentWireframe} />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+              <p className="text-muted-foreground">No wireframe to edit. Generate one first.</p>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="code">
@@ -214,45 +348,20 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <pre className="p-4 bg-muted/50 rounded-md overflow-auto max-h-[500px]">
-                <code className="text-xs font-mono">
-                  {`{
-  "id": "${uuidv4()}",
-  "title": "${projectName || 'Untitled Wireframe'}",
-  "description": "${prompt || 'No description provided'}",
-  "sections": [
-    {
-      "id": "${uuidv4()}",
-      "name": "Hero Section",
-      "sectionType": "hero",
-      "description": "Main hero section"
-    },
-    {
-      "id": "${uuidv4()}",
-      "name": "Features Section",
-      "sectionType": "features",
-      "description": "Features overview"
-    }
-  ]
-}`}
-                </code>
-              </pre>
+              {renderCodePreview()}
             </CardContent>
             <CardFooter>
               <Button
                 variant="outline"
                 onClick={() => {
-                  navigator.clipboard.writeText(`{
-  "id": "${uuidv4()}",
-  "title": "${projectName || 'Untitled Wireframe'}",
-  "description": "${prompt || 'No description provided'}",
-  "sections": []
-}`);
+                  if (!currentWireframe) return;
+                  navigator.clipboard.writeText(JSON.stringify(currentWireframe, null, 2));
                   toast({
                     title: "Copied to clipboard",
                     description: "Code has been copied to clipboard"
                   });
                 }}
+                disabled={!currentWireframe}
               >
                 Copy JSON
               </Button>

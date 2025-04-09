@@ -19,7 +19,7 @@ interface WireframeCanvasEnhancedProps {
   onSectionSelect?: (section: WireframeSection | null) => void;
 }
 
-const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
+export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
   sections,
   width = 1200,
   height = 800,
@@ -82,6 +82,8 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
     
     canvas.clear();
     
+    console.log(`Rendering ${sections.length} sections on canvas with device type: ${deviceType}`);
+    
     sections.forEach(section => {
       const fabricObject = componentToFabricObject(section, {
         deviceType,
@@ -90,10 +92,20 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
       
       if (fabricObject) {
         canvas.add(fabricObject as unknown as fabric.Object);
+      } else {
+        console.warn(`Failed to convert section to fabric object: ${section.id} (${section.sectionType})`);
       }
     });
     
-    canvas.renderAll();
+    // Auto-fit the content
+    if (sections.length > 0) {
+      try {
+        canvas.zoomToPoint(new fabric.Point(0, 0), 1);
+        canvas.renderAll();
+      } catch (error) {
+        console.error("Error rendering canvas:", error);
+      }
+    }
   }, [canvas, sections, deviceType, editable]);
   
   useEffect(() => {
