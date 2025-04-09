@@ -12,6 +12,13 @@ export {
 
 // Export responsive utilities from responsive-utils
 export {
+  getResponsiveValue,
+  getDeviceTypeFromWidth,
+  calculateResponsiveDimensions,
+  makeComponentResponsive,
+  pxToRem,
+  remToPx,
+  // Newly added exports
   type ResponsiveOptions,
   type DeviceType as ResponsiveDeviceType,
   type BreakpointKey,

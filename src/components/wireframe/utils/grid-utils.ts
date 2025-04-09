@@ -1,4 +1,3 @@
-
 import { fabric } from 'fabric';
 import { AlignmentGuide } from './types';
 
@@ -7,12 +6,22 @@ export interface GridConfig {
   gutterWidth: number;
   marginWidth: number;
   containerWidth: number;
+  visible: boolean;
+  snapToGrid: boolean;
+  showBreakpoints: boolean;
+  type: 'lines' | 'dots' | 'columns';
+  size: number;
+  gutterSize: number;
+  marginSize: number;
+  breakpoints: GridBreakpoint[];
 }
 
 export interface GridBreakpoint {
   name: string;
   minWidth: number;
+  width: number;
   gridConfig: GridConfig;
+  color?: string;
 }
 
 export const TAILWIND_BREAKPOINTS = {
@@ -27,7 +36,19 @@ export const DEFAULT_GRID_CONFIG: GridConfig = {
   columns: 12,
   gutterWidth: 16,
   marginWidth: 24,
-  containerWidth: 1200
+  containerWidth: 1200,
+  visible: true,
+  snapToGrid: true,
+  showBreakpoints: false,
+  type: 'lines',
+  size: 10,
+  gutterSize: 16,
+  marginSize: 24,
+  breakpoints: [
+    { name: 'SM', minWidth: 640, width: 640, color: 'blue-500', gridConfig: { columns: 6, gutterWidth: 12, marginWidth: 16, containerWidth: 640, visible: true, snapToGrid: true, showBreakpoints: false, type: 'lines', size: 10, gutterSize: 12, marginSize: 16, breakpoints: [] } },
+    { name: 'MD', minWidth: 768, width: 768, color: 'green-500', gridConfig: { columns: 8, gutterWidth: 16, marginWidth: 24, containerWidth: 768, visible: true, snapToGrid: true, showBreakpoints: false, type: 'lines', size: 10, gutterSize: 16, marginSize: 24, breakpoints: [] } },
+    { name: 'LG', minWidth: 1024, width: 1024, color: 'yellow-500', gridConfig: { columns: 12, gutterWidth: 24, marginWidth: 32, containerWidth: 1024, visible: true, snapToGrid: true, showBreakpoints: false, type: 'lines', size: 10, gutterSize: 24, marginSize: 32, breakpoints: [] } }
+  ]
 };
 
 /**
@@ -257,23 +278,27 @@ export function getObjectBounds(object: fabric.Object): {
  * Calculate positions for column-based grid
  */
 export function calculateColumnPositions(
-  gridConfig: GridConfig = DEFAULT_GRID_CONFIG,
-  canvasWidth: number
+  width: number,
+  columns: number,
+  gutterSize: number,
+  marginSize: number
 ): number[] {
   const positions: number[] = [];
-  const { columns, gutterWidth, marginWidth } = gridConfig;
-  const columnWidth = (canvasWidth - (marginWidth * 2) - (gutterWidth * (columns - 1))) / columns;
   
   // Left margin
-  positions.push(marginWidth);
+  positions.push(marginSize);
   
-  let position = marginWidth;
+  let position = marginSize;
+  const availableWidth = width - (marginSize * 2);
+  const totalGutterWidth = gutterSize * (columns - 1);
+  const columnWidth = (availableWidth - totalGutterWidth) / columns;
+  
   for (let i = 0; i < columns; i++) {
     position += columnWidth;
     positions.push(position); // Column end
     
     if (i < columns - 1) {
-      position += gutterWidth;
+      position += gutterSize;
       positions.push(position); // Next column start
     }
   }
@@ -285,16 +310,24 @@ export function calculateColumnPositions(
  * Calculate positions for regular grid
  */
 export function calculateGridPositions(
-  gridSize: number = 10,
-  canvasSize: number = 1000
-): number[] {
-  const positions: number[] = [];
+  width: number,
+  height: number,
+  gridSize: number = 10
+): { horizontal: number[], vertical: number[] } {
+  const horizontal: number[] = [];
+  const vertical: number[] = [];
   
-  for (let i = 0; i <= canvasSize; i += gridSize) {
-    positions.push(i);
+  // Calculate horizontal grid positions
+  for (let i = 0; i <= height; i += gridSize) {
+    horizontal.push(i);
   }
   
-  return positions;
+  // Calculate vertical grid positions
+  for (let i = 0; i <= width; i += gridSize) {
+    vertical.push(i);
+  }
+  
+  return { horizontal, vertical };
 }
 
 /**

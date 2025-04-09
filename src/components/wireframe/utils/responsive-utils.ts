@@ -4,6 +4,25 @@
  */
 import { TAILWIND_BREAKPOINTS } from './grid-utils';
 
+// Add missing type definitions
+export type DeviceType = 'desktop' | 'tablet' | 'mobile';
+export type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+export interface ResponsiveOptions {
+  device: DeviceType;
+  width: number;
+}
+
+// Add missing breakpoint values
+export const BREAKPOINT_VALUES = {
+  xs: 0,
+  sm: TAILWIND_BREAKPOINTS.sm,
+  md: TAILWIND_BREAKPOINTS.md,
+  lg: TAILWIND_BREAKPOINTS.lg,
+  xl: TAILWIND_BREAKPOINTS.xl,
+  '2xl': TAILWIND_BREAKPOINTS['2xl']
+};
+
 /**
  * Determine device type based on width
  */
@@ -11,6 +30,19 @@ export function getDeviceTypeFromWidth(width: number): 'mobile' | 'tablet' | 'de
   if (width < TAILWIND_BREAKPOINTS.sm) return 'mobile';
   if (width < TAILWIND_BREAKPOINTS.lg) return 'tablet';
   return 'desktop';
+}
+
+// Get the breakpoint for a device
+export function getBreakpointForDevice(device: DeviceType): BreakpointKey {
+  switch (device) {
+    case 'mobile':
+      return 'sm';
+    case 'tablet':
+      return 'md';
+    case 'desktop':
+    default:
+      return 'lg';
+  }
 }
 
 /**
@@ -53,6 +85,69 @@ export function getResponsiveValue<T>(
   
   // Return as-is if not a responsive object
   return responsiveObj as T;
+}
+
+// Add other missing functions
+export function getResponsiveStyles(
+  styles: any,
+  device: DeviceType
+): any {
+  return getResponsiveValue(styles, device) || {};
+}
+
+export function isFluidLayout(layout: any): boolean {
+  return layout?.type === 'fluid' || false;
+}
+
+export function getResponsiveGridColumns(device: DeviceType): number {
+  switch (device) {
+    case 'mobile':
+      return 4;
+    case 'tablet':
+      return 8;
+    case 'desktop':
+    default:
+      return 12;
+  }
+}
+
+export function getResponsiveGutterSize(device: DeviceType): number {
+  switch (device) {
+    case 'mobile':
+      return 16;
+    case 'tablet':
+      return 24;
+    case 'desktop':
+    default:
+      return 32;
+  }
+}
+
+export function responsiveTailwindClasses(device: DeviceType): Record<string, string> {
+  const baseClasses = {
+    container: 'w-full mx-auto px-4',
+    row: 'flex flex-wrap -mx-4',
+    col: 'px-4'
+  };
+
+  switch (device) {
+    case 'mobile':
+      return {
+        ...baseClasses,
+        container: `${baseClasses.container} max-w-full`,
+      };
+    case 'tablet':
+      return {
+        ...baseClasses,
+        container: `${baseClasses.container} max-w-md`,
+      };
+    case 'desktop':
+    default:
+      return {
+        ...baseClasses,
+        container: `${baseClasses.container} max-w-xl`,
+      };
+  }
 }
 
 /**

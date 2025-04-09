@@ -6,12 +6,17 @@ import {
   GridBreakpoint, 
   getResponsiveGridConfig 
 } from '@/components/wireframe/utils/grid-utils';
-import { ResponsiveOptions } from '@/components/wireframe/utils/responsive-utils';
+import { DeviceType } from '@/components/wireframe/utils/responsive-utils';
 
 export interface UseGridSystemOptions {
   initialConfig?: Partial<GridConfig>;
   persistConfig?: boolean;
   responsiveMode?: boolean;
+}
+
+export interface ResponsiveOptions {
+  device: DeviceType;
+  width: number;
 }
 
 export function useGridSystem(options: UseGridSystemOptions = {}) {
@@ -35,7 +40,7 @@ export function useGridSystem(options: UseGridSystemOptions = {}) {
   
   // Get responsive grid config based on current options
   const responsiveGridConfig = responsiveMode 
-    ? getResponsiveGridConfig(responsiveOptions.width, gridConfig)
+    ? getResponsiveGridConfig(responsiveOptions.width, gridConfig.breakpoints)
     : gridConfig;
   
   // Update grid config
