@@ -27,7 +27,7 @@ export const wireframeGenerator = {
         creativityLevel: params.creativityLevel ?? 8, // Default high creativity
         // Create a cache key based on params to enable caching
         cacheKey: params.description ? 
-          `${params.description.substring(0, 50)}_${params.style || 'default'}_${params.colorTheme || 'default'}` : 
+          `${params.description.substring(0, 50)}_${params.style || 'default'}_${params.colorScheme || 'default'}` : 
           undefined
       };
       

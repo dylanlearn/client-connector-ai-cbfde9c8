@@ -35,7 +35,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   const saveStateForUndo = useWireframeStore(state => state.saveStateForUndo);
   const { toast } = useToast();
   
-  // Default canvas settings merged with provided config
   const defaultConfig: WireframeCanvasConfig = {
     width: 1200,
     height: 800,
@@ -44,12 +43,14 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     showGrid: true,
     snapToGrid: true,
     gridSize: 8,
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    gridType: 'lines',
+    snapTolerance: 5,
+    showSmartGuides: false
   };
   
   const config = { ...defaultConfig, ...canvasConfig };
 
-  // Initialize the canvas
   useEffect(() => {
     if (canvasRef.current && !isInitialized) {
       try {
@@ -61,15 +62,12 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
           preserveObjectStacking: true
         });
         
-        // Apply zoom and pan from config
         fabricCanvas.setZoom(config.zoom);
         fabricCanvas.absolutePan(new fabric.Point(config.panOffset.x, config.panOffset.y));
         
-        // Handle selection events
         fabricCanvas.on('selection:created', (e) => {
           const selected = e.selected?.[0];
           if (selected && selected.data) {
-            // Handle section selection
             const sectionId = selected.data.id;
             if (sectionId) {
               useWireframeStore.getState().setActiveSection(sectionId);
@@ -78,11 +76,9 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         });
         
         fabricCanvas.on('object:modified', () => {
-          // Save state for undo when objects are modified
           saveStateForUndo();
         });
         
-        // Add grid if enabled
         if (config.showGrid) {
           renderGrid(fabricCanvas, config.gridSize);
         }
@@ -111,14 +107,12 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   }, [canvasRef, isInitialized, config.showGrid, config.zoom, 
       config.panOffset, config.gridSize, editable, onCanvasReady, toast, saveStateForUndo]);
   
-  // Update canvas when wireframeData changes
   useEffect(() => {
     if (isInitialized && canvas && wireframeData) {
       renderWireframe();
     }
   }, [isInitialized, canvas, wireframeData, deviceType]);
   
-  // Update grid when grid settings change
   useEffect(() => {
     if (canvas && isInitialized) {
       canvas.clear();
@@ -131,7 +125,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     }
   }, [config.showGrid, config.gridSize, isInitialized]);
   
-  // Update zoom and pan when config changes
   useEffect(() => {
     if (canvas && isInitialized) {
       canvas.setZoom(config.zoom);
@@ -140,7 +133,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     }
   }, [config.zoom, config.panOffset, isInitialized]);
   
-  // Handle wireframe update from feedback
   const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
     if (onWireframeUpdate) {
       onWireframeUpdate(updatedWireframe);
@@ -148,12 +140,10 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     }
   };
   
-  // Render grid on canvas
   const renderGrid = (canvas: fabric.Canvas, gridSize: number) => {
     const width = canvas.getWidth();
     const height = canvas.getHeight();
     
-    // Create grid lines
     for (let i = 0; i < width / gridSize; i++) {
       const lineX = new fabric.Line([i * gridSize, 0, i * gridSize, height], {
         stroke: '#e0e0e0',
@@ -179,11 +169,9 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     canvas.renderAll();
   };
   
-  // Render wireframe sections
   const renderWireframe = useCallback(() => {
     if (!canvas || !wireframeData || !wireframeData.sections) return;
     
-    // Clear existing content but keep grid
     const objects = canvas.getObjects();
     const gridLines = objects.filter(obj => 
       obj instanceof fabric.Line && 
@@ -193,21 +181,16 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     
     canvas.clear();
     
-    // Re-add grid lines if needed
     if (config.showGrid && gridLines.length > 0) {
       gridLines.forEach(line => canvas.add(line));
     }
     
-    // Add sections
     wireframeData.sections.forEach((section: WireframeSection) => {
       if (!section) return;
       
-      // Create a copy with the layout in the correct format
       const normalizedSection = {...section};
       
-      // Handle the case where section.layout might be a string
       if (typeof normalizedSection.layout === 'string') {
-        // Convert string layout to object format
         normalizedSection.layout = {
           type: normalizedSection.layout,
           direction: 'column',
@@ -215,22 +198,18 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         };
       }
       
-      // Convert section to fabric object
       const fabricObject = componentToFabricObject(normalizedSection, {
         deviceType,
         interactive: editable
       });
       
-      // Add to canvas
       if (fabricObject) {
         canvas.add(fabricObject as unknown as fabric.Object);
         
-        // Add components if they exist
         if (normalizedSection.components && Array.isArray(normalizedSection.components)) {
           normalizedSection.components.forEach(component => {
             if (!component) return;
             
-            // Use the wireframeComponentToFabric from fabric-converters.ts
             const componentObj = fabric.util.object.clone(component);
             
             if (componentObj) {
@@ -244,7 +223,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     canvas.renderAll();
   }, [canvas, wireframeData, deviceType, editable, config.showGrid]);
   
-  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       if (!canvas || !canvasRef.current) return;
@@ -253,11 +231,10 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
       if (!parentElement) return;
       
       const width = parentElement.clientWidth;
-      const height = 800; // Fixed height or make responsive
+      const height = 800;
       
       canvas.setDimensions({ width, height });
       
-      // Re-render grid and wireframe
       if (config.showGrid) {
         canvas.clear();
         renderGrid(canvas, config.gridSize);
@@ -268,14 +245,13 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     };
     
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial resize
+    handleResize();
     
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [canvas, renderWireframe, config.showGrid, config.gridSize]);
-
-  // Set up snap to grid if enabled
+  
   useEffect(() => {
     if (canvas && config.snapToGrid) {
       canvas.on('object:moving', function(options) {
@@ -283,7 +259,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
           const target = options.target;
           const gridSize = config.gridSize;
           
-          // Round position to nearest grid
           target.set({
             left: Math.round(target.left! / gridSize) * gridSize,
             top: Math.round(target.top! / gridSize) * gridSize
@@ -297,7 +272,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     <div className="wireframe-canvas-fabric-container w-full relative">
       <canvas ref={canvasRef} />
       
-      {/* Feedback button overlay */}
       {editable && wireframeData?.id && (
         <div className="absolute bottom-4 right-4">
           <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
