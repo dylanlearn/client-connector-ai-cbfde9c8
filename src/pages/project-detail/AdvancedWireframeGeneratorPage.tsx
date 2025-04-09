@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 const AdvancedWireframeGeneratorPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -15,6 +16,12 @@ const AdvancedWireframeGeneratorPage: React.FC = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [projectName, setProjectName] = useState<string>('');
+  const [wireframeData, setWireframeData] = useState<any>({
+    id: uuidv4(),
+    title: 'New Wireframe',
+    description: 'Start editing your wireframe',
+    sections: []
+  });
 
   // Fetch project details when the component mounts
   useEffect(() => {
@@ -76,7 +83,11 @@ const AdvancedWireframeGeneratorPage: React.FC = () => {
           <CardTitle>Wireframe Editor</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <WireframeEditor projectId={projectId} />
+          <WireframeEditor 
+            projectId={projectId} 
+            wireframeData={wireframeData}
+            onUpdate={(updatedWireframe) => setWireframeData(updatedWireframe)}
+          />
         </CardContent>
       </Card>
     </div>
