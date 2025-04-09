@@ -1,6 +1,5 @@
-
 import { fabric } from 'fabric';
-import { GuideVisualization, AlignmentGuide } from '@/components/wireframe/utils/types';
+import { AlignmentGuide } from '@/components/wireframe/utils/types';
 
 /**
  * Finds potential alignment guides between an object and other objects on the canvas
@@ -151,27 +150,23 @@ export function snapObjectToGuides(
       }
       
       // Default priority
-      const typePriority: Record<string, number> = { 'edge': 3, 'center': 2, 'distribution': 1 };
+      const typePriority: Record<string, number> = { 'edge': 3, 'center': 2, 'distribution': 1, 'grid': 2 };
       return typePriority[b.type] - typePriority[a.type];
     });
     
     const bestHGuide = horizontalGuides[0];
     
-    switch (bestHGuide.type) {
-      case 'edge':
-        // Either top or bottom edge - figure out which one is closest
-        if (Math.abs(bestHGuide.position - bounds.top) <= Math.abs(bestHGuide.position - bounds.bottom)) {
-          object.set('top', bestHGuide.position);
-        } else {
-          object.set('top', bestHGuide.position - bounds.height);
-        }
-        break;
-      case 'center':
-        object.set('top', bestHGuide.position - bounds.height / 2);
-        break;
-      case 'distribution':
-        // Distribution snapping logic would go here
-        break;
+    if (bestHGuide.type === 'edge') {
+      // Either top or bottom edge - figure out which one is closest
+      if (Math.abs(bestHGuide.position - bounds.top) <= Math.abs(bestHGuide.position - bounds.bottom)) {
+        object.set('top', bestHGuide.position);
+      } else {
+        object.set('top', bestHGuide.position - bounds.height);
+      }
+    } else if (bestHGuide.type === 'center') {
+      object.set('top', bestHGuide.position - bounds.height / 2);
+    } else if (bestHGuide.type === 'distribution' || bestHGuide.type === 'grid') {
+      // Distribution snapping logic would go here
     }
   }
   
@@ -185,27 +180,23 @@ export function snapObjectToGuides(
       }
       
       // Default priority
-      const typePriority: Record<string, number> = { 'edge': 3, 'center': 2, 'distribution': 1 };
+      const typePriority: Record<string, number> = { 'edge': 3, 'center': 2, 'distribution': 1, 'grid': 2 };
       return typePriority[b.type] - typePriority[a.type];
     });
     
     const bestVGuide = verticalGuides[0];
     
-    switch (bestVGuide.type) {
-      case 'edge':
-        // Either left or right edge - figure out which one is closest
-        if (Math.abs(bestVGuide.position - bounds.left) <= Math.abs(bestVGuide.position - bounds.right)) {
-          object.set('left', bestVGuide.position);
-        } else {
-          object.set('left', bestVGuide.position - bounds.width);
-        }
-        break;
-      case 'center':
-        object.set('left', bestVGuide.position - bounds.width / 2);
-        break;
-      case 'distribution':
-        // Distribution snapping logic would go here
-        break;
+    if (bestVGuide.type === 'edge') {
+      // Either left or right edge - figure out which one is closest
+      if (Math.abs(bestVGuide.position - bounds.left) <= Math.abs(bestVGuide.position - bounds.right)) {
+        object.set('left', bestVGuide.position);
+      } else {
+        object.set('left', bestVGuide.position - bounds.width);
+      }
+    } else if (bestVGuide.type === 'center') {
+      object.set('left', bestVGuide.position - bounds.width / 2);
+    } else if (bestVGuide.type === 'distribution' || bestVGuide.type === 'grid') {
+      // Distribution snapping logic would go here
     }
   }
   
@@ -221,7 +212,12 @@ export function renderAlignmentGuides(
   canvasWidth: number,
   canvasHeight: number,
   guides: AlignmentGuide[],
-  visualization: GuideVisualization
+  visualizationSettings: {
+    color: { edge: string; center: string; distribution: string; };
+    strokeWidth: number;
+    dashArray?: number[];
+    showLabels?: boolean;
+  }
 ) {
   if (!ctx) return;
   
@@ -231,15 +227,15 @@ export function renderAlignmentGuides(
   guides.forEach(guide => {
     // Set line style based on guide type
     ctx.strokeStyle = guide.type === 'center' 
-      ? visualization.color.center 
+      ? visualizationSettings.color.center 
       : guide.type === 'distribution' 
-        ? visualization.color.distribution 
-        : visualization.color.edge;
+        ? visualizationSettings.color.distribution 
+        : visualizationSettings.color.edge;
     
-    ctx.lineWidth = visualization.strokeWidth;
+    ctx.lineWidth = visualizationSettings.strokeWidth;
     
-    if (visualization.dashArray && visualization.dashArray.length) {
-      ctx.setLineDash(visualization.dashArray);
+    if (visualizationSettings.dashArray && visualizationSettings.dashArray.length) {
+      ctx.setLineDash(visualizationSettings.dashArray);
     }
     
     ctx.beginPath();
@@ -255,7 +251,7 @@ export function renderAlignmentGuides(
     ctx.stroke();
     
     // Draw label if enabled
-    if (visualization.showLabels && guide.label) {
+    if (visualizationSettings.showLabels && guide.label) {
       ctx.fillStyle = ctx.strokeStyle;
       ctx.font = '10px Arial';
       ctx.fillText(

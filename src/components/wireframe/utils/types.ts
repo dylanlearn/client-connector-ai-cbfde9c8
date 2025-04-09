@@ -17,6 +17,10 @@ export interface WireframeCanvasConfig {
   showSmartGuides: boolean;
   showRulers?: boolean;
   rulerSize?: number;
+  rulerColor?: string;
+  rulerMarkings?: boolean;
+  historyEnabled?: boolean;
+  maxHistorySteps?: number;
 }
 
 // Options for rendering sections
@@ -25,13 +29,18 @@ export interface SectionRenderingOptions {
   darkMode?: boolean;
   showGrid?: boolean;
   gridSize?: number;
+  showBorders?: boolean;
+  deviceType?: string;
+  interactive?: boolean;
 }
 
 // Alignment guide for smart snapping
 export interface AlignmentGuide {
   position: number;
   orientation: 'horizontal' | 'vertical';
-  type: 'edge' | 'center' | 'grid';
+  type: 'edge' | 'center' | 'grid' | 'distribution';
+  strength?: number;
+  label?: string;
 }
 
 // History entry for undo/redo
@@ -48,4 +57,51 @@ export interface SnapTarget {
   edge: 'left' | 'right' | 'top' | 'bottom' | 'centerX' | 'centerY';
   distance: number;
   position: number;
+}
+
+// Layer information for layer management
+export interface LayerInfo {
+  id: string;
+  name: string;
+  type: string;
+  visible: boolean;
+  locked: boolean;
+  zIndex: number;
+  parentId?: string;
+}
+
+// Drop zone indicator for drag and drop operations
+export interface DropZoneIndicator {
+  id: string;
+  rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+  active: boolean;
+  type: string;
+}
+
+// Guide visualization settings
+export interface GuideVisualization {
+  color: {
+    edge: string;
+    center: string;
+    distribution: string;
+  };
+  strokeWidth: number;
+  dashArray?: number[];
+  showLabels?: boolean;
+}
+
+// Boundary styles for selection
+export interface BoundaryStyles {
+  stroke: string;
+  strokeWidth: number;
+  fill: string;
+  cornerSize: number;
+  transparentCorners: boolean;
+  hasRotatingPoint: boolean;
+  cornerColor: string;
 }

@@ -1,4 +1,3 @@
-
 import { fabric } from 'fabric';
 import { AlignmentGuide } from './types';
 
@@ -193,7 +192,7 @@ export function findAlignmentGuides(
   });
   
   // Sort guides by strength (strongest first)
-  return guides.sort((a, b) => b.strength - a.strength);
+  return guides.sort((a, b) => (b.strength || 0) - (a.strength || 0));
 }
 
 /**
