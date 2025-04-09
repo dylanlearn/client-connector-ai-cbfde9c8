@@ -39,13 +39,11 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     showSmartGuides: true
   });
   
-  // Initialize canvas
   const initializeCanvas = useCallback(() => {
     if (!canvasRef.current) return;
     
     const canvasElement = canvasRef.current;
     
-    // Create fabric canvas
     const fabricCanvas = new fabric.Canvas(canvasElement, {
       width: config.width,
       height: config.height,
@@ -56,7 +54,6 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     setCanvas(fabricCanvas);
     setIsInitialized(true);
     
-    // Apply grid if enabled
     if (config.showGrid) {
       const guidelines = generateSnapGuidelines(config.width, config.height, config.gridSize);
       // Implement grid rendering logic here
@@ -65,7 +62,6 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     return fabricCanvas;
   }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize]);
   
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (canvas) {

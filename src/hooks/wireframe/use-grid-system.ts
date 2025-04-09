@@ -86,7 +86,7 @@ export function useGridSystem(options: UseGridSystemOptions = {}) {
     updateGridConfig({ columns });
   }, [updateGridConfig]);
   
-  // Change gutter
+  // Change gutter size
   const changeGutter = useCallback((gutterSize: number) => {
     updateGridConfig({ gutterSize });
   }, [updateGridConfig]);

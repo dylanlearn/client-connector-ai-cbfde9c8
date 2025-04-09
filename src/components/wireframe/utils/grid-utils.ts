@@ -1,5 +1,6 @@
-
 // Define types for grid system
+import { fabric } from 'fabric';
+
 export interface GridConfig {
   visible: boolean;
   snapToGrid: boolean;
@@ -130,8 +131,7 @@ export function getObjectBounds(obj: any) {
   };
 }
 
-// Add the missing functions that are referenced in index.ts
-// Generate snap guidelines for grid
+// Function to generate snap guidelines for grid
 export function generateSnapGuidelines(width: number, height: number, gridSize: number) {
   const guidelines = [];
   
