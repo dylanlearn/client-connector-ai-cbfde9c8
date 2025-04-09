@@ -38,8 +38,21 @@ export {
 // Export from responsive-utils
 export * from './responsive-utils';
 
-// Export grid utilities 
-export * from './grid-utils';
+// Export grid utilities - explicitly re-export getObjectBounds to avoid ambiguity
+export {
+  generateSnapGuidelines,
+  createCanvasGrid,
+  snapObjectToGuidelines,
+  getObjectBounds,
+  calculateColumnPositions,
+  calculateGridPositions,
+  getResponsiveGridConfig,
+  getBreakpointFromWidth,
+  DEFAULT_GRID_CONFIG,
+  TAILWIND_BREAKPOINTS,
+  type GridConfig,
+  type GridBreakpoint
+} from './grid-utils';
 
 // Export new alignment guides utilities
 export * from './alignment-guides';

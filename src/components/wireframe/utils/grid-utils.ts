@@ -2,6 +2,160 @@
 import { fabric } from 'fabric';
 import { GridGuideline } from '@/components/wireframe/utils/types';
 
+// Define the necessary types for grid system
+export interface GridConfig {
+  visible: boolean;
+  snapToGrid: boolean;
+  size: number;
+  type: 'lines' | 'dots' | 'columns';
+  columns: number;
+  gutterSize: number;
+  marginSize: number;
+  showBreakpoints: boolean;
+  breakpoints: GridBreakpoint[];
+}
+
+export interface GridBreakpoint {
+  name: string;
+  width: number;
+  color?: string;
+  description?: string;
+}
+
+// Default breakpoints following Tailwind CSS conventions
+export const TAILWIND_BREAKPOINTS: GridBreakpoint[] = [
+  { name: 'sm', width: 640, color: 'blue-500', description: 'Small devices' },
+  { name: 'md', width: 768, color: 'green-500', description: 'Medium devices' },
+  { name: 'lg', width: 1024, color: 'yellow-500', description: 'Large devices' },
+  { name: 'xl', width: 1280, color: 'red-500', description: 'Extra-large devices' },
+  { name: '2xl', width: 1536, color: 'purple-500', description: '2X Extra-large devices' }
+];
+
+// Default grid configuration
+export const DEFAULT_GRID_CONFIG: GridConfig = {
+  visible: true,
+  snapToGrid: true,
+  size: 8,
+  type: 'lines',
+  columns: 12,
+  gutterSize: 24,
+  marginSize: 16,
+  showBreakpoints: false,
+  breakpoints: TAILWIND_BREAKPOINTS
+};
+
+/**
+ * Get a responsive grid config based on current width
+ * @param width Current viewport width
+ * @param baseConfig Base grid config
+ * @returns Adjusted grid config for the current width
+ */
+export function getResponsiveGridConfig(
+  width: number,
+  baseConfig: GridConfig = DEFAULT_GRID_CONFIG
+): GridConfig {
+  // Create a responsive configuration based on width
+  let responsiveConfig = { ...baseConfig };
+  
+  // Adjust grid size based on viewport width
+  if (width < 640) { // Mobile
+    responsiveConfig.size = Math.max(4, Math.floor(baseConfig.size * 0.75));
+    responsiveConfig.columns = 4;
+    responsiveConfig.gutterSize = 16;
+  } else if (width < 1024) { // Tablet
+    responsiveConfig.size = Math.max(6, Math.floor(baseConfig.size * 0.9));
+    responsiveConfig.columns = 8;
+    responsiveConfig.gutterSize = 20;
+  }
+  
+  return responsiveConfig;
+}
+
+/**
+ * Get the current breakpoint based on width
+ * @param width Current viewport width
+ * @param breakpoints List of breakpoints to check against
+ * @returns The matching breakpoint or null if no match
+ */
+export function getBreakpointFromWidth(
+  width: number,
+  breakpoints: GridBreakpoint[] = TAILWIND_BREAKPOINTS
+): GridBreakpoint | null {
+  // Sort breakpoints from largest to smallest
+  const sortedBreakpoints = [...breakpoints].sort((a, b) => b.width - a.width);
+  
+  // Find the first breakpoint that's smaller than or equal to the current width
+  for (const bp of sortedBreakpoints) {
+    if (width >= bp.width) {
+      return bp;
+    }
+  }
+  
+  // If no match found, return the smallest breakpoint
+  return sortedBreakpoints[sortedBreakpoints.length - 1] || null;
+}
+
+/**
+ * Calculate column positions for a grid layout
+ * @param totalWidth Total width of the canvas
+ * @param columnCount Number of columns
+ * @param gutterSize Size of gutters between columns
+ * @param marginSize Size of margins on left and right
+ * @returns Array of x positions for column guidelines
+ */
+export function calculateColumnPositions(
+  totalWidth: number,
+  columnCount: number = 12,
+  gutterSize: number = 24,
+  marginSize: number = 16
+): number[] {
+  const positions: number[] = [];
+  
+  // Calculate the effective width (total width minus margins)
+  const effectiveWidth = totalWidth - (marginSize * 2);
+  
+  // Calculate the width of each column
+  // (effectiveWidth - gutters) / columnCount
+  const gutters = gutterSize * (columnCount - 1);
+  const columnWidth = (effectiveWidth - gutters) / columnCount;
+  
+  // Calculate the position of each column
+  for (let i = 0; i <= columnCount; i++) {
+    const x = marginSize + (i * (columnWidth + gutterSize));
+    positions.push(x);
+  }
+  
+  return positions;
+}
+
+/**
+ * Calculate grid positions for standard grid layout
+ * @param width Width of the canvas
+ * @param height Height of the canvas
+ * @param gridSize Size of grid cells
+ * @returns Object with horizontal and vertical grid positions
+ */
+export function calculateGridPositions(
+  width: number,
+  height: number,
+  gridSize: number = 8
+): { horizontal: number[], vertical: number[] } {
+  const horizontal: number[] = [];
+  const vertical: number[] = [];
+  
+  // Calculate horizontal grid positions
+  for (let y = 0; y <= height; y += gridSize) {
+    horizontal.push(y);
+  }
+  
+  // Calculate vertical grid positions
+  for (let x = 0; x <= width; x += gridSize) {
+    vertical.push(x);
+  }
+  
+  return { horizontal, vertical };
+}
+
 /**
  * Generates a set of guidelines for an object to snap to when dragged near other objects
  * @param objects - The objects to compare against
