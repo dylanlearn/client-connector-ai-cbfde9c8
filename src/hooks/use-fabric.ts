@@ -1,13 +1,12 @@
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { WireframeCanvasConfig } from '@/types/wireframe';
-
-interface UseFabricOptions {
-  persistConfig?: boolean;
-  initialConfig?: Partial<WireframeCanvasConfig>;
-}
+import { UseFabricOptions } from '@/types/fabric-canvas';
+import { useCanvasInitialization } from './fabric/use-canvas-initialization';
+import { useCanvasActions } from './fabric/use-canvas-actions';
+import { useGridActions } from './fabric/use-grid-actions';
 
 export function useFabric(options: UseFabricOptions = {}) {
   const { persistConfig = true, initialConfig = {} } = options;
@@ -35,71 +34,6 @@ export function useFabric(options: UseFabricOptions = {}) {
     showSmartGuides: initialConfig.showSmartGuides || storeCanvasSettings.showSmartGuides || false
   });
 
-  // Initialize Fabric canvas
-  const initializeFabric = useCallback((canvasElement?: HTMLCanvasElement) => {
-    const canvasEl = canvasElement || canvasRef.current;
-    if (!canvasEl) return null;
-    
-    // Create new canvas instance
-    const canvas = new fabric.Canvas(canvasEl, {
-      backgroundColor: '#ffffff',
-      preserveObjectStacking: true,
-      selection: true
-    });
-
-    // Set up event handlers
-    canvas.on('selection:created', (e) => {
-      setSelectedObject(e.selected?.[0] || null);
-    });
-
-    canvas.on('selection:updated', (e) => {
-      setSelectedObject(e.selected?.[0] || null);
-    });
-
-    canvas.on('selection:cleared', () => {
-      setSelectedObject(null);
-    });
-    
-    canvas.on('mouse:down', () => {
-      if (canvas.isDrawingMode) {
-        setIsDrawing(true);
-      }
-    });
-    
-    canvas.on('mouse:up', () => {
-      if (isDrawing) {
-        setIsDrawing(false);
-      }
-    });
-    
-    // Apply saved canvas configuration
-    if (canvasConfig.zoom !== 1) {
-      canvas.setZoom(canvasConfig.zoom);
-    }
-    
-    if (canvasConfig.panOffset.x !== 0 || canvasConfig.panOffset.y !== 0) {
-      canvas.absolutePan(new fabric.Point(canvasConfig.panOffset.x, canvasConfig.panOffset.y));
-    }
-    
-    // Set snap to grid if enabled
-    if (canvasConfig.snapToGrid) {
-      canvas.on('object:moving', (options) => {
-        if (options.target) {
-          const target = options.target;
-          const gridSize = canvasConfig.gridSize;
-          
-          target.set({
-            left: Math.round(target.left! / gridSize) * gridSize,
-            top: Math.round(target.top! / gridSize) * gridSize
-          });
-        }
-      });
-    }
-
-    setFabricCanvas(canvas);
-    return canvas;
-  }, [canvasConfig, isDrawing]);
-
   // Update canvas config and persist if needed
   const updateConfig = useCallback((config: Partial<WireframeCanvasConfig>) => {
     setCanvasConfig(prev => {
@@ -114,9 +48,46 @@ export function useFabric(options: UseFabricOptions = {}) {
     });
   }, [persistConfig, updateCanvasSettings]);
 
+  // Use the extracted canvas initialization
+  const { initializeFabric } = useCanvasInitialization(
+    canvasConfig, 
+    setSelectedObject, 
+    setIsDrawing, 
+    isDrawing
+  );
+
+  // Use the extracted canvas actions
+  const {
+    addObject,
+    removeObject,
+    clearCanvas,
+    saveCanvasAsJSON,
+    loadCanvasFromJSON,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    pan
+  } = useCanvasActions(fabricCanvas, updateConfig, canvasConfig);
+
+  // Use the extracted grid actions
+  const {
+    toggleGrid,
+    toggleSnapToGrid,
+    setGridSize
+  } = useGridActions(updateConfig, canvasConfig);
+
+  // Initialize Fabric canvas
+  const initCanvas = useCallback(() => {
+    const canvas = initializeFabric(canvasRef.current);
+    if (canvas) {
+      setFabricCanvas(canvas);
+    }
+    return canvas;
+  }, [initializeFabric]);
+
+  // Initialize on mount and cleanup on unmount
   useEffect(() => {
-    // Initialize Fabric canvas
-    const canvas = initializeFabric();
+    const canvas = initCanvas();
     
     // Cleanup on unmount
     return () => {
@@ -124,93 +95,7 @@ export function useFabric(options: UseFabricOptions = {}) {
         fabricCanvas.dispose();
       }
     };
-  }, [initializeFabric]);
-
-  // Methods for canvas manipulation
-  const addObject = useCallback((obj: fabric.Object) => {
-    if (!fabricCanvas) return;
-    fabricCanvas.add(obj);
-    fabricCanvas.renderAll();
-  }, [fabricCanvas]);
-
-  const removeObject = useCallback((obj: fabric.Object) => {
-    if (!fabricCanvas) return;
-    fabricCanvas.remove(obj);
-    fabricCanvas.renderAll();
-  }, [fabricCanvas]);
-
-  const clearCanvas = useCallback(() => {
-    if (!fabricCanvas) return;
-    fabricCanvas.clear();
-    fabricCanvas.backgroundColor = '#ffffff';
-    fabricCanvas.renderAll();
-  }, [fabricCanvas]);
-
-  const saveCanvasAsJSON = useCallback(() => {
-    if (!fabricCanvas) return null;
-    return fabricCanvas.toJSON();
-  }, [fabricCanvas]);
-
-  const loadCanvasFromJSON = useCallback((json: any) => {
-    if (!fabricCanvas) return;
-    fabricCanvas.loadFromJSON(json, () => {
-      fabricCanvas.renderAll();
-    });
-  }, [fabricCanvas]);
-  
-  // Methods for zoom and pan
-  const zoomIn = useCallback(() => {
-    if (!fabricCanvas) return;
-    
-    const newZoom = Math.min(3, canvasConfig.zoom + 0.1);
-    fabricCanvas.setZoom(newZoom);
-    
-    updateConfig({ zoom: newZoom });
-  }, [fabricCanvas, canvasConfig.zoom, updateConfig]);
-  
-  const zoomOut = useCallback(() => {
-    if (!fabricCanvas) return;
-    
-    const newZoom = Math.max(0.1, canvasConfig.zoom - 0.1);
-    fabricCanvas.setZoom(newZoom);
-    
-    updateConfig({ zoom: newZoom });
-  }, [fabricCanvas, canvasConfig.zoom, updateConfig]);
-  
-  const resetZoom = useCallback(() => {
-    if (!fabricCanvas) return;
-    
-    fabricCanvas.setZoom(1);
-    fabricCanvas.absolutePan(new fabric.Point(0, 0));
-    
-    updateConfig({ zoom: 1, panOffset: { x: 0, y: 0 } });
-  }, [fabricCanvas, updateConfig]);
-  
-  const pan = useCallback((x: number, y: number) => {
-    if (!fabricCanvas) return;
-    
-    fabricCanvas.relativePan(new fabric.Point(x, y));
-    
-    const viewportTransform = fabricCanvas.viewportTransform;
-    if (viewportTransform) {
-      updateConfig({
-        panOffset: { x: viewportTransform[4], y: viewportTransform[5] }
-      });
-    }
-  }, [fabricCanvas, updateConfig]);
-  
-  // Grid management
-  const toggleGrid = useCallback(() => {
-    updateConfig({ showGrid: !canvasConfig.showGrid });
-  }, [canvasConfig.showGrid, updateConfig]);
-  
-  const toggleSnapToGrid = useCallback(() => {
-    updateConfig({ snapToGrid: !canvasConfig.snapToGrid });
-  }, [canvasConfig.snapToGrid, updateConfig]);
-  
-  const setGridSize = useCallback((size: number) => {
-    updateConfig({ gridSize: size });
-  }, [updateConfig]);
+  }, [initCanvas]);
 
   return {
     canvasRef,
@@ -239,5 +124,8 @@ export function useFabric(options: UseFabricOptions = {}) {
     canvas: fabricCanvas,
   };
 }
+
+// Add missing import
+import { useEffect } from 'react';
 
 export default useFabric;
