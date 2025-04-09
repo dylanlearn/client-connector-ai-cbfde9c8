@@ -1,9 +1,9 @@
-
 import { fabric } from 'fabric';
 import { AlignmentGuide, GuideVisualization } from '@/components/wireframe/utils/types';
 
 // Default styles for guidelines
 const DEFAULT_GUIDE_STYLES: GuideVisualization = {
+  guide: {} as AlignmentGuide, // Placeholder, will be overridden
   color: {
     edge: '#2196F3',
     center: '#FF4081',
@@ -291,9 +291,14 @@ export function renderAlignmentGuides(
   // Create guides
   guides.forEach(guide => {
     // Determine guide color based on type
-    let guideColor = guideStyles.color.edge;
-    if (guide.type === 'center') guideColor = guideStyles.color.center;
-    if (guide.type === 'distribution') guideColor = guideStyles.color.distribution;
+    let guideColor = typeof guideStyles.color === 'string' 
+      ? guideStyles.color 
+      : (guideStyles.color.edge || '#2196F3');
+    
+    if (typeof guideStyles.color !== 'string') {
+      if (guide.type === 'center') guideColor = guideStyles.color.center;
+      if (guide.type === 'distribution') guideColor = guideStyles.color.distribution;
+    }
     
     // Create guide line
     const canvasWidth = canvas.getWidth();

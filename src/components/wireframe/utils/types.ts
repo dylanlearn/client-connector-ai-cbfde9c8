@@ -41,9 +41,16 @@ export interface AlignmentGuide {
 
 export interface GuideVisualization {
   guide: AlignmentGuide;
-  color: string;
+  color: string | {
+    edge: string;
+    center: string;
+    distribution: string;
+    [key: string]: string;
+  };
   dashArray?: number[];
   width?: number;
+  strokeWidth?: number;
+  showLabels?: boolean;
 }
 
 export interface BoundaryStyles {
@@ -71,3 +78,4 @@ export interface LayerInfo {
   depth: number;
   fabricObject?: fabric.Object;
 }
+
