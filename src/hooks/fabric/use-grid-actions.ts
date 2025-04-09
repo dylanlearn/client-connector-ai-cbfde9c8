@@ -22,13 +22,13 @@ export function useGridActions(
   }, [updateConfig]);
   
   // Change grid type (lines, dots, etc.)
-  const setGridType = useCallback((type: 'lines' | 'dots' | 'grid') => {
+  const setGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
     updateConfig({ gridType: type });
   }, [updateConfig]);
   
   // Set grid color
   const setGridColor = useCallback((color: string) => {
-    updateConfig({ gridColor: color });
+    updateConfig({ gridColor: color } as Partial<WireframeCanvasConfig>);
   }, [updateConfig]);
   
   // Set snap tolerance

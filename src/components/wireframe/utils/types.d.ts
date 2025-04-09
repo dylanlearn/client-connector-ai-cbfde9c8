@@ -8,7 +8,7 @@ export interface WireframeCanvasConfig {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
-  gridType: 'lines' | 'dots' | 'grid';
+  gridType: 'lines' | 'dots' | 'columns';
   snapTolerance: number;
   backgroundColor: string;
   showSmartGuides: boolean;
@@ -27,3 +27,4 @@ export interface SectionRenderingOptions {
   gridSize: number;
   showBorders: boolean;
 }
+
