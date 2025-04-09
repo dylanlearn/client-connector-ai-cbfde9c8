@@ -1,4 +1,3 @@
-
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
