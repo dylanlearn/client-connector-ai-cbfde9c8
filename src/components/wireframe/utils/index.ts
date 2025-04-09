@@ -5,6 +5,7 @@ export * from './canvas-serialization';
 
 // Export section type definitions
 export type { ResponsiveLayoutSettings, AdaptiveWireframeSection } from './section-types';
+export type { WireframeCanvasConfig, SectionRenderingOptions } from './types';
 
 // Export responsive layout utilities
 export {

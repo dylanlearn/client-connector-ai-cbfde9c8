@@ -22,6 +22,7 @@ import Analytics from "./pages/Analytics";
 import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
 import WireframeStudioPage from "./pages/WireframeStudioPage";
+import Index from "./pages/Index";
 
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
@@ -75,7 +76,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: <WireframeStudioPage />,
+        element: <Index />,
       },
       {
         path: '/dashboard',
