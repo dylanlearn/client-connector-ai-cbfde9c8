@@ -1,5 +1,5 @@
 
-import { ComponentDefinition } from '../component-registry';
+import { ComponentDefinition } from '../component-types';
 
 export const footerComponents: ComponentDefinition = {
   type: 'footer',

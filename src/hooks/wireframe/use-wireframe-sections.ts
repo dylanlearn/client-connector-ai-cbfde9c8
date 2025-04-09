@@ -1,8 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
-import { createSectionInstance, getComponentDefinition } from '@/components/wireframe/registry/component-registry';
 import { useToast } from '@/hooks/use-toast';
+import { createSectionInstance, getComponentDefinition } from '@/components/wireframe/registry/component-registry';
 
 export function useWireframeSections() {
   const { toast } = useToast();

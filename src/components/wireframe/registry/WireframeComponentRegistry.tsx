@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { getAllComponentDefinitions, ComponentDefinition } from './component-registry';
+import { getAllComponentDefinitions } from './component-registry';
+import { ComponentDefinition } from './component-types';
 import { Badge } from '@/components/ui/badge';
 import { 
   Card,
@@ -49,7 +50,7 @@ const WireframeComponentRegistry: React.FC<WireframeComponentRegistryProps> = ({
     // Extract unique categories
     const uniqueCategories = Array.from(
       new Set(filteredComponents.map(comp => comp.category))
-    );
+    ).filter(category => typeof category === 'string') as string[];
     
     setComponents(filteredComponents);
     setCategories(uniqueCategories);

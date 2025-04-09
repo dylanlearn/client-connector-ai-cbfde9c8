@@ -1,5 +1,5 @@
 
-import { registerComponent } from "./component-registry";
+import { registerComponent, getComponentDefinition, createSectionInstance } from "./component-registry";
 import { v4 as uuidv4 } from 'uuid';
 import { defaultComponents, defaultHeroComponent, defaultFeaturesComponent, defaultTestimonialsComponent, defaultCTAComponent, defaultFooterComponent } from "./default-components";
 import { navigationComponents } from './components/navigation-components';
