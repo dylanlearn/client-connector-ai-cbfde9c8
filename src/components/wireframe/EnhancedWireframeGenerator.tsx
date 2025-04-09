@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export interface EnhancedWireframeGeneratorProps {
   projectId?: string;
+  intakeData?: any; // Added this property to fix the type error
   onWireframeGenerated?: (wireframe: any) => void;
   onWireframeSaved?: (wireframe: any) => void;
   viewMode?: 'editor' | 'preview';

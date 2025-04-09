@@ -2,7 +2,7 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
-interface ComponentRendererProps {
+export interface ComponentRendererProps {
   section: WireframeSection;
   viewMode: 'preview' | 'flowchart';
   darkMode: boolean;

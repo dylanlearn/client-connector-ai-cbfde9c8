@@ -113,6 +113,9 @@ const SectionEditorPreview: React.FC<SectionEditorPreviewProps> = ({
                 section={section}
                 viewMode="preview" 
                 darkMode={darkMode}
+                deviceType={activeDevice || 'desktop'} // Add the required deviceType prop
+                isSelected={false} // Add the required isSelected prop
+                onClick={() => {}} // Add the required onClick prop
               />
             </div>
           </div>
