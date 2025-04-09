@@ -5,9 +5,13 @@ import { Clipboard, Check } from 'lucide-react';
 
 interface WireframeDataVisualizerProps {
   wireframeData: any;
+  title?: string;
 }
 
-const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({ wireframeData }) => {
+const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({ 
+  wireframeData,
+  title
+}) => {
   const [copied, setCopied] = useState(false);
 
   if (!wireframeData) {
@@ -26,6 +30,7 @@ const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({ wiref
 
   return (
     <div className="wireframe-data-visualizer">
+      {title && <h3 className="text-lg font-medium mb-2">{title}</h3>}
       <div className="flex justify-end mb-2">
         <Button 
           variant="outline" 

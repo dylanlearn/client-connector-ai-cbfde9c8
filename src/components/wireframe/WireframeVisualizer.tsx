@@ -6,12 +6,14 @@ interface WireframeVisualizerProps {
   wireframeData: any;
   preview?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSelect?: (id: string) => void;
 }
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframeData,
   preview = false,
-  deviceType = 'desktop'
+  deviceType = 'desktop',
+  onSelect
 }) => {
   if (!wireframeData) {
     return (
@@ -34,6 +36,12 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   const width = getWidth();
   const height = 2000; // Default height, could be made responsive too
 
+  const handleSectionSelect = (sectionId: string) => {
+    if (onSelect) {
+      onSelect(sectionId);
+    }
+  };
+
   return (
     <div className={`wireframe-visualizer ${preview ? 'preview-mode' : ''}`}>
       <WireframeCanvasEnhanced
@@ -45,6 +53,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
         snapToGrid={false}
         deviceType={deviceType}
         responsiveMode={deviceType !== 'desktop'}
+        onSectionSelect={onSelect ? handleSectionSelect : undefined}
       />
     </div>
   );

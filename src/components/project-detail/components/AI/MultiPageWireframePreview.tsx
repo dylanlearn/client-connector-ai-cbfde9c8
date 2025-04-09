@@ -47,7 +47,6 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({
             <TabsContent key={wireframe.id} value={wireframe.id}>
               <WireframeDataVisualizer 
                 wireframeData={wireframe} 
-                title={wireframe.title || 'Wireframe Preview'}
               />
             </TabsContent>
           ))}

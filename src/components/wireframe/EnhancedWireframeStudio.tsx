@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
 import { AdvancedWireframeGenerator } from '@/components/wireframe';
 import { WireframeVisualizer } from '@/components/wireframe';
 import { WireframeDataVisualizer } from '@/components/wireframe';
+import WireframeEditor from '@/components/wireframe/WireframeEditor';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Laptop, Smartphone, Download, Share2, Code } from 'lucide-react';
@@ -27,30 +27,25 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const { project } = useProject();
   const { currentWireframe, generateWireframe, saveWireframe } = useAdvancedWireframe();
 
-  // Handle wireframe generation
   const handleWireframeGenerated = (wireframe: any) => {
     console.log("Wireframe generated in studio:", wireframe);
-    // Switch to the visualizer tab after generation
     setActiveTab('visualizer');
   };
 
-  // Handle wireframe save
   const handleWireframeSaved = (wireframe: any) => {
     console.log("Wireframe saved:", wireframe);
   };
 
-  // Handle export
   const handleExport = () => {
-    if (!currentWireframe?.wireframe) return;
+    if (!currentWireframe) return;
     
-    // Export wireframe as JSON
-    const wireframeJson = JSON.stringify(currentWireframe.wireframe, null, 2);
+    const wireframeJson = JSON.stringify(currentWireframe, null, 2);
     const blob = new Blob([wireframeJson], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wireframe-${currentWireframe.wireframe.title || 'untitled'}.json`;
+    a.download = `wireframe-${currentWireframe.title || 'untitled'}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -68,7 +63,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
               variant="outline" 
               size="sm" 
               onClick={handleExport}
-              disabled={!currentWireframe?.wireframe}
+              disabled={!currentWireframe}
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -76,7 +71,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              disabled={!currentWireframe?.wireframe}
+              disabled={!currentWireframe}
             >
               <Share2 className="h-4 w-4 mr-2" />
               Share
@@ -106,11 +101,11 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         
         <TabsContent value="visualizer">
           <Card className="p-4">
-            {currentWireframe?.wireframe ? (
+            {currentWireframe ? (
               <div>
                 <div className="mb-4 flex justify-between items-center">
                   <h3 className="text-lg font-medium">
-                    {currentWireframe.wireframe.title || "Untitled Wireframe"}
+                    {currentWireframe.title || "Untitled Wireframe"}
                   </h3>
                   <div className="flex gap-2">
                     <Button 
@@ -141,7 +136,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                   margin: devicePreview !== 'desktop' ? '0 auto' : undefined
                 }}>
                   <WireframeVisualizer 
-                    wireframeData={currentWireframe.wireframe} 
+                    wireframeData={currentWireframe} 
                     preview={true}
                     deviceType={devicePreview}
                   />
@@ -157,12 +152,11 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         
         <TabsContent value="editor">
           <Card className="p-4">
-            {currentWireframe?.wireframe ? (
+            {currentWireframe ? (
               <div className="wireframe-editor-container">
-                {/* Use the WireframeEditor to edit the current wireframe */}
                 <WireframeEditor 
                   projectId={projectId} 
-                  wireframeData={currentWireframe.wireframe}
+                  wireframeData={currentWireframe}
                   onUpdate={(updated) => saveWireframe(projectId, "Updated wireframe")}
                 />
               </div>
@@ -176,7 +170,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         
         <TabsContent value="data">
           <Card className="p-4">
-            {currentWireframe?.wireframe ? (
+            {currentWireframe ? (
               <div className="wireframe-data-container">
                 <div className="mb-4 flex justify-between items-center">
                   <h3 className="text-lg font-medium">Wireframe Code</h3>
@@ -185,7 +179,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                     Copy JSON
                   </Button>
                 </div>
-                <WireframeDataVisualizer wireframeData={currentWireframe.wireframe} />
+                <WireframeDataVisualizer wireframeData={currentWireframe} title="Wireframe JSON Data" />
               </div>
             ) : (
               <div className="flex items-center justify-center h-64 bg-muted rounded-md">

@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import WireframeEditor from './WireframeEditor';
 import { Loader2, Save, FileDown, Upload, ArrowRight, Code, Smartphone, Laptop } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
@@ -61,8 +60,8 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   }, [projectId, intakeData, projectName]);
 
   useEffect(() => {
-    if (currentWireframe?.title) {
-      setWireframeName(currentWireframe.title);
+    if (currentWireframe) {
+      setWireframeName(currentWireframe.title || "New Wireframe");
       setWireframeDescription(currentWireframe.description || prompt);
     }
   }, [currentWireframe, prompt]);
@@ -316,7 +315,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                     margin: devicePreview !== 'desktop' ? '0 auto' : undefined
                   }}>
                     <WireframeCanvasEnhanced 
-                      sections={currentWireframe.sections}
+                      sections={currentWireframe.sections || []}
                       width={devicePreview === 'desktop' ? 1200 : devicePreview === 'tablet' ? 768 : 375}
                       height={2000}
                       editable={false}
@@ -329,7 +328,13 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
                 </CardContent>
               </Card>
               
-              <WireframeEditor projectId={projectId} wireframeData={currentWireframe} />
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-center text-muted-foreground">
+                    Editor functionality will be available in a future update.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           ) : (
             <div className="flex items-center justify-center h-64 bg-muted rounded-md">
