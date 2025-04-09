@@ -32,4 +32,5 @@ export {
   TAILWIND_BREAKPOINTS,
   calculateColumnPositions,
   calculateGridPositions,
+  getBreakpointFromWidth,
 } from '../utils/grid-utils';

@@ -10,10 +10,10 @@ export interface WireframeCanvasConfig {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
+  backgroundColor: string;
   gridType: "lines" | "dots" | "columns";
   snapTolerance: number;
   showSmartGuides: boolean;
-  backgroundColor: string;
 }
 
 // Section rendering utilities
