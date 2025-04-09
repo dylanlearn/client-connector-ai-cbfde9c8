@@ -25,7 +25,7 @@ const SpecificQuestionsStep: React.FC = () => {
         
         {questions.length > 0 ? (
           <div className="space-y-8">
-            {questions.map((question, index) => (
+            {questions.map((question) => (
               <FormField
                 key={question.id}
                 name={`specificQuestions.${question.id}`}
@@ -53,8 +53,8 @@ const SpecificQuestionsStep: React.FC = () => {
           <Separator className="mb-6" />
           <WireframeVisualizer 
             wireframeData={{
-              title: intakeData.businessName || "Business Preview",
-              description: intakeData.businessDescription || "Based on your inputs",
+              title: intakeData.projectName || "Business Preview",
+              description: intakeData.projectDescription || "Based on your inputs",
               sections: []
             }}
             preview={true}

@@ -13,6 +13,13 @@ export interface IntakeFormData {
   mainFeatures?: string;
   competitors?: string;
   
+  // Business specific
+  businessName?: string;
+  businessDescription?: string;
+  serviceOfferings?: string;
+  contactFormRequired?: boolean;
+  hasPhysicalLocation?: boolean;
+  
   // SaaS specific
   userAccountsRequired?: boolean;
   pricingTiers?: string;
@@ -23,11 +30,6 @@ export interface IntakeFormData {
   paymentProcessors?: string;
   shippingIntegration?: boolean;
   customQuestions?: string[];
-  
-  // Business specific
-  serviceOfferings?: string;
-  contactFormRequired?: boolean;
-  hasPhysicalLocation?: boolean;
   
   // Portfolio specific
   projectCategories?: string;

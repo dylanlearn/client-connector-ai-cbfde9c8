@@ -8,23 +8,30 @@ import { Laptop, Smartphone } from 'lucide-react';
 
 export interface WireframeVisualizerProps {
   wireframeData: any;
+  wireframe?: any; // Add wireframe as optional prop for backward compatibility
   title?: string;
   description?: string;
   preview?: boolean;
+  onSelect?: (id: string) => void;
 }
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframeData,
+  wireframe, // Accept wireframe prop
   title,
   description,
-  preview = false
+  preview = false,
+  onSelect
 }) => {
   const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   
-  // Extract sections from wireframeData
-  const sections: WireframeSection[] = wireframeData?.sections || [];
+  // Use wireframe data from either wireframeData or wireframe prop
+  const data = wireframe || wireframeData;
   
-  if (!wireframeData || sections.length === 0) {
+  // Extract sections from data
+  const sections: WireframeSection[] = data?.sections || [];
+  
+  if (!data || sections.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -38,37 +45,46 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   }
   
   return (
-    <Card>
+    <Card className={onSelect ? "cursor-pointer hover:border-primary" : ""} onClick={() => onSelect && onSelect(data.id)}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle>{title || wireframeData.title || 'Wireframe Preview'}</CardTitle>
+          <CardTitle>{title || data.title || 'Wireframe Preview'}</CardTitle>
           <div className="flex gap-2">
             <Button 
               variant={devicePreview === 'desktop' ? 'default' : 'outline'} 
               size="sm" 
-              onClick={() => setDevicePreview('desktop')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDevicePreview('desktop');
+              }}
             >
               <Laptop className="h-4 w-4" />
             </Button>
             <Button 
               variant={devicePreview === 'tablet' ? 'default' : 'outline'} 
               size="sm" 
-              onClick={() => setDevicePreview('tablet')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDevicePreview('tablet');
+              }}
             >
               <Smartphone className="h-4 w-4 rotate-90" />
             </Button>
             <Button 
               variant={devicePreview === 'mobile' ? 'default' : 'outline'} 
               size="sm" 
-              onClick={() => setDevicePreview('mobile')}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDevicePreview('mobile');
+              }}
             >
               <Smartphone className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        {description || wireframeData.description ? (
+        {description || data.description ? (
           <p className="text-sm text-muted-foreground mt-1">
-            {description || wireframeData.description}
+            {description || data.description}
           </p>
         ) : null}
       </CardHeader>
