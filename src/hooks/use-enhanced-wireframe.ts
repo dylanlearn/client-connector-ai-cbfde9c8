@@ -1,9 +1,11 @@
+
 import { useState, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { 
   WireframeData, 
   WireframeSection,
-  WireframeGenerationParams
+  WireframeGenerationParams,
+  EnhancedWireframeGenerationResult
 } from "@/services/ai/wireframe/wireframe-types";
 import { EnhancedWireframeGenerator } from "@/services/ai/wireframe/enhanced-wireframe-generator";
 import { AdvancedWireframeService } from "@/services/ai/wireframe/advanced-wireframe-service";
@@ -74,7 +76,11 @@ export function useEnhancedWireframe() {
       }
       
       setCurrentWireframe(result.wireframe);
-      setLayoutAnalysis(result.layoutAnalysis);
+      
+      // Now using the proper EnhancedWireframeGenerationResult type
+      if (result.layoutAnalysis) {
+        setLayoutAnalysis(result.layoutAnalysis);
+      }
       
       toast({
         title: "Wireframe generated",
@@ -126,6 +132,7 @@ export function useEnhancedWireframe() {
         count
       );
       
+      // Now using the proper EnhancedWireframeGenerationResult type
       if (result.variations && result.variations.length > 0) {
         setVariations(result.variations);
         

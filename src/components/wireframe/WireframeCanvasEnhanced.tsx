@@ -2,10 +2,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { WireframeSection } from '@/types/wireframe';
 
-// We no longer need to extend WireframeSection with these properties
-// since we added them directly to WireframeSection interface
-type ExtendedWireframeSection = WireframeSection;
-
 export interface WireframeCanvasEnhancedProps {
   sections: WireframeSection[];
   width?: number;

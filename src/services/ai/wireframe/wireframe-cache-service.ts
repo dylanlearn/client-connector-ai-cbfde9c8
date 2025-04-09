@@ -1,122 +1,154 @@
 
-import { createHash } from 'crypto';
-import { 
-  WireframeGenerationParams, 
-  WireframeData, 
-  WireframeGenerationResult 
-} from './wireframe-types';
+import { v4 as uuidv4 } from 'uuid';
+import { WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
 
-/**
- * Service for caching wireframe generation requests and results
- */
-export class WireframeCacheService {
-  /**
-   * Generate a cache key for wireframe generation parameters
-   */
-  static generateCacheKey(params: WireframeGenerationParams): string {
-    // Extract the parameters that affect the wireframe generation result
-    const keyParams: Record<string, any> = {
-      description: params.description || '',
-      industry: params.industry || '',
-      pageType: params.pageType || '',
-      style: params.style || '',
-      colorTheme: params.colorTheme || '',
-      complexity: params.complexity || 'moderate',
-      creativityLevel: params.creativityLevel || 8,
-      enhancedCreativity: params.enhancedCreativity || false
+interface CachedWireframe {
+  id: string;
+  params: WireframeGenerationParams;
+  result: WireframeGenerationResult;
+  timestamp: number;
+}
+
+class WireframeCache {
+  private cache: Map<string, CachedWireframe> = new Map();
+  private readonly MAX_CACHE_SIZE = 50;
+  private readonly CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+  // Create a cache key based on generation parameters
+  private createCacheKey(params: WireframeGenerationParams): string {
+    const {
+      description = '',
+      projectId = '',
+      style = '',
+      colorTheme = '',
+      industry = '',
+      creativityLevel = 0,
+      pageType = ''
+    } = params;
+
+    // Include additional properties in the cache key if they exist
+    let complexityStr = '';
+    if ('complexity' in params && params.complexity !== undefined) {
+      complexityStr = `_complexity:${params.complexity}`;
+    }
+
+    let multiPageStr = '';
+    if ('multiPageLayout' in params && params.multiPageLayout) {
+      multiPageStr = '_multiPage';
+      
+      if ('pages' in params && params.pages) {
+        multiPageStr += `:${params.pages.length}`;
+      }
+    }
+    
+    let componentTypesStr = '';
+    if ('componentTypes' in params && params.componentTypes) {
+      componentTypesStr = `_components:${params.componentTypes.length}`;
+      if (params.componentTypes.length > 0) {
+        componentTypesStr += `:${params.componentTypes[0]}`;
+      }
+    }
+    
+    let moodboardStr = '';
+    if ('moodboardSelections' in params && params.moodboardSelections) {
+      moodboardStr = `_mood:${params.moodboardSelections.length}`;
+      if (params.moodboardSelections.length > 0) {
+        moodboardStr += `:${params.moodboardSelections[0]}`;
+      }
+    }
+    
+    // Build the cache key
+    const key = `${description.substring(0, 50)}_${projectId}_${style}_${colorTheme}_${industry}_${creativityLevel}_${pageType}${complexityStr}${multiPageStr}${componentTypesStr}${moodboardStr}`;
+    return key.replace(/\s+/g, '_').toLowerCase();
+  }
+
+  // Check if there's a valid cached wireframe for the given parameters
+  getCachedWireframe(params: WireframeGenerationParams): WireframeGenerationResult | null {
+    const cacheKey = this.createCacheKey(params);
+    const cached = this.cache.get(cacheKey);
+    
+    if (!cached) {
+      return null;
+    }
+    
+    // Check if cache is expired
+    if (Date.now() - cached.timestamp > this.CACHE_EXPIRY_MS) {
+      this.cache.delete(cacheKey);
+      return null;
+    }
+    
+    // Check if parameters match closely enough
+    if (
+      params.description !== cached.params.description ||
+      params.style !== cached.params.style ||
+      params.colorTheme !== cached.params.colorTheme ||
+      params.industry !== cached.params.industry ||
+      ('complexity' in params && 'complexity' in cached.params && params.complexity !== cached.params.complexity) ||
+      ('multiPageLayout' in params && 'multiPageLayout' in cached.params && 
+       params.multiPageLayout !== cached.params.multiPageLayout) ||
+      ('multiPageLayout' in params && params.multiPageLayout === true && 
+       'pages' in params && 'pages' in cached.params && 
+       JSON.stringify(params.pages) !== JSON.stringify(cached.params.pages)) ||
+      (params.creativityLevel && cached.params.creativityLevel && 
+       Math.abs(params.creativityLevel - cached.params.creativityLevel) > 2)
+    ) {
+      return null;
+    }
+    
+    return cached.result;
+  }
+
+  // Store a wireframe in the cache
+  cacheWireframe(params: WireframeGenerationParams, result: WireframeGenerationResult): void {
+    // Don't cache failed generations
+    if (!result.success || !result.wireframe) {
+      return;
+    }
+    
+    const cacheKey = this.createCacheKey(params);
+    
+    this.cache.set(cacheKey, {
+      id: uuidv4(),
+      params,
+      result,
+      timestamp: Date.now()
+    });
+    
+    // Clean up if cache is too large
+    if (this.cache.size > this.MAX_CACHE_SIZE) {
+      this.pruneCache();
+    }
+  }
+  
+  // Clean up the oldest entries in the cache
+  private pruneCache(): void {
+    const entries = Array.from(this.cache.entries());
+    entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    
+    const entriesToRemove = entries.slice(0, Math.floor(this.MAX_CACHE_SIZE / 4));
+    entriesToRemove.forEach(([key]) => this.cache.delete(key));
+  }
+  
+  // Clear the entire cache
+  clearCache(): void {
+    this.cache.clear();
+  }
+  
+  // Get cache stats
+  getStats(): { size: number, oldestEntry: Date | null } {
+    let oldestTimestamp = Date.now();
+    
+    for (const entry of this.cache.values()) {
+      if (entry.timestamp < oldestTimestamp) {
+        oldestTimestamp = entry.timestamp;
+      }
+    }
+    
+    return {
+      size: this.cache.size,
+      oldestEntry: this.cache.size > 0 ? new Date(oldestTimestamp) : null
     };
-    
-    // Add special handling for multi-page layouts
-    if (params.multiPageLayout) {
-      keyParams.multiPageLayout = true;
-      keyParams.pages = params.pages || 1;
-    }
-    
-    // Add specific component types if specified
-    if (params.componentTypes && params.componentTypes.length > 0) {
-      keyParams.componentTypes = params.componentTypes.join(',');
-    }
-    
-    // Add moodboard selections if included
-    if (params.moodboardSelections && params.moodboardSelections.length > 0) {
-      keyParams.moodboardSelections = params.moodboardSelections.join(',');
-    }
-    
-    // Create a JSON string from the parameters
-    const paramString = JSON.stringify(keyParams);
-    
-    // Return SHA-256 hash of the parameter string
-    return createHash('sha256')
-      .update(paramString)
-      .digest('hex');
-  }
-  
-  /**
-   * Check if the wireframe data requires regeneration based on parameter changes
-   */
-  static requiresRegeneration(
-    currentParams: WireframeGenerationParams,
-    previousParams: WireframeGenerationParams
-  ): boolean {
-    // Compare critical parameters that would require regeneration
-    const criticalChanges = [
-      currentParams.description !== previousParams.description,
-      currentParams.industry !== previousParams.industry,
-      currentParams.pageType !== previousParams.pageType,
-      currentParams.complexity !== previousParams.complexity,
-      currentParams.style !== previousParams.style,
-      currentParams.colorTheme !== previousParams.colorTheme
-    ];
-    
-    // If multi-page layout is involved, check page count
-    if (currentParams.multiPageLayout || previousParams.multiPageLayout) {
-      criticalChanges.push(
-        currentParams.multiPageLayout !== previousParams.multiPageLayout ||
-        (currentParams.pages || 0) !== (previousParams.pages || 0)
-      );
-    }
-    
-    return criticalChanges.some(change => change === true);
-  }
-  
-  /**
-   * Compare two wireframes to calculate similarity score
-   */
-  static calculateSimilarityScore(wireframe1: WireframeData, wireframe2: WireframeData): number {
-    let score = 0;
-    let totalFactors = 0;
-    
-    // Check section count similarity
-    const sectionCountSimilarity = 
-      Math.min(wireframe1.sections.length, wireframe2.sections.length) / 
-      Math.max(wireframe1.sections.length, wireframe2.sections.length);
-    score += sectionCountSimilarity;
-    totalFactors++;
-    
-    // Check multi-page similarity if applicable
-    const hasPages1 = !!(wireframe1.pages && wireframe1.pages.length > 0);
-    const hasPages2 = !!(wireframe2.pages && wireframe2.pages.length > 0);
-    
-    if (hasPages1 && hasPages2) {
-      const pageCountSimilarity =
-        Math.min((wireframe1.pages || []).length, (wireframe2.pages || []).length) /
-        Math.max((wireframe1.pages || []).length, (wireframe2.pages || []).length);
-      score += pageCountSimilarity;
-      totalFactors++;
-    }
-    
-    // Calculate section type similarity
-    const sectionTypes1 = wireframe1.sections.map(s => s.sectionType);
-    const sectionTypes2 = wireframe2.sections.map(s => s.sectionType);
-    
-    const commonSectionTypes = sectionTypes1.filter(type => sectionTypes2.includes(type));
-    const sectionTypeSimilarity = 
-      commonSectionTypes.length / Math.max(sectionTypes1.length, sectionTypes2.length);
-    
-    score += sectionTypeSimilarity;
-    totalFactors++;
-    
-    // Return average score (scale 0-1)
-    return score / totalFactors;
   }
 }
+
+export const wireframeCache = new WireframeCache();
