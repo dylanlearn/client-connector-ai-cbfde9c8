@@ -7,23 +7,30 @@ export interface GridConfig {
   gutterSize: number;
   marginSize: number;
   breakpoints: GridBreakpoint[];
-  type: 'bootstrap' | 'tailwind' | 'custom';
+  type: 'bootstrap' | 'tailwind' | 'custom' | 'lines' | 'dots' | 'columns';
+  size?: number;
+  gutter?: number;
+  visible?: boolean;
+  snapToGrid?: boolean;
+  showBreakpoints?: boolean;
 }
 
 export interface GridBreakpoint {
   name: string;
   minWidth: number;
+  width: number; // Added width property
+  color?: string; // Added color property
   columns?: number;
   gutterSize?: number;
   marginSize?: number;
 }
 
 export const TAILWIND_BREAKPOINTS: GridBreakpoint[] = [
-  { name: 'sm', minWidth: 640 },
-  { name: 'md', minWidth: 768 },
-  { name: 'lg', minWidth: 1024 },
-  { name: 'xl', minWidth: 1280 },
-  { name: '2xl', minWidth: 1536 }
+  { name: 'sm', minWidth: 640, width: 640 },
+  { name: 'md', minWidth: 768, width: 768 },
+  { name: 'lg', minWidth: 1024, width: 1024 },
+  { name: 'xl', minWidth: 1280, width: 1280 },
+  { name: '2xl', minWidth: 1536, width: 1536 }
 ];
 
 export const DEFAULT_GRID_CONFIG: GridConfig = {
@@ -31,7 +38,11 @@ export const DEFAULT_GRID_CONFIG: GridConfig = {
   gutterSize: 16,
   marginSize: 24,
   breakpoints: TAILWIND_BREAKPOINTS,
-  type: 'tailwind'
+  type: 'tailwind',
+  size: 8,
+  visible: true,
+  snapToGrid: true,
+  showBreakpoints: true
 };
 
 // Create grid positions for columns
@@ -39,7 +50,7 @@ export function calculateColumnPositions(
   width: number, 
   columns: number, 
   gutterSize: number, 
-  marginSize: number
+  marginSize: number = 0
 ): number[] {
   const positions: number[] = [];
   const columnWidth = (width - (marginSize * 2) - ((columns - 1) * gutterSize)) / columns;
@@ -83,7 +94,7 @@ export function calculateGridPositions(
 
 // Get appropriate grid config based on width
 export function getResponsiveGridConfig(
-  width: number, 
+  width: number,
   config: GridConfig = DEFAULT_GRID_CONFIG
 ): GridConfig {
   // Find the appropriate breakpoint

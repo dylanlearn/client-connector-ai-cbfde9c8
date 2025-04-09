@@ -1,3 +1,4 @@
+
 import { DeviceType } from './responsive-utils';
 
 // Canvas configuration interface

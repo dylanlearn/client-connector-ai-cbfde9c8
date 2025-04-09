@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { TAILWIND_BREAKPOINTS, calculateColumnPositions, calculateGridPositions } from '../utils/grid-utils';
+import { GridConfig, GridBreakpoint as GridConfigBreakpoint, calculateColumnPositions, calculateGridPositions } from '../utils/grid-utils';
 
 export type GridType = 'lines' | 'dots' | 'columns' | 'bootstrap' | 'tailwind' | 'custom';
 
@@ -46,7 +46,7 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
   columns = 12,
   gutter = 24,
   className,
-  breakpoints = TAILWIND_BREAKPOINTS,
+  breakpoints = [],
   showBreakpoints = true,
   opacity = 0.15,
   color,
@@ -74,7 +74,7 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
     if (['columns', 'bootstrap', 'tailwind'].includes(gridType)) {
       // Adjust canvas width to account for margins
       const adjustedWidth = canvasWidth - (margins * 2);
-      return calculateColumnPositions(adjustedWidth, columns, gutter);
+      return calculateColumnPositions(adjustedWidth, columns, gutter, margins);
     }
     return [];
   }, [canvasWidth, columns, gutter, gridType, margins]);
@@ -110,11 +110,10 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
       }
     } else if (gridType === 'lines') {
       // Draw lines
-      const horizontalLines = calculateGridPositions(canvasHeight, gridSize);
-      const verticalLines = calculateGridPositions(canvasWidth, gridSize);
+      const positions = calculateGridPositions(canvasWidth, canvasHeight, gridSize);
       
       // Draw horizontal lines
-      horizontalLines.forEach(y => {
+      positions.horizontal.forEach(y => {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvasWidth, y);
@@ -122,7 +121,7 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
       });
       
       // Draw vertical lines
-      verticalLines.forEach(x => {
+      positions.vertical.forEach(x => {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvasHeight);
@@ -187,7 +186,7 @@ const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
     }
     
     // Draw breakpoints if enabled
-    if (showBreakpoints) {
+    if (showBreakpoints && breakpoints.length > 0) {
       const applicableBreakpoints = breakpoints.filter(bp => bp.width < canvasWidth);
       
       applicableBreakpoints.forEach(breakpoint => {
