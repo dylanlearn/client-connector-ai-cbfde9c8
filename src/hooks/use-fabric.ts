@@ -1,5 +1,5 @@
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { WireframeCanvasConfig } from '@/types/wireframe';
@@ -95,7 +95,7 @@ export function useFabric(options: UseFabricOptions = {}) {
         fabricCanvas.dispose();
       }
     };
-  }, [initCanvas]);
+  }, [initCanvas, fabricCanvas]);
 
   return {
     canvasRef,
@@ -124,8 +124,5 @@ export function useFabric(options: UseFabricOptions = {}) {
     canvas: fabricCanvas,
   };
 }
-
-// Add missing import
-import { useEffect } from 'react';
 
 export default useFabric;
