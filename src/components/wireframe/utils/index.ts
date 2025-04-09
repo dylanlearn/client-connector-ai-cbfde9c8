@@ -5,7 +5,11 @@ export * from './canvas-serialization';
 
 // Export section type definitions
 export type { ResponsiveLayoutSettings, AdaptiveWireframeSection } from './section-types';
-export type { WireframeCanvasConfig, SectionRenderingOptions } from './types';
+export type { 
+  WireframeCanvasConfig, 
+  SectionRenderingOptions,
+  AlignmentGuide
+} from './types';
 
 // Export responsive layout utilities
 export {
@@ -36,3 +40,6 @@ export * from './responsive-utils';
 
 // Export grid utilities 
 export * from './grid-utils';
+
+// Export new alignment guides utilities
+export * from './alignment-guides';

@@ -2,11 +2,12 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { WireframeCanvasConfig } from '@/types/wireframe';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import { UseFabricOptions } from '@/types/fabric-canvas';
 import { useCanvasInitialization } from './fabric/use-canvas-initialization';
 import { useCanvasActions } from './fabric/use-canvas-actions';
 import { useGridActions } from './fabric/use-grid-actions';
+import { findAlignmentGuides, snapObjectToGuides } from '@/components/wireframe/utils/alignment-guides';
 
 export function useFabric(options: UseFabricOptions = {}) {
   const { persistConfig = true, initialConfig = {} } = options;
@@ -15,6 +16,7 @@ export function useFabric(options: UseFabricOptions = {}) {
   const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [guides, setGuides] = useState<any[]>([]);
   
   const storeCanvasSettings = useWireframeStore(state => state.canvasSettings);
   const updateCanvasSettings = useWireframeStore(state => state.updateCanvasSettings);
@@ -73,7 +75,8 @@ export function useFabric(options: UseFabricOptions = {}) {
   const {
     toggleGrid,
     toggleSnapToGrid,
-    setGridSize
+    setGridSize,
+    changeGridType
   } = useGridActions(updateConfig, canvasConfig);
 
   // Initialize Fabric canvas
@@ -81,9 +84,33 @@ export function useFabric(options: UseFabricOptions = {}) {
     const canvas = initializeFabric(canvasRef.current);
     if (canvas) {
       setFabricCanvas(canvas);
+      
+      // Set up smart guides if enabled
+      if (canvasConfig.showSmartGuides) {
+        canvas.on('object:moving', (e) => {
+          if (!e.target) return;
+          
+          // Find alignment guides
+          const activeObject = e.target;
+          const allObjects = canvas.getObjects().filter(obj => obj !== activeObject);
+          const newGuides = findAlignmentGuides(activeObject, allObjects, canvasConfig.snapTolerance);
+          
+          // Set guides for rendering
+          setGuides(newGuides);
+          
+          // Apply snapping
+          if (canvasConfig.showSmartGuides && newGuides.length > 0) {
+            snapObjectToGuides(activeObject, newGuides, canvas);
+          }
+        });
+        
+        canvas.on('object:modified', () => {
+          setGuides([]);
+        });
+      }
     }
     return canvas;
-  }, [initializeFabric]);
+  }, [initializeFabric, canvasConfig.showSmartGuides, canvasConfig.snapTolerance]);
 
   // Initialize on mount and cleanup on unmount
   useEffect(() => {
@@ -97,12 +124,18 @@ export function useFabric(options: UseFabricOptions = {}) {
     };
   }, [initCanvas, fabricCanvas]);
 
+  // Toggle smart guides
+  const toggleSmartGuides = useCallback(() => {
+    updateConfig({ showSmartGuides: !canvasConfig.showSmartGuides });
+  }, [updateConfig, canvasConfig.showSmartGuides]);
+
   return {
     canvasRef,
     fabricCanvas,
     selectedObject,
     canvasConfig,
     isDrawing,
+    guides,
     // Basic fabric operations
     addObject,
     removeObject,
@@ -116,7 +149,9 @@ export function useFabric(options: UseFabricOptions = {}) {
     pan,
     toggleGrid,
     toggleSnapToGrid,
+    toggleSmartGuides,
     setGridSize,
+    changeGridType,
     updateConfig,
     // Also expose the original initialize method
     initializeFabric,

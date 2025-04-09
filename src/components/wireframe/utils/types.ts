@@ -24,3 +24,23 @@ export interface SectionRenderingOptions {
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   interactive?: boolean;
 }
+
+// Enhanced guide interface for smart alignment
+export interface AlignmentGuide {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'edge' | 'center' | 'distribution';
+  strength: number; // For weighted guide importance
+}
+
+// Layer interface for managing component stacking
+export interface LayerInfo {
+  id: string;
+  name: string;
+  type: string; 
+  visible: boolean;
+  locked: boolean;
+  zIndex: number;
+  parentId?: string; // For grouped layers
+  isExpanded?: boolean; // For group open/closed state
+}
