@@ -54,7 +54,7 @@ export class WireframeService {
           title: updated.title || params.title,
           description: updated.description || params.description,
           sections: params.sections,
-          lastUpdated: updated.updated_at || new Date().toISOString()
+          lastUpdated: updated.updatedAt || new Date().toISOString()
         } : null;
       } else {
         // Create new wireframe
@@ -88,7 +88,7 @@ export class WireframeService {
           title: result.title || params.title,
           description: result.description || params.description,
           sections: params.sections,
-          lastUpdated: result.updated_at || new Date().toISOString()
+          lastUpdated: result.updatedAt || new Date().toISOString()
         };
       }
     } catch (error) {
@@ -118,8 +118,8 @@ export class WireframeService {
         title: wireframe.title || wireframe.description || "Untitled Wireframe",
         description: wireframe.description || "",
         sections: wireframe.sections || [],
-        imageUrl: wireframe.image_url || "",
-        lastUpdated: wireframe.updated_at || new Date().toISOString()
+        imageUrl: wireframe.imageUrl || "",
+        lastUpdated: wireframe.updatedAt || new Date().toISOString()
       };
     } catch (error) {
       console.error("Error in getWireframe:", error);

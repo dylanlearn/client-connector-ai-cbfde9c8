@@ -84,6 +84,13 @@ export interface WireframeSection {
     alignment?: string;
     [key: string]: any;
   };
+  style?: {
+    [key: string]: any;
+    backgroundColor?: string;
+    textAlign?: string;
+    padding?: string;
+    gap?: string;
+  };
   designReasoning?: string;
   mobileLayout?: {
     structure?: string;
@@ -112,6 +119,12 @@ export interface WireframeComponent {
   position?: { x: number; y: number };
   dimensions?: { width: number; height: number };
   styleProperties?: any;
+  style?: {
+    [key: string]: any;
+    color?: string;
+    fontSize?: string;
+    padding?: string;
+  };
 }
 
 export interface DesignMemoryResponse {
@@ -152,6 +165,9 @@ export interface AIWireframe {
   project_id?: string;
   createdAt?: string;
   updatedAt?: string;
+  updated_at?: string;
+  image_url?: string;
+  imageUrl?: string;
 }
 
 export interface WireframeData {
