@@ -96,7 +96,7 @@ export const createDefaultQuickActions = (
   onDelete: () => void,
   onBringForward: () => void,
   onSendBackward: () => void,
-  onRotate: () => void,
+  onRotate: () => void, // Changed from accepting an event to no arguments
   onEdit: () => void,
   isLocked: boolean = false,
   onToggleLock: () => void
@@ -118,7 +118,7 @@ export const createDefaultQuickActions = (
       id: 'rotate',
       icon: <RotateCw size={14} />,
       label: 'Rotate',
-      onClick: onRotate
+      onClick: onRotate // This function now properly matches the expected signature
     },
     {
       id: 'toggle-lock',

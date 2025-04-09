@@ -42,13 +42,18 @@ const WireframeTransformationControls: React.FC<TransformationControlsProps> = (
 }) => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   
-  // Define the quick actions
+  // Define the quick actions - we'll wrap the onRotateStart to handle the event inside
   const quickActions = createDefaultQuickActions(
     onDuplicate,
     onDelete,
     onBringForward,
     onSendBackward,
-    onRotateStart,
+    // Wrap onRotateStart to handle the MouseEvent
+    () => {
+      // We'll create a synthetic event when the button is clicked
+      const syntheticEvent = new MouseEvent('click') as unknown as React.MouseEvent;
+      onRotateStart(syntheticEvent);
+    },
     onEdit,
     isLocked,
     onToggleLock
