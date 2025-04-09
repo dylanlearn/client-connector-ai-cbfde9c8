@@ -1,368 +1,60 @@
 
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from "@/hooks/use-toast";
-import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
-import { WireframeVisualizer } from '@/components/wireframe';
-import { AIWireframe, WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { Loader2 } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
-import { adaptSectionsForVisualizer } from '@/components/wireframe/utils/wireframe-adapter';
+import { Button } from '@/components/ui/button';
+import { CornerDownRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AdvancedWireframeGenerator, WireframeVisualizer } from '@/components/wireframe';
+import { useProject } from '@/hooks/useProject';
 
-interface WireframeGeneratorProps {
-  projectId: string;
-  onWireframeGenerated?: (wireframe: AIWireframe) => void;
-  onWireframeSaved?: (wireframe: AIWireframe) => void;
-  darkMode?: boolean;
-}
-
-const WireframeGeneratorComponent: React.FC<WireframeGeneratorProps> = ({ 
-  projectId, 
-  onWireframeGenerated, 
-  onWireframeSaved,
-  darkMode
-}) => {
-  const [prompt, setPrompt] = useState<string>('');
-  const [pageType, setPageType] = useState<string>('landing');
-  const [stylePreference, setStylePreference] = useState<string>('modern');
-  const [complexity, setComplexity] = useState<'simple' | 'moderate' | 'complex'>('moderate');
-  const [creativityLevel, setCreativityLevel] = useState<number>(5);
-  const [isMultiPage, setIsMultiPage] = useState<boolean>(false);
-  const [numPages, setNumPages] = useState<number>(1);
-  const [isEnhancedCreativity, setIsEnhancedCreativity] = useState<boolean>(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [isMobileOptimized, setIsMobileOptimized] = useState<boolean>(true);
-  const [generatedWireframe, setGeneratedWireframe] = useState<WireframeData | null>(null);
-  const [wireframeName, setWireframeName] = useState<string>('Untitled Wireframe');
-  const [wireframeDescription, setWireframeDescription] = useState<string>('');
-  const { toast } = useToast();
-  const { 
-    isGenerating, 
-    generateWireframe,
-    currentWireframe
-  } = useWireframeGeneration();
-
-  const isValidUUID = (id: string): boolean => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(id);
-  };
-
-  const handleGenerateWireframe = async () => {
-    if (!prompt) {
-      toast({
-        title: "Please enter a prompt",
-        description: "Describe the wireframe you want to generate.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const params = {
-      projectId: isValidUUID(projectId) ? projectId : uuidv4(),
-      description: prompt,
-      prompt: prompt,
-      pageType: pageType,
-      stylePreferences: [stylePreference],
-      complexity: complexity,
-      creativityLevel: creativityLevel,
-      enhancedCreativity: isEnhancedCreativity,
-      darkMode: isDarkMode,
-      multiPageLayout: isMultiPage,
-      pages: numPages,
-    };
-
-    try {
-      console.log("Generating wireframe with params:", params);
-      const result = await generateWireframe(params);
-      if (result?.wireframe) {
-        // Create a wireframe data with required title field
-        const wireframeWithId: WireframeData = {
-          id: result.wireframe.id || `generated-${Date.now()}`,
-          title: result.wireframe.title || "Untitled Wireframe",
-          sections: result.wireframe.sections || [],
-          description: result.wireframe.description,
-          colorScheme: result.wireframe.colorScheme,
-          typography: result.wireframe.typography,
-          style: result.wireframe.style,
-          imageUrl: result.wireframe.imageUrl
-        };
-        
-        setGeneratedWireframe(wireframeWithId);
-        
-        if (onWireframeGenerated) {
-          const aiWireframe: AIWireframe = {
-            id: wireframeWithId.id,
-            title: wireframeWithId.title,
-            description: wireframeWithId.description || '',
-            wireframe: result.wireframe,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            data: wireframeWithId,
-            sections: wireframeWithId.sections,
-            project_id: projectId
-          };
-          
-          onWireframeGenerated(aiWireframe);
-        }
-        
-        toast({
-          title: "Wireframe generated",
-          description: "Your wireframe is ready to preview."
-        });
-      } else {
-        toast({
-          title: "Wireframe generation failed",
-          description: "Please try again with a different prompt.",
-          variant: "destructive"
-        });
-      }
-    } catch (error: any) {
-      console.error("Error generating wireframe:", error);
-      toast({
-        title: "Error generating wireframe",
-        description: error.message || "Failed to generate wireframe.",
-        variant: "destructive"
-      });
+const WireframeGeneratorComponent = () => {
+  const navigate = useNavigate();
+  const { project } = useProject();
+  
+  const handleNavigateToWireframe = () => {
+    if (project) {
+      navigate(`/project/${project.id}/advanced-wireframe`);
     }
   };
-
-  const handleSaveWireframe = () => {
-    if (!generatedWireframe) {
-      toast({
-        title: "No wireframe to save",
-        description: "Please generate a wireframe first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const wireframeToSave: AIWireframe = {
-      id: generatedWireframe.id || uuidv4(),
-      project_id: isValidUUID(projectId) ? projectId : uuidv4(),
-      title: wireframeName || "Untitled Wireframe",
-      description: wireframeDescription || prompt,
-      wireframe: {
-        title: wireframeName || "Untitled Wireframe",
-        description: wireframeDescription || prompt,
-        sections: generatedWireframe.sections || [],
-        id: generatedWireframe.id
-      },
-      sections: generatedWireframe.sections || [],
-      data: generatedWireframe,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    console.log("Saving wireframe:", wireframeToSave);
-
-    if (onWireframeSaved) {
-      onWireframeSaved(wireframeToSave);
-    }
-
-    toast({
-      title: "Wireframe saved",
-      description: "Your wireframe has been saved successfully."
-    });
-  };
-
+  
   return (
-    <div className={`space-y-6 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-      <Card className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}>
-        <CardHeader>
-          <CardTitle>AI Wireframe Generator</CardTitle>
-          <CardDescription>Generate wireframes using AI with advanced options</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="prompt">Prompt</Label>
-            <Textarea
-              id="prompt"
-              placeholder="Describe the wireframe you want to generate"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="pageType">Page Type</Label>
-              <Select onValueChange={setPageType}>
-                <SelectTrigger className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}>
-                  <SelectValue placeholder="Select a page type" defaultValue={pageType} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="landing">Landing Page</SelectItem>
-                  <SelectItem value="dashboard">Dashboard</SelectItem>
-                  <SelectItem value="blog">Blog</SelectItem>
-                  <SelectItem value="ecommerce">E-commerce</SelectItem>
-                  <SelectItem value="portfolio">Portfolio</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="stylePreference">Style Preference</Label>
-              <Select onValueChange={setStylePreference}>
-                <SelectTrigger className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}>
-                  <SelectValue placeholder="Select a style" defaultValue={stylePreference} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="modern">Modern</SelectItem>
-                  <SelectItem value="minimalist">Minimalist</SelectItem>
-                  <SelectItem value="corporate">Corporate</SelectItem>
-                  <SelectItem value="playful">Playful</SelectItem>
-                  <SelectItem value="tech">Tech</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="complexity">Complexity</Label>
-              <Select onValueChange={(value: 'simple' | 'moderate' | 'complex') => setComplexity(value)}>
-                <SelectTrigger className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}>
-                  <SelectValue placeholder="Select complexity" defaultValue={complexity} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="simple">Simple</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="complex">Complex</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="creativityLevel">Creativity Level</Label>
-              <Slider
-                id="creativityLevel"
-                defaultValue={[creativityLevel]}
-                max={10}
-                step={1}
-                onValueChange={(value) => setCreativityLevel(value[0])}
-              />
-              <p className="text-sm text-muted-foreground">
-                Adjust the creativity level of the AI (1-10)
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Switch id="enhancedCreativity" checked={isEnhancedCreativity} onCheckedChange={setIsEnhancedCreativity} />
-              <Label htmlFor="enhancedCreativity">Enhanced Creativity</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch id="darkMode" checked={isDarkMode} onCheckedChange={setIsDarkMode} />
-              <Label htmlFor="darkMode">Dark Mode</Label>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch id="mobileOptimized" checked={isMobileOptimized} onCheckedChange={setIsMobileOptimized} />
-              <Label htmlFor="mobileOptimized">Mobile Optimized</Label>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Switch id="multiPage" checked={isMultiPage} onCheckedChange={setIsMultiPage} />
-              <Label htmlFor="multiPage">Multi-Page Layout</Label>
-            </div>
-            
-            {isMultiPage && (
-              <div className="space-y-2">
-                <Label htmlFor="numPages">Number of Pages</Label>
-                <Input
-                  id="numPages"
-                  type="number"
-                  min="1"
-                  max="10"
-                  defaultValue={numPages}
-                  onChange={(e) => setNumPages(parseInt(e.target.value))}
-                  className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}
-                />
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <div className="p-4 border-t">
-          <Button onClick={handleGenerateWireframe} disabled={isGenerating} className="w-full">
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate Wireframe"
-            )}
+    <Card className="w-full h-full flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Wireframe Generator</span>
+          <Button variant="ghost" size="sm" onClick={handleNavigateToWireframe}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Open Full Generator
           </Button>
-        </div>
-      </Card>
-
-      {currentWireframe && currentWireframe.wireframe && (
-        <Card className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}>
-          <CardHeader>
-            <CardTitle>Generated Wireframe</CardTitle>
-            <CardDescription>Preview and save your generated wireframe</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="wireframeName">Wireframe Name</Label>
-              <Input
-                id="wireframeName"
-                placeholder="Enter wireframe name"
-                value={wireframeName}
-                onChange={(e) => setWireframeName(e.target.value)}
-                className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}
+        </CardTitle>
+        <CardDescription>Create wireframes based on AI-powered design intelligence</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="flex-grow">
+        {project ? (
+          <div className="flex flex-col h-full">
+            <div className="flex-grow mb-4">
+              <AdvancedWireframeGenerator
+                projectId={project.id}
+                viewMode="editor"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="wireframeDescription">Wireframe Description</Label>
-              <Textarea
-                id="wireframeDescription"
-                placeholder="Enter wireframe description"
-                value={wireframeDescription}
-                onChange={(e) => setWireframeDescription(e.target.value)}
-                className={darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'}
-              />
-            </div>
-            
-            {currentWireframe.wireframe ? (
-              <WireframeVisualizer 
-                wireframe={{
-                  id: currentWireframe.wireframe.id || `generated-${Date.now()}`,
-                  title: currentWireframe.wireframe.title || 'Generated Wireframe',
-                  description: currentWireframe.wireframe.description || '',
-                  imageUrl: currentWireframe.wireframe.imageUrl,
-                  sections: adaptSectionsForVisualizer(currentWireframe.wireframe.sections || []),
-                  lastUpdated: new Date().toISOString()
-                }} 
-                darkMode={darkMode} 
-              />
-            ) : (
-              <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
-                <p className="text-muted-foreground">No preview available</p>
-              </div>
-            )}
-          </CardContent>
-          <div className="p-4 border-t">
-            <Button onClick={handleSaveWireframe} className="w-full">
-              Save Wireframe
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={handleNavigateToWireframe}
+            >
+              <CornerDownRight className="h-4 w-4 mr-2" />
+              Full Wireframe Generator
             </Button>
           </div>
-        </Card>
-      )}
-    </div>
+        ) : (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Select a project to use the wireframe generator</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

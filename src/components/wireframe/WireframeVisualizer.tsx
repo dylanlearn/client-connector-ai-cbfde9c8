@@ -1,92 +1,97 @@
 
-import React from 'react';
-import ComponentRenderer from './renderers/ComponentRenderer';
-import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { Button } from '@/components/ui/button';
+import { Laptop, Smartphone } from 'lucide-react';
 
-export interface WireframeVisualizerProps {
-  wireframe: {
-    id: string;
-    title: string;
-    description?: string;
-    imageUrl?: string;
-    sections: Array<WireframeSection>;
-    version?: string;
-    lastUpdated?: string;
-  };
-  viewMode?: 'preview' | 'flowchart';
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  darkMode?: boolean; 
-  onSelect?: (id: string) => void;
-  className?: string;
+interface WireframeVisualizerProps {
+  wireframeData: any;
+  title?: string;
+  description?: string;
+  preview?: boolean;
 }
 
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
-  wireframe,
-  viewMode = 'preview',
-  deviceType = 'desktop',
-  darkMode = false,
-  onSelect,
-  className
+  wireframeData,
+  title,
+  description,
+  preview = false
 }) => {
-  if (!wireframe || !wireframe.sections) {
+  const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  
+  // Extract sections from wireframeData
+  const sections: WireframeSection[] = wireframeData?.sections || [];
+  
+  if (!wireframeData || sections.length === 0) {
     return (
-      <div className="p-4 text-center text-muted-foreground">
-        No wireframe data available
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{title || 'Wireframe Preview'}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">No wireframe data available to display</p>
+        </CardContent>
+      </Card>
     );
   }
-
+  
   return (
-    <div className={cn(
-      "wireframe-visualizer", 
-      darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900", 
-      className
-    )}>
-      <div className="mb-4">
-        <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          {wireframe.title || 'Untitled Wireframe'}
-        </h2>
-        {wireframe.description && (
-          <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-muted-foreground'}`}>
-            {wireframe.description}
-          </p>
-        )}
-      </div>
-      
-      <div className="space-y-4">
-        {wireframe.sections?.map((section) => {
-          const handleClick = () => {
-            if (onSelect && section.id) {
-              onSelect(section.id);
-            }
-          };
-          
-          return (
-            <div 
-              key={section.id} 
-              className="wireframe-section"
-              onClick={handleClick}
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle>{title || wireframeData.title || 'Wireframe Preview'}</CardTitle>
+          <div className="flex gap-2">
+            <Button 
+              variant={devicePreview === 'desktop' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setDevicePreview('desktop')}
             >
-              <ComponentRenderer 
-                section={section}
-                viewMode={viewMode}
-                darkMode={darkMode}
-                deviceType={deviceType}
-                isSelected={false}
-                onClick={handleClick}
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {wireframe.version && (
-        <div className="mt-4 text-xs text-muted-foreground">
-          Version: {wireframe.version} • Last updated: {wireframe.lastUpdated || 'Unknown'}
+              <Laptop className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={devicePreview === 'tablet' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setDevicePreview('tablet')}
+            >
+              <Smartphone className="h-4 w-4 rotate-90" />
+            </Button>
+            <Button 
+              variant={devicePreview === 'mobile' ? 'default' : 'outline'} 
+              size="sm" 
+              onClick={() => setDevicePreview('mobile')}
+            >
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      )}
-    </div>
+        {description || wireframeData.description ? (
+          <p className="text-sm text-muted-foreground mt-1">
+            {description || wireframeData.description}
+          </p>
+        ) : null}
+      </CardHeader>
+      <CardContent className="p-0 overflow-hidden">
+        <div className="relative border-t" style={{ 
+          height: '600px',
+          width: devicePreview === 'desktop' ? '100%' : devicePreview === 'tablet' ? '768px' : '375px',
+          margin: devicePreview !== 'desktop' ? '0 auto' : undefined,
+          overflow: 'auto'
+        }}>
+          <WireframeCanvasEnhanced 
+            sections={sections}
+            width={devicePreview === 'desktop' ? 1200 : devicePreview === 'tablet' ? 768 : 375}
+            height={2000}
+            editable={false}
+            showGrid={false}
+            snapToGrid={false}
+            deviceType={devicePreview}
+            responsiveMode={devicePreview !== 'desktop'}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

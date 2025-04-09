@@ -19,6 +19,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState(800);
   const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [showGrid, setShowGrid] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(true);
   
   useEffect(() => {
     if (wireframeData?.sections) {
@@ -84,8 +86,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
               width={canvasWidth}
               height={canvasHeight}
               editable={true}
-              showGrid={true}
-              snapToGrid={true}
+              showGrid={showGrid}
+              snapToGrid={snapToGrid}
               deviceType={deviceType}
               onSectionClick={handleSectionClick}
               onSectionChange={handleSectionChange}

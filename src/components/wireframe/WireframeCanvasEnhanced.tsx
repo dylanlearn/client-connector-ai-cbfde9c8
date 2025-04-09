@@ -53,7 +53,7 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
           height: `${section.dimensions?.height || 200}px`,
           cursor: editable ? 'pointer' : 'default',
           // These were causing type errors - use proper CSS property types
-          textAlign: section.style?.textAlign as any || 'left',
+          textAlign: section.style?.textAlign as "left" | "center" | "right" | "justify" | undefined || 'left',
           padding: section.style?.padding || '16px',
           gap: section.style?.gap || undefined,
           backgroundColor: section.style?.backgroundColor || 'transparent'

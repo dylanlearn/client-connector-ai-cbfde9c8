@@ -1,11 +1,11 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { ComponentRegistration } from "@/components/wireframe/registry/ComponentRegistration";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { EnhancedWireframeGenerator } from "@/components/wireframe"; // Updated import
+import { AdvancedWireframeGenerator } from "@/components/wireframe"; 
 import { v4 as uuidv4 } from "uuid";
 import WireframeTest from "@/components/wireframe/WireframeTest";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,7 +43,7 @@ const WireframeGenerator = () => {
           
           <TabsContent value="generator">
             <TooltipProvider>
-              <EnhancedWireframeGenerator 
+              <AdvancedWireframeGenerator 
                 projectId={projectId}
                 viewMode="editor"
               />

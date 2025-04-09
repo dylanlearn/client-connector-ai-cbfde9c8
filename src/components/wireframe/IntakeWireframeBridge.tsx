@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEnhancedWireframe } from '@/hooks/use-enhanced-wireframe';
 import { v4 as uuidv4 } from 'uuid';
-import EnhancedWireframeGenerator from './EnhancedWireframeGenerator';
+import AdvancedWireframeGenerator from './AdvancedWireframeGenerator';
 
 interface IntakeWireframeBridgeProps {
   intakeData: any;
@@ -73,7 +73,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   return (
     <div className="intake-wireframe-bridge">
       {showAdvanced ? (
-        <EnhancedWireframeGenerator 
+        <AdvancedWireframeGenerator 
           projectId={projectId}
           intakeData={intakeData}
           onWireframeGenerated={onWireframeGenerated}

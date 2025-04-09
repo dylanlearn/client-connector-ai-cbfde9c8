@@ -1,3 +1,4 @@
+
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -22,7 +23,7 @@ import Analytics from "./pages/Analytics";
 import WireframeGenerator from "./pages/WireframeGenerator";
 import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
-import { EnhancedWireframeGenerator } from '@/components/wireframe';
+import { AdvancedWireframeGenerator } from '@/components/wireframe';
 
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
@@ -77,7 +78,7 @@ const router = createBrowserRouter([
       {
         path: '/',
         element: (
-          <EnhancedWireframeGenerator 
+          <AdvancedWireframeGenerator 
             projectId={demoProjectId} 
             onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
             onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}
