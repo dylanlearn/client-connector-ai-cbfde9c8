@@ -3,26 +3,32 @@
 export * from './fabric-converters';
 export * from './canvas-serialization';
 
-// Export functions and types from section-utils
+// Export section type definitions
+export type { ResponsiveLayoutSettings, AdaptiveWireframeSection } from './section-types';
+
+// Export responsive layout utilities
 export {
   getResponsiveLayout,
   isSectionVisibleOnDevice,
   getResponsiveContent,
+  getResponsiveStyles,
+  getResponsiveTailwindClasses,
   createResponsiveVariation,
+  makeFullyResponsive
+} from './responsive-layout-utils';
+
+// Export section creation utilities
+export {
   cloneSection,
   createEmptySection,
-  createGridSection,
-  makeFullyResponsive,
-  getResponsiveTailwindClasses,
-  calculateSectionsBounds,
-  findAlignmentGuides,
-  // Rename to avoid conflict with getResponsiveStyles from responsive-utils
-  getResponsiveStyles as getSectionResponsiveStyles
-} from './section-utils';
+  createGridSection
+} from './section-creation-utils';
 
-// Export types with 'export type' syntax to fix the isolatedModules error
-export type { ResponsiveLayoutSettings } from './section-utils';
-export type { AdaptiveWireframeSection } from './section-utils';
+// Export section layout utilities
+export {
+  calculateSectionsBounds,
+  findAlignmentGuides
+} from './section-layout-utils';
 
 // Export from responsive-utils
 export * from './responsive-utils';
