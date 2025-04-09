@@ -1,49 +1,11 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Monitor, Tablet, Smartphone, RotateCcw, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import WireframeCanvas from './WireframeCanvas';
-import WireframeSectionRenderer from './WireframeSectionRenderer';
 import { useWireframeStore } from '@/stores/wireframe-store';
-
-const DEVICE_DIMENSIONS = {
-  desktop: { 
-    width: '100%', 
-    height: '600px',
-    label: 'Desktop (1024px+)'
-  },
-  tablet: { 
-    width: '768px', 
-    height: '1024px',
-    label: 'Tablet (768px)'
-  },
-  tabletLandscape: {
-    width: '1024px',
-    height: '768px',
-    label: 'Tablet Landscape'
-  },
-  mobile: { 
-    width: '375px', 
-    height: '667px',
-    label: 'Mobile (375px)'
-  },
-  mobileLandscape: {
-    width: '667px',
-    height: '375px',
-    label: 'Mobile Landscape'
-  },
-  mobileSm: {
-    width: '320px',
-    height: '568px',
-    label: 'Small Mobile (320px)'
-  }
-};
-
-type DeviceType = keyof typeof DEVICE_DIMENSIONS;
+import { DEVICE_DIMENSIONS, DeviceType } from './preview/DeviceInfo';
+import PreviewHeader from './preview/PreviewHeader';
+import PreviewDisplay from './preview/PreviewDisplay';
 
 interface ResponsivePreviewProps {
   className?: string;
@@ -93,118 +55,36 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
     }
   };
   
+  // Determine device type for rendering
+  const getDeviceType = (): 'mobile' | 'tablet' | 'desktop' => {
+    if (activeDevice.includes('mobile')) return 'mobile';
+    if (activeDevice.includes('tablet')) return 'tablet';
+    return 'desktop';
+  };
+  
   return (
     <Card className={cn("shadow-md overflow-hidden", className)}>
-      <CardHeader className="pb-3 border-b">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-medium">
-            Multi-Device Preview
-          </CardTitle>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {formatDimensions()}
-            </span>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRotate}
-                    disabled={activeDevice === 'desktop'}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Rotate device</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Button variant="ghost" size="sm">
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        
-        <Tabs
-          value={activeDevice}
-          onValueChange={(v) => handleDeviceChange(v as DeviceType)}
-          className="w-full mt-2"
-        >
-          <TabsList className="w-full">
-            <TabsTrigger value="desktop" className="flex items-center gap-1 w-full">
-              <Monitor className="h-4 w-4" />
-              <span className="hidden md:inline">Desktop</span>
-            </TabsTrigger>
-            <TabsTrigger value="tablet" className="flex items-center gap-1 w-full">
-              <Tablet className="h-4 w-4" />
-              <span className="hidden md:inline">Tablet</span>
-            </TabsTrigger>
-            <TabsTrigger value="mobile" className="flex items-center gap-1 w-full">
-              <Smartphone className="h-4 w-4" />
-              <span className="hidden md:inline">Mobile</span>
-            </TabsTrigger>
-            <TabsTrigger value="mobileSm" className="flex items-center gap-1 w-full">
-              <Smartphone className="h-4 w-4" />
-              <span className="hidden md:inline">Small</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <CardHeader className="p-0">
+        <PreviewHeader
+          activeDevice={activeDevice}
+          isRotated={isRotated}
+          onDeviceChange={handleDeviceChange}
+          onRotate={handleRotate}
+          formatDimensions={formatDimensions}
+        />
       </CardHeader>
       
       <CardContent className={cn(
         "flex justify-center p-4 bg-gray-50 dark:bg-gray-900/30 overflow-auto transition-all",
         darkMode ? "dark" : "",
       )}>
-        <div 
-          className={cn(
-            "flex items-center justify-center transition-all duration-300 overflow-hidden", 
-            darkMode ? "bg-gray-900" : "bg-white",
-            "border rounded-md shadow-sm"
-          )}
-          style={{
-            width: currentDimensions.width,
-            height: currentDimensions.height,
-            maxHeight: '80vh'
-          }}
-        >
-          <div className="w-full h-full overflow-auto">
-            <WireframeCanvas
-              className="border-0 shadow-none"
-              deviceType={activeDevice.includes('mobile') 
-                ? 'mobile' 
-                : activeDevice.includes('tablet') ? 'tablet' : 'desktop'
-              }
-              onSectionClick={handleSectionClick}
-            >
-              {wireframe && wireframe.sections && (
-                <div className="p-4">
-                  {wireframe.sections.map((section, index) => (
-                    <div 
-                      key={section.id || `section-${index}`} 
-                      className="mb-4"
-                      onClick={() => onSectionClick && section.id && onSectionClick(section.id)}
-                    >
-                      <WireframeSectionRenderer
-                        section={section}
-                        viewMode="preview"
-                        darkMode={darkMode}
-                        deviceType={activeDevice.includes('mobile') 
-                          ? 'mobile' 
-                          : activeDevice.includes('tablet') ? 'tablet' : 'desktop'
-                        }
-                        sectionIndex={index}
-                        onSectionClick={onSectionClick}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </WireframeCanvas>
-          </div>
-        </div>
+        <PreviewDisplay
+          currentDimensions={currentDimensions}
+          darkMode={darkMode}
+          wireframe={wireframe}
+          deviceType={getDeviceType()}
+          onSectionClick={handleSectionClick}
+        />
       </CardContent>
     </Card>
   );
