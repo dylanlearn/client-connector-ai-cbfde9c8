@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { WireframeSection } from '@/types/wireframe';
 import { fabric } from 'fabric';
@@ -113,11 +114,11 @@ const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
       
       if (activeObj.data && sections.length > 1) {
         const activeSectionId = activeObj.data.id;
-        const activeSection = sections.find(s => s.id === activeSectionId);
+        const activeSection = sections.find(section => section.id === activeSectionId);
         
         if (activeSection) {
-          const alignmentGuides = findAlignmentGuides(activeSection, sections);
-          setGuidelines(alignmentGuides);
+          const guides = findAlignmentGuides(activeSection, sections);
+          setGuidelines(guides);
         }
       }
     };

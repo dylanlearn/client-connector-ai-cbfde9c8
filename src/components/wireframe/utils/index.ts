@@ -3,7 +3,7 @@
 export * from './fabric-converters';
 export * from './canvas-serialization';
 
-// Export from section-utils but rename the one that causes the conflict
+// Export functions and types from section-utils
 export {
   getResponsiveLayout,
   isSectionVisibleOnDevice,
