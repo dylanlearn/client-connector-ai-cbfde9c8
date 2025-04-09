@@ -1,8 +1,9 @@
+
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import { useCanvasActions } from './use-canvas-actions';
-import { useGridActions } from './use-grid-actions';
+import { useCanvasActions } from './fabric/use-canvas-actions';
+import { useGridActions } from './fabric/use-grid-actions';
 
 export interface UseFabricOptions {
   persistConfig?: boolean;

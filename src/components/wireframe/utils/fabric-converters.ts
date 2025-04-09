@@ -1,3 +1,4 @@
+
 import { fabric } from 'fabric';
 import { SectionRenderingOptions } from './types';
 
@@ -82,6 +83,98 @@ export function objectToFabric(obj: Record<string, any>): fabric.Object {
   // Add more object types and property assignments as needed
   
   return fabricObject;
+}
+
+/**
+ * Converts a component definition to a Fabric.js object
+ */
+export function componentToFabricObject(component: Record<string, any>): fabric.Object {
+  const { type, position, dimensions, style, content } = component;
+  
+  // Default position and dimensions
+  const left = position?.x || 0;
+  const top = position?.y || 0;
+  const width = dimensions?.width || 100;
+  const height = dimensions?.height || 50;
+  
+  // Create different types of objects based on component type
+  switch (type) {
+    case 'text':
+      return new fabric.Text(content || 'Text', {
+        left,
+        top,
+        fontSize: style?.fontSize || 16,
+        fontFamily: style?.fontFamily || 'Arial',
+        fill: style?.color || '#000000',
+        width,
+        data: {
+          componentType: 'text',
+          id: component.id
+        }
+      });
+      
+    case 'button':
+      const buttonRect = new fabric.Rect({
+        left,
+        top,
+        width,
+        height,
+        fill: style?.backgroundColor || '#4285f4',
+        rx: 4,
+        ry: 4,
+        stroke: style?.borderColor || 'transparent',
+        strokeWidth: style?.borderWidth || 0,
+      });
+      
+      const buttonText = new fabric.Text(content || 'Button', {
+        left: left + width / 2,
+        top: top + height / 2,
+        fontSize: style?.fontSize || 14,
+        fontFamily: style?.fontFamily || 'Arial',
+        fill: style?.color || '#ffffff',
+        originX: 'center',
+        originY: 'center'
+      });
+      
+      return new fabric.Group([buttonRect, buttonText], {
+        data: {
+          componentType: 'button',
+          id: component.id
+        }
+      });
+      
+    case 'image':
+      return new fabric.Rect({
+        left,
+        top,
+        width,
+        height,
+        fill: '#f0f0f0',
+        stroke: '#dddddd',
+        strokeWidth: 1,
+        rx: 0,
+        ry: 0,
+        data: {
+          componentType: 'image',
+          id: component.id
+        }
+      });
+      
+    default:
+      return new fabric.Rect({
+        left,
+        top,
+        width,
+        height,
+        fill: style?.backgroundColor || '#f5f5f5',
+        stroke: style?.borderColor || '#dddddd',
+        strokeWidth: style?.borderWidth || 1,
+        data: {
+          componentType: type || 'generic',
+          id: component.id
+        }
+      });
+  }
 }
 
 /**
