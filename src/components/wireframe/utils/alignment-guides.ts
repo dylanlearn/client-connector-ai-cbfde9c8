@@ -1,17 +1,125 @@
 
 import { fabric } from 'fabric';
-import { AlignmentGuide, GuideVisualization } from './types';
+import { GuideVisualization, AlignmentGuide } from '@/components/wireframe/utils/types';
 
-// Get object bounds for alignment
-export function getObjectBounds(obj: fabric.Object) {
-  const width = obj.getScaledWidth();
-  const height = obj.getScaledHeight();
-  const left = obj.left || 0;
-  const top = obj.top || 0;
+/**
+ * Finds potential alignment guides between an object and other objects on the canvas
+ */
+export function findAlignmentGuides(
+  activeObject: fabric.Object, 
+  otherObjects: fabric.Object[], 
+  threshold: number = 10
+): AlignmentGuide[] {
+  const guides: AlignmentGuide[] = [];
+  
+  if (!activeObject) return guides;
+  
+  const activeBounds = getObjectBounds(activeObject);
+  
+  // Collect all other objects' bounds
+  const otherBounds = otherObjects.map(obj => getObjectBounds(obj));
+  
+  // Check for horizontal alignments
+  otherBounds.forEach(bounds => {
+    // Top edge alignment
+    if (Math.abs(bounds.top - activeBounds.top) < threshold) {
+      guides.push({
+        position: bounds.top,
+        orientation: 'horizontal',
+        type: 'edge',
+        label: `Top: ${Math.round(bounds.top)}px`,
+        strength: 10
+      });
+    }
+    
+    // Center alignment
+    if (Math.abs(bounds.centerY - activeBounds.centerY) < threshold) {
+      guides.push({
+        position: bounds.centerY,
+        orientation: 'horizontal',
+        type: 'center',
+        label: `Middle: ${Math.round(bounds.centerY)}px`,
+        strength: 8
+      });
+    }
+    
+    // Bottom edge alignment
+    if (Math.abs(bounds.bottom - activeBounds.bottom) < threshold) {
+      guides.push({
+        position: bounds.bottom,
+        orientation: 'horizontal',
+        type: 'edge',
+        label: `Bottom: ${Math.round(bounds.bottom)}px`,
+        strength: 10
+      });
+    }
+    
+    // Vertical alignments
+    // Left edge alignment
+    if (Math.abs(bounds.left - activeBounds.left) < threshold) {
+      guides.push({
+        position: bounds.left,
+        orientation: 'vertical',
+        type: 'edge',
+        label: `Left: ${Math.round(bounds.left)}px`,
+        strength: 10
+      });
+    }
+    
+    // Center alignment
+    if (Math.abs(bounds.centerX - activeBounds.centerX) < threshold) {
+      guides.push({
+        position: bounds.centerX,
+        orientation: 'vertical',
+        type: 'center',
+        label: `Center: ${Math.round(bounds.centerX)}px`,
+        strength: 8
+      });
+    }
+    
+    // Right edge alignment
+    if (Math.abs(bounds.right - activeBounds.right) < threshold) {
+      guides.push({
+        position: bounds.right,
+        orientation: 'vertical',
+        type: 'edge',
+        label: `Right: ${Math.round(bounds.right)}px`,
+        strength: 10
+      });
+    }
+  });
+  
+  // Add distance distribution guides
+  // This is more complex and would require calculating equal distances between multiple objects
+  // For simplicity, we'll skip this in this implementation
+  
+  return guides;
+}
+
+/**
+ * Calculates and returns the bounds of an object
+ */
+export function getObjectBounds(object: fabric.Object) {
+  const scaleX = object.scaleX || 1;
+  const scaleY = object.scaleY || 1;
+  const angle = object.angle || 0;
+  const strokeWidth = object.strokeWidth || 0;
+  let width = (object.width || 0) * scaleX;
+  let height = (object.height || 0) * scaleY;
+  const left = object.left || 0;
+  const top = object.top || 0;
+  
+  // If the object is rotated, we need the bounding box
+  if (angle !== 0) {
+    // Get the bounding rect accounting for rotation
+    const boundingRect = object.getBoundingRect();
+    width = boundingRect.width;
+    height = boundingRect.height;
+  }
   
   return {
-    left,
-    top,
+    left: left,
+    top: top,
     right: left + width,
     bottom: top + height,
     centerX: left + width / 2,
@@ -21,228 +129,156 @@ export function getObjectBounds(obj: fabric.Object) {
   };
 }
 
-// Find alignment guides for an object against other objects
-export function findAlignmentGuides(
-  activeObject: fabric.Object,
-  otherObjects: fabric.Object[],
-  snapThreshold = 10
-): AlignmentGuide[] {
-  const guides: AlignmentGuide[] = [];
-  const activeBounds = getObjectBounds(activeObject);
-  
-  // Edge positions of the active object
-  const activeEdges = {
-    left: activeBounds.left,
-    right: activeBounds.right,
-    top: activeBounds.top,
-    bottom: activeBounds.bottom,
-    centerX: activeBounds.centerX,
-    centerY: activeBounds.centerY
-  };
-  
-  otherObjects.forEach(obj => {
-    const targetBounds = getObjectBounds(obj);
-    
-    // Check horizontal alignments (left, center, right)
-    if (Math.abs(activeEdges.left - targetBounds.left) < snapThreshold) {
-      guides.push({
-        position: targetBounds.left,
-        orientation: 'vertical',
-        type: 'edge',
-        strength: 10
-      });
-    }
-    
-    if (Math.abs(activeEdges.right - targetBounds.right) < snapThreshold) {
-      guides.push({
-        position: targetBounds.right,
-        orientation: 'vertical',
-        type: 'edge',
-        strength: 10
-      });
-    }
-    
-    if (Math.abs(activeEdges.centerX - targetBounds.centerX) < snapThreshold) {
-      guides.push({
-        position: targetBounds.centerX,
-        orientation: 'vertical',
-        type: 'center',
-        strength: 8
-      });
-    }
-    
-    // Check vertical alignments (top, middle, bottom)
-    if (Math.abs(activeEdges.top - targetBounds.top) < snapThreshold) {
-      guides.push({
-        position: targetBounds.top,
-        orientation: 'horizontal',
-        type: 'edge',
-        strength: 10
-      });
-    }
-    
-    if (Math.abs(activeEdges.bottom - targetBounds.bottom) < snapThreshold) {
-      guides.push({
-        position: targetBounds.bottom,
-        orientation: 'horizontal',
-        type: 'edge',
-        strength: 10
-      });
-    }
-    
-    if (Math.abs(activeEdges.centerY - targetBounds.centerY) < snapThreshold) {
-      guides.push({
-        position: targetBounds.centerY,
-        orientation: 'horizontal',
-        type: 'center',
-        strength: 8
-      });
-    }
-    
-    // Check equal spacing (distribution)
-    // This would be a more complex implementation requiring knowledge of multiple objects
-    // Simplified version here
-  });
-  
-  // Sort guides by strength for better snapping priority
-  return guides.sort((a, b) => (b.strength || 0) - (a.strength || 0));
-}
-
-// Snap object to guides
+/**
+ * Applies snapping to an object based on guides
+ */
 export function snapObjectToGuides(
-  obj: fabric.Object,
-  guides: AlignmentGuide[],
+  object: fabric.Object, 
+  guides: AlignmentGuide[], 
   canvas: fabric.Canvas
-): void {
-  if (!guides.length) return;
+) {
+  if (!object || !guides.length) return;
   
-  const bounds = getObjectBounds(obj);
+  const bounds = getObjectBounds(object);
   
-  // Find the strongest guide in each orientation
-  const horizontalGuide = guides.find(g => g.orientation === 'horizontal');
-  const verticalGuide = guides.find(g => g.orientation === 'vertical');
-  
-  // Apply horizontal snapping if available
-  if (horizontalGuide) {
-    const targetY = horizontalGuide.position;
-    let offsetY = 0;
+  // Find strongest horizontal guide
+  const horizontalGuides = guides.filter(g => g.orientation === 'horizontal');
+  if (horizontalGuides.length) {
+    // Sort by strength (if available) or default to edge > center > distribution
+    horizontalGuides.sort((a, b) => {
+      if (a.strength !== undefined && b.strength !== undefined) {
+        return b.strength - a.strength; // Higher strength first
+      }
+      
+      // Default priority
+      const typePriority: Record<string, number> = { 'edge': 3, 'center': 2, 'distribution': 1 };
+      return typePriority[b.type] - typePriority[a.type];
+    });
     
-    // Determine which part of the object to align
-    switch (horizontalGuide.type) {
+    const bestHGuide = horizontalGuides[0];
+    
+    switch (bestHGuide.type) {
       case 'edge':
-        // Snap top edge
-        offsetY = targetY - bounds.top;
+        // Either top or bottom edge - figure out which one is closest
+        if (Math.abs(bestHGuide.position - bounds.top) <= Math.abs(bestHGuide.position - bounds.bottom)) {
+          object.set('top', bestHGuide.position);
+        } else {
+          object.set('top', bestHGuide.position - bounds.height);
+        }
         break;
       case 'center':
-        // Snap center
-        offsetY = targetY - bounds.centerY;
+        object.set('top', bestHGuide.position - bounds.height / 2);
         break;
       case 'distribution':
-        // Distribution snapping would be more complex
+        // Distribution snapping logic would go here
         break;
     }
-    
-    // Apply offset
-    obj.set({ top: obj.top! + offsetY });
   }
   
-  // Apply vertical snapping if available
-  if (verticalGuide) {
-    const targetX = verticalGuide.position;
-    let offsetX = 0;
+  // Find strongest vertical guide
+  const verticalGuides = guides.filter(g => g.orientation === 'vertical');
+  if (verticalGuides.length) {
+    // Sort by strength (if available) or default to edge > center > distribution
+    verticalGuides.sort((a, b) => {
+      if (a.strength !== undefined && b.strength !== undefined) {
+        return b.strength - a.strength; // Higher strength first
+      }
+      
+      // Default priority
+      const typePriority: Record<string, number> = { 'edge': 3, 'center': 2, 'distribution': 1 };
+      return typePriority[b.type] - typePriority[a.type];
+    });
     
-    // Determine which part of the object to align
-    switch (verticalGuide.type) {
+    const bestVGuide = verticalGuides[0];
+    
+    switch (bestVGuide.type) {
       case 'edge':
-        // Snap left edge
-        offsetX = targetX - bounds.left;
+        // Either left or right edge - figure out which one is closest
+        if (Math.abs(bestVGuide.position - bounds.left) <= Math.abs(bestVGuide.position - bounds.right)) {
+          object.set('left', bestVGuide.position);
+        } else {
+          object.set('left', bestVGuide.position - bounds.width);
+        }
         break;
       case 'center':
-        // Snap center
-        offsetX = targetX - bounds.centerX;
+        object.set('left', bestVGuide.position - bounds.width / 2);
         break;
       case 'distribution':
-        // Distribution snapping would be more complex
+        // Distribution snapping logic would go here
         break;
     }
-    
-    // Apply offset
-    obj.set({ left: obj.left! + offsetX });
   }
   
-  // Update canvas
+  // Let the canvas know we've modified an object
   canvas.renderAll();
 }
 
-// Render alignment guides on canvas
+/**
+ * Renders alignment guides on the canvas context
+ */
 export function renderAlignmentGuides(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
   canvasHeight: number,
   guides: AlignmentGuide[],
   visualization: GuideVisualization
-): void {
-  // Save context state
+) {
+  if (!ctx) return;
+  
   ctx.save();
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   
-  // Set up line style
-  ctx.lineWidth = visualization.strokeWidth;
-  ctx.setLineDash(visualization.dashArray);
-  
-  // Draw each guide
   guides.forEach(guide => {
-    // Set color based on guide type
-    let color = visualization.color.edge;
-    if (guide.type === 'center') {
-      color = visualization.color.center;
-    } else if (guide.type === 'distribution') {
-      color = visualization.color.distribution;
+    // Set line style based on guide type
+    ctx.strokeStyle = guide.type === 'center' 
+      ? visualization.color.center 
+      : guide.type === 'distribution' 
+        ? visualization.color.distribution 
+        : visualization.color.edge;
+    
+    ctx.lineWidth = visualization.strokeWidth;
+    
+    if (visualization.dashArray && visualization.dashArray.length) {
+      ctx.setLineDash(visualization.dashArray);
     }
     
-    ctx.strokeStyle = color;
     ctx.beginPath();
     
     if (guide.orientation === 'horizontal') {
-      // Draw horizontal guide
       ctx.moveTo(0, guide.position);
       ctx.lineTo(canvasWidth, guide.position);
     } else {
-      // Draw vertical guide
       ctx.moveTo(guide.position, 0);
       ctx.lineTo(guide.position, canvasHeight);
     }
     
     ctx.stroke();
     
-    // Draw labels if enabled
+    // Draw label if enabled
     if (visualization.showLabels && guide.label) {
-      ctx.fillStyle = color;
+      ctx.fillStyle = ctx.strokeStyle;
       ctx.font = '10px Arial';
-      
-      if (guide.orientation === 'horizontal') {
-        ctx.fillText(guide.label, 5, guide.position - 5);
-      } else {
-        ctx.fillText(guide.label, guide.position + 5, 15);
-      }
+      ctx.fillText(
+        guide.label,
+        guide.orientation === 'vertical' ? guide.position + 5 : 5,
+        guide.orientation === 'horizontal' ? guide.position + 15 : 15
+      );
     }
   });
   
-  // Restore context state
   ctx.restore();
 }
 
-// Highlight object boundary for better visibility
+/**
+ * Highlights an object's boundary while dragging
+ */
 export function highlightObjectBoundary(
-  obj: fabric.Object,
+  object: fabric.Object, 
   canvas: fabric.Canvas
-): void {
-  // Remove existing highlights
-  const existingHighlights = canvas.getObjects().filter((o: any) => o.isHighlight);
-  existingHighlights.forEach(h => canvas.remove(h));
+) {
+  const bounds = getObjectBounds(object);
   
-  const bounds = getObjectBounds(obj);
-  
-  // Create highlight rectangle
+  // Create a temporary rectangle to highlight the bounds
   const highlight = new fabric.Rect({
     left: bounds.left - 1,
     top: bounds.top - 1,
@@ -251,17 +287,26 @@ export function highlightObjectBoundary(
     fill: 'transparent',
     stroke: '#2196F3',
     strokeWidth: 1,
-    strokeDashArray: [3, 3],
+    strokeDashArray: [5, 5],
     selectable: false,
     evented: false,
     hasControls: false,
-    hasBorders: false
+    hasBorders: false,
+    isHighlight: true, // Custom property for easy identification
+    opacity: 0.8
   });
   
-  // Mark as highlight for easy identification
-  (highlight as any).isHighlight = true;
+  // Remove any existing highlights
+  const existingHighlights = canvas.getObjects().filter(obj => (obj as any).isHighlight);
+  existingHighlights.forEach(h => canvas.remove(h));
   
-  // Add to canvas
+  // Add new highlight
   canvas.add(highlight);
   canvas.renderAll();
+  
+  // Remove after a short delay
+  setTimeout(() => {
+    canvas.remove(highlight);
+    canvas.renderAll();
+  }, 1000);
 }

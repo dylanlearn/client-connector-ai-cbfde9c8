@@ -12,7 +12,7 @@ export interface AlignmentGuide {
   orientation: 'horizontal' | 'vertical';
   type: 'edge' | 'center' | 'distribution';
   label?: string;
-  strength?: number; // Added strength property
+  strength?: number; 
 }
 
 // Styles for object boundaries
@@ -47,8 +47,8 @@ export interface SectionRenderingOptions {
   showLabels: boolean;
   showComponentOutlines: boolean;
   highlightOnHover: boolean;
-  deviceType?: 'mobile' | 'tablet' | 'desktop'; // Added deviceType
-  interactive?: boolean; // Added interactive property
+  deviceType?: 'mobile' | 'tablet' | 'desktop';
+  interactive?: boolean;
 }
 
 // Canvas configuration for wireframes
@@ -71,6 +71,15 @@ export interface WireframeCanvasConfig {
   // Visual settings
   backgroundColor: string;
   showSmartGuides: boolean;
+  
+  // Ruler settings
+  showRulers?: boolean;
+  rulerColor?: string;
+  rulerMarkings?: 'pixels' | 'percentage' | 'both';
+  
+  // History settings
+  historyEnabled?: boolean;
+  maxHistorySteps?: number;
 }
 
 // Layer information for layer management
@@ -82,5 +91,35 @@ export interface LayerInfo {
   locked: boolean;
   zIndex: number;
   parentId?: string;
-  isExpanded?: boolean; // Added isExpanded property
+  isExpanded?: boolean;
+}
+
+// Canvas history entry for undo/redo functionality
+export interface CanvasHistoryEntry {
+  id: string;
+  timestamp: number;
+  snapshot: string; // JSON representation of the canvas state
+  description: string;
+}
+
+// Drop zone indicator for component dragging
+export interface DropZoneIndicator {
+  id: string;
+  bounds: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
+  type: 'valid' | 'invalid' | 'suggested';
+  highlightColor: string;
+}
+
+// Hover feedback configuration for dragging
+export interface HoverFeedbackConfig {
+  showOutline: boolean;
+  outlineColor: string;
+  outlineWidth: number;
+  showDistance: boolean;
+  distanceUnit: 'px' | '%';
 }

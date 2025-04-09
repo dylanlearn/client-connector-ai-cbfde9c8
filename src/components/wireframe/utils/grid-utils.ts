@@ -1,230 +1,304 @@
 
-import { DeviceType } from './responsive-utils';
 import { fabric } from 'fabric';
-import { GridGuideline } from './types';
+import { GridGuideline } from '@/components/wireframe/utils/types';
 
-export interface GridBreakpoint {
-  name: string;
-  width: number;
-  color?: string;
-}
-
-export interface GridConfig {
-  visible: boolean;
-  snapToGrid: boolean;
-  showBreakpoints: boolean;
-  size: number;
-  type: 'lines' | 'dots' | 'columns';
-  columns: number;
-  gutter: number;
-  gutterSize: number;
-  marginSize: number;
-  breakpoints: GridBreakpoint[];
-  columnLineColor?: string;
-  guidelineColor?: string;
-}
-
-export const DEFAULT_GRID_CONFIG: GridConfig = {
-  visible: true,
-  snapToGrid: true,
-  showBreakpoints: true,
-  size: 8,
-  type: 'lines',
-  columns: 12,
-  gutter: 16,
-  gutterSize: 16,
-  marginSize: 16,
-  breakpoints: [
-    { name: 'SM', width: 640, color: 'purple-500' },
-    { name: 'MD', width: 768, color: 'blue-500' },
-    { name: 'LG', width: 1024, color: 'green-500' },
-    { name: 'XL', width: 1280, color: 'amber-500' },
-    { name: '2XL', width: 1536, color: 'red-500' }
-  ]
-};
-
-export const TAILWIND_BREAKPOINTS = [
-  { name: 'SM', width: 640 },
-  { name: 'MD', width: 768 },
-  { name: 'LG', width: 1024 },
-  { name: 'XL', width: 1280 },
-  { name: '2XL', width: 1536 }
-];
-
-export function getResponsiveGridConfig(width: number, baseConfig: GridConfig): GridConfig {
-  // Adjust grid configuration based on viewport width
-  let responsive: Partial<GridConfig> = {};
-
-  if (width < 640) {
-    // Mobile
-    responsive = {
-      columns: 4,
-      gutterSize: 8,
-      marginSize: 8,
-      size: 4
-    };
-  } else if (width < 1024) {
-    // Tablet
-    responsive = {
-      columns: 8,
-      gutterSize: 12,
-      marginSize: 12,
-      size: 6
-    };
-  }
-
-  // Return merged configuration
-  return {
-    ...baseConfig,
-    ...responsive
-  };
-}
-
-export function getBreakpointFromWidth(width: number): string {
-  if (width < 640) return 'XS';
-  if (width < 768) return 'SM';
-  if (width < 1024) return 'MD';
-  if (width < 1280) return 'LG';
-  if (width < 1536) return 'XL';
-  return '2XL';
-}
-
-export function calculateGridPositions(
-  width: number,
-  height: number,
-  gridSize: number
-): { horizontal: number[]; vertical: number[] } {
-  const horizontal: number[] = [];
-  const vertical: number[] = [];
-
-  // Calculate horizontal grid positions
-  for (let y = 0; y <= height; y += gridSize) {
-    horizontal.push(y);
-  }
-
-  // Calculate vertical grid positions
-  for (let x = 0; x <= width; x += gridSize) {
-    vertical.push(x);
-  }
-
-  return { horizontal, vertical };
-}
-
-export function calculateColumnPositions(
-  width: number,
-  columns: number,
-  gutterSize: number,
-  marginSize: number
-): number[] {
-  const positions: number[] = [];
-  
-  // Content width (excluding margins)
-  const contentWidth = width - (marginSize * 2);
-  
-  // Calculate gutters total width
-  const guttersWidth = (columns - 1) * gutterSize;
-  
-  // Single column width
-  const columnWidth = (contentWidth - guttersWidth) / columns;
-  
-  // Calculate each column position
-  for (let i = 0; i < columns; i++) {
-    // Left edge of column
-    const leftPosition = marginSize + (i * (columnWidth + gutterSize));
-    positions.push(leftPosition);
-    
-    // Right edge of column
-    const rightPosition = leftPosition + columnWidth;
-    positions.push(rightPosition);
-  }
-  
-  return positions;
-}
-
-// Add the missing function for generating snap guidelines
+/**
+ * Generates a set of guidelines for an object to snap to when dragged near other objects
+ * @param objects - The objects to compare against
+ * @param activeObject - The object being dragged
+ * @param threshold - The distance threshold for snapping
+ * @returns Array of guidelines for snapping
+ */
 export function generateSnapGuidelines(
-  allObjects: fabric.Object[],
+  objects: fabric.Object[],
   activeObject: fabric.Object,
-  snapThreshold: number = 10
+  threshold: number = 10
 ): GridGuideline[] {
+  if (!activeObject) return [];
+
   const guidelines: GridGuideline[] = [];
-
-  // Get active object bounds
-  const activeBounds = {
-    left: activeObject.left || 0,
-    top: activeObject.top || 0,
-    right: (activeObject.left || 0) + (activeObject.getScaledWidth() || 0),
-    bottom: (activeObject.top || 0) + (activeObject.getScaledHeight() || 0),
-    centerX: (activeObject.left || 0) + (activeObject.getScaledWidth() || 0) / 2,
-    centerY: (activeObject.top || 0) + (activeObject.getScaledHeight() || 0) / 2
-  };
-
-  // Check against each other object
-  allObjects.forEach((obj) => {
+  
+  // Calculate bounds for active object
+  const activeObjectBounds = getObjectBounds(activeObject);
+  
+  objects.forEach(obj => {
     if (obj === activeObject) return;
-
-    const objBounds = {
-      left: obj.left || 0,
-      top: obj.top || 0,
-      right: (obj.left || 0) + (obj.getScaledWidth() || 0),
-      bottom: (obj.top || 0) + (obj.getScaledHeight() || 0),
-      centerX: (obj.left || 0) + (obj.getScaledWidth() || 0) / 2,
-      centerY: (obj.top || 0) + (obj.getScaledHeight() || 0) / 2
-    };
-
-    // Horizontal alignments
-    if (Math.abs(activeBounds.left - objBounds.left) < snapThreshold) {
-      guidelines.push({
-        position: objBounds.left,
-        orientation: 'vertical',
-        type: 'edge'
-      });
-    }
-
-    if (Math.abs(activeBounds.right - objBounds.right) < snapThreshold) {
-      guidelines.push({
-        position: objBounds.right,
-        orientation: 'vertical',
-        type: 'edge'
-      });
-    }
-
-    if (Math.abs(activeBounds.centerX - objBounds.centerX) < snapThreshold) {
-      guidelines.push({
-        position: objBounds.centerX,
-        orientation: 'vertical',
-        type: 'center'
-      });
-    }
-
-    // Vertical alignments
-    if (Math.abs(activeBounds.top - objBounds.top) < snapThreshold) {
+    
+    const objBounds = getObjectBounds(obj);
+    
+    // Check for horizontal alignments (tops, centers, bottoms)
+    // Top edge alignment
+    if (Math.abs(objBounds.top - activeObjectBounds.top) < threshold) {
       guidelines.push({
         position: objBounds.top,
         orientation: 'horizontal',
         type: 'edge'
       });
     }
-
-    if (Math.abs(activeBounds.bottom - objBounds.bottom) < snapThreshold) {
-      guidelines.push({
-        position: objBounds.bottom,
-        orientation: 'horizontal',
-        type: 'edge'
-      });
-    }
-
-    if (Math.abs(activeBounds.centerY - objBounds.centerY) < snapThreshold) {
+    
+    // Center alignment
+    if (Math.abs(objBounds.centerY - activeObjectBounds.centerY) < threshold) {
       guidelines.push({
         position: objBounds.centerY,
         orientation: 'horizontal',
         type: 'center'
       });
     }
-
-    // Distribution guidelines (equal spacing)
-    // This is a simplified version, you can extend it as needed
+    
+    // Bottom edge alignment
+    if (Math.abs(objBounds.bottom - activeObjectBounds.bottom) < threshold) {
+      guidelines.push({
+        position: objBounds.bottom,
+        orientation: 'horizontal',
+        type: 'edge'
+      });
+    }
+    
+    // Check for vertical alignments (lefts, centers, rights)
+    // Left edge alignment
+    if (Math.abs(objBounds.left - activeObjectBounds.left) < threshold) {
+      guidelines.push({
+        position: objBounds.left,
+        orientation: 'vertical',
+        type: 'edge'
+      });
+    }
+    
+    // Center alignment
+    if (Math.abs(objBounds.centerX - activeObjectBounds.centerX) < threshold) {
+      guidelines.push({
+        position: objBounds.centerX,
+        orientation: 'vertical',
+        type: 'center'
+      });
+    }
+    
+    // Right edge alignment
+    if (Math.abs(objBounds.right - activeObjectBounds.right) < threshold) {
+      guidelines.push({
+        position: objBounds.right,
+        orientation: 'vertical',
+        type: 'edge'
+      });
+    }
+    
+    // Equal spacing/distribution between objects (simplified version)
+    // This would be more complex in a full implementation
   });
-
+  
   return guidelines;
+}
+
+/**
+ * Calculate and get the bounding box coordinates of an object
+ * @param obj The fabric object to calculate bounds for
+ * @returns Object containing bounds coordinates
+ */
+export function getObjectBounds(obj: fabric.Object) {
+  const width = obj.getScaledWidth();
+  const height = obj.getScaledHeight();
+  const left = obj.left || 0;
+  const top = obj.top || 0;
+  
+  return {
+    left,
+    top,
+    right: left + width,
+    bottom: top + height,
+    centerX: left + width / 2,
+    centerY: top + height / 2,
+    width,
+    height
+  };
+}
+
+/**
+ * Creates a grid of lines for the canvas background
+ * @param canvas The fabric canvas
+ * @param gridSize Size of the grid cells
+ * @param gridType Type of grid to create ('lines', 'dots', 'columns')
+ * @returns Array of fabric objects representing the grid
+ */
+export function createCanvasGrid(
+  canvas: fabric.Canvas,
+  gridSize: number = 10,
+  gridType: 'lines' | 'dots' | 'columns' = 'lines'
+): fabric.Object[] {
+  if (!canvas) return [];
+  
+  const gridObjects: fabric.Object[] = [];
+  const width = canvas.getWidth();
+  const height = canvas.getHeight();
+  
+  switch (gridType) {
+    case 'dots':
+      // Create dots at grid intersections
+      for (let x = 0; x <= width; x += gridSize) {
+        for (let y = 0; y <= height; y += gridSize) {
+          const dot = new fabric.Circle({
+            left: x,
+            top: y,
+            radius: 1,
+            fill: '#ccc',
+            stroke: '',
+            originX: 'center',
+            originY: 'center',
+            selectable: false,
+            evented: false,
+            hoverCursor: 'default'
+          });
+          gridObjects.push(dot);
+        }
+      }
+      break;
+      
+    case 'columns':
+      // Create a column-based grid (vertical lines only, with different spacing)
+      const columnCount = 12; // Standard 12-column grid
+      const columnWidth = width / columnCount;
+      
+      for (let i = 0; i <= columnCount; i++) {
+        const x = i * columnWidth;
+        const isMainColumn = i % 3 === 0;
+        
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: isMainColumn ? '#aaa' : '#ddd',
+          strokeWidth: isMainColumn ? 0.5 : 0.5,
+          selectable: false,
+          evented: false,
+          hoverCursor: 'default'
+        });
+        gridObjects.push(line);
+      }
+      
+      // Add some horizontal lines for reference
+      for (let y = 0; y <= height; y += gridSize * 5) {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: '#ddd',
+          strokeWidth: 0.5,
+          selectable: false,
+          evented: false,
+          hoverCursor: 'default'
+        });
+        gridObjects.push(line);
+      }
+      break;
+      
+    case 'lines':
+    default:
+      // Create standard grid lines
+      for (let x = 0; x <= width; x += gridSize) {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: '#e0e0e0',
+          strokeWidth: x % (gridSize * 5) === 0 ? 0.7 : 0.5,
+          selectable: false,
+          evented: false,
+          hoverCursor: 'default'
+        });
+        gridObjects.push(line);
+      }
+      
+      for (let y = 0; y <= height; y += gridSize) {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: '#e0e0e0',
+          strokeWidth: y % (gridSize * 5) === 0 ? 0.7 : 0.5,
+          selectable: false,
+          evented: false,
+          hoverCursor: 'default'
+        });
+        gridObjects.push(line);
+      }
+      break;
+  }
+  
+  return gridObjects;
+}
+
+/**
+ * Applies snap logic to move an object to specified guidelines
+ * @param object The fabric object to snap
+ * @param guidelines The guidelines to snap to
+ * @param canvas The fabric canvas
+ */
+export function snapObjectToGuidelines(
+  object: fabric.Object, 
+  guidelines: GridGuideline[],
+  canvas: fabric.Canvas
+): void {
+  if (!object || !guidelines.length) return;
+  
+  const objectBounds = getObjectBounds(object);
+  
+  let horizontalSnap = false;
+  let verticalSnap = false;
+  
+  // Process horizontal guidelines
+  const horizontalGuidelines = guidelines.filter(g => g.orientation === 'horizontal');
+  if (horizontalGuidelines.length) {
+    // Sort by type importance (edge > center > distribution)
+    const sortedH = [...horizontalGuidelines].sort((a, b) => {
+      // Priority: edge, center, distribution
+      const typePriority = { 'edge': 0, 'center': 1, 'distribution': 2 };
+      return typePriority[a.type] - typePriority[b.type];
+    });
+    
+    const guide = sortedH[0]; // Use most important guide
+    
+    // Apply snap based on type
+    switch (guide.type) {
+      case 'edge':
+        // Check if this is a top or bottom edge snap
+        if (Math.abs(guide.position - objectBounds.top) <= Math.abs(guide.position - objectBounds.bottom)) {
+          object.set('top', guide.position);
+        } else {
+          object.set('top', guide.position - objectBounds.height);
+        }
+        horizontalSnap = true;
+        break;
+      case 'center':
+        object.set('top', guide.position - objectBounds.height / 2);
+        horizontalSnap = true;
+        break;
+      case 'distribution':
+        // More complex distribution logic would go here
+        break;
+    }
+  }
+  
+  // Process vertical guidelines
+  const verticalGuidelines = guidelines.filter(g => g.orientation === 'vertical');
+  if (verticalGuidelines.length) {
+    // Sort by type importance (edge > center > distribution)
+    const sortedV = [...verticalGuidelines].sort((a, b) => {
+      // Priority: edge, center, distribution
+      const typePriority = { 'edge': 0, 'center': 1, 'distribution': 2 };
+      return typePriority[a.type] - typePriority[b.type];
+    });
+    
+    const guide = sortedV[0]; // Use most important guide
+    
+    // Apply snap based on type
+    switch (guide.type) {
+      case 'edge':
+        // Check if this is a left or right edge snap
+        if (Math.abs(guide.position - objectBounds.left) <= Math.abs(guide.position - objectBounds.right)) {
+          object.set('left', guide.position);
+        } else {
+          object.set('left', guide.position - objectBounds.width);
+        }
+        verticalSnap = true;
+        break;
+      case 'center':
+        object.set('left', guide.position - objectBounds.width / 2);
+        verticalSnap = true;
+        break;
+      case 'distribution':
+        // More complex distribution logic would go here
+        break;
+    }
+  }
+  
+  if (horizontalSnap || verticalSnap) {
+    canvas.renderAll();
+  }
 }

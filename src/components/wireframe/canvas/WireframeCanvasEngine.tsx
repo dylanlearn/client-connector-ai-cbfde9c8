@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig, SectionRenderingOptions } from '@/components/wireframe/utils/types';
@@ -6,9 +7,15 @@ import { componentToFabricObject } from '@/components/wireframe/utils/fabric-con
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { MessageSquarePlus } from 'lucide-react';
+import { MessageSquarePlus, ZoomIn, ZoomOut, RotateCw, Grid, Ruler } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import WireframeFeedbackProcessor from '../feedback/WireframeFeedbackProcessor';
+import CanvasRulers from './CanvasRulers';
+import PropertyPanel from './PropertyPanel';
+import HistoryControls from './HistoryControls';
+import DragEnhancementHandler from './DragEnhancementHandler';
+import { useCanvasHistory } from '@/hooks/wireframe/use-canvas-history';
+import { cn } from '@/lib/utils';
 
 interface WireframeCanvasEngineProps {
   wireframeData: WireframeData;
@@ -33,6 +40,8 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [feedbackOpen, setFeedbackOpen] = useState<boolean>(false);
+  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
+  const [showPropertyPanel, setShowPropertyPanel] = useState<boolean>(false);
   const saveStateForUndo = useWireframeStore(state => state.saveStateForUndo);
   const { toast } = useToast();
   
@@ -47,18 +56,63 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
     backgroundColor: '#ffffff',
     gridType: 'lines',
     snapTolerance: 5,
-    showSmartGuides: false
+    showSmartGuides: true,
+    showRulers: true,
+    rulerColor: '#888888',
+    rulerMarkings: 'pixels',
+    historyEnabled: true,
+    maxHistorySteps: 50
   };
   
   const config = { ...defaultConfig, ...canvasConfig };
+  
+  const {
+    history,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    saveHistoryState
+  } = useCanvasHistory({
+    canvas,
+    maxHistorySteps: config.maxHistorySteps,
+    onChange: (canUndo, canRedo) => {
+      // Update any UI that needs to know about undo/redo state
+    }
+  });
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!canvas || !config.historyEnabled) return;
+    
+    // Handle undo/redo keyboard shortcuts
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z') {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+        e.preventDefault();
+        redo();
+      }
+    }
+    
+    // Handle delete key
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject && !activeObject.isGuide) {
+        canvas.remove(activeObject);
+        canvas.renderAll();
+        saveHistoryState('Object deleted');
+      }
+    }
+  }, [canvas, config.historyEnabled, undo, redo, saveHistoryState]);
 
   useEffect(() => {
     if (canvasRef.current && !isInitialized) {
       try {
         const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-          width: 1200,
-          height: 800,
-          backgroundColor: config.showGrid ? '#f8f8f8' : '#ffffff',
+          width: config.width,
+          height: config.height,
+          backgroundColor: config.showGrid ? '#f8f8f8' : config.backgroundColor,
           selection: editable,
           preserveObjectStacking: true
         });
@@ -68,6 +122,8 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         
         fabricCanvas.on('selection:created', (e) => {
           const selected = e.selected?.[0];
+          setSelectedObject(selected || null);
+          
           if (selected && selected.data) {
             const sectionId = selected.data.id;
             if (sectionId) {
@@ -76,8 +132,21 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
           }
         });
         
+        fabricCanvas.on('selection:updated', (e) => {
+          const selected = e.selected?.[0];
+          setSelectedObject(selected || null);
+        });
+        
+        fabricCanvas.on('selection:cleared', () => {
+          setSelectedObject(null);
+        });
+        
         fabricCanvas.on('object:modified', () => {
           saveStateForUndo();
+          // Auto-show property panel when an object is modified
+          if (!showPropertyPanel) {
+            setShowPropertyPanel(true);
+          }
         });
         
         if (config.showGrid) {
@@ -105,7 +174,7 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         canvas.dispose();
       }
     };
-  }, [canvasRef, isInitialized, config.showGrid, config.zoom, 
+  }, [canvasRef, isInitialized, config.showGrid, config.zoom, config.backgroundColor,
       config.panOffset, config.gridSize, editable, onCanvasReady, toast, saveStateForUndo]);
   
   useEffect(() => {
@@ -133,6 +202,15 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
       canvas.renderAll();
     }
   }, [config.zoom, config.panOffset, isInitialized]);
+
+  // Add event listener for keyboard shortcuts
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
   
   const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
     if (onWireframeUpdate) {
@@ -274,10 +352,155 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
       });
     }
   }, [canvas, config.snapToGrid, config.gridSize]);
+
+  const handleZoomIn = () => {
+    if (!canvas) return;
+    const newZoom = Math.min(5, config.zoom + 0.1);
+    canvas.setZoom(newZoom);
+    
+    if (onCanvasConfigChange) {
+      onCanvasConfigChange({ zoom: newZoom });
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (!canvas) return;
+    const newZoom = Math.max(0.1, config.zoom - 0.1);
+    canvas.setZoom(newZoom);
+    
+    if (onCanvasConfigChange) {
+      onCanvasConfigChange({ zoom: newZoom });
+    }
+  };
+
+  const handleResetZoom = () => {
+    if (!canvas) return;
+    canvas.setZoom(1);
+    canvas.absolutePan(new fabric.Point(0, 0));
+    
+    if (onCanvasConfigChange) {
+      onCanvasConfigChange({ zoom: 1, panOffset: { x: 0, y: 0 } });
+    }
+  };
+
+  const toggleGrid = () => {
+    if (onCanvasConfigChange) {
+      onCanvasConfigChange({ showGrid: !config.showGrid });
+    }
+  };
+
+  const toggleRulers = () => {
+    if (onCanvasConfigChange) {
+      onCanvasConfigChange({ showRulers: !config.showRulers });
+    }
+  };
+  
+  const rulerSize = 20;
   
   return (
     <div className="wireframe-canvas-fabric-container w-full relative">
-      <canvas ref={canvasRef} />
+      {/* Toolbar */}
+      <div className="flex items-center justify-between mb-2 pb-2 border-b">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomIn}
+            className="h-8 w-8 p-0"
+            title="Zoom In"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomOut}
+            className="h-8 w-8 p-0"
+            title="Zoom Out"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResetZoom}
+            className="h-8 w-8 p-0"
+            title="Reset View"
+          >
+            <RotateCw className="h-4 w-4" />
+          </Button>
+          <div className="text-xs text-muted-foreground px-2">
+            {Math.round(config.zoom * 100)}%
+          </div>
+          <Button
+            variant={config.showGrid ? "secondary" : "outline"}
+            size="sm"
+            onClick={toggleGrid}
+            className="h-8 w-8 p-0"
+            title={config.showGrid ? "Hide Grid" : "Show Grid"}
+          >
+            <Grid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={config.showRulers ? "secondary" : "outline"}
+            size="sm"
+            onClick={toggleRulers}
+            className="h-8 w-8 p-0"
+            title={config.showRulers ? "Hide Rulers" : "Show Rulers"}
+          >
+            <Ruler className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <HistoryControls 
+          canUndo={canUndo} 
+          canRedo={canRedo} 
+          onUndo={undo} 
+          onRedo={redo} 
+        />
+      </div>
+
+      {/* Canvas container with rulers */}
+      <div className="relative" style={{ 
+        paddingTop: config.showRulers ? rulerSize : 0, 
+        paddingLeft: config.showRulers ? rulerSize : 0 
+      }}>
+        {config.showRulers && canvas && (
+          <CanvasRulers 
+            width={canvas.width || 1200} 
+            height={canvas.height || 800} 
+            zoom={config.zoom} 
+            panOffset={config.panOffset} 
+            rulerSize={rulerSize}
+            rulerColor={config.rulerColor}
+            markingType={config.rulerMarkings}
+          />
+        )}
+
+        <canvas ref={canvasRef} className="border border-gray-200 shadow-sm" />
+
+        {/* Smart guides and drag enhancement */}
+        {canvas && config.showSmartGuides && (
+          <DragEnhancementHandler
+            canvas={canvas}
+            snapTolerance={config.snapTolerance}
+            showSmartGuides={config.showSmartGuides}
+            showDropZones={true}
+            showHoverOutlines={true}
+          />
+        )}
+      </div>
+      
+      {/* Property panel for selected object */}
+      {selectedObject && showPropertyPanel && (
+        <div className="mt-4">
+          <PropertyPanel
+            selectedObject={selectedObject}
+            canvas={canvas}
+            onUpdate={() => saveHistoryState('Properties updated')}
+          />
+        </div>
+      )}
       
       {editable && wireframeData?.id && (
         <div className="absolute bottom-4 right-4">
