@@ -38,12 +38,12 @@ export {
 // Export from responsive-utils
 export * from './responsive-utils';
 
-// Export grid utilities - explicitly re-export getObjectBounds to avoid ambiguity
+// Export grid utilities - explicitly re-export getObjectBounds from grid-utils to avoid ambiguity
 export {
   generateSnapGuidelines,
   createCanvasGrid,
   snapObjectToGuidelines,
-  getObjectBounds,
+  getObjectBounds as getGridObjectBounds,
   calculateColumnPositions,
   calculateGridPositions,
   getResponsiveGridConfig,

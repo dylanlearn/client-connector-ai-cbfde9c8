@@ -87,8 +87,8 @@ export function useGridSystem(options: UseGridSystemOptions = {}) {
   }, [updateGridConfig]);
   
   // Change gutter
-  const changeGutter = useCallback((gutter: number) => {
-    updateGridConfig({ gutter });
+  const changeGutter = useCallback((gutterSize: number) => {
+    updateGridConfig({ gutterSize });
   }, [updateGridConfig]);
   
   // Update responsive options
