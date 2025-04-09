@@ -1,10 +1,11 @@
+
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import { 
   calculateGridPositions,
   generateSnapGuidelines
-} from '@/components/wireframe/utils/grid-utils';
+} from '@/components/wireframe/utils';
 
 export interface UseCanvasEngineOptions {
   containerId?: string;

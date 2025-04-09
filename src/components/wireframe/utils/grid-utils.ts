@@ -157,9 +157,9 @@ export function generateSnapGuidelines(width: number, height: number, gridSize: 
 }
 
 // Function to create a canvas grid
-export function createCanvasGrid(canvas: any, gridSize: number, gridType: string) {
-  const width = canvas.width;
-  const height = canvas.height;
+export function createCanvasGrid(canvas: fabric.Canvas, gridSize: number, gridType: string) {
+  const width = canvas.width || 0;
+  const height = canvas.height || 0;
   const gridLines = [];
   
   if (gridType === 'lines' || gridType === 'columns') {
@@ -190,7 +190,7 @@ export function createCanvasGrid(canvas: any, gridSize: number, gridType: string
 }
 
 // Function to snap object to guidelines
-export function snapObjectToGuidelines(obj: any, guidelines: any[], tolerance: number = 10) {
+export function snapObjectToGuidelines(obj: fabric.Object, guidelines: any[], tolerance: number = 10) {
   const objBounds = getObjectBounds(obj);
   
   for (const guideline of guidelines) {
