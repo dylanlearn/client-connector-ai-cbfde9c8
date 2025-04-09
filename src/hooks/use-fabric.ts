@@ -20,7 +20,7 @@ export function useFabric(options: UseFabricOptions = {}) {
   const storeCanvasSettings = useWireframeStore(state => state.canvasSettings);
   const updateCanvasSettings = useWireframeStore(state => state.updateCanvasSettings);
   
-  // Define the canvas configuration
+  // Define the canvas configuration with all required properties
   const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
     width: initialConfig.width || storeCanvasSettings.width || 1200,
     height: initialConfig.height || storeCanvasSettings.height || 800,

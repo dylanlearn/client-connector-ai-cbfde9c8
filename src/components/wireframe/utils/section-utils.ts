@@ -1,4 +1,3 @@
-
 import { WireframeSection } from '@/types/wireframe';
 import { DeviceType } from './responsive-utils';
 
