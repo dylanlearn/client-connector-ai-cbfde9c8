@@ -1,10 +1,10 @@
+
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+
 export interface WireframeGenerationParams {
-  description?: string;
-  prompt?: string;
+  description: string;
   projectId?: string;
-  baseWireframe?: any;
-  style?: string;
-  colorTheme?: string;
+  style?: string | object;
   pageType?: string;
   colorScheme?: {
     primary: string;
@@ -12,22 +12,14 @@ export interface WireframeGenerationParams {
     accent: string;
     background: string;
   };
-  industry?: string;
+  baseWireframe?: any;
   creativityLevel?: number;
   enhancedCreativity?: boolean;
-  intakeFormData?: any;
-  variationOf?: string;
-  variationType?: string;
   stylePreferences?: any;
-  enableLayoutIntelligence?: boolean;
   customParams?: Record<string, any>;
-  
-  // Additional props required by multiple files
-  complexity?: number;
-  multiPageLayout?: boolean;
-  pages?: any[];
-  componentTypes?: string[];
-  moodboardSelections?: any;
+  enableLayoutIntelligence?: boolean;
+  industry?: string;
+  intakeFormData?: any;
 }
 
 export interface WireframeGenerationResult {
@@ -39,11 +31,9 @@ export interface WireframeGenerationResult {
     completion_tokens?: number;
     prompt_tokens?: number;
   };
-  success: boolean;
   error?: string;
+  success: boolean;
   imageUrl?: string;
-  layoutAnalysis?: any; // Added this property
-  variations?: any[]; // Added this property
 }
 
 export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
@@ -53,166 +43,23 @@ export interface EnhancedWireframeGenerationResult extends WireframeGenerationRe
   variations?: any[];
 }
 
+export interface FeedbackModificationResult {
+  wireframe: any;
+  modified: boolean;
+  changeDescription: string;
+  modifiedSections?: string[];
+  addedSections?: string[];
+  removedSections?: string[];
+}
+
+// Re-export the WireframeCanvasConfig for consistency
+export { WireframeCanvasConfig };
+
+// Define the AIWireframe interface
 export interface AIWireframe {
   id: string;
   title: string;
   description?: string;
   sections: any[];
   [key: string]: any;
-}
-
-export interface FeedbackInterpretation {
-  changes: Record<string, any>;
-  summary: string;
-  impact: string;
-}
-
-export interface FeedbackModificationResult {
-  wireframe: any;
-  modified: boolean;
-  changeDescription?: string;
-  modifiedSections?: string[];
-  addedSections?: string[];
-  removedSections?: string[];
-}
-
-export interface WireframeData {
-  id: string;
-  title: string;
-  description?: string;
-  sections: any[];
-  [key: string]: any;
-}
-
-export interface WireframeSection {
-  id: string;
-  name: string;
-  sectionType: string;
-  description?: string;
-  components?: WireframeComponent[];
-  layout?: {
-    type: string;
-    direction?: string;
-    alignment?: string;
-    [key: string]: any;
-  } | string;
-  layoutType?: string;
-  positionOrder?: number;
-  componentVariant?: string;
-  copySuggestions?: CopySuggestions;
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-  position?: {
-    x: number;
-    y: number;
-  };
-  backgroundColor?: string;
-  textAlign?: string;
-  padding?: string;
-  gap?: string;
-  style?: {
-    [key: string]: any;
-    backgroundColor?: string;
-    textAlign?: string;
-    padding?: string;
-    gap?: string;
-  };
-  data?: any;
-  designReasoning?: string;
-  mobileLayout?: any;
-  animationSuggestions?: any;
-  dynamicElements?: any;
-  styleVariants?: any;
-  [key: string]: any;
-}
-
-export interface WireframeComponent {
-  id: string;
-  type: string;
-  content?: string;
-  props?: Record<string, any>;
-  children?: WireframeComponent[];
-  style?: Record<string, any>;
-  [key: string]: any;
-}
-
-export interface CopySuggestions {
-  heading?: string;
-  subheading?: string;
-  body?: string;
-  cta?: string;
-  [key: string]: any;
-}
-
-export interface WireframeCanvasConfig {
-  width: number;
-  height: number;
-  showGrid?: boolean;
-  snapToGrid?: boolean;
-  gridSize?: number;
-  backgroundColor?: string;
-  zoom?: number;
-  panOffset?: { x: number, y: number };
-  gridType?: 'lines' | 'dots' | 'columns';
-  snapTolerance?: number;
-  showSmartGuides?: boolean;
-  [key: string]: any;
-}
-
-export interface DesignMemoryData {
-  colorPalettes?: any[];
-  fontPairings?: any[];
-  layoutPatterns?: any[];
-  componentStyles?: Record<string, any>;
-  userPreferences?: Record<string, any>;
-  [key: string]: any;
-}
-
-export interface DesignMemoryResponse {
-  id: string;
-  projectId: string;
-  data: DesignMemoryData;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WireframeVersion {
-  id: string;
-  wireframe_id: string;
-  version_number: number;
-  branch_name: string;
-  data: Record<string, any>;
-  parent_version_id?: string;
-  is_current: boolean;
-  change_description?: string;
-  created_at: string;
-  created_by?: string;
-  sourceData?: any;
-  version?: string;
-}
-
-export interface BranchInfo {
-  name: string;
-  description?: string;
-  createdAt: string;
-  lastUpdated: string;
-  versionCount: number;
-  latestVersionId: string;
-  createdBy?: string;
-}
-
-export interface WireframeResult extends WireframeGenerationResult {
-  // This ensures WireframeResult has at least the same properties as WireframeGenerationResult
-}
-
-export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeData {
-  return {
-    id: wireframe.id,
-    title: wireframe.title,
-    description: wireframe.description,
-    sections: wireframe.sections || [],
-    ...(wireframe.wireframe_data || wireframe.data || {})
-  };
 }

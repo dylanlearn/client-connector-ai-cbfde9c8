@@ -175,12 +175,12 @@ export interface WireframeCanvasConfig {
   height: number;
   zoom: number;
   panOffset: { x: number, y: number };
-  showGrid?: boolean;
-  snapToGrid?: boolean;
-  gridSize?: number;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
   backgroundColor: string;
-  gridType?: 'lines' | 'dots' | 'columns';
-  snapTolerance?: number;
-  showSmartGuides?: boolean;
+  gridType: 'lines' | 'dots' | 'columns';
+  snapTolerance: number;
+  showSmartGuides: boolean;
   [key: string]: any;
 }
