@@ -12,6 +12,7 @@ export interface AlignmentGuide {
   orientation: 'horizontal' | 'vertical';
   type: 'edge' | 'center' | 'distribution';
   label?: string;
+  strength?: number; // Added strength property
 }
 
 // Styles for object boundaries
@@ -46,6 +47,8 @@ export interface SectionRenderingOptions {
   showLabels: boolean;
   showComponentOutlines: boolean;
   highlightOnHover: boolean;
+  deviceType?: 'mobile' | 'tablet' | 'desktop'; // Added deviceType
+  interactive?: boolean; // Added interactive property
 }
 
 // Canvas configuration for wireframes
@@ -61,4 +64,15 @@ export interface WireframeCanvasConfig {
   gridType: 'lines' | 'dots' | 'columns';
   snapTolerance: number;
   showSmartGuides: boolean;
+}
+
+// Layer information for layer management
+export interface LayerInfo {
+  id: string;
+  name: string;
+  type: string;
+  visible: boolean;
+  locked: boolean;
+  zIndex: number;
+  parentId?: string;
 }

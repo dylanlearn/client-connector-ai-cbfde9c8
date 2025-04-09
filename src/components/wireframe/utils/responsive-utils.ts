@@ -3,8 +3,11 @@
  * Responsive utilities for wireframe components
  */
 
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
+export type BreakpointKey = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
 export interface ResponsiveOptions {
-  device: 'mobile' | 'tablet' | 'desktop' | string;
+  device: DeviceType | string;
   width: number;
 }
 
@@ -12,6 +15,14 @@ export const DEFAULT_DEVICE_WIDTHS = {
   mobile: 375,
   tablet: 768,
   desktop: 1200
+};
+
+export const BREAKPOINT_VALUES = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  '2xl': 1536
 };
 
 export const getResponsiveClasses = (device: string): string => {
@@ -26,7 +37,7 @@ export const getResponsiveClasses = (device: string): string => {
   }
 };
 
-export const getDeviceFromWidth = (width: number): 'mobile' | 'tablet' | 'desktop' => {
+export const getDeviceFromWidth = (width: number): DeviceType => {
   if (width < 640) return 'mobile';
   if (width < 1024) return 'tablet';
   return 'desktop';
@@ -58,5 +69,75 @@ export const getMediaQueryForDevice = (device: string): string => {
     case 'desktop':
     default:
       return '@media (min-width: 1024px)';
+  }
+};
+
+// Add missing functions for responsive utils
+export const getBreakpointForDevice = (device: DeviceType): BreakpointKey => {
+  switch (device) {
+    case 'mobile':
+      return 'sm';
+    case 'tablet':
+      return 'md';
+    case 'desktop':
+      return 'lg';
+    default:
+      return 'lg';
+  }
+};
+
+export const getResponsiveStyles = (device: DeviceType, baseStyles: Record<string, any> = {}): Record<string, any> => {
+  // This function returns responsive styles based on device type
+  const deviceSpecificStyles = {
+    ...baseStyles,
+    // Add device-specific style overrides
+    ...(device === 'mobile' ? { width: '100%', maxWidth: '375px' } : {}),
+    ...(device === 'tablet' ? { width: '100%', maxWidth: '768px' } : {}),
+    ...(device === 'desktop' ? { width: '100%' } : {})
+  };
+  
+  return deviceSpecificStyles;
+};
+
+export const isFluidLayout = (layoutType: string): boolean => {
+  return ['fluid', 'responsive', 'adaptive'].includes(layoutType);
+};
+
+export const getResponsiveGridColumns = (device: DeviceType, defaultColumns: number = 12): number => {
+  switch (device) {
+    case 'mobile':
+      return 4;
+    case 'tablet':
+      return 8;
+    case 'desktop':
+      return defaultColumns;
+    default:
+      return defaultColumns;
+  }
+};
+
+export const getResponsiveGutterSize = (device: DeviceType, defaultGutter: number = 16): number => {
+  switch (device) {
+    case 'mobile':
+      return 8;
+    case 'tablet':
+      return 12;
+    case 'desktop':
+      return defaultGutter;
+    default:
+      return defaultGutter;
+  }
+};
+
+export const responsiveTailwindClasses = (device: DeviceType): string => {
+  switch (device) {
+    case 'mobile':
+      return 'w-full px-4';
+    case 'tablet':
+      return 'w-full max-w-3xl px-6';
+    case 'desktop':
+      return 'w-full max-w-7xl px-8';
+    default:
+      return 'w-full';
   }
 };

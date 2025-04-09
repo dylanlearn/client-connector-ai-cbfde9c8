@@ -13,6 +13,7 @@ export {
 // Export responsive utilities from responsive-utils
 export {
   type ResponsiveOptions,
+  type DeviceType as ResponsiveDeviceType,
   type BreakpointKey,
   BREAKPOINT_VALUES,
   getBreakpointForDevice,
