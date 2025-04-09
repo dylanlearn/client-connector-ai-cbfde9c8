@@ -1,16 +1,14 @@
 
-import { useEffect } from 'react';
-import { initializeComponentRegistry } from './index';
+import React, { useEffect } from 'react';
+import { initializeComponentRegistry } from './register-components';
 
-export function useComponentRegistry() {
+export const ComponentRegistration: React.FC = () => {
   useEffect(() => {
+    // Register all components when the component mounts
     initializeComponentRegistry();
+    console.log('All wireframe components registered successfully');
   }, []);
-}
 
-const ComponentRegistration = () => {
-  useComponentRegistry();
+  // This component doesn't render anything visible
   return null;
 };
-
-export { ComponentRegistration };

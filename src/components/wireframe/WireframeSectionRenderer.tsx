@@ -70,58 +70,58 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
     );
   }
   
+  // Normalize section type for matching
+  const sectionType = section.sectionType?.toLowerCase() || '';
+  
   // Render the appropriate section component based on the section type
-  switch (section.sectionType?.toLowerCase()) {
-    case 'hero':
-      return <HeroSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'features':
-    case 'feature':
-      return <FeatureSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'testimonials':
-    case 'testimonial':
-      return <TestimonialSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'pricing':
-      return <PricingSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'contact':
-      return <ContactSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'faq':
-      return <FAQSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'blog':
-      return <BlogSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'cta':
-      return <CTASectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'footer':
-      return <FooterSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
-    
-    case 'navigation':
-    case 'nav':
-      return <NavigationRenderer component={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} />;
-    
-    default:
-      // Fallback renderer for unknown section types
-      return (
-        <div 
-          className={`p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
-          onClick={handleSectionClick}
-        >
-          <div className="font-medium">
-            {section.name || `Unknown Section Type: ${section.sectionType || 'Unnamed'}`}
-          </div>
-          {section.description && (
-            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              {section.description}
-            </div>
-          )}
+  // Match both exact types and prefixed types (e.g. "pricing" matches "pricing-table")
+  if (sectionType === 'hero' || sectionType.startsWith('hero-')) {
+    return <HeroSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'features' || sectionType === 'feature' || sectionType.startsWith('feature-')) {
+    return <FeatureSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'testimonials' || sectionType === 'testimonial' || sectionType.startsWith('testimonial-')) {
+    return <TestimonialSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'pricing' || sectionType === 'pricing-table' || sectionType.startsWith('pricing-')) {
+    return <PricingSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'contact' || sectionType.startsWith('contact-')) {
+    return <ContactSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'faq' || sectionType.startsWith('faq-')) {
+    return <FAQSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'blog' || sectionType.startsWith('blog-')) {
+    return <BlogSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'cta' || sectionType === 'cta-banner' || sectionType.startsWith('cta-')) {
+    return <CTASectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'footer' || sectionType.startsWith('footer-')) {
+    return <FooterSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleSectionClick} />;
+  } 
+  else if (sectionType === 'navigation' || sectionType === 'nav' || sectionType.startsWith('nav-')) {
+    return <NavigationRenderer component={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} />;
+  } 
+  else {
+    // Fallback renderer for unknown section types
+    return (
+      <div 
+        className={`p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+        onClick={handleSectionClick}
+      >
+        <div className="font-medium">
+          {section.name || `Unknown Section Type: ${section.sectionType || 'Unnamed'}`}
         </div>
-      );
+        {section.description && (
+          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {section.description}
+          </div>
+        )}
+      </div>
+    );
   }
 };
 
