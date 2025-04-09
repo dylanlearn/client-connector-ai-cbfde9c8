@@ -66,7 +66,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
     });
   };
 
-  // This now accepts a sectionId instead of section object
+  // Fix the type mismatch by updating to accept a sectionId string
   const handleSectionSelect = (sectionId: string) => {
     const section = sections.find(s => s.id === sectionId);
     if (section) {

@@ -47,6 +47,18 @@ export interface WireframeSection {
     x: number;
     y: number;
   };
+  // Additional styling properties
+  backgroundColor?: string;
+  textAlign?: string;
+  padding?: string;
+  gap?: string;
+  style?: {
+    [key: string]: any;
+    backgroundColor?: string;
+    textAlign?: string;
+    padding?: string;
+    gap?: string;
+  };
   [key: string]: any;
 }
 

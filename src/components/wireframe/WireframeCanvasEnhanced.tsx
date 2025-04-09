@@ -2,16 +2,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { WireframeSection } from '@/types/wireframe';
 
-// Extended WireframeSection interface to include missing properties
-interface ExtendedWireframeSection extends WireframeSection {
-  backgroundColor?: string;
-  textAlign?: string;
-  padding?: string;
-  gap?: string;
-}
+// We no longer need to extend WireframeSection with these properties
+// since we added them directly to WireframeSection interface
+type ExtendedWireframeSection = WireframeSection;
 
 export interface WireframeCanvasEnhancedProps {
-  sections: (WireframeSection | ExtendedWireframeSection)[];
+  sections: WireframeSection[];
   width?: number;
   height?: number;
   editable?: boolean;
@@ -72,17 +68,16 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
     }
 
     return sections.map((section) => {
-      const extendedSection = section as ExtendedWireframeSection;
-      
       // Determine section style
       const sectionStyle: React.CSSProperties = {
         position: 'relative',
         marginBottom: '20px',
         border: selectedSection === section.id ? '2px dashed blue' : '1px solid #e5e7eb',
-        backgroundColor: extendedSection.backgroundColor || '#ffffff',
-        textAlign: (extendedSection.textAlign as any) || 'left',
-        padding: extendedSection.padding || '20px',
-        gap: extendedSection.gap || '10px',
+        // Get style properties either from direct props or from style object
+        backgroundColor: section.backgroundColor || section.style?.backgroundColor || '#ffffff',
+        textAlign: (section.textAlign || section.style?.textAlign || 'left') as any,
+        padding: section.padding || section.style?.padding || '20px',
+        gap: section.gap || section.style?.gap || '10px',
       };
 
       // Add specific styles based on section type
