@@ -1,4 +1,3 @@
-
 // This file initializes and exports all component registry functions
 import { registerComponent } from './component-registry';
 import { heroComponents } from './components/hero-components';
@@ -15,7 +14,7 @@ import { contactComponents } from './components/contact-components';
 // Export functions from component-registry
 export { 
   registerComponent,
-  getAllComponentDefinitions 
+  getAllComponentDefinitions
 } from './component-registry';
 
 // Export types from component-types using 'export type' syntax for isolatedModules

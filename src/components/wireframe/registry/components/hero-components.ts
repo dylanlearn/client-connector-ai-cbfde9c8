@@ -1,5 +1,5 @@
 
-import { ComponentDefinition } from '../component-registry';
+import { ComponentDefinition } from '../component-types';
 import { HeroComponentProps } from '@/types/component-library';
 
 // Hero component variants data

@@ -1,5 +1,5 @@
 
-import { ComponentDefinition } from '../component-registry';
+import { ComponentDefinition } from '../component-types';
 import blogVariants from '@/data/component-library-variants-blog';
 
 export const blogComponents: ComponentDefinition = {

@@ -3,6 +3,8 @@ import { DeviceType } from '@/components/wireframe/preview/DeviceInfo';
 import { ComponentDefinition, ComponentVariant } from './component-types';
 import { v4 as uuidv4 } from 'uuid';
 
+export type { ComponentDefinition, ComponentVariant };
+
 export interface ComponentRegistryProps {
   deviceType?: DeviceType;
 }

@@ -1,5 +1,4 @@
-
-import { ComponentDefinition } from '../component-registry';
+import { ComponentDefinition } from '../component-types';
 
 export const contactComponents: ComponentDefinition = {
   type: 'contact',
