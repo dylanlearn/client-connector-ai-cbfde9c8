@@ -1,3 +1,4 @@
+
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
@@ -6,7 +7,7 @@ import { useFabric } from '@/hooks/use-fabric';
 import { useCanvasInteractions } from '@/hooks/wireframe/use-canvas-interactions';
 import CanvasControls from './controls/CanvasControls';
 import { useToast } from '@/hooks/use-toast';
-import { WireframeCanvasConfig } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 
 interface WireframeCanvasFabricProps {
   projectId?: string;
@@ -54,9 +55,9 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
     resetZoom: fabricResetZoom,
     toggleGrid: fabricToggleGrid,
     toggleSnapToGrid: fabricToggleSnapToGrid,
-    updateConfig
+    updateConfig,
+    initializeCanvas
   } = useFabric({
-    persistConfig: true,
     initialConfig: effectiveCanvasSettings
   });
   
@@ -85,6 +86,20 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
     }
   });
 
+  // Initialize the fabric canvas instance
+  useEffect(() => {
+    if (fabricCanvasRef.current && !fabricCanvas) {
+      const canvas = new fabric.Canvas(fabricCanvasRef.current, {
+        width: canvasConfig.width || 800,
+        height: canvasConfig.height || 600,
+        backgroundColor: canvasConfig.backgroundColor || '#ffffff'
+      });
+      
+      initializeCanvas(fabricCanvasRef.current);
+    }
+  }, [fabricCanvasRef, fabricCanvas, canvasConfig, initializeCanvas]);
+
+  // Render wireframe sections to the canvas
   useEffect(() => {
     if (fabricCanvas && wireframe && wireframe.sections) {
       try {
@@ -98,7 +113,7 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
           for (let i = 0; i < width / gridSize; i++) {
             fabricCanvas.add(
               new fabric.Line([i * gridSize, 0, i * gridSize, height], {
-                stroke: '#e0e0e0',
+                stroke: canvasConfig.gridColor || '#e0e0e0',
                 selectable: false,
                 evented: false,
                 strokeWidth: 1
@@ -109,7 +124,7 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
           for (let i = 0; i < height / gridSize; i++) {
             fabricCanvas.add(
               new fabric.Line([0, i * gridSize, width, i * gridSize], {
-                stroke: '#e0e0e0',
+                stroke: canvasConfig.gridColor || '#e0e0e0',
                 selectable: false,
                 evented: false,
                 strokeWidth: 1
@@ -188,7 +203,7 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
       }
     }
   }, [fabricCanvas, wireframe, activeDevice, darkMode, canvasConfig.showGrid, 
-      canvasConfig.gridSize, editMode, onSectionClick, toast]);
+      canvasConfig.gridSize, canvasConfig.gridColor, editMode, onSectionClick, toast]);
 
   useEffect(() => {
     setIsRendering(true);

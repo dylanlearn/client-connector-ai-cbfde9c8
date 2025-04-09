@@ -27,3 +27,19 @@ export interface SectionRenderingOptions {
   gridSize: number;
   showBorders: boolean;
 }
+
+// Add interfaces for alignment guides
+export interface AlignmentGuide {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'grid' | 'center' | 'edge' | 'spacing';
+  label?: string;
+  strength?: number;
+}
+
+export interface DropZoneIndicator {
+  id: string;
+  element: HTMLElement;
+  rect: DOMRect;
+  isHovering: boolean;
+}

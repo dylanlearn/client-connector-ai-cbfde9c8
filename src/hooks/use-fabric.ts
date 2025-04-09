@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,6 +10,8 @@ interface UseFabricOptions {
 
 export function useFabric(options: UseFabricOptions = {}) {
   const { toast } = useToast();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<any>(null);
   
   // Default canvas configuration
   const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
@@ -47,6 +49,14 @@ export function useFabric(options: UseFabricOptions = {}) {
       return newConfig;
     });
   }, [options.onConfigChange]);
+
+  // Initialize fabric canvas
+  const initializeCanvas = useCallback((canvasElement?: HTMLCanvasElement) => {
+    // This would normally initialize the fabric.js canvas
+    // For now, we'll just set up a stub
+    setFabricCanvas({});
+    return {};
+  }, []);
   
   // Toggle grid visibility
   const toggleGrid = useCallback(() => {
@@ -119,6 +129,24 @@ export function useFabric(options: UseFabricOptions = {}) {
     updateConfig({ zoom });
   }, [updateConfig]);
   
+  // Zoom in
+  const zoomIn = useCallback(() => {
+    updateConfig({ zoom: Math.min(5, canvasConfig.zoom + 0.1) });
+  }, [canvasConfig.zoom, updateConfig]);
+  
+  // Zoom out
+  const zoomOut = useCallback(() => {
+    updateConfig({ zoom: Math.max(0.1, canvasConfig.zoom - 0.1) });
+  }, [canvasConfig.zoom, updateConfig]);
+  
+  // Reset zoom
+  const resetZoom = useCallback(() => {
+    updateConfig({ 
+      zoom: 1,
+      panOffset: { x: 0, y: 0 }
+    });
+  }, [updateConfig]);
+  
   // Set pan offset
   const setPanOffset = useCallback((x: number, y: number) => {
     updateConfig({ panOffset: { x, y } });
@@ -130,6 +158,8 @@ export function useFabric(options: UseFabricOptions = {}) {
   }, [updateConfig]);
 
   return {
+    canvasRef,
+    fabricCanvas,
     canvasConfig,
     updateConfig,
     toggleGrid,
@@ -140,6 +170,10 @@ export function useFabric(options: UseFabricOptions = {}) {
     setBackgroundColor,
     setZoom,
     setPanOffset,
-    setGridColor
+    setGridColor,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    initializeCanvas
   };
 }

@@ -29,7 +29,12 @@ export function useCanvasInteractions({
     backgroundColor: initialConfig?.backgroundColor || '#ffffff',
     showSmartGuides: initialConfig?.showSmartGuides !== undefined ? initialConfig.showSmartGuides : true,
     showRulers: initialConfig?.showRulers !== undefined ? initialConfig.showRulers : true,
-    rulerSize: initialConfig?.rulerSize || 20
+    rulerSize: initialConfig?.rulerSize || 20,
+    gridColor: initialConfig?.gridColor || '#e0e0e0',
+    rulerColor: initialConfig?.rulerColor || '#bbbbbb',
+    rulerMarkings: initialConfig?.rulerMarkings !== undefined ? initialConfig.rulerMarkings : true,
+    historyEnabled: initialConfig?.historyEnabled !== undefined ? initialConfig.historyEnabled : true,
+    maxHistorySteps: initialConfig?.maxHistorySteps || 30
   });
 
   // Update internal config when external config changes
