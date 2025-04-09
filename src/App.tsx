@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   BrowserRouter as Router,
@@ -5,7 +6,7 @@ import {
   Routes,
   Navigate
 } from 'react-router-dom';
-import { SiteLayout } from '@/components/layout/SiteLayout';
+import Layout from '@/components/layout/Layout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -47,12 +48,12 @@ function App() {
     >
       <Router>
         <Routes>
-          <Route path="/" element={<SiteLayout><LandingPage /></SiteLayout>} />
-          <Route path="/pricing" element={<SiteLayout><PricingPage /></SiteLayout>} />
-          <Route path="/docs" element={<SiteLayout><DocsPage /></SiteLayout>} />
-          <Route path="/help" element={<SiteLayout><HelpPage /></SiteLayout>} />
-          <Route path="/terms" element={<SiteLayout><TermsPage /></SiteLayout>} />
-          <Route path="/privacy" element={<SiteLayout><PrivacyPage /></SiteLayout>} />
+          <Route path="/" element={<Layout><LandingPage /></Layout>} />
+          <Route path="/pricing" element={<Layout><PricingPage /></Layout>} />
+          <Route path="/docs" element={<Layout><DocsPage /></Layout>} />
+          <Route path="/help" element={<Layout><HelpPage /></Layout>} />
+          <Route path="/terms" element={<Layout><TermsPage /></Layout>} />
+          <Route path="/privacy" element={<Layout><PrivacyPage /></Layout>} />
           
           <Route
             path="/login"
@@ -119,7 +120,6 @@ function App() {
           <Route
             path="/dev"
             element={
-              
                 <div className="container mx-auto p-4">
                   <h1 className="text-3xl font-bold">Development Playground</h1>
                   <p className="text-muted-foreground">
@@ -130,7 +130,6 @@ function App() {
                     <Toast />
                   </div>
                 </div>
-              
             }
           />
           
