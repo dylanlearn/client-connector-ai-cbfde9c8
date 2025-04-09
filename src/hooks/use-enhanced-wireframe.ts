@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { 
@@ -15,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface UseEnhancedWireframeParams extends WireframeGenerationParams {
   userInput?: string;
+  styleToken?: string;
 }
 
 export function useEnhancedWireframe() {
@@ -30,7 +30,6 @@ export function useEnhancedWireframe() {
   const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
-  // Load design memory
   const loadDesignMemory = useCallback(async (projectId?: string) => {
     if (!projectId) return null;
     
@@ -45,7 +44,6 @@ export function useEnhancedWireframe() {
     }
   }, []);
 
-  // Generate wireframe using the enhanced generator
   const generateWireframe = async (params: UseEnhancedWireframeParams) => {
     setIsGenerating(true);
     setError(null);
@@ -58,7 +56,6 @@ export function useEnhancedWireframe() {
         description: "Creating a highly structured design from your input...",
       });
       
-      // Convert parameters to the format expected by the generator
       const generationParams: WireframeGenerationParams = {
         description: params.userInput || params.description,
         projectId: params.projectId || uuidv4(),
@@ -70,7 +67,6 @@ export function useEnhancedWireframe() {
         ...params
       };
       
-      // Generate the wireframe
       const result = await EnhancedWireframeGenerator.generateWireframe(generationParams);
       
       if (!result.wireframe) {
@@ -103,7 +99,6 @@ export function useEnhancedWireframe() {
     }
   };
 
-  // Generate variations of the current wireframe
   const generateVariations = async (count = 2, variationType: 'creative' | 'layout' | 'style' | 'component' = 'creative') => {
     if (!currentWireframe) {
       toast({
@@ -163,7 +158,6 @@ export function useEnhancedWireframe() {
     }
   };
 
-  // Apply feedback to the current wireframe
   const applyFeedback = async (feedbackText: string) => {
     if (!currentWireframe) {
       toast({
@@ -219,7 +213,6 @@ export function useEnhancedWireframe() {
     }
   };
 
-  // Generate wireframe from intake form data
   const generateFromIntakeData = async (intakeData: any, projectId?: string) => {
     try {
       toast({
@@ -246,7 +239,6 @@ export function useEnhancedWireframe() {
     }
   };
 
-  // Analyze layout patterns using enhanced layout intelligence
   const analyzeLayout = async () => {
     if (!currentWireframe) {
       toast({
@@ -298,7 +290,6 @@ export function useEnhancedWireframe() {
     }
   };
 
-  // Save the current wireframe
   const saveWireframe = async (projectId: string, title?: string, description?: string) => {
     if (!currentWireframe) {
       toast({
@@ -315,14 +306,12 @@ export function useEnhancedWireframe() {
         description: "Storing wireframe in your project...",
       });
       
-      // Update title and description if provided
       const wireframeToSave = {
         ...currentWireframe,
         title: title || currentWireframe.title,
         description: description || currentWireframe.description
       };
       
-      // Use the AdvancedWireframeService to save the wireframe
       const result = await AdvancedWireframeService.saveWireframe(
         projectId,
         wireframeToSave.description || "Generated wireframe",
@@ -351,7 +340,6 @@ export function useEnhancedWireframe() {
     }
   };
 
-  // Select a variation to become the current wireframe
   const selectVariation = (variationIndex: number) => {
     if (variationIndex < 0 || variationIndex >= variations.length) {
       toast({
@@ -362,11 +350,9 @@ export function useEnhancedWireframe() {
       return;
     }
     
-    // Store the current wireframe as a variation
     const previousWireframe = currentWireframe;
     if (previousWireframe) {
       setVariations(prev => {
-        // Only add the previous wireframe if it's not already in variations
         if (!prev.some(v => v.id === previousWireframe.id)) {
           return [previousWireframe, ...prev.filter(v => v.id !== variations[variationIndex].id)];
         }
@@ -374,7 +360,6 @@ export function useEnhancedWireframe() {
       });
     }
     
-    // Update the current wireframe to the selected variation
     setCurrentWireframe(variations[variationIndex]);
     
     toast({
@@ -384,7 +369,6 @@ export function useEnhancedWireframe() {
   };
 
   return {
-    // State
     isGenerating,
     isApplyingFeedback,
     isGeneratingVariations,
@@ -396,7 +380,6 @@ export function useEnhancedWireframe() {
     layoutAnalysis,
     error,
     
-    // Actions
     generateWireframe,
     generateVariations,
     applyFeedback,
@@ -406,7 +389,6 @@ export function useEnhancedWireframe() {
     loadDesignMemory,
     selectVariation,
     
-    // State setters
     setCurrentWireframe,
     setVariations,
     setLayoutAnalysis

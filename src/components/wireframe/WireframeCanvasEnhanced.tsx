@@ -1,211 +1,72 @@
 
-import React, { useEffect, useState, useRef } from 'react';
-import { WireframeSection } from '@/types/wireframe';
-import { fabric } from 'fabric';
-import { componentToFabricObject } from './utils/fabric-converters';
-import GridSystem from './canvas/GridSystem';
-import { useWireframeStore } from '@/stores/wireframe-store';
-import { calculateSectionsBounds, findAlignmentGuides } from './utils/section-utils';
+import React from 'react';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
-interface WireframeCanvasEnhancedProps {
+export interface WireframeCanvasEnhancedProps {
   sections: WireframeSection[];
-  width?: number;
-  height?: number;
-  editable?: boolean;
-  showGrid?: boolean;
-  snapToGrid?: boolean;
+  width: number;
+  height: number;
+  editable: boolean;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  deviceType: 'desktop' | 'tablet' | 'mobile';
   responsiveMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionSelect?: (section: WireframeSection | null) => void;
+  onSectionClick?: (sectionId: string) => void;
+  onSectionChange?: (section: WireframeSection) => void;
+  scale?: number; // Add scale as an optional prop
 }
 
 export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = ({
   sections,
-  width = 1200,
-  height = 800,
-  editable = true,
-  showGrid = true,
-  snapToGrid = true,
+  width,
+  height,
+  editable,
+  showGrid,
+  snapToGrid,
+  deviceType,
   responsiveMode = false,
-  deviceType = 'desktop',
-  onSectionSelect
+  onSectionClick,
+  onSectionChange,
+  scale = 1 // Default scale to 1 if not provided
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-  const [selectedSection, setSelectedSection] = useState<WireframeSection | null>(null);
-  const [guidelines, setGuidelines] = useState<{ position: number; orientation: 'horizontal' | 'vertical' }[]>([]);
-  
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-      width,
-      height,
-      backgroundColor: '#ffffff',
-      selection: editable
-    });
-    
-    fabricCanvas.on('selection:created', (e) => {
-      const selected = e.selected?.[0];
-      if (selected && selected.data) {
-        const sectionId = selected.data.id;
-        const foundSection = sections.find(section => section.id === sectionId);
-        if (foundSection) {
-          setSelectedSection(foundSection);
-          if (onSectionSelect) {
-            onSectionSelect(foundSection);
-          }
-        }
-      }
-    });
-    
-    fabricCanvas.on('selection:cleared', () => {
-      setSelectedSection(null);
-      if (onSectionSelect) {
-        onSectionSelect(null);
-      }
-    });
-    
-    if (showGrid) {
-      // Grid will be rendered as SVG overlay
-    }
-    
-    setCanvas(fabricCanvas);
-    
-    return () => {
-      fabricCanvas.dispose();
-    };
-  }, [width, height, editable, onSectionSelect]);
-  
-  useEffect(() => {
-    if (!canvas) return;
-    
-    canvas.clear();
-    
-    console.log(`Rendering ${sections.length} sections on canvas with device type: ${deviceType}`);
-    
-    sections.forEach(section => {
-      const fabricObject = componentToFabricObject(section, {
-        deviceType,
-        interactive: editable
-      });
-      
-      if (fabricObject) {
-        canvas.add(fabricObject as unknown as fabric.Object);
-      } else {
-        console.warn(`Failed to convert section to fabric object: ${section.id} (${section.sectionType})`);
-      }
-    });
-    
-    // Auto-fit the content
-    if (sections.length > 0) {
-      try {
-        canvas.zoomToPoint(new fabric.Point(0, 0), 1);
-        canvas.renderAll();
-      } catch (error) {
-        console.error("Error rendering canvas:", error);
-      }
-    }
-  }, [canvas, sections, deviceType, editable]);
-  
-  useEffect(() => {
-    if (!canvas || !snapToGrid) return;
-    
-    const handleObjectMoving = (e: fabric.IEvent) => {
-      if (!e.target) return;
-      
-      const activeObj = e.target;
-      
-      if (snapToGrid) {
-        const gridSize = 10;
-        activeObj.set({
-          left: Math.round(activeObj.left! / gridSize) * gridSize,
-          top: Math.round(activeObj.top! / gridSize) * gridSize
-        });
-      }
-      
-      if (activeObj.data && sections.length > 1) {
-        const activeSectionId = activeObj.data.id;
-        const activeSection = sections.find(section => section.id === activeSectionId);
-        
-        if (activeSection) {
-          const guides = findAlignmentGuides(activeSection, sections);
-          setGuidelines(guides);
-        }
-      }
-    };
-    
-    canvas.on('object:moving', handleObjectMoving);
-    
-    return () => {
-      canvas.off('object:moving', handleObjectMoving);
-    };
-  }, [canvas, sections, snapToGrid]);
-  
-  useEffect(() => {
-    if (!canvas) return;
-    
-    const clearGuidelines = () => {
-      setGuidelines([]);
-    };
-    
-    canvas.on('mouse:up', clearGuidelines);
-    
-    return () => {
-      canvas.off('mouse:up', clearGuidelines);
-    };
-  }, [canvas]);
-  
+  // Placeholder implementation - you would want to replace this with your actual implementation
   return (
-    <div className="wireframe-canvas-enhanced relative w-full h-full">
-      <canvas ref={canvasRef} className="absolute top-0 left-0" />
-      
+    <div 
+      className="wireframe-canvas relative bg-white"
+      style={{ 
+        width: `${width}px`, 
+        height: `${height}px`,
+        transform: scale !== 1 ? `scale(${scale})` : undefined,
+        transformOrigin: 'top left'
+      }}
+    >
       {showGrid && (
-        <GridSystem
-          canvasWidth={width}
-          canvasHeight={height}
-          gridSize={10}
-          gridType="lines"
-          guidelines={guidelines}
-          visible={showGrid}
-        />
+        <div className="absolute inset-0 grid-pattern opacity-10" />
       )}
       
-      {guidelines.length > 0 && (
-        <svg
-          className="absolute top-0 left-0 pointer-events-none"
-          width={width}
-          height={height}
+      {sections.map((section) => (
+        <div
+          key={section.id}
+          className="absolute border border-dashed border-gray-300 bg-gray-50 p-4"
+          style={{
+            left: `${section.position?.x || 0}px`,
+            top: `${section.position?.y || 0}px`,
+            width: `${section.dimensions?.width || 300}px`,
+            height: `${section.dimensions?.height || 200}px`,
+            cursor: editable ? 'pointer' : 'default',
+            ...section.style // Apply any additional style properties
+          }}
+          onClick={() => onSectionClick && onSectionClick(section.id)}
         >
-          {guidelines.map((guide, index) => {
-            return guide.orientation === 'horizontal' ? (
-              <line
-                key={`h-${index}`}
-                x1={0}
-                y1={guide.position}
-                x2={width}
-                y2={guide.position}
-                stroke="#3b82f6"
-                strokeWidth={1}
-                strokeDasharray="4,2"
-              />
-            ) : (
-              <line
-                key={`v-${index}`}
-                x1={guide.position}
-                y1={0}
-                x2={guide.position}
-                y2={height}
-                stroke="#3b82f6"
-                strokeWidth={1}
-                strokeDasharray="4,2"
-              />
-            );
-          })}
-        </svg>
-      )}
+          <div className="font-medium">{section.name}</div>
+          <div className="text-sm text-gray-500">{section.sectionType}</div>
+          {section.components && section.components.length > 0 && (
+            <div className="mt-2 text-xs text-gray-400">
+              {section.components.length} component(s)
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
-
-export default WireframeCanvasEnhanced;

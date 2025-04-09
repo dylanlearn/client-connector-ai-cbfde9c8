@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
   WireframeGenerationParams, 
@@ -6,7 +5,7 @@ import {
   WireframeData,
   FeedbackInterpretation,
   FeedbackModificationResult
-} from '../wireframe-types';
+} from '../../../services/ai/wireframe/wireframe-types';
 import { wireframeGenerator } from './generator/wireframe-generator-service';
 import { AdvancedWireframeService } from './advanced-wireframe-service';
 import { WireframeFeedbackController } from './feedback/wireframe-feedback-controller';
