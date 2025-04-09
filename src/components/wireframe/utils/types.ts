@@ -94,3 +94,38 @@ export interface EnhancedGridConfig {
   showBreakpoints: boolean;
   responsiveMode: boolean;
 }
+
+// Wireframe data structure 
+export interface WireframeData {
+  id: string;
+  name: string;
+  sections: WireframeSection[];
+  projectId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Wireframe section structure
+export interface WireframeSection {
+  id: string;
+  name: string;
+  sectionType: string;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+  layout?: any;
+  position?: {
+    x: number;
+    y: number;
+  };
+  components?: any[];
+  responsive?: Record<string, any>;
+}
+
+// Grid guideline for alignment
+export interface GridGuideline {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'center' | 'edge' | 'distribution';
+}

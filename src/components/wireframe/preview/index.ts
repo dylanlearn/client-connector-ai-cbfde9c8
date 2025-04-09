@@ -27,7 +27,6 @@ export {
 // Export grid utilities
 export {
   type GridConfig,
-  type GridGuideline,
   type GridBreakpoint,
   DEFAULT_GRID_CONFIG,
   getResponsiveGridConfig,
@@ -36,3 +35,4 @@ export {
   calculateGridPositions,
   generateSnapGuidelines,
 } from '../utils/grid-utils';
+

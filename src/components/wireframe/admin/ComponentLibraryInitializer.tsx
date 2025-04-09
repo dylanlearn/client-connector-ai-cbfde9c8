@@ -18,8 +18,10 @@ const ComponentLibraryInitializer = () => {
   const heroComponentExists = componentTypes.some(type => type.name === 'Hero Section');
 
   const handleInitialize = async () => {
-    await initializeHeroComponentLibrary();
-    setIsInitialized(true);
+    const result = await initializeHeroComponentLibrary();
+    if (result) {
+      setIsInitialized(true);
+    }
   };
 
   return (
@@ -43,15 +45,15 @@ const ComponentLibraryInitializer = () => {
           <div>
             <h3 className="text-lg font-medium">Available Hero Variants:</h3>
             <p className="text-sm text-muted-foreground mb-2">
-              {heroVariants.length} hero variants will be imported to the database
+              {heroVariants?.length || 0} hero variants will be imported to the database
             </p>
             <div className="grid grid-cols-3 gap-2">
-              {heroVariants.slice(0, 6).map((variant, index) => (
+              {heroVariants?.slice(0, 6).map((variant, index) => (
                 <div key={index} className="border p-2 rounded-md text-xs">
                   {variant.variant}
                 </div>
               ))}
-              {heroVariants.length > 6 && (
+              {heroVariants && heroVariants.length > 6 && (
                 <div className="border p-2 rounded-md text-xs text-center">
                   +{heroVariants.length - 6} more
                 </div>

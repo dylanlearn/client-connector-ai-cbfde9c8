@@ -22,13 +22,17 @@ const FAQCTAInitializer = () => {
   const ctaComponentExists = componentTypes.some(type => type.name === 'CTA Section');
 
   const handleInitializeFAQ = async () => {
-    await initializeFAQComponentLibrary();
-    setFaqInitialized(true);
+    const result = await initializeFAQComponentLibrary();
+    if (result) {
+      setFaqInitialized(true);
+    }
   };
 
   const handleInitializeCTA = async () => {
-    await initializeCTAComponentLibrary();
-    setCtaInitialized(true);
+    const result = await initializeCTAComponentLibrary();
+    if (result) {
+      setCtaInitialized(true);
+    }
   };
 
   return (
@@ -42,15 +46,15 @@ const FAQCTAInitializer = () => {
             <div>
               <h3 className="text-lg font-medium">Available FAQ Variants:</h3>
               <p className="text-sm text-muted-foreground mb-2">
-                {faqVariants.length} FAQ variants will be imported to the database
+                {faqVariants?.length || 0} FAQ variants will be imported to the database
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {faqVariants.slice(0, 4).map((variant, index) => (
+                {faqVariants?.slice(0, 4).map((variant, index) => (
                   <div key={index} className="border p-2 rounded-md text-xs">
                     {variant.variant}
                   </div>
                 ))}
-                {faqVariants.length > 4 && (
+                {faqVariants && faqVariants.length > 4 && (
                   <div className="border p-2 rounded-md text-xs text-center">
                     +{faqVariants.length - 4} more
                   </div>
@@ -97,15 +101,15 @@ const FAQCTAInitializer = () => {
             <div>
               <h3 className="text-lg font-medium">Available CTA Variants:</h3>
               <p className="text-sm text-muted-foreground mb-2">
-                {ctaVariants.length} CTA variants will be imported to the database
+                {ctaVariants?.length || 0} CTA variants will be imported to the database
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {ctaVariants.slice(0, 4).map((variant, index) => (
+                {ctaVariants?.slice(0, 4).map((variant, index) => (
                   <div key={index} className="border p-2 rounded-md text-xs">
                     {variant.variant}
                   </div>
                 ))}
-                {ctaVariants.length > 4 && (
+                {ctaVariants && ctaVariants.length > 4 && (
                   <div className="border p-2 rounded-md text-xs text-center">
                     +{ctaVariants.length - 4} more
                   </div>

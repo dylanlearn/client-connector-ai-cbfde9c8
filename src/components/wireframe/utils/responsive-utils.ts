@@ -35,6 +35,18 @@ export const DEVICE_CONFIGS: Record<DeviceType, DeviceConfig> = {
   }
 };
 
+// Define breakpoint types
+export type BreakpointKey = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+// Define breakpoint values
+export const BREAKPOINT_VALUES: Record<BreakpointKey, number> = {
+  'sm': 640,
+  'md': 768,
+  'lg': 1024,
+  'xl': 1280,
+  '2xl': 1536
+};
+
 // Get device type from viewport width
 export function getDeviceTypeFromWidth(width: number): DeviceType {
   if (width < DEVICE_CONFIGS.tablet.breakpoint) {
@@ -43,6 +55,58 @@ export function getDeviceTypeFromWidth(width: number): DeviceType {
     return 'tablet';
   }
   return 'desktop';
+}
+
+// Function to get breakpoint for device
+export function getBreakpointForDevice(device: DeviceType): BreakpointKey {
+  switch (device) {
+    case 'mobile': return 'sm';
+    case 'tablet': return 'md';
+    case 'desktop': return 'lg';
+    default: return 'lg';
+  }
+}
+
+// Check if layout is fluid
+export function isFluidLayout(layoutType: string): boolean {
+  return ['fluid', 'responsive', 'adaptive'].includes(layoutType);
+}
+
+// Get responsive grid columns
+export function getResponsiveGridColumns(device: DeviceType, defaultColumns: number = 12): number {
+  switch (device) {
+    case 'mobile': return 4;
+    case 'tablet': return 8;
+    case 'desktop': return defaultColumns;
+    default: return defaultColumns;
+  }
+}
+
+// Get responsive gutter size
+export function getResponsiveGutterSize(device: DeviceType, defaultGutter: number = 16): number {
+  switch (device) {
+    case 'mobile': return Math.max(8, defaultGutter / 2);
+    case 'tablet': return Math.max(12, defaultGutter / 1.5);
+    case 'desktop': return defaultGutter;
+    default: return defaultGutter;
+  }
+}
+
+// Generate responsive Tailwind classes
+export function responsiveTailwindClasses(options: {
+  base: string;
+  sm?: string;
+  md?: string;
+  lg?: string;
+  xl?: string;
+}): string {
+  return [
+    options.base,
+    options.sm ? `sm:${options.sm}` : '',
+    options.md ? `md:${options.md}` : '',
+    options.lg ? `lg:${options.lg}` : '',
+    options.xl ? `xl:${options.xl}` : ''
+  ].filter(Boolean).join(' ');
 }
 
 // Apply responsive transformations to a component
@@ -114,6 +178,30 @@ export function applyResponsiveTransforms(
   return responsiveComponent;
 }
 
+// Get responsive styles for components
+export function getResponsiveStyles(baseStyles: Record<string, any>, device: DeviceType): Record<string, any> {
+  if (!baseStyles) return {};
+  
+  const responsiveStyles = { ...baseStyles };
+  
+  // Adjust styles based on device
+  if (device === 'mobile') {
+    // Decrease padding and margins by 50% for mobile
+    if (responsiveStyles.padding) responsiveStyles.padding = Math.round(responsiveStyles.padding * 0.5);
+    if (responsiveStyles.margin) responsiveStyles.margin = Math.round(responsiveStyles.margin * 0.5);
+    // Decrease font size by 20% for mobile
+    if (responsiveStyles.fontSize) responsiveStyles.fontSize = Math.round(responsiveStyles.fontSize * 0.8);
+  } else if (device === 'tablet') {
+    // Decrease padding and margins by 25% for tablet
+    if (responsiveStyles.padding) responsiveStyles.padding = Math.round(responsiveStyles.padding * 0.75);
+    if (responsiveStyles.margin) responsiveStyles.margin = Math.round(responsiveStyles.margin * 0.75);
+    // Decrease font size by 10% for tablet
+    if (responsiveStyles.fontSize) responsiveStyles.fontSize = Math.round(responsiveStyles.fontSize * 0.9);
+  }
+  
+  return responsiveStyles;
+}
+
 // Generate media query CSS for responsive designs
 export function generateMediaQueries(componentId: string, styles: Record<DeviceType, any>): string {
   let css = '';
@@ -176,3 +264,4 @@ export function matchesDevice(width: number, device: DeviceType): boolean {
       return false;
   }
 }
+

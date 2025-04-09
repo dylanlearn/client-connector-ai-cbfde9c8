@@ -2,6 +2,9 @@
 import { GridBreakpoint } from '../canvas/EnhancedGridSystem';
 import { ResponsiveOptions } from './responsive-utils';
 
+// Export the GridBreakpoint interface
+export { GridBreakpoint };
+
 export interface GridConfig {
   visible: boolean;
   size: number;
@@ -99,6 +102,87 @@ export function getResponsiveGridConfig(
   }
   
   return gridConfig;
+}
+
+// Generate snap guidelines for alignment
+export function generateSnapGuidelines(objects: any[], activeObject: any, tolerance: number = 10): GridGuideline[] {
+  const guidelines: GridGuideline[] = [];
+  
+  if (!activeObject || !objects.length) return guidelines;
+  
+  const activeBounds = {
+    left: activeObject.left,
+    top: activeObject.top,
+    right: activeObject.left + activeObject.width,
+    bottom: activeObject.top + activeObject.height,
+    centerX: activeObject.left + activeObject.width / 2,
+    centerY: activeObject.top + activeObject.height / 2
+  };
+  
+  objects.forEach(obj => {
+    if (obj === activeObject) return;
+    
+    const objBounds = {
+      left: obj.left,
+      top: obj.top,
+      right: obj.left + obj.width,
+      bottom: obj.top + obj.height,
+      centerX: obj.left + obj.width / 2,
+      centerY: obj.top + obj.height / 2
+    };
+    
+    // Check for horizontal alignments
+    if (Math.abs(activeBounds.top - objBounds.top) < tolerance) {
+      guidelines.push({
+        position: objBounds.top,
+        orientation: 'horizontal',
+        type: 'edge'
+      });
+    }
+    
+    if (Math.abs(activeBounds.bottom - objBounds.bottom) < tolerance) {
+      guidelines.push({
+        position: objBounds.bottom,
+        orientation: 'horizontal',
+        type: 'edge'
+      });
+    }
+    
+    if (Math.abs(activeBounds.centerY - objBounds.centerY) < tolerance) {
+      guidelines.push({
+        position: objBounds.centerY,
+        orientation: 'horizontal',
+        type: 'center'
+      });
+    }
+    
+    // Check for vertical alignments
+    if (Math.abs(activeBounds.left - objBounds.left) < tolerance) {
+      guidelines.push({
+        position: objBounds.left,
+        orientation: 'vertical',
+        type: 'edge'
+      });
+    }
+    
+    if (Math.abs(activeBounds.right - objBounds.right) < tolerance) {
+      guidelines.push({
+        position: objBounds.right,
+        orientation: 'vertical',
+        type: 'edge'
+      });
+    }
+    
+    if (Math.abs(activeBounds.centerX - objBounds.centerX) < tolerance) {
+      guidelines.push({
+        position: objBounds.centerX,
+        orientation: 'vertical',
+        type: 'center'
+      });
+    }
+  });
+  
+  return guidelines;
 }
 
 // Generate a grid system CSS for export
@@ -223,3 +307,4 @@ export function getBreakpointFromWidth(width: number, breakpoints: GridBreakpoin
   
   return null; // No matching breakpoint
 }
+

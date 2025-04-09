@@ -22,13 +22,17 @@ const NavFooterInitializer = () => {
   const footerComponentExists = componentTypes.some(type => type.name === 'Footer');
 
   const handleInitializeNavigation = async () => {
-    await initializeNavigationComponentLibrary();
-    setNavInitialized(true);
+    const result = await initializeNavigationComponentLibrary();
+    if (result) {
+      setNavInitialized(true);
+    }
   };
 
   const handleInitializeFooter = async () => {
-    await initializeFooterComponentLibrary();
-    setFooterInitialized(true);
+    const result = await initializeFooterComponentLibrary();
+    if (result) {
+      setFooterInitialized(true);
+    }
   };
 
   return (
@@ -42,15 +46,15 @@ const NavFooterInitializer = () => {
             <div>
               <h3 className="text-lg font-medium">Available Navigation Variants:</h3>
               <p className="text-sm text-muted-foreground mb-2">
-                {navigationVariants.length} Navigation variants will be imported to the database
+                {navigationVariants?.length || 0} Navigation variants will be imported to the database
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {navigationVariants.slice(0, 4).map((variant, index) => (
+                {navigationVariants?.slice(0, 4).map((variant, index) => (
                   <div key={index} className="border p-2 rounded-md text-xs">
                     {variant.variant}
                   </div>
                 ))}
-                {navigationVariants.length > 4 && (
+                {navigationVariants && navigationVariants.length > 4 && (
                   <div className="border p-2 rounded-md text-xs text-center">
                     +{navigationVariants.length - 4} more
                   </div>
@@ -97,15 +101,15 @@ const NavFooterInitializer = () => {
             <div>
               <h3 className="text-lg font-medium">Available Footer Variants:</h3>
               <p className="text-sm text-muted-foreground mb-2">
-                {footerVariants.length} Footer variants will be imported to the database
+                {footerVariants?.length || 0} Footer variants will be imported to the database
               </p>
               <div className="grid grid-cols-2 gap-2">
-                {footerVariants.slice(0, 4).map((variant, index) => (
+                {footerVariants?.slice(0, 4).map((variant, index) => (
                   <div key={index} className="border p-2 rounded-md text-xs">
                     {variant.variant}
                   </div>
                 ))}
-                {footerVariants.length > 4 && (
+                {footerVariants && footerVariants.length > 4 && (
                   <div className="border p-2 rounded-md text-xs text-center">
                     +{footerVariants.length - 4} more
                   </div>
