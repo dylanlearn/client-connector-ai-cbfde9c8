@@ -1,8 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { GridType } from '@/components/wireframe/canvas/EnhancedGridSystem';
-import { GridConfig, DEFAULT_GRID_CONFIG, GridBreakpoint } from '@/components/wireframe/utils/grid-utils';
-import { ResponsiveOptions, getResponsiveGridConfig } from '@/components/wireframe/utils/responsive-utils';
+import { GridConfig, DEFAULT_GRID_CONFIG, GridBreakpoint, getResponsiveGridConfig } from '@/components/wireframe/utils/grid-utils';
+import { ResponsiveOptions } from '@/components/wireframe/utils/responsive-utils';
 
 export interface UseGridSystemOptions {
   initialConfig?: Partial<GridConfig>;

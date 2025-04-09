@@ -45,9 +45,9 @@ export function getResponsiveLayout(
   
   // Get base layout
   const baseLayout = section.layout ? {
-    layout: section.layout.type || 'flex',
-    alignItems: section.layout.alignment || 'center',
-    justifyContent: section.layout.justifyContent || 'between',
+    layout: (section.layout.type || 'flex') as 'flex' | 'grid' | 'stack' | 'columns',
+    alignItems: (section.layout.alignment || 'center') as 'start' | 'center' | 'end' | 'stretch',
+    justifyContent: (section.layout.justifyContent || 'between') as 'start' | 'center' | 'end' | 'between' | 'around',
     columns: section.layout.columns || 1,
     gap: section.layout.gap || 16,
     wrap: section.layout.wrap !== false
@@ -58,7 +58,7 @@ export function getResponsiveLayout(
     return {
       ...baseLayout,
       ...section.responsive[device].layout
-    };
+    } as ResponsiveLayoutSettings;
   }
   
   // Device-specific defaults if no explicit settings
@@ -352,4 +352,105 @@ export function getResponsiveTailwindClasses(section: AdaptiveWireframeSection):
     ...tabletClasses,
     ...desktopClasses
   ].join(' ');
+}
+
+/**
+ * Calculate bounds for sections on a canvas
+ */
+export function calculateSectionsBounds(sections: WireframeSection[]) {
+  if (!sections || sections.length === 0) return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+  
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  
+  sections.forEach(section => {
+    // Use section's position and dimensions
+    const left = section.position?.x || 0;
+    const top = section.position?.y || 0;
+    const width = section.dimensions?.width || 200;
+    const height = section.dimensions?.height || 100;
+    
+    minX = Math.min(minX, left);
+    minY = Math.min(minY, top);
+    maxX = Math.max(maxX, left + width);
+    maxY = Math.max(maxY, top + height);
+  });
+  
+  return {
+    left: minX,
+    top: minY,
+    right: maxX,
+    bottom: maxY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
+}
+
+/**
+ * Find alignment guides for sections
+ */
+export function findAlignmentGuides(
+  activeSection: WireframeSection,
+  allSections: WireframeSection[],
+  snapThreshold = 10
+) {
+  const guides = {
+    horizontal: [],
+    vertical: []
+  };
+  
+  if (!activeSection || !activeSection.position) return guides;
+  
+  const activeBounds = {
+    left: activeSection.position.x,
+    top: activeSection.position.y,
+    right: activeSection.position.x + (activeSection.dimensions?.width || 0),
+    bottom: activeSection.position.y + (activeSection.dimensions?.height || 0),
+    centerX: activeSection.position.x + ((activeSection.dimensions?.width || 0) / 2),
+    centerY: activeSection.position.y + ((activeSection.dimensions?.height || 0) / 2)
+  };
+  
+  // Check against other sections
+  allSections.forEach(section => {
+    if (section.id === activeSection.id || !section.position) return;
+    
+    const sectionBounds = {
+      left: section.position.x,
+      top: section.position.y,
+      right: section.position.x + (section.dimensions?.width || 0),
+      bottom: section.position.y + (section.dimensions?.height || 0),
+      centerX: section.position.x + ((section.dimensions?.width || 0) / 2),
+      centerY: section.position.y + ((section.dimensions?.height || 0) / 2)
+    };
+    
+    // Check horizontal alignment: tops, centers, bottoms
+    if (Math.abs(activeBounds.top - sectionBounds.top) <= snapThreshold) {
+      guides.horizontal.push({ position: sectionBounds.top, type: 'top' });
+    }
+    
+    if (Math.abs(activeBounds.centerY - sectionBounds.centerY) <= snapThreshold) {
+      guides.horizontal.push({ position: sectionBounds.centerY, type: 'center' });
+    }
+    
+    if (Math.abs(activeBounds.bottom - sectionBounds.bottom) <= snapThreshold) {
+      guides.horizontal.push({ position: sectionBounds.bottom, type: 'bottom' });
+    }
+    
+    // Check vertical alignment: lefts, centers, rights
+    if (Math.abs(activeBounds.left - sectionBounds.left) <= snapThreshold) {
+      guides.vertical.push({ position: sectionBounds.left, type: 'left' });
+    }
+    
+    if (Math.abs(activeBounds.centerX - sectionBounds.centerX) <= snapThreshold) {
+      guides.vertical.push({ position: sectionBounds.centerX, type: 'center' });
+    }
+    
+    if (Math.abs(activeBounds.right - sectionBounds.right) <= snapThreshold) {
+      guides.vertical.push({ position: sectionBounds.right, type: 'right' });
+    }
+  });
+  
+  return guides;
 }
