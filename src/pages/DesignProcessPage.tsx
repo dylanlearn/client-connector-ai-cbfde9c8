@@ -9,10 +9,21 @@ import DesignProcessStatus from '@/components/design-process/DesignProcessStatus
 import ClientDesignIntake from '@/components/design-process/ClientDesignIntake';
 import DesignBriefGenerator from '@/components/design-process/DesignBriefGenerator';
 import EnhancedWireframeStudio from '@/components/wireframe/EnhancedWireframeStudio';
+import { v4 as uuidv4 } from 'uuid';
 
 const DesignProcessPage: React.FC = () => {
   const { currentStage, resetProcess } = useDesignProcess();
   const navigate = useNavigate();
+  
+  // Generate a consistent project ID for this design process
+  const designProcessProjectId = React.useMemo(() => {
+    const storedId = localStorage.getItem('designProcessProjectId');
+    if (storedId) return storedId;
+    
+    const newId = uuidv4();
+    localStorage.setItem('designProcessProjectId', newId);
+    return newId;
+  }, []);
   
   const renderStageContent = () => {
     switch (currentStage) {
@@ -21,8 +32,7 @@ const DesignProcessPage: React.FC = () => {
       case 'analysis':
         return <DesignBriefGenerator />;
       case 'wireframe':
-        // Using placeholder projectId, in a real app this would come from context or params
-        return <EnhancedWireframeStudio projectId="design-process" />;
+        return <EnhancedWireframeStudio projectId={designProcessProjectId} />;
       case 'moodboard':
         // This would be implemented in a real application
         return (

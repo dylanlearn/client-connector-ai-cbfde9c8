@@ -1,140 +1,55 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { WireframeData } from '@/types/wireframe';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Clipboard, Check } from 'lucide-react';
 
-export interface WireframeDataVisualizerProps {
-  wireframeData: WireframeData;
-  title?: string;
-  showSections?: boolean;
-  showColorScheme?: boolean;
-  showTypography?: boolean;
+interface WireframeDataVisualizerProps {
+  wireframeData: any;
 }
 
-const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({
-  wireframeData,
-  title,
-  showSections = true,
-  showColorScheme = true,
-  showTypography = true
-}) => {
+const WireframeDataVisualizer: React.FC<WireframeDataVisualizerProps> = ({ wireframeData }) => {
+  const [copied, setCopied] = useState(false);
+
   if (!wireframeData) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No Wireframe Data</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No wireframe data is available to display</p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+        <p className="text-muted-foreground">No wireframe data available</p>
+      </div>
     );
   }
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(JSON.stringify(wireframeData, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title || wireframeData.title || 'Wireframe Data'}</CardTitle>
-        {wireframeData.description && (
-          <p className="text-muted-foreground">{wireframeData.description}</p>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {showColorScheme && wireframeData.colorScheme && (
-            <div>
-              <h3 className="font-medium mb-2">Color Scheme</h3>
-              <Separator className="mb-3" />
-              <div className="grid grid-cols-4 gap-2">
-                <div className="flex flex-col items-center">
-                  <div 
-                    className="w-12 h-12 rounded-md mb-1" 
-                    style={{ backgroundColor: wireframeData.colorScheme.primary }}
-                  />
-                  <span className="text-xs">Primary</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div 
-                    className="w-12 h-12 rounded-md mb-1" 
-                    style={{ backgroundColor: wireframeData.colorScheme.secondary }}
-                  />
-                  <span className="text-xs">Secondary</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div 
-                    className="w-12 h-12 rounded-md mb-1" 
-                    style={{ backgroundColor: wireframeData.colorScheme.accent }}
-                  />
-                  <span className="text-xs">Accent</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div 
-                    className="w-12 h-12 rounded-md mb-1 border" 
-                    style={{ backgroundColor: wireframeData.colorScheme.background }}
-                  />
-                  <span className="text-xs">Background</span>
-                </div>
-              </div>
-            </div>
+    <div className="wireframe-data-visualizer">
+      <div className="flex justify-end mb-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleCopy} 
+          className="flex items-center"
+        >
+          {copied ? (
+            <>
+              <Check className="h-4 w-4 mr-2" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Clipboard className="h-4 w-4 mr-2" />
+              Copy JSON
+            </>
           )}
-          
-          {showTypography && wireframeData.typography && (
-            <div>
-              <h3 className="font-medium mb-2">Typography</h3>
-              <Separator className="mb-3" />
-              <div className="space-y-2">
-                <div>
-                  <span className="text-xs text-muted-foreground">Headings:</span>
-                  <p className="font-medium" style={{ fontFamily: wireframeData.typography.headings }}>
-                    {wireframeData.typography.headings}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground">Body:</span>
-                  <p style={{ fontFamily: wireframeData.typography.body }}>
-                    {wireframeData.typography.body}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {showSections && wireframeData.sections && wireframeData.sections.length > 0 && (
-            <div>
-              <h3 className="font-medium mb-2">Sections ({wireframeData.sections.length})</h3>
-              <Separator className="mb-3" />
-              <div className="space-y-2">
-                {wireframeData.sections.map((section, index) => (
-                  <div key={section.id || index} className="border rounded-md p-2">
-                    <div className="flex justify-between items-center">
-                      <p className="font-medium">{section.name || `Section ${index + 1}`}</p>
-                      <Badge variant="outline">{section.sectionType}</Badge>
-                    </div>
-                    {section.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{section.description}</p>
-                    )}
-                    {section.components && (
-                      <p className="text-xs mt-2">
-                        Components: {section.components.length}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {wireframeData.styleToken && (
-            <div>
-              <h3 className="font-medium mb-2">Style</h3>
-              <Badge>{wireframeData.styleToken}</Badge>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </Button>
+      </div>
+      <pre className="p-4 rounded-md bg-muted/50 overflow-auto max-h-[600px] text-xs">
+        <code>{JSON.stringify(wireframeData, null, 2)}</code>
+      </pre>
+    </div>
   );
 };
 

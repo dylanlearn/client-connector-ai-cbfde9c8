@@ -6,7 +6,6 @@ import App from "./App";
 import Dashboard from "./pages/Dashboard";
 import { Settings } from "./pages/settings";
 import { ProjectDetailPage } from "./pages/project-detail/ProjectDetailPage";
-import AdvancedWireframeGeneratorPage from "./pages/project-detail/AdvancedWireframeGeneratorPage";
 import NotFound from "./pages/NotFound";
 import DesignPicker from "./pages/DesignPicker";
 import Login from "./pages/Login";
@@ -20,10 +19,9 @@ import WebsiteAnalyzer from "./pages/design-analysis/WebsiteAnalyzer";
 import FeedbackAnalysis from "./pages/FeedbackAnalysis";
 import AIDesignSuggestions from "./pages/AIDesignSuggestions";
 import Analytics from "./pages/Analytics";
-import WireframeGenerator from "./pages/WireframeGenerator";
 import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
-import { AdvancedWireframeGenerator } from '@/components/wireframe';
+import WireframeStudioPage from "./pages/WireframeStudioPage";
 
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
@@ -77,13 +75,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: '/',
-        element: (
-          <AdvancedWireframeGenerator 
-            projectId={demoProjectId} 
-            onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
-            onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}
-          />
-        ),
+        element: <WireframeStudioPage />,
       },
       {
         path: '/dashboard',
@@ -102,8 +94,16 @@ const router = createBrowserRouter([
         element: <ProtectedRoute><ProjectDetailPage /></ProtectedRoute>,
       },
       {
-        path: '/project/:projectId/advanced-wireframe',
-        element: <ProtectedRoute><AdvancedWireframeGeneratorPage /></ProtectedRoute>,
+        path: '/project/:projectId/wireframe-studio',
+        element: <ProtectedRoute><WireframeStudioPage /></ProtectedRoute>,
+      },
+      {
+        path: '/wireframe-studio',
+        element: <WireframeStudioPage />,
+      },
+      {
+        path: '/wireframe-studio/:projectId',
+        element: <WireframeStudioPage />,
       },
       {
         path: '/design-picker',
@@ -128,10 +128,6 @@ const router = createBrowserRouter([
       {
         path: '/analytics',
         element: <ProtectedRoute><Analytics /></ProtectedRoute>,
-      },
-      {
-        path: '/wireframe-generator',
-        element: <ProtectedRoute><WireframeGenerator /></ProtectedRoute>,
       },
       {
         path: '/clients',
