@@ -53,16 +53,23 @@ export interface SectionRenderingOptions {
 
 // Canvas configuration for wireframes
 export interface WireframeCanvasConfig {
+  // Canvas dimensions
   width: number;
   height: number;
+  
+  // Viewport settings
   zoom: number;
   panOffset: { x: number; y: number };
+  
+  // Grid and snap settings
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
-  backgroundColor: string;
   gridType: 'lines' | 'dots' | 'columns';
   snapTolerance: number;
+  
+  // Visual settings
+  backgroundColor: string;
   showSmartGuides: boolean;
 }
 

@@ -58,16 +58,23 @@ export function useFabric(options: UseFabricOptions = {}) {
   
   // Define the canvas configuration with all required properties
   const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
+    // Canvas dimensions
     width: initialConfig.width || storeCanvasSettings.width || 1200,
     height: initialConfig.height || storeCanvasSettings.height || 800,
+    
+    // Viewport settings
     zoom: initialConfig.zoom || storeCanvasSettings.zoom || 1,
     panOffset: initialConfig.panOffset || storeCanvasSettings.panOffset || { x: 0, y: 0 },
+    
+    // Grid and snap settings
     showGrid: initialConfig.showGrid !== undefined ? initialConfig.showGrid : storeCanvasSettings.showGrid !== undefined ? storeCanvasSettings.showGrid : true,
     snapToGrid: initialConfig.snapToGrid !== undefined ? initialConfig.snapToGrid : storeCanvasSettings.snapToGrid !== undefined ? storeCanvasSettings.snapToGrid : true,
     gridSize: initialConfig.gridSize || storeCanvasSettings.gridSize || 8,
-    backgroundColor: initialConfig.backgroundColor || storeCanvasSettings.backgroundColor || '#ffffff',
     gridType: initialConfig.gridType || storeCanvasSettings.gridType || 'lines',
     snapTolerance: initialConfig.snapTolerance || storeCanvasSettings.snapTolerance || 5,
+    
+    // Visual settings
+    backgroundColor: initialConfig.backgroundColor || storeCanvasSettings.backgroundColor || '#ffffff',
     showSmartGuides: initialConfig.showSmartGuides !== undefined ? initialConfig.showSmartGuides : storeCanvasSettings.showSmartGuides !== undefined ? storeCanvasSettings.showSmartGuides : false
   });
 

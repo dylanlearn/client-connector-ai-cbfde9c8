@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig, SectionRenderingOptions } from '@/components/wireframe/utils/types';
@@ -200,7 +199,6 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({
         };
       }
       
-      // Create complete rendering options with all required properties
       const renderOptions: SectionRenderingOptions = {
         showBorders: true,
         showLabels: true,
