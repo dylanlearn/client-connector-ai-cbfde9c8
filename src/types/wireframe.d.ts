@@ -34,7 +34,7 @@ export interface WireframeSection {
     gap?: number;
     wrap?: boolean;
     [key: string]: any;
-  } | string; // Added string as a potential type for layout
+  } | string; // This allows the layout to be a string
   layoutType?: string;
   positionOrder?: number;
   componentVariant?: string;
@@ -173,12 +173,12 @@ export interface WireframeHistoryState {
 export interface WireframeCanvasConfig {
   width: number;
   height: number;
+  zoom: number;
+  panOffset: { x: number, y: number };
   showGrid?: boolean;
   snapToGrid?: boolean;
   gridSize?: number;
   backgroundColor?: string;
-  zoom?: number;
-  panOffset?: { x: number, y: number };
   gridType?: 'lines' | 'dots' | 'columns';
   snapTolerance?: number;
   showSmartGuides?: boolean;
