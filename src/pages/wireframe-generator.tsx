@@ -5,7 +5,7 @@ import { ComponentRegistration } from "@/components/wireframe/registry/Component
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
-import { AdvancedWireframeGenerator } from "@/components/wireframe";
+import { EnhancedWireframeGenerator } from "@/components/wireframe"; // Updated import
 import { v4 as uuidv4 } from "uuid";
 import WireframeTest from "@/components/wireframe/WireframeTest";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,7 +43,7 @@ const WireframeGenerator = () => {
           
           <TabsContent value="generator">
             <TooltipProvider>
-              <AdvancedWireframeGenerator 
+              <EnhancedWireframeGenerator 
                 projectId={projectId}
                 viewMode="editor"
               />

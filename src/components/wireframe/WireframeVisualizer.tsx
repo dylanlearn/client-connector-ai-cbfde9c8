@@ -2,7 +2,7 @@
 import React from 'react';
 import ComponentRenderer from './renderers/ComponentRenderer';
 import { cn } from '@/lib/utils';
-import { WireframeSection } from '@/types/wireframe';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeVisualizerProps {
   wireframe: {
@@ -10,7 +10,7 @@ export interface WireframeVisualizerProps {
     title: string;
     description?: string;
     imageUrl?: string;
-    sections: Array<WireframeSection>; // Use the correct type directly
+    sections: Array<WireframeSection>;
     version?: string;
     lastUpdated?: string;
   };

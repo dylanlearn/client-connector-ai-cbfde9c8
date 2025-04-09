@@ -22,14 +22,12 @@ import Analytics from "./pages/Analytics";
 import WireframeGenerator from "./pages/WireframeGenerator";
 import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
-import { AdvancedWireframeGenerator } from '@/components/wireframe';
+import { EnhancedWireframeGenerator } from '@/components/wireframe';
 
-// Define type augmentation for window object
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
 }
 
-// Add debug helper
 if (typeof window !== 'undefined') {
   (window as WindowWithAdminRoutes).checkAdminRoutes = () => {
     console.log('Admin routes check:');
@@ -40,13 +38,10 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Generate a stable UUID for demo purposes (it will be consistent between renders)
 const getDemoProjectId = (): string => {
-  // We could use localStorage to keep this consistent across sessions
   const storedId = typeof localStorage !== 'undefined' ? localStorage.getItem('demoProjectId') : null;
   
   if (storedId) {
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (uuidRegex.test(storedId)) {
       return storedId;
@@ -82,7 +77,7 @@ const router = createBrowserRouter([
       {
         path: '/',
         element: (
-          <AdvancedWireframeGenerator 
+          <EnhancedWireframeGenerator 
             projectId={demoProjectId} 
             onWireframeGenerated={(wireframe) => console.log("Wireframe generated:", wireframe)}
             onWireframeSaved={(wireframe) => console.log("Wireframe saved:", wireframe)}

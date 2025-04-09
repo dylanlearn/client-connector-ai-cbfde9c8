@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeCanvasEnhancedProps {
@@ -44,29 +44,38 @@ export const WireframeCanvasEnhanced: React.FC<WireframeCanvasEnhancedProps> = (
         <div className="absolute inset-0 grid-pattern opacity-10" />
       )}
       
-      {sections.map((section) => (
-        <div
-          key={section.id}
-          className="absolute border border-dashed border-gray-300 bg-gray-50 p-4"
-          style={{
-            left: `${section.position?.x || 0}px`,
-            top: `${section.position?.y || 0}px`,
-            width: `${section.dimensions?.width || 300}px`,
-            height: `${section.dimensions?.height || 200}px`,
-            cursor: editable ? 'pointer' : 'default',
-            ...section.style // Apply any additional style properties
-          }}
-          onClick={() => onSectionClick && onSectionClick(section.id)}
-        >
-          <div className="font-medium">{section.name}</div>
-          <div className="text-sm text-gray-500">{section.sectionType}</div>
-          {section.components && section.components.length > 0 && (
-            <div className="mt-2 text-xs text-gray-400">
-              {section.components.length} component(s)
-            </div>
-          )}
-        </div>
-      ))}
+      {sections.map((section) => {
+        // Define a properly typed style object
+        const sectionStyle: CSSProperties = {
+          left: `${section.position?.x || 0}px`,
+          top: `${section.position?.y || 0}px`,
+          width: `${section.dimensions?.width || 300}px`,
+          height: `${section.dimensions?.height || 200}px`,
+          cursor: editable ? 'pointer' : 'default',
+        };
+        
+        // If section.style exists, merge it into sectionStyle
+        if (section.style) {
+          Object.assign(sectionStyle, section.style);
+        }
+        
+        return (
+          <div
+            key={section.id}
+            className="absolute border border-dashed border-gray-300 bg-gray-50 p-4"
+            style={sectionStyle}
+            onClick={() => onSectionClick && onSectionClick(section.id)}
+          >
+            <div className="font-medium">{section.name}</div>
+            <div className="text-sm text-gray-500">{section.sectionType}</div>
+            {section.components && section.components.length > 0 && (
+              <div className="mt-2 text-xs text-gray-400">
+                {section.components.length} component(s)
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
