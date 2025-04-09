@@ -1,26 +1,28 @@
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import PropertyPanel from './PropertyPanel';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { 
-  ZoomIn, 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ColorPicker } from '@/components/ui/colorpicker';
+import {
+  ZoomIn,
   ZoomOut,
-  RotateCcw, 
-  Grid, 
-  Layers, 
-  Trash2, 
-  Save, 
-  DownloadCloud,
-  Upload,
+  Save,
+  Download,
+  Grid,
+  Home,
   Undo,
   Redo,
   Magnet,
-  Copy,
-  ClipboardCopy
+  Eraser
 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import PropertyPanel from './PropertyPanel';
 import { cn } from '@/lib/utils';
 
 interface FabricDesignCanvasProps {
@@ -50,7 +52,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
   const [historyPosition, setHistoryPosition] = useState(-1);
   const [history, setHistory] = useState<string[]>([]);
   
-  // Canvas configuration with defaults and provided overrides
   const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
     width: width,
     height: height,
@@ -67,7 +68,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     ...(initialCanvasConfig || {})
   });
   
-  // Initialize fabric canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -75,22 +75,19 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
       width: canvasConfig.width,
       height: canvasConfig.height,
       backgroundColor: canvasConfig.backgroundColor,
-      selection: true // Allow multiple selection with the mouse
+      selection: true
     });
     
     setFabricCanvas(canvas);
     
-    // Save initial state to history
     const initialJson = JSON.stringify(canvas.toJSON());
     setHistory([initialJson]);
     setHistoryPosition(0);
     
-    // Call onCanvasReady callback if provided
     if (onCanvasReady) {
       onCanvasReady(canvas);
     }
     
-    // Draw grid if enabled
     if (canvasConfig.showGrid) {
       drawGrid(canvas);
     }
@@ -100,7 +97,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     };
   }, [canvasConfig.width, canvasConfig.height, canvasConfig.backgroundColor, onCanvasReady]);
   
-  // Add event listeners
   useEffect(() => {
     if (!fabricCanvas) return;
     
@@ -144,9 +140,7 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     };
   }, [fabricCanvas, onSelectionChanged, onCanvasChanged]);
   
-  // Draw grid lines
   const drawGrid = (canvas: fabric.Canvas) => {
-    // Remove any existing grid lines
     const existingGridLines = canvas.getObjects().filter((obj) => {
       return obj.data?.type === 'grid';
     });
@@ -155,7 +149,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
       canvas.remove(line);
     });
     
-    // Skip if grid is not shown
     if (!canvasConfig.showGrid) return;
     
     const gridSize = canvasConfig.gridSize;
@@ -163,7 +156,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     const height = canvas.getHeight();
     
     if (canvasConfig.gridType === 'lines') {
-      // Draw vertical lines
       for (let i = 0; i < width / gridSize; i++) {
         const line = new fabric.Line([i * gridSize, 0, i * gridSize, height], {
           stroke: canvasConfig.gridColor || '#e0e0e0',
@@ -176,7 +168,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
         canvas.sendToBack(line);
       }
       
-      // Draw horizontal lines
       for (let i = 0; i < height / gridSize; i++) {
         const line = new fabric.Line([0, i * gridSize, width, i * gridSize], {
           stroke: canvasConfig.gridColor || '#e0e0e0',
@@ -189,7 +180,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
         canvas.sendToBack(line);
       }
     } else if (canvasConfig.gridType === 'dots') {
-      // Draw dots at grid intersections
       for (let i = 0; i <= width / gridSize; i++) {
         for (let j = 0; j <= height / gridSize; j++) {
           const dot = new fabric.Circle({
@@ -207,13 +197,11 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
         }
       }
     } else if (canvasConfig.gridType === 'columns') {
-      // Draw a column-based grid (like in design systems)
-      const columns = 12; // Standard 12-column grid
-      const gutter = 20; // Gutter between columns
-      const margin = 50; // Page margin
+      const columns = 12;
+      const gutter = 20;
+      const margin = 50;
       const columnWidth = (width - 2 * margin - (columns - 1) * gutter) / columns;
       
-      // Draw margin lines
       const leftMargin = new fabric.Line([margin, 0, margin, height], {
         stroke: canvasConfig.gridColor || '#e0e0e0',
         strokeWidth: 2,
@@ -233,10 +221,8 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
       canvas.add(leftMargin);
       canvas.add(rightMargin);
       
-      // Draw column lines
       let x = margin;
       for (let i = 0; i < columns; i++) {
-        // Right edge of column
         x += columnWidth;
         const colLine = new fabric.Line([x, 0, x, height], {
           stroke: canvasConfig.gridColor || '#e0e0e0',
@@ -247,7 +233,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
         });
         canvas.add(colLine);
         
-        // Only add gutter line if it's not the last column
         if (i < columns - 1) {
           x += gutter;
           const gutterLine = new fabric.Line([x, 0, x, height], {
@@ -266,7 +251,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     canvas.renderAll();
   };
   
-  // Add object to canvas
   const addShape = (type: string) => {
     if (!fabricCanvas) return;
     
@@ -311,7 +295,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
         fill: '#1F2937'
       });
     } else {
-      // Default to rectangle if unknown type
       shape = new fabric.Rect({
         left: 50,
         top: 50,
@@ -324,7 +307,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     fabricCanvas.add(shape);
     fabricCanvas.setActiveObject(shape);
     
-    // Snap to grid if enabled
     if (canvasConfig.snapToGrid) {
       snapObjectToGrid(shape);
     }
@@ -337,13 +319,11 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     }
   };
   
-  // Snap an object to the grid
   const snapObjectToGrid = (object: fabric.Object) => {
     if (!canvasConfig.snapToGrid || !object) return;
     
     const gridSize = canvasConfig.gridSize;
     
-    // Snap to grid
     object.set({
       left: Math.round(object.left! / gridSize) * gridSize,
       top: Math.round(object.top! / gridSize) * gridSize
@@ -362,7 +342,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     }
   };
   
-  // Toggle grid visibility
   const toggleGrid = () => {
     const newShowGrid = !canvasConfig.showGrid;
     
@@ -381,7 +360,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Toggle snap to grid
   const toggleSnapToGrid = () => {
     const newSnapToGrid = !canvasConfig.snapToGrid;
     
@@ -396,7 +374,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Zoom in
   const zoomIn = () => {
     if (!fabricCanvas) return;
     
@@ -409,7 +386,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Zoom out
   const zoomOut = () => {
     if (!fabricCanvas) return;
     
@@ -422,7 +398,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Reset zoom
   const resetZoom = () => {
     if (!fabricCanvas) return;
     
@@ -436,7 +411,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Delete selected object
   const deleteObject = () => {
     if (!fabricCanvas) return;
     
@@ -461,7 +435,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     }
   };
   
-  // Duplicate selected object
   const duplicateObject = () => {
     if (!fabricCanvas || !selectedObject) return;
     
@@ -475,9 +448,7 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
       });
       
       if (cloned.type === 'activeSelection') {
-        // @ts-ignore
         cloned.canvas = fabricCanvas;
-        // @ts-ignore
         cloned.forEachObject((obj: fabric.Object) => {
           fabricCanvas.add(obj);
         });
@@ -503,13 +474,11 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Add to history stack
   const addToHistory = () => {
     if (!fabricCanvas) return;
     
     const json = JSON.stringify(fabricCanvas.toJSON());
     
-    // If we're not at the end of history, remove everything after current position
     if (historyPosition < history.length - 1) {
       const newHistory = history.slice(0, historyPosition + 1);
       setHistory([...newHistory, json]);
@@ -523,7 +492,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     setCanRedo(false);
   };
   
-  // Undo last action
   const undo = () => {
     if (!fabricCanvas || historyPosition <= 0) return;
     
@@ -543,7 +511,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Redo previously undone action
   const redo = () => {
     if (!fabricCanvas || historyPosition >= history.length - 1) return;
     
@@ -563,7 +530,6 @@ const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
     });
   };
   
-  // Export canvas as JSON
   const exportCanvas = () => {
     if (!fabricCanvas) return;
     

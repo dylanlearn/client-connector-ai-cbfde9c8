@@ -1,307 +1,230 @@
 
-import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Slider } from "@/components/ui/slider";
-import { ColorPicker } from "@/components/ui/colorpicker";
-import { fabric } from "fabric";
+import React, { useState, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ColorPicker } from '@/components/ui/colorpicker';
 
 export interface PropertyPanelProps {
-  selectedObject: fabric.Object;
-  fabricCanvas: fabric.Canvas | null;
+  selectedObject: any;
+  fabricCanvas: any;
 }
 
-const PropertyPanel: React.FC<PropertyPanelProps> = ({
-  selectedObject,
-  fabricCanvas
-}) => {
-  const [objectType, setObjectType] = useState<string>("");
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  const [fill, setFill] = useState("#000000");
-  const [stroke, setStroke] = useState("#000000");
-  const [strokeWidth, setStrokeWidth] = useState(0);
-  const [opacity, setOpacity] = useState(100);
-  const [text, setText] = useState("");
-  const [fontSize, setFontSize] = useState(16);
-  const [fontFamily, setFontFamily] = useState("Arial");
-
-  useEffect(() => {
-    if (!selectedObject) return;
-
-    // Determine object type
-    let type = selectedObject.type || "unknown";
-    setObjectType(type);
-
-    // Set position
-    setPosition({
-      x: Math.round(selectedObject.left || 0),
-      y: Math.round(selectedObject.top || 0)
-    });
-
-    // Set size
-    if ("width" in selectedObject && "height" in selectedObject) {
-      setSize({
-        width: Math.round(selectedObject.width || 0),
-        height: Math.round(selectedObject.height || 0)
-      });
-    } else if ("radius" in selectedObject) {
-      const radius = (selectedObject as fabric.Circle).radius || 0;
-      setSize({
-        width: Math.round(radius * 2),
-        height: Math.round(radius * 2)
-      });
-    }
-
-    // Set appearance
-    setFill(selectedObject.fill?.toString() || "#000000");
-    setStroke(selectedObject.stroke?.toString() || "#000000");
-    setStrokeWidth(selectedObject.strokeWidth || 0);
-    setOpacity(Math.round((selectedObject.opacity || 1) * 100));
-
-    // Set text properties if it's a text object
-    if (type === "textbox" || type === "text" || type === "i-text") {
-      const textObj = selectedObject as fabric.Textbox;
-      setText(textObj.text || "");
-      setFontSize(textObj.fontSize || 16);
-      setFontFamily(textObj.fontFamily || "Arial");
-    }
-  }, [selectedObject]);
-
-  const updateProperty = (property: string, value: any) => {
+const PropertyPanel: React.FC<PropertyPanelProps> = ({ selectedObject, fabricCanvas }) => {
+  const [objectProperties, setObjectProperties] = useState(getObjectProperties(selectedObject));
+  
+  // Get properties from the selected object
+  function getObjectProperties(obj: any) {
+    if (!obj) return {};
+    
+    const props: any = {};
+    
+    if (obj.width !== undefined) props.width = obj.width;
+    if (obj.height !== undefined) props.height = obj.height;
+    if (obj.left !== undefined) props.left = obj.left;
+    if (obj.top !== undefined) props.top = obj.top;
+    if (obj.fill !== undefined) props.fill = obj.fill;
+    if (obj.stroke !== undefined) props.stroke = obj.stroke;
+    if (obj.strokeWidth !== undefined) props.strokeWidth = obj.strokeWidth;
+    if (obj.angle !== undefined) props.angle = obj.angle;
+    if (obj.radius !== undefined) props.radius = obj.radius;
+    if (obj.text !== undefined) props.text = obj.text;
+    if (obj.fontSize !== undefined) props.fontSize = obj.fontSize;
+    
+    return props;
+  }
+  
+  // Update object when property changes
+  const handlePropertyChange = useCallback((property: string, value: any) => {
     if (!selectedObject || !fabricCanvas) return;
-
+    
+    // Update local state
+    setObjectProperties((prevProps) => ({
+      ...prevProps,
+      [property]: value
+    }));
+    
+    // Update fabric object
     const updateObj: any = {};
     updateObj[property] = value;
-
-    // Special handling for radius in circles
-    if (property === "width" && objectType === "circle") {
-      updateObj["radius"] = value / 2;
-      delete updateObj["width"];
-    }
-
-    // Update the object
     selectedObject.set(updateObj);
-    fabricCanvas.renderAll();
-  };
-
-  const updatePosition = (key: "left" | "top", value: number) => {
-    if (!selectedObject || !fabricCanvas) return;
-
-    const newPos = { ...position };
-    newPos[key === "left" ? "x" : "y"] = value;
-    setPosition(newPos);
-
-    const updateObj: any = {};
-    updateObj[key] = value;
-    selectedObject.set(updateObj);
-    fabricCanvas.renderAll();
-  };
-
-  const updateSize = (key: "width" | "height", value: number) => {
-    if (!selectedObject || !fabricCanvas) return;
-
-    const newSize = { ...size };
-    newSize[key] = value;
-    setSize(newSize);
-
-    if (objectType === "circle" && key === "width") {
-      selectedObject.set({ radius: value / 2 });
-    } else {
-      const updateObj: any = {};
-      updateObj[key] = value;
-      selectedObject.set(updateObj);
-    }
-
-    fabricCanvas.renderAll();
-  };
-
+    fabricCanvas.requestRenderAll();
+  }, [selectedObject, fabricCanvas]);
+  
+  if (!selectedObject || !fabricCanvas) {
+    return <div className="p-4 text-center text-muted-foreground">No object selected</div>;
+  }
+  
   return (
-    <Card className="w-full md:w-72 h-fit">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">
-          {objectType.charAt(0).toUpperCase() + objectType.slice(1)} Properties
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="position" className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="position" className="flex-1">
-              Position
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex-1">
-              Style
-            </TabsTrigger>
-            {(objectType === "textbox" || objectType === "text" || objectType === "i-text") && (
-              <TabsTrigger value="text" className="flex-1">
-                Text
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="position" className="space-y-4 pt-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label htmlFor="position-x">X Position</Label>
-                <Input
-                  id="position-x"
-                  type="number"
-                  value={position.x}
-                  onChange={(e) => updatePosition("left", parseInt(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="position-y">Y Position</Label>
-                <Input
-                  id="position-y"
-                  type="number"
-                  value={position.y}
-                  onChange={(e) => updatePosition("top", parseInt(e.target.value))}
-                />
-              </div>
+    <div className="property-panel border rounded-lg p-4 bg-background">
+      <h3 className="text-lg font-medium mb-4">Properties</h3>
+      
+      <Tabs defaultValue="position">
+        <TabsList className="mb-4">
+          <TabsTrigger value="position">Position</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          {selectedObject.type === 'textbox' && (
+            <TabsTrigger value="text">Text</TabsTrigger>
+          )}
+        </TabsList>
+        
+        <TabsContent value="position" className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="left">Left</Label>
+              <Input 
+                id="left" 
+                type="number" 
+                value={Math.round(objectProperties.left || 0)} 
+                onChange={(e) => handlePropertyChange('left', Number(e.target.value))}
+              />
             </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="top">Top</Label>
+              <Input 
+                id="top" 
+                type="number" 
+                value={Math.round(objectProperties.top || 0)} 
+                onChange={(e) => handlePropertyChange('top', Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          {objectProperties.width !== undefined && (
             <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="width">Width</Label>
-                <Input
-                  id="width"
-                  type="number"
-                  value={size.width}
-                  onChange={(e) => updateSize("width", parseInt(e.target.value))}
+                <Input 
+                  id="width" 
+                  type="number" 
+                  value={Math.round(objectProperties.width || 0)} 
+                  onChange={(e) => handlePropertyChange('width', Number(e.target.value))}
                 />
               </div>
-              <div className="space-y-2">
+              
+              <div className="space-y-1">
                 <Label htmlFor="height">Height</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={size.height}
-                  onChange={(e) => updateSize("height", parseInt(e.target.value))}
+                <Input 
+                  id="height" 
+                  type="number" 
+                  value={Math.round(objectProperties.height || 0)} 
+                  onChange={(e) => handlePropertyChange('height', Number(e.target.value))}
                 />
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="appearance" className="space-y-4 pt-3">
-            <div className="space-y-2">
-              <Label htmlFor="fill">Fill Color</Label>
-              <div className="flex items-center gap-2">
-                <div
-                  className="h-9 w-9 rounded-md border"
-                  style={{ backgroundColor: fill }}
-                />
-                <Input
-                  id="fill"
-                  value={fill}
-                  onChange={(e) => {
-                    setFill(e.target.value);
-                    updateProperty("fill", e.target.value);
-                  }}
-                  className="flex-1"
-                />
+          )}
+          
+          {objectProperties.angle !== undefined && (
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <Label htmlFor="angle">Angle</Label>
+                <span className="text-sm text-muted-foreground">{Math.round(objectProperties.angle)}°</span>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stroke">Stroke Color</Label>
-              <div className="flex items-center gap-2">
-                <div
-                  className="h-9 w-9 rounded-md border"
-                  style={{ backgroundColor: stroke }}
-                />
-                <Input
-                  id="stroke"
-                  value={stroke}
-                  onChange={(e) => {
-                    setStroke(e.target.value);
-                    updateProperty("stroke", e.target.value);
-                  }}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stroke-width">Stroke Width ({strokeWidth}px)</Label>
               <Slider
-                id="stroke-width"
+                id="angle"
+                min={0}
+                max={360}
+                step={1}
+                value={[objectProperties.angle || 0]}
+                onValueChange={(value) => handlePropertyChange('angle', value[0])}
+              />
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="appearance" className="space-y-4">
+          {objectProperties.fill !== undefined && (
+            <div className="space-y-1">
+              <Label>Fill Color</Label>
+              <div className="flex items-center gap-2">
+                <ColorPicker
+                  value={objectProperties.fill}
+                  onChange={(color) => handlePropertyChange('fill', color)}
+                />
+                <span className="text-sm">{objectProperties.fill}</span>
+              </div>
+            </div>
+          )}
+          
+          {objectProperties.stroke !== undefined && (
+            <div className="space-y-1">
+              <Label>Stroke Color</Label>
+              <div className="flex items-center gap-2">
+                <ColorPicker
+                  value={objectProperties.stroke}
+                  onChange={(color) => handlePropertyChange('stroke', color)}
+                />
+                <span className="text-sm">{objectProperties.stroke}</span>
+              </div>
+            </div>
+          )}
+          
+          {objectProperties.strokeWidth !== undefined && (
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <Label htmlFor="strokeWidth">Stroke Width</Label>
+                <span className="text-sm text-muted-foreground">{objectProperties.strokeWidth}px</span>
+              </div>
+              <Slider
+                id="strokeWidth"
                 min={0}
                 max={20}
                 step={1}
-                value={[strokeWidth]}
-                onValueChange={(values) => {
-                  setStrokeWidth(values[0]);
-                  updateProperty("strokeWidth", values[0]);
-                }}
+                value={[objectProperties.strokeWidth || 0]}
+                onValueChange={(value) => handlePropertyChange('strokeWidth', value[0])}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="opacity">Opacity ({opacity}%)</Label>
+          )}
+          
+          {objectProperties.radius !== undefined && (
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <Label htmlFor="radius">Radius</Label>
+                <span className="text-sm text-muted-foreground">{objectProperties.radius}px</span>
+              </div>
               <Slider
-                id="opacity"
-                min={0}
-                max={100}
+                id="radius"
+                min={1}
+                max={200}
                 step={1}
-                value={[opacity]}
-                onValueChange={(values) => {
-                  setOpacity(values[0]);
-                  updateProperty("opacity", values[0] / 100);
-                }}
+                value={[objectProperties.radius || 0]}
+                onValueChange={(value) => handlePropertyChange('radius', value[0])}
+              />
+            </div>
+          )}
+        </TabsContent>
+        
+        {selectedObject.type === 'textbox' && (
+          <TabsContent value="text" className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="text">Text</Label>
+              <Input 
+                id="text" 
+                value={objectProperties.text || ''} 
+                onChange={(e) => handlePropertyChange('text', e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <div className="flex justify-between">
+                <Label htmlFor="fontSize">Font Size</Label>
+                <span className="text-sm text-muted-foreground">{objectProperties.fontSize}px</span>
+              </div>
+              <Slider
+                id="fontSize"
+                min={8}
+                max={72}
+                step={1}
+                value={[objectProperties.fontSize || 16]}
+                onValueChange={(value) => handlePropertyChange('fontSize', value[0])}
               />
             </div>
           </TabsContent>
-
-          {(objectType === "textbox" || objectType === "text" || objectType === "i-text") && (
-            <TabsContent value="text" className="space-y-4 pt-3">
-              <div className="space-y-2">
-                <Label htmlFor="text">Text Content</Label>
-                <Input
-                  id="text"
-                  value={text}
-                  onChange={(e) => {
-                    setText(e.target.value);
-                    updateProperty("text", e.target.value);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="font-size">Font Size ({fontSize}px)</Label>
-                <Slider
-                  id="font-size"
-                  min={8}
-                  max={72}
-                  step={1}
-                  value={[fontSize]}
-                  onValueChange={(values) => {
-                    setFontSize(values[0]);
-                    updateProperty("fontSize", values[0]);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="font-family">Font Family</Label>
-                <select
-                  id="font-family"
-                  value={fontFamily}
-                  onChange={(e) => {
-                    setFontFamily(e.target.value);
-                    updateProperty("fontFamily", e.target.value);
-                  }}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="Arial">Arial</option>
-                  <option value="Times New Roman">Times New Roman</option>
-                  <option value="Courier New">Courier New</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Verdana">Verdana</option>
-                  <option value="Helvetica">Helvetica</option>
-                </select>
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
-      </CardContent>
-    </Card>
+        )}
+      </Tabs>
+    </div>
   );
 };
 
