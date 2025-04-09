@@ -1,226 +1,284 @@
 
 import { WireframeSection } from '@/types/wireframe';
-import { v4 as uuidv4 } from 'uuid';
+
+export interface SectionBounds {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+  width: number;
+  height: number;
+  centerX: number;
+  centerY: number;
+}
+
+export interface AlignmentGuide {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'center' | 'edge' | 'distribution';
+  sections: string[];
+}
 
 /**
- * Generate a unique section ID
+ * Calculate the bounds of a section from its position and dimensions
  */
-export const generateSectionId = (): string => {
-  return `section-${uuidv4()}`;
-};
-
-/**
- * Create a new section with default properties
- */
-export const createEmptySection = (
-  sectionType: string = 'container',
-  name: string = 'New Section'
-): WireframeSection => {
+export const calculateSectionBounds = (section: WireframeSection): SectionBounds => {
+  const position = section.position || { x: 0, y: 0 };
+  const dimensions = section.dimensions || { width: 200, height: 100 };
+  
+  const left = position.x;
+  const top = position.y;
+  const width = dimensions.width;
+  const height = dimensions.height;
+  
   return {
-    id: generateSectionId(),
-    name,
-    sectionType,
-    components: [],
-    layout: {
-      type: 'flex',
-      direction: 'column',
-      alignment: 'center'
-    },
-    layoutType: 'default',
-    positionOrder: 0,
-    dimensions: {
-      width: 800,
-      height: 400
-    },
-    position: {
-      x: 20,
-      y: 20
-    },
-    styleProperties: {}
+    top,
+    right: left + width,
+    bottom: top + height,
+    left,
+    width,
+    height,
+    centerX: left + width / 2,
+    centerY: top + height / 2,
   };
 };
 
 /**
- * Convert a section to its responsive variant
- * This adjusts dimensions and layout based on target device
- */
-export const getResponsiveSection = (
-  section: WireframeSection,
-  deviceType: 'desktop' | 'tablet' | 'mobile'
-): WireframeSection => {
-  // Create a deep copy of the section to avoid mutating the original
-  const responsiveSection = JSON.parse(JSON.stringify(section)) as WireframeSection;
-  
-  // Adjust dimensions based on device type
-  switch (deviceType) {
-    case 'mobile':
-      // For mobile, we scale down width significantly and adjust height proportionally
-      if (responsiveSection.dimensions) {
-        const heightRatio = responsiveSection.dimensions.height / responsiveSection.dimensions.width;
-        responsiveSection.dimensions.width = Math.min(350, responsiveSection.dimensions.width);
-        responsiveSection.dimensions.height = Math.round(responsiveSection.dimensions.width * heightRatio);
-      }
-      
-      // Adjust layout for mobile
-      if (responsiveSection.layout) {
-        // On mobile, we generally want a column layout
-        responsiveSection.layout.direction = 'column';
-      }
-      
-      // Adjust position for mobile view (centered)
-      if (responsiveSection.position) {
-        responsiveSection.position.x = 10;
-      }
-      break;
-      
-    case 'tablet':
-      // For tablet, scale down width moderately
-      if (responsiveSection.dimensions) {
-        const heightRatio = responsiveSection.dimensions.height / responsiveSection.dimensions.width;
-        responsiveSection.dimensions.width = Math.min(700, responsiveSection.dimensions.width);
-        responsiveSection.dimensions.height = Math.round(responsiveSection.dimensions.width * heightRatio);
-      }
-      
-      // Adjust position for tablet view
-      if (responsiveSection.position) {
-        responsiveSection.position.x = 15;
-      }
-      break;
-      
-    // Desktop uses original dimensions
-  }
-  
-  return responsiveSection;
-};
-
-/**
- * Get component variations based on device type
- * This is useful for components that need different layouts per device
- */
-export const getComponentVariant = (
-  componentType: string,
-  deviceType: 'desktop' | 'tablet' | 'mobile',
-  variant: string = 'default'
-): string => {
-  // Map of component types to their responsive variants
-  const variantMap: Record<string, Record<'desktop' | 'tablet' | 'mobile', Record<string, string>>> = {
-    header: {
-      desktop: { default: 'standard', minimal: 'minimal' },
-      tablet: { default: 'standard', minimal: 'minimal' },
-      mobile: { default: 'hamburger', minimal: 'minimal-hamburger' }
-    },
-    hero: {
-      desktop: { default: 'split', centered: 'centered' },
-      tablet: { default: 'stacked', centered: 'centered' },
-      mobile: { default: 'stacked', centered: 'centered' }
-    },
-    features: {
-      desktop: { default: 'three-column', minimal: 'two-column' },
-      tablet: { default: 'two-column', minimal: 'two-column' },
-      mobile: { default: 'single-column', minimal: 'single-column' }
-    }
-  };
-  
-  // Return the variant if it exists, or fall back to the device's default
-  if (variantMap[componentType]?.[deviceType]?.[variant]) {
-    return variantMap[componentType][deviceType][variant];
-  }
-  
-  // Default fallback - return the original variant
-  return variant;
-};
-
-/**
- * Helper to check if a section has responsive variations
- */
-export const hasResponsiveVariations = (section: WireframeSection): boolean => {
-  // These section types typically have responsive variations
-  const responsiveTypes = ['header', 'hero', 'features', 'footer', 'gallery', 'testimonials'];
-  return responsiveTypes.includes(section.sectionType);
-};
-
-/**
- * Calculate bounds for each section
- * Used for alignment guides and snapping
- */
-export const calculateSectionBounds = (sections: WireframeSection[]) => {
-  return sections.map(section => {
-    const { position, dimensions } = section;
-    
-    if (!position || !dimensions) {
-      return {
-        id: section.id,
-        bounds: { top: 0, left: 0, right: 0, bottom: 0, centerX: 0, centerY: 0 }
-      };
-    }
-    
-    const { x, y } = position;
-    const { width, height } = dimensions;
-    
-    const left = x;
-    const top = y;
-    const right = x + width;
-    const bottom = y + height;
-    const centerX = x + width / 2;
-    const centerY = y + height / 2;
-    
-    return {
-      id: section.id,
-      bounds: { top, left, right, bottom, centerX, centerY }
-    };
-  });
-};
-
-/**
- * Find alignment guides for a section compared to other sections
- * Used for smart guides when moving or resizing sections
+ * Find alignment guides between the active section and other sections
  */
 export const findAlignmentGuides = (
-  activeSectionId: string,
-  activeBounds: { top: number; left: number; right: number; bottom: number; centerX: number; centerY: number },
-  allBounds: Array<{ id: string; bounds: typeof activeBounds }>,
+  activeSection: WireframeSection,
+  allSections: WireframeSection[],
   tolerance: number = 5
-) => {
-  const guides: Array<{ position: number; orientation: 'horizontal' | 'vertical' }> = [];
+): AlignmentGuide[] => {
+  if (!activeSection || allSections.length <= 1) return [];
   
-  // Skip if no active bounds
-  if (!activeBounds) {
-    return guides;
-  }
+  const activeBounds = calculateSectionBounds(activeSection);
+  const guides: AlignmentGuide[] = [];
   
-  // Compare with all other section bounds
-  allBounds.forEach(({ id, bounds }) => {
-    // Skip self
-    if (id === activeSectionId || !bounds) {
-      return;
-    }
+  // Filter out the active section
+  const otherSections = allSections.filter(section => section.id !== activeSection.id);
+  
+  otherSections.forEach(section => {
+    const bounds = calculateSectionBounds(section);
     
-    // Check for horizontal alignments (top, center, bottom)
-    if (Math.abs(activeBounds.top - bounds.top) <= tolerance) {
-      guides.push({ position: bounds.top, orientation: 'horizontal' });
+    // Center alignments
+    if (Math.abs(activeBounds.centerX - bounds.centerX) <= tolerance) {
+      guides.push({
+        position: bounds.centerX,
+        orientation: 'vertical',
+        type: 'center',
+        sections: [section.id, activeSection.id]
+      });
     }
     
     if (Math.abs(activeBounds.centerY - bounds.centerY) <= tolerance) {
-      guides.push({ position: bounds.centerY, orientation: 'horizontal' });
+      guides.push({
+        position: bounds.centerY,
+        orientation: 'horizontal',
+        type: 'center',
+        sections: [section.id, activeSection.id]
+      });
     }
     
-    if (Math.abs(activeBounds.bottom - bounds.bottom) <= tolerance) {
-      guides.push({ position: bounds.bottom, orientation: 'horizontal' });
-    }
-    
-    // Check for vertical alignments (left, center, right)
+    // Edge alignments
     if (Math.abs(activeBounds.left - bounds.left) <= tolerance) {
-      guides.push({ position: bounds.left, orientation: 'vertical' });
-    }
-    
-    if (Math.abs(activeBounds.centerX - bounds.centerX) <= tolerance) {
-      guides.push({ position: bounds.centerX, orientation: 'vertical' });
+      guides.push({
+        position: bounds.left,
+        orientation: 'vertical',
+        type: 'edge',
+        sections: [section.id, activeSection.id]
+      });
     }
     
     if (Math.abs(activeBounds.right - bounds.right) <= tolerance) {
-      guides.push({ position: bounds.right, orientation: 'vertical' });
+      guides.push({
+        position: bounds.right,
+        orientation: 'vertical',
+        type: 'edge',
+        sections: [section.id, activeSection.id]
+      });
+    }
+    
+    if (Math.abs(activeBounds.top - bounds.top) <= tolerance) {
+      guides.push({
+        position: bounds.top,
+        orientation: 'horizontal',
+        type: 'edge',
+        sections: [section.id, activeSection.id]
+      });
+    }
+    
+    if (Math.abs(activeBounds.bottom - bounds.bottom) <= tolerance) {
+      guides.push({
+        position: bounds.bottom,
+        orientation: 'horizontal',
+        type: 'edge',
+        sections: [section.id, activeSection.id]
+      });
     }
   });
   
+  // Add distribution guides (equal spacing between 3+ elements)
+  if (allSections.length >= 3) {
+    // Horizontal distribution
+    const sortedHorizontal = [...allSections].sort((a, b) => 
+      (a.position?.x || 0) - (b.position?.x || 0)
+    );
+    
+    // Vertical distribution
+    const sortedVertical = [...allSections].sort((a, b) => 
+      (a.position?.y || 0) - (b.position?.y || 0)
+    );
+    
+    // Calculate distribution guides for horizontal
+    for (let i = 1; i < sortedHorizontal.length - 1; i++) {
+      const prev = calculateSectionBounds(sortedHorizontal[i-1]);
+      const curr = calculateSectionBounds(sortedHorizontal[i]);
+      const next = calculateSectionBounds(sortedHorizontal[i+1]);
+      
+      const gap1 = curr.left - prev.right;
+      const gap2 = next.left - curr.right;
+      
+      if (Math.abs(gap1 - gap2) <= tolerance) {
+        guides.push({
+          position: curr.centerX,
+          orientation: 'vertical',
+          type: 'distribution',
+          sections: [sortedHorizontal[i-1].id, sortedHorizontal[i].id, sortedHorizontal[i+1].id]
+        });
+      }
+    }
+    
+    // Calculate distribution guides for vertical
+    for (let i = 1; i < sortedVertical.length - 1; i++) {
+      const prev = calculateSectionBounds(sortedVertical[i-1]);
+      const curr = calculateSectionBounds(sortedVertical[i]);
+      const next = calculateSectionBounds(sortedVertical[i+1]);
+      
+      const gap1 = curr.top - prev.bottom;
+      const gap2 = next.top - curr.bottom;
+      
+      if (Math.abs(gap1 - gap2) <= tolerance) {
+        guides.push({
+          position: curr.centerY,
+          orientation: 'horizontal',
+          type: 'distribution',
+          sections: [sortedVertical[i-1].id, sortedVertical[i].id, sortedVertical[i+1].id]
+        });
+      }
+    }
+  }
+  
   return guides;
+};
+
+/**
+ * Distribute sections evenly along an axis
+ */
+export const distributeEvenly = (
+  sections: WireframeSection[],
+  axis: 'horizontal' | 'vertical'
+): WireframeSection[] => {
+  if (sections.length < 3) return sections;
+  
+  const sortedSections = [...sections].sort((a, b) => {
+    if (axis === 'horizontal') {
+      return (a.position?.x || 0) - (b.position?.x || 0);
+    } else {
+      return (a.position?.y || 0) - (b.position?.y || 0);
+    }
+  });
+  
+  const first = calculateSectionBounds(sortedSections[0]);
+  const last = calculateSectionBounds(sortedSections[sortedSections.length - 1]);
+  
+  let totalSpace: number;
+  let totalSectionSize = 0;
+  
+  if (axis === 'horizontal') {
+    totalSpace = last.right - first.left;
+    sortedSections.forEach(section => {
+      totalSectionSize += (section.dimensions?.width || 0);
+    });
+  } else {
+    totalSpace = last.bottom - first.top;
+    sortedSections.forEach(section => {
+      totalSectionSize += (section.dimensions?.height || 0);
+    });
+  }
+  
+  const availableSpace = totalSpace - totalSectionSize;
+  const gapSize = availableSpace / (sortedSections.length - 1);
+  
+  const result = [...sortedSections];
+  
+  let currentPosition = first.left;
+  if (axis === 'vertical') {
+    currentPosition = first.top;
+  }
+  
+  for (let i = 0; i < result.length; i++) {
+    const section = result[i];
+    
+    if (!section.position) {
+      section.position = { x: 0, y: 0 };
+    }
+    
+    if (axis === 'horizontal') {
+      section.position.x = currentPosition;
+      currentPosition += (section.dimensions?.width || 0) + gapSize;
+    } else {
+      section.position.y = currentPosition;
+      currentPosition += (section.dimensions?.height || 0) + gapSize;
+    }
+  }
+  
+  return result;
+};
+
+/**
+ * Align sections by a specified edge or center
+ */
+export const alignSections = (
+  sections: WireframeSection[],
+  alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'
+): WireframeSection[] => {
+  if (sections.length < 2) return sections;
+  
+  // Use the first section as reference
+  const referenceBounds = calculateSectionBounds(sections[0]);
+  
+  return sections.map(section => {
+    const newSection = { ...section };
+    
+    if (!newSection.position) {
+      newSection.position = { x: 0, y: 0 };
+    }
+    
+    const bounds = calculateSectionBounds(newSection);
+    
+    switch (alignmentType) {
+      case 'left':
+        newSection.position.x = referenceBounds.left;
+        break;
+      case 'center':
+        newSection.position.x = referenceBounds.centerX - (bounds.width / 2);
+        break;
+      case 'right':
+        newSection.position.x = referenceBounds.right - bounds.width;
+        break;
+      case 'top':
+        newSection.position.y = referenceBounds.top;
+        break;
+      case 'middle':
+        newSection.position.y = referenceBounds.centerY - (bounds.height / 2);
+        break;
+      case 'bottom':
+        newSection.position.y = referenceBounds.bottom - bounds.height;
+        break;
+    }
+    
+    return newSection;
+  });
 };

@@ -9,7 +9,7 @@ interface PreviewDisplayProps {
   currentDimensions: DeviceDimensions;
   darkMode: boolean;
   wireframe: any; // Using any for now, should be replaced with proper wireframe type
-  deviceType: 'mobile' | 'tablet' | 'desktop';
+  deviceType: DeviceType;
   onSectionClick?: (sectionId: string) => void;
 }
 

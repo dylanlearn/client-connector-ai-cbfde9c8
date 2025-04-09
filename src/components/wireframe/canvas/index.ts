@@ -5,3 +5,4 @@ export { default as WireframeCanvasEngine } from './WireframeCanvasEngine';
 export { default as GridSystem } from './GridSystem';
 export { default as CanvasController } from './CanvasController';
 export * from './GridSystem';
+export * from './canvas-serialization';
