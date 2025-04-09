@@ -85,6 +85,13 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
     const { width, height } = currentDimensions;
     return `${width} × ${height}`;
   };
+
+  // Handle section click if not provided by props
+  const handleSectionClick = (sectionId: string) => {
+    if (onSectionClick) {
+      onSectionClick(sectionId);
+    }
+  };
   
   return (
     <Card className={cn("shadow-md overflow-hidden", className)}>
@@ -170,6 +177,7 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
                 ? 'mobile' 
                 : activeDevice.includes('tablet') ? 'tablet' : 'desktop'
               }
+              onSectionClick={handleSectionClick}
             >
               {wireframe && wireframe.sections && (
                 <div className="p-4">

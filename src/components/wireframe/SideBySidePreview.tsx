@@ -156,7 +156,11 @@ const SideBySidePreview: React.FC<SideBySidePreviewProps> = ({
                 </Button>
               </div>
             </div>
-            <WireframeCanvas key={`preview-${lastUpdate}`} className="border rounded-md shadow-sm">
+            <WireframeCanvas 
+              key={`preview-${lastUpdate}`} 
+              className="border rounded-md shadow-sm"
+              onSectionClick={handleSectionClick}
+            >
               {wireframe && <Wireframe 
                 wireframe={wireframe} 
                 viewMode="preview" 
