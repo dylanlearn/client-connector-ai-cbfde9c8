@@ -1,7 +1,7 @@
 
 import { fabric } from 'fabric';
 import { useCallback } from 'react';
-import { WireframeCanvasConfig } from '@/types/wireframe';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 
 export function useCanvasActions(
   fabricCanvas: fabric.Canvas | null, 
