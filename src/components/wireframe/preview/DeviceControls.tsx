@@ -4,8 +4,7 @@ import { Monitor, Tablet, Smartphone, RotateCcw } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-export type DeviceType = 'desktop' | 'tablet' | 'tabletLandscape' | 'mobile' | 'mobileLandscape' | 'mobileSm';
+import { DeviceType } from './DeviceInfo';
 
 interface DeviceControlsProps {
   activeDevice: DeviceType;

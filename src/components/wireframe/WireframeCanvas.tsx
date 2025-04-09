@@ -4,7 +4,16 @@ import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useSectionManipulation } from '@/hooks/wireframe/use-section-manipulation';
 
-const WireframeCanvas = ({ 
+interface WireframeCanvasProps {
+  children: React.ReactNode;
+  className?: string;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  editable?: boolean;
+  darkMode?: boolean;
+  onSectionClick?: (sectionId: string) => void;
+}
+
+const WireframeCanvas: React.FC<WireframeCanvasProps> = ({ 
   children,
   className,
   deviceType = 'desktop',
@@ -22,7 +31,7 @@ const WireframeCanvas = ({
   } = useSectionManipulation();
 
   // Handle canvas click (deselect active section)
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       selectSection(null);
     }

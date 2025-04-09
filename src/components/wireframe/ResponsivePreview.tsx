@@ -48,7 +48,7 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ className, onSect
     return `${width} × ${height}`;
   };
 
-  // Handle section click if not provided by props
+  // Handle section click
   const handleSectionClick = (sectionId: string) => {
     if (onSectionClick) {
       onSectionClick(sectionId);
