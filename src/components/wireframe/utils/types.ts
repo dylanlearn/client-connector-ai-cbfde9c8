@@ -1,63 +1,20 @@
 
-import { DeviceType } from './responsive-utils';
-
-// Canvas configuration interface
-export interface WireframeCanvasConfig {
-  width: number;
-  height: number;
-  zoom: number;
-  panOffset: { x: number; y: number; };
-  showGrid: boolean;
-  snapToGrid: boolean;
-  gridSize: number;
-  backgroundColor: string;
-  gridType: "lines" | "dots" | "columns";
-  snapTolerance: number;
-  showSmartGuides: boolean;
+// Grid guideline type for alignment
+export interface GridGuideline {
+  position: number;
+  orientation: 'horizontal' | 'vertical';
+  type: 'edge' | 'center' | 'distribution';
 }
 
-// Section rendering utilities
-export interface SectionRenderingOptions {
-  scale?: number;
-  responsiveDevice?: DeviceType;
-  preview?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  interactive?: boolean;
-}
-
-// Enhanced guide interface for smart alignment
+// Alignment guide for smart snapping
 export interface AlignmentGuide {
   position: number;
   orientation: 'horizontal' | 'vertical';
   type: 'edge' | 'center' | 'distribution';
-  strength: number; // For weighted guide importance
+  label?: string;
 }
 
-// Layer interface for managing component stacking
-export interface LayerInfo {
-  id: string;
-  name: string;
-  type: string; 
-  visible: boolean;
-  locked: boolean;
-  zIndex: number;
-  parentId?: string; // For grouped layers
-  isExpanded?: boolean; // For group open/closed state
-}
-
-// Selection interface for tracking selected elements
-export interface SelectionState {
-  id: string | null;
-  type: 'object' | 'group' | 'layer' | null;
-  bounds?: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-}
-
-// Component boundary visual settings
+// Styles for object boundaries
 export interface BoundaryStyles {
   stroke: string;
   strokeWidth: number;
@@ -69,7 +26,7 @@ export interface BoundaryStyles {
   cornerStrokeColor: string;
 }
 
-// Smart guide visualization options
+// Visualization options for alignment guides
 export interface GuideVisualization {
   strokeWidth: number;
   color: {
@@ -83,49 +40,25 @@ export interface GuideVisualization {
   showLabels: boolean;
 }
 
-// Grid configuration for enhanced grid system
-export interface EnhancedGridConfig {
-  type: "lines" | "dots" | "columns" | "bootstrap" | "tailwind" | "custom";
-  size: number;
-  columns: number;
-  gutter: number;
-  color: string;
-  opacity: number;
-  showBreakpoints: boolean;
-  responsiveMode: boolean;
+// Rendering options for sections
+export interface SectionRenderingOptions {
+  showBorders: boolean;
+  showLabels: boolean;
+  showComponentOutlines: boolean;
+  highlightOnHover: boolean;
 }
 
-// Wireframe data structure 
-export interface WireframeData {
-  id: string;
-  name: string;
-  sections: WireframeSection[];
-  projectId?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Wireframe section structure
-export interface WireframeSection {
-  id: string;
-  name: string;
-  sectionType: string;
-  dimensions?: {
-    width: number;
-    height: number;
-  };
-  layout?: any;
-  position?: {
-    x: number;
-    y: number;
-  };
-  components?: any[];
-  responsive?: Record<string, any>;
-}
-
-// Grid guideline for alignment
-export interface GridGuideline {
-  position: number;
-  orientation: 'horizontal' | 'vertical';
-  type: 'center' | 'edge' | 'distribution';
+// Canvas configuration for wireframes
+export interface WireframeCanvasConfig {
+  width: number;
+  height: number;
+  zoom: number;
+  panOffset: { x: number; y: number };
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+  backgroundColor: string;
+  gridType: 'lines' | 'dots' | 'columns';
+  snapTolerance: number;
+  showSmartGuides: boolean;
 }
