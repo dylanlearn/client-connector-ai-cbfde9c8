@@ -1,6 +1,6 @@
 
 import { fabric } from 'fabric';
-import { AlignmentGuide } from './types';
+import { AlignmentGuide, GuideVisualization } from './types';
 
 export interface ObjectBounds {
   left: number;
@@ -198,19 +198,35 @@ export function renderAlignmentGuides(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
   canvasHeight: number,
-  guides: AlignmentGuide[]
+  guides: AlignmentGuide[],
+  visualization?: GuideVisualization
 ): void {
   if (!ctx) return;
+  
+  const defaultVisualization: GuideVisualization = {
+    strokeWidth: 1,
+    color: {
+      edge: '#00cc66',
+      center: '#0066ff',
+      distribution: '#cc00ff'
+    },
+    dashArray: [4, 4],
+    snapIndicatorSize: 6,
+    snapIndicatorColor: '#2196F3',
+    showLabels: true
+  };
+  
+  const settings = visualization || defaultVisualization;
   
   // Apply some global settings for all guides
   ctx.save();
   
   guides.forEach(guide => {
     // Set line style based on guide type
-    ctx.strokeStyle = guide.type === 'center' ? '#0066ff' : 
-                     guide.type === 'edge' ? '#00cc66' : '#cc00ff';
-    ctx.lineWidth = 1;
-    ctx.setLineDash(guide.type === 'distribution' ? [4, 4] : []);
+    ctx.strokeStyle = guide.type === 'center' ? settings.color.center : 
+                     guide.type === 'edge' ? settings.color.edge : settings.color.distribution;
+    ctx.lineWidth = settings.strokeWidth;
+    ctx.setLineDash(settings.dashArray);
     
     // Draw the guide line
     ctx.beginPath();
@@ -260,9 +276,77 @@ export function renderAlignmentGuides(
         ctx.stroke();
       }
     }
+    
+    // Add labels for measurements if enabled
+    if (settings.showLabels) {
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      if (guide.orientation === 'horizontal') {
+        ctx.fillText(
+          `${Math.round(guide.position)}px`, 
+          canvasWidth - 40, 
+          guide.position - 10
+        );
+      } else {
+        ctx.fillText(
+          `${Math.round(guide.position)}px`, 
+          guide.position + 10,
+          20
+        );
+      }
+    }
   });
   
   ctx.restore(); // Restore original context settings
+}
+
+/**
+ * Highlight object boundaries
+ */
+export function highlightObjectBoundary(
+  obj: fabric.Object,
+  canvas: fabric.Canvas,
+  color: string = '#4285f4'
+): void {
+  if (!obj || !canvas) return;
+  
+  const bounds = getObjectBounds(obj);
+  
+  // Create or update highlight rectangle
+  let highlight = canvas.getObjects().find(o => (o as any).isHighlight && (o as any).targetId === obj.id) as fabric.Rect | undefined;
+  
+  if (!highlight) {
+    highlight = new fabric.Rect({
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height,
+      fill: 'transparent',
+      stroke: color,
+      strokeWidth: 1,
+      strokeDashArray: [3, 3],
+      selectable: false,
+      evented: false
+    });
+    
+    // Add custom properties
+    (highlight as any).isHighlight = true;
+    (highlight as any).targetId = obj.id;
+    
+    canvas.add(highlight);
+  } else {
+    highlight.set({
+      left: bounds.left,
+      top: bounds.top,
+      width: bounds.width,
+      height: bounds.height
+    });
+  }
+  
+  canvas.renderAll();
 }
 
 /**
@@ -321,46 +405,96 @@ export function createCanvasGuides(
 }
 
 /**
- * Highlight object boundaries
+ * Create distance measurement between objects
  */
-export function highlightObjectBoundary(
-  obj: fabric.Object,
-  canvas: fabric.Canvas,
-  color: string = '#4285f4'
+export function createDistanceMeasurement(
+  obj1: fabric.Object,
+  obj2: fabric.Object,
+  canvas: fabric.Canvas
 ): void {
-  if (!obj || !canvas) return;
+  if (!obj1 || !obj2 || !canvas) return;
   
-  const bounds = getObjectBounds(obj);
+  const bounds1 = getObjectBounds(obj1);
+  const bounds2 = getObjectBounds(obj2);
   
-  // Create or update highlight rectangle
-  let highlight = canvas.getObjects().find(o => (o as any).isHighlight && (o as any).targetId === obj.id) as fabric.Rect | undefined;
+  // Measure horizontal distance
+  const horizontalDistance = Math.abs(bounds1.right - bounds2.left);
   
-  if (!highlight) {
-    highlight = new fabric.Rect({
-      left: bounds.left,
-      top: bounds.top,
-      width: bounds.width,
-      height: bounds.height,
-      fill: 'transparent',
-      stroke: color,
+  if (horizontalDistance > 0) {
+    const line = new fabric.Line([
+      bounds1.right,
+      bounds1.centerY,
+      bounds2.left,
+      bounds2.centerY
+    ], {
+      stroke: '#0066ff',
       strokeWidth: 1,
-      strokeDashArray: [3, 3],
+      strokeDashArray: [2, 2],
       selectable: false,
       evented: false
     });
     
-    // Add custom properties
-    (highlight as any).isHighlight = true;
-    (highlight as any).targetId = obj.id;
+    const label = new fabric.Text(
+      `${Math.round(horizontalDistance)}px`,
+      {
+        left: bounds1.right + horizontalDistance / 2,
+        top: bounds1.centerY - 15,
+        fontSize: 10,
+        fill: '#0066ff',
+        selectable: false,
+        evented: false,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        padding: 2
+      }
+    );
     
-    canvas.add(highlight);
-  } else {
-    highlight.set({
-      left: bounds.left,
-      top: bounds.top,
-      width: bounds.width,
-      height: bounds.height
+    canvas.add(line, label);
+    
+    // Remove after a delay
+    setTimeout(() => {
+      canvas.remove(line, label);
+      canvas.renderAll();
+    }, 2000);
+  }
+  
+  // Measure vertical distance
+  const verticalDistance = Math.abs(bounds1.bottom - bounds2.top);
+  
+  if (verticalDistance > 0) {
+    const line = new fabric.Line([
+      bounds1.centerX,
+      bounds1.bottom,
+      bounds1.centerX,
+      bounds2.top
+    ], {
+      stroke: '#0066ff',
+      strokeWidth: 1,
+      strokeDashArray: [2, 2],
+      selectable: false,
+      evented: false
     });
+    
+    const label = new fabric.Text(
+      `${Math.round(verticalDistance)}px`,
+      {
+        left: bounds1.centerX + 5,
+        top: bounds1.bottom + verticalDistance / 2,
+        fontSize: 10,
+        fill: '#0066ff',
+        selectable: false,
+        evented: false,
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        padding: 2
+      }
+    );
+    
+    canvas.add(line, label);
+    
+    // Remove after a delay
+    setTimeout(() => {
+      canvas.remove(line, label);
+      canvas.renderAll();
+    }, 2000);
   }
   
   canvas.renderAll();
