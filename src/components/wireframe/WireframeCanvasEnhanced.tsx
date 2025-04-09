@@ -1,11 +1,10 @@
-
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { useCanvasInteractions } from '@/hooks/wireframe/use-canvas-interactions';
 import { useSectionManipulation } from '@/hooks/wireframe/use-section-manipulation';
-import { WireframeSection } from '@/types/wireframe';
+import { WireframeSection } from '@/stores/wireframe-store'; // Use the type from the store
 import { componentToFabricObject, fabricObjectToComponent } from './utils/fabric-converters';
 import { calculateSectionBounds, findAlignmentGuides } from './utils/section-utils';
 import CanvasControls from './controls/CanvasControls';
@@ -123,7 +122,7 @@ const WireframeCanvasEnhanced = memo(({
     fabricCanvas.clear();
     
     // Render each section
-    wireframe.sections.forEach(section => {
+    wireframe.sections.forEach((section: WireframeSection) => {
       const fabricObject = componentToFabricObject(section, {
         deviceType: activeDevice,
         interactive: editMode,
@@ -160,9 +159,17 @@ const WireframeCanvasEnhanced = memo(({
         fabricObject.on('moved', () => {
           const updatedComponent = fabricObjectToComponent(fabricObject);
           if (updatedComponent && updatedComponent.id) {
+            // Cast the updatedComponent to store's WireframeSection type
+            const update = {
+              ...updatedComponent,
+              copySuggestions: Array.isArray(updatedComponent.copySuggestions) 
+                ? updatedComponent.copySuggestions 
+                : []
+            };
+            
             useWireframeStore.getState().updateSection(
               updatedComponent.id,
-              updatedComponent
+              update
             );
             setGuidelines([]);
           }
@@ -340,6 +347,37 @@ const WireframeCanvasEnhanced = memo(({
     };
   }, []);
   
+  // Apply styles safely for CSS properties
+  const applySectionStyle = (section: WireframeSection) => {
+    const position = section.id && sectionPositions[section.id];
+    
+    if (position) {
+      return {
+        position: 'absolute',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: position.width ? `${position.width}px` : undefined,
+        height: position.height ? `${position.height}px` : undefined,
+        transform: position.rotation ? `rotate(${position.rotation}deg)` : 
+          draggingSection === section.id ? 'scale(1.02)' : undefined,
+        zIndex: (draggingSection === section.id || resizingSection === section.id || activeSection === section.id) ? 10 : 1
+      } as React.CSSProperties;
+    } else if (section.position) {
+      // Use position from section if available
+      return {
+        position: 'absolute',
+        left: `${section.position.x}px`,
+        top: `${section.position.y}px`,
+        width: section.dimensions?.width ? `${section.dimensions.width}px` : undefined,
+        height: section.dimensions?.height ? `${section.dimensions.height}px` : undefined,
+        transform: section.styleProperties?.rotation ? `rotate(${section.styleProperties.rotation}deg)` : undefined
+      } as React.CSSProperties;
+    }
+    
+    // Default to empty object for static positioning
+    return {} as React.CSSProperties;
+  };
+
   // Render the sections and their controls
   const renderSections = useCallback(() => {
     return wireframe.sections.map(section => {
@@ -523,7 +561,7 @@ const WireframeCanvasEnhanced = memo(({
       </div>
     </div>
   );
-});
+}); 
 
 WireframeCanvasEnhanced.displayName = 'WireframeCanvasEnhanced';
 

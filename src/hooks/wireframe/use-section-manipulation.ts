@@ -149,7 +149,7 @@ export function useSectionManipulation() {
     // Update position with delta
     setSectionPositions(prev => ({
       ...prev,
-      [draggingSection as string]: {
+      [draggingSection]: {
         ...originalPosition,
         x: newX,
         y: newY
@@ -254,7 +254,7 @@ export function useSectionManipulation() {
     setSectionPositions(prev => ({
       ...prev,
       [resizingSection]: {
-        ...prev[resizingSection],
+        ...(prev[resizingSection] || { x: 0, y: 0, originalX: 0, originalY: 0 }),
         x: newX,
         y: newY,
         width: newWidth,
@@ -281,13 +281,24 @@ export function useSectionManipulation() {
       // Store current rotation
       const currentRotation = sectionPositions[sectionId]?.rotation || 0;
       
-      setSectionPositions(prev => ({
-        ...prev,
-        [sectionId]: {
-          ...(prev[sectionId] || {}),
-          rotation: currentRotation
+      setSectionPositions(prev => {
+        const updatedPositions = {...prev};
+        if (!updatedPositions[sectionId]) {
+          updatedPositions[sectionId] = {
+            x: 0,
+            y: 0,
+            originalX: 0,
+            originalY: 0,
+            rotation: currentRotation
+          };
+        } else {
+          updatedPositions[sectionId] = {
+            ...updatedPositions[sectionId],
+            rotation: currentRotation
+          };
         }
-      }));
+        return updatedPositions;
+      });
     }
   }, [sectionPositions]);
 
@@ -313,13 +324,24 @@ export function useSectionManipulation() {
       rotation = Math.round(rotation / 15) * 15;
     }
     
-    setSectionPositions(prev => ({
-      ...prev,
-      [sectionId]: {
-        ...(prev[sectionId] || {}),
-        rotation
+    setSectionPositions(prev => {
+      const updatedPositions = {...prev};
+      if (!updatedPositions[sectionId]) {
+        updatedPositions[sectionId] = {
+          x: 0,
+          y: 0,
+          originalX: 0,
+          originalY: 0,
+          rotation: rotation
+        };
+      } else {
+        updatedPositions[sectionId] = {
+          ...updatedPositions[sectionId],
+          rotation: rotation
+        };
       }
-    }));
+      return updatedPositions;
+    });
   }, [isRotating, rotationStart, sectionPositions, snapToGrid]);
 
   // Stop dragging, resizing or rotating and commit changes
@@ -382,25 +404,28 @@ export function useSectionManipulation() {
     }
   }, [draggingSection, resizingSection, isRotating, activeSection, sectionPositions, wireframe, updateSection]);
 
+  // Stop drag section (alias for stopManipulation for compatibility)
+  const stopDragSection = stopManipulation;
+
   // Apply section positions to component styles
   const applySectionPositions = useCallback((section: WireframeSection) => {
     const position = section.id && sectionPositions[section.id];
     
     if (position) {
       return {
-        position: 'absolute',
+        position: 'absolute' as const,
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: position.width ? `${position.width}px` : undefined,
         height: position.height ? `${position.height}px` : undefined,
         transform: position.rotation ? `rotate(${position.rotation}deg)` : 
           draggingSection === section.id ? 'scale(1.02)' : undefined,
-        zIndex: draggingSection === section.id || resizingSection === section.id || activeSection === section.id ? 10 : 1
+        zIndex: (draggingSection === section.id || resizingSection === section.id || activeSection === section.id) ? 10 : 1
       };
     } else if (section.position) {
       // Use position from section if available
       return {
-        position: 'absolute',
+        position: 'absolute' as const,
         left: `${section.position.x}px`,
         top: `${section.position.y}px`,
         width: section.dimensions?.width ? `${section.dimensions.width}px` : undefined,
@@ -426,6 +451,7 @@ export function useSectionManipulation() {
     startRotateSection,
     rotateSection,
     stopManipulation,
+    stopDragSection,
     applySectionPositions
   };
 }

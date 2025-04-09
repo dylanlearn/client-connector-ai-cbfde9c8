@@ -24,7 +24,7 @@ export interface SectionQuickActionsProps {
 
 export interface WireframeSectionRendererProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'edit' | 'code';
+  viewMode?: 'preview' | 'edit' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   sectionIndex?: number;
@@ -34,7 +34,7 @@ export interface WireframeSectionRendererProps {
 
 export interface WireframeRendererProps {
   wireframeData: any;
-  viewMode?: 'preview' | 'edit' | 'code';
+  viewMode?: 'preview' | 'edit' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   onSectionClick?: (sectionId: string) => void;
@@ -44,4 +44,40 @@ export interface WireframeRendererProps {
 export interface GuidelineProps {
   position: number;
   orientation: 'horizontal' | 'vertical';
+}
+
+export interface WireframeProps {
+  wireframe: any;
+  viewMode?: 'preview' | 'edit' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (id: string) => void;
+}
+
+export interface WireframeVisualizerProps {
+  wireframe: any;
+  viewMode?: 'preview' | 'edit' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (id: string) => void;
+}
+
+export interface SectionComponentProps {
+  section: WireframeSection;
+  viewMode?: 'preview' | 'edit' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  isSelected?: boolean;
+  onClick?: () => void;
+}
+
+export interface VariantComponentProps {
+  component: any;
+  viewMode?: 'preview' | 'edit' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
 }

@@ -1,3 +1,4 @@
+
 import React, { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
@@ -79,7 +80,7 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = memo(({
     selectSection,
     startDragSection,
     dragSection,
-    stopDragSection,
+    stopDragSection, // Using the added stopDragSection function
     applySectionPositions
   } = useSectionManipulation();
 

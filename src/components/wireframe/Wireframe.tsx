@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from '@/types/wireframe';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
-import { WireframeVisualizerProps } from './types';
+import { WireframeProps } from './types';
 
-const Wireframe: React.FC<WireframeVisualizerProps> = ({
+const Wireframe: React.FC<WireframeProps> = ({
   wireframe,
   viewMode = 'preview',
   darkMode = false,
