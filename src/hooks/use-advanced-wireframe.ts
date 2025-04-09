@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { useToast } from "./use-toast";
 import { AdvancedWireframeService, DesignMemory } from "@/services/ai/wireframe/advanced-wireframe-service";
@@ -140,7 +139,7 @@ export function useAdvancedWireframe() {
         toast({
           title: "Wireframe generated with warnings",
           description: `Some sections are missing: ${validationResult.missingSections.join(', ')}`,
-          variant: "warning",
+          variant: "destructive",
         });
       }
       

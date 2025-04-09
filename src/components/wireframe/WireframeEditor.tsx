@@ -40,7 +40,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeD
 
   if (!displayData || !displayData.sections || displayData.sections.length === 0) {
     return (
-      <Alert variant="warning" className="mb-4">
+      <Alert variant="default" className="mb-4 border-amber-200 bg-amber-50">
         <AlertTitle>No wireframe data</AlertTitle>
         <AlertDescription>There are no sections to display in this wireframe.</AlertDescription>
       </Alert>

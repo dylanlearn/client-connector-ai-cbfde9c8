@@ -2,7 +2,7 @@
 import { fabric } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeSection } from '@/types/wireframe';
-import { fabricObjectToComponent } from './fabric-converters';
+// Remove the incorrect import and create a simple conversion function instead
 
 /**
  * Canvas serialization format
@@ -106,10 +106,22 @@ export function canvasToWireframeSections(canvas: fabric.Canvas): WireframeSecti
   objects.forEach(obj => {
     if (!obj.data || obj.data.type !== 'section') return;
     
-    const sectionData = fabricObjectToComponent(obj);
-    if (sectionData && sectionData.id) {
-      sections.push(sectionData as WireframeSection);
-    }
+    // Simple conversion from fabric object to wireframe section
+    const section: WireframeSection = {
+      id: obj.data.id || uuidv4(),
+      name: obj.data.name || 'Untitled Section',
+      sectionType: obj.data.sectionType || 'generic',
+      position: {
+        x: obj.left || 0,
+        y: obj.top || 0
+      },
+      dimensions: {
+        width: obj.width || 200,
+        height: obj.height || 100
+      }
+    };
+    
+    sections.push(section);
   });
   
   return sections;
