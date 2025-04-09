@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Save } from 'lucide-react';
 
-interface WireframeEditorProps {
+export interface WireframeEditorProps {
   projectId?: string;
   wireframeData: any;
   onUpdate?: (updatedWireframe: any) => void;

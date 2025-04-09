@@ -2,158 +2,94 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-
-// Extend the existing WireframeGenerationResult to include the properties we need
-interface EnhancedWireframeGenerationResult {
-  wireframe: any;
-  error?: string;
-  intentData?: any;
-  blueprint?: any;
-  success: boolean;
-  generationTime?: number;
-}
+import { EnhancedWireframeGenerator } from '@/services/ai/wireframe/enhanced-wireframe-generator';
+import { 
+  WireframeGenerationParams, 
+  EnhancedWireframeGenerationResult, 
+  WireframeData 
+} from '@/services/ai/wireframe/wireframe-types';
 
 export function useAdvancedWireframe() {
-  const [loading, setLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(null);
+  const [generationResults, setGenerationResults] = useState<EnhancedWireframeGenerationResult | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [intentData, setIntentData] = useState<any>(null);
-  const [blueprint, setBlueprint] = useState<any>(null);
-  
   const { toast } = useToast();
-  const [currentWireframe, setCurrentWireframe] = useState<any>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Get intent data from the generation results
+  const intentData = generationResults?.intentData || null;
+  
+  // Get blueprint data from generation results
+  const blueprint = generationResults?.blueprint || null;
 
-  // Enhanced wireframe generator with error handling
-  const generateWireframe = useCallback(async (params: any) => {
-    setIsGenerating(true);
-    setError(null);
-    
+  const generateWireframe = useCallback(async (params: WireframeGenerationParams) => {
     try {
-      // Simulate API call - in a real app, this would call an API
-      console.log("Generating wireframe with params:", params);
+      setIsGenerating(true);
+      setError(null);
       
-      // Mock result for demo purposes
-      const result: EnhancedWireframeGenerationResult = {
-        wireframe: {
-          id: uuidv4(),
-          title: `Wireframe for ${params.projectId || 'New Project'}`,
-          description: params.userInput || params.description || 'A generated wireframe',
-          sections: [
-            {
-              id: uuidv4(),
-              name: 'Hero Section',
-              sectionType: 'hero',
-              description: 'Main hero section with headline and call to action'
-            },
-            {
-              id: uuidv4(),
-              name: 'Features Section',
-              sectionType: 'features',
-              description: 'Display of key product features'
-            }
-          ],
-          lastUpdated: new Date().toISOString()
-        },
-        intentData: { userIntent: 'create landing page', audience: 'general' },
-        blueprint: { layout: 'standard', style: params.styleToken || 'modern' },
-        success: true
-      };
+      const result = await EnhancedWireframeGenerator.generateWireframe(params);
       
-      setCurrentWireframe(result.wireframe);
-      
-      // Store intent and blueprint data if available
-      if (result.intentData) {
-        setIntentData(result.intentData);
-      }
-      
-      if (result.blueprint) {
-        setBlueprint(result.blueprint);
+      if (result && result.wireframe) {
+        setCurrentWireframe(result.wireframe);
+        setGenerationResults(result as EnhancedWireframeGenerationResult);
       }
       
       return result;
     } catch (err) {
-      console.error("Error in advanced wireframe generation:", err);
+      console.error("Error generating wireframe:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      
       setError(err instanceof Error ? err : new Error(errorMessage));
       
       toast({
-        title: "Generation failed",
+        title: "Wireframe generation failed",
         description: errorMessage,
         variant: "destructive"
       });
       
-      return null;
+      return {
+        wireframe: null,
+        success: false,
+        error: errorMessage
+      };
     } finally {
       setIsGenerating(false);
     }
   }, [toast]);
   
-  // Save wireframe with enhanced options
-  const saveWireframe = useCallback(async (projectId: string, prompt: string) => {
-    if (!currentWireframe) {
-      toast({
-        title: "No wireframe to save",
-        description: "Please generate a wireframe first"
-      });
-      return null;
-    }
+  const saveWireframe = useCallback(async (projectId: string, description: string) => {
+    if (!currentWireframe) return null;
     
     try {
-      setLoading(true);
-      
-      // If we're using a real API, we would call it here
-      // For now, we'll just add an ID if it doesn't exist
-      const wireframeToSave = currentWireframe;
-      
-      if (!wireframeToSave.id) {
-        wireframeToSave.id = uuidv4();
-      }
-      
-      // Update metadata
-      wireframeToSave.lastUpdated = new Date().toISOString();
+      // In a real implementation, you'd save the wireframe to the database here
       
       toast({
         title: "Wireframe saved",
         description: "Your wireframe has been saved successfully"
       });
       
-      return wireframeToSave;
-    } catch (error) {
-      console.error("Error saving wireframe:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to save wireframe";
+      return currentWireframe;
+    } catch (err) {
+      console.error("Error saving wireframe:", err);
       
       toast({
-        title: "Save failed",
-        description: errorMessage,
+        title: "Failed to save wireframe",
+        description: err instanceof Error ? err.message : "Unknown error occurred",
         variant: "destructive"
       });
       
       return null;
-    } finally {
-      setLoading(false);
     }
   }, [currentWireframe, toast]);
-
-  // Add function to create a WireframeEditor component in EnhancedWireframeStudio
-  const getWireframe = useCallback(async (wireframeId: string) => {
-    // In a real app, this would fetch from an API
-    return currentWireframe;
-  }, [currentWireframe]);
-
-  const loadProjectWireframes = useCallback(async (projectId: string) => {
-    // In a real app, this would fetch from an API
-    return currentWireframe ? [currentWireframe] : [];
-  }, [currentWireframe]);
-
+  
   return {
-    isGenerating: isGenerating || loading,
+    isGenerating,
     currentWireframe,
+    generationResults,
     intentData,
     blueprint,
-    error,
     generateWireframe,
     saveWireframe,
-    loadProjectWireframes,
-    getWireframe
+    error
   };
 }

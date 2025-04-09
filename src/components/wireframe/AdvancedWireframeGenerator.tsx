@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
 import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { WireframeData, EnhancedWireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
 
 export interface AdvancedWireframeGeneratorProps {
   projectId?: string;
   intakeData?: any;
-  onWireframeGenerated?: (wireframe: any) => void;
-  onWireframeSaved?: (wireframe: any) => void;
+  onWireframeGenerated?: (wireframe: WireframeData) => void;
+  onWireframeSaved?: (wireframe: WireframeData) => void;
   viewMode?: 'editor' | 'preview';
 }
 
@@ -77,9 +79,9 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
     }
 
     const params = {
-      userInput: prompt,
+      description: prompt,
       projectId: projectId || uuidv4(),
-      styleToken,
+      style: styleToken,
       includeDesignMemory,
       customParams: {
         darkMode: false,

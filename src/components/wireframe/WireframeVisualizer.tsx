@@ -2,7 +2,7 @@
 import React from 'react';
 import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
 
-interface WireframeVisualizerProps {
+export interface WireframeVisualizerProps {
   wireframeData: any;
   preview?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';

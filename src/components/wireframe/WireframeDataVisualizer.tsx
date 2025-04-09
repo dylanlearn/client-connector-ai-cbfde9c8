@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Clipboard, Check } from 'lucide-react';
 
-interface WireframeDataVisualizerProps {
+export interface WireframeDataVisualizerProps {
   wireframeData: any;
   title?: string;
 }

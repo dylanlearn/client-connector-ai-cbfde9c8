@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import WireframeEditor from '@/components/wireframe/WireframeEditor';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Laptop, Smartphone, Download, Share2, Code } from 'lucide-react';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 interface EnhancedWireframeStudioProps {
   projectId: string;
@@ -27,12 +29,12 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   const { project } = useProject();
   const { currentWireframe, generateWireframe, saveWireframe } = useAdvancedWireframe();
 
-  const handleWireframeGenerated = (wireframe: any) => {
+  const handleWireframeGenerated = (wireframe: WireframeData) => {
     console.log("Wireframe generated in studio:", wireframe);
     setActiveTab('visualizer');
   };
 
-  const handleWireframeSaved = (wireframe: any) => {
+  const handleWireframeSaved = (wireframe: WireframeData) => {
     console.log("Wireframe saved:", wireframe);
   };
 
@@ -139,6 +141,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                     wireframeData={currentWireframe} 
                     preview={true}
                     deviceType={devicePreview}
+                    onSelect={(id) => console.log('Selected section:', id)}
                   />
                 </div>
               </div>

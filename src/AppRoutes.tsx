@@ -7,7 +7,6 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<WireframeStudioPage />} />
-      <Route path="/wireframe" element={<WireframeStudioPage />} />
       <Route path="/wireframe-studio" element={<WireframeStudioPage />} />
       <Route path="/wireframe-studio/:projectId" element={<WireframeStudioPage />} />
       <Route path="/project/:projectId/wireframe-studio" element={<WireframeStudioPage />} />
