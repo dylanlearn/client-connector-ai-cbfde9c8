@@ -1,3 +1,4 @@
+
 export interface WireframeGenerationParams {
   description?: string;
   pageType?: string;
@@ -38,6 +39,9 @@ export interface WireframeGenerationParams {
   layoutOptions?: string;
   imageUrl?: string;
   success?: boolean;
+  intakeFormData?: any; // Added for intake form integration
+  variationOf?: string; // Added to support variations
+  variationType?: 'creative' | 'layout' | 'style' | 'component'; // Type of variation
 }
 
 export interface WireframeGenerationResult {
@@ -53,6 +57,7 @@ export interface WireframeGenerationResult {
   error?: string;
   imageUrl?: string;
   layoutAnalysis?: any;
+  variations?: WireframeData[]; // Added to support variations
 }
 
 export interface WireframeSection {
@@ -110,6 +115,7 @@ export interface WireframeSection {
   optimizationSuggestions?: string[];
   patternMatch?: string;
   positionOrder?: number;
+  feedbackApplied?: string[]; // Track applied feedback
 }
 
 export interface WireframeComponent {
@@ -125,6 +131,10 @@ export interface WireframeComponent {
     fontSize?: string;
     padding?: string;
   };
+  variant?: string;
+  props?: Record<string, any>;
+  children?: WireframeComponent[];
+  feedbackApplied?: string[]; // Track applied feedback
 }
 
 export interface DesignMemoryResponse {
@@ -190,6 +200,12 @@ export interface WireframeData {
   style?: string | object;
   imageUrl?: string;
   pages?: any[];
+  styleToken?: string;
+  layoutAnalysis?: any;
+  parentId?: string; // Added for variation tracking
+  variationType?: string; // Added for variation tracking
+  generationType?: 'standard' | 'advanced' | 'intake' | 'variation';
+  lastUpdated?: string;
   [key: string]: any;
 }
 
@@ -223,6 +239,33 @@ export interface WireframeResult {
 }
 
 export type WireframeGeneratorPrompt = WireframeGenerationParams;
+
+// Feedback system interfaces
+export interface FeedbackAction {
+  type: 'color' | 'layout' | 'text' | 'spacing' | 'size' | 'component' | 'section' | 'add' | 'remove' | 'move';
+  target: 'section' | 'component' | 'wireframe';
+  targetId?: string;
+  property?: string;
+  value?: any;
+  confidence: number;
+  description: string;
+}
+
+export interface FeedbackInterpretation {
+  summary: string;
+  suggestedChanges: FeedbackAction[];
+  sentiment: 'positive' | 'negative' | 'neutral' | 'mixed';
+  confidenceScore: number;
+}
+
+export interface FeedbackModificationResult {
+  wireframe: WireframeData;
+  modified: boolean;
+  changeDescription: string;
+  modifiedSections: string[];
+  addedSections: string[];
+  removedSections: string[];
+}
 
 export function aiWireframeToWireframeData(wireframe: AIWireframe): WireframeData | null {
   if (!wireframe) return null;
