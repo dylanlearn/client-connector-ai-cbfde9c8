@@ -129,3 +129,91 @@ export function getObjectBounds(obj: any) {
     height
   };
 }
+
+// Add the missing functions that are referenced in index.ts
+// Generate snap guidelines for grid
+export function generateSnapGuidelines(width: number, height: number, gridSize: number) {
+  const guidelines = [];
+  
+  // Generate horizontal guidelines
+  for (let i = 0; i <= height; i += gridSize) {
+    guidelines.push({
+      position: i,
+      orientation: 'horizontal',
+      type: 'grid'
+    });
+  }
+  
+  // Generate vertical guidelines
+  for (let i = 0; i <= width; i += gridSize) {
+    guidelines.push({
+      position: i,
+      orientation: 'vertical',
+      type: 'grid'
+    });
+  }
+  
+  return guidelines;
+}
+
+// Function to create a canvas grid
+export function createCanvasGrid(canvas: any, gridSize: number, gridType: string) {
+  const width = canvas.width;
+  const height = canvas.height;
+  const gridLines = [];
+  
+  if (gridType === 'lines' || gridType === 'columns') {
+    // Create horizontal lines
+    for (let i = 0; i <= height; i += gridSize) {
+      const line = new fabric.Line([0, i, width, i], {
+        stroke: '#e0e0e0',
+        selectable: false,
+        evented: false,
+        strokeWidth: 0.5
+      });
+      gridLines.push(line);
+    }
+    
+    // Create vertical lines
+    for (let i = 0; i <= width; i += gridSize) {
+      const line = new fabric.Line([i, 0, i, height], {
+        stroke: '#e0e0e0',
+        selectable: false,
+        evented: false,
+        strokeWidth: 0.5
+      });
+      gridLines.push(line);
+    }
+  }
+  
+  return gridLines;
+}
+
+// Function to snap object to guidelines
+export function snapObjectToGuidelines(obj: any, guidelines: any[], tolerance: number = 10) {
+  const objBounds = getObjectBounds(obj);
+  
+  for (const guideline of guidelines) {
+    if (guideline.orientation === 'horizontal') {
+      // Check for horizontal snap
+      if (Math.abs(objBounds.top - guideline.position) < tolerance) {
+        obj.set('top', guideline.position);
+      } else if (Math.abs(objBounds.centerY - guideline.position) < tolerance) {
+        obj.set('top', guideline.position - objBounds.height / 2);
+      } else if (Math.abs(objBounds.bottom - guideline.position) < tolerance) {
+        obj.set('top', guideline.position - objBounds.height);
+      }
+    } else if (guideline.orientation === 'vertical') {
+      // Check for vertical snap
+      if (Math.abs(objBounds.left - guideline.position) < tolerance) {
+        obj.set('left', guideline.position);
+      } else if (Math.abs(objBounds.centerX - guideline.position) < tolerance) {
+        obj.set('left', guideline.position - objBounds.width / 2);
+      } else if (Math.abs(objBounds.right - guideline.position) < tolerance) {
+        obj.set('left', guideline.position - objBounds.width);
+      }
+    }
+  }
+  
+  return obj;
+}
