@@ -55,7 +55,7 @@ export function sectionToFabricObject(section: WireframeSection): fabric.Object 
  */
 export function fabricObjectToSection(obj: fabric.Object): AdaptiveWireframeSection {
   // Get the existing section data if available
-  const existingData = obj.data as AdaptiveWireframeSection || {};
+  const existingData = (obj.data as AdaptiveWireframeSection) || {} as AdaptiveWireframeSection;
   
   // Update position and dimensions
   return {
