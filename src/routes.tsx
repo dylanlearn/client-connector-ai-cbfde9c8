@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -23,9 +22,6 @@ import WireframeStudioPage from "./pages/WireframeStudioPage";
 import Layout from "@/components/layout/Layout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import RegisterPage from "@/pages/RegisterPage";
-import DashboardPage from "@/pages/DashboardPage";
-import SettingsPage from "@/pages/SettingsPage";
-import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
 import { Navigate } from "react-router-dom";
@@ -78,15 +74,15 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />,
+    element: <Dashboard />,
   },
   {
     path: "/settings",
-    element: <SettingsPage />,
+    element: <Settings />,
   },
   {
     path: "/project/:projectId",
-    element: <ProjectDetailsPage />,
+    element: <ProjectDetailPage />,
   },
   {
     path: "/wireframe/:projectId?",
