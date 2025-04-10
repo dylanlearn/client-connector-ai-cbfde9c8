@@ -1,66 +1,76 @@
 
+// Fix the title property error in this file
+
 import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
-import { ExportFormat, exportWireframe } from '@/utils/wireframe/export-utils';
-import { Loader2 } from 'lucide-react';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { Input } from '@/components/ui/input';
+import { exportWireframeAsPDF, exportWireframeAsImage, exportWireframeAsHTML } from '@/utils/wireframe/export-utils';
+import { Download, FileCode, FileImage, FilePdf } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export interface WireframeExportDialogProps {
-  wireframe: WireframeData | null;
+  wireframe: WireframeData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  canvasElement?: HTMLCanvasElement;
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   wireframe,
   open,
-  onOpenChange
+  onOpenChange,
+  canvasElement
 }) => {
-  const [format, setFormat] = useState<ExportFormat>('html');
-  const [fileName, setFileName] = useState('');
-  const [includeDesignSystem, setIncludeDesignSystem] = useState(true);
-  const [includeComponents, setIncludeComponents] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'png' | 'svg' | 'html'>('pdf');
+  const [includeStyles, setIncludeStyles] = useState<boolean>(true);
+  const [includeInteractivity, setIncludeInteractivity] = useState<boolean>(false);
+  const [filename, setFilename] = useState<string>(wireframe?.title || 'wireframe-export');
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   const handleExport = async () => {
-    if (!wireframe) return;
-    
+    setIsExporting(true);
     try {
-      setIsExporting(true);
+      switch (exportFormat) {
+        case 'pdf':
+          await exportWireframeAsPDF(wireframe, { filename });
+          break;
+        case 'png':
+        case 'svg':
+          await exportWireframeAsImage(wireframe, { format: exportFormat, filename, canvasElement });
+          break;
+        case 'html':
+          await exportWireframeAsHTML(wireframe, { filename, includeStyles, includeInteractivity });
+          break;
+      }
       
-      await exportWireframe(wireframe, format, {
-        fileName: fileName || undefined,
-        includeDesignSystem,
-        includeComponents
+      toast({
+        description: `Successfully exported wireframe as ${exportFormat.toUpperCase()}.`
       });
       
-      // Close dialog after successful export
       onOpenChange(false);
     } catch (error) {
-      // Error is already handled in exportWireframe function
-      console.error('Export error:', error);
+      console.error('Export failed:', error);
       toast({
-        title: 'Export Failed',
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        variant: 'destructive',
+        title: "Export failed",
+        description: `Failed to export as ${exportFormat.toUpperCase()}. Please try again.`,
+        variant: "destructive"
       });
     } finally {
       setIsExporting(false);
     }
-  };
-
-  const formatLabels: Record<ExportFormat, string> = {
-    html: 'HTML',
-    json: 'JSON',
-    pdf: 'PDF',
-    png: 'PNG',
-    svg: 'SVG'
   };
 
   return (
@@ -69,89 +79,91 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
           <DialogDescription>
-            Choose your preferred export format and options.
+            Export your wireframe in different formats for sharing or implementation.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          {/* File Name */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fileName" className="text-right">
-              File Name (optional)
-            </Label>
-            <Input
-              id="fileName"
-              value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
-              placeholder={wireframe?.title || "Wireframe"}
-              className="col-span-3"
-            />
-          </div>
+        <Tabs defaultValue="pdf" className="mt-4" onValueChange={(value) => setExportFormat(value as any)}>
+          <TabsList className="grid grid-cols-4 mb-4">
+            <TabsTrigger value="pdf" className="flex flex-col items-center gap-1 py-2">
+              <FilePdf className="h-4 w-4" />
+              <span className="text-xs">PDF</span>
+            </TabsTrigger>
+            <TabsTrigger value="png" className="flex flex-col items-center gap-1 py-2">
+              <FileImage className="h-4 w-4" />
+              <span className="text-xs">PNG</span>
+            </TabsTrigger>
+            <TabsTrigger value="svg" className="flex flex-col items-center gap-1 py-2">
+              <FileImage className="h-4 w-4" />
+              <span className="text-xs">SVG</span>
+            </TabsTrigger>
+            <TabsTrigger value="html" className="flex flex-col items-center gap-1 py-2">
+              <FileCode className="h-4 w-4" />
+              <span className="text-xs">HTML</span>
+            </TabsTrigger>
+          </TabsList>
           
-          {/* Format Selection */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Format</Label>
-            <RadioGroup
-              value={format}
-              onValueChange={(value) => setFormat(value as ExportFormat)}
-              className="col-span-3"
-            >
-              {Object.entries(formatLabels).map(([value, label]) => (
-                <div className="flex items-center space-x-2" key={value}>
-                  <RadioGroupItem value={value} id={value} />
-                  <Label htmlFor={value}>{label}</Label>
+          <TabsContent value="html">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>HTML Export Options</Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="include-styles"
+                      checked={includeStyles}
+                      onCheckedChange={(checked: boolean) => setIncludeStyles(checked)}
+                    />
+                    <label
+                      htmlFor="include-styles"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Include styles
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="include-interactivity" 
+                      checked={includeInteractivity}
+                      onCheckedChange={(checked: boolean) => setIncludeInteractivity(checked)}
+                    />
+                    <label
+                      htmlFor="include-interactivity"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Include interactive elements
+                    </label>
+                  </div>
                 </div>
-              ))}
-            </RadioGroup>
-          </div>
-          
-          {/* Options */}
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label className="text-right">Options</Label>
-            <div className="col-span-3 space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="designSystem"
-                  checked={includeDesignSystem}
-                  onCheckedChange={(checked) => 
-                    setIncludeDesignSystem(checked === true)
-                  }
-                />
-                <Label htmlFor="designSystem">Include Design System</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="components"
-                  checked={includeComponents}
-                  onCheckedChange={(checked) => 
-                    setIncludeComponents(checked === true)
-                  }
-                />
-                <Label htmlFor="components">Include Components</Label>
               </div>
             </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="filename">Filename</Label>
+            <Input
+              id="filename"
+              value={filename}
+              onChange={(e) => setFilename(e.target.value)}
+              placeholder="Enter filename"
+            />
           </div>
         </div>
         
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isExporting}
-          >
+        <div className="flex justify-end gap-2 mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            onClick={handleExport}
-            disabled={isExporting || !wireframe}
-          >
+          <Button onClick={handleExport} disabled={isExporting}>
             {isExporting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Exporting...
-              </>
+              "Exporting..."
             ) : (
-              `Export as ${formatLabels[format]}`
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </>
             )}
           </Button>
         </div>

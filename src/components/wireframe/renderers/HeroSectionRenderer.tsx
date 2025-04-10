@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
 import { Button } from '@/components/ui/button';
 import { Image } from 'lucide-react';
+import { getSuggestion, createStyleObject } from './utilities';
 
 export const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -31,7 +32,7 @@ export const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
         : 'Powerful Heading That Converts';
     }
     
-    return section.copySuggestions?.heading || 'Powerful Heading That Converts';
+    return getSuggestion(section.copySuggestions, 'heading', 'Powerful Heading That Converts');
   };
   
   const getSubheadingText = () => {
@@ -41,8 +42,8 @@ export const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
         : 'A brief description of your product or service that clearly communicates your value proposition.';
     }
     
-    return section.copySuggestions?.subheading || 
-      'A brief description of your product or service that clearly communicates your value proposition.';
+    return getSuggestion(section.copySuggestions, 'subheading', 
+      'A brief description of your product or service that clearly communicates your value proposition.');
   };
   
   const getCtaText = () => {
@@ -50,7 +51,7 @@ export const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
       return typeof ctaComponent.content === 'string' ? ctaComponent.content : 'Get Started';
     }
     
-    return section.copySuggestions?.cta || 'Get Started';
+    return getSuggestion(section.copySuggestions, 'cta', 'Get Started');
   };
   
   const getBackgroundStyle = () => {

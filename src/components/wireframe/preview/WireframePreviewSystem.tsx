@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { DeviceType, DEVICE_DIMENSIONS, mapDeviceType } from './DeviceInfo';
@@ -41,6 +40,7 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
   const [darkMode, setDarkMode] = useState(initialDarkMode);
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'developer'>('preview');
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   // Calculate device dimensions
   const currentDimensions = useCallback(() => {
@@ -151,6 +151,10 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
       }
     }
   }, [onSectionClick, user, wireframe]);
+
+  const handleExportDialogOpen = () => {
+    setIsExportDialogOpen(true);
+  };
 
   return (
     <div className={`wireframe-preview-system ${fullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`}>
@@ -333,12 +337,13 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
         </CardContent>
       </Card>
       
-      <WireframeExportDialog
-        wireframe={wireframe}
-        open={showExportDialog}
-        onOpenChange={setShowExportDialog}
-        canvasElement={canvasRef.current?.querySelector('canvas') as HTMLCanvasElement}
-      />
+      {wireframe && (
+        <WireframeExportDialog
+          wireframe={wireframe}
+          open={isExportDialogOpen}
+          onOpenChange={setIsExportDialogOpen}
+        />
+      )}
     </div>
   );
 };

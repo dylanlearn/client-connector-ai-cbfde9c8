@@ -1,3 +1,4 @@
+
 // Fix for missing onExport and projectId prop in WireframeCanvasFabric
 // This assumes the component has an export function that needs to be updated
 
@@ -30,7 +31,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     title: 'New Wireframe',
     sections: [],
   });
-  const [viewMode, setViewMode] = useState<ViewMode>('editor');
+  const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
@@ -52,7 +53,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       <div className="flex justify-between mb-4">
         <Tabs value={viewMode} onValueChange={(value) => handleViewModeChange(value as ViewMode)}>
           <TabsList>
-            <TabsTrigger value="editor">Editor</TabsTrigger>
+            <TabsTrigger value="edit">Editor</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
             <TabsTrigger value="code">Code</TabsTrigger>
           </TabsList>
@@ -110,7 +111,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       </div>
 
       <div className="wireframe-content">
-        {viewMode === 'editor' && (
+        {viewMode === 'edit' && (
           <Card>
             <CardContent className="p-0">
               <div className="grid grid-cols-4 h-[70vh]">

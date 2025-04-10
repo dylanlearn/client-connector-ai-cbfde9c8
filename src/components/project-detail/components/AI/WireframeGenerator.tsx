@@ -36,7 +36,7 @@ const WireframeGeneratorComponent = () => {
             <div className="flex-grow mb-4">
               <AdvancedWireframeGenerator
                 projectId={project.id}
-                viewMode="editor"
+                viewMode="edit"
               />
             </div>
             <Button 

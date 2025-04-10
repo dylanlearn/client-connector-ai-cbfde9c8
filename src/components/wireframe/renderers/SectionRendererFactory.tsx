@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { SectionComponentProps } from '../types';
+import { SectionComponentProps, ViewMode } from '../types';
 import HeroSectionRenderer from './HeroSectionRenderer';
 import CTASectionRenderer from './CTASectionRenderer';
 import ComponentRenderer from './ComponentRenderer';
@@ -10,7 +10,17 @@ import ComponentRenderer from './ComponentRenderer';
  * Factory component that returns the appropriate section renderer
  */
 const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
-  const { section } = props;
+  const { section, viewMode } = props;
+  
+  // Map ViewMode to ComponentRenderer compatible viewMode
+  const mappedViewMode = viewMode === 'edit' || viewMode === 'editor' || viewMode === 'code' 
+    ? 'preview' 
+    : viewMode;
+  
+  const adjustedProps = {
+    ...props,
+    viewMode: mappedViewMode as 'preview' | 'flowchart'
+  };
   
   // Select the renderer based on section type
   switch (section.sectionType) {
@@ -21,7 +31,7 @@ const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
     // Add more specialized renderers for other section types
     default:
       // Fall back to the generic component renderer
-      return <ComponentRenderer {...props} />;
+      return <ComponentRenderer {...adjustedProps} />;
   }
 };
 

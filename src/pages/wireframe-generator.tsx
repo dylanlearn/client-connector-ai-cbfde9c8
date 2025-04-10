@@ -45,7 +45,7 @@ const WireframeGenerator = () => {
             <TooltipProvider>
               <AdvancedWireframeGenerator 
                 projectId={projectId}
-                viewMode="editor"
+                viewMode="edit"
               />
             </TooltipProvider>
           </TabsContent>

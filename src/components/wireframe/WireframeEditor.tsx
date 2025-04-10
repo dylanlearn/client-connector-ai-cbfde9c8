@@ -133,8 +133,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
           </Button>
           <Button 
             size="sm" 
-            variant={viewMode === 'editor' ? 'default' : 'outline'}
-            onClick={() => setViewMode('editor')}
+            variant={viewMode === 'edit' ? 'default' : 'outline'}
+            onClick={() => setViewMode('edit')}
           >
             <LayoutDashboard className="h-4 w-4 mr-1" /> Editor
           </Button>

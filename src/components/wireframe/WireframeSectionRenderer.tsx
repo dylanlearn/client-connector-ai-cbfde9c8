@@ -1,19 +1,9 @@
 
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { ViewMode, DeviceType } from './types';
+import { ViewMode, DeviceType, WireframeSectionRendererProps } from './types';
 import { cn } from '@/lib/utils';
 import SectionRendererFactory from './renderers/SectionRendererFactory';
-
-interface WireframeSectionRendererProps {
-  section: WireframeSection;
-  viewMode?: ViewMode;
-  darkMode?: boolean;
-  deviceType?: DeviceType;
-  isSelected?: boolean;
-  onClick?: (sectionId: string) => void;
-  className?: string;
-}
 
 const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   section,
@@ -21,12 +11,12 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   darkMode = false,
   deviceType = 'desktop',
   isSelected = false,
-  onClick,
-  className
+  sectionIndex,
+  onSectionClick
 }) => {
   const handleClick = () => {
-    if (onClick && section.id) {
-      onClick(section.id);
+    if (onSectionClick && section.id) {
+      onSectionClick(section.id);
     }
   };
 
@@ -35,7 +25,6 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
       className={cn(
         'wireframe-section w-full',
         isSelected && 'ring-2 ring-primary ring-offset-2',
-        className
       )}
       data-section-id={section.id}
     >
