@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -23,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { useWireframeRenderer } from '@/hooks/wireframe/use-wireframe-renderer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 interface WireframeComparisonViewProps {
   wireframes: {
@@ -42,7 +42,6 @@ const WireframeComparisonView: React.FC<WireframeComparisonViewProps> = ({
   const [viewMode, setViewMode] = useState<'side-by-side' | 'overlay'>('side-by-side');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   
-  // When a wireframe is selected
   const handleSelect = (id: string) => {
     setSelectedId(id);
     if (onSelectWireframe) {
@@ -147,7 +146,6 @@ const WireframeComparisonView: React.FC<WireframeComparisonViewProps> = ({
   );
 };
 
-// Sub-component for each wireframe in the comparison
 const WireframeComparisonItem: React.FC<{
   wireframe: WireframeData;
   label: string;
