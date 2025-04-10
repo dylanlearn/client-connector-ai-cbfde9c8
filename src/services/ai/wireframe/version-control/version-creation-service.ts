@@ -32,7 +32,7 @@ export class VersionCreationService extends BaseVersionService {
       console.log(`Created version ${versionNumber} for wireframe ${options.wireframeId}`);
       
       return version;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating version:', error);
       throw new Error(`Failed to create version: ${error.message}`);
     }
@@ -46,11 +46,13 @@ export class VersionCreationService extends BaseVersionService {
       // In a real implementation, query the database for the latest version number
       // For demonstration, return a simple number
       return 1;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting next version number:', error);
       throw new Error(`Failed to get next version number: ${error.message}`);
     }
   }
 }
 
-export default new VersionCreationService();
+// Create a singleton instance
+const versionCreationService = new VersionCreationService();
+export default versionCreationService;

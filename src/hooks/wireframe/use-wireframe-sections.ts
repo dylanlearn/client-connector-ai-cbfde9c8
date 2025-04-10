@@ -1,103 +1,108 @@
 
-import { useState, useCallback } from 'react';
-import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { createSectionInstance, getComponentDefinition } from '@/components/wireframe/registry/component-registry';
+import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
+import { v4 as uuidv4 } from 'uuid';
 
-export function useWireframeSections() {
+export const useWireframeSections = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const wireframe = useWireframeStore();
   const { toast } = useToast();
-  const [isMoving, setIsMoving] = useState(false);
   
-  const wireframe = useWireframeStore(state => state.wireframe);
-  const activeSection = useWireframeStore(state => state.activeSection);
-  const addSection = useWireframeStore(state => state.addSection);
-  const updateSection = useWireframeStore(state => state.updateSection);
-  const removeSection = useWireframeStore(state => state.removeSection);
-  const reorderSections = useWireframeStore(state => state.reorderSections);
-  const setActiveSection = useWireframeStore(state => state.setActiveSection);
-  
-  const handleAddSection = useCallback((componentType: string, variantId?: string) => {
-    const newSectionData = createSectionInstance(componentType, variantId);
-    const componentDef = getComponentDefinition(componentType);
-    
-    if (!componentDef) {
+  const addSection = (section: Omit<WireframeSection, "id">) => {
+    try {
+      wireframe.addSection(section);
       toast({
-        title: "Error",
-        description: `Component type '${componentType}' not found`,
-        variant: "destructive"
+        title: "Section added",
+        description: `${section.name} section was added successfully.`,
       });
-      return;
+    } catch (error) {
+      console.error("Error adding section:", error);
+      toast({
+        title: "Error adding section",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
-    
-    // Create a section object compatible with the wireframe-store WireframeSection type
-    const sectionToAdd: Omit<WireframeSection, 'id'> = {
-      name: componentDef.name || 'New Section',
-      sectionType: componentType,
-      description: componentDef.description || '',
-      layoutType: 'default',
-      // Initialize copySuggestions as an empty array to ensure proper typing
-      copySuggestions: [] as any[],
-      ...newSectionData
-    };
-    
-    addSection(sectionToAdd);
-    
-    toast({
-      title: "Section added",
-      description: `Added ${componentDef.name} section to wireframe`
-    });
-  }, [addSection, toast]);
+  };
   
-  const handleUpdateSection = useCallback((sectionId: string, updates: Partial<WireframeSection>) => {
-    if (!sectionId) return;
-    
-    // Create a new updates object with normalized copySuggestions if present
-    const normalizedUpdates = { ...updates };
-    
-    if ('copySuggestions' in updates) {
-      // Normalize copySuggestions to always be an array
-      normalizedUpdates.copySuggestions = Array.isArray(updates.copySuggestions)
-        ? updates.copySuggestions
-        : updates.copySuggestions
-          ? [updates.copySuggestions as any]
-          : [] as any[];
+  const updateSection = (id: string, updates: Partial<WireframeSection>) => {
+    try {
+      wireframe.updateSection(id, updates);
+      toast({
+        title: "Section updated",
+        description: "Section was updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error updating section:", error);
+      toast({
+        title: "Error updating section",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
     }
-    
-    // Apply the normalized updates
-    updateSection(sectionId, normalizedUpdates);
-  }, [updateSection]);
+  };
   
-  const handleRemoveSection = useCallback((sectionId: string) => {
-    if (!sectionId) return;
-    
-    removeSection(sectionId);
-    
-    toast({
-      title: "Section removed",
-      description: "Section has been removed from wireframe"
-    });
-  }, [removeSection, toast]);
+  const removeSection = (id: string) => {
+    try {
+      wireframe.removeSection(id);
+      toast({
+        title: "Section removed",
+        description: "Section was removed successfully.",
+      });
+    } catch (error) {
+      console.error("Error removing section:", error);
+      toast({
+        title: "Error removing section",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
   
-  const handleReorderSections = useCallback((fromIndex: number, toIndex: number) => {
-    setIsMoving(true);
-    reorderSections(fromIndex, toIndex);
-    
-    // Small delay to prevent UI flicker
-    setTimeout(() => setIsMoving(false), 100);
-  }, [reorderSections]);
-  
-  const handleSelectSection = useCallback((sectionId: string) => {
-    setActiveSection(sectionId);
-  }, [setActiveSection]);
+  const duplicateSection = (id: string) => {
+    try {
+      const section = wireframe.sections.find(s => s.id === id);
+      if (!section) {
+        throw new Error("Section not found");
+      }
+      
+      const { id: _, ...sectionWithoutId } = section;
+      
+      const newSection = {
+        ...sectionWithoutId,
+        name: `${section.name} (Copy)`,
+        id: uuidv4()
+      };
+      
+      wireframe.addSection(newSection);
+      
+      toast({
+        title: "Section duplicated",
+        description: "Section was duplicated successfully.",
+      });
+    } catch (error) {
+      console.error("Error duplicating section:", error);
+      toast({
+        title: "Error duplicating section",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
   
   return {
-    sections: wireframe.sections || [],
-    activeSection,
-    isMoving,
-    addSection: handleAddSection,
-    updateSection: handleUpdateSection,
-    removeSection: handleRemoveSection,
-    reorderSections: handleReorderSections,
-    selectSection: handleSelectSection
+    sections: wireframe.sections,
+    activeSection: wireframe.activeSection,
+    setActiveSection: wireframe.setActiveSection,
+    addSection,
+    updateSection,
+    removeSection,
+    duplicateSection,
+    moveSectionUp: wireframe.moveSectionUp,
+    moveSectionDown: wireframe.moveSectionDown,
+    isLoading
   };
-}
+};
+
+export default useWireframeSections;

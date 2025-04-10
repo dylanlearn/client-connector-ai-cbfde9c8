@@ -93,6 +93,67 @@ export class WireframeMemoryService {
       };
     }
   }
+
+  /**
+   * Get design memory for a project
+   */
+  async getDesignMemory(projectId: string): Promise<DesignMemoryData | null> {
+    try {
+      const response = await this.loadDesignMemory({ projectId });
+      
+      if (response.success && response.data) {
+        return response.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting design memory:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Save project data
+   */
+  async saveProject(projectId: string, projectData: Partial<any>): Promise<any> {
+    try {
+      console.log('Saving project data', { projectId, projectData });
+      
+      // In a real implementation, you would save to a database
+      return {
+        success: true,
+        data: {
+          id: projectId,
+          ...projectData,
+          updatedAt: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      console.error('Error saving project data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get project data
+   */
+  async getProject(projectId: string): Promise<any> {
+    try {
+      console.log('Getting project data', { projectId });
+      
+      // In a real implementation, you would fetch from a database
+      return {
+        id: projectId,
+        title: 'Project ' + projectId,
+        description: 'Auto-generated project',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error getting project data:', error);
+      throw error;
+    }
+  }
   
   /**
    * Extract style preferences from wireframe data
@@ -113,4 +174,6 @@ export class WireframeMemoryService {
   }
 }
 
-export default new WireframeMemoryService();
+// Create and export a default instance
+export const wireframeMemoryService = new WireframeMemoryService();
+export default wireframeMemoryService;

@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
+import { useWireframeStore } from '@/stores/wireframe-store';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Loader2, Sparkles } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface WireframeAISuggestionsProps {
   onClose: () => void;
@@ -15,10 +17,10 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({ onClose
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const wireframe = useWireframeStore(state => state.wireframe);
-  const activeSection = useWireframeStore(state => state.activeSection);
-  const addSection = useWireframeStore(state => state.addSection);
-  const updateSection = useWireframeStore(state => state.updateSection);
+  const wireframe = useWireframeStore(state => state);
+  const activeSection = wireframe.activeSection;
+  const addSection = wireframe.addSection;
+  const updateSection = wireframe.updateSection;
   
   const getActiveSectionData = () => {
     if (!activeSection) return null;
@@ -42,7 +44,7 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({ onClose
       
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const suggestedSection: Partial<WireframeSection> = {
+      const suggestedSection = {
         name: "AI Suggested Section",
         description: "This section was generated based on your prompt: " + prompt,
         sectionType: "hero",
@@ -59,6 +61,7 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({ onClose
         updateSection(activeSection, suggestedSection);
       } else {
         addSection({
+          id: uuidv4(), // Add id to satisfy TypeScript
           name: suggestedSection.name || "AI Section",
           sectionType: suggestedSection.sectionType || "generic",
           description: suggestedSection.description,
