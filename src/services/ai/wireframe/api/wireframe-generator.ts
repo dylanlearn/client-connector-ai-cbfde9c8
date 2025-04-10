@@ -47,14 +47,17 @@ export const wireframeGenerator = {
       }
       
       const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
         wireframe: WireframeData;
         model?: string;
+        intentData?: any;
+        blueprint?: any;
         usage?: { 
           total_tokens: number;
           completion_tokens: number;
           prompt_tokens: number;
         };
-      }>('generation-api', {
+      }>('generate-advanced-wireframe', {
         body: {
           action: 'generate-wireframe',
           ...enhancedParams
@@ -77,7 +80,9 @@ export const wireframeGenerator = {
         generationTime,
         model: data.model,
         usage: data.usage,
-        success: true
+        success: true,
+        intentData: data.intentData,
+        blueprint: data.blueprint
       };
     } catch (error) {
       console.error("Error generating wireframe:", error);

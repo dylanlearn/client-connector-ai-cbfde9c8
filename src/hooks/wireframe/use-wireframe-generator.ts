@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { wireframeGenerator } from '@/services/ai/wireframe/api/wireframe-generator';
@@ -5,8 +6,7 @@ import { wireframeMemoryService } from '@/services/ai/wireframe/wireframe-memory
 import { Toast } from '@/hooks/use-toast';
 import { 
   WireframeGenerationParams, 
-  WireframeGenerationResult,
-  WireframeResult
+  WireframeGenerationResult
 } from '@/services/ai/wireframe/wireframe-types';
 
 export function useWireframeGenerator(
@@ -52,7 +52,7 @@ export function useWireframeGenerator(
       console.error("Wireframe generation error:", err);
       setError(err instanceof Error ? err : new Error(errorMessage));
       
-      // Provide a fallback wireframe with error information for graceful UI handling
+      // Provide an error wireframe for graceful UI handling
       const fallbackResult: WireframeGenerationResult = {
         wireframe: {
           id: uuidv4(),
@@ -61,7 +61,7 @@ export function useWireframeGenerator(
           description: `Error: ${errorMessage}`
         },
         error: errorMessage,
-        success: false // Set success to false
+        success: false
       };
       
       setCurrentWireframe(fallbackResult);
@@ -91,7 +91,7 @@ export function useWireframeGenerator(
         throw new Error("No base wireframe provided for variation");
       }
       
-      // Create a clean params object without the imageUrl property which isn't part of WireframeGenerationParams
+      // Create a clean params object
       const params: WireframeGenerationParams = {
         baseWireframe: baseWireframe.wireframe,
         description: `Create a more creative variation of the existing wireframe: ${baseWireframe.wireframe.title || ''}`,
@@ -100,7 +100,6 @@ export function useWireframeGenerator(
         enhancedCreativity: true
       };
       
-      // If we need to keep track of imageUrl, add it to the wireframe object after generation
       const result = await generateWireframe(params);
       
       if (result && baseWireframe.imageUrl) {
@@ -126,7 +125,7 @@ export function useWireframeGenerator(
           description: `Error: ${errorMessage}`
         },
         error: err instanceof Error ? err.message : String(err),
-        success: false // Set success to false
+        success: false
       };
       
       return fallbackResult;
@@ -162,7 +161,7 @@ export function useWireframeGenerator(
           description: `Error: ${errorMessage}`
         },
         error: errorMessage,
-        success: false // Set success to false
+        success: false
       };
       
       return fallbackResult;

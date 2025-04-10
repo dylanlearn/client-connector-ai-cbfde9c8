@@ -74,8 +74,8 @@ export class WireframeGeneratorService {
     } catch (error) {
       console.error("Error generating wireframe:", error);
       
-      // Instead of falling back to mock data, return an error state
-      // that the UI can handle appropriately
+      // Return an error state that the UI can handle appropriately
+      // No mock data, just an error state with proper error information
       return {
         wireframe: {
           id: uuidv4(),
