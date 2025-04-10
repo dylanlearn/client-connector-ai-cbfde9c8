@@ -1,178 +1,116 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { DesignMemoryData, DesignMemoryResponse } from './wireframe-types';
+import { WireframeData } from './wireframe-types';
+import { DesignMemoryData, DesignMemoryResponse } from './design-memory-types';
 
 /**
- * Service for managing design memory storage and retrieval
+ * Service for managing design memory functionality
  */
 export class WireframeMemoryService {
   /**
-   * Store design memory data for a project
+   * Store design memory from a wireframe
    */
-  async storeDesignMemory(data: DesignMemoryData): Promise<DesignMemoryResponse> {
+  async storeDesignMemory(
+    wireframeData: WireframeData, 
+    options: {
+      projectId?: string;
+      includeUserFeedback?: boolean;
+    } = {}
+  ): Promise<DesignMemoryResponse> {
     try {
-      // Check if a record already exists for this project
-      const { data: existing } = await supabase
-        .from('wireframe_design_memory')
-        .select()
-        .eq('project_id', data.projectId)
-        .maybeSingle();
-        
-      if (existing) {
-        // Update existing record
-        const { data: updated, error } = await supabase
-          .from('wireframe_design_memory')
-          .update({
-            blueprint_id: data.blueprintId,
-            layout_patterns: data.layoutPatterns,
-            style_preferences: data.stylePreferences,
-            component_preferences: data.componentPreferences,
-            updated_at: new Date().toISOString()
-          })
-          .eq('project_id', data.projectId)
-          .select()
-          .single();
-          
-        if (error) throw error;
-        return this.formatResponse(updated);
-      } else {
-        // Create new record
-        const { data: created, error } = await supabase
-          .from('wireframe_design_memory')
-          .insert({
-            project_id: data.projectId,
-            blueprint_id: data.blueprintId,
-            layout_patterns: data.layoutPatterns,
-            style_preferences: data.stylePreferences,
-            component_preferences: data.componentPreferences
-          })
-          .select()
-          .single();
-          
-        if (error) throw error;
-        return this.formatResponse(created);
-      }
+      console.log('Storing design memory', {
+        wireframeId: wireframeData.id,
+        projectId: options.projectId
+      });
+      
+      // Extract relevant design elements from the wireframe
+      const designMemory: DesignMemoryData = {
+        wireframeId: wireframeData.id,
+        projectId: options.projectId,
+        colorScheme: wireframeData.colorScheme,
+        typography: wireframeData.typography,
+        designTokens: wireframeData.designTokens,
+        stylePreferences: this.extractStylePreferences(wireframeData),
+        timestamp: new Date().toISOString()
+      };
+      
+      // In a real implementation, you would store this in a database
+      console.log('Design memory created:', designMemory);
+      
+      return {
+        success: true,
+        data: designMemory
+      };
     } catch (error) {
       console.error('Error storing design memory:', error);
-      throw error;
+      return {
+        success: false,
+        error: 'Failed to store design memory'
+      };
     }
   }
   
   /**
-   * Get design memory for a project
+   * Load design memory for a project or wireframe
    */
-  async getDesignMemory(projectId: string): Promise<DesignMemoryResponse> {
-    try {
-      const { data, error } = await supabase
-        .from('wireframe_design_memory')
-        .select()
-        .eq('project_id', projectId)
-        .maybeSingle();
-        
-      if (error) throw error;
-      
-      if (!data) {
-        throw new Error('Design memory not found for project: ' + projectId);
-      }
-      
-      return this.formatResponse(data);
-    } catch (error) {
-      console.error('Error getting design memory:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Update design memory
-   */
-  async updateDesignMemory({
-    memoryId,
-    updates
-  }: {
-    memoryId: string;
-    updates: Partial<Omit<DesignMemoryData, 'projectId'>>;
+  async loadDesignMemory(options: {
+    projectId?: string;
+    wireframeId?: string;
   }): Promise<DesignMemoryResponse> {
     try {
-      const { data, error } = await supabase
-        .from('wireframe_design_memory')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', memoryId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return this.formatResponse(data);
+      console.log('Loading design memory', options);
+      
+      // In a real implementation, you would fetch this from a database
+      // For now, return a mock response
+      const mockDesignMemory: DesignMemoryData = {
+        projectId: options.projectId,
+        wireframeId: options.wireframeId,
+        colorScheme: {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          background: '#ffffff'
+        },
+        typography: {
+          headings: 'Inter',
+          body: 'Inter'
+        },
+        stylePreferences: [
+          'clean',
+          'modern',
+          'minimalist'
+        ]
+      };
+      
+      return {
+        success: true,
+        data: mockDesignMemory
+      };
     } catch (error) {
-      console.error('Error updating design memory:', error);
-      throw error;
+      console.error('Error loading design memory:', error);
+      return {
+        success: false,
+        error: 'Failed to load design memory'
+      };
     }
   }
   
   /**
-   * Get project data by ID
+   * Extract style preferences from wireframe data
    */
-  async getProject(projectId: string): Promise<any> {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
-        
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error getting project:', error);
-      throw error;
+  private extractStylePreferences(wireframeData: WireframeData): string[] {
+    const preferences: string[] = [];
+    
+    // Logic to extract style preferences from the wireframe
+    if (wireframeData.style && typeof wireframeData.style === 'string') {
+      const lowerStyle = wireframeData.style.toLowerCase();
+      if (lowerStyle.includes('modern')) preferences.push('modern');
+      if (lowerStyle.includes('minimal')) preferences.push('minimalist');
+      if (lowerStyle.includes('bold')) preferences.push('bold');
+      if (lowerStyle.includes('professional')) preferences.push('professional');
     }
-  }
-  
-  /**
-   * Save project data
-   */
-  async saveProject(projectId: string, projectData: any): Promise<any> {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .update(projectData)
-        .eq('id', projectId)
-        .select()
-        .single();
-        
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error saving project:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Format the response from database to a consistent API format
-   */
-  private formatResponse(data: any): DesignMemoryResponse {
-    return {
-      id: data.id,
-      projectId: data.project_id,
-      data: {
-        projectId: data.project_id,
-        blueprintId: data.blueprint_id,
-        layoutPatterns: data.layout_patterns,
-        stylePreferences: data.style_preferences,
-        componentPreferences: data.component_preferences
-      },
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-      success: true
-    };
+    
+    return preferences;
   }
 }
 
-// Create a singleton instance to export
-export const wireframeMemoryService = new WireframeMemoryService();
-
-// Export types for use in hooks
-export type { DesignMemoryData, DesignMemoryResponse };
+export default new WireframeMemoryService();

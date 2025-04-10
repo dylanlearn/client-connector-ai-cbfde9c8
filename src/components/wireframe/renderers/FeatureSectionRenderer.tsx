@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -17,14 +18,15 @@ const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
     }
   };
   
-  const copySuggestions = section.copySuggestions || {};
-  
-  // Generate fake feature items
+  // Generate feature items
   const features = Array(6).fill(null).map((_, i) => ({
-    title: copySuggestions[`feature${i+1}Title`] || `Feature ${i+1}`,
-    description: copySuggestions[`feature${i+1}Description`] || 'Description of this amazing feature and how it benefits the user.',
+    title: getSuggestion(section.copySuggestions, `feature${i+1}Title`, `Feature ${i+1}`),
+    description: getSuggestion(section.copySuggestions, `feature${i+1}Description`, 'Description of this amazing feature and how it benefits the user.'),
     icon: '📊'
   }));
+  
+  // Create properly typed style object
+  const styles = createStyleObject(section.style);
   
   return (
     <div 
@@ -35,7 +37,7 @@ const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
         viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
       onClick={handleClick}
-      style={section.style}
+      style={styles}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -43,14 +45,14 @@ const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
             'text-3xl font-bold mb-4',
             darkMode ? 'text-white' : 'text-gray-900'
           )}>
-            {copySuggestions.heading || section.name || 'Features'}
+            {getSuggestion(section.copySuggestions, 'heading', section.name || 'Features')}
           </h2>
           
           <p className={cn(
             'max-w-3xl mx-auto',
             darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {copySuggestions.subheading || 'Discover the powerful features that make our product stand out from the competition.'}
+            {getSuggestion(section.copySuggestions, 'subheading', 'Discover the powerful features that make our product stand out from the competition.')}
           </p>
         </div>
         

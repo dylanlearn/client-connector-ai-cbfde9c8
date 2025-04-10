@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -16,8 +17,6 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
       onClick();
     }
   };
-  
-  const copySuggestions = section.copySuggestions || {};
   
   // Quick links for the footer
   const quickLinks = [
@@ -36,6 +35,9 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
     { label: 'FAQ', url: '#' },
   ];
   
+  // Create properly typed style object
+  const styles = createStyleObject(section.style);
+  
   return (
     <footer 
       className={cn(
@@ -45,7 +47,7 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
         viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
       onClick={handleClick}
-      style={section.style}
+      style={styles}
     >
       <div className="max-w-7xl mx-auto">
         <div className={cn(
@@ -59,13 +61,13 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
               'text-lg font-bold mb-4',
               darkMode ? 'text-white' : 'text-gray-900'
             )}>
-              {copySuggestions.companyName || 'Company Name'}
+              {getSuggestion(section.copySuggestions, 'companyName', 'Company Name')}
             </h3>
             <p className={cn(
               'mb-4',
               darkMode ? 'text-gray-400' : 'text-gray-600'
             )}>
-              {copySuggestions.companyDescription || 'A brief description of your company and what you do.'}
+              {getSuggestion(section.copySuggestions, 'companyDescription', 'A brief description of your company and what you do.')}
             </p>
           </div>
           
@@ -75,7 +77,7 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
               'text-lg font-bold mb-4',
               darkMode ? 'text-white' : 'text-gray-900'
             )}>
-              {copySuggestions.quickLinksTitle || 'Quick Links'}
+              {getSuggestion(section.copySuggestions, 'quickLinksTitle', 'Quick Links')}
             </h3>
             <ul className="space-y-2">
               {quickLinks.map((link, i) => (
@@ -99,7 +101,7 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
               'text-lg font-bold mb-4',
               darkMode ? 'text-white' : 'text-gray-900'
             )}>
-              {copySuggestions.resourcesTitle || 'Resources'}
+              {getSuggestion(section.copySuggestions, 'resourcesTitle', 'Resources')}
             </h3>
             <ul className="space-y-2">
               {resourceLinks.map((link, i) => (
@@ -123,19 +125,19 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
               'text-lg font-bold mb-4',
               darkMode ? 'text-white' : 'text-gray-900'
             )}>
-              {copySuggestions.contactTitle || 'Contact Us'}
+              {getSuggestion(section.copySuggestions, 'contactTitle', 'Contact Us')}
             </h3>
             <address className={cn(
               'not-italic',
               darkMode ? 'text-gray-400' : 'text-gray-600'
             )}>
-              {copySuggestions.address || '123 Main Street'}<br />
-              {copySuggestions.cityStateZip || 'City, State 12345'}<br />
+              {getSuggestion(section.copySuggestions, 'address', '123 Main Street')}<br />
+              {getSuggestion(section.copySuggestions, 'cityStateZip', 'City, State 12345')}<br />
               <a 
-                href={`mailto:${copySuggestions.email || 'info@example.com'}`}
+                href={`mailto:${getSuggestion(section.copySuggestions, 'email', 'info@example.com')}`}
                 className={darkMode ? 'text-blue-400' : 'text-blue-600'}
               >
-                {copySuggestions.email || 'info@example.com'}
+                {getSuggestion(section.copySuggestions, 'email', 'info@example.com')}
               </a>
             </address>
           </div>
@@ -146,7 +148,7 @@ const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
           'mt-12 pt-8 border-t text-center',
           darkMode ? 'border-gray-800 text-gray-400' : 'border-gray-200 text-gray-600'
         )}>
-          {copySuggestions.copyright || `© ${new Date().getFullYear()} Company Name. All rights reserved.`}
+          {getSuggestion(section.copySuggestions, 'copyright', `© ${new Date().getFullYear()} Company Name. All rights reserved.`)}
         </div>
       </div>
     </footer>

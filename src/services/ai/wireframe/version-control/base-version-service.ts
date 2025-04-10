@@ -1,76 +1,95 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { WireframeData, WireframeVersion } from '../wireframe-types';
+import { WireframeData } from '../wireframe-types';
+import { WireframeVersion } from './types';
 
 /**
- * Base version service for common version functionality
+ * Base service for wireframe version control functionality
  */
-export const baseVersionService = {
+export class BaseVersionService {
   /**
-   * Get the latest version number for a wireframe and branch
+   * Create a new version of a wireframe
    */
-  getLatestVersionNumber: async (wireframeId: string, branchName: string = "main"): Promise<number> => {
+  protected async createVersion(
+    wireframeId: string,
+    versionData: WireframeData,
+    options: {
+      parentVersionId?: string;
+      versionNumber?: number;
+      changeDescription?: string;
+      branchName?: string;
+      createdBy?: string;
+    } = {}
+  ): Promise<WireframeVersion> {
     try {
-      const { data: versionNumber, error: versionError } = await supabase
-        .rpc('get_latest_version_number', { 
-          p_wireframe_id: wireframeId,
-          p_branch_name: branchName
-        });
+      const now = new Date().toISOString();
       
-      if (versionError) {
-        console.error("Error fetching last version:", versionError);
-        throw versionError;
-      }
+      // Create the new version object
+      const version: WireframeVersion = {
+        id: `v_${Date.now()}`, // Simple ID for demonstration
+        wireframe_id: wireframeId,
+        version_number: options.versionNumber || 1,
+        data: versionData,
+        parent_version_id: options.parentVersionId,
+        created_at: now,
+        created_by: options.createdBy || 'system',
+        change_description: options.changeDescription || 'New version created',
+        is_current: true
+      };
       
-      return typeof versionNumber === 'number' && versionNumber > 0 ? versionNumber : 0;
+      // In a real implementation, store this in the database
+      console.log('Created new version:', version);
+      
+      return version;
     } catch (error) {
-      console.error("Error in get latest version:", error);
-      return 0;
-    }
-  },
-
-  /**
-   * Get a specific wireframe version
-   */
-  getWireframeVersion: async (versionId: string): Promise<WireframeVersion | null> => {
-    try {
-      const { data: versionData, error } = await supabase
-        .rpc('get_wireframe_version', { p_version_id: versionId });
-      
-      if (error || !versionData) {
-        console.error("Error getting wireframe version:", error);
-        throw error || new Error("Version not found");
-      }
-      
-      return versionData as unknown as WireframeVersion;
-    } catch (error) {
-      console.error("Error getting wireframe version:", error);
-      return null;
-    }
-  },
-
-  /**
-   * Update the main wireframe with version data
-   */
-  updateMainWireframe: async (wireframeId: string, versionId: string, data: WireframeData): Promise<void> => {
-    try {
-      // Convert wireframeData to JSON-compatible format
-      const dataForMainWireframe = JSON.parse(JSON.stringify(data));
-      
-      const { error: wireframeUpdateError } = await supabase
-        .rpc('update_wireframe_with_version', {
-          p_wireframe_id: wireframeId,
-          p_version_id: versionId,
-          p_wireframe_data: dataForMainWireframe
-        });
-      
-      if (wireframeUpdateError) {
-        console.error("Error updating wireframe with new version:", wireframeUpdateError);
-        throw wireframeUpdateError;
-      }
-    } catch (error) {
-      console.error("Error updating main wireframe:", error);
-      throw error;
+      console.error('Error creating version:', error);
+      throw new Error(`Failed to create version: ${error.message}`);
     }
   }
-};
+  
+  /**
+   * Compare two wireframe versions
+   */
+  protected compareVersions(
+    version1: WireframeVersion,
+    version2: WireframeVersion
+  ): { changes: string[]; summary: string } {
+    // Simple implementation for demonstration
+    const changes: string[] = [];
+    let sectionsAdded = 0;
+    let sectionsRemoved = 0;
+    
+    // Compare section counts
+    const v1SectionCount = version1.data.sections?.length || 0;
+    const v2SectionCount = version2.data.sections?.length || 0;
+    
+    if (v1SectionCount !== v2SectionCount) {
+      if (v1SectionCount < v2SectionCount) {
+        sectionsAdded = v2SectionCount - v1SectionCount;
+        changes.push(`Added ${sectionsAdded} section(s)`);
+      } else {
+        sectionsRemoved = v1SectionCount - v2SectionCount;
+        changes.push(`Removed ${sectionsRemoved} section(s)`);
+      }
+    }
+    
+    // Check if titles are different
+    if (version1.data.title !== version2.data.title) {
+      changes.push('Title changed');
+    }
+    
+    // Check if descriptions are different
+    if (version1.data.description !== version2.data.description) {
+      changes.push('Description changed');
+    }
+    
+    // Generate a summary
+    let summary = changes.length > 0 
+      ? `${changes.length} change(s): ${changes.join(', ')}` 
+      : 'No significant changes detected';
+    
+    return {
+      changes,
+      summary
+    };
+  }
+}

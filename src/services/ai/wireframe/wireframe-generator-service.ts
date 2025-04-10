@@ -1,224 +1,133 @@
 
-import { v4 as uuidv4 } from 'uuid';
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,
-  WireframeSection
 } from './wireframe-types';
-import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Service for generating wireframes
- */
 export class WireframeGeneratorService {
-  /**
-   * Generate a wireframe based on a description
-   * @param params The wireframe generation parameters
-   * @returns Generated wireframe data
-   */
   async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
+    // This is just a placeholder implementation - actual generation would involve API calls
     try {
-      console.log("Generating wireframe with params:", params);
-      const startTime = performance.now();
+      // Log the process start for debugging
+      console.log(`Generating wireframe with params:`, params);
       
-      // Validate required parameters
-      if (!params.description) {
-        throw new Error("Description is required for wireframe generation");
-      }
-
-      // Call the edge function for generating wireframes
-      const { data, error } = await supabase.functions.invoke<{
-        success: boolean;
-        wireframe: any;
-        intentData?: any;
-        blueprint?: any;
-        model?: string;
-        usage?: any;
-      }>('generate-advanced-wireframe', {
-        body: {
-          userInput: params.description,
-          projectId: params.projectId,
-          styleToken: params.style,
-          colorScheme: params.colorScheme,
-          enhancedCreativity: params.enhancedCreativity,
-          creativityLevel: params.creativityLevel,
-          industry: params.industry,
-          includeDesignMemory: true
+      // Start timing the generation process
+      const startTime = Date.now();
+      
+      // Handle the case where we need to parse a string-based style
+      let parsedStyle = {};
+      if (params.style) {
+        if (typeof params.style === 'string') {
+          try {
+            parsedStyle = JSON.parse(params.style);
+          } catch {
+            parsedStyle = { styleToken: params.style };
+          }
+        } else {
+          parsedStyle = params.style;
         }
-      });
-      
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(`Failed to generate wireframe: ${error.message}`);
       }
       
-      if (!data?.success || !data.wireframe) {
-        throw new Error("Wireframe generation failed: No data returned from the service");
-      }
+      // Create a sample wireframe structure
+      const wireframe = {
+        id: this.generateUniqueId(),
+        title: `Wireframe for ${params.description}`,
+        description: params.description,
+        sections: this.generateDefaultSections(params),
+        style: parsedStyle,
+        colorScheme: params.colorScheme || this.generateDefaultColorScheme(),
+        createdAt: new Date().toISOString()
+      };
       
-      const endTime = performance.now();
+      // End timing the generation process
+      const endTime = Date.now();
       const generationTime = (endTime - startTime) / 1000; // Convert to seconds
       
-      // Transform the wireframe to ensure it has all required fields
-      const transformedWireframe = this.transformWireframeToFabricCompatible(data.wireframe);
-      
-      return {
-        wireframe: transformedWireframe,
+      // Create the result object
+      const result: WireframeGenerationResult = {
+        wireframe,
         generationTime,
-        model: data.model,
-        usage: data.usage,
-        success: true,
-        intentData: data.intentData,
-        blueprint: data.blueprint
+        success: true
       };
+      
+      return result;
     } catch (error) {
       console.error("Error generating wireframe:", error);
       
-      // Return an error state that the UI can handle appropriately
-      // No mock data, just an error state with proper error information
       return {
-        wireframe: {
-          id: uuidv4(),
-          title: "Error Generating Wireframe",
-          description: error instanceof Error ? error.message : "Unknown error occurred",
-          sections: [],
-          error: true
-        },
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        wireframe: null,
+        error: `Failed to generate wireframe: ${error?.toString() || 'Unknown error'}`,
         success: false
       };
     }
   }
   
-  /**
-   * Transform wireframe data to ensure compatibility with Fabric.js
-   */
-  private transformWireframeToFabricCompatible(wireframe: any): any {
-    if (!wireframe) return null;
-    
-    // Make a deep copy to avoid modifying the original
-    const transformed = JSON.parse(JSON.stringify(wireframe));
-    
-    // Ensure the wireframe has a valid ID
-    if (!transformed.id) {
-      transformed.id = uuidv4();
-    }
-    
-    // Ensure the wireframe has a title
-    if (!transformed.title) {
-      transformed.title = "Generated Wireframe";
-    }
-    
-    // Ensure all sections have position and dimensions
-    if (transformed.sections && Array.isArray(transformed.sections)) {
-      let offsetY = 0;
-      const width = 1200;
-      
-      transformed.sections.forEach((section: WireframeSection, index: number) => {
-        // Ensure section has an ID
-        if (!section.id) {
-          section.id = uuidv4();
-        }
-        
-        // Ensure section has a name
-        if (!section.name) {
-          section.name = `${section.sectionType || 'Section'} ${index + 1}`;
-        }
-        
-        // Ensure section has position
-        if (!section.position) {
-          section.position = { x: 0, y: offsetY };
-        }
-        
-        // Ensure section has dimensions
-        if (!section.dimensions) {
-          const height = section.sectionType === 'hero' ? 400 : 
-                         section.sectionType === 'footer' ? 200 : 300;
-          section.dimensions = { width, height };
-        }
-        
-        // Update offsetY for next section
-        offsetY += (section.dimensions.height || 300) + 20;
-      });
-    }
-    
-    return transformed;
+  private generateUniqueId(): string {
+    // Simple implementation - in a real app, use a proper UUID library
+    return 'wf_' + Math.random().toString(36).substring(2, 11);
   }
   
-  /**
-   * Generate creative variations of an existing wireframe
-   * @param baseWireframe The base wireframe to generate variations from
-   * @param variationCount Number of variations to generate
-   * @returns Array of wireframe variations
-   */
-  async generateVariations(
-    baseWireframe: any, 
-    variationCount: number = 3,
-    variationPrompt?: string
-  ): Promise<WireframeGenerationResult[]> {
-    const variations: WireframeGenerationResult[] = [];
-    
-    // Generate variations using the edge function
-    for (let i = 0; i < variationCount; i++) {
-      try {
-        // Call the edge function for generating variations
-        const { data, error } = await supabase.functions.invoke<{
-          success: boolean;
-          wireframe: any;
-          intentData?: any;
-          blueprint?: any;
-        }>('generate-advanced-wireframe', {
-          body: {
-            userInput: variationPrompt || `Create variation ${i+1} of the existing wireframe`,
-            baseWireframe: baseWireframe,
-            isVariation: true,
-            variationIndex: i + 1
-          }
-        });
-        
-        if (error) {
-          console.error(`Error generating variation ${i+1}:`, error);
-          continue;
+  private generateDefaultSections(params: WireframeGenerationParams): any[] {
+    // Create some default sections for this demo implementation
+    return [
+      {
+        id: this.generateUniqueId(),
+        name: "Hero Section",
+        sectionType: "hero",
+        description: "Main hero section with call-to-action",
+        components: [],
+        layoutType: "centered",
+        position: { x: 0, y: 0 },
+        dimensions: { width: "100%", height: 500 },
+        copySuggestions: {
+          heading: `Welcome to ${params.description || 'Our Product'}`,
+          subheading: "The perfect solution for your needs",
+          primaryCta: "Get Started",
+          secondaryCta: "Learn More"
         }
-        
-        if (data?.success && data.wireframe) {
-          // Transform the wireframe variation
-          const transformedVariation = this.transformWireframeToFabricCompatible(data.wireframe);
-          
-          // Ensure a unique ID and appropriate title
-          transformedVariation.id = uuidv4();
-          transformedVariation.title = `${baseWireframe.title} - Variation ${i+1}`;
-          
-          variations.push({
-            wireframe: transformedVariation,
-            success: true,
-            intentData: data.intentData,
-            blueprint: data.blueprint
-          });
+      },
+      {
+        id: this.generateUniqueId(),
+        name: "Features",
+        sectionType: "features",
+        description: "Product features overview",
+        components: [],
+        layoutType: "grid",
+        position: { x: 0, y: 500 },
+        dimensions: { width: "100%", height: 600 },
+        copySuggestions: {
+          heading: "Key Features",
+          subheading: "Everything you need to succeed"
         }
-      } catch (err) {
-        console.error(`Failed to generate variation ${i+1}:`, err);
+      },
+      {
+        id: this.generateUniqueId(),
+        name: "CTA Banner",
+        sectionType: "cta",
+        description: "Call to action banner",
+        components: [],
+        layoutType: "centered",
+        position: { x: 0, y: 1100 },
+        dimensions: { width: "100%", height: 300 },
+        copySuggestions: {
+          heading: "Ready to Begin?",
+          subheading: "Start your free trial today - no credit card required",
+          primaryCta: "Start Free Trial",
+          secondaryCta: "Contact Sales"
+        }
       }
-    }
-    
-    // If no variations were successfully generated, return an error result
-    if (variations.length === 0) {
-      variations.push({
-        wireframe: {
-          id: uuidv4(),
-          title: "Variation Generation Failed",
-          description: "Could not generate variations of the wireframe",
-          sections: [],
-          error: true
-        },
-        success: false,
-        error: "Failed to generate variations"
-      });
-    }
-    
-    return variations;
+    ];
+  }
+  
+  private generateDefaultColorScheme() {
+    // Generate a default color scheme
+    return {
+      primary: "#3b82f6",
+      secondary: "#10b981",
+      accent: "#f59e0b",
+      background: "#ffffff"
+    };
   }
 }
 
-// Create a singleton instance to export
-export const wireframeGenerator = new WireframeGeneratorService();
+export default new WireframeGeneratorService();

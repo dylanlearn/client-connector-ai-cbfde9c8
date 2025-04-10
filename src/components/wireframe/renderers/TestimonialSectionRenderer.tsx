@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -17,26 +18,27 @@ const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
     }
   };
   
-  const copySuggestions = section.copySuggestions || {};
-  
   // Sample testimonials
   const testimonials = [
     {
-      quote: copySuggestions.testimonial1 || 'This product has completely transformed how we operate. The efficiency gains alone have paid for the investment many times over.',
-      author: copySuggestions.author1 || 'Jane Smith',
-      role: copySuggestions.role1 || 'CEO, Company Name'
+      quote: getSuggestion(section.copySuggestions, 'testimonial1', 'This product has completely transformed how we operate. The efficiency gains alone have paid for the investment many times over.'),
+      author: getSuggestion(section.copySuggestions, 'author1', 'Jane Smith'),
+      role: getSuggestion(section.copySuggestions, 'role1', 'CEO, Company Name')
     },
     {
-      quote: copySuggestions.testimonial2 || 'The customer support is fantastic. Any time we had questions, the team was immediately responsive and helpful.',
-      author: copySuggestions.author2 || 'Michael Johnson',
-      role: copySuggestions.role2 || 'Director of Operations, Company Name'
+      quote: getSuggestion(section.copySuggestions, 'testimonial2', 'The customer support is fantastic. Any time we had questions, the team was immediately responsive and helpful.'),
+      author: getSuggestion(section.copySuggestions, 'author2', 'Michael Johnson'),
+      role: getSuggestion(section.copySuggestions, 'role2', 'Director of Operations, Company Name')
     },
     {
-      quote: copySuggestions.testimonial3 || 'We evaluated several solutions before choosing this one. Three years later, we couldn\'t be happier with our decision.',
-      author: copySuggestions.author3 || 'Sarah Williams',
-      role: copySuggestions.role3 || 'CTO, Company Name'
+      quote: getSuggestion(section.copySuggestions, 'testimonial3', 'We evaluated several solutions before choosing this one. Three years later, we couldn\'t be happier with our decision.'),
+      author: getSuggestion(section.copySuggestions, 'author3', 'Sarah Williams'),
+      role: getSuggestion(section.copySuggestions, 'role3', 'CTO, Company Name')
     }
   ];
+  
+  // Create properly typed style object
+  const styles = createStyleObject(section.style);
   
   return (
     <div 
@@ -47,7 +49,7 @@ const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
         viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
       onClick={handleClick}
-      style={section.style}
+      style={styles}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -55,14 +57,14 @@ const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
             'text-3xl font-bold mb-4',
             darkMode ? 'text-white' : 'text-gray-900'
           )}>
-            {copySuggestions.heading || 'What Our Customers Say'}
+            {getSuggestion(section.copySuggestions, 'heading', 'What Our Customers Say')}
           </h2>
           
           <p className={cn(
             'max-w-3xl mx-auto',
             darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {copySuggestions.subheading || 'Don\'t just take our word for it. See what our satisfied customers have to say.'}
+            {getSuggestion(section.copySuggestions, 'subheading', 'Don\'t just take our word for it. See what our satisfied customers have to say.')}
           </p>
         </div>
         

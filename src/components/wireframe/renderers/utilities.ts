@@ -27,7 +27,7 @@ export const getSuggestion = (
   
   // Handle object case
   if (typeof copySuggestions === 'object') {
-    return (copySuggestions as any)[key] || defaultValue;
+    return copySuggestions[key] || defaultValue;
   }
   
   return defaultValue;

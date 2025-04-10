@@ -282,9 +282,76 @@ export interface CopySuggestions {
   email?: string;
   copyright?: string;
   
+  // Navigation section fields
+  brandName?: string;
+  navItem1?: string;
+  navItem2?: string;
+  navItem3?: string;
+  navItem4?: string;
+  navItem5?: string;
+  ctaButton?: string;
+  
   // Add other specific fields used in different renderers
   [key: string]: string | undefined;
 }
 
 // Fix the CopySuggestions array type for consistency
 export type CopySuggestionsArray = CopySuggestions[];
+
+// Add missing utility types for design memory
+export interface DesignMemoryData {
+  projectId?: string;
+  wireframeId?: string;
+  designTokens?: Record<string, any>;
+  colorScheme?: Record<string, string>;
+  typography?: Record<string, any>;
+  stylePreferences?: string[];
+  componentLibrary?: Record<string, any>;
+  userFeedback?: string[];
+  designHistory?: Array<{
+    timestamp: string;
+    action: string;
+    details: any;
+  }>;
+  [key: string]: any;
+}
+
+export interface DesignMemoryResponse {
+  success: boolean;
+  data?: DesignMemoryData;
+  error?: string;
+}
+
+// Add missing types for version control
+export interface WireframeVersion {
+  id: string;
+  wireframe_id: string;
+  version_number: number;
+  data: any;
+  parent_version_id?: string;
+  created_at: string;
+  created_by?: string;
+  change_description?: string;
+  is_current: boolean;
+}
+
+export interface BranchInfo {
+  id: string;
+  name: string;
+  wireframe_id: string;
+  created_at: string;
+  created_by?: string;
+  description?: string;
+  is_default?: boolean;
+}
+
+// Add utility function to convert AIWireframe to WireframeData
+export function aiWireframeToWireframeData(aiWireframe: AIWireframe): WireframeData {
+  return {
+    id: aiWireframe.id,
+    title: aiWireframe.title || 'Untitled Wireframe',
+    description: aiWireframe.description || '',
+    sections: aiWireframe.sections || [],
+    ...aiWireframe
+  };
+}
