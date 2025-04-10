@@ -22,7 +22,8 @@ const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
     viewMode: mappedViewMode as 'preview' | 'flowchart',
     darkMode: props.darkMode || false, // Ensure darkMode is always provided
     deviceType: props.deviceType || 'desktop', // Ensure deviceType is always provided
-    isSelected: props.isSelected || false // Ensure isSelected is always provided
+    isSelected: props.isSelected || false, // Ensure isSelected is always provided
+    onClick: props.onClick || (() => {}) // Ensure onClick is always provided with a default no-op function
   };
   
   // Select the renderer based on section type
