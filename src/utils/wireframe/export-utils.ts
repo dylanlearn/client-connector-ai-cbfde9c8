@@ -259,9 +259,9 @@ const downloadBlob = (blob: Blob, fileName: string): void => {
 /**
  * Helper function to convert base64 data to a blob
  */
-export const dataURItoBlob = (dataURI: string): Blob => {
+export const dataURItoBlob = (dataURI: string | ArrayBuffer): Blob => {
   // Convert base64/URLEncoded data component to raw binary data held in a string
-  let byteString;
+  let byteString: string;
   
   // Fix for the TS errors: Make sure we're working with a string before using string methods
   if (typeof dataURI === 'string') {
