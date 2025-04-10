@@ -1,133 +1,198 @@
+// src/services/ai/wireframe/wireframe-generator-service.ts
 
+import { v4 as uuidv4 } from 'uuid';
 import { 
-  WireframeGenerationParams, 
-  WireframeGenerationResult,
-} from './wireframe-types';
+  WireframeData, 
+  WireframeSection, 
+  WireframeComponent,
+  WireframeGenerationParams
+} from '../wireframe-types';
 
-export class WireframeGeneratorService {
-  async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
-    // This is just a placeholder implementation - actual generation would involve API calls
-    try {
-      // Log the process start for debugging
-      console.log(`Generating wireframe with params:`, params);
-      
-      // Start timing the generation process
-      const startTime = Date.now();
-      
-      // Handle the case where we need to parse a string-based style
-      let parsedStyle = {};
-      if (params.style) {
-        if (typeof params.style === 'string') {
-          try {
-            parsedStyle = JSON.parse(params.style);
-          } catch {
-            parsedStyle = { styleToken: params.style };
+export const WireframeGeneratorService = {
+  generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeData> => {
+    // Mock data for demonstration purposes
+    const sections: WireframeSection[] = [
+      {
+        id: uuidv4(),
+        name: 'Header',
+        components: [
+          {
+            id: uuidv4(),
+            type: 'text',
+            content: 'Website Title',
+            style: {
+              fontSize: '24px',
+              fontWeight: 'bold'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'navigation',
+            content: ['Home', 'About', 'Services', 'Contact'],
+            style: {
+              display: 'flex',
+              justifyContent: 'space-around'
+            }
           }
-        } else {
-          parsedStyle = params.style;
-        }
-      }
-      
-      // Create a sample wireframe structure
-      const wireframe = {
-        id: this.generateUniqueId(),
-        title: `Wireframe for ${params.description}`,
-        description: params.description,
-        sections: this.generateDefaultSections(params),
-        style: parsedStyle,
-        colorScheme: params.colorScheme || this.generateDefaultColorScheme(),
-        createdAt: new Date().toISOString()
-      };
-      
-      // End timing the generation process
-      const endTime = Date.now();
-      const generationTime = (endTime - startTime) / 1000; // Convert to seconds
-      
-      // Create the result object
-      const result: WireframeGenerationResult = {
-        wireframe,
-        generationTime,
-        success: true
-      };
-      
-      return result;
-    } catch (error) {
-      console.error("Error generating wireframe:", error);
-      
-      return {
-        wireframe: null,
-        error: `Failed to generate wireframe: ${error?.toString() || 'Unknown error'}`,
-        success: false
-      };
-    }
-  }
-  
-  private generateUniqueId(): string {
-    // Simple implementation - in a real app, use a proper UUID library
-    return 'wf_' + Math.random().toString(36).substring(2, 11);
-  }
-  
-  private generateDefaultSections(params: WireframeGenerationParams): any[] {
-    // Create some default sections for this demo implementation
-    return [
-      {
-        id: this.generateUniqueId(),
-        name: "Hero Section",
-        sectionType: "hero",
-        description: "Main hero section with call-to-action",
-        components: [],
-        layoutType: "centered",
-        position: { x: 0, y: 0 },
-        dimensions: { width: "100%", height: 500 },
-        copySuggestions: {
-          heading: `Welcome to ${params.description || 'Our Product'}`,
-          subheading: "The perfect solution for your needs",
-          primaryCta: "Get Started",
-          secondaryCta: "Learn More"
-        }
+        ]
       },
       {
-        id: this.generateUniqueId(),
-        name: "Features",
-        sectionType: "features",
-        description: "Product features overview",
-        components: [],
-        layoutType: "grid",
-        position: { x: 0, y: 500 },
-        dimensions: { width: "100%", height: 600 },
-        copySuggestions: {
-          heading: "Key Features",
-          subheading: "Everything you need to succeed"
-        }
+        id: uuidv4(),
+        name: 'Hero Section',
+        components: [
+          {
+            id: uuidv4(),
+            type: 'image',
+            url: 'https://via.placeholder.com/800x400',
+            altText: 'Hero Image',
+            style: {
+              width: '100%',
+              height: 'auto'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'text',
+            content: 'Welcome to Our Website',
+            style: {
+              fontSize: '36px',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'text',
+            content: 'A brief description of what we offer.',
+            style: {
+              fontSize: '18px',
+              textAlign: 'center'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'button',
+            content: 'Learn More',
+            style: {
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              padding: '15px 32px',
+              textAlign: 'center',
+              textDecoration: 'none',
+              display: 'inline-block',
+              fontSize: '16px',
+              borderRadius: '5px'
+            }
+          }
+        ]
       },
       {
-        id: this.generateUniqueId(),
-        name: "CTA Banner",
-        sectionType: "cta",
-        description: "Call to action banner",
-        components: [],
-        layoutType: "centered",
-        position: { x: 0, y: 1100 },
-        dimensions: { width: "100%", height: 300 },
-        copySuggestions: {
-          heading: "Ready to Begin?",
-          subheading: "Start your free trial today - no credit card required",
-          primaryCta: "Start Free Trial",
-          secondaryCta: "Contact Sales"
-        }
+        id: uuidv4(),
+        name: 'Content Section',
+        components: [
+          {
+            id: uuidv4(),
+            type: 'text',
+            content: 'About Us',
+            style: {
+              fontSize: '24px',
+              fontWeight: 'bold'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'text',
+            content: 'A detailed description about our company and services.',
+            style: {
+              fontSize: '16px'
+            }
+          }
+        ]
+      },
+      {
+        id: uuidv4(),
+        name: 'Contact Form',
+        components: [
+          {
+            id: uuidv4(),
+            type: 'form',
+            fields: ['Name', 'Email', 'Message'],
+            style: {
+              display: 'flex',
+              flexDirection: 'column'
+            }
+          },
+          {
+            id: uuidv4(),
+            type: 'button',
+            content: 'Submit',
+            style: {
+              backgroundColor: '#008CBA',
+              color: 'white',
+              padding: '15px 32px',
+              textAlign: 'center',
+              textDecoration: 'none',
+              display: 'inline-block',
+              fontSize: '16px',
+              borderRadius: '5px'
+            }
+          }
+        ]
+      },
+      {
+        id: uuidv4(),
+        name: 'Footer',
+        components: [
+          {
+            id: uuidv4(),
+            type: 'text',
+            content: '© 2023 My Company',
+            style: {
+              textAlign: 'center'
+            }
+          }
+        ]
       }
     ];
-  }
-  
-  private generateDefaultColorScheme() {
-    // Generate a default color scheme
+
+    // Mock color scheme and typography
+    const colorScheme = {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    };
+
+    const typography = {
+      headings: 'sans-serif',
+      body: 'sans-serif'
+    };
+    
+    // Ensure colorScheme has the required structure
+    const safeColorScheme = {
+      primary: colorScheme.primary || '#3b82f6',
+      secondary: colorScheme.secondary || '#10b981',
+      accent: colorScheme.accent || '#f59e0b',
+      background: colorScheme.background || '#ffffff',
+      text: colorScheme.text || '#111827'
+    };
+
     return {
-      primary: "#3b82f6",
-      secondary: "#10b981",
-      accent: "#f59e0b",
-      background: "#ffffff"
+      id: uuidv4(),
+      title: params.title || 'New Wireframe',
+      description: params.description || '',
+      sections: sections || [],
+      style: params.style || {},
+      colorScheme: safeColorScheme,
+      typography: typography,
+      designTokens: {},
+      mobileLayouts: {},
+      styleVariants: {},
+      designReasoning: {},
+      animations: {},
+      imageUrl: '',
+      lastUpdated: new Date().toISOString()
     };
   }
-}
-
-export default new WireframeGeneratorService();
+};

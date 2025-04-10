@@ -176,8 +176,9 @@ export class EnhancedWireframeGenerator {
       console.error('Error applying feedback:', error);
       return {
         wireframe: null,
+        success: false,
         modified: false,
-        changeDescription: 'Failed to apply feedback',
+        changeDescription: `Error: ${error.message || 'Unknown error occurred during modification'}`
       };
     }
   }

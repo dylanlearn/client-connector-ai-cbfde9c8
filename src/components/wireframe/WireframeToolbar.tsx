@@ -1,161 +1,77 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { Slider } from "@/components/ui/slider"
+import { useWireframe } from '@/contexts/WireframeContext';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { 
-  Save, 
-  Download, 
-  Copy, 
-  Monitor, 
-  Smartphone, 
-  Tablet, 
-  Sun, 
-  Moon,
-  EyeIcon,
-  Grid3X3,
-  PanelLeft
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { Toggle } from "@/components/ui/toggle"
 
 interface WireframeToolbarProps {
-  onSave: () => Promise<any>;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onResetZoom: () => void;
 }
 
-const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onSave }) => {
-  const [isSaving, setIsSaving] = useState(false);
-  const { 
-    wireframe, 
-    updateWireframe,
-    activeDevice, 
-    setActiveDevice,
-    darkMode,
-    toggleDarkMode,
-    showGrid,
-    toggleShowGrid,
-    highlightSections,
-    toggleHighlightSections
-  } = useWireframeStore();
-  
-  const handleSave = async () => {
-    if (isSaving) return;
-    
-    setIsSaving(true);
-    try {
-      await onSave();
-    } finally {
-      setIsSaving(false);
-    }
+const WireframeToolbar: React.FC<WireframeToolbarProps> = ({ onZoomIn, onZoomOut, onResetZoom }) => {
+  const { zoomLevel, setZoomLevel, gridSize, setGridSize, toggleGrid, toggleSnapToGrid, showGrid, snapToGrid } = useWireframe();
+  const { darkMode, showGrid: showGridStore, highlightSections, toggleDarkMode, toggleShowGrid, toggleHighlightSections } = useWireframeStore();
+
+  const handleZoomChange = (value: number[]) => {
+    setZoomLevel(value[0] / 100);
   };
-  
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateWireframe({ title: e.target.value });
+
+  const handleGridSizeChange = (value: number[]) => {
+    setGridSize(value[0]);
   };
-  
-  const handleCopyJson = () => {
-    navigator.clipboard.writeText(JSON.stringify(wireframe, null, 2));
-    toast.success("Wireframe JSON copied to clipboard");
-  };
-  
+
   return (
-    <div className="wireframe-toolbar p-4 border rounded-md bg-background shadow-sm">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <div className="flex flex-wrap items-center justify-between p-4 bg-secondary text-secondary-foreground">
+      <div className="flex items-center space-x-4">
+        <Button variant="outline" size="sm" onClick={onZoomIn}>
+          Zoom In
+        </Button>
+        <Button variant="outline" size="sm" onClick={onZoomOut}>
+          Zoom Out
+        </Button>
+        <Button variant="outline" size="sm" onClick={onResetZoom}>
+          Reset Zoom
+        </Button>
         <div>
-          <Label htmlFor="wireframe-title" className="mb-2 block text-sm">Wireframe Title</Label>
-          <Input 
-            id="wireframe-title"
-            value={wireframe?.title || ''}
-            onChange={handleTitleChange}
-            placeholder="Enter wireframe title"
+          Zoom: {(zoomLevel * 100).toFixed(0)}%
+          <Slider
+            defaultValue={[zoomLevel * 100]}
+            max={200}
+            min={25}
+            step={5}
+            onValueChange={handleZoomChange}
+            className="w-[100px] ml-2 inline-block"
           />
         </div>
       </div>
-      
-      <div className="flex flex-wrap gap-2">
-        <Button variant="default" onClick={handleSave} disabled={isSaving}>
-          <Save className="h-4 w-4 mr-2" />
-          {isSaving ? 'Saving...' : 'Save Wireframe'}
-        </Button>
-        
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56">
-            <div className="grid gap-2">
-              <Button variant="ghost" className="justify-start" onClick={handleCopyJson}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy as JSON
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              {activeDevice === 'desktop' && <Monitor className="h-4 w-4 mr-2" />}
-              {activeDevice === 'tablet' && <Tablet className="h-4 w-4 mr-2" />}
-              {activeDevice === 'mobile' && <Smartphone className="h-4 w-4 mr-2" />}
-              {activeDevice}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setActiveDevice('desktop')}>
-              <Monitor className="h-4 w-4 mr-2" /> Desktop
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveDevice('tablet')}>
-              <Tablet className="h-4 w-4 mr-2" /> Tablet
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveDevice('mobile')}>
-              <Smartphone className="h-4 w-4 mr-2" /> Mobile
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={toggleDarkMode}
-          title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
-          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={toggleShowGrid}
-          title={showGrid ? "Hide Grid" : "Show Grid"}
-          className={showGrid ? "bg-muted" : ""}
-        >
-          <Grid3X3 className="h-4 w-4" />
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={toggleHighlightSections}
-          title={highlightSections ? "Hide Section Outlines" : "Show Section Outlines"}
-          className={highlightSections ? "bg-muted" : ""}
-        >
-          <PanelLeft className="h-4 w-4" />
-        </Button>
+
+      <div className="flex items-center space-x-4">
+        <div>
+          Grid Size: {gridSize}px
+          <Slider
+            defaultValue={[gridSize]}
+            max={100}
+            min={2}
+            step={2}
+            onValueChange={handleGridSizeChange}
+            className="w-[100px] ml-2 inline-block"
+          />
+        </div>
+        <Toggle pressed={showGridStore} onPressedChange={toggleShowGrid}>
+          Show Grid
+        </Toggle>
+        <Toggle pressed={snapToGrid} onPressedChange={toggleSnapToGrid}>
+          Snap to Grid
+        </Toggle>
+        <Toggle pressed={darkMode} onPressedChange={toggleDarkMode}>
+          Dark Mode
+        </Toggle>
+        <Toggle pressed={highlightSections} onPressedChange={toggleHighlightSections}>
+          Highlight Sections
+        </Toggle>
       </div>
     </div>
   );

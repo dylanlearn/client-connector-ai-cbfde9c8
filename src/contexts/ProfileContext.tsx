@@ -42,20 +42,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     refetchProfile,
   }), [profile, isLoading, error, updateProfile, refetchProfile]);
   
-  // Wrap the original AuthContext to include profile data
-  const authContext = useContext(AuthContext);
-  
-  // Memoize the enhanced auth context to prevent unnecessary re-renders
-  const enhancedAuthContext = useMemo(() => ({
-    ...authContext,
-    profile: profile,
-  }), [authContext, profile]);
-  
   return (
     <ProfileContext.Provider value={contextValue}>
-      <AuthContext.Provider value={enhancedAuthContext}>
-        {children}
-      </AuthContext.Provider>
+      {children}
     </ProfileContext.Provider>
   );
 }

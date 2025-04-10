@@ -2,7 +2,6 @@
 import { createContext, useState, useEffect, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { ProfileProvider } from "./ProfileContext";
 import { UserProfile } from "@/utils/auth-utils";
 
 interface AuthContextType {
@@ -82,9 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signInWithGoogle,
       profile: null // Will be provided by ProfileProvider
     }}>
-      <ProfileProvider>
-        {children}
-      </ProfileProvider>
+      {children}
     </AuthContext.Provider>
   );
 }

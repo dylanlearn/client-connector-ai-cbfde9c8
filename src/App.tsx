@@ -6,6 +6,8 @@ import { Toaster } from '@/components/ui/toaster';
 import router from './routes';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryProvider } from './providers/QueryProvider';
+import { ProfileProvider } from './contexts/ProfileContext';
 
 function App() {
   return (
@@ -15,12 +17,16 @@ function App() {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <AuthProvider>
-        <TooltipProvider>
-          <RouterProvider router={router} />
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <TooltipProvider>
+              <RouterProvider router={router} />
+              <Toaster />
+            </TooltipProvider>
+          </ProfileProvider>
+        </AuthProvider>
+      </QueryProvider>
     </ThemeProvider>
   );
 }

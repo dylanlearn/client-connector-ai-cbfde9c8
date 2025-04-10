@@ -1,10 +1,9 @@
-
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-interface WireframeState {
+export interface WireframeState {
   id: string;
   title: string;
   styleToken?: string;
@@ -30,6 +29,7 @@ interface WireframeState {
   gridSize: number;
   wireframe: WireframeData | null;
   canvasSettings: any;
+  highlightSections: boolean;
   undo: () => void;
   redo: () => void;
   setActiveSection: (id: string | null) => void;
@@ -43,9 +43,12 @@ interface WireframeState {
   updateCanvasSettings: (settings: Partial<any>) => void;
   setDarkMode: (darkMode: boolean) => void;
   setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
+  toggleDarkMode: () => void;
+  toggleShowGrid: () => void;
+  toggleHighlightSections: () => void;
+  setWireframe: (wireframe: WireframeData) => void;
 }
 
-// Type guard function to check if a typography object is properly formatted
 function isProperTypographyFormat(typography: any): typography is { headings: string; body: string; fontPairings?: string[] } {
   return typeof typography === 'object' && 
          typeof typography.headings === 'string' && 
@@ -92,6 +95,13 @@ export const useWireframeStore = create<WireframeState>()(
         snapTolerance: 10,
         showSmartGuides: true,
       },
+      highlightSections: false,
+      
+      toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
+      
+      toggleShowGrid: () => set((state) => ({ showGrid: !state.showGrid })),
+      
+      toggleHighlightSections: () => set((state) => ({ highlightSections: !state.highlightSections })),
       
       setActiveSection: (id) => set({ activeSection: id }),
       
@@ -147,20 +157,16 @@ export const useWireframeStore = create<WireframeState>()(
       
       updateWireframe: (updates) => {
         set((state) => {
-          // Handle typography and colorScheme properly
           let updatedTypography = updates.typography || state.typography;
           let updatedColorScheme = updates.colorScheme || state.colorScheme;
           
-          // Ensure typography has the correct format
           if (updatedTypography && !isProperTypographyFormat(updatedTypography)) {
-            // If it's a Record<string, string>, create a proper format
             if (typeof updatedTypography === 'object') {
               updatedTypography = {
                 headings: (updatedTypography as Record<string, string>).headings || 'sans-serif',
                 body: (updatedTypography as Record<string, string>).body || 'sans-serif',
               };
             } else {
-              // Fallback to default
               updatedTypography = {
                 headings: 'sans-serif',
                 body: 'sans-serif'
@@ -168,7 +174,6 @@ export const useWireframeStore = create<WireframeState>()(
             }
           }
           
-          // Return updated state
           return {
             ...state,
             ...updates,
@@ -213,13 +218,13 @@ export const useWireframeStore = create<WireframeState>()(
       
       setActiveDevice: (device) => set({ activeDevice: device }),
       
+      setWireframe: (wireframe) => set({ wireframe }),
+      
       undo: () => {
-        // Placeholder for undo functionality
         console.log('Undo operation not implemented');
       },
       
       redo: () => {
-        // Placeholder for redo functionality
         console.log('Redo operation not implemented');
       }
     }),
