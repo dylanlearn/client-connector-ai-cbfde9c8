@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -19,12 +18,10 @@ const DesignCanvasPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load project data if ID is provided
   useEffect(() => {
     if (id) {
       setIsLoading(true);
       try {
-        // This would normally be an API call
         const savedData = localStorage.getItem(`design-canvas-${id}`);
         if (savedData) {
           const parsedData = JSON.parse(savedData);

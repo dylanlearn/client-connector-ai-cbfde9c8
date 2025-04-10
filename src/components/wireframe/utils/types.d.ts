@@ -32,7 +32,6 @@ export interface SectionRenderingOptions {
   interactive?: boolean;
 }
 
-// Add interfaces for alignment guides
 export interface AlignmentGuide {
   position: number;
   orientation: 'horizontal' | 'vertical';

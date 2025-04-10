@@ -1,614 +1,575 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
-import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ColorPicker } from '@/components/ui/colorpicker';
-import {
-  ZoomIn,
-  ZoomOut,
-  Save,
-  Download,
-  Grid,
-  Home,
-  Undo,
-  Redo,
-  Magnet,
-  Eraser
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+  Undo, Redo, Square, Circle, Type, Image as ImageIcon,
+  ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Grid, Home,
+  Move, MousePointer, Hand, PenTool, Download, Upload, 
+  Trash2, RotateCcw, Copy, DownloadCloud
 } from 'lucide-react';
 import PropertyPanel from './PropertyPanel';
+import { ColorPicker } from '@/components/ui/colorpicker';
+import { useFabric } from '@/hooks/use-fabric';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-interface FabricDesignCanvasProps {
-  width?: number;
-  height?: number;
+export interface FabricDesignCanvasProps {
+  showToolbar?: boolean;
+  readOnly?: boolean;
+  fullWidth?: boolean;
+  projectId?: string;
+  onSave?: (canvasData: any) => void;
   className?: string;
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
-  onCanvasChanged?: (canvas: fabric.Canvas) => void;
-  onSelectionChanged?: (selectedObject: fabric.Object | null) => void;
-  initialCanvasConfig?: Partial<WireframeCanvasConfig>;
 }
 
 const FabricDesignCanvas: React.FC<FabricDesignCanvasProps> = ({
-  width = 800,
-  height = 600,
-  className,
-  onCanvasReady,
-  onCanvasChanged,
-  onSelectionChanged,
-  initialCanvasConfig
+  showToolbar = true,
+  readOnly = false,
+  fullWidth = false,
+  projectId,
+  onSave,
+  className
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
-  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [historyPosition, setHistoryPosition] = useState(-1);
-  const [history, setHistory] = useState<string[]>([]);
-  
-  const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
-    width: width,
-    height: height,
+  const { toast } = useToast();
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvas, setCanvas] = useState<any>(null);
+  const [selectedObject, setSelectedObject] = useState<any>(null);
+  const [currentTool, setCurrentTool] = useState<string>('select');
+  const [fillColor, setFillColor] = useState('#333333');
+  const [strokeColor, setStrokeColor] = useState('#000000');
+  const [strokeWidth, setStrokeWidth] = useState(1);
+  const [fontSize, setFontSize] = useState(16);
+  const [canvasSettings, setCanvasSettings] = useState<WireframeCanvasConfig>({
+    width: 1200,
+    height: 800,
     zoom: 1,
     panOffset: { x: 0, y: 0 },
     showGrid: true,
     snapToGrid: true,
     gridSize: 20,
     gridType: 'lines',
-    snapTolerance: 5,
+    snapTolerance: 10,
     backgroundColor: '#ffffff',
     showSmartGuides: true,
     gridColor: '#e0e0e0',
-    ...(initialCanvasConfig || {})
+    showRulers: true,
+    rulerSize: 20,
+    rulerColor: '#bbbbbb',
+    rulerMarkings: true
+  });
+
+  const {
+    fabricCanvas,
+    canvasConfig,
+    updateConfig,
+    toggleGrid,
+    toggleSnapToGrid,
+    setZoom,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    initializeCanvas
+  } = useFabric({
+    initialConfig: canvasSettings
   });
   
   useEffect(() => {
-    if (!canvasRef.current) return;
-    
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      width: canvasConfig.width,
-      height: canvasConfig.height,
-      backgroundColor: canvasConfig.backgroundColor,
-      selection: true
-    });
-    
-    setFabricCanvas(canvas);
-    
-    const initialJson = JSON.stringify(canvas.toJSON());
-    setHistory([initialJson]);
-    setHistoryPosition(0);
-    
-    if (onCanvasReady) {
-      onCanvasReady(canvas);
-    }
-    
-    if (canvasConfig.showGrid) {
-      drawGrid(canvas);
-    }
-    
-    return () => {
-      canvas.dispose();
-    };
-  }, [canvasConfig.width, canvasConfig.height, canvasConfig.backgroundColor, onCanvasReady]);
-  
-  useEffect(() => {
-    if (!fabricCanvas) return;
-    
-    const handleSelectionCreated = (options: fabric.IEvent) => {
-      const selectedObj = fabricCanvas.getActiveObject();
-      setSelectedObject(selectedObj);
-      
-      if (onSelectionChanged) {
-        onSelectionChanged(selectedObj);
-      }
-    };
-    
-    const handleSelectionCleared = () => {
-      setSelectedObject(null);
-      
-      if (onSelectionChanged) {
-        onSelectionChanged(null);
-      }
-    };
-    
-    const handleObjectModified = (options: fabric.IEvent) => {
-      addToHistory();
-      
-      if (onCanvasChanged) {
-        onCanvasChanged(fabricCanvas);
-      }
-    };
-    
-    fabricCanvas.on('selection:created', handleSelectionCreated);
-    fabricCanvas.on('selection:updated', handleSelectionCreated);
-    fabricCanvas.on('selection:cleared', handleSelectionCleared);
-    fabricCanvas.on('object:modified', handleObjectModified);
-    
-    return () => {
-      if (fabricCanvas) {
-        fabricCanvas.off('selection:created', handleSelectionCreated);
-        fabricCanvas.off('selection:updated', handleSelectionCreated);
-        fabricCanvas.off('selection:cleared', handleSelectionCleared);
-        fabricCanvas.off('object:modified', handleObjectModified);
-      }
-    };
-  }, [fabricCanvas, onSelectionChanged, onCanvasChanged]);
-  
-  const drawGrid = (canvas: fabric.Canvas) => {
-    const existingGridLines = canvas.getObjects().filter((obj) => {
-      return obj.data?.type === 'grid';
-    });
-    
-    existingGridLines.forEach((line) => {
-      canvas.remove(line);
-    });
-    
-    if (!canvasConfig.showGrid) return;
-    
-    const gridSize = canvasConfig.gridSize;
-    const width = canvas.getWidth();
-    const height = canvas.getHeight();
-    
-    if (canvasConfig.gridType === 'lines') {
-      for (let i = 0; i < width / gridSize; i++) {
-        const line = new fabric.Line([i * gridSize, 0, i * gridSize, height], {
-          stroke: canvasConfig.gridColor || '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'grid' }
-        });
-        canvas.add(line);
-        canvas.sendToBack(line);
-      }
-      
-      for (let i = 0; i < height / gridSize; i++) {
-        const line = new fabric.Line([0, i * gridSize, width, i * gridSize], {
-          stroke: canvasConfig.gridColor || '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'grid' }
-        });
-        canvas.add(line);
-        canvas.sendToBack(line);
-      }
-    } else if (canvasConfig.gridType === 'dots') {
-      for (let i = 0; i <= width / gridSize; i++) {
-        for (let j = 0; j <= height / gridSize; j++) {
-          const dot = new fabric.Circle({
-            left: i * gridSize - 1,
-            top: j * gridSize - 1,
-            radius: 1,
-            fill: canvasConfig.gridColor || '#e0e0e0',
-            stroke: null,
-            selectable: false,
-            evented: false,
-            data: { type: 'grid' }
-          });
-          canvas.add(dot);
-          canvas.sendToBack(dot);
-        }
-      }
-    } else if (canvasConfig.gridType === 'columns') {
-      const columns = 12;
-      const gutter = 20;
-      const margin = 50;
-      const columnWidth = (width - 2 * margin - (columns - 1) * gutter) / columns;
-      
-      const leftMargin = new fabric.Line([margin, 0, margin, height], {
-        stroke: canvasConfig.gridColor || '#e0e0e0',
-        strokeWidth: 2,
-        selectable: false,
-        evented: false,
-        data: { type: 'grid' }
+    if (canvasRef.current && !fabricCanvas) {
+      const canvasInstance = new fabric.Canvas(canvasRef.current, {
+        width: canvasSettings.width,
+        height: canvasSettings.height,
+        backgroundColor: canvasSettings.backgroundColor,
+        selection: true
       });
       
-      const rightMargin = new fabric.Line([width - margin, 0, width - margin, height], {
-        stroke: canvasConfig.gridColor || '#e0e0e0',
-        strokeWidth: 2,
+      setCanvas(canvasInstance);
+      initializeCanvas(canvasRef.current);
+    }
+  }, [canvasRef, fabricCanvas, canvasSettings, initializeCanvas]);
+
+  // Fix functions to use gridColor correctly
+  const drawGrid = () => {
+    if (!canvas) return;
+    
+    // Clear any existing grid
+    const existingGrid = canvas.getObjects().filter((obj: any) => 
+      obj.data && obj.data.type === 'grid'
+    );
+    existingGrid.forEach((obj: any) => canvas.remove(obj));
+    
+    if (!canvasSettings.showGrid) return;
+    
+    const { width, height } = canvas;
+    
+    // Draw vertical lines
+    for (let i = 0; i <= width; i += canvasSettings.gridSize) {
+      const line = new fabric.Line([i, 0, i, height], {
+        stroke: canvasSettings.gridColor,
         selectable: false,
         evented: false,
+        strokeWidth: 1,
         data: { type: 'grid' }
       });
-      
-      canvas.add(leftMargin);
-      canvas.add(rightMargin);
-      
-      let x = margin;
-      for (let i = 0; i < columns; i++) {
-        x += columnWidth;
-        const colLine = new fabric.Line([x, 0, x, height], {
-          stroke: canvasConfig.gridColor || '#e0e0e0',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'grid' }
-        });
-        canvas.add(colLine);
-        
-        if (i < columns - 1) {
-          x += gutter;
-          const gutterLine = new fabric.Line([x, 0, x, height], {
-            stroke: canvasConfig.gridColor || '#e0e0e0',
-            strokeDashArray: [4, 4],
-            strokeWidth: 1,
-            selectable: false,
-            evented: false,
-            data: { type: 'grid' }
-          });
-          canvas.add(gutterLine);
-        }
-      }
+      canvas.add(line);
+      line.sendToBack();
+    }
+    
+    // Draw horizontal lines
+    for (let i = 0; i <= height; i += canvasSettings.gridSize) {
+      const line = new fabric.Line([0, i, width, i], {
+        stroke: canvasSettings.gridColor,
+        selectable: false,
+        evented: false,
+        strokeWidth: 1,
+        data: { type: 'grid' }
+      });
+      canvas.add(line);
+      line.sendToBack();
     }
     
     canvas.renderAll();
   };
-  
-  const addShape = (type: string) => {
-    if (!fabricCanvas) return;
+
+  useEffect(() => {
+    if (canvas) {
+      drawGrid();
+    }
+  }, [canvas, canvasSettings.showGrid, canvasSettings.gridSize, canvasSettings.gridColor]);
+
+  const handleAddShape = (shapeType: string) => {
+    if (!canvas) return;
     
     let shape: fabric.Object;
     
-    if (type === 'rectangle') {
-      shape = new fabric.Rect({
-        left: 50,
-        top: 50,
-        width: 100,
-        height: 100,
-        fill: '#3B82F6',
-        stroke: null,
-        strokeWidth: 0,
-        rx: 0,
-        ry: 0
-      });
-    } else if (type === 'circle') {
-      shape = new fabric.Circle({
-        left: 50,
-        top: 50,
-        radius: 50,
-        fill: '#10B981',
-        stroke: null
-      });
-    } else if (type === 'triangle') {
-      shape = new fabric.Triangle({
-        left: 50,
-        top: 50,
-        width: 100,
-        height: 100,
-        fill: '#F59E0B',
-        stroke: null
-      });
-    } else if (type === 'text') {
-      shape = new fabric.Textbox('Edit this text', {
-        left: 50,
-        top: 50,
-        width: 200,
-        fontSize: 20,
-        fontFamily: 'Arial',
-        fill: '#1F2937'
-      });
-    } else {
-      shape = new fabric.Rect({
-        left: 50,
-        top: 50,
-        width: 100,
-        height: 100,
-        fill: '#3B82F6'
-      });
-    }
-    
-    fabricCanvas.add(shape);
-    fabricCanvas.setActiveObject(shape);
-    
-    if (canvasConfig.snapToGrid) {
-      snapObjectToGrid(shape);
-    }
-    
-    fabricCanvas.renderAll();
-    addToHistory();
-    
-    if (onCanvasChanged) {
-      onCanvasChanged(fabricCanvas);
-    }
-  };
-  
-  const snapObjectToGrid = (object: fabric.Object) => {
-    if (!canvasConfig.snapToGrid || !object) return;
-    
-    const gridSize = canvasConfig.gridSize;
-    
-    object.set({
-      left: Math.round(object.left! / gridSize) * gridSize,
-      top: Math.round(object.top! / gridSize) * gridSize
-    });
-    
-    if (object.width) {
-      object.set({
-        width: Math.round(object.width / gridSize) * gridSize
-      });
-    }
-    
-    if (object.height) {
-      object.set({
-        height: Math.round(object.height / gridSize) * gridSize
-      });
-    }
-  };
-  
-  const toggleGrid = () => {
-    const newShowGrid = !canvasConfig.showGrid;
-    
-    setCanvasConfig({
-      ...canvasConfig,
-      showGrid: newShowGrid
-    });
-    
-    if (fabricCanvas) {
-      drawGrid(fabricCanvas);
-    }
-    
-    toast({
-      title: newShowGrid ? "Grid Visible" : "Grid Hidden",
-      description: newShowGrid ? "Showing grid for better alignment" : "Grid is now hidden"
-    });
-  };
-  
-  const toggleSnapToGrid = () => {
-    const newSnapToGrid = !canvasConfig.snapToGrid;
-    
-    setCanvasConfig({
-      ...canvasConfig,
-      snapToGrid: newSnapToGrid
-    });
-    
-    toast({
-      title: newSnapToGrid ? "Snap to Grid Enabled" : "Snap to Grid Disabled",
-      description: newSnapToGrid ? "Objects will snap to grid" : "Objects can be placed freely"
-    });
-  };
-  
-  const zoomIn = () => {
-    if (!fabricCanvas) return;
-    
-    const newZoom = Math.min(5, canvasConfig.zoom + 0.1);
-    fabricCanvas.setZoom(newZoom);
-    
-    setCanvasConfig({
-      ...canvasConfig,
-      zoom: newZoom
-    });
-  };
-  
-  const zoomOut = () => {
-    if (!fabricCanvas) return;
-    
-    const newZoom = Math.max(0.1, canvasConfig.zoom - 0.1);
-    fabricCanvas.setZoom(newZoom);
-    
-    setCanvasConfig({
-      ...canvasConfig,
-      zoom: newZoom
-    });
-  };
-  
-  const resetZoom = () => {
-    if (!fabricCanvas) return;
-    
-    fabricCanvas.setZoom(1);
-    fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-    
-    setCanvasConfig({
-      ...canvasConfig,
-      zoom: 1,
-      panOffset: { x: 0, y: 0 }
-    });
-  };
-  
-  const deleteObject = () => {
-    if (!fabricCanvas) return;
-    
-    const activeObjects = fabricCanvas.getActiveObjects();
-    
-    if (activeObjects.length > 0) {
-      fabricCanvas.remove(...activeObjects);
-      fabricCanvas.discardActiveObject();
-      fabricCanvas.renderAll();
-      setSelectedObject(null);
-      
-      addToHistory();
-      
-      if (onCanvasChanged) {
-        onCanvasChanged(fabricCanvas);
-      }
-      
-      toast({
-        title: activeObjects.length === 1 ? "Object Deleted" : "Objects Deleted",
-        description: `Deleted ${activeObjects.length} element${activeObjects.length !== 1 ? 's' : ''}`
-      });
-    }
-  };
-  
-  const duplicateObject = () => {
-    if (!fabricCanvas || !selectedObject) return;
-    
-    fabricCanvas.getActiveObject().clone((cloned: fabric.Object) => {
-      fabricCanvas.discardActiveObject();
-      
-      cloned.set({
-        left: cloned.left! + 20,
-        top: cloned.top! + 20,
-        evented: true
-      });
-      
-      if (cloned.type === 'activeSelection') {
-        cloned.canvas = fabricCanvas;
-        cloned.forEachObject((obj: fabric.Object) => {
-          fabricCanvas.add(obj);
+    switch (shapeType) {
+      case 'square':
+        shape = new fabric.Rect({
+          left: 50,
+          top: 50,
+          width: 50,
+          height: 50,
+          fill: fillColor,
+          stroke: strokeColor,
+          strokeWidth: strokeWidth
         });
-        
-        cloned.setCoords();
-      } else {
-        fabricCanvas.add(cloned);
-      }
-      
-      fabricCanvas.setActiveObject(cloned);
-      fabricCanvas.renderAll();
-      
-      addToHistory();
-      
-      if (onCanvasChanged) {
-        onCanvasChanged(fabricCanvas);
-      }
-      
-      toast({
-        title: "Object Duplicated",
-        description: "Created a copy of the selected object"
-      });
-    });
-  };
-  
-  const addToHistory = () => {
-    if (!fabricCanvas) return;
-    
-    const json = JSON.stringify(fabricCanvas.toJSON());
-    
-    if (historyPosition < history.length - 1) {
-      const newHistory = history.slice(0, historyPosition + 1);
-      setHistory([...newHistory, json]);
-      setHistoryPosition(historyPosition + 1);
-    } else {
-      setHistory([...history, json]);
-      setHistoryPosition(historyPosition + 1);
+        break;
+      case 'circle':
+        shape = new fabric.Circle({
+          left: 50,
+          top: 50,
+          radius: 25,
+          fill: fillColor,
+          stroke: strokeColor,
+          strokeWidth: strokeWidth
+        });
+        break;
+      default:
+        return;
     }
     
-    setCanUndo(true);
-    setCanRedo(false);
+    canvas.add(shape);
+    canvas.setActiveObject(shape);
+    canvas.renderAll();
   };
-  
-  const undo = () => {
-    if (!fabricCanvas || historyPosition <= 0) return;
+
+  const handleAddText = () => {
+    if (!canvas) return;
     
-    const newPosition = historyPosition - 1;
-    const json = JSON.parse(history[newPosition]);
+    const text = new fabric.Textbox('New Text', {
+      left: 50,
+      top: 50,
+      width: 150,
+      fontSize: fontSize,
+      fill: fillColor,
+      stroke: strokeColor,
+      strokeWidth: strokeWidth
+    });
     
-    fabricCanvas.loadFromJSON(json, () => {
-      fabricCanvas.renderAll();
-      
-      setHistoryPosition(newPosition);
-      setCanUndo(newPosition > 0);
-      setCanRedo(true);
-      
-      if (onCanvasChanged) {
-        onCanvasChanged(fabricCanvas);
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+  };
+
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const handleSelectionCreated = (e: any) => {
+      setSelectedObject(e.target);
+    };
+    
+    const handleSelectionUpdated = (e: any) => {
+      setSelectedObject(e.target);
+    };
+    
+    const handleSelectionCleared = () => {
+      setSelectedObject(null);
+    };
+    
+    canvas.on('selection:created', handleSelectionCreated);
+    canvas.on('selection:updated', handleSelectionUpdated);
+    canvas.on('selection:cleared', handleSelectionCleared);
+    
+    return () => {
+      canvas.off('selection:created', handleSelectionCreated);
+      canvas.off('selection:updated', handleSelectionUpdated);
+      canvas.off('selection:cleared', handleSelectionCleared);
+    };
+  }, [canvas]);
+
+  const handleZoom = (zoomType: string) => {
+    switch (zoomType) {
+      case 'in':
+        zoomIn();
+        break;
+      case 'out':
+        zoomOut();
+        break;
+      case 'reset':
+        resetZoom();
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handlePan = (direction: string) => {
+    if (!canvas) return;
+    
+    let panX = 0;
+    let panY = 0;
+    const panValue = 50;
+    
+    switch (direction) {
+      case 'left':
+        panX = -panValue;
+        break;
+      case 'right':
+        panX = panValue;
+        break;
+      case 'up':
+        panY = -panValue;
+        break;
+      case 'down':
+        panY = panValue;
+        break;
+      default:
+        return;
+    }
+    
+    canvas.relativePan(new fabric.Point(panX, panY));
+    canvas.requestRenderAll();
+  };
+
+  const handleClearCanvas = () => {
+    if (!canvas) return;
+    
+    canvas.clear();
+    canvas.backgroundColor = canvasSettings.backgroundColor;
+    drawGrid();
+    canvas.renderAll();
+  };
+
+  const handleSave = () => {
+    if (!canvas || !projectId) return;
+    
+    const canvasJson = canvas.toJSON(['id', 'name', 'data']);
+    
+    if (onSave) {
+      onSave(canvasJson);
+    } else {
+      try {
+        localStorage.setItem(`design-canvas-${projectId}`, JSON.stringify(canvasJson));
+        toast({
+          title: "Saved",
+          description: "Your design has been saved",
+        });
+      } catch (err) {
+        console.error('Error saving project:', err);
+        toast({
+          title: "Error",
+          description: "Could not save your design",
+          variant: "destructive",
+        });
       }
-    });
+    }
   };
-  
-  const redo = () => {
-    if (!fabricCanvas || historyPosition >= history.length - 1) return;
+
+  const handleLoad = () => {
+    if (!canvas || !projectId) return;
     
-    const newPosition = historyPosition + 1;
-    const json = JSON.parse(history[newPosition]);
-    
-    fabricCanvas.loadFromJSON(json, () => {
-      fabricCanvas.renderAll();
-      
-      setHistoryPosition(newPosition);
-      setCanUndo(true);
-      setCanRedo(newPosition < history.length - 1);
-      
-      if (onCanvasChanged) {
-        onCanvasChanged(fabricCanvas);
+    try {
+      const savedJson = localStorage.getItem(`design-canvas-${projectId}`);
+      if (savedJson) {
+        canvas.loadFromJSON(savedJson, () => {
+          canvas.renderAll();
+          toast({
+            title: "Loaded",
+            description: "Your design has been loaded",
+          });
+        });
+      } else {
+        toast({
+          title: "No saved design",
+          description: "No design found for this project",
+        });
       }
-    });
+    } catch (err) {
+      console.error('Error loading project:', err);
+      toast({
+        title: "Error",
+        description: "Could not load your design",
+        variant: "destructive",
+      });
+    }
   };
-  
-  const exportCanvas = () => {
-    if (!fabricCanvas) return;
+
+  const handleDownload = () => {
+    if (!canvas) return;
     
-    const json = JSON.stringify(fabricCanvas.toJSON());
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'canvas-design.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    toast({
-      title: "Design Exported",
-      description: "Your design has been downloaded as a JSON file"
+    const canvasDataUrl = canvas.toDataURL({
+      format: 'png',
+      quality: 1
     });
+    
+    const link = document.createElement('a');
+    link.href = canvasDataUrl;
+    link.download = 'design-canvas.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
-  
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canvas || !e.target.files) return;
+    
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = (f: any) => {
+      const img = new Image();
+      img.onload = () => {
+        const fabricImage = new fabric.Image(img, {
+          left: 50,
+          top: 50
+        });
+        canvas.add(fabricImage);
+        canvas.renderAll();
+      };
+      img.src = f.target.result;
+    };
+    
+    reader.readAsDataURL(file);
+  };
+
+  const handleToolChange = (tool: string) => {
+    setCurrentTool(tool);
+    
+    if (!canvas) return;
+    
+    switch (tool) {
+      case 'select':
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        break;
+      case 'pan':
+        canvas.isDrawingMode = false;
+        canvas.selection = false;
+        canvas.defaultCursor = 'grab';
+        break;
+      case 'line':
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        canvas.freeDrawingBrush.color = fillColor;
+        canvas.freeDrawingBrush.width = strokeWidth;
+        canvas.selection = false;
+        break;
+      default:
+        canvas.isDrawingMode = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+        break;
+    }
+  };
+
+  const handleColorChange = (color: string, type: string) => {
+    switch (type) {
+      case 'fill':
+        setFillColor(color);
+        if (selectedObject) {
+          selectedObject.set('fill', color);
+          canvas?.renderAll();
+        }
+        break;
+      case 'stroke':
+        setStrokeColor(color);
+        if (selectedObject) {
+          selectedObject.set('stroke', color);
+          canvas?.renderAll();
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleStrokeChange = (width: number) => {
+    setStrokeWidth(width);
+    if (selectedObject) {
+      selectedObject.set('strokeWidth', width);
+      canvas?.renderAll();
+    }
+  };
+
+  const handleFontChange = (size: number) => {
+    setFontSize(size);
+    if (selectedObject && selectedObject.type === 'textbox') {
+      selectedObject.set('fontSize', size);
+      canvas?.renderAll();
+    }
+  };
+
   return (
-    <div className="fabric-design-canvas space-y-4">
-      <div className="canvas-toolbar flex flex-wrap gap-2 mb-4">
-        <Button onClick={() => addShape('rectangle')} variant="outline" size="sm">Rectangle</Button>
-        <Button onClick={() => addShape('circle')} variant="outline" size="sm">Circle</Button>
-        <Button onClick={() => addShape('triangle')} variant="outline" size="sm">Triangle</Button>
-        <Button onClick={() => addShape('text')} variant="outline" size="sm">Text</Button>
-        
-        <div className="grow"></div>
-        
-        <Button onClick={toggleGrid} variant="ghost" size="icon" className={cn(canvasConfig.showGrid && "bg-accent")}>
-          <Grid size={18} />
-        </Button>
-        <Button onClick={toggleSnapToGrid} variant="ghost" size="icon" className={cn(canvasConfig.snapToGrid && "bg-accent")}>
-          <Magnet size={18} />
-        </Button>
-        <Button onClick={zoomIn} variant="ghost" size="icon">
-          <ZoomIn size={18} />
-        </Button>
-        <Button onClick={zoomOut} variant="ghost" size="icon">
-          <ZoomOut size={18} />
-        </Button>
-        <Button onClick={resetZoom} variant="ghost" size="icon">
-          <RotateCcw size={18} />
-        </Button>
-        <Button onClick={deleteObject} variant="ghost" size="icon" disabled={!selectedObject}>
-          <Trash2 size={18} />
-        </Button>
-        <Button onClick={duplicateObject} variant="ghost" size="icon" disabled={!selectedObject}>
-          <Copy size={18} />
-        </Button>
-        <Button onClick={undo} variant="ghost" size="icon" disabled={!canUndo}>
-          <Undo size={18} />
-        </Button>
-        <Button onClick={redo} variant="ghost" size="icon" disabled={!canRedo}>
-          <Redo size={18} />
-        </Button>
-        <Button onClick={exportCanvas} variant="ghost" size="icon">
-          <DownloadCloud size={18} />
-        </Button>
-      </div>
-      
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className={cn(
-          "canvas-container border rounded-lg overflow-hidden shadow-sm",
-          className
-        )}>
-          <canvas ref={canvasRef} />
-        </div>
-        
-        {selectedObject && (
-          <PropertyPanel 
-            selectedObject={selectedObject} 
-            fabricCanvas={fabricCanvas} 
-          />
+    <div className={cn("fabric-design-canvas relative", className)}>
+      {showToolbar && (
+        <ScrollArea className="absolute top-2 left-2 right-2 z-10 bg-secondary/80 backdrop-blur-sm rounded-md">
+          <div className="flex items-center space-x-2 p-2">
+            <Button variant="outline" size="icon" onClick={() => handleZoom('in')}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => handleZoom('out')}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => handleZoom('reset')}>
+              <Home className="h-4 w-4" />
+            </Button>
+            <Separator orientation="vertical" className="h-5" />
+            <Button variant="outline" size="icon" onClick={toggleGrid}>
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={toggleSnapToGrid}>
+              <Magnet className="h-4 w-4" />
+            </Button>
+            <Separator orientation="vertical" className="h-5" />
+            <ToggleGroup type="single" defaultValue="select" value={currentTool} onValueChange={handleToolChange}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem value="select" aria-label="Select">
+                      <MousePointer className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Select</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem value="pan" aria-label="Pan">
+                      <Hand className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Pan</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem value="line" aria-label="Line">
+                      <PenTool className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Line</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </ToggleGroup>
+            <Separator orientation="vertical" className="h-5" />
+            <ColorPicker value={fillColor} onChange={(color) => handleColorChange(color, 'fill')} />
+            <ColorPicker value={strokeColor} onChange={(color) => handleColorChange(color, 'stroke')} />
+            <Slider
+              defaultValue={[strokeWidth]}
+              max={20}
+              step={1}
+              onValueChange={(value) => handleStrokeChange(value[0])}
+              className="w-[100px]"
+            />
+            <Slider
+              defaultValue={[fontSize]}
+              max={100}
+              step={1}
+              onValueChange={(value) => handleFontChange(value[0])}
+              className="w-[100px]"
+            />
+            <Separator orientation="vertical" className="h-5" />
+            <Button variant="outline" size="icon" onClick={handleClearCanvas}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleSave}>
+              <DownloadCloud className="h-4 w-4" />
+            </Button>
+            {!readOnly && (
+              <>
+                <Separator orientation="vertical" className="h-5" />
+                <input
+                  type="file"
+                  id="upload-image"
+                  className="hidden"
+                  onChange={handleUpload}
+                />
+                <Label htmlFor="upload-image" className="cursor-pointer">
+                  <Button variant="outline" size="icon">
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </Label>
+                <Button variant="outline" size="icon" onClick={handleDownload}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </ScrollArea>
+      )}
+      <div 
+        ref={canvasContainerRef}
+        className={cn(
+          "canvas-container border rounded-md overflow-hidden touch-none",
+          fullWidth ? "w-full" : "w-[1200px]",
+          "h-[800px]",
+          "relative",
+          !showToolbar && "mt-0"
         )}
+      >
+        <canvas 
+          ref={canvasRef} 
+          id="fabric-canvas"
+          className="absolute top-0 left-0"
+        />
       </div>
+      {selectedObject && (
+        <div className="absolute bottom-2 left-2 right-2 z-10 bg-secondary/80 backdrop-blur-sm rounded-md p-2">
+          <PropertyPanel selectedObject={selectedObject} fabricCanvas={canvas} />
+        </div>
+      )}
     </div>
   );
 };
 
 export default FabricDesignCanvas;
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Label } from "@/components/ui/label"
+import { Magnet } from "lucide-react"
