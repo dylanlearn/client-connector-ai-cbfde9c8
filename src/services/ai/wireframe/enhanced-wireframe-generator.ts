@@ -1,10 +1,10 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,
   EnhancedWireframeGenerationResult,
-  WireframeData
+  WireframeData,
+  FeedbackModificationResult
 } from "./wireframe-types";
 import { v4 as uuidv4 } from "uuid";
 
@@ -185,6 +185,61 @@ export class EnhancedWireframeGenerator {
         blueprint: null,
         designTokens: {},
         generationTime: 0
+      };
+    }
+  }
+  
+  /**
+   * Modify a wireframe based on user feedback
+   */
+  static async modifyWireframeBasedOnFeedback(wireframe: WireframeData, feedback: string): Promise<FeedbackModificationResult> {
+    try {
+      if (!wireframe) {
+        throw new Error("Valid wireframe is required for modifications");
+      }
+      
+      // Prepare the request payload
+      const requestPayload = {
+        action: 'modify-wireframe',
+        wireframe,
+        feedback
+      };
+      
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        wireframe: WireframeData;
+        changes?: any[];
+        error?: string;
+        modified?: boolean;
+        changeDescription?: string;
+        modifiedSections?: any[];
+        addedSections?: any[];
+      }>('generate-advanced-wireframe', {
+        body: requestPayload
+      });
+      
+      if (error || !data?.success) {
+        throw new Error(`Failed to modify wireframe: ${error?.message || data?.error || 'Unknown error'}`);
+      }
+      
+      return {
+        wireframe: data.wireframe,
+        success: true,
+        changes: data.changes || [],
+        modified: data.modified || false,
+        changeDescription: data.changeDescription || '',
+        modifiedSections: data.modifiedSections || [],
+        addedSections: data.addedSections || []
+      };
+      
+    } catch (error) {
+      console.error("Error modifying wireframe with feedback:", error);
+      
+      return {
+        wireframe,
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }

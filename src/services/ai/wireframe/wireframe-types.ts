@@ -156,6 +156,12 @@ export interface WireframeSection {
 
 export interface CopySuggestions {
   [key: string]: string;
+  heading?: string;
+  subheading?: string;
+  ctaText?: string;
+  ctaUrl?: string;
+  primaryCta?: string;
+  secondaryCta?: string;
 }
 
 export interface DesignMemoryData {

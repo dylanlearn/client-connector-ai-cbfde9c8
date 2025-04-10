@@ -2,6 +2,7 @@
 import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 interface WireframePreviewSectionProps {
   section: WireframeSection;
@@ -86,16 +87,16 @@ const WireframePreviewSection: React.FC<WireframePreviewSectionProps> = ({
         return (
           <div className="w-full space-y-6">
             <h1 className="text-3xl md:text-4xl font-bold">
-              {copySuggestions.heading || createPlaceholder('heading')}
+              {getSuggestion(copySuggestions, 'heading') || createPlaceholder('heading')}
             </h1>
             <p className="text-lg opacity-80">
-              {copySuggestions.subheading || createPlaceholder('paragraph')}
+              {getSuggestion(copySuggestions, 'subheading') || createPlaceholder('paragraph')}
             </p>
-            {copySuggestions.ctaText && (
+            {getSuggestion(copySuggestions, 'ctaText') && (
               <button 
                 className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700"
               >
-                {copySuggestions.ctaText}
+                {getSuggestion(copySuggestions, 'ctaText')}
               </button>
             )}
           </div>
@@ -106,10 +107,10 @@ const WireframePreviewSection: React.FC<WireframePreviewSectionProps> = ({
           <>
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold">
-                {copySuggestions.heading || "Features"}
+                {getSuggestion(copySuggestions, 'heading') || "Features"}
               </h2>
-              {copySuggestions.subheading && (
-                <p className="mt-2 opacity-80">{copySuggestions.subheading}</p>
+              {getSuggestion(copySuggestions, 'subheading') && (
+                <p className="mt-2 opacity-80">{getSuggestion(copySuggestions, 'subheading')}</p>
               )}
             </div>
             <div className={`grid grid-cols-1 md:grid-cols-${section.layout?.columns || 3} gap-6`}>
@@ -129,10 +130,10 @@ const WireframePreviewSection: React.FC<WireframePreviewSectionProps> = ({
           <>
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold">
-                {copySuggestions.heading || "Testimonials"}
+                {getSuggestion(copySuggestions, 'heading') || "Testimonials"}
               </h2>
-              {copySuggestions.subheading && (
-                <p className="mt-2 opacity-80">{copySuggestions.subheading}</p>
+              {getSuggestion(copySuggestions, 'subheading') && (
+                <p className="mt-2 opacity-80">{getSuggestion(copySuggestions, 'subheading')}</p>
               )}
             </div>
             <div className={`grid grid-cols-1 md:grid-cols-${section.layout?.columns || 2} gap-6`}>
@@ -158,18 +159,18 @@ const WireframePreviewSection: React.FC<WireframePreviewSectionProps> = ({
         return (
           <div className="text-center space-y-6">
             <h2 className="text-2xl md:text-3xl font-bold">
-              {copySuggestions.heading || "Ready to get started?"}
+              {getSuggestion(copySuggestions, 'heading') || "Ready to get started?"}
             </h2>
-            {copySuggestions.subheading && (
-              <p className="opacity-80">{copySuggestions.subheading}</p>
+            {getSuggestion(copySuggestions, 'subheading') && (
+              <p className="opacity-80">{getSuggestion(copySuggestions, 'subheading')}</p>
             )}
             <div className="flex justify-center gap-4">
               <button className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700">
-                {copySuggestions.primaryCta || "Get Started"}
+                {getSuggestion(copySuggestions, 'primaryCta') || "Get Started"}
               </button>
-              {copySuggestions.secondaryCta && (
+              {getSuggestion(copySuggestions, 'secondaryCta') && (
                 <button className="px-6 py-3 bg-transparent border border-current font-medium rounded-md">
-                  {copySuggestions.secondaryCta}
+                  {getSuggestion(copySuggestions, 'secondaryCta')}
                 </button>
               )}
             </div>

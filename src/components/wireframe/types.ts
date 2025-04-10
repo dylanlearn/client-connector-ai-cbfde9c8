@@ -4,6 +4,18 @@ import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wirefra
 
 export type ViewMode = 'editor' | 'preview' | 'code' | 'split';
 
+export { DeviceType };
+
+export interface WireframeProps {
+  wireframe: WireframeData;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (id: string) => void;
+}
+
 export interface WireframeVisualizerProps {
   wireframe: WireframeData;
   darkMode?: boolean;
@@ -41,6 +53,34 @@ export interface WireframeSectionProps {
   deviceType?: DeviceType;
 }
 
+export interface WireframeRendererProps {
+  wireframeData: WireframeData;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+}
+
+export interface WireframeSectionRendererProps {
+  section: WireframeSection;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  sectionIndex?: number;
+  onSectionClick?: (sectionId: string) => void;
+  isSelected?: boolean;
+}
+
+export interface SectionComponentProps {
+  section: WireframeSection;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  isSelected?: boolean;
+  onClick?: () => void;
+}
+
 // Additional types for the wireframe editor
 export interface EditableComponentProps {
   component: any;
@@ -52,3 +92,4 @@ export interface SectionEditorProps {
   section: WireframeSection;
   onUpdate: (updates: Partial<WireframeSection>) => void;
 }
+
