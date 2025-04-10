@@ -6,6 +6,7 @@ import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import CanvasControls from '../controls/CanvasControls';
 import { Loader2 } from 'lucide-react';
+import { fabric } from 'fabric';
 
 export interface EnhancedWireframeCanvasProps {
   wireframe: WireframeData | null;
@@ -21,6 +22,7 @@ export interface EnhancedWireframeCanvasProps {
   onZoomOut?: () => void;
   onResetZoom?: () => void;
   onToggleGrid?: () => void;
+  onToggleSnapToGrid?: () => void;
 }
 
 const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
@@ -36,7 +38,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
   onZoomIn,
   onZoomOut,
   onResetZoom,
-  onToggleGrid
+  onToggleGrid,
+  onToggleSnapToGrid
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -152,6 +155,13 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       }
     }
   };
+
+  // Handle toggle snap to grid
+  const handleToggleSnapToGrid = () => {
+    if (onToggleSnapToGrid) {
+      onToggleSnapToGrid();
+    }
+  };
   
   return (
     <div className="enhanced-wireframe-canvas-container">
@@ -161,8 +171,9 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
           onZoomOut={handleZoomOut}
           onResetZoom={handleResetZoom}
           onToggleGrid={handleToggleGrid}
+          onToggleSnapToGrid={handleToggleSnapToGrid}
           showGrid={mergedConfig.showGrid}
-          snapToGrid={mergedConfig.snapToGrid}
+          snapToGrid={mergedConfig.snapToGrid || false}
           className="mb-2"
         />
       )}

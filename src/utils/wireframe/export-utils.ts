@@ -1,4 +1,3 @@
-
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 /**
@@ -234,4 +233,51 @@ function generateComponentHTML(component: any): string {
   <p>${componentType}: ${componentContent || 'Component'}</p>
 </div>`;
   }
+}
+
+/**
+ * Updates the function that processes layout data
+ * @param layout The layout data
+ * @returns CSS class string for the layout
+ */
+export function processLayoutInformation(layout: any): string {
+  if (!layout) return '';
+  
+  const layoutProps = typeof layout === 'string' ? { type: layout } : layout;
+  
+  // Generate CSS class based on layout properties
+  const classes = [];
+  
+  if (layoutProps.type === 'grid' && typeof layoutProps.columns === 'number') {
+    classes.push('grid');
+    classes.push(`grid-cols-${layoutProps.columns || 1}`);
+    classes.push(`gap-${layoutProps.gap ? Math.min(12, Math.ceil(layoutProps.gap / 4)) : 4}`);
+  } else if (layoutProps.type === 'flex' || layoutProps.direction) {
+    classes.push('flex');
+    
+    if (layoutProps.direction === 'vertical') {
+      classes.push('flex-col');
+    }
+    
+    if (layoutProps.wrap) {
+      classes.push('flex-wrap');
+    }
+    
+    // Handle alignment
+    if (layoutProps.alignment) {
+      classes.push(`justify-${layoutProps.alignment}`);
+    }
+    
+    // Handle justification
+    if (layoutProps.justifyContent) {
+      classes.push(`justify-${layoutProps.justifyContent}`);
+    }
+    
+    // Add gap
+    if (layoutProps.gap !== undefined) {
+      classes.push(`gap-${typeof layoutProps.gap === 'number' ? Math.min(12, Math.ceil(layoutProps.gap / 4)) : 4}`);
+    }
+  }
+  
+  return classes.join(' ');
 }

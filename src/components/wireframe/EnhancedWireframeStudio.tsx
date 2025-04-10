@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import AIWireframeRenderer from './AIWireframeRenderer';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { useWireframeStore } from '@/stores/wireframe-store';
+import { useWireframeStore, WireframeState } from '@/stores/wireframe-store';
 import { Button } from '@/components/ui/button';
 import { Download, Copy, Edit3, Code2 } from 'lucide-react';
 import { exportToHTML } from '@/utils/wireframe/export-utils';
@@ -37,10 +37,11 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   
   // Export wireframe to HTML
   const handleExportHTML = async () => {
-    if (!wireframe) return;
+    const currentWireframe = wireframe || initialData as WireframeData;
+    if (!currentWireframe) return;
     
     try {
-      const html = await exportToHTML(wireframe);
+      const html = await exportToHTML(currentWireframe);
       
       // Create a blob and download link
       const blob = new Blob([html], { type: 'text/html' });
@@ -48,7 +49,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${wireframe.title || 'wireframe'}-export.html`;
+      a.download = `${currentWireframe.title || 'wireframe'}-export.html`;
       document.body.appendChild(a);
       a.click();
       
@@ -72,10 +73,11 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   
   // Copy wireframe JSON
   const handleCopyJSON = () => {
-    if (!wireframe) return;
+    const currentWireframe = wireframe || initialData;
+    if (!currentWireframe) return;
     
     try {
-      const json = JSON.stringify(wireframe, null, 2);
+      const json = JSON.stringify(currentWireframe, null, 2);
       navigator.clipboard.writeText(json);
       
       toast({
@@ -95,12 +97,26 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   // Update wireframe when initialData changes
   useEffect(() => {
     if (initialData) {
-      setWireframe(initialData);
+      // Make sure initialData conforms to the required format for WireframeState
+      const wireframeData: Partial<WireframeState> = {
+        ...initialData,
+        id: initialData.id || '',
+        title: initialData.title || '',
+        sections: initialData.sections.map(section => ({
+          ...section,
+          // Ensure copySuggestions is an array
+          copySuggestions: Array.isArray(section.copySuggestions) 
+            ? section.copySuggestions
+            : section.copySuggestions ? [section.copySuggestions] : []
+        }))
+      };
+      
+      setWireframe(wireframeData);
     }
   }, [initialData, setWireframe]);
   
   // Get the effective wireframe data
-  const effectiveWireframe = wireframe || initialData;
+  const effectiveWireframe = wireframe || initialData as WireframeData;
   
   return (
     <div className="enhanced-wireframe-studio">
@@ -130,32 +146,30 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
               )}
             </div>
           </div>
-        </Tabs>
-      </div>
-      
-      <TabsContent value="preview" className="mt-0">
-        <AIWireframeRenderer 
-          wireframe={effectiveWireframe} 
-          onSectionClick={handleSectionClick}
-          className="w-full"
-        />
-      </TabsContent>
-      
-      <TabsContent value="code" className="mt-0">
-        <Card className="overflow-hidden">
-          <div className="p-4 bg-muted flex items-center justify-between">
-            <div className="flex items-center">
-              <Code2 className="h-4 w-4 mr-2" />
-              <span className="font-medium">Generated Code</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleExportHTML}>
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-          </div>
-          <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-            {effectiveWireframe ? (
-              <pre>{`<!DOCTYPE html>
+          
+          <TabsContent value="preview" className="mt-0">
+            <AIWireframeRenderer 
+              wireframe={effectiveWireframe} 
+              onSectionClick={handleSectionClick}
+              className="w-full"
+            />
+          </TabsContent>
+          
+          <TabsContent value="code" className="mt-0">
+            <Card className="overflow-hidden">
+              <div className="p-4 bg-muted flex items-center justify-between">
+                <div className="flex items-center">
+                  <Code2 className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Generated Code</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleExportHTML}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </Button>
+              </div>
+              <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
+                {effectiveWireframe ? (
+                  <pre>{`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -178,34 +192,36 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   </div>
 </body>
 </html>`}</pre>
-            ) : (
-              <p>No wireframe data available</p>
-            )}
-          </div>
-        </Card>
-      </TabsContent>
-      
-      <TabsContent value="data" className="mt-0">
-        <Card className="overflow-hidden">
-          <div className="p-4 bg-muted flex items-center justify-between">
-            <div className="flex items-center">
-              <Code2 className="h-4 w-4 mr-2" />
-              <span className="font-medium">Wireframe Data</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleCopyJSON}>
-              <Copy className="h-4 w-4 mr-1" />
-              Copy JSON
-            </Button>
-          </div>
-          <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-            {effectiveWireframe ? (
-              <pre>{JSON.stringify(effectiveWireframe, null, 2)}</pre>
-            ) : (
-              <p>No wireframe data available</p>
-            )}
-          </div>
-        </Card>
-      </TabsContent>
+                ) : (
+                  <p>No wireframe data available</p>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="data" className="mt-0">
+            <Card className="overflow-hidden">
+              <div className="p-4 bg-muted flex items-center justify-between">
+                <div className="flex items-center">
+                  <Code2 className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Wireframe Data</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleCopyJSON}>
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy JSON
+                </Button>
+              </div>
+              <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
+                {effectiveWireframe ? (
+                  <pre>{JSON.stringify(effectiveWireframe, null, 2)}</pre>
+                ) : (
+                  <p>No wireframe data available</p>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
