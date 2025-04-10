@@ -36,7 +36,6 @@ export function useWireframeGenerator(
       
       if (designMemory) {
         enhancedParams.stylePreferences = designMemory.stylePreferences;
-        // Additional logic for using design memory
       }
       
       const result = await wireframeGenerator.generateWireframe(enhancedParams);

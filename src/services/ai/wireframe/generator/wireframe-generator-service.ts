@@ -1,24 +1,13 @@
 
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/integrations/supabase/client";
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult 
 } from '../wireframe-types';
 
-interface WireframeResult {
-  wireframe: any;
-  generationTime?: number;
-  model?: string;
-  usage?: {
-    total_tokens?: number;
-    completion_tokens?: number;
-    prompt_tokens?: number;
-  };
-  success: boolean;
-}
-
 /**
- * Service for generating wireframes
+ * Service for generating wireframes through Supabase Edge Functions
  */
 export class WireframeGeneratorService {
   /**
@@ -31,78 +20,69 @@ export class WireframeGeneratorService {
       console.log("Generating wireframe with params:", params);
       const startTime = performance.now();
       
-      // If there's a baseWireframe, use it as a starting point
-      let wireframeData = params.baseWireframe || {
-        id: uuidv4(), // Always ensure we have an ID
-        title: params.pageType || 'New Wireframe', // Ensure we always have a title
-        description: params.description || 'Generated wireframe',
-        sections: [],
-        style: params.style || 'modern',
-        colorScheme: params.colorScheme || {
-          primary: '#3b82f6',
-          secondary: '#10b981',
-          accent: '#f59e0b',
-          background: '#ffffff'
-        },
-        typography: {
-          headings: 'Inter',
-          body: 'Roboto',
-          fontPairings: ['Inter', 'Roboto']
+      // Validate required parameters
+      if (!params.description) {
+        throw new Error("Description is required for wireframe generation");
+      }
+
+      // Call the edge function for generating wireframes
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        wireframe: any;
+        intentData?: any;
+        blueprint?: any;
+        model?: string;
+        usage?: any;
+      }>('generate-advanced-wireframe', {
+        body: {
+          userInput: params.description,
+          projectId: params.projectId,
+          styleToken: params.style,
+          colorScheme: params.colorScheme,
+          enhancedCreativity: params.enhancedCreativity,
+          creativityLevel: params.creativityLevel,
+          industry: params.industry,
+          includeDesignMemory: true,
+          baseWireframe: params.baseWireframe
         }
-      };
+      });
       
-      // Ensure ID is set even if it's passed in the params
-      if (!wireframeData.id) {
-        wireframeData.id = uuidv4();
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to generate wireframe: ${error.message}`);
       }
       
-      // Ensure title is set even if it's passed in the params
-      if (!wireframeData.title) {
-        wireframeData.title = params.pageType || 'New Wireframe';
-      }
-      
-      // TODO: This is where we would call the AI service to generate the wireframe
-      // Mock implementation for now
-      
-      // Add some default sections if no sections exist
-      if (!wireframeData.sections || wireframeData.sections.length === 0) {
-        wireframeData.sections = [
-          {
-            id: uuidv4(),
-            name: 'Hero Section',
-            sectionType: 'hero',
-            description: 'Main hero section',
-            position: { x: 0, y: 0 },
-            dimensions: { width: 1140, height: 400 }
-          },
-          {
-            id: uuidv4(),
-            name: 'Features Section',
-            sectionType: 'features',
-            description: 'Features showcase',
-            position: { x: 0, y: 420 },
-            dimensions: { width: 1140, height: 300 }
-          }
-        ];
+      if (!data?.success || !data.wireframe) {
+        throw new Error("Wireframe generation failed: No data returned from the service");
       }
       
       const endTime = performance.now();
       const generationTime = (endTime - startTime) / 1000; // Convert to seconds
       
       return {
-        wireframe: wireframeData,
+        wireframe: data.wireframe,
         generationTime,
-        model: "mock-model",
-        usage: {
-          total_tokens: 1000,
-          completion_tokens: 500,
-          prompt_tokens: 500
-        },
-        success: true
+        model: data.model,
+        usage: data.usage,
+        success: true,
+        intentData: data.intentData,
+        blueprint: data.blueprint
       };
     } catch (error) {
       console.error("Error generating wireframe:", error);
-      throw error;
+      
+      // Return an error state that the UI can handle appropriately
+      return {
+        wireframe: {
+          id: uuidv4(),
+          title: "Error Generating Wireframe",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          sections: [],
+          error: true
+        },
+        error: error instanceof Error ? error.message : "Unknown error occurred",
+        success: false
+      };
     }
   }
   
@@ -114,30 +94,91 @@ export class WireframeGeneratorService {
    */
   async generateVariations(
     baseWireframe: any, 
-    variationCount: number = 3
+    variationCount: number = 3,
+    variationPrompt?: string
   ): Promise<WireframeGenerationResult[]> {
-    // Create array to hold variations
-    const variations: WireframeGenerationResult[] = [];
-    
-    // Generate variations
-    for (let i = 0; i < variationCount; i++) {
-      // Deep clone the base wireframe
-      const clone = JSON.parse(JSON.stringify(baseWireframe));
+    try {
+      const variations: WireframeGenerationResult[] = [];
       
-      // Modify clone to create a variation
-      const variation = {
-        ...clone,
-        id: clone.id || uuidv4(), // Ensure ID is always present
-        title: `${clone.title} - Variation ${i + 1}`
-      };
+      // Generate variations using the edge function
+      for (let i = 0; i < variationCount; i++) {
+        try {
+          // Call the edge function for generating variations
+          const { data, error } = await supabase.functions.invoke<{
+            success: boolean;
+            wireframe: any;
+            intentData?: any;
+            blueprint?: any;
+            model?: string;
+            usage?: any;
+          }>('generate-advanced-wireframe', {
+            body: {
+              userInput: variationPrompt || `Create variation ${i+1} of the existing wireframe`,
+              baseWireframe: baseWireframe,
+              isVariation: true,
+              variationIndex: i + 1
+            }
+          });
+          
+          if (error) {
+            console.error(`Error generating variation ${i+1}:`, error);
+            continue;
+          }
+          
+          if (data?.success && data.wireframe) {
+            // Ensure a unique ID and appropriate title
+            if (!data.wireframe.id) {
+              data.wireframe.id = uuidv4();
+            }
+            
+            if (!data.wireframe.title) {
+              data.wireframe.title = `${baseWireframe.title || 'Wireframe'} - Variation ${i+1}`;
+            }
+            
+            variations.push({
+              wireframe: data.wireframe,
+              success: true,
+              intentData: data.intentData,
+              blueprint: data.blueprint,
+              model: data.model,
+              usage: data.usage
+            });
+          }
+        } catch (err) {
+          console.error(`Failed to generate variation ${i+1}:`, err);
+        }
+      }
       
-      variations.push({
-        wireframe: variation,
-        success: true
-      });
+      // If no variations were successfully generated, return an error result
+      if (variations.length === 0) {
+        variations.push({
+          wireframe: {
+            id: uuidv4(),
+            title: "Variation Generation Failed",
+            description: "Could not generate variations of the wireframe",
+            sections: [],
+            error: true
+          },
+          success: false,
+          error: "Failed to generate variations"
+        });
+      }
+      
+      return variations;
+    } catch (error) {
+      console.error("Error generating variations:", error);
+      return [{
+        wireframe: {
+          id: uuidv4(),
+          title: "Variation Generation Failed",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          sections: [],
+          error: true
+        },
+        error: error instanceof Error ? error.message : "Unknown error occurred",
+        success: false
+      }];
     }
-    
-    return variations;
   }
 }
 
