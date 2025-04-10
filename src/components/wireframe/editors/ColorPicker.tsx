@@ -1,5 +1,9 @@
 
+// This file is now deprecated. 
+// Please use the component from @/components/ui/color-picker instead.
+
 import React from 'react';
+import { ColorPicker as UIColorPicker } from '@/components/ui/color-picker';
 
 interface ColorPickerProps {
   id: string;
@@ -7,17 +11,9 @@ interface ColorPickerProps {
   onChange: (color: string) => void;
 }
 
-// A very simple color picker for now
+// This is now a wrapper around the UI component for backward compatibility
 const ColorPicker: React.FC<ColorPickerProps> = ({ id, color, onChange }) => {
-  return (
-    <input
-      type="color"
-      id={id}
-      value={color}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-8 h-8 p-0 border rounded cursor-pointer"
-    />
-  );
+  return <UIColorPicker id={id} color={color} onChange={onChange} />;
 };
 
 export default ColorPicker;
