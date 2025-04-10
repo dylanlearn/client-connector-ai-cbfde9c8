@@ -1,3 +1,4 @@
+
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 
 export interface WireframeGenerationParams {
@@ -118,7 +119,7 @@ export interface WireframeSection {
   layoutType?: string;
   positionOrder?: number;
   componentVariant?: string;
-  copySuggestions?: CopySuggestions;
+  copySuggestions?: CopySuggestions | CopySuggestions[];
   dimensions?: {
     width: number;
     height: number;
@@ -145,7 +146,7 @@ export interface WireframeSection {
     element?: string;
     timing?: string;
     effect?: string[];
-  };
+  } | any[]; // This allows both object and array formats
   mobileLayout?: {
     structure?: string;
     stackOrder?: string[];

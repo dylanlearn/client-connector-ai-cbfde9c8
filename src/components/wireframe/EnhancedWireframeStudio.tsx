@@ -37,11 +37,20 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   
   // Export wireframe to HTML
   const handleExportHTML = async () => {
-    const currentWireframe = wireframe || initialData as WireframeData;
+    const currentWireframe = wireframe || initialData;
     if (!currentWireframe) return;
     
     try {
-      const html = await exportToHTML(currentWireframe);
+      // Cast wireframeData to required type with required id property
+      const wireframeData: WireframeData = {
+        id: currentWireframe.id || '',
+        title: currentWireframe.title || '',
+        sections: currentWireframe.sections || [],
+        // Include other required properties from WireframeData
+        ...currentWireframe
+      };
+      
+      const html = await exportToHTML(wireframeData);
       
       // Create a blob and download link
       const blob = new Blob([html], { type: 'text/html' });
@@ -49,7 +58,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentWireframe.title || 'wireframe'}-export.html`;
+      a.download = `${wireframeData.title || 'wireframe'}-export.html`;
       document.body.appendChild(a);
       a.click();
       
@@ -104,10 +113,14 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         title: initialData.title || '',
         sections: initialData.sections.map(section => ({
           ...section,
-          // Ensure copySuggestions is an array
+          // Ensure copySuggestions is properly formatted, could be object or array
           copySuggestions: Array.isArray(section.copySuggestions) 
             ? section.copySuggestions
-            : section.copySuggestions ? [section.copySuggestions] : []
+            : section.copySuggestions ? [section.copySuggestions] : [],
+          // Ensure animationSuggestions is an array if present
+          animationSuggestions: section.animationSuggestions 
+            ? [section.animationSuggestions] 
+            : []
         }))
       };
       
@@ -116,7 +129,16 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   }, [initialData, setWireframe]);
   
   // Get the effective wireframe data
-  const effectiveWireframe = wireframe || initialData as WireframeData;
+  const effectiveWireframe = wireframe || initialData;
+  
+  // Cast the effective wireframe to ensure it has required properties for WireframeData
+  const safeWireframe: WireframeData | null = effectiveWireframe ? {
+    id: effectiveWireframe.id || '',
+    title: effectiveWireframe.title || '',
+    sections: effectiveWireframe.sections || [],
+    // Include other required properties
+    ...effectiveWireframe
+  } : null;
   
   return (
     <div className="enhanced-wireframe-studio">
@@ -149,7 +171,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
           
           <TabsContent value="preview" className="mt-0">
             <AIWireframeRenderer 
-              wireframe={effectiveWireframe} 
+              wireframe={safeWireframe} 
               onSectionClick={handleSectionClick}
               className="w-full"
             />
@@ -168,21 +190,21 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 </Button>
               </div>
               <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-                {effectiveWireframe ? (
+                {safeWireframe ? (
                   <pre>{`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${effectiveWireframe.title || 'Wireframe'}</title>
+  <title>${safeWireframe.title || 'Wireframe'}</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
   <!-- Generated wireframe HTML would appear here -->
   <div class="container mx-auto px-4">
-    <h1 class="text-3xl font-bold my-4">${effectiveWireframe.title || 'Wireframe'}</h1>
+    <h1 class="text-3xl font-bold my-4">${safeWireframe.title || 'Wireframe'}</h1>
     
-    ${effectiveWireframe.sections.map(section => `
+    ${safeWireframe.sections.map(section => `
     <!-- ${section.name || section.sectionType || 'Section'} -->
     <section class="my-8">
       <h2 class="text-xl font-semibold mb-4">${section.name || ''}</h2>
@@ -212,8 +234,8 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
                 </Button>
               </div>
               <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-                {effectiveWireframe ? (
-                  <pre>{JSON.stringify(effectiveWireframe, null, 2)}</pre>
+                {safeWireframe ? (
+                  <pre>{JSON.stringify(safeWireframe, null, 2)}</pre>
                 ) : (
                   <p>No wireframe data available</p>
                 )}

@@ -1,3 +1,4 @@
+
 import { fabric } from 'fabric';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
@@ -25,10 +26,13 @@ export const wireframeRendererService = {
       renderGrid(canvas, options.config);
     }
     
-    // Render sections
-    wireframe.sections.forEach(section => {
-      renderSection(canvas, section, options);
-    });
+    // Ensure wireframe has all required properties
+    if (wireframe && Array.isArray(wireframe.sections)) {
+      // Render sections
+      wireframe.sections.forEach(section => {
+        renderSection(canvas, section, options);
+      });
+    }
     
     // Update canvas
     canvas.renderAll();
@@ -68,10 +72,10 @@ function renderSection(
   options: RenderingOptions = {}
 ) {
   const sectionRect = new fabric.Rect({
-    left: section.x,
-    top: section.y,
-    width: section.width,
-    height: section.height,
+    left: section.position?.x || section.x || 0,
+    top: section.position?.y || section.y || 0,
+    width: section.dimensions?.width || section.width || 300,
+    height: section.dimensions?.height || section.height || 200,
     fill: 'transparent',
     stroke: 'rgba(0,0,0,0.1)',
     strokeWidth: 1,

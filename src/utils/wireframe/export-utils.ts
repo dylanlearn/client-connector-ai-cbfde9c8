@@ -1,3 +1,4 @@
+
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 /**
@@ -113,7 +114,11 @@ function generateSectionHTML(section: WireframeSection, colorScheme: any): strin
     let layoutClasses = '';
     switch (layoutType.toLowerCase()) {
       case 'grid':
-        const columns = section.layout?.columns || 3;
+        // Handle layout columns safely checking type
+        let columns = 3; // Default value
+        if (typeof section.layout === 'object' && section.layout && 'columns' in section.layout) {
+          columns = section.layout.columns || 3;
+        }
         layoutClasses = `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(columns, 12)} gap-6`;
         break;
       case 'horizontal':
