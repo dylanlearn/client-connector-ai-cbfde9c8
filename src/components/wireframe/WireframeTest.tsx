@@ -1,274 +1,177 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { Loader2, Settings } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
-import { Switch } from '@/components/ui/switch';
-import { v4 as uuidv4 } from 'uuid';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import WireframeVisualizer from './WireframeVisualizer';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 const WireframeTest: React.FC = () => {
   const { toast } = useToast();
-  const [prompt, setPrompt] = useState<string>('Create a landing page for a cloud storage service');
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [wireframe, setWireframe] = useState<WireframeData | null>(null);
-  const [selectedTab, setSelectedTab] = useState<string>('prompt');
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [activeTab, setActiveTab] = useState<string>('preview');
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      toast({
-        title: 'Prompt Required',
-        description: 'Please enter a prompt to generate a wireframe',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    
-    try {
-      // Mock wireframe generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create a simple wireframe data structure
-      const generatedWireframe: WireframeData = {
+  const [wireframe, setWireframe] = useState({
+    id: uuidv4(),
+    title: 'Test Wireframe',
+    description: 'A test wireframe for development purposes',
+    sections: [
+      {
         id: uuidv4(),
-        title: 'Generated Wireframe',
-        description: prompt,
-        sections: [
-          {
-            id: uuidv4(),
-            name: 'Header',
-            sectionType: 'header',
-            components: [
-              {
-                id: uuidv4(),
-                type: 'text',
-                content: 'Company Logo',
-                style: { 
-                  fontSize: '24px', 
-                  fontWeight: 'bold' 
-                }
-              },
-              {
-                id: uuidv4(),
-                type: 'navigation',
-                content: ['Home', 'Features', 'Pricing', 'Contact'],
-                style: {
-                  display: 'flex',
-                  justifyContent: 'space-between'
-                }
-              }
-            ]
-          },
-          {
-            id: uuidv4(),
-            name: 'Hero',
-            sectionType: 'hero',
-            components: [
-              {
-                id: uuidv4(),
-                type: 'text',
-                content: 'Cloud Storage Solution',
-                style: {
-                  fontSize: '36px',
-                  fontWeight: 'bold',
-                  textAlign: 'center'
-                }
-              },
-              {
-                id: uuidv4(),
-                type: 'text',
-                content: 'Secure, reliable, and easy to use cloud storage for all your needs.',
-                style: {
-                  fontSize: '18px',
-                  textAlign: 'center'
-                }
-              },
-              {
-                id: uuidv4(),
-                type: 'button',
-                content: 'Get Started',
-                style: {
-                  padding: '10px 20px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  borderRadius: '5px'
-                }
-              }
-            ]
-          }
-        ],
-        colorScheme: {
-          primary: '#3b82f6',
-          secondary: '#10b981',
-          accent: '#f59e0b',
-          background: '#ffffff',
-          text: '#111827'
-        },
-        typography: {
-          headings: 'sans-serif',
-          body: 'sans-serif'
-        },
-        style: 'modern'
-      };
-      
-      setWireframe(generatedWireframe);
-      toast({
-        title: 'Wireframe Generated',
-        description: 'Your wireframe has been created successfully'
-      });
-    } catch (error) {
-      console.error('Error generating wireframe:', error);
-      toast({
-        title: 'Generation Failed',
-        description: 'Failed to generate wireframe. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+        name: 'Hero Section',
+        sectionType: 'hero',
+        components: []
+      },
+      {
+        id: uuidv4(),
+        name: 'Features Section',
+        sectionType: 'features',
+        components: []
+      }
+    ]
+  });
+
+  const handleAddSection = () => {
+    setWireframe(prev => ({
+      ...prev,
+      sections: [
+        ...prev.sections,
+        {
+          id: uuidv4(),
+          name: 'New Section',
+          sectionType: 'generic',
+          components: []
+        }
+      ]
+    }));
+
+    toast({
+      title: 'Section Added',
+      description: 'A new section has been added to the wireframe'
+    });
   };
 
   return (
-    <div className="wireframe-test-container p-4 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between">
-            <span>Wireframe Test</span>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="dark-mode">Dark Mode</Label>
-                <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} />
+    <Card className="w-full h-full">
+      <CardHeader>
+        <CardTitle>Wireframe Test Component</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="editor">Editor</TabsTrigger>
+            <TabsTrigger value="code">Code</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="preview" className="p-4 border rounded-md mt-4">
+            <div className="wireframe-preview">
+              <h2 className="text-2xl font-bold">{wireframe.title}</h2>
+              <p className="text-muted-foreground">{wireframe.description}</p>
+              
+              <div className="sections-list mt-4 space-y-4">
+                {wireframe.sections.map(section => (
+                  <div key={section.id} className="p-4 border rounded-md">
+                    <h3 className="text-xl font-medium">{section.name}</h3>
+                    <div className="text-sm text-muted-foreground">Type: {section.sectionType}</div>
+                  </div>
+                ))}
               </div>
-              <Select value={deviceType} onValueChange={(value: 'desktop' | 'tablet' | 'mobile') => setDeviceType(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Device" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="desktop">Desktop</SelectItem>
-                  <SelectItem value="tablet">Tablet</SelectItem>
-                  <SelectItem value="mobile">Mobile</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="prompt">Prompt</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-            <TabsContent value="prompt" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="prompt">Wireframe Prompt</Label>
-                <Textarea
-                  id="prompt"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe the wireframe you want to generate..."
-                  className="min-h-[100px]"
+          </TabsContent>
+          
+          <TabsContent value="editor" className="p-4 border rounded-md mt-4">
+            <div className="wireframe-editor space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={wireframe.title}
+                  onChange={(e) => setWireframe(prev => ({ ...prev, title: e.target.value }))}
                 />
               </div>
-              <Button 
-                onClick={handleGenerate} 
-                disabled={isGenerating} 
-                className="w-full"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  'Generate Wireframe'
-                )}
-              </Button>
-            </TabsContent>
-            <TabsContent value="settings">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Complexity</Label>
-                  <Slider 
-                    defaultValue={[50]} 
-                    max={100} 
-                    step={10}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Style</Label>
-                  <RadioGroup defaultValue="modern">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="modern" id="modern" />
-                      <Label htmlFor="modern">Modern</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="classic" id="classic" />
-                      <Label htmlFor="classic">Classic</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="minimal" id="minimal" />
-                      <Label htmlFor="minimal">Minimal</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                <div className="space-y-2">
-                  <Label>Elements</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="header" defaultChecked />
-                      <Label htmlFor="header">Header</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="hero" defaultChecked />
-                      <Label htmlFor="hero">Hero</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="features" defaultChecked />
-                      <Label htmlFor="features">Features</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="footer" defaultChecked />
-                      <Label htmlFor="footer">Footer</Label>
-                    </div>
-                  </div>
-                </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={wireframe.description}
+                  onChange={(e) => setWireframe(prev => ({ ...prev, description: e.target.value }))}
+                />
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {wireframe && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <WireframeVisualizer
-              wireframe={wireframe}
-              darkMode={darkMode}
-              deviceType={deviceType}
-            />
-          </CardContent>
-        </Card>
-      )}
-    </div>
+              
+              <div className="sections-header flex items-center justify-between">
+                <h3 className="text-lg font-medium">Sections</h3>
+                <Button size="sm" onClick={handleAddSection}>Add Section</Button>
+              </div>
+              
+              <div className="sections-editor space-y-2">
+                {wireframe.sections.map(section => (
+                  <Card key={section.id}>
+                    <CardContent className="p-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`section-${section.id}-name`}>Name</Label>
+                        <Input
+                          id={`section-${section.id}-name`}
+                          value={section.name}
+                          onChange={(e) => {
+                            setWireframe(prev => ({
+                              ...prev,
+                              sections: prev.sections.map(s => 
+                                s.id === section.id ? { ...s, name: e.target.value } : s
+                              )
+                            }));
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2 mt-2">
+                        <Label htmlFor={`section-${section.id}-type`}>Type</Label>
+                        <Select
+                          value={section.sectionType}
+                          onValueChange={(value) => {
+                            setWireframe(prev => ({
+                              ...prev,
+                              sections: prev.sections.map(s => 
+                                s.id === section.id ? { ...s, sectionType: value } : s
+                              )
+                            }));
+                          }}
+                        >
+                          <SelectTrigger id={`section-${section.id}-type`}>
+                            <SelectValue placeholder="Select a section type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hero">Hero</SelectItem>
+                            <SelectItem value="features">Features</SelectItem>
+                            <SelectItem value="testimonials">Testimonials</SelectItem>
+                            <SelectItem value="pricing">Pricing</SelectItem>
+                            <SelectItem value="faq">FAQ</SelectItem>
+                            <SelectItem value="contact">Contact</SelectItem>
+                            <SelectItem value="footer">Footer</SelectItem>
+                            <SelectItem value="header">Header</SelectItem>
+                            <SelectItem value="generic">Generic</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="code" className="p-4 border rounded-md mt-4">
+            <pre className="p-4 bg-muted rounded-md overflow-auto max-h-96">
+              {JSON.stringify(wireframe, null, 2)}
+            </pre>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 

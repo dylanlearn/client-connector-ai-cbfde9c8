@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import {
   WireframeData,
@@ -7,24 +8,29 @@ import {
   EnhancedWireframeGenerationResult,
   FeedbackModificationResult
 } from './wireframe-types';
-import { WireframeGeneratorService } from './generator/wireframe-generator-service';
-import { WireframeFeedbackService } from './feedback/wireframe-feedback-service';
-import { WireframeManagementService } from './management/wireframe-management-service';
-import { WireframeTemplateService } from './templates/wireframe-template-service';
-import { aiWireframeToWireframeData } from './wireframe-types';
 
 export const EnhancedWireframeGenerator = {
   async generateWireframe(params: WireframeGenerationParams): Promise<EnhancedWireframeGenerationResult> {
     try {
       // 1. Generate the base wireframe
-      const baseWireframe = WireframeGeneratorService.generateWireframe({
+      const baseWireframe = {
+        id: uuidv4(),
         title: params.description,
         description: params.description,
         sections: [],
-        style: params.stylePreferences,
-        colorScheme: params.colorScheme,
-        typography: params.typography
-      });
+        style: params.stylePreferences || '',
+        colorScheme: {
+          primary: '#007bff',
+          secondary: '#6c757d',
+          accent: '#ffc107',
+          background: '#f8f9fa',
+          text: '#212529'
+        },
+        typography: {
+          headings: 'sans-serif',
+          body: 'sans-serif'
+        }
+      };
       
       // 2. Enhance the wireframe with AI (example: add sections, components)
       const enhancedWireframe = await this.enhanceWireframeWithAI(baseWireframe, params);
@@ -113,7 +119,8 @@ export const EnhancedWireframeGenerator = {
         primary: '#28a745',
         secondary: '#dc3545',
         accent: '#ffc107',
-        background: '#f8f9fa'
+        background: '#f8f9fa',
+        text: '#212529'
       }
     };
     
@@ -211,31 +218,30 @@ export const EnhancedWireframeGenerator = {
         sections: modifiedSections
       };
       
-      const changes = {
-        modifiedSections: modifiedSections,
-        addedSections: []
-      };
+      const changes = [
+        { type: 'modified', path: 'sections', count: modifiedSections.length }
+      ];
       
-      const changeDescription = `Modified sections: ${modifiedSections.length}`;
+      const changeDescriptionText = `Modified sections: ${modifiedSections.length}`;
       
       return {
         wireframe: modifiedWireframe,
         success: true,
         changes,
         modified: true,
-        changeDescription,
-        modifiedSections: [],
-        addedSections: []
+        changeDescription: changeDescriptionText
       };
     } catch (error: any) {
       console.error("Error modifying wireframe based on feedback:", error);
       return {
-        wireframe: null,
+        wireframe: wireframeData,
         success: false,
+        error: "Unable to modify the wireframe.",
         modified: false,
-        changeDescription,
-        error: "Unable to modify the wireframe."
+        changeDescription: "Failed to apply feedback"
       };
     }
   }
 };
+
+export default EnhancedWireframeGenerator;

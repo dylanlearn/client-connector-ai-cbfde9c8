@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WireframeDataVisualizer } from '@/components/wireframe';
+import { WireframeVisualizer } from '@/components/wireframe';
 
 interface MultiPageWireframePreviewProps {
   projectId: string;
@@ -45,8 +45,8 @@ const MultiPageWireframePreview: React.FC<MultiPageWireframePreviewProps> = ({
           
           {wireframes.map(wireframe => (
             <TabsContent key={wireframe.id} value={wireframe.id}>
-              <WireframeDataVisualizer 
-                wireframeData={wireframe} 
+              <WireframeVisualizer 
+                wireframe={wireframe} 
               />
             </TabsContent>
           ))}

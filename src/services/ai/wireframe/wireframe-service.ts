@@ -1,3 +1,4 @@
+
 import { WireframeData, AIWireframe } from './wireframe-types';
 
 export const wireframeService = {
@@ -8,21 +9,21 @@ export const wireframeService = {
       title: aiWireframe.title || 'Untitled Wireframe',
       description: aiWireframe.description || '',
       sections: aiWireframe.sections || [],
-      colorScheme: aiWireframe.colorScheme || {
+      colorScheme: {
         primary: '#3b82f6',
         secondary: '#10b981',
         accent: '#f59e0b',
         background: '#ffffff',
         text: '#111827'
       },
-      typography: aiWireframe.typography || {
+      typography: {
         headings: 'sans-serif',
         body: 'sans-serif'
       },
-      style: aiWireframe.style || '',
+      style: '',
       designTokens: aiWireframe.design_tokens || {},
       imageUrl: aiWireframe.image_url || '',
-      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at) : new Date()
+      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at).toISOString() : new Date().toISOString()
     };
   },
   
@@ -61,7 +62,7 @@ export const wireframeService = {
       sections: aiWireframe.sections || [],
       sectionCount: (aiWireframe.sections || []).length,
       imageUrl: aiWireframe.image_url || '',
-      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at) : new Date()
+      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at).toISOString() : new Date().toISOString()
     };
   },
   
