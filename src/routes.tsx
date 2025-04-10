@@ -1,3 +1,4 @@
+
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -24,14 +25,9 @@ import Layout from "@/components/layout/Layout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
-import PricingPage from "@/pages/PricingPage";
 import DashboardPage from "@/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
 import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
-import { LandingPage } from "@/pages/LandingPage";
-import { DocsPage } from "@/pages/DocsPage";
-import { HelpPage } from "@/pages/HelpPage";
-import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
 import { Navigate } from "react-router-dom";
@@ -72,30 +68,6 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Index />,
-  },
-  {
-    path: "/landing",
-    element: <Layout><LandingPage /></Layout>,
-  },
-  {
-    path: "/pricing",
-    element: <Layout><PricingPage /></Layout>,
-  },
-  {
-    path: "/docs",
-    element: <Layout><DocsPage /></Layout>,
-  },
-  {
-    path: "/help",
-    element: <Layout><HelpPage /></Layout>,
-  },
-  {
-    path: "/terms",
-    element: <Layout><TermsPage /></Layout>,
-  },
-  {
-    path: "/privacy",
-    element: <Layout><PrivacyPage /></Layout>,
   },
   {
     path: "/login",
@@ -176,6 +148,10 @@ const router = createBrowserRouter([
   {
     path: '/clients',
     element: <Clients />,
+  },
+  {
+    path: '/privacy',
+    element: <Layout><PrivacyPage /></Layout>,
   },
   {
     path: '/admin',
