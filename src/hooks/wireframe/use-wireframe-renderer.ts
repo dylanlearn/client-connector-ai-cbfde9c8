@@ -31,6 +31,7 @@ export function useWireframeRenderer(options: UseWireframeRendererOptions = {}) 
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const isCanvasDisposed = useRef<boolean>(false);
   const { toast } = useToast();
   
   const [lastRenderedData, setLastRenderedData] = useState<{
@@ -49,40 +50,56 @@ export function useWireframeRenderer(options: UseWireframeRendererOptions = {}) 
     
     // If we already have a canvas, dispose it first
     if (canvas) {
-      canvas.dispose();
+      try {
+        // Only dispose if the canvas hasn't been disposed already
+        if (!isCanvasDisposed.current) {
+          canvas.dispose();
+          isCanvasDisposed.current = true;
+        }
+      } catch (err) {
+        console.error("Error disposing canvas:", err);
+      }
     }
+    
+    isCanvasDisposed.current = false;
     
     // Create new canvas
-    const fabricCanvas = new fabric.Canvas(canvasElement, {
-      width: canvasConfig.width || 1200,
-      height: canvasConfig.height || 800,
-      backgroundColor: canvasConfig.backgroundColor || (darkMode ? '#1a1a1a' : '#ffffff'),
-      selection: interactive,
-      preserveObjectStacking: true
-    });
-    
-    // Set up event handlers for section clicks
-    if (interactive && onSectionClick) {
-      fabricCanvas.on('mouse:down', (event) => {
-        const target = event.target;
-        
-        if (target && target.data?.type === 'section') {
-          onSectionClick(target.data.id, target.data.originalSection || {});
-        }
+    try {
+      const fabricCanvas = new fabric.Canvas(canvasElement, {
+        width: canvasConfig.width || 1200,
+        height: canvasConfig.height || 800,
+        backgroundColor: canvasConfig.backgroundColor || (darkMode ? '#1a1a1a' : '#ffffff'),
+        selection: interactive,
+        preserveObjectStacking: true
       });
+      
+      // Set up event handlers for section clicks
+      if (interactive && onSectionClick) {
+        fabricCanvas.on('mouse:down', (event) => {
+          const target = event.target;
+          
+          if (target && target.data?.type === 'section') {
+            onSectionClick(target.data.id, target.data.originalSection || {});
+          }
+        });
+      }
+      
+      // Apply canvas configuration
+      if (canvasConfig.zoom && canvasConfig.zoom !== 1) {
+        fabricCanvas.setZoom(canvasConfig.zoom);
+      }
+      
+      if (canvasConfig.panOffset && (canvasConfig.panOffset.x !== 0 || canvasConfig.panOffset.y !== 0)) {
+        fabricCanvas.absolutePan(new fabric.Point(canvasConfig.panOffset.x, canvasConfig.panOffset.y));
+      }
+      
+      setCanvas(fabricCanvas);
+      return fabricCanvas;
+    } catch (err) {
+      console.error("Error initializing canvas:", err);
+      setError(err instanceof Error ? err : new Error(String(err)));
+      return null;
     }
-    
-    // Apply canvas configuration
-    if (canvasConfig.zoom && canvasConfig.zoom !== 1) {
-      fabricCanvas.setZoom(canvasConfig.zoom);
-    }
-    
-    if (canvasConfig.panOffset && (canvasConfig.panOffset.x !== 0 || canvasConfig.panOffset.y !== 0)) {
-      fabricCanvas.absolutePan(new fabric.Point(canvasConfig.panOffset.x, canvasConfig.panOffset.y));
-    }
-    
-    setCanvas(fabricCanvas);
-    return fabricCanvas;
   }, [canvas, canvasConfig, darkMode, interactive, onSectionClick]);
   
   // Function to render wireframe data to canvas
@@ -161,7 +178,15 @@ export function useWireframeRenderer(options: UseWireframeRendererOptions = {}) 
   useEffect(() => {
     return () => {
       if (canvas) {
-        canvas.dispose();
+        try {
+          // Check if the canvas still has a valid wrapper element before disposing
+          if (canvas.wrapperEl && canvas.wrapperEl.parentNode && !isCanvasDisposed.current) {
+            canvas.dispose();
+            isCanvasDisposed.current = true;
+          }
+        } catch (err) {
+          console.error("Error during canvas cleanup:", err);
+        }
       }
     };
   }, [canvas]);
