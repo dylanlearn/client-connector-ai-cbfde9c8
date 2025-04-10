@@ -1,6 +1,6 @@
 
 /**
- * CORS headers for Supabase Edge Functions
+ * CORS headers for allowing all origins
  */
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

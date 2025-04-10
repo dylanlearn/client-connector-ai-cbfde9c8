@@ -8,17 +8,26 @@ import TestimonialsSectionEditor from './TestimonialsSectionEditor';
 import RichTextEditor from './RichTextEditor';
 import PricingSectionEditor from './PricingSectionEditor';
 import NavigationSectionEditor from './NavigationSectionEditor';
-
-// Add more section editor imports as they're created
+import FeaturesSectionEditor from './FeaturesSectionEditor';
+import FooterSectionEditor from './FooterSectionEditor';
+import GallerySectionEditor from './GallerySectionEditor';
+import ContactSectionEditor from './ContactSectionEditor';
+import TeamSectionEditor from './TeamSectionEditor';
+import StatsSectionEditor from './StatsSectionEditor';
+import BlogSectionEditor from './BlogSectionEditor';
+import CardsSectionEditor from './CardsSectionEditor';
 
 interface SectionEditorProps {
   section: WireframeSection;
   onUpdate: (updates: Partial<WireframeSection>) => void;
 }
 
+/**
+ * Factory component that renders the appropriate section editor based on section type
+ */
 const SectionEditorFactory: React.FC<SectionEditorProps> = ({ section, onUpdate }) => {
   // Normalize section type for matching
-  const sectionType = section.sectionType?.toLowerCase() || '';
+  const sectionType = section.sectionType?.toLowerCase() || section.type?.toLowerCase() || '';
   
   // Select the appropriate editor based on section type
   // Match both exact types and prefixed types (e.g. "pricing" matches "pricing-table")
@@ -37,9 +46,34 @@ const SectionEditorFactory: React.FC<SectionEditorProps> = ({ section, onUpdate 
   else if (sectionType === 'pricing' || sectionType === 'pricing-table' || sectionType.startsWith('pricing-')) {
     return <PricingSectionEditor section={section} onUpdate={onUpdate} />;
   }
-  else if (sectionType === 'navigation' || sectionType === 'nav' || sectionType.startsWith('nav-')) {
+  else if (sectionType === 'navigation' || sectionType === 'nav' || sectionType === 'header' || sectionType.startsWith('nav-')) {
     return <NavigationSectionEditor section={section} onUpdate={onUpdate} />;
   }
+  else if (sectionType === 'features' || sectionType === 'feature' || sectionType.startsWith('feature-')) {
+    return <FeaturesSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'footer' || sectionType.startsWith('footer-')) {
+    return <FooterSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'gallery' || sectionType.startsWith('gallery-') || sectionType === 'portfolio') {
+    return <GallerySectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'contact' || sectionType === 'form' || sectionType.startsWith('contact-')) {
+    return <ContactSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'team' || sectionType === 'about' || sectionType.startsWith('team-')) {
+    return <TeamSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'stats' || sectionType === 'statistics' || sectionType.startsWith('stat-')) {
+    return <StatsSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'blog' || sectionType === 'articles' || sectionType.startsWith('blog-')) {
+    return <BlogSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  else if (sectionType === 'cards' || sectionType === 'card-grid' || sectionType.startsWith('card-')) {
+    return <CardsSectionEditor section={section} onUpdate={onUpdate} />;
+  }
+  
   // Generic editor for section types without specialized editors
   return (
     <div className="space-y-4">

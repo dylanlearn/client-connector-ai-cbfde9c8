@@ -1,8 +1,9 @@
 
 /**
- * Interface for wireframe generation request parameters
+ * Interface for wireframe generation request
  */
 export interface WireframeGenerationRequest {
+  action?: string;
   userInput: string;
   styleToken?: string;
   colorScheme?: any;
@@ -11,15 +12,16 @@ export interface WireframeGenerationRequest {
   industry?: string;
   baseWireframe?: any;
   isVariation?: boolean;
-  intakeData?: any;
+  projectId?: string;
+  [key: string]: any;
 }
 
 /**
- * Interface for wireframe generation response
+ * Interface for successful wireframe generation response
  */
-export interface WireframeGenerationResponse {
-  success: boolean;
-  wireframe?: any;
+export interface WireframeGenerationSuccess {
+  success: true;
+  wireframe: any;
   model?: string;
   intentData?: any;
   blueprint?: any;
@@ -28,40 +30,92 @@ export interface WireframeGenerationResponse {
     prompt_tokens: number;
     completion_tokens: number;
   };
-  error?: string;
-  errorType?: string;
-  errorDetails?: string;
   generationTime?: number;
 }
 
 /**
- * Interface for design suggestion input
+ * Interface for failed wireframe generation response
  */
-export interface SuggestionRequest {
-  wireframe: any;
-  sections?: any[];
-  targetSection?: string;
-}
-
-/**
- * Interface for design suggestion
- */
-export interface DesignSuggestion {
-  title: string;
-  description: string;
-  preview?: any;
-  justification?: string;
-  sectionId?: string;
-  changes?: any;
-}
-
-/**
- * Interface for design suggestion response
- */
-export interface SuggestionResponse {
-  success: boolean;
-  suggestions?: DesignSuggestion[];
-  error?: string;
+export interface WireframeGenerationError {
+  success: false;
+  error: string;
   errorType?: string;
   errorDetails?: string;
 }
+
+/**
+ * Union type for wireframe generation response
+ */
+export type WireframeGenerationResponse = WireframeGenerationSuccess | WireframeGenerationError;
+
+/**
+ * Interface for wireframe feedback modification request
+ */
+export interface WireframeFeedbackRequest {
+  action: string;
+  wireframe: any;
+  feedback: string;
+  preserveSections?: string[];
+  [key: string]: any;
+}
+
+/**
+ * Interface for successful wireframe feedback modification response
+ */
+export interface WireframeFeedbackSuccess {
+  success: true;
+  modifiedWireframe: any;
+  changes?: any[];
+  changeDescription?: string;
+  modifiedSections?: string[];
+  addedSections?: any[];
+}
+
+/**
+ * Interface for failed wireframe feedback modification response
+ */
+export interface WireframeFeedbackError {
+  success: false;
+  error: string;
+  errorType?: string;
+  errorDetails?: string;
+}
+
+/**
+ * Union type for wireframe feedback modification response
+ */
+export type WireframeFeedbackResponse = WireframeFeedbackSuccess | WireframeFeedbackError;
+
+/**
+ * Interface for wireframe suggestion generation request
+ */
+export interface WireframeSuggestionRequest {
+  action: string;
+  wireframe: any;
+  sections?: any[];
+  targetSection?: string;
+  [key: string]: any;
+}
+
+/**
+ * Interface for successful wireframe suggestion generation response
+ */
+export interface WireframeSuggestionSuccess {
+  success: true;
+  suggestions: any[];
+}
+
+/**
+ * Interface for failed wireframe suggestion generation response
+ */
+export interface WireframeSuggestionError {
+  success: false;
+  error: string;
+  errorType?: string;
+  errorDetails?: string;
+}
+
+/**
+ * Union type for wireframe suggestion generation response
+ */
+export type WireframeSuggestionResponse = WireframeSuggestionSuccess | WireframeSuggestionError;

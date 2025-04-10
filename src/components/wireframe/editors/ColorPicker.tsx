@@ -7,7 +7,8 @@ interface ColorPickerProps {
   onChange: (color: string) => void;
 }
 
-export function ColorPicker({ id, color, onChange }: ColorPickerProps) {
+// A very simple color picker for now
+const ColorPicker: React.FC<ColorPickerProps> = ({ id, color, onChange }) => {
   return (
     <input
       type="color"
@@ -17,4 +18,6 @@ export function ColorPicker({ id, color, onChange }: ColorPickerProps) {
       className="w-8 h-8 p-0 border rounded cursor-pointer"
     />
   );
-}
+};
+
+export default ColorPicker;

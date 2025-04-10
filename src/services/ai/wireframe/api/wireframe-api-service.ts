@@ -11,6 +11,27 @@ import {
  */
 class WireframeApiService {
   /**
+   * Call a Supabase Edge Function
+   */
+  async callEdgeFunction(
+    functionName: string, 
+    payload: Record<string, any>
+  ): Promise<any> {
+    try {
+      console.log(`Calling edge function: ${functionName}`, payload);
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: payload
+      });
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error(`Error calling edge function ${functionName}:`, error);
+      throw error;
+    }
+  }
+  
+  /**
    * Get a wireframe by ID
    */
   async getWireframe(wireframeId: string): Promise<AIWireframe | null> {
