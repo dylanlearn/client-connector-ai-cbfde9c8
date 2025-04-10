@@ -118,9 +118,7 @@ export function useWireframeHistory({
   // Undo to previous state
   const undo = useCallback(() => {
     if (currentIndex <= 0) {
-      toast({
-        description: 'Nothing to undo'
-      });
+      toast('Nothing to undo');
       return null;
     }
     
@@ -133,9 +131,7 @@ export function useWireframeHistory({
     if (onChange && previousState) {
       onChange(previousState.wireframe);
       
-      toast({
-        description: previousState.description || 'Previous change undone'
-      });
+      toast(previousState.description || 'Previous change undone');
     }
     
     setIsHistoryAction(false);
@@ -145,9 +141,7 @@ export function useWireframeHistory({
   // Redo to next state
   const redo = useCallback(() => {
     if (currentIndex >= history.length - 1) {
-      toast({
-        description: 'Nothing to redo'
-      });
+      toast('Nothing to redo');
       return null;
     }
     
@@ -160,9 +154,7 @@ export function useWireframeHistory({
     if (onChange && nextState) {
       onChange(nextState.wireframe);
       
-      toast({
-        description: nextState.description || 'Next change redone'
-      });
+      toast(nextState.description || 'Next change redone');
     }
     
     setIsHistoryAction(false);
