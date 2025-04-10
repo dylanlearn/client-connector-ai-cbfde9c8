@@ -22,7 +22,7 @@ export const wireframeService = {
       style: aiWireframe.style || '',
       designTokens: aiWireframe.design_tokens || {},
       imageUrl: aiWireframe.image_url || '',
-      lastUpdated: aiWireframe.updated_at || ''
+      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at) : new Date()
     };
   },
   
@@ -61,7 +61,7 @@ export const wireframeService = {
       sections: aiWireframe.sections || [],
       sectionCount: (aiWireframe.sections || []).length,
       imageUrl: aiWireframe.image_url || '',
-      lastUpdated: aiWireframe.updated_at || ''
+      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at) : new Date()
     };
   },
   

@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import {
   WireframeData,
@@ -59,7 +58,10 @@ export const EnhancedWireframeGenerator = {
       return {
         wireframe: null,
         success: false,
-        error: error.message
+        error: error.message,
+        intentData: {},
+        blueprint: {},
+        designTokens: {}
       };
     }
   },
@@ -204,18 +206,26 @@ export const EnhancedWireframeGenerator = {
         };
       });
       
-      const result: WireframeData = {
+      const modifiedWireframe: WireframeData = {
         ...wireframeData,
         sections: modifiedSections
       };
       
-      return {
-        wireframe: result,
-        success: true,
-        modified: true,
-        changeDescription: `Modified sections: ${modifiedSections.length}`,
+      const changes = {
         modifiedSections: modifiedSections,
-        addedSections: [] // Add an empty array for the addedSections property
+        addedSections: []
+      };
+      
+      const changeDescription = `Modified sections: ${modifiedSections.length}`;
+      
+      return {
+        wireframe: modifiedWireframe,
+        success: true,
+        changes,
+        modified: true,
+        changeDescription,
+        modifiedSections: [],
+        addedSections: []
       };
     } catch (error: any) {
       console.error("Error modifying wireframe based on feedback:", error);
@@ -223,7 +233,8 @@ export const EnhancedWireframeGenerator = {
         wireframe: null,
         success: false,
         modified: false,
-        changeDescription: `Failed to update wireframe: ${error}`
+        changeDescription,
+        error: "Unable to modify the wireframe."
       };
     }
   }

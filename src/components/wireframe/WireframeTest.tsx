@@ -1,342 +1,275 @@
-import React, { useState, useEffect } from 'react';
-import Wireframe from './Wireframe';
-import { WireframeData } from '@/types/wireframe'; // Import the WireframeData type
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Switch } from "@/components/ui/switch"
-import { useForm } from 'react-hook-form';
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { cn } from '@/lib/utils';
+import { Loader2, Settings } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
+import { Switch } from '@/components/ui/switch';
+import { v4 as uuidv4 } from 'uuid';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import WireframeVisualizer from './WireframeVisualizer';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { HoverCard, HoverCardContent, HoverCardDescription, HoverCardHeader, HoverCardTitle, HoverCardTrigger } from "@/components/ui/hover-card"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/components/ui/context-menu"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Sonner, Toast, Toaster } from "@/components/ui/sonner"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Timeline, TimelineContent, TimelineItem, TimelineSeparator, TimelineTrack } from "@/components/ui/timeline"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CalendarDateRangePicker } from "@/components/ui/calendar-date-range-picker"
-import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Combobox, ComboboxContent, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxPopover } from "@/components/ui/combobox"
-import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
-import { DatePicker } from "@/components/ui/date-picker"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataTableFacetedFilter } from "@/components/ui/data-table-faceted-filter"
-import { DataTablePagination } from "@/components/ui/data-table-pagination"
-import { DataTableToolbar } from "@/components/ui/data-table-toolbar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Listbox, ListboxContent, ListboxEmpty, ListboxGroup, ListboxItem, ListboxLabel, ListboxPopover, ListboxSeparator, ListboxTrigger } from "@/components/ui/listbox"
-import { Menubar, MenubarCheckboxItem, MenubarContent, MenubarGroup, MenubarItem, MenubarLabel, MenubarMenu, MenubarPortal, MenubarRadioGroup, MenubarRadioItem, MenubarSeparator, MenubarShortcut, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar"
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuViewport } from "@/components/ui/navigation-menu"
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from "@/components/ui/resizable"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectScrollUp, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
-import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
-import { Timeline, TimelineContent, TimelineItem, TimelineSeparator, TimelineTrack } from "@/components/ui/timeline"
-import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
-import { Calendar } from "@/components/ui/calendar"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarDateRangePicker } from "@/components/ui/calendar-date-range-picker"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from "@/components/ui/command"
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardDescription,
-  HoverCardHeader,
-  HoverCardTitle,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-import {
-  Menubar,
-  MenubarCheckboxItem,
-  MenubarContent,
-  MenubarGroup,
-  MenubarItem,
-  MenubarLabel,
-  MenubarMenu,
-  MenubarPortal,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
-  MenubarTrigger,
-} from "@/components/ui/menubar"
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  NavigationMenuViewport,
-} from "@/components/ui/navigation-menu"
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  ResizableSeparator,
-} from "@/components/ui/resizable"
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectScrollUp,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  ContextMenu,
-  ContextMenuCheckboxItem,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Listbox,
-  ListboxContent,
-  ListboxEmpty,
-  ListboxGroup,
-  ListboxItem,
-  ListboxLabel,
-  ListboxPopover,
-  ListboxSeparator,
-  ListboxTrigger,
-} from "@/components/ui/listbox"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-import {
-  ScrollArea,
-  ScrollBar,
-} from "@/components/ui/scroll-area"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import {
-  Progress,
-} from "@/components/ui/progress"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import {
-  Skeleton,
-} from "@/components/ui/skeleton"
-import {
-  Sonner,
-  Toast,
-  Toaster,
-} from "@/components/ui/sonner"
-import {
-  AspectRatio,
-} from "@/components/ui/aspect-ratio"
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-import { WireframeData as AIWireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { WireframeData as ProjectWireframeData } from '@/types/wireframe';
+const WireframeTest: React.FC = () => {
+  const { toast } = useToast();
+  const [prompt, setPrompt] = useState<string>('Create a landing page for a cloud storage service');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [wireframe, setWireframe] = useState<WireframeData | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string>('prompt');
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
 
-const convertWireframeData = (data: ProjectWireframeData): AIWireframeData => {
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description || '',
-    sections: data.sections || [],
-    colorScheme: data.colorScheme || {
-      primary: '#3b82f6',
-      secondary: '#10b981',
-      accent: '#f59e0b',
-      background: '#ffffff',
-      text: '#111827'
-    },
-    typography: data.typography || {
-      headings: 'sans-serif',
-      body: 'sans-serif'
-    },
-    style: typeof data.style === 'string' ? data.style : JSON.stringify(data.style)
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      toast({
+        title: 'Prompt Required',
+        description: 'Please enter a prompt to generate a wireframe',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      // Mock wireframe generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create a simple wireframe data structure
+      const generatedWireframe: WireframeData = {
+        id: uuidv4(),
+        title: 'Generated Wireframe',
+        description: prompt,
+        sections: [
+          {
+            id: uuidv4(),
+            name: 'Header',
+            sectionType: 'header',
+            components: [
+              {
+                id: uuidv4(),
+                type: 'text',
+                content: 'Company Logo',
+                style: { 
+                  fontSize: '24px', 
+                  fontWeight: 'bold' 
+                }
+              },
+              {
+                id: uuidv4(),
+                type: 'navigation',
+                content: ['Home', 'Features', 'Pricing', 'Contact'],
+                style: {
+                  display: 'flex',
+                  justifyContent: 'space-between'
+                }
+              }
+            ]
+          },
+          {
+            id: uuidv4(),
+            name: 'Hero',
+            sectionType: 'hero',
+            components: [
+              {
+                id: uuidv4(),
+                type: 'text',
+                content: 'Cloud Storage Solution',
+                style: {
+                  fontSize: '36px',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }
+              },
+              {
+                id: uuidv4(),
+                type: 'text',
+                content: 'Secure, reliable, and easy to use cloud storage for all your needs.',
+                style: {
+                  fontSize: '18px',
+                  textAlign: 'center'
+                }
+              },
+              {
+                id: uuidv4(),
+                type: 'button',
+                content: 'Get Started',
+                style: {
+                  padding: '10px 20px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  borderRadius: '5px'
+                }
+              }
+            ]
+          }
+        ],
+        colorScheme: {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          background: '#ffffff',
+          text: '#111827'
+        },
+        typography: {
+          headings: 'sans-serif',
+          body: 'sans-serif'
+        },
+        style: 'modern'
+      };
+      
+      setWireframe(generatedWireframe);
+      toast({
+        title: 'Wireframe Generated',
+        description: 'Your wireframe has been created successfully'
+      });
+    } catch (error) {
+      console.error('Error generating wireframe:', error);
+      toast({
+        title: 'Generation Failed',
+        description: 'Failed to generate wireframe. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  return (
+    <div className="wireframe-test-container p-4 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex justify-between">
+            <span>Wireframe Test</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="dark-mode">Dark Mode</Label>
+                <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} />
+              </div>
+              <Select value={deviceType} onValueChange={(value: 'desktop' | 'tablet' | 'mobile') => setDeviceType(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Device" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desktop">Desktop</SelectItem>
+                  <SelectItem value="tablet">Tablet</SelectItem>
+                  <SelectItem value="mobile">Mobile</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="prompt">Prompt</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="prompt" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="prompt">Wireframe Prompt</Label>
+                <Textarea
+                  id="prompt"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe the wireframe you want to generate..."
+                  className="min-h-[100px]"
+                />
+              </div>
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isGenerating} 
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Wireframe'
+                )}
+              </Button>
+            </TabsContent>
+            <TabsContent value="settings">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Complexity</Label>
+                  <Slider 
+                    defaultValue={[50]} 
+                    max={100} 
+                    step={10}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Style</Label>
+                  <RadioGroup defaultValue="modern">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="modern" id="modern" />
+                      <Label htmlFor="modern">Modern</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="classic" id="classic" />
+                      <Label htmlFor="classic">Classic</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="minimal" id="minimal" />
+                      <Label htmlFor="minimal">Minimal</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                <div className="space-y-2">
+                  <Label>Elements</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="header" defaultChecked />
+                      <Label htmlFor="header">Header</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="hero" defaultChecked />
+                      <Label htmlFor="hero">Hero</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="features" defaultChecked />
+                      <Label htmlFor="features">Features</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="footer" defaultChecked />
+                      <Label htmlFor="footer">Footer</Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {wireframe && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WireframeVisualizer
+              wireframe={wireframe}
+              darkMode={darkMode}
+              deviceType={deviceType}
+            />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 };
+
+export default WireframeTest;

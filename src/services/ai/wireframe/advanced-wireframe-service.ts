@@ -1,6 +1,7 @@
-import { supabase } from "@/integrations/supabase/client";
-import { wireframeService } from "./wireframe-service";
-import { WireframeData } from "./wireframe-types";
+import { WireframeData, WireframeGenerationParams } from './wireframe-types';
+import { enhancedWireframeGenerator } from './enhanced-wireframe-generator';
+import { wireframeGenerator } from './generator/wireframe-generator-service';
+import { wireframeService } from './wireframe-service';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -34,6 +35,8 @@ export class AdvancedWireframeService {
       console.log("Saving advanced wireframe for project:", projectId);
       
       // Use the wireframeService instead of WireframeService
+      const wireframeData = wireframeService.createMinimalWireframeData();
+      
       const result = await wireframeService.createWireframe({
         title: wireframeData.title || "Advanced Wireframe",
         description: wireframeData.description || prompt || "Generated using advanced wireframe engine",

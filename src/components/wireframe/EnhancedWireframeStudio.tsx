@@ -13,11 +13,12 @@ import WireframeAISuggestions from './WireframeAISuggestions';
 import { DeviceType, ViewMode } from './types';
 
 interface EnhancedWireframeStudioProps {
-  projectId?: string;
-  initialWireframe?: WireframeData;
-  onSave?: (wireframe: WireframeData) => void;
-  onExport?: (wireframe: WireframeData, format: string) => void;
-  readOnly?: boolean;
+  projectId: string;
+  initialData?: WireframeData;
+  standalone?: boolean;
+  onUpdate?: (data: WireframeData) => void;
+  onSave?: (data: WireframeData) => Promise<void>;
+  viewMode?: 'edit' | 'preview';
 }
 
 // Helper function to ensure complete WireframeData
@@ -46,13 +47,14 @@ const ensureCompleteWireframeData = (partialData: Partial<WireframeData>): Wiref
 
 const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   projectId,
-  initialWireframe,
+  initialData,
+  standalone = false,
+  onUpdate,
   onSave,
-  onExport,
-  readOnly = false
+  viewMode = 'preview'
 }) => {
   const { toast } = useToast();
-  const [viewMode, setViewMode] = useState<ViewMode>('preview');
+  const [viewModeState, setViewModeState] = useState<ViewMode>(viewMode);
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [showAISuggestions, setShowAISuggestions] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -70,8 +72,8 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   
   // Initialize wireframe from props or create a new one
   useEffect(() => {
-    if (initialWireframe) {
-      setWireframe(ensureCompleteWireframeData(initialWireframe));
+    if (initialData) {
+      setWireframe(ensureCompleteWireframeData(initialData));
     } else if (!wireframe) {
       // Create a default wireframe if none exists
       setWireframe(ensureCompleteWireframeData({
@@ -81,7 +83,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         sections: []
       }));
     }
-  }, [initialWireframe, wireframe, setWireframe]);
+  }, [initialData, wireframe, setWireframe]);
   
   // Handle section selection
   const handleSectionClick = useCallback((sectionId: string) => {
@@ -154,7 +156,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
         
         <div className="flex items-center space-x-2">
           {/* View mode selector */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+          <Tabs value={viewModeState} onValueChange={(value) => setViewModeState(value as ViewMode)}>
             <TabsList>
               <TabsTrigger value="preview" className="flex items-center">
                 <Eye className="h-4 w-4 mr-1" />
@@ -224,7 +226,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
           </Button>
           
           {/* Save button */}
-          {!readOnly && (
+          {!standalone && (
             <Button 
               onClick={handleSave}
               disabled={isLoading}
@@ -242,28 +244,28 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
               <CardTitle>Wireframe</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {viewMode === 'preview' && wireframe && (
+              {viewModeState === 'preview' && wireframe && (
                 <WireframeVisualizer
                   wireframe={wireframe}
                   darkMode={darkMode}
                   deviceType={deviceType}
-                  viewMode={viewMode}
+                  viewMode={viewModeState}
                   onSectionClick={handleSectionClick}
                   selectedSectionId={selectedSectionId}
                   preview={true}
                 />
               )}
               
-              {viewMode === 'editor' && (
+              {viewModeState === 'editor' && (
                 <WireframeCanvasFabric
                   projectId={projectId}
                   deviceType={deviceType}
                   onSectionClick={handleSectionClick}
-                  editMode={!readOnly}
+                  editMode={!standalone}
                 />
               )}
               
-              {viewMode === 'code' && (
+              {viewModeState === 'code' && (
                 <div className="p-4">
                   <pre className="bg-muted p-4 rounded-md overflow-auto max-h-[600px]">
                     <code>

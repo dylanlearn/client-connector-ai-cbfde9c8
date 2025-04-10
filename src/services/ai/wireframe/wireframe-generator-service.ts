@@ -1,3 +1,4 @@
+
 // src/services/ai/wireframe/wireframe-generator-service.ts
 
 import { v4 as uuidv4 } from 'uuid';
@@ -15,6 +16,7 @@ export const WireframeGeneratorService = {
       {
         id: uuidv4(),
         name: 'Header',
+        sectionType: 'navigation',
         components: [
           {
             id: uuidv4(),
@@ -39,6 +41,7 @@ export const WireframeGeneratorService = {
       {
         id: uuidv4(),
         name: 'Hero Section',
+        sectionType: 'hero',
         components: [
           {
             id: uuidv4(),
@@ -89,6 +92,7 @@ export const WireframeGeneratorService = {
       {
         id: uuidv4(),
         name: 'Content Section',
+        sectionType: 'content',
         components: [
           {
             id: uuidv4(),
@@ -112,6 +116,7 @@ export const WireframeGeneratorService = {
       {
         id: uuidv4(),
         name: 'Contact Form',
+        sectionType: 'contact',
         components: [
           {
             id: uuidv4(),
@@ -142,6 +147,7 @@ export const WireframeGeneratorService = {
       {
         id: uuidv4(),
         name: 'Footer',
+        sectionType: 'footer',
         components: [
           {
             id: uuidv4(),

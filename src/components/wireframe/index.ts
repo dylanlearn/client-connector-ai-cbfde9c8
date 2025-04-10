@@ -1,13 +1,30 @@
 
-// Core components
-export { default as WireframeEditor } from './WireframeEditor';
-export { default as WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
-export { default as EnhancedWireframeStudio } from './EnhancedWireframeStudio';
-export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenerator';
+import WireframeVisualizer from './WireframeVisualizer';
+import WireframeEditor from './WireframeEditor';
+import WireframeFlow from './WireframeFlow';
+import WireframeCanvas from './WireframeCanvas';
+import WireframePreview from './WireframePreview';
+import Wireframe from './Wireframe';
+import AdvancedWireframeGenerator from './AdvancedWireframeGenerator';
+import EnhancedWireframeStudio from './EnhancedWireframeStudio';
+import WireframeSectionEditor from './WireframeSectionEditor';
+import WireframeComponentEditor from './WireframeComponentEditor';
+import WireframeAISuggestions from './WireframeAISuggestions';
+import { WireframeCanvasFabric } from './WireframeCanvasFabric';
+import WireframeTest from './WireframeTest';
 
-// Visualization components
-export { default as WireframeVisualizer } from './WireframeVisualizer';
-export { default as WireframeDataVisualizer } from './WireframeDataVisualizer';
-
-// Helpers and utilities
-export { default as WireframeTest } from './WireframeTest';
+export {
+  WireframeVisualizer,
+  WireframeEditor,
+  WireframeFlow,
+  WireframeCanvas,
+  WireframePreview,
+  Wireframe,
+  AdvancedWireframeGenerator,
+  EnhancedWireframeStudio,
+  WireframeSectionEditor,
+  WireframeComponentEditor,
+  WireframeAISuggestions,
+  WireframeCanvasFabric,
+  WireframeTest
+};
