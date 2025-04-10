@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
@@ -220,23 +219,101 @@ export const useWireframeStore = create<WireframeState>((set) => ({
   
   // Add method to set wireframe data
   setWireframe: (data) => set((state) => {
+    // Create standard colorScheme structure
+    let colorScheme: {
+      primary: string;
+      secondary: string;
+      accent: string;
+      background: string;
+      text?: string;
+    };
+    
+    if (data.colorScheme) {
+      if ('primary' in data.colorScheme) {
+        // If it has the expected structure, use it directly
+        colorScheme = data.colorScheme;
+      } else {
+        // Convert from Record<string, string> to required structure
+        colorScheme = {
+          primary: data.colorScheme['primary'] || state.colorScheme?.primary || '#3b82f6', 
+          secondary: data.colorScheme['secondary'] || state.colorScheme?.secondary || '#10b981',
+          accent: data.colorScheme['accent'] || state.colorScheme?.accent || '#f59e0b',
+          background: data.colorScheme['background'] || state.colorScheme?.background || '#ffffff',
+          text: data.colorScheme['text'] || state.colorScheme?.text || '#111827'
+        };
+      }
+    } else {
+      // Use default or existing
+      colorScheme = state.colorScheme as {
+        primary: string;
+        secondary: string;
+        accent: string;
+        background: string;
+        text?: string;
+      } || {
+        primary: '#3b82f6',
+        secondary: '#10b981',
+        accent: '#f59e0b',
+        background: '#ffffff',
+        text: '#111827'
+      };
+    }
+    
+    // Create standard typography structure
+    let typography: {
+      headings: string;
+      body: string;
+      fontPairings?: string[];
+    };
+    
+    if (data.typography) {
+      if ('headings' in data.typography) {
+        // If it has the expected structure, use it directly
+        typography = data.typography;
+      } else {
+        // Convert from Record<string, string> to required structure
+        typography = {
+          headings: data.typography['headings'] || state.typography?.headings || 'Inter',
+          body: data.typography['body'] || state.typography?.body || 'Inter'
+        };
+        
+        // Handle fontPairings separately if available
+        if (data.typography['fontPairings'] && Array.isArray(data.typography['fontPairings'])) {
+          typography.fontPairings = data.typography['fontPairings'];
+        }
+      }
+    } else {
+      // Use default or existing
+      typography = state.typography as {
+        headings: string;
+        body: string;
+        fontPairings?: string[];
+      } || {
+        headings: 'Inter',
+        body: 'Inter'
+      };
+    }
+
     const wireframeData: WireframeData = {
       id: data.id || state.id || uuidv4(),
       title: data.title || state.title || 'New Wireframe',
       sections: data.sections || state.sections || [],
       description: data.description || state.description,
-      colorScheme: data.colorScheme || state.colorScheme,
-      typography: data.typography || state.typography,
+      colorScheme: colorScheme,
+      typography: typography,
       style: data.style || state.styleToken,
       styleToken: data.styleToken || state.styleToken,
       designTokens: data.designTokens || {},
     };
     
     return {
+      id: wireframeData.id,
       sections: wireframeData.sections,
       wireframe: wireframeData,
       title: wireframeData.title,
       description: wireframeData.description,
+      colorScheme: wireframeData.colorScheme,
+      typography: wireframeData.typography,
       styleToken: wireframeData.styleToken || state.styleToken,
     };
   }),

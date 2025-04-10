@@ -1,4 +1,3 @@
-
 import { WireframeGenerationParams, WireframeGenerationResult, EnhancedWireframeGenerationResult, FeedbackModificationResult } from './wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -82,21 +81,20 @@ export class EnhancedWireframeGenerator {
         success: true,
         wireframe: mockWireframe,
         generationTime: 1.2,
-        model: 'enhanced-wireframe-v1',
-        intentData: { userIntent: 'landing-page', focusAreas: ['conversion', 'clarity'] },
-        blueprint: { structure: 'landing-page', sections: ['hero', 'features', 'pricing', 'cta'] },
-        layoutAnalysis: {
-          patterns: ['Z-pattern', 'F-pattern'],
-          optimizations: ['Improve whitespace between sections', 'Add visual hierarchy']
-        },
-        variations: []
+        model: "enhanced-wireframe-generator",
+        intentData: {}, // Required property
+        blueprint: {}, // Required property
+        designTokens: {} // Required property
       };
     } catch (error) {
       console.error('Enhanced wireframe generation error:', error);
       return {
         success: false,
         wireframe: null,
-        error: error instanceof Error ? error.message : 'Unknown error during wireframe generation'
+        error: "Failed to create wireframe",
+        intentData: {}, // Required property
+        blueprint: {}, // Required property
+        designTokens: {} // Required property
       };
     }
   }
@@ -131,14 +129,20 @@ export class EnhancedWireframeGenerator {
         wireframe: baseWireframe,
         variations: variations,
         generationTime: 0.9,
-        model: 'enhanced-wireframe-v1'
+        model: "enhanced-creative-generator",
+        intentData: {}, // Required property
+        blueprint: {}, // Required property
+        designTokens: {} // Required property
       };
     } catch (error) {
       console.error('Error generating variations:', error);
       return {
         success: false,
         wireframe: baseWireframe,
-        error: error instanceof Error ? error.message : 'Unknown error during variation generation'
+        error: error instanceof Error ? error.message : 'Unknown error during variation generation',
+        intentData: {}, // Required property
+        blueprint: {}, // Required property
+        designTokens: {} // Required property
       };
     }
   }

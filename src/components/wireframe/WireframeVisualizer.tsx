@@ -1,59 +1,38 @@
 
 import React from 'react';
-import { WireframeCanvasEnhanced } from './WireframeCanvasEnhanced';
+import { WireframeVisualizerProps } from './types';
+import Wireframe from './Wireframe';
+import { Card } from '@/components/ui/card';
 
-export interface WireframeVisualizerProps {
-  wireframeData: any;
-  preview?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSelect?: (id: string) => void;
-}
-
+/**
+ * WireframeVisualizer is a wrapper component that renders a wireframe in various view modes
+ * with consistent styling and behavior.
+ */
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
-  wireframeData,
-  preview = false,
+  wireframe,
+  darkMode = false,
   deviceType = 'desktop',
-  onSelect
+  viewMode = 'preview',
+  onSectionClick,
+  selectedSectionId
 }) => {
-  if (!wireframeData) {
+  if (!wireframe) {
     return (
-      <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+      <Card className="flex items-center justify-center p-8 h-full">
         <p className="text-muted-foreground">No wireframe data available</p>
-      </div>
+      </Card>
     );
   }
 
-  // Get width based on device type
-  const getWidth = () => {
-    switch (deviceType) {
-      case 'mobile': return 375;
-      case 'tablet': return 768;
-      case 'desktop': return 1200;
-      default: return 1200;
-    }
-  };
-
-  const width = getWidth();
-  const height = 2000; // Default height, could be made responsive too
-
-  const handleSectionSelect = (sectionId: string) => {
-    if (onSelect) {
-      onSelect(sectionId);
-    }
-  };
-
   return (
-    <div className={`wireframe-visualizer ${preview ? 'preview-mode' : ''}`}>
-      <WireframeCanvasEnhanced
-        sections={wireframeData.sections || []}
-        width={width}
-        height={height}
-        editable={false}
-        showGrid={false}
-        snapToGrid={false}
+    <div className="wireframe-visualizer">
+      <Wireframe
+        wireframe={wireframe}
+        viewMode={viewMode}
+        darkMode={darkMode}
         deviceType={deviceType}
-        responsiveMode={deviceType !== 'desktop'}
-        onSectionSelect={onSelect ? handleSectionSelect : undefined}
+        onSectionClick={onSectionClick}
+        activeSection={selectedSectionId}
       />
     </div>
   );

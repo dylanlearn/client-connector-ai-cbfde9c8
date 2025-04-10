@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
 import { Laptop, Tablet, Smartphone, Sun, Moon, Sparkles, Download } from "lucide-react";
 import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
-import { WireframeVisualizer } from ".";
+import { WireframeVisualizer } from './WireframeVisualizer';
 import { v4 as uuidv4 } from 'uuid';
 import { ViewMode, DeviceType } from './types';
 import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
@@ -219,10 +218,13 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
             <CardContent className="p-0 overflow-auto">
               {currentWireframe?.wireframe ? (
                 <div className={`border-t p-4 ${selectedDeviceType === "mobile" ? "max-w-[375px]" : selectedDeviceType === "tablet" ? "max-w-[768px]" : "w-full"} mx-auto`}>
-                  <WireframeVisualizer
-                    wireframe={currentWireframe.wireframe}
-                    darkMode={darkMode}
+                  <WireframeVisualizer 
+                    wireframe={currentWireframe.wireframe} 
+                    darkMode={darkMode} 
                     deviceType={selectedDeviceType}
+                    viewMode="preview" 
+                    onSectionClick={handleSectionClick}
+                    selectedSectionId={selectedSectionId}
                   />
                 </div>
               ) : (

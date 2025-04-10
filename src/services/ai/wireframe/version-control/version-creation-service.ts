@@ -1,4 +1,3 @@
-
 import { BaseVersionService } from './base-version-service';
 import { WireframeData } from '../wireframe-types';
 import { WireframeVersion, VersionCreationOptions } from './types';
@@ -10,7 +9,28 @@ export class VersionCreationService extends BaseVersionService {
   /**
    * Create a new version of a wireframe
    */
-  async createVersion(options: VersionCreationOptions): Promise<WireframeVersion> {
+  createVersion(
+    wireframeId: string,
+    versionData: WireframeData,
+    options?: {
+      parentVersionId?: string;
+      versionNumber?: number;
+      changeDescription?: string;
+      branchName?: string;
+      createdBy?: string;
+    }
+  ): Promise<WireframeVersion> {
+    // Implementation that internally uses the options parameter format
+    const createOptions: VersionCreationOptions = {
+      wireframeId,
+      data: versionData,
+      ...options
+    };
+    
+    return this.createVersionInternal(createOptions);
+  }
+  
+  private async createVersionInternal(options: VersionCreationOptions): Promise<WireframeVersion> {
     try {
       // Get the latest version number for this wireframe
       const versionNumber = await this.getNextVersionNumber(options.wireframeId);

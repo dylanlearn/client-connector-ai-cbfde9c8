@@ -31,8 +31,9 @@ const TextComponentRenderer: React.FC<BaseComponentRendererProps> = ({
   } = component.style || {};
 
   // Get specific text content or use placeholder
-  const textContent = component.content || 
-    (component.type === 'heading' ? 'Heading Text' : 'Paragraph text content goes here. This is a placeholder for your actual content.');
+  const textContent = typeof component.content === 'string' 
+    ? component.content 
+    : (component.type === 'heading' ? 'Heading Text' : 'Paragraph text content goes here. This is a placeholder for your actual content.');
 
   // Determine component type for rendering
   const getTextElement = () => {

@@ -50,13 +50,21 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
       return <TestimonialSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'navigation' || sectionType === 'nav' || sectionType === 'header' || sectionType.startsWith('nav-')) {
-      // For navigation, we need to use the section as a component with a variant
-      const sectionVariant = section.variant || 'default';
+      // For navigation, we need to create a component from section
+      const navComponent = {
+        id: section.id || `nav-${sectionIndex}`,
+        type: "navigation",
+        style: section.style || {},
+        content: section.copySuggestions || {},
+        variant: section.variant || 'default',
+        // Add other properties as needed
+        ...section
+      };
       
       return (
         <NavigationRenderer 
-          component={section} 
-          variant={sectionVariant} 
+          component={navComponent} 
+          variant={navComponent.variant} 
           viewMode={viewMode} 
           darkMode={darkMode} 
           deviceType={deviceType} 

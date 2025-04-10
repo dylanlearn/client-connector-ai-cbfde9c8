@@ -23,7 +23,7 @@ export interface WireframeGenerationParams {
   baseWireframe?: any;
   componentPreferences?: string[];
   colorScheme?: Record<string, string>;
-  typography?: Record<string, any>;
+  typography?: Record<string, string>;
   creativityLevel?: number;
   enhancedCreativity?: boolean;
   saveMemory?: boolean;
@@ -39,6 +39,7 @@ export interface WireframeGenerationResult {
   blueprint?: any;
   generationTime?: number;
   model?: string;
+  usage?: any;
 }
 
 export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
@@ -62,6 +63,10 @@ export interface AIWireframe {
   generation_params?: any;
   image_url?: string;
   created_at?: string;
+  updated_at?: string;
+  title?: string;
+  data?: any;
+  wireframe_data?: any;
   sections?: WireframeSection[];
 }
 
@@ -72,6 +77,8 @@ export interface WireframeComponent {
   style?: Record<string, any>;
   children?: WireframeComponent[];
   props?: Record<string, any>;
+  src?: string;
+  alt?: string;
   [key: string]: any;
 }
 
@@ -142,6 +149,7 @@ export interface WireframeSection {
   optimizationSuggestions?: any[];
   patternMatch?: any;
   positionOrder?: number;
+  componentVariant?: string;
 }
 
 export interface CopySuggestions {
@@ -169,6 +177,8 @@ export interface FeedbackModificationResult {
   success: boolean;
   changes?: any[];
   error?: string;
+  modified?: boolean;
+  changeDescription?: string;
 }
 
 // Base version control interfaces

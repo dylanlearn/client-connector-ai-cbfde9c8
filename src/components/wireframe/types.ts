@@ -28,7 +28,7 @@ export interface BaseComponentRendererProps {
   component: WireframeComponent;
   darkMode?: boolean;
   interactive?: boolean;
-  onClick?: () => void;
+  onClick?: (componentId: string) => void;
   isSelected?: boolean;
   deviceType?: DeviceType;
 }

@@ -14,7 +14,7 @@ export const getSuggestion = (
   // If it's an array, try to find the key in any of the objects
   if (Array.isArray(copySuggestions)) {
     for (const suggestion of copySuggestions) {
-      if (suggestion[key]) {
+      if (suggestion && suggestion[key]) {
         return suggestion[key];
       }
     }
@@ -48,3 +48,17 @@ export const createStyleObject = (styles: Record<string, any> = {}): React.CSSPr
   
   return result as React.CSSProperties;
 };
+
+/**
+ * Helper to safely convert string or number dimensions to numeric values for calculations
+ */
+export const parseDimension = (value: string | number | undefined, defaultValue: number = 0): number => {
+  if (value === undefined) return defaultValue;
+  
+  if (typeof value === 'number') return value;
+  
+  // Try to parse the string as a number
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+

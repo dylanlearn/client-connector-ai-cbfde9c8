@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,7 @@ const WireframeTest = () => {
   const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [viewMode, setViewMode] = useState<'preview' | 'code' | 'flowchart'>('preview');
   
-  // Create a sample wireframe for testing
+  // Create a sample wireframe with properly typed data
   const [sampleWireframe, setSampleWireframe] = useState<WireframeData>({
     id: uuidv4(),
     title: "Sample Wireframe",
@@ -42,7 +41,14 @@ const WireframeTest = () => {
         position: { x: 20, y: 760 },
         dimensions: { width: 800, height: 200 }
       }
-    ]
+    ],
+    style: "modern",
+    colorScheme: {
+      primary: "#3b82f6",
+      secondary: "#10b981",
+      accent: "#f59e0b",
+      background: "#ffffff"
+    }
   });
 
   const handleSectionClick = (sectionId: string) => {

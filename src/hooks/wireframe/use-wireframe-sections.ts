@@ -1,17 +1,18 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useWireframeStore, WireframeSection } from '@/stores/wireframe-store';
+import { useWireframeStore } from '@/stores/wireframe-store';
 import { v4 as uuidv4 } from 'uuid';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export const useWireframeSections = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const wireframe = useWireframeStore();
+  const wireframeStore = useWireframeStore();
   const { toast } = useToast();
   
   const addSection = (section: Omit<WireframeSection, "id">) => {
     try {
-      wireframe.addSection(section);
+      wireframeStore.addSection(section);
       toast({
         title: "Section added",
         description: `${section.name} section was added successfully.`,
@@ -28,7 +29,7 @@ export const useWireframeSections = () => {
   
   const updateSection = (id: string, updates: Partial<WireframeSection>) => {
     try {
-      wireframe.updateSection(id, updates);
+      wireframeStore.updateSection(id, updates);
       toast({
         title: "Section updated",
         description: "Section was updated successfully.",
@@ -45,7 +46,7 @@ export const useWireframeSections = () => {
   
   const removeSection = (id: string) => {
     try {
-      wireframe.removeSection(id);
+      wireframeStore.removeSection(id);
       toast({
         title: "Section removed",
         description: "Section was removed successfully.",
@@ -62,7 +63,7 @@ export const useWireframeSections = () => {
   
   const duplicateSection = (id: string) => {
     try {
-      const section = wireframe.sections.find(s => s.id === id);
+      const section = wireframeStore.sections.find(s => s.id === id);
       if (!section) {
         throw new Error("Section not found");
       }
@@ -75,7 +76,7 @@ export const useWireframeSections = () => {
         id: uuidv4()
       };
       
-      wireframe.addSection(newSection);
+      wireframeStore.addSection(newSection);
       
       toast({
         title: "Section duplicated",
@@ -92,15 +93,15 @@ export const useWireframeSections = () => {
   };
   
   return {
-    sections: wireframe.sections,
-    activeSection: wireframe.activeSection,
-    setActiveSection: wireframe.setActiveSection,
+    sections: wireframeStore.sections,
+    activeSection: wireframeStore.activeSection,
+    setActiveSection: wireframeStore.setActiveSection,
     addSection,
     updateSection,
     removeSection,
     duplicateSection,
-    moveSectionUp: wireframe.moveSectionUp,
-    moveSectionDown: wireframe.moveSectionDown,
+    moveSectionUp: wireframeStore.moveSectionUp,
+    moveSectionDown: wireframeStore.moveSectionDown,
     isLoading
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Copy, Edit3, Code2 } from 'lucide-react';
 import { exportToHTML } from '@/utils/wireframe/export-utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { v4 as uuidv4 } from 'uuid';
 
 interface EnhancedWireframeStudioProps {
   projectId: string;
@@ -107,22 +107,43 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   // Update wireframe when initialData changes
   useEffect(() => {
     if (initialData) {
-      // Make sure initialData conforms to the required format for WireframeState
-      const wireframeData: Partial<WireframeState> = {
-        ...initialData,
-        id: initialData.id || '',
-        title: initialData.title || '',
-        sections: initialData.sections.map(section => ({
+      // Convert the wireframe data to the appropriate format
+      const { id, title, sections, description, colorScheme, typography, style, styleToken, designTokens } = initialData;
+      
+      // Prepare properly shaped data for the wireframe store
+      const wireframeData: Partial<WireframeData> = {
+        id: id || uuidv4(),
+        title: title || 'New Wireframe',
+        description: description,
+        // Ensure sections have the right properties
+        sections: (sections || []).map(section => ({
           ...section,
-          // Ensure copySuggestions is properly formatted, could be object or array
+          // Ensure copySuggestions has the right format
           copySuggestions: Array.isArray(section.copySuggestions) 
             ? section.copySuggestions
             : section.copySuggestions ? [section.copySuggestions] : [],
-          // Ensure animationSuggestions is an array if present
-          animationSuggestions: section.animationSuggestions 
-            ? [section.animationSuggestions] 
-            : []
-        }))
+          // Ensure animationSuggestions is an array
+          animationSuggestions: Array.isArray(section.animationSuggestions)
+            ? section.animationSuggestions
+            : section.animationSuggestions ? [section.animationSuggestions] : []
+        })),
+        // Ensure colorScheme has the right shape
+        colorScheme: {
+          primary: colorScheme?.primary || '#3b82f6',
+          secondary: colorScheme?.secondary || '#10b981',
+          accent: colorScheme?.accent || '#f59e0b',
+          background: colorScheme?.background || '#ffffff',
+          text: colorScheme?.text || '#111827'
+        },
+        // Ensure typography has the right shape
+        typography: {
+          headings: typography?.headings || 'Inter',
+          body: typography?.body || 'Inter',
+          fontPairings: typography?.fontPairings || []
+        },
+        style: style || styleToken,
+        styleToken: styleToken || style,
+        designTokens: designTokens || {}
       };
       
       setWireframe(wireframeData);

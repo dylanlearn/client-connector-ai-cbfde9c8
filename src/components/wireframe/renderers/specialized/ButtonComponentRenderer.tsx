@@ -40,8 +40,10 @@ const ButtonComponentRenderer: React.FC<BaseComponentRendererProps> = ({
     size = 'default',
   } = component.style || {};
 
-  // Get button content
-  const buttonText = component.content || 'Button';
+  // Get button content - ensure it's a string
+  const buttonText = typeof component.content === 'string' 
+    ? component.content 
+    : 'Button';
   
   // Handle button variants
   const getButtonVariant = () => {

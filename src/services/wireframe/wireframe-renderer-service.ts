@@ -43,9 +43,13 @@ function renderGrid(canvas: fabric.Canvas, config: Partial<WireframeCanvasConfig
   const gridSize = config.gridSize || 20;
   const gridColor = config.gridColor || 'rgba(224,224,224,0.5)';
   
-  for (let i = 0; i < (config.width || canvas.width!) / gridSize; i++) {
+  // Use width and height as numbers
+  const canvasWidth = typeof config.width === 'number' ? config.width : canvas.width || 0;
+  const canvasHeight = typeof config.height === 'number' ? config.height : canvas.height || 0;
+  
+  for (let i = 0; i < canvasWidth / gridSize; i++) {
     const x = i * gridSize;
-    canvas.add(new fabric.Line([x, 0, x, config.height || canvas.height!], {
+    canvas.add(new fabric.Line([x, 0, x, canvasHeight], {
       stroke: gridColor,
       selectable: false,
       evented: false,
@@ -54,9 +58,9 @@ function renderGrid(canvas: fabric.Canvas, config: Partial<WireframeCanvasConfig
     }));
   }
   
-  for (let i = 0; i < (config.height || canvas.height!) / gridSize; i++) {
+  for (let i = 0; i < canvasHeight / gridSize; i++) {
     const y = i * gridSize;
-    canvas.add(new fabric.Line([0, y, config.width || canvas.width!, y], {
+    canvas.add(new fabric.Line([0, y, canvasWidth, y], {
       stroke: gridColor,
       selectable: false,
       evented: false,
@@ -71,11 +75,24 @@ function renderSection(
   section: WireframeSection,
   options: RenderingOptions = {}
 ) {
+  // Parse position to ensure we're working with numbers
+  const x = section.position?.x ?? section.x ?? 0;
+  const y = section.position?.y ?? section.y ?? 0;
+  
+  // Parse dimensions to ensure we're working with numbers
+  const width = typeof section.dimensions?.width === 'string' ? 
+    parseFloat(section.dimensions.width) : 
+    (section.dimensions?.width ?? section.width ?? 300);
+  
+  const height = typeof section.dimensions?.height === 'string' ? 
+    parseFloat(section.dimensions.height) : 
+    (section.dimensions?.height ?? section.height ?? 200);
+  
   const sectionRect = new fabric.Rect({
-    left: section.position?.x || section.x || 0,
-    top: section.position?.y || section.y || 0,
-    width: section.dimensions?.width || section.width || 300,
-    height: section.dimensions?.height || section.height || 200,
+    left: x,
+    top: y,
+    width: width,
+    height: height,
     fill: 'transparent',
     stroke: 'rgba(0,0,0,0.1)',
     strokeWidth: 1,
@@ -133,22 +150,31 @@ export function renderFlexLayout(canvas: fabric.Canvas, section: WireframeSectio
   const alignment = layoutProps.alignment || 'center';
   const justify = layoutProps.justifyContent || 'center';
   const columnsCount = layoutProps.columns || 1;
-  const gapSize = layoutProps.gap || 10;
+  
+  // Parse the gap to ensure it's a number
+  const gapSize = typeof section.gap === 'string' ? parseFloat(section.gap) : (section.gap || 10);
+  
   const wrap = layoutProps.wrap !== undefined ? layoutProps.wrap : true;
+  
+  // Parse section values to ensure they are numbers
+  const sectionX = section.x !== undefined ? section.x : 0;
+  const sectionY = section.y !== undefined ? section.y : 0;
+  const sectionWidth = typeof section.width === 'string' ? parseFloat(section.width) : (section.width || 300);
+  const sectionHeight = typeof section.height === 'string' ? parseFloat(section.height) : (section.height || 200);
   
   // Set up grid layout
   if (direction === 'grid' && typeof layoutProps.columns === 'number') {
-    const columnWidth = section.width / columnsCount;
+    const columnWidth = sectionWidth / columnsCount;
     let xOffset = 0;
     let yOffset = 0;
     
     for (let i = 0; i < columnsCount; i++) {
       // Example: Render a placeholder in each grid cell
       const cellRect = new fabric.Rect({
-        left: section.x + xOffset,
-        top: section.y + yOffset,
+        left: sectionX + xOffset,
+        top: sectionY + yOffset,
         width: columnWidth - gapSize,
-        height: section.height - gapSize,
+        height: sectionHeight - gapSize,
         fill: 'rgba(0,255,0,0.1)',
         selectable: false,
         evented: false
@@ -161,8 +187,8 @@ export function renderFlexLayout(canvas: fabric.Canvas, section: WireframeSectio
   
   // Set up flexbox-like layout
   if (direction === 'horizontal' || direction === 'vertical') {
-    let xOffset = section.x;
-    let yOffset = section.y;
+    let xOffset = sectionX;
+    let yOffset = sectionY;
     let itemIndex = 0;
     
     // Example: Render placeholders for items
@@ -172,14 +198,14 @@ export function renderFlexLayout(canvas: fabric.Canvas, section: WireframeSectio
       
       if (direction === 'horizontal') {
         xOffset += itemWidth + gapSize;
-        if (xOffset > section.x + section.width && wrap) {
-          xOffset = section.x;
+        if (xOffset > sectionX + sectionWidth && wrap) {
+          xOffset = sectionX;
           yOffset += itemHeight + gapSize;
         }
       } else {
         yOffset += itemHeight + gapSize;
-        if (yOffset > section.y + section.height && wrap) {
-          yOffset = section.y;
+        if (yOffset > sectionY + sectionHeight && wrap) {
+          yOffset = sectionY;
           xOffset += itemWidth + gapSize;
         }
       }

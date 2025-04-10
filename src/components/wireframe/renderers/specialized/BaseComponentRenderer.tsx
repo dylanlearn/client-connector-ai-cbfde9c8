@@ -37,6 +37,14 @@ const BaseComponentRenderer: React.FC<BaseComponentRendererProps> = ({
     return null;
   }
 
+  // Safe rendering of content
+  const renderContent = () => {
+    if (typeof component.content === 'string') {
+      return component.content;
+    }
+    return JSON.stringify(component.content);
+  };
+
   // Return a placeholder - this would be overridden in actual component renderers
   return (
     <div
@@ -52,7 +60,7 @@ const BaseComponentRenderer: React.FC<BaseComponentRendererProps> = ({
         ...component.style
       }}
     >
-      {component.type}: {component.content || 'No content'}
+      {component.type}: {renderContent()}
     </div>
   );
 };
