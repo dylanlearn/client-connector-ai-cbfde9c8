@@ -1,18 +1,15 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Toggle } from "@/components/ui/toggle";
-import { Laptop, Tablet, Smartphone, Sun, Moon, Sparkles, Download } from "lucide-react";
-import { useWireframeGeneration } from "@/hooks/use-wireframe-generation";
-import { WireframeVisualizer } from './WireframeVisualizer';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { DeviceType, ViewMode } from './types';
 import { v4 as uuidv4 } from 'uuid';
-import { ViewMode, DeviceType } from './types';
-import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
+import WireframeVisualizer from './WireframeVisualizer';
 
-export interface AdvancedWireframeGeneratorProps {
+interface AdvancedWireframeGeneratorProps {
   projectId?: string;
   viewMode?: ViewMode;
   onWireframeGenerated?: (wireframe: WireframeData) => void;
@@ -21,242 +18,170 @@ export interface AdvancedWireframeGeneratorProps {
   intakeData?: any;
 }
 
-export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
-  projectId,
-  viewMode = "preview",
+const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
+  projectId = uuidv4(),
+  viewMode = 'preview',
   onWireframeGenerated,
-  initialPrompt = "",
-  enhancedCreativity = true,
-  intakeData,
+  initialPrompt = '',
+  enhancedCreativity = false,
+  intakeData
 }) => {
-  // Local state
-  const [prompt, setPrompt] = useState(initialPrompt);
-  const [selectedDeviceType, setSelectedDeviceType] = useState<DeviceType>("desktop");
-  const [darkMode, setDarkMode] = useState(false);
-  const [activeTab, setActiveTab] = useState("generator");
+  const { toast } = useToast();
+  const { 
+    isGenerating, 
+    currentWireframe, 
+    generationResults, 
+    intentData, 
+    blueprint, 
+    generateWireframe, 
+    saveWireframe, 
+    error 
+  } = useAdvancedWireframe();
+  
+  const [prompt, setPrompt] = useState<string>(initialPrompt);
+  const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [isEnhancedCreativity, setIsEnhancedCreativity] = useState<boolean>(enhancedCreativity);
+  const [wireframeTitle, setWireframeTitle] = useState<string>('New Wireframe');
+  const [wireframeDescription, setWireframeDescription] = useState<string>('Describe your wireframe');
 
-  // Use the generation hook
-  const {
-    isGenerating,
-    currentWireframe,
-    generateWireframe,
-    creativityLevel,
-    setCreativityLevel,
-  } = useWireframeGeneration();
+  // Function to handle section click
+  const handleSectionClick = useCallback((sectionId: string) => {
+    // Set the selected section ID
+    setSelectedSectionId(sectionId);
+  }, []);
 
-  // Generate wireframe from the prompt
-  const handleGenerateClick = useCallback(async () => {
-    if (!prompt.trim()) return;
+  useEffect(() => {
+    if (initialPrompt) {
+      setPrompt(initialPrompt);
+    }
+  }, [initialPrompt]);
 
-    // Ensure there's a valid project ID
-    const effectiveProjectId = projectId || uuidv4();
-    
-    // Set up color scheme for the wireframe
-    const colorScheme = {
-      primary: "#3b82f6", // Blue
-      secondary: "#10b981", // Green
-      accent: "#f97316", // Orange
-      background: darkMode ? "#1f2937" : "#ffffff",
+  const handleGenerateWireframe = async () => {
+    if (!projectId) {
+      toast({
+        title: "Project ID is required",
+        description: "Please provide a valid project ID.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const params = {
+      projectId: projectId,
+      prompt: prompt,
+      enhancedCreativity: isEnhancedCreativity,
+      intakeData: intakeData
     };
-    
-    // Generate the wireframe
-    const result = await generateWireframe({
-      description: prompt,
-      projectId: effectiveProjectId,
-      enhancedCreativity,
-      creativityLevel,
-      colorScheme,
-      customParams: {
-        darkMode: darkMode,
-        deviceType: selectedDeviceType,
-      },
-    });
 
-    // If there's a callback, pass the generated wireframe
-    if (result && result.wireframe && onWireframeGenerated) {
+    const result = await generateWireframe(params);
+
+    if (result && result.success && onWireframeGenerated && result.wireframe) {
       onWireframeGenerated(result.wireframe);
     }
+  };
 
-  }, [prompt, projectId, generateWireframe, darkMode, selectedDeviceType, creativityLevel, enhancedCreativity, onWireframeGenerated]);
-
-  // Process intake data if provided
-  useEffect(() => {
-    if (intakeData && Object.keys(intakeData).length > 0) {
-      // Extract relevant information for the prompt
-      const { businessName, businessType, mission, vision } = intakeData;
-      
-      // Create a prompt based on the intake data
-      let generatedPrompt = `Create a ${businessType || 'business'} website`;
-      
-      if (businessName) {
-        generatedPrompt += ` for ${businessName}`;
-      }
-      
-      if (mission || vision) {
-        generatedPrompt += ` that focuses on ${mission || vision}`;
-      }
-      
-      // Set the generated prompt
-      setPrompt(generatedPrompt);
+  const handleSaveWireframe = async () => {
+    if (!projectId) {
+      toast({
+        title: "Project ID is required",
+        description: "Please provide a valid project ID.",
+        variant: "destructive"
+      });
+      return;
     }
-  }, [intakeData]);
 
-  // Export wireframe to JSON
-  const handleExport = () => {
-    if (!currentWireframe?.wireframe) return;
-    
-    const dataStr = JSON.stringify(currentWireframe.wireframe, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `wireframe-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!currentWireframe) {
+      toast({
+        title: "No wireframe to save",
+        description: "Please generate a wireframe before saving.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await saveWireframe(projectId, wireframeDescription);
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="generator">Generator</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="generator" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Generate Wireframe</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="prompt" className="block text-sm font-medium mb-1">
-                    Describe your website
-                  </label>
-                  <Textarea
-                    id="prompt"
-                    placeholder="Describe the website you want to create, e.g., 'A modern SaaS landing page with features, pricing, and testimonials'"
-                    className="min-h-[100px]"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Creativity Level:</span>
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
-                    value={creativityLevel}
-                    onChange={(e) => setCreativityLevel(parseInt(e.target.value))}
-                    className="w-full max-w-xs"
-                  />
-                  <span className="text-sm">{creativityLevel}/10</span>
-                </div>
-                
-                <div className="flex justify-center">
-                  <Button
-                    onClick={handleGenerateClick}
-                    disabled={isGenerating || !prompt.trim()}
-                    className="w-full max-w-xs"
-                  >
-                    {isGenerating ? "Generating..." : "Generate Wireframe"}
-                    {enhancedCreativity && !isGenerating && <Sparkles className="ml-2 h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="preview">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Wireframe Preview</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Toggle
-                  pressed={darkMode}
-                  onPressedChange={setDarkMode}
-                  aria-label="Toggle dark mode"
-                >
-                  {darkMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-                </Toggle>
-                <div className="flex border rounded-md">
-                  <Button
-                    variant={selectedDeviceType === "desktop" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setSelectedDeviceType("desktop")}
-                    className="rounded-r-none"
-                  >
-                    <Laptop className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={selectedDeviceType === "tablet" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setSelectedDeviceType("tablet")}
-                    className="rounded-none"
-                  >
-                    <Tablet className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={selectedDeviceType === "mobile" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setSelectedDeviceType("mobile")}
-                    className="rounded-l-none"
-                  >
-                    <Smartphone className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 overflow-auto">
-              {currentWireframe?.wireframe ? (
-                <div className={`border-t p-4 ${selectedDeviceType === "mobile" ? "max-w-[375px]" : selectedDeviceType === "tablet" ? "max-w-[768px]" : "w-full"} mx-auto`}>
-                  <WireframeVisualizer 
-                    wireframe={currentWireframe.wireframe} 
-                    darkMode={darkMode} 
-                    deviceType={selectedDeviceType}
-                    viewMode="preview" 
-                    onSectionClick={handleSectionClick}
-                    selectedSectionId={selectedSectionId}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center p-12 border-t text-muted-foreground">
-                  Generate a wireframe to preview it here
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="export">
-          <Card>
-            <CardHeader>
-              <CardTitle>Export Options</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button 
-                onClick={handleExport} 
-                disabled={!currentWireframe?.wireframe}
-                className="w-full"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export as JSON
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                The exported file contains all wireframe data that you can import later or use in other applications.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+    <div className="advanced-wireframe-generator">
+      <div className="prompt-input-area space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Wireframe Generator</h3>
+          <div className="creativity-toggle">
+            <label htmlFor="creativity" className="text-sm text-muted-foreground mr-2">
+              Enhanced Creativity
+            </label>
+            <input
+              type="checkbox"
+              id="creativity"
+              checked={isEnhancedCreativity}
+              onChange={(e) => setIsEnhancedCreativity(e.target.checked)}
+              className="border rounded-sm h-4 w-4 text-primary focus:ring-primary"
+            />
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            placeholder="Enter wireframe title"
+            value={wireframeTitle}
+            onChange={(e) => setWireframeTitle(e.target.value)}
+            className="border rounded-md px-3 py-2 w-1/3"
+          />
+          <input
+            type="text"
+            placeholder="Describe your wireframe"
+            value={wireframeDescription}
+            onChange={(e) => setWireframeDescription(e.target.value)}
+            className="border rounded-md px-3 py-2 w-2/3"
+          />
+        </div>
+        <div className="flex">
+          <input
+            type="text"
+            placeholder="Enter your prompt"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="border rounded-md px-3 py-2 w-full"
+          />
+          <Button
+            onClick={handleGenerateWireframe}
+            disabled={isGenerating}
+            className="ml-2"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              "Generate Wireframe"
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {currentWireframe && (
+        <div className="wireframe-preview mt-4">
+          <WireframeVisualizer
+            wireframe={currentWireframe}
+            darkMode={false}
+            deviceType={deviceType}
+            onSectionClick={handleSectionClick}
+            selectedSectionId={selectedSectionId}
+          />
+        </div>
+      )}
+
+      <div className="actions mt-4">
+        <Button
+          onClick={handleSaveWireframe}
+          disabled={isGenerating || !currentWireframe}
+        >
+          Save Wireframe
+        </Button>
+      </div>
     </div>
   );
 };

@@ -216,7 +216,9 @@ const WireframeFlow: React.FC<WireframeFlowProps> = ({
               {sampleWireframes.map(wireframe => (
                 <WireframeVisualizer 
                   key={wireframe.id}
-                  wireframeData={wireframe}
+                  wireframe={wireframe}
+                  darkMode={false}
+                  deviceType="desktop"
                   onSelect={(id) => handleSelectWireframe(id)}
                 />
               ))}
@@ -265,7 +267,7 @@ const WireframeFlow: React.FC<WireframeFlowProps> = ({
       
       {step === 2 && selectedWireframe && (
         <div className="space-y-6">
-          <WireframeVisualizer wireframeData={selectedWireframe} />
+          <WireframeVisualizer wireframe={selectedWireframe} darkMode={false} deviceType="desktop" />
           
           <Card>
             <CardHeader>

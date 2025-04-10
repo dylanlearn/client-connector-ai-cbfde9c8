@@ -1,4 +1,3 @@
-
 import { WireframeSection as WireframeSectionType, WireframeData, CopySuggestions, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 import React from 'react';
 

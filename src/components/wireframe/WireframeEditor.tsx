@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { DeviceType, ViewMode } from './types';
+import { DeviceType, ViewMode, WireframeData } from './types';
 import { Eye, EyeOff, Code2, LayoutDashboard, Smartphone, Tablet, Monitor, Save, Undo, Redo } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiWireframeToWireframeData } from '@/services/ai/wireframe/wireframe-types';
@@ -21,11 +21,20 @@ import WireframeVisualizer from './WireframeVisualizer';
 interface WireframeEditorProps {
   projectId?: string;
   wireframeId?: string;
+  wireframeData?: WireframeData;
   deviceType?: DeviceType;
   viewMode?: ViewMode;
+  onUpdate?: (updatedWireframe: WireframeData) => void;
 }
 
-const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeId, deviceType: propDeviceType = 'desktop', viewMode: propViewMode = 'preview' }) => {
+const WireframeEditor: React.FC<WireframeEditorProps> = ({ 
+  projectId, 
+  wireframeId, 
+  wireframeData,
+  deviceType: propDeviceType = 'desktop', 
+  viewMode: propViewMode = 'preview',
+  onUpdate
+}) => {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -63,9 +72,100 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeI
   const [showAISectionComponentDesignReasoning, setShowAISectionComponentDesignReasoning] = useState(false);
   const [showAISectionComponentTypeSuggestions, setShowAISectionComponentTypeSuggestions] = useState(false);
 
+  const [deviceType, setDeviceType] = useState<DeviceType>(propDeviceType);
+  const [viewMode, setViewMode] = useState<ViewMode>(propViewMode);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  
+  const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(wireframeData || null);
+
+  useEffect(() => {
+    if (wireframeData) {
+      setCurrentWireframe(wireframeData);
+    }
+  }, [wireframeData]);
+
+  const handleSectionClick = useCallback((sectionId: string) => {
+    setSelectedSectionId(sectionId);
+  }, []);
+
+  useEffect(() => {
+    if (currentWireframe && onUpdate) {
+      onUpdate(currentWireframe);
+    }
+  }, [currentWireframe, onUpdate]);
+
   return (
-    <div>
-      {/* Add your component JSX here */}
+    <div className="wireframe-editor flex flex-col h-full">
+      <div className="toolbar flex items-center justify-between p-2 border-b">
+        <div className="device-controls flex items-center space-x-2">
+          <Button 
+            size="sm" 
+            variant={deviceType === 'desktop' ? 'default' : 'outline'}
+            onClick={() => setDeviceType('desktop')}
+          >
+            <Monitor className="h-4 w-4 mr-1" /> Desktop
+          </Button>
+          <Button 
+            size="sm" 
+            variant={deviceType === 'tablet' ? 'default' : 'outline'}
+            onClick={() => setDeviceType('tablet')}
+          >
+            <Tablet className="h-4 w-4 mr-1" /> Tablet
+          </Button>
+          <Button 
+            size="sm" 
+            variant={deviceType === 'mobile' ? 'default' : 'outline'}
+            onClick={() => setDeviceType('mobile')}
+          >
+            <Smartphone className="h-4 w-4 mr-1" /> Mobile
+          </Button>
+        </div>
+        
+        <div className="view-controls flex items-center space-x-2">
+          <Button 
+            size="sm" 
+            variant={viewMode === 'preview' ? 'default' : 'outline'}
+            onClick={() => setViewMode('preview')}
+          >
+            <Eye className="h-4 w-4 mr-1" /> Preview
+          </Button>
+          <Button 
+            size="sm" 
+            variant={viewMode === 'editor' ? 'default' : 'outline'}
+            onClick={() => setViewMode('editor')}
+          >
+            <LayoutDashboard className="h-4 w-4 mr-1" /> Editor
+          </Button>
+          <Button 
+            size="sm" 
+            variant={viewMode === 'code' ? 'default' : 'outline'}
+            onClick={() => setViewMode('code')}
+          >
+            <Code2 className="h-4 w-4 mr-1" /> Code
+          </Button>
+        </div>
+      </div>
+      
+      <div className="content-area flex flex-1">
+        <div className="wireframe-canvas flex-1 p-4">
+          {currentWireframe && (
+            <WireframeVisualizer
+              wireframe={currentWireframe}
+              darkMode={false}
+              deviceType={deviceType}
+              viewMode={viewMode}
+              onSectionClick={handleSectionClick}
+              selectedSectionId={selectedSectionId}
+            />
+          )}
+          
+          {!currentWireframe && (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-muted-foreground">No wireframe data available</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

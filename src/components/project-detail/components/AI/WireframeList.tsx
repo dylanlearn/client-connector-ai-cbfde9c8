@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { AdvancedWireframeGenerator, WireframeVisualizer } from '@/components/wireframe';
+import WireframeVisualizer from '@/components/wireframe/WireframeVisualizer';
 import { useNavigate } from 'react-router-dom';
 
 interface WireframeListProps {
@@ -49,8 +48,9 @@ const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
               </CardHeader>
               <CardContent className="p-0 border-t">
                 <WireframeVisualizer 
-                  wireframeData={wireframe}
-                  preview={true}
+                  wireframe={wireframe}
+                  darkMode={false}
+                  deviceType="desktop"
                 />
               </CardContent>
             </Card>

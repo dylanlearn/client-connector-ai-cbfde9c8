@@ -85,6 +85,12 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
     }
   });
 
+  const getGridSize = () => {
+    return Number(canvasConfig.gridSize) + 0;
+  };
+
+  const gridSize = getGridSize();
+
   useEffect(() => {
     if (fabricCanvasRef.current && !fabricCanvas) {
       const canvas = new fabric.Canvas(fabricCanvasRef.current, {
