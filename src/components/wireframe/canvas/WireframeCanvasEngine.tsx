@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '../utils/types';
@@ -46,14 +47,14 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({ width = 1
     setIsInitialized(true);
 
     if (config.showGrid) {
-      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
+      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType, config.gridColor);
       gridLines.forEach(line => fabricCanvas.add(line));
     }
 
     return () => {
       fabricCanvas.dispose();
     };
-  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType]);
+  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType, config.gridColor]);
 
   return (
     <canvas ref={canvasRef} width={width} height={height} />
