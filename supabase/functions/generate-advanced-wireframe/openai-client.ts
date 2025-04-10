@@ -1,5 +1,5 @@
 
-import { createParser } from "eventsource-parser";
+import { createParser } from "https://esm.sh/eventsource-parser@1.1.1";
 
 // Configuration interface for OpenAI calls
 interface OpenAICallOptions {
