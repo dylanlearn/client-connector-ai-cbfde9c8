@@ -11,7 +11,7 @@ const WireframeTest = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [viewMode, setViewMode] = useState<'preview' | 'edit' | 'flowchart'>('preview');
+  const [viewMode, setViewMode] = useState<'preview' | 'code' | 'flowchart'>('preview');
   
   // Create a sample wireframe for testing
   const [sampleWireframe, setSampleWireframe] = useState<WireframeData>({
@@ -65,10 +65,10 @@ const WireframeTest = () => {
               </Button>
               <Button 
                 size="sm" 
-                variant={viewMode === 'edit' ? 'default' : 'outline'} 
-                onClick={() => setViewMode('edit')}
+                variant={viewMode === 'code' ? 'default' : 'outline'} 
+                onClick={() => setViewMode('code')}
               >
-                Edit
+                Code
               </Button>
               <Button 
                 size="sm" 
