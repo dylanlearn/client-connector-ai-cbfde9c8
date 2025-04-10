@@ -21,12 +21,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { PDFExportDialog } from '@/components/export/PDFExportDialog';
-import { WireframeData } from '@/types/wireframe';
+import { WireframeData as TypesWireframeData } from '@/types/wireframe';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { generateHtmlFromWireframe } from './html-export';
 
+// Create a type that's compatible with both WireframeData types
 interface WireframeExportMenuProps {
-  wireframeData: WireframeData;
+  wireframeData: TypesWireframeData;
   buttonVariant?: "default" | "outline" | "secondary";
   buttonSize?: "default" | "sm" | "lg" | "icon";
 }
@@ -63,7 +64,16 @@ export const WireframeExportMenu: React.FC<WireframeExportMenuProps> = ({
   
   const handleHtmlExport = () => {
     try {
-      const htmlContent = generateHtmlFromWireframe(wireframeData);
+      // Convert wireframeData to the format expected by generateHtmlFromWireframe
+      const exportData = {
+        id: wireframeData.id,
+        title: wireframeData.title,
+        description: wireframeData.description || '',
+        sections: wireframeData.sections || [],
+        colorScheme: wireframeData.colorScheme
+      };
+      
+      const htmlContent = generateHtmlFromWireframe(exportData as any);
       
       // Create a blob with the HTML content
       const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -127,7 +137,7 @@ export const WireframeExportMenu: React.FC<WireframeExportMenuProps> = ({
       title: wireframeData.title,
       sections: wireframeData.sections?.map(section => ({
         id: section.id,
-        sectionType: section.sectionType,
+        sectionType: section.sectionType || 'content', // Add default sectionType
         name: section.name
       }))
     };

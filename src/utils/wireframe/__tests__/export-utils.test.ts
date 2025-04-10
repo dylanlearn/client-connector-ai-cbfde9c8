@@ -47,7 +47,7 @@ describe('Export Utils', () => {
       {
         id: 'section-1',
         name: 'Section 1',
-        sectionType: 'content',
+        sectionType: 'content', // Added required sectionType
         description: 'Section 1 description',
         components: []
       }
@@ -133,8 +133,12 @@ describe('Export Utils', () => {
     });
 
     it('should handle empty wireframe data', () => {
-      const emptyData = { id: 'empty', title: 'Empty', sections: [] };
-      const html = generateHtmlFromWireframe(emptyData as WireframeData);
+      const emptyData = { 
+        id: 'empty', 
+        title: 'Empty', 
+        sections: [] 
+      } as WireframeData;
+      const html = generateHtmlFromWireframe(emptyData);
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('Wireframe Export');
       expect(html).not.toContain('wireframe-section');

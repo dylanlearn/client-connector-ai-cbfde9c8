@@ -32,7 +32,7 @@ describe('WireframeExportDialog', () => {
       {
         id: 'section-1',
         name: 'Section 1',
-        sectionType: 'content',
+        sectionType: 'content', // Added required sectionType
         components: []
       }
     ]
