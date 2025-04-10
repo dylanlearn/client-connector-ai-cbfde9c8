@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion } from './utilities';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -18,15 +18,13 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
     }
   };
   
-  const styles: React.CSSProperties = {
+  // Create a properly typed style object
+  const styleBase: Record<string, any> = {
     minHeight: 'min(600px, 60vh)',
     ...(section.style || {})
   };
   
-  // If textAlign is present in style, ensure it's a valid CSSProperties value
-  if (section.style?.textAlign) {
-    styles.textAlign = section.style.textAlign as React.CSSProperties['textAlign'];
-  }
+  const styles = createStyleObject(styleBase);
   
   return (
     <div 

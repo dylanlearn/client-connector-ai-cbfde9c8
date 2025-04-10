@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -17,30 +18,28 @@ const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
     }
   };
   
-  const copySuggestions = section.copySuggestions || {};
-  
-  // Sample blog posts
+  // Sample blog posts using getSuggestion helper
   const posts = [
     {
-      title: copySuggestions.post1Title || 'Getting Started with Our Product',
-      excerpt: copySuggestions.post1Excerpt || 'Learn how to set up your account and start using our product to improve your workflow.',
-      author: copySuggestions.post1Author || 'John Smith',
-      date: copySuggestions.post1Date || 'June 15, 2023',
-      category: copySuggestions.post1Category || 'Tutorials'
+      title: getSuggestion(section.copySuggestions, 'post1Title', 'Getting Started with Our Product'),
+      excerpt: getSuggestion(section.copySuggestions, 'post1Excerpt', 'Learn how to set up your account and start using our product to improve your workflow.'),
+      author: getSuggestion(section.copySuggestions, 'post1Author', 'John Smith'),
+      date: getSuggestion(section.copySuggestions, 'post1Date', 'June 15, 2023'),
+      category: getSuggestion(section.copySuggestions, 'post1Category', 'Tutorials')
     },
     {
-      title: copySuggestions.post2Title || '5 Tips to Maximize Productivity',
-      excerpt: copySuggestions.post2Excerpt || 'Discover the best practices for getting more done in less time with our platform.',
-      author: copySuggestions.post2Author || 'Sarah Johnson',
-      date: copySuggestions.post2Date || 'June 10, 2023',
-      category: copySuggestions.post2Category || 'Best Practices'
+      title: getSuggestion(section.copySuggestions, 'post2Title', '5 Tips to Maximize Productivity'),
+      excerpt: getSuggestion(section.copySuggestions, 'post2Excerpt', 'Discover the best practices for getting more done in less time with our platform.'),
+      author: getSuggestion(section.copySuggestions, 'post2Author', 'Sarah Johnson'),
+      date: getSuggestion(section.copySuggestions, 'post2Date', 'June 10, 2023'),
+      category: getSuggestion(section.copySuggestions, 'post2Category', 'Best Practices')
     },
     {
-      title: copySuggestions.post3Title || 'New Features Release: What\'s New',
-      excerpt: copySuggestions.post3Excerpt || 'Explore the latest features we\'ve added to enhance your experience and productivity.',
-      author: copySuggestions.post3Author || 'Michael Brown',
-      date: copySuggestions.post3Date || 'June 5, 2023',
-      category: copySuggestions.post3Category || 'Updates'
+      title: getSuggestion(section.copySuggestions, 'post3Title', 'New Features Release: What\'s New'),
+      excerpt: getSuggestion(section.copySuggestions, 'post3Excerpt', 'Explore the latest features we\'ve added to enhance your experience and productivity.'),
+      author: getSuggestion(section.copySuggestions, 'post3Author', 'Michael Brown'),
+      date: getSuggestion(section.copySuggestions, 'post3Date', 'June 5, 2023'),
+      category: getSuggestion(section.copySuggestions, 'post3Category', 'Updates')
     }
   ];
   
@@ -48,6 +47,9 @@ const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
     // Show fewer posts on mobile
     posts.length = 2;
   }
+  
+  // Use createStyleObject to ensure properly typed styles
+  const styles = createStyleObject(section.style);
   
   return (
     <div 
@@ -58,7 +60,7 @@ const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
         viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
       onClick={handleClick}
-      style={section.style}
+      style={styles}
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -66,14 +68,14 @@ const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
             'text-3xl font-bold mb-4',
             darkMode ? 'text-white' : 'text-gray-900'
           )}>
-            {copySuggestions.heading || 'From Our Blog'}
+            {getSuggestion(section.copySuggestions, 'heading', 'From Our Blog')}
           </h2>
           
           <p className={cn(
             'max-w-3xl mx-auto',
             darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {copySuggestions.subheading || 'Latest news, tips, and insights from our team.'}
+            {getSuggestion(section.copySuggestions, 'subheading', 'Latest news, tips, and insights from our team.')}
           </p>
         </div>
         
@@ -140,7 +142,7 @@ const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
             'px-6 py-2 rounded-md font-medium',
             darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
           )}>
-            {copySuggestions.viewAllButton || 'View All Posts'}
+            {getSuggestion(section.copySuggestions, 'viewAllButton', 'View All Posts')}
           </button>
         </div>
       </div>

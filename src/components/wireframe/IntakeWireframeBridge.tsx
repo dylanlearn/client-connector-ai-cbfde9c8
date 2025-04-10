@@ -1,16 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Wand2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useEnhancedWireframe } from '@/hooks/use-enhanced-wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { AdvancedWireframeGenerator } from '@/components/wireframe';
 import { v4 as uuidv4 } from 'uuid';
-import AdvancedWireframeGenerator from './AdvancedWireframeGenerator';
 
 interface IntakeWireframeBridgeProps {
   intakeData: any;
-  onWireframeGenerated?: (wireframe: any) => void;
+  onWireframeGenerated?: (wireframe: WireframeData) => void;
   projectId?: string;
 }
 
@@ -20,126 +17,110 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   projectId
 }) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [wireframeData, setWireframeData] = useState<any>(null);
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
-  const { toast } = useToast();
-  const { generateFromIntakeData } = useEnhancedWireframe();
+  const [wireframeData, setWireframeData] = useState<WireframeData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
+  const [bridgeProjectId] = useState(() => projectId || uuidv4());
+  
+  // Generate a prompt based on intake data
+  useEffect(() => {
+    if (!intakeData) return;
 
-  const generateWireframe = async () => {
-    setIsGenerating(true);
-    
     try {
-      toast({
-        title: "Generating wireframe",
-        description: "Creating wireframe from your project information..."
-      });
+      // Extract relevant information from intake data
+      const { 
+        businessName, 
+        businessType,
+        mission,
+        vision,
+        targetAudience,
+        industryType,
+        brandPersonality,
+        primaryColor,
+        designPreferences = {},
+      } = intakeData;
       
-      const result = await generateFromIntakeData(intakeData, projectId || uuidv4());
+      // Create a descriptive prompt based on intake data
+      let prompt = `Create a ${businessType || 'business'} website`;
       
-      if (result && result.wireframe) {
-        setWireframeData(result.wireframe);
-        
-        if (onWireframeGenerated) {
-          onWireframeGenerated(result.wireframe);
-        }
-        
-        toast({
-          title: "Wireframe generated",
-          description: "Successfully created wireframe from intake data"
-        });
-      } else {
-        toast({
-          title: "Generation failed",
-          description: "Failed to generate wireframe from intake data",
-          variant: "destructive"
-        });
+      if (businessName) {
+        prompt += ` for ${businessName}`;
       }
-    } catch (error) {
-      console.error("Error generating wireframe from intake data:", error);
-      toast({
-        title: "Generation error",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
+      
+      if (industryType) {
+        prompt += ` in the ${industryType} industry`;
+      }
+      
+      if (targetAudience) {
+        prompt += ` targeting ${targetAudience}`;
+      }
+      
+      if (mission || vision) {
+        prompt += `. The brand ${mission ? `has a mission to ${mission}` : ''}${mission && vision ? ' and' : ''}${vision ? ` envisions ${vision}` : ''}`;
+      }
+      
+      if (brandPersonality) {
+        prompt += `. The brand personality is ${brandPersonality}`;
+      }
+      
+      if (designPreferences.visualStyle) {
+        prompt += `. Use a ${designPreferences.visualStyle} design style`;
+      }
+      
+      setGeneratedPrompt(prompt);
+    } catch (err) {
+      console.error("Error generating prompt from intake data:", err);
+      setError("Failed to process intake data");
     }
+  }, [intakeData]);
+
+  // Handler for when a wireframe is generated
+  const handleWireframeGenerated = (generatedWireframe: WireframeData) => {
+    setWireframeData(generatedWireframe);
+    
+    if (onWireframeGenerated) {
+      onWireframeGenerated(generatedWireframe);
+    }
+    
+    setIsGenerating(false);
   };
   
-  const handleShowAdvanced = () => {
-    setShowAdvanced(true);
+  // Helper to render status message
+  const renderStatus = () => {
+    if (isGenerating) {
+      return <p className="text-gray-500">Generating wireframe...</p>;
+    }
+    
+    if (error) {
+      return <p className="text-red-500">{error}</p>;
+    }
+    
+    if (wireframeData) {
+      return <p className="text-green-500">Wireframe generated successfully!</p>;
+    }
+    
+    return null;
   };
 
   return (
-    <div className="intake-wireframe-bridge">
-      {showAdvanced ? (
-        <AdvancedWireframeGenerator 
-          projectId={projectId}
-          intakeData={intakeData}
-          onWireframeGenerated={onWireframeGenerated}
-        />
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Generate Wireframe</CardTitle>
-            <CardDescription>
-              Create a wireframe based on your project information
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {wireframeData ? (
-              <div className="flex flex-col items-center space-y-4">
-                <div className="bg-emerald-50 text-emerald-800 p-3 rounded-md">
-                  <p className="text-sm font-medium">Wireframe successfully generated!</p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Your wireframe "{wireframeData.title}" is ready to view and edit.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  We can automatically generate a wireframe based on the information you provided in the intake form.
-                </p>
-                <div className="bg-amber-50 text-amber-800 p-3 rounded-md">
-                  <p className="text-sm">This will create a wireframe with:</p>
-                  <ul className="text-sm list-disc ml-5 mt-2">
-                    <li>Brand colors from your intake form</li>
-                    <li>Sections based on your business type</li>
-                    <li>Components tailored to your industry</li>
-                    <li>Copy suggestions based on your business description</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={handleShowAdvanced}
-            >
-              Advanced Editor
-            </Button>
-            {!wireframeData && (
-              <Button 
-                onClick={generateWireframe} 
-                disabled={isGenerating || !intakeData}
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="w-4 h-4 mr-2" />
-                    Generate Wireframe
-                  </>
-                )}
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+    <div className="intake-wireframe-bridge p-4">
+      <h3 className="text-lg font-medium mb-4">Generate Wireframe from Intake Data</h3>
+      
+      <div className="mb-4">
+        {renderStatus()}
+      </div>
+      
+      {intakeData && (
+        <div className="space-y-4">
+          <AdvancedWireframeGenerator
+            projectId={bridgeProjectId}
+            initialPrompt={generatedPrompt}
+            onWireframeGenerated={handleWireframeGenerated}
+            enhancedCreativity={true}
+            intakeData={intakeData}
+            viewMode="preview"
+          />
+        </div>
       )}
     </div>
   );

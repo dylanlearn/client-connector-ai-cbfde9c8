@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion } from './utilities';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const CTASectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -18,14 +18,8 @@ const CTASectionRenderer: React.FC<SectionComponentProps> = ({
     }
   };
   
-  const styles: React.CSSProperties = {
-    ...(section.style || {})
-  };
-  
-  // If textAlign is present in style, ensure it's a valid CSSProperties value
-  if (section.style?.textAlign) {
-    styles.textAlign = section.style.textAlign as React.CSSProperties['textAlign'];
-  }
+  // Use the createStyleObject utility to ensure type safety
+  const styles = createStyleObject(section.style);
   
   return (
     <div 

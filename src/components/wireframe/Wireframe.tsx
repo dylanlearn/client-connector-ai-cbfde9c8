@@ -3,6 +3,7 @@ import React from 'react';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 import { WireframeProps } from './types';
+import { cn } from '@/lib/utils';
 
 const Wireframe: React.FC<WireframeProps> = ({
   wireframe,
@@ -12,6 +13,7 @@ const Wireframe: React.FC<WireframeProps> = ({
   onSectionClick,
   activeSection,
   onSelect,
+  className
 }) => {
   if (!wireframe || !wireframe.sections) {
     return (
@@ -41,7 +43,11 @@ const Wireframe: React.FC<WireframeProps> = ({
 
   return (
     <div 
-      className={`wireframe-container ${darkMode ? 'dark' : ''}`}
+      className={cn(
+        "wireframe-container",
+        darkMode ? 'dark' : '',
+        className
+      )}
       data-testid="wireframe-container"
       style={{
         width: '100%',

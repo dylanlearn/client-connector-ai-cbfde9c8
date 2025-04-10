@@ -39,12 +39,12 @@ export interface ComponentRendererProps extends BaseComponentRendererProps {
 }
 
 export interface WireframeRendererProps {
-  wireframe: WireframeData;
+  wireframeData: WireframeData;
   viewMode?: ViewMode;
   darkMode?: boolean;
   deviceType?: DeviceType;
   onSectionClick?: (sectionId: string) => void;
-  selectedSectionId?: string;
+  activeSection?: string | null;
 }
 
 export interface WireframeState extends Partial<WireframeData> {
@@ -63,9 +63,15 @@ export interface AdvancedWireframeGeneratorProps {
   intakeData?: any; // Add intakeData prop
 }
 
-// Add WireframeProps interface
+// Update WireframeProps to match how it's being used in the codebase
 export interface WireframeProps {
-  data: WireframeData;
+  wireframe: WireframeData;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string;
+  onSelect?: (sectionId: string) => void;
   className?: string;
 }
 
@@ -76,7 +82,7 @@ export interface VariantComponentProps extends BaseComponentRendererProps {
 }
 
 export interface WireframeVisualizerProps {
-  wireframe?: WireframeData;
+  wireframe: WireframeData | undefined;
   darkMode?: boolean;
   deviceType?: DeviceType;
   viewMode?: ViewMode;

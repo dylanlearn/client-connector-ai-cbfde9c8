@@ -165,8 +165,9 @@ export interface WireframeComponent {
   [key: string]: any;
 }
 
-// Update the CopySuggestions interface to include all potential fields
+// Updated CopySuggestions interface to include all potential fields referenced in renderers
 export interface CopySuggestions {
+  // Common fields
   heading?: string;
   subheading?: string;
   cta?: string;
@@ -192,17 +193,16 @@ export interface CopySuggestions {
   post3Category?: string;
   viewAllButton?: string;
   
-  // Feature section
-  feature1Title?: string;
-  feature1Description?: string;
-  feature2Title?: string;
-  feature2Description?: string;
-  feature3Title?: string;
-  feature3Description?: string;
-  feature4Title?: string;
-  feature4Description?: string;
-  feature5Title?: string;
-  feature5Description?: string;
+  // Testimonial section
+  testimonial1?: string;
+  author1?: string;
+  role1?: string;
+  testimonial2?: string;
+  author2?: string;
+  role2?: string;
+  testimonial3?: string;
+  author3?: string;
+  role3?: string;
   
   // FAQ section
   question1?: string;
@@ -218,30 +218,40 @@ export interface CopySuggestions {
   supportText?: string;
   supportCta?: string;
   
-  // Testimonial section
-  testimonial1?: string;
-  author1?: string;
-  role1?: string;
-  testimonial2?: string;
-  author2?: string;
-  role2?: string;
-  testimonial3?: string;
-  author3?: string;
-  role3?: string;
+  // Pricing section
+  basicPlanName?: string;
+  basicPlanPrice?: string;
+  basicPlanPeriod?: string;
+  basicPlanDescription?: string;
+  basicPlanCta?: string;
+  basicFeature1?: string;
+  basicFeature2?: string;
+  basicFeature3?: string;
+  basicFeature4?: string;
   
-  // Footer section
-  companyName?: string;
-  companyDescription?: string;
-  quickLinksTitle?: string;
-  resourcesTitle?: string;
-  contactTitle?: string;
-  address?: string;
-  cityStateZip?: string;
-  email?: string;
-  phone?: string;
-  copyright?: string;
+  proPlanName?: string;
+  proPlanPrice?: string;
+  proPlanPeriod?: string;
+  proPlanDescription?: string;
+  proPlanCta?: string;
+  proFeature1?: string;
+  proFeature2?: string;
+  proFeature3?: string;
+  proFeature4?: string;
+  proFeature5?: string;
   
-  // Contact section
+  enterprisePlanName?: string;
+  enterprisePlanPrice?: string;
+  enterprisePlanPeriod?: string;
+  enterprisePlanDescription?: string;
+  enterprisePlanCta?: string;
+  enterpriseFeature1?: string;
+  enterpriseFeature2?: string;
+  enterpriseFeature3?: string;
+  enterpriseFeature4?: string;
+  enterpriseFeature5?: string;
+  
+  // Contact section fields
   nameLabel?: string;
   namePlaceholder?: string;
   emailLabel?: string;
@@ -253,105 +263,28 @@ export interface CopySuggestions {
   submitButton?: string;
   contactInfoTitle?: string;
   addressTitle?: string;
+  address?: string;
   phoneTitle?: string;
+  phone?: string;
   emailTitle?: string;
-  hoursTitle?: string;
   emailAddress?: string;
+  hoursTitle?: string;
   hours?: string;
   weekend?: string;
   
-  // Pricing section
-  basicPlanName?: string;
-  basicPlanPrice?: string;
-  basicPlanPeriod?: string;
-  basicPlanDescription?: string;
-  basicFeature1?: string;
-  basicFeature2?: string;
-  basicFeature3?: string;
-  basicFeature4?: string;
-  basicPlanCta?: string;
+  // Footer section fields
+  companyName?: string;
+  companyDescription?: string;
+  quickLinksTitle?: string;
+  resourcesTitle?: string;
+  contactTitle?: string;
+  cityStateZip?: string;
+  email?: string;
+  copyright?: string;
   
-  proPlanName?: string;
-  proPlanPrice?: string;
-  proPlanPeriod?: string;
-  proPlanDescription?: string;
-  proFeature1?: string;
-  proFeature2?: string;
-  proFeature3?: string;
-  proFeature4?: string;
-  proFeature5?: string;
-  proPlanCta?: string;
-  
-  enterprisePlanName?: string;
-  enterprisePlanPrice?: string;
-  enterprisePlanPeriod?: string;
-  enterprisePlanDescription?: string;
-  enterpriseFeature1?: string;
-  enterpriseFeature2?: string;
-  enterpriseFeature3?: string;
-  enterpriseFeature4?: string;
-  enterpriseFeature5?: string;
-  enterprisePlanCta?: string;
-
-  [key: string]: any; // Allow for additional dynamic fields
+  // Add other specific fields used in different renderers
+  [key: string]: string | undefined;
 }
 
-export interface WireframeResult {
-  wireframe: WireframeData;
-  generationTime?: number;
-  model?: string;
-  usage?: any;
-}
-
-export interface WireframeVersion {
-  id: string;
-  wireframe_id: string;
-  version_number: number;
-  branch_name: string;
-  data: Record<string, any>;
-  parent_version_id?: string;
-  is_current: boolean;
-  change_description?: string;
-  created_at: string;
-  created_by?: string;
-}
-
-export interface BranchInfo {
-  name: string;
-  current_version_id?: string;
-  versions: string[];
-}
-
-export interface DesignMemoryData {
-  projectId: string;
-  blueprintId?: string;
-  layoutPatterns?: any;
-  stylePreferences?: any;
-  componentPreferences?: any;
-  designs?: any[];
-  preferences?: Record<string, any>;
-  insights?: Record<string, any>;
-}
-
-export interface DesignMemoryResponse {
-  id?: string;
-  projectId?: string;
-  data: DesignMemoryData;
-  memory?: DesignMemoryData;
-  recommendations?: any[];
-  success: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Helper function to convert AIWireframe to WireframeData
-export const aiWireframeToWireframeData = (wireframe: AIWireframe): WireframeData => {
-  return {
-    id: wireframe.id,
-    title: wireframe.title,
-    description: wireframe.description || '',
-    sections: wireframe.sections || [],
-    // Map any other properties as needed
-    ...wireframe
-  };
-};
+// Fix the CopySuggestions array type for consistency
+export type CopySuggestionsArray = CopySuggestions[];
