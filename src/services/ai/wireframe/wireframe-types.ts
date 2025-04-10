@@ -33,6 +33,8 @@ export interface WireframeGenerationResult {
   error?: string;
   success: boolean;
   imageUrl?: string;
+  intentData?: any;
+  blueprint?: any;
 }
 
 export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
