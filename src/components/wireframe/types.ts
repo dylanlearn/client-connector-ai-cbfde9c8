@@ -1,30 +1,18 @@
 
-import { ReactNode } from 'react';
-import { WireframeSection } from '@/types/wireframe'; 
+import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-export interface CanvasControlsProps {
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onResetZoom: () => void;
-  onToggleGrid: () => void;
-  onToggleSnapToGrid: () => void;
-  showGrid?: boolean;
-  snapToGrid?: boolean;
-  className?: string;
-}
-
-export interface SectionQuickActionsProps {
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onDuplicate?: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  compact?: boolean;
+export interface WireframeRendererProps {
+  wireframeData: WireframeData;
+  viewMode?: 'preview' | 'code' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
 }
 
 export interface WireframeSectionRendererProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
+  viewMode?: 'preview' | 'code' | 'flowchart';
   darkMode?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   sectionIndex?: number;
@@ -32,54 +20,52 @@ export interface WireframeSectionRendererProps {
   isSelected?: boolean;
 }
 
-export interface WireframeRendererProps {
-  wireframeData: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
+export interface SectionRenderingOptions {
+  responsive?: boolean;
   darkMode?: boolean;
+  showGrid?: boolean;
+  gridSize?: number;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
+  interactive?: boolean;
+  showBorders?: boolean;
+  colorScheme?: {
+    primary?: string;
+    secondary?: string;
+    background?: string;
+    text?: string;
+  };
 }
 
-export interface GuidelineProps {
-  position: number;
-  orientation: 'horizontal' | 'vertical';
+export interface WireframeCanvasConfig {
+  width: number;
+  height: number;
+  zoom: number;
+  panOffset: { x: number, y: number };
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+  backgroundColor: string;
+  gridType: 'lines' | 'dots' | 'columns';
+  snapTolerance: number;
+  showSmartGuides: boolean;
+  gridColor: string;
+  showRulers?: boolean;
+  rulerSize?: number;
+  rulerColor?: string;
+  rulerMarkings?: boolean;
+  historyEnabled?: boolean;
+  maxHistorySteps?: number;
+  [key: string]: any;
 }
 
-export interface WireframeProps {
-  wireframe: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
-  onSelect?: (id: string) => void;
-}
-
-export interface WireframeVisualizerProps {
-  wireframe: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
-  onSelect?: (id: string) => void;
-}
-
-export interface SectionComponentProps {
-  section: WireframeSection;
-  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  isSelected?: boolean;
-  onClick?: () => void;
-}
-
-export interface VariantComponentProps {
-  component: any;
-  viewMode?: 'preview' | 'edit' | 'flowchart' | 'code';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  variant?: string;
-  data?: any;
+export interface InteractiveComponentOptions {
+  selectable?: boolean;
+  draggable?: boolean;
+  resizable?: boolean;
+  rotatable?: boolean;
+  lockMovementX?: boolean;
+  lockMovementY?: boolean;
+  hasControls?: boolean;
+  hasBorders?: boolean;
+  [key: string]: any;
 }

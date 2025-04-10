@@ -4,6 +4,7 @@ import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeRendererProps } from './types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const WireframeRenderer: React.FC<WireframeRendererProps> = ({
   wireframeData,
@@ -22,13 +23,20 @@ const WireframeRenderer: React.FC<WireframeRendererProps> = ({
     );
   }
 
+  // Apply device-specific styles
+  const deviceStyles = {
+    desktop: {},
+    tablet: { maxWidth: '768px' },
+    mobile: { maxWidth: '375px' }
+  };
+
   return (
     <div 
-      className={`wireframe-renderer ${darkMode ? 'dark' : ''}`}
-      style={{ 
-        maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
-        margin: deviceType !== 'desktop' ? '0 auto' : undefined
-      }}
+      className={cn(
+        "wireframe-renderer", 
+        darkMode ? "dark bg-gray-900 text-white" : "bg-white text-gray-900"
+      )}
+      style={deviceStyles[deviceType]}
     >
       <div className="wireframe-header p-4 border-b">
         <h1 className="text-xl font-bold">{wireframeData.title}</h1>
@@ -41,16 +49,19 @@ const WireframeRenderer: React.FC<WireframeRendererProps> = ({
         {wireframeData.sections.map((section, index) => (
           <React.Fragment key={section.id || `section-${index}`}>
             <div
-              className={`wireframe-section relative ${
-                activeSection === section.id ? 'ring-2 ring-primary' : ''
-              }`}
+              className={cn(
+                "wireframe-section relative",
+                activeSection === section.id && "ring-2 ring-primary"
+              )}
             >
               <WireframeSectionRenderer 
                 section={section}
                 viewMode={viewMode}
                 darkMode={darkMode}
+                deviceType={deviceType}
                 sectionIndex={index}
                 onSectionClick={onSectionClick}
+                isSelected={activeSection === section.id}
               />
             </div>
             {index < wireframeData.sections.length - 1 && <Separator className="my-2" />}

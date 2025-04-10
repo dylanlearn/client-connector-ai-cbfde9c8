@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { WireframeSection } from '@/types/wireframe';
 import { WireframeSectionRendererProps } from './types';
@@ -12,6 +11,7 @@ import HeroSectionRenderer from './renderers/HeroSectionRenderer';
 import NavigationRenderer from './renderers/NavigationRenderer';
 import PricingSectionRenderer from './renderers/PricingSectionRenderer';
 import TestimonialSectionRenderer from './renderers/TestimonialSectionRenderer';
+import EnhancedSectionRenderer from './enhance/EnhancedSectionRenderer';
 
 const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   section,
@@ -31,6 +31,27 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
       onSectionClick(section.id);
     }
   };
+  
+  // Use the enhanced renderer for advanced component rendering
+  const useEnhancedRenderer = true;
+  
+  if (useEnhancedRenderer) {
+    return (
+      <EnhancedSectionRenderer
+        section={section}
+        viewMode={viewMode}
+        darkMode={darkMode}
+        deviceType={deviceType}
+        interactive={!!onSectionClick}
+        isSelected={!!isSelected}
+        onClick={handleSectionClick}
+        onComponentClick={(componentId) => {
+          console.log('Component clicked:', componentId);
+          // Add component selection logic here if needed
+        }}
+      />
+    );
+  }
   
   // Handle code view for the section
   if (viewMode === 'code') {
