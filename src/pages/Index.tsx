@@ -5,17 +5,21 @@ import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
-import PricingSection from "@/components/landing/PricingSection";
 import TemplatesShowcase from "@/components/landing/TemplatesShowcase";
 import Footer from "@/components/landing/Footer";
 import { useState, useEffect } from "react";
 import { Menu, X, ExternalLink } from "lucide-react";
 import { AlertMessage } from "@/components/ui/alert-message";
+import { BillingCycle } from "@/types/subscription";
+import { PricingPlan } from "@/components/pricing/PricingPlan";
+import { BillingToggle } from "@/components/pricing/BillingToggle";
 
 const Index = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showClientError, setShowClientError] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -26,6 +30,14 @@ const Index = () => {
     const urlParams = new URLSearchParams(window.location.search);
     setShowClientError(urlParams.get('clientHubError') === 'true');
   }, []);
+
+  const handleSelectPlan = (plan: string) => {
+    setIsLoading(true);
+    setTimeout(() => {
+      navigate("/signup", { state: { selectedPlan: plan, billingCycle } });
+      setIsLoading(false);
+    }, 500);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -147,7 +159,83 @@ const Index = () => {
         <HowItWorksSection />
         <TestimonialsSection />
         <TemplatesShowcase />
-        <PricingSection />
+        
+        {/* Pricing Section */}
+        <section id="pricing" className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold mb-3">Simple, Transparent Pricing</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Choose the plan that fits your needs. All plans include a 3-day free trial.
+              </p>
+              <div className="mt-6">
+                <BillingToggle 
+                  billingCycle={billingCycle} 
+                  onChange={(cycle) => setBillingCycle(cycle)} 
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {/* Templates Plan */}
+              <PricingPlan
+                name="Templates"
+                price="Free"
+                period={null}
+                description="Get started with pre-built templates"
+                features={[
+                  "Access to template library",
+                  "Basic customization",
+                  "Export for personal use",
+                  "Community support"
+                ]}
+                cta="Get Started"
+                highlight={false}
+                isLoading={isLoading}
+                onSelect={() => handleSelectPlan("free")}
+              />
+              
+              {/* Sync Plan */}
+              <PricingPlan
+                name="Sync"
+                price={billingCycle === "monthly" ? "$29" : "$290"}
+                period={billingCycle === "monthly" ? "month" : "year"}
+                description="Perfect for freelancers and small businesses"
+                features={[
+                  "10 projects",
+                  "Basic design tools",
+                  "Client sharing",
+                  "Email support"
+                ]}
+                cta="Choose Sync"
+                highlight={false}
+                isLoading={isLoading}
+                onSelect={() => handleSelectPlan("sync")}
+                savings={billingCycle === "annual" ? "Save 16%" : undefined}
+              />
+              
+              {/* Sync Pro Plan */}
+              <PricingPlan
+                name="Sync Pro"
+                price={billingCycle === "monthly" ? "$69" : "$690"}
+                period={billingCycle === "monthly" ? "month" : "year"}
+                description="Advanced tools for design professionals"
+                features={[
+                  "Unlimited projects",
+                  "Advanced AI analysis",
+                  "Client readiness score",
+                  "Priority support",
+                  "White-labeling options"
+                ]}
+                cta="Choose Sync Pro"
+                highlight={true}
+                isLoading={isLoading}
+                onSelect={() => handleSelectPlan("sync-pro")}
+                savings={billingCycle === "annual" ? "Save 16%" : undefined}
+              />
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
