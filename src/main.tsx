@@ -4,16 +4,15 @@ import ReactDOM from 'react-dom/client'
 import './index.css'
 import { AppProviders } from './providers/AppProviders'
 import { initializeErrorHandling } from "@/utils/monitoring/error-handling";
-import { RouterProvider } from 'react-router-dom';
-import router from './routes';
+import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!)
 
-// Render the app with the router
+// Render the app
 root.render(
   <React.StrictMode>
     <AppProviders>
-      <RouterProvider router={router} />
+      <App />
     </AppProviders>
   </React.StrictMode>
 );

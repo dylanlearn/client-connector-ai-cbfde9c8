@@ -2,7 +2,6 @@
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
-import App from "./App";
 import Dashboard from "./pages/Dashboard";
 import { Settings } from "./pages/settings";
 import { ProjectDetailPage } from "./pages/project-detail/ProjectDetailPage";
@@ -23,6 +22,21 @@ import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
 import WireframeStudioPage from "./pages/WireframeStudioPage";
 import Index from "./pages/Index";
+import Layout from "@/components/layout/Layout";
+import { AuthLayout } from "@/components/layout/AuthLayout";
+import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import PricingPage from "@/pages/PricingPage";
+import DashboardPage from "@/pages/DashboardPage";
+import SettingsPage from "@/pages/SettingsPage";
+import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
+import { LandingPage } from "@/pages/LandingPage";
+import { DocsPage } from "@/pages/DocsPage";
+import { HelpPage } from "@/pages/HelpPage";
+import { TermsPage } from "@/pages/TermsPage";
+import { PrivacyPage } from "@/pages/PrivacyPage";
+import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
+import { Navigate } from "react-router-dom";
 
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
@@ -55,9 +69,59 @@ const getDemoProjectId = (): string => {
   return newId;
 };
 
-const demoProjectId = getDemoProjectId();
-
 const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout><LandingPage /></Layout>,
+  },
+  {
+    path: "/pricing",
+    element: <Layout><PricingPage /></Layout>,
+  },
+  {
+    path: "/docs",
+    element: <Layout><DocsPage /></Layout>,
+  },
+  {
+    path: "/help",
+    element: <Layout><HelpPage /></Layout>,
+  },
+  {
+    path: "/terms",
+    element: <Layout><TermsPage /></Layout>,
+  },
+  {
+    path: "/privacy",
+    element: <Layout><PrivacyPage /></Layout>,
+  },
+  {
+    path: "/login",
+    element: <AuthLayout><LoginPage /></AuthLayout>,
+  },
+  {
+    path: "/register",
+    element: <AuthLayout><RegisterPage /></AuthLayout>,
+  },
+  {
+    path: "/dashboard",
+    element: <DashboardPage />,
+  },
+  {
+    path: "/settings",
+    element: <SettingsPage />,
+  },
+  {
+    path: "/project/:projectId",
+    element: <ProjectDetailsPage />,
+  },
+  {
+    path: "/wireframe/:projectId?",
+    element: <WireframeStudioPage />,
+  },
+  {
+    path: "/design-canvas/:id?",
+    element: <DesignCanvasPage />,
+  },
   {
     path: "/design-process",
     element: (
@@ -67,94 +131,68 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/login',
-    element: <Login />,
+    path: '/projects',
+    element: <Projects />,
   },
   {
-    path: '/',
-    element: <App />,
-    children: [
-      {
-        path: '/',
-        element: <Index />,
-      },
-      {
-        path: '/dashboard',
-        element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
-      },
-      {
-        path: '/settings',
-        element: <ProtectedRoute><Settings /></ProtectedRoute>,
-      },
-      {
-        path: '/projects',
-        element: <ProtectedRoute><Projects /></ProtectedRoute>,
-      },
-      {
-        path: '/project/:projectId',
-        element: <ProtectedRoute><ProjectDetailPage /></ProtectedRoute>,
-      },
-      {
-        path: '/project/:projectId/wireframe-studio',
-        element: <ProtectedRoute><WireframeStudioPage /></ProtectedRoute>,
-      },
-      {
-        path: '/wireframe-studio',
-        element: <WireframeStudioPage />,
-      },
-      {
-        path: '/wireframe-studio/:projectId',
-        element: <WireframeStudioPage />,
-      },
-      {
-        path: '/design-picker',
-        element: <ProtectedRoute><DesignPicker /></ProtectedRoute>,
-      },
-      {
-        path: '/intake-form',
-        element: <ProtectedRoute><IntakeForm /></ProtectedRoute>,
-      },
-      {
-        path: '/website-analyzer',
-        element: <ProtectedRoute><WebsiteAnalyzer /></ProtectedRoute>,
-      },
-      {
-        path: '/feedback-analysis',
-        element: <ProtectedRoute><FeedbackAnalysis /></ProtectedRoute>,
-      },
-      {
-        path: '/ai-suggestions',
-        element: <ProtectedRoute><AIDesignSuggestions /></ProtectedRoute>,
-      },
-      {
-        path: '/analytics',
-        element: <ProtectedRoute><Analytics /></ProtectedRoute>,
-      },
-      {
-        path: '/clients',
-        element: <ProtectedRoute><Clients /></ProtectedRoute>,
-      },
-      {
-        path: '/admin',
-        element: <AdminRoute><AdminPanel /></AdminRoute>,
-      },
-      {
-        path: '/admin/analytics',
-        element: <AdminRoute><AdminAnalytics /></AdminRoute>,
-      },
-      {
-        path: '/admin/supabase-audit',
-        element: <AdminRoute><AdminAnalytics /></AdminRoute>,
-      },
-      {
-        path: '/admin/audit-and-monitoring',
-        element: <AdminRoute><AdminAnalytics /></AdminRoute>,
-      },
-      {
-        path: '*',
-        element: <NotFound />,
-      },
-    ],
+    path: '/project/:projectId/wireframe-studio',
+    element: <WireframeStudioPage />,
+  },
+  {
+    path: '/wireframe-studio',
+    element: <WireframeStudioPage />,
+  },
+  {
+    path: '/wireframe-studio/:projectId',
+    element: <WireframeStudioPage />,
+  },
+  {
+    path: '/design-picker',
+    element: <DesignPicker />,
+  },
+  {
+    path: '/intake-form',
+    element: <IntakeForm />,
+  },
+  {
+    path: '/website-analyzer',
+    element: <WebsiteAnalyzer />,
+  },
+  {
+    path: '/feedback-analysis',
+    element: <FeedbackAnalysis />,
+  },
+  {
+    path: '/ai-suggestions',
+    element: <AIDesignSuggestions />,
+  },
+  {
+    path: '/analytics',
+    element: <Analytics />,
+  },
+  {
+    path: '/clients',
+    element: <Clients />,
+  },
+  {
+    path: '/admin',
+    element: <AdminRoute><AdminPanel /></AdminRoute>,
+  },
+  {
+    path: '/admin/analytics',
+    element: <AdminRoute><AdminAnalytics /></AdminRoute>,
+  },
+  {
+    path: '/admin/supabase-audit',
+    element: <AdminRoute><AdminAnalytics /></AdminRoute>,
+  },
+  {
+    path: '/admin/audit-and-monitoring',
+    element: <AdminRoute><AdminAnalytics /></AdminRoute>,
+  },
+  {
+    path: '*',
+    element: <NotFound />,
   },
 ]);
 
