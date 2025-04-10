@@ -1,6 +1,8 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { DeviceType } from './types';
 
 interface WireframeCanvasFabricProps {
   wireframeData?: WireframeData;
@@ -9,6 +11,8 @@ interface WireframeCanvasFabricProps {
   height?: number;
   onSectionClick?: (sectionId: string) => void;
   onSectionUpdate?: (section: WireframeSection) => void;
+  deviceType?: DeviceType;
+  projectId?: string; // Added projectId prop
 }
 
 const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = ({
@@ -17,7 +21,9 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = ({
   width = 1200,
   height = 800,
   onSectionClick,
-  onSectionUpdate
+  onSectionUpdate,
+  deviceType = 'desktop',
+  projectId // Add projectId to component props
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);

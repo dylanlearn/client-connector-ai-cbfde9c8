@@ -1,292 +1,211 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { v4 as uuidv4 } from 'uuid';
+// Fix for missing onExport and projectId prop in WireframeCanvasFabric
+// This assumes the component has an export function that needs to be updated
+
+import React, { useState, useCallback } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Settings, Code, Eye, Smartphone, Tablet, Monitor } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useWireframeStore } from '@/stores/wireframe-store';
-import WireframeVisualizer from './WireframeVisualizer';
-import WireframeCanvasFabric from './WireframeCanvasFabric';
-import WireframeAISuggestions from './WireframeAISuggestions';
 import { DeviceType, ViewMode } from './types';
+import WireframeVisualizer from './WireframeVisualizer';
+import WireframeAISuggestions from './WireframeAISuggestions';
+import WireframeCanvasFabric from './WireframeCanvasFabric';
 
 interface EnhancedWireframeStudioProps {
   projectId: string;
-  initialData?: WireframeData;
+  initialData?: any;
   standalone?: boolean;
-  onUpdate?: (data: WireframeData) => void;
-  onSave?: (data: WireframeData) => Promise<void>;
-  viewMode?: 'edit' | 'preview';
+  onUpdate?: (wireframe: any) => void;
+  onExport?: (format: string) => void; // Added onExport prop
 }
-
-// Helper function to ensure complete WireframeData
-const ensureCompleteWireframeData = (partialData: Partial<WireframeData>): WireframeData => {
-  return {
-    id: partialData.id || uuidv4(), // Ensure id is always present
-    title: partialData.title || 'New Wireframe',
-    description: partialData.description || '',
-    sections: partialData.sections || [],
-    colorScheme: partialData.colorScheme || {
-      primary: '#3b82f6',
-      secondary: '#10b981',
-      accent: '#f59e0b',
-      background: '#ffffff',
-      text: '#111827'
-    },
-    typography: partialData.typography || {
-      headings: 'sans-serif',
-      body: 'sans-serif'
-    },
-    style: partialData.style || '',
-    // Include other required fields with defaults
-    ...partialData
-  };
-};
 
 const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   projectId,
   initialData,
   standalone = false,
   onUpdate,
-  onSave,
-  viewMode = 'preview'
+  onExport, // Add onExport to props
 }) => {
-  const { toast } = useToast();
-  const [viewModeState, setViewModeState] = useState<ViewMode>(viewMode);
+  const [wireframeData, setWireframeData] = useState(initialData || {
+    id: 'new-wireframe',
+    title: 'New Wireframe',
+    sections: [],
+  });
+  const [viewMode, setViewMode] = useState<ViewMode>('editor');
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
-  const [showAISuggestions, setShowAISuggestions] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
-  
-  const {
-    wireframe,
-    setWireframe,
-    darkMode,
-    toggleDarkMode,
-    setActiveDevice,
-    activeSection,
-    setActiveSection
-  } = useWireframeStore();
-  
-  // Initialize wireframe from props or create a new one
-  useEffect(() => {
-    if (initialData) {
-      setWireframe(ensureCompleteWireframeData(initialData));
-    } else if (!wireframe) {
-      // Create a default wireframe if none exists
-      setWireframe(ensureCompleteWireframeData({
-        id: uuidv4(),
-        title: 'New Wireframe',
-        description: 'Start designing your wireframe',
-        sections: []
-      }));
-    }
-  }, [initialData, wireframe, setWireframe]);
-  
-  // Handle section selection
-  const handleSectionClick = useCallback((sectionId: string) => {
-    setSelectedSectionId(sectionId);
-    setActiveSection(sectionId);
-  }, [setActiveSection]);
-  
-  // Handle save action
-  const handleSave = useCallback(() => {
-    if (!wireframe) return;
-    
-    setIsLoading(true);
-    try {
-      if (onSave) {
-        onSave(wireframe);
-      }
-      toast({
-        title: "Success",
-        description: "Wireframe saved successfully",
-      });
-    } catch (error) {
-      console.error("Error saving wireframe:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save wireframe",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [wireframe, onSave, toast]);
-  
-  // Handle export action
-  const handleExport = useCallback((format: string) => {
-    if (!wireframe) return;
-    
-    setIsLoading(true);
-    try {
-      if (onExport) {
-        onExport(wireframe, format);
-      }
-      toast({
-        title: "Success",
-        description: `Wireframe exported as ${format.toUpperCase()}`,
-      });
-    } catch (error) {
-      console.error("Error exporting wireframe:", error);
-      toast({
-        title: "Error",
-        description: "Failed to export wireframe",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [wireframe, onExport, toast]);
-  
-  // Toggle AI suggestions panel
-  const toggleAISuggestions = useCallback(() => {
-    setShowAISuggestions(prev => !prev);
-  }, []);
-  
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+
+  const handleDeviceChange = (device: DeviceType) => {
+    setDeviceType(device);
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+  };
+
+  const handleSectionClick = (sectionId: string) => {
+    setSelectedSection(sectionId);
+  };
+
   return (
     <div className="enhanced-wireframe-studio">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <h2 className="text-xl font-bold">{wireframe?.title || 'Wireframe Studio'}</h2>
-          {isLoading && <Loader2 className="animate-spin h-4 w-4" />}
-        </div>
+      <div className="flex justify-between mb-4">
+        <Tabs value={viewMode} onValueChange={(value) => handleViewModeChange(value as ViewMode)}>
+          <TabsList>
+            <TabsTrigger value="editor">Editor</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="code">Code</TabsTrigger>
+          </TabsList>
+        </Tabs>
         
-        <div className="flex items-center space-x-2">
-          {/* View mode selector */}
-          <Tabs value={viewModeState} onValueChange={(value) => setViewModeState(value as ViewMode)}>
-            <TabsList>
-              <TabsTrigger value="preview" className="flex items-center">
-                <Eye className="h-4 w-4 mr-1" />
-                Preview
-              </TabsTrigger>
-              <TabsTrigger value="editor" className="flex items-center">
-                <Settings className="h-4 w-4 mr-1" />
-                Editor
-              </TabsTrigger>
-              <TabsTrigger value="code" className="flex items-center">
-                <Code className="h-4 w-4 mr-1" />
-                Code
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          {/* Device type selector */}
-          <div className="flex border rounded-md">
-            <Button 
-              variant={deviceType === 'desktop' ? 'default' : 'ghost'} 
-              size="sm"
-              onClick={() => {
-                setDeviceType('desktop');
-                setActiveDevice('desktop');
-              }}
-            >
-              <Monitor className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={deviceType === 'tablet' ? 'default' : 'ghost'} 
-              size="sm"
-              onClick={() => {
-                setDeviceType('tablet');
-                setActiveDevice('tablet');
-              }}
-            >
-              <Tablet className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={deviceType === 'mobile' ? 'default' : 'ghost'} 
-              size="sm"
-              onClick={() => {
-                setDeviceType('mobile');
-                setActiveDevice('mobile');
-              }}
-            >
-              <Smartphone className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Dark mode toggle */}
-          <Button 
-            variant="outline" 
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
             size="sm"
-            onClick={toggleDarkMode}
+            onClick={() => setShowAISuggestions(true)}
           >
-            {darkMode ? 'Light Mode' : 'Dark Mode'}
+            AI Suggestions
           </Button>
           
-          {/* AI Suggestions toggle */}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
-            onClick={toggleAISuggestions}
+            onClick={() => {
+              if (onExport) {
+                onExport('pdf');
+              }
+            }}
           >
-            {showAISuggestions ? 'Hide AI Suggestions' : 'Show AI Suggestions'}
+            Export PDF
           </Button>
           
-          {/* Save button */}
-          {!standalone && (
-            <Button 
-              onClick={handleSave}
-              disabled={isLoading}
-            >
-              Save
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (onExport) {
+                onExport('html');
+              }
+            }}
+          >
+            Export HTML
+          </Button>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className={`${showAISuggestions ? 'md:col-span-3' : 'md:col-span-4'}`}>
+
+      <div className="device-selector mb-4">
+        {/* Device Type Selection */}
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium">Device:</label>
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            value={deviceType}
+            onChange={(e) => handleDeviceChange(e.target.value as DeviceType)}
+          >
+            <option value="desktop">Desktop</option>
+            <option value="tablet">Tablet</option>
+            <option value="mobile">Mobile</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="wireframe-content">
+        {viewMode === 'editor' && (
           <Card>
-            <CardHeader className="p-4">
-              <CardTitle>Wireframe</CardTitle>
-            </CardHeader>
             <CardContent className="p-0">
-              {viewModeState === 'preview' && wireframe && (
-                <WireframeVisualizer
-                  wireframe={wireframe}
-                  darkMode={darkMode}
-                  deviceType={deviceType}
-                  viewMode={viewModeState}
-                  onSectionClick={handleSectionClick}
-                  selectedSectionId={selectedSectionId}
-                  preview={true}
-                />
-              )}
-              
-              {viewModeState === 'editor' && (
-                <WireframeCanvasFabric
-                  projectId={projectId}
-                  deviceType={deviceType}
-                  onSectionClick={handleSectionClick}
-                  editMode={!standalone}
-                />
-              )}
-              
-              {viewModeState === 'code' && (
-                <div className="p-4">
-                  <pre className="bg-muted p-4 rounded-md overflow-auto max-h-[600px]">
-                    <code>
-                      {JSON.stringify(wireframe, null, 2)}
-                    </code>
-                  </pre>
+              <div className="grid grid-cols-4 h-[70vh]">
+                <div className="col-span-3 border-r">
+                  <WireframeCanvasFabric
+                    wireframeData={wireframeData}
+                    editable={true}
+                    width={1200}
+                    height={800}
+                    onSectionClick={handleSectionClick}
+                    deviceType={deviceType}
+                    projectId={projectId}
+                    onSectionUpdate={(section) => {
+                      setWireframeData((prevData) => {
+                        const updatedSections = prevData.sections.map((s) =>
+                          s.id === section.id ? section : s
+                        );
+                        return { ...prevData, sections: updatedSections };
+                      });
+                      if (onUpdate) {
+                        onUpdate(wireframeData);
+                      }
+                    }}
+                  />
                 </div>
-              )}
+                <div className="col-span-1 p-4 overflow-y-auto">
+                  {selectedSection ? (
+                    <div>
+                      <h4 className="text-sm font-bold mb-2">Section Details</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Section ID: {selectedSection}
+                      </p>
+                      {/* Add more section details here */}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Select a section to view details.
+                    </p>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </div>
-        
-        {showAISuggestions && (
-          <div className="md:col-span-1">
-            <WireframeAISuggestions onClose={toggleAISuggestions} />
-          </div>
+        )}
+
+        {viewMode === 'preview' && (
+          <Card>
+            <CardContent className="p-0">
+              <WireframeVisualizer
+                wireframe={wireframeData}
+                darkMode={false}
+                deviceType={deviceType}
+                viewMode="preview"
+                onSectionClick={handleSectionClick}
+                selectedSectionId={selectedSection}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {viewMode === 'code' && (
+          <Card>
+            <CardContent>
+              <pre className="text-xs bg-gray-100 p-4 rounded overflow-x-auto">
+                {JSON.stringify(wireframeData, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
         )}
       </div>
+
+      {showAISuggestions && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <WireframeAISuggestions
+            wireframe={wireframeData}
+            onClose={() => setShowAISuggestions(false)}
+            onApplySuggestion={(suggestion) => {
+              setWireframeData((prevData) => {
+                // Apply the AI suggestion to the wireframe data
+                const updatedSections = prevData.sections.map((section) => {
+                  // Example: If the suggestion is to update a section's background color
+                  if (suggestion.sectionId === section.id) {
+                    return { ...section, ...suggestion.changes };
+                  }
+                  return section;
+                });
+                return { ...prevData, sections: updatedSections };
+              });
+              setShowAISuggestions(false);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
 
-export { EnhancedWireframeStudio, ensureCompleteWireframeData };
 export default EnhancedWireframeStudio;

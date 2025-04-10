@@ -1,6 +1,6 @@
 
 export type DeviceType = 'desktop' | 'tablet' | 'tabletLandscape' | 'mobile' | 'mobileLandscape' | 'mobileSm';
-export type ViewMode = 'editor' | 'preview' | 'code';
+export type ViewMode = 'editor' | 'preview' | 'code' | 'edit';
 
 export interface WireframeVisualizerProps {
   wireframe: any;
