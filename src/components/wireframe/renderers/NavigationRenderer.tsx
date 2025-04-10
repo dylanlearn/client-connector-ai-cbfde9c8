@@ -2,58 +2,121 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { VariantComponentProps } from '../types';
+import { getSuggestion } from './utilities';
 
 const NavigationRenderer: React.FC<VariantComponentProps> = ({
   component,
   variant = 'default',
-  data,
   viewMode = 'preview',
   darkMode = false,
   deviceType = 'desktop',
+  onClick
 }) => {
-  // Default navigation links
-  const navLinks = component?.links || [
-    { label: 'Home', url: '#' },
-    { label: 'Features', url: '#' },
-    { label: 'Pricing', url: '#' },
-    { label: 'About', url: '#' },
-    { label: 'Contact', url: '#' }
-  ];
+  // Handle different navigation variants
+  const renderNavigationVariant = () => {
+    switch (variant.toLowerCase()) {
+      case 'simple':
+        return renderSimpleNavigation();
+      case 'mega':
+        return renderMegaNavigation();
+      case 'centered':
+        return renderCenteredNavigation();
+      default:
+        return renderDefaultNavigation();
+    }
+  };
 
-  // This just renders a basic navigation bar for preview purposes
-  return (
-    <div className={cn(
-      'w-full py-4 px-6',
-      darkMode ? 'bg-gray-800' : 'bg-white border-b',
-      viewMode === 'flowchart' && 'border-2 border-dashed'
-    )}>
+  // Simple top navigation
+  const renderDefaultNavigation = () => {
+    const navItems = [
+      { label: getSuggestion(component.copySuggestions, 'navItem1', 'Home'), url: '#' },
+      { label: getSuggestion(component.copySuggestions, 'navItem2', 'Features'), url: '#' },
+      { label: getSuggestion(component.copySuggestions, 'navItem3', 'Pricing'), url: '#' },
+      { label: getSuggestion(component.copySuggestions, 'navItem4', 'About'), url: '#' },
+      { label: getSuggestion(component.copySuggestions, 'navItem5', 'Contact'), url: '#' },
+    ];
+
+    return (
       <div className={cn(
-        'flex items-center justify-between',
-        deviceType === 'mobile' && 'flex-col space-y-4'
+        'px-6 py-4 flex items-center justify-between',
+        darkMode ? 'bg-gray-900' : 'bg-white',
+        component.style?.className
       )}>
-        <div className="font-bold text-lg">
-          {component?.logoText || data?.logoText || 'Brand Logo'}
+        <div className="flex items-center">
+          <div className="text-xl font-bold">
+            {getSuggestion(component.copySuggestions, 'brandName', 'Brand')}
+          </div>
         </div>
         
-        {deviceType !== 'mobile' ? (
-          <div className="flex items-center space-x-6">
-            {navLinks.map((link, i) => (
-              <div key={i} className={cn(
-                'text-sm',
-                darkMode ? 'text-gray-300' : 'text-gray-700'
-              )}>
-                {link.label}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="w-8 h-8 flex flex-col justify-around">
-            <span className={`block h-0.5 w-8 ${darkMode ? 'bg-white' : 'bg-black'}`}></span>
-            <span className={`block h-0.5 w-8 ${darkMode ? 'bg-white' : 'bg-black'}`}></span>
-            <span className={`block h-0.5 w-8 ${darkMode ? 'bg-white' : 'bg-black'}`}></span>
-          </div>
-        )}
+        <div className={cn(
+          deviceType === 'mobile' ? 'hidden' : 'flex items-center space-x-6'
+        )}>
+          {navItems.map((item, i) => (
+            <a 
+              key={i} 
+              href={item.url}
+              className={cn(
+                'text-sm font-medium',
+                darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-black'
+              )}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+        
+        <div>
+          <button className={cn(
+            'px-4 py-2 rounded',
+            darkMode ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white'
+          )}>
+            {getSuggestion(component.copySuggestions, 'ctaButton', 'Sign Up')}
+          </button>
+          
+          {deviceType === 'mobile' && (
+            <button className="ml-4 text-gray-500">
+              ☰
+            </button>
+          )}
+        </div>
       </div>
+    );
+  };
+
+  // Simple navigation implementation (placeholder)
+  const renderSimpleNavigation = () => {
+    return renderDefaultNavigation(); // For now, use the default
+  };
+
+  // Mega menu navigation implementation (placeholder)
+  const renderMegaNavigation = () => {
+    return renderDefaultNavigation(); // For now, use the default
+  };
+
+  // Centered navigation implementation (placeholder)
+  const renderCenteredNavigation = () => {
+    return renderDefaultNavigation(); // For now, use the default
+  };
+
+  const styles: React.CSSProperties = {
+    ...(component.style || {}),
+  };
+  
+  // If textAlign is present in style, ensure it's a valid CSSProperties value
+  if (component.style?.textAlign) {
+    styles.textAlign = component.style.textAlign as React.CSSProperties['textAlign'];
+  }
+
+  return (
+    <div 
+      className={cn(
+        'wireframe-navigation w-full',
+        viewMode === 'flowchart' && 'border-2 border-dashed p-2'
+      )}
+      onClick={onClick}
+      style={styles}
+    >
+      {renderNavigationVariant()}
     </div>
   );
 };

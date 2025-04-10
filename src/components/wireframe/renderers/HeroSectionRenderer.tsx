@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
+import { getSuggestion } from './utilities';
 
 const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -17,7 +18,15 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
     }
   };
   
-  const copySuggestions = section.copySuggestions || {};
+  const styles: React.CSSProperties = {
+    minHeight: 'min(600px, 60vh)',
+    ...(section.style || {})
+  };
+  
+  // If textAlign is present in style, ensure it's a valid CSSProperties value
+  if (section.style?.textAlign) {
+    styles.textAlign = section.style.textAlign as React.CSSProperties['textAlign'];
+  }
   
   return (
     <div 
@@ -28,10 +37,7 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
         viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
       onClick={handleClick}
-      style={{
-        minHeight: 'min(600px, 60vh)',
-        ...section.style
-      }}
+      style={styles}
     >
       <div className={cn(
         'max-w-4xl mx-auto',
@@ -41,7 +47,7 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
           'text-4xl md:text-5xl lg:text-6xl font-bold mb-6',
           deviceType === 'mobile' && 'text-3xl'
         )}>
-          {copySuggestions.heading || section.name || 'Compelling Headline'}
+          {getSuggestion(section.copySuggestions, 'heading', section.name || 'Compelling Headline')}
         </h1>
         
         <p className={cn(
@@ -49,7 +55,7 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
           darkMode ? 'text-gray-300' : 'text-gray-600',
           deviceType === 'mobile' && 'text-base'
         )}>
-          {copySuggestions.subheading || 'Supporting subtitle text that expands on the headline and connects with your audience.'}
+          {getSuggestion(section.copySuggestions, 'subheading', 'Supporting subtitle text that expands on the headline and connects with your audience.')}
         </p>
         
         <div className={cn(
@@ -60,14 +66,14 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
             'px-6 py-3 rounded-md font-medium',
             darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
           )}>
-            {copySuggestions.primaryCta || 'Primary Action'}
+            {getSuggestion(section.copySuggestions, 'primaryCta', 'Primary Action')}
           </button>
           
           <button className={cn(
             'px-6 py-3 rounded-md font-medium',
             darkMode ? 'bg-transparent border border-gray-300 text-gray-300' : 'bg-white border border-gray-300 text-gray-700'
           )}>
-            {copySuggestions.secondaryCta || 'Secondary Action'}
+            {getSuggestion(section.copySuggestions, 'secondaryCta', 'Secondary Action')}
           </button>
         </div>
       </div>

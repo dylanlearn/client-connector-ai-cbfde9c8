@@ -119,7 +119,7 @@ export interface WireframeSection {
   layoutType?: string;
   positionOrder?: number;
   componentVariant?: string;
-  copySuggestions?: CopySuggestions;
+  copySuggestions?: CopySuggestions | CopySuggestions[];
   dimensions?: {
     width: number | string;
     height: number | string;

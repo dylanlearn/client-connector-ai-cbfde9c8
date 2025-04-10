@@ -1,12 +1,12 @@
 
-import { CopySuggestions, WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection as WireframeSectionType, WireframeData, CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
 import React from 'react';
 
 export type ViewMode = 'preview' | 'editor' | 'flowchart' | 'code';
 export type DeviceType = 'desktop' | 'tablet' | 'mobile';
 
 export interface WireframeSectionRendererProps {
-  section: WireframeSection;
+  section: WireframeSectionType;
   viewMode?: ViewMode;
   darkMode?: boolean;
   deviceType?: DeviceType;
@@ -16,7 +16,7 @@ export interface WireframeSectionRendererProps {
 }
 
 export interface SectionComponentProps {
-  section: WireframeSection;
+  section: WireframeSectionType;
   viewMode?: ViewMode;
   darkMode?: boolean;
   deviceType?: DeviceType;
@@ -50,8 +50,8 @@ export interface WireframeRendererProps {
 export interface WireframeState extends Partial<WireframeData> {
   title: string;
   styleToken?: string;
-  id?: string;
-  sections: WireframeSection[];
+  id: string; // Make id required to match WireframeData
+  sections: WireframeSectionType[];
 }
 
 export interface AdvancedWireframeGeneratorProps {
@@ -60,4 +60,26 @@ export interface AdvancedWireframeGeneratorProps {
   onWireframeGenerated?: (wireframe: WireframeData) => void;
   initialPrompt?: string;
   enhancedCreativity?: boolean;
+  intakeData?: any; // Add intakeData prop
+}
+
+// Add WireframeProps interface
+export interface WireframeProps {
+  data: WireframeData;
+  className?: string;
+}
+
+// Add VariantComponentProps interface
+export interface VariantComponentProps extends BaseComponentRendererProps {
+  variant?: string;
+  viewMode?: ViewMode;
+}
+
+export interface WireframeVisualizerProps {
+  wireframe?: WireframeData;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  viewMode?: ViewMode;
+  onSectionClick?: (sectionId: string) => void;
+  selectedSectionId?: string;
 }
