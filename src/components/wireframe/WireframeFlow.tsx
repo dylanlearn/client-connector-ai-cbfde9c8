@@ -1,13 +1,14 @@
 
 import React, { useState, useCallback } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
   Controls,
   Background,
   useReactFlow,
-} from 'reactflow';
+} from '@xyflow/react';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,7 @@ const WireframeFlow: React.FC<WireframeFlowProps> = ({ wireframes, onSelect }) =
               className="bg-muted rounded-md"
             >
               <Controls />
-              <Background variant="dots" gap={12} size={1} />
+              <Background variant="lines" gap={12} size={1} />
             </ReactFlow>
           </CardContent>
         </Card>
