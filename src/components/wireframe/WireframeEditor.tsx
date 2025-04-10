@@ -61,4 +61,13 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({ projectId, wireframeI
   const [showAISectionComponentCopySuggestions, setShowAISectionComponentCopySuggestions] = useState(false);
   const [showAISectionComponentAnimationSuggestions, setShowAISectionComponentAnimationSuggestions] = useState(false);
   const [showAISectionComponentDesignReasoning, setShowAISectionComponentDesignReasoning] = useState(false);
-  const [showAISectionComponentTypeSuggestions, setShowAISectionComponentTypeSuggestions] = useState(
+  const [showAISectionComponentTypeSuggestions, setShowAISectionComponentTypeSuggestions] = useState(false);
+
+  return (
+    <div>
+      {/* Add your component JSX here */}
+    </div>
+  );
+};
+
+export default WireframeEditor;
