@@ -1,9 +1,6 @@
-
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import useCanvasHistory from './use-canvas-history';
-import { useToast } from '@/hooks/use-toast';
 
 // Utility function to create a grid on the canvas
 const createCanvasGrid = (
@@ -82,10 +79,11 @@ export function useEnhancedCanvasEngine({
     showSmartGuides: true,
     showRulers: true,
     rulerSize: 20,
-    rulerColor: '#888888',
+    rulerColor: '#bbbbbb',
     rulerMarkings: true,
     historyEnabled: true,
     maxHistorySteps: 50,
+    gridColor: '#e0e0e0',
     ...initialConfig
   });
   
@@ -257,7 +255,7 @@ export function useEnhancedCanvasEngine({
       
       // Draw grid if needed
       if (config.showGrid) {
-        const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, '#e0e0e0');
+        const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridColor);
         gridLines.forEach(line => fabricCanvas.add(line));
         fabricCanvas.renderAll();
       }
@@ -364,14 +362,14 @@ export function useEnhancedCanvasEngine({
       
       // Add grid if needed
       if (showGrid) {
-        const gridLines = createCanvasGrid(canvas, prev.gridSize, '#e0e0e0');
+        const gridLines = createCanvasGrid(canvas, prev.gridSize, config.gridColor);
         gridLines.forEach(line => canvas.add(line));
       }
       
       canvas.renderAll();
       return { ...prev, showGrid };
     });
-  }, [canvas]);
+  }, [canvas, config.gridColor]);
   
   const toggleSnapToGrid = useCallback(() => {
     setConfig(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }));
