@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { DeviceType, ViewMode, WireframeData } from './types';
+import { DeviceType, ViewMode } from './types';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Eye, EyeOff, Code2, LayoutDashboard, Smartphone, Tablet, Monitor, Save, Undo, Redo } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { aiWireframeToWireframeData } from '@/services/ai/wireframe/wireframe-types';

@@ -86,7 +86,9 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
   });
 
   const getGridSize = () => {
-    return Number(canvasConfig.gridSize) + 0;
+    return typeof canvasConfig.gridSize === 'number' ? 
+      canvasConfig.gridSize : 
+      Number(canvasConfig.gridSize || 10);
   };
 
   const gridSize = getGridSize();

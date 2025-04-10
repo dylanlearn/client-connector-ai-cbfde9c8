@@ -6,7 +6,7 @@ import { useFormContext } from 'react-hook-form';
 import { useIntakeForm } from '@/hooks/use-intake-form';
 import { QuestionItem } from './QuestionItem';
 import { FormField } from '@/components/ui/form';
-import { WireframeVisualizer } from '@/components/wireframe';
+import WireframeVisualizer from '@/components/wireframe/WireframeVisualizer';
 import { IntakeFormData } from '@/types/intake-form';
 
 interface SpecificQuestionsStepProps {
@@ -68,7 +68,8 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
           <h3 className="text-lg font-medium mb-4">Preview</h3>
           <Separator className="mb-6" />
           <WireframeVisualizer 
-            wireframeData={{
+            wireframe={{
+              id: "preview",
               title: displayData.projectName || displayData.businessName || "Business Preview",
               description: displayData.projectDescription || displayData.businessDescription || "Based on your inputs",
               sections: []

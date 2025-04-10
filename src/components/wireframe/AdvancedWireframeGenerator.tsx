@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,7 +70,7 @@ const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
 
     const params = {
       projectId: projectId,
-      prompt: prompt,
+      description: prompt, // Map the prompt to description as required by WireframeGenerationParams
       enhancedCreativity: isEnhancedCreativity,
       intakeData: intakeData
     };

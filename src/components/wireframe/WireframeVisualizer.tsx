@@ -14,7 +14,9 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   deviceType = 'desktop',
   viewMode = 'preview',
   onSectionClick,
-  selectedSectionId
+  selectedSectionId,
+  onSelect,
+  preview = false
 }) => {
   if (!wireframe) {
     return (
@@ -33,6 +35,7 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
         deviceType={deviceType}
         onSectionClick={onSectionClick}
         activeSection={selectedSectionId}
+        onSelect={onSelect}
       />
     </div>
   );

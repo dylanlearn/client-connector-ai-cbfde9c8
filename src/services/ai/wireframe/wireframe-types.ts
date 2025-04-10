@@ -27,6 +27,8 @@ export interface WireframeGenerationParams {
   creativityLevel?: number;
   enhancedCreativity?: boolean;
   saveMemory?: boolean;
+  intakeData?: any;
+  prompt?: string;
   [key: string]: any;
 }
 
@@ -150,6 +152,7 @@ export interface WireframeSection {
   patternMatch?: any;
   positionOrder?: number;
   componentVariant?: string;
+  type?: string; // Add type property
 }
 
 export interface CopySuggestions {
@@ -179,6 +182,7 @@ export interface FeedbackModificationResult {
   error?: string;
   modified?: boolean;
   changeDescription?: string;
+  modifiedSections?: any[];
 }
 
 // Base version control interfaces

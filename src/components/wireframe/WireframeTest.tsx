@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Wireframe from './Wireframe';
 import { useWireframeStore } from '@/stores/wireframe-store';
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData } from '@/types/wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 const WireframeTest = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);

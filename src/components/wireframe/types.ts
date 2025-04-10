@@ -1,3 +1,4 @@
+
 import { WireframeSection as WireframeSectionType, WireframeData, CopySuggestions, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 import React from 'react';
 
@@ -85,4 +86,6 @@ export interface WireframeVisualizerProps {
   viewMode?: ViewMode;
   onSectionClick?: (sectionId: string) => void;
   selectedSectionId?: string;
+  onSelect?: (sectionId: string) => void;
+  preview?: boolean;
 }

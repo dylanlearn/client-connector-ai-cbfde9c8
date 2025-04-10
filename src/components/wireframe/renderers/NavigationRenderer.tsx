@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 import { cn } from '@/lib/utils';
@@ -48,13 +49,13 @@ const NavigationRenderer: React.FC<NavigationRendererProps> = ({
         ...component.style
       }}
     >
-      {component.components && component.components.map(component => (
+      {component.components && component.components.map(item => (
         <div 
-          key={component.id} 
+          key={item.id} 
           className={`navigation-item ${isActive ? 'active' : ''}`}
-          onClick={handleComponentClick(component.id)}
+          onClick={handleComponentClick(item.id)}
         >
-          {component.content}
+          {typeof item.content === 'string' ? item.content : JSON.stringify(item.content)}
         </div>
       ))}
     </div>

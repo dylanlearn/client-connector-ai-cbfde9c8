@@ -40,7 +40,7 @@ export const wireframeRendererService = {
 };
 
 function renderGrid(canvas: fabric.Canvas, config: Partial<WireframeCanvasConfig> = {}) {
-  const gridSize = config.gridSize || 20;
+  const gridSize = typeof config.gridSize === 'number' ? config.gridSize : Number(config.gridSize || 20);
   const gridColor = config.gridColor || 'rgba(224,224,224,0.5)';
   
   // Use width and height as numbers
@@ -197,16 +197,16 @@ export function renderFlexLayout(canvas: fabric.Canvas, section: WireframeSectio
       const itemHeight = 30;
       
       if (direction === 'horizontal') {
-        xOffset += itemWidth + gapSize;
+        xOffset += itemWidth + Number(gapSize);
         if (xOffset > sectionX + sectionWidth && wrap) {
           xOffset = sectionX;
-          yOffset += itemHeight + gapSize;
+          yOffset += itemHeight + Number(gapSize);
         }
       } else {
-        yOffset += itemHeight + gapSize;
+        yOffset += itemHeight + Number(gapSize);
         if (yOffset > sectionY + sectionHeight && wrap) {
           yOffset = sectionY;
-          xOffset += itemWidth + gapSize;
+          xOffset += itemWidth + Number(gapSize);
         }
       }
       

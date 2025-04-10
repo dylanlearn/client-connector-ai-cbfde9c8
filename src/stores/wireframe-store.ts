@@ -1,322 +1,230 @@
-import { create } from 'zustand';
-import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
-export interface WireframeState {
-  id?: string;
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
+import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+
+interface WireframeState {
+  id: string;
   title: string;
-  description?: string;
-  styleToken: string;
+  styleToken?: string;
   sections: WireframeSection[];
-  activeSection: string | null;
-  history: any[];
-  historyIndex: number;
-  colorScheme?: Record<string, string>;
-  typography?: Record<string, string>;
-  darkMode: boolean;
-  activeDevice: 'desktop' | 'tablet' | 'mobile';
-  showGrid: boolean;
-  highlightSections: boolean;
-  canvasSettings: {
-    zoom: number;
-    position: { x: number; y: number };
+  description: string;
+  colorScheme: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text?: string;
   };
-  wireframe?: WireframeData; // Add wireframe property
-  addSection: (section: Omit<WireframeSection, "id">) => void;
+  typography: {
+    headings: string;
+    body: string;
+    fontPairings?: string[];
+  };
+  activeSection: string | null;
+  activeDevice: 'desktop' | 'tablet' | 'mobile';
+  darkMode: boolean;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  gridSize: number;
+  wireframe: WireframeData | null;
+  canvasSettings: any;
+  undo: () => void;
+  redo: () => void;
+  setActiveSection: (id: string | null) => void;
+  addSection: (section: Omit<WireframeSection, 'id'>) => void;
   updateSection: (id: string, updates: Partial<WireframeSection>) => void;
   removeSection: (id: string) => void;
   moveSectionUp: (id: string) => void;
   moveSectionDown: (id: string) => void;
-  setActiveSection: (id: string | null) => void;
-  reorderSection: (id: string, newOrder: number) => void;
-  updateColorScheme: (colorScheme: Record<string, string>) => void;
-  updateTypography: (typography: Record<string, string>) => void;
-  toggleDarkMode: () => void;
-  toggleShowGrid: () => void;
-  toggleHighlightSections: () => void;
+  updateWireframe: (wireframe: Partial<WireframeData>) => void;
+  setWireframeData: (data: WireframeData) => void;
+  updateCanvasSettings: (settings: Partial<any>) => void;
+  setDarkMode: (darkMode: boolean) => void;
   setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
-  updateCanvasSettings: (settings: Partial<{ zoom: number; position: { x: number; y: number } }>) => void;
-  updateWireframe: (updates: Partial<WireframeState>) => void;
-  setWireframe: (data: Partial<WireframeData>) => void; // Add method to set wireframe
 }
 
-export const useWireframeStore = create<WireframeState>((set) => ({
-  id: uuidv4(),
-  title: 'New Wireframe',
-  description: '',
-  styleToken: 'modern-professional',
-  sections: [],
-  activeSection: null,
-  history: [],
-  historyIndex: -1,
-  colorScheme: {
-    primary: '#3b82f6',
-    secondary: '#10b981',
-    accent: '#f59e0b',
-    background: '#ffffff',
-    text: '#111827'
-  },
-  typography: {
-    headings: 'Inter',
-    body: 'Inter'
-  },
-  darkMode: false,
-  activeDevice: 'desktop',
-  showGrid: true,
-  highlightSections: true,
-  canvasSettings: {
-    zoom: 1,
-    position: { x: 0, y: 0 }
-  },
-  wireframe: undefined, // Initialize wireframe property
-  
-  addSection: (section) => set((state) => {
-    const newSection = {
+// Type guard function to check if a typography object is properly formatted
+function isProperTypographyFormat(typography: any): typography is { headings: string; body: string; fontPairings?: string[] } {
+  return typeof typography === 'object' && 
+         typeof typography.headings === 'string' && 
+         typeof typography.body === 'string' &&
+         (typography.fontPairings === undefined || Array.isArray(typography.fontPairings));
+}
+
+export const useWireframeStore = create<WireframeState>()(
+  devtools(
+    (set, get) => ({
       id: uuidv4(),
-      order: state.sections.length,
-      ...section
-    };
-    
-    const newSections = [...state.sections, newSection];
-    
-    // Also update the wireframe object if it exists
-    const updatedWireframe = state.wireframe 
-      ? { ...state.wireframe, sections: newSections } 
-      : undefined;
-    
-    return {
-      sections: newSections,
-      activeSection: newSection.id,
-      wireframe: updatedWireframe,
-    };
-  }),
-  
-  updateSection: (id, updates) => set((state) => {
-    const updatedSections = state.sections.map(section => 
-      section.id === id ? { ...section, ...updates } : section
-    );
-    
-    // Also update the wireframe object if it exists
-    const updatedWireframe = state.wireframe 
-      ? { ...state.wireframe, sections: updatedSections } 
-      : undefined;
-    
-    return {
-      sections: updatedSections,
-      wireframe: updatedWireframe,
-    };
-  }),
-  
-  removeSection: (id) => set((state) => {
-    const filteredSections = state.sections.filter(section => section.id !== id);
-    
-    // Also update the wireframe object if it exists
-    const updatedWireframe = state.wireframe 
-      ? { ...state.wireframe, sections: filteredSections } 
-      : undefined;
-    
-    return {
-      sections: filteredSections,
-      activeSection: state.activeSection === id ? null : state.activeSection,
-      wireframe: updatedWireframe,
-    };
-  }),
-  
-  moveSectionUp: (id) => set((state) => {
-    const index = state.sections.findIndex(s => s.id === id);
-    if (index <= 0) return state;
-    
-    const newSections = [...state.sections];
-    const temp = newSections[index - 1];
-    newSections[index - 1] = newSections[index];
-    newSections[index] = temp;
-    
-    // Also update the wireframe object if it exists
-    const updatedWireframe = state.wireframe 
-      ? { ...state.wireframe, sections: newSections } 
-      : undefined;
-    
-    return { 
-      sections: newSections,
-      wireframe: updatedWireframe,
-    };
-  }),
-  
-  moveSectionDown: (id) => set((state) => {
-    const index = state.sections.findIndex(s => s.id === id);
-    if (index === -1 || index >= state.sections.length - 1) return state;
-    
-    const newSections = [...state.sections];
-    const temp = newSections[index + 1];
-    newSections[index + 1] = newSections[index];
-    newSections[index] = temp;
-    
-    // Also update the wireframe object if it exists
-    const updatedWireframe = state.wireframe 
-      ? { ...state.wireframe, sections: newSections } 
-      : undefined;
-    
-    return { 
-      sections: newSections,
-      wireframe: updatedWireframe,
-    };
-  }),
-  
-  setActiveSection: (id) => set({ activeSection: id }),
-  
-  reorderSection: (id, newOrder) => set((state) => {
-    const section = state.sections.find(s => s.id === id);
-    if (!section) return state;
-    
-    const oldOrder = state.sections.indexOf(section);
-    const newSections = [...state.sections];
-    
-    newSections.splice(oldOrder, 1);
-    newSections.splice(newOrder, 0, section);
-    
-    // Also update the wireframe object if it exists
-    const updatedWireframe = state.wireframe 
-      ? { ...state.wireframe, sections: newSections } 
-      : undefined;
-    
-    return { 
-      sections: newSections,
-      wireframe: updatedWireframe,
-    };
-  }),
-  
-  updateColorScheme: (colorScheme) => set((state) => ({
-    colorScheme: { ...state.colorScheme, ...colorScheme },
-    wireframe: state.wireframe ? {
-      ...state.wireframe,
-      colorScheme: { ...state.wireframe.colorScheme, ...colorScheme }
-    } : undefined
-  })),
-  
-  updateTypography: (typography) => set((state) => ({
-    typography: { ...state.typography, ...typography },
-    wireframe: state.wireframe ? {
-      ...state.wireframe,
-      typography: { ...state.wireframe.typography, ...typography }
-    } : undefined
-  })),
-  
-  toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
-  
-  toggleShowGrid: () => set((state) => ({ showGrid: !state.showGrid })),
-  
-  toggleHighlightSections: () => set((state) => ({ 
-    highlightSections: !state.highlightSections
-  })),
-  
-  setActiveDevice: (device) => set({ activeDevice: device }),
-  
-  updateCanvasSettings: (settings) => set((state) => ({
-    canvasSettings: { ...state.canvasSettings, ...settings }
-  })),
-  
-  updateWireframe: (updates) => set((state) => ({ ...state, ...updates })),
-  
-  // Add method to set wireframe data
-  setWireframe: (data) => set((state) => {
-    // Create standard colorScheme structure
-    let colorScheme: {
-      primary: string;
-      secondary: string;
-      accent: string;
-      background: string;
-      text?: string;
-    };
-    
-    if (data.colorScheme) {
-      if ('primary' in data.colorScheme) {
-        // If it has the expected structure, use it directly
-        colorScheme = data.colorScheme;
-      } else {
-        // Convert from Record<string, string> to required structure
-        colorScheme = {
-          primary: data.colorScheme['primary'] || state.colorScheme?.primary || '#3b82f6', 
-          secondary: data.colorScheme['secondary'] || state.colorScheme?.secondary || '#10b981',
-          accent: data.colorScheme['accent'] || state.colorScheme?.accent || '#f59e0b',
-          background: data.colorScheme['background'] || state.colorScheme?.background || '#ffffff',
-          text: data.colorScheme['text'] || state.colorScheme?.text || '#111827'
-        };
-      }
-    } else {
-      // Use default or existing
-      colorScheme = state.colorScheme as {
-        primary: string;
-        secondary: string;
-        accent: string;
-        background: string;
-        text?: string;
-      } || {
+      title: 'New Wireframe',
+      description: '',
+      colorScheme: {
         primary: '#3b82f6',
         secondary: '#10b981',
         accent: '#f59e0b',
         background: '#ffffff',
         text: '#111827'
-      };
-    }
-    
-    // Create standard typography structure
-    let typography: {
-      headings: string;
-      body: string;
-      fontPairings?: string[];
-    };
-    
-    if (data.typography) {
-      if ('headings' in data.typography) {
-        // If it has the expected structure, use it directly
-        typography = data.typography;
-      } else {
-        // Convert from Record<string, string> to required structure
-        typography = {
-          headings: data.typography['headings'] || state.typography?.headings || 'Inter',
-          body: data.typography['body'] || state.typography?.body || 'Inter'
+      },
+      typography: {
+        headings: 'sans-serif',
+        body: 'sans-serif'
+      },
+      styleToken: '',
+      sections: [],
+      activeSection: null,
+      activeDevice: 'desktop',
+      darkMode: false,
+      showGrid: true,
+      snapToGrid: true,
+      gridSize: 10,
+      wireframe: null,
+      canvasSettings: {
+        width: 1200,
+        height: 800,
+        zoom: 1,
+        panOffset: { x: 0, y: 0 },
+        showGrid: true,
+        snapToGrid: true,
+        gridSize: 10,
+        backgroundColor: '#ffffff',
+        gridType: 'lines',
+        snapTolerance: 10,
+        showSmartGuides: true,
+      },
+      
+      setActiveSection: (id) => set({ activeSection: id }),
+      
+      addSection: (section) => {
+        const newSection = {
+          ...section,
+          id: uuidv4(),
         };
         
-        // Handle fontPairings separately if available
-        if (data.typography['fontPairings'] && Array.isArray(data.typography['fontPairings'])) {
-          typography.fontPairings = data.typography['fontPairings'];
-        }
+        set((state) => ({
+          sections: [...state.sections, newSection]
+        }));
+      },
+      
+      updateSection: (id, updates) => {
+        set((state) => ({
+          sections: state.sections.map((section) =>
+            section.id === id ? { ...section, ...updates } : section
+          )
+        }));
+      },
+      
+      removeSection: (id) => {
+        set((state) => ({
+          sections: state.sections.filter((section) => section.id !== id),
+          activeSection: state.activeSection === id ? null : state.activeSection
+        }));
+      },
+      
+      moveSectionUp: (id) => {
+        set((state) => {
+          const index = state.sections.findIndex((section) => section.id === id);
+          if (index <= 0) return state;
+          
+          const newSections = [...state.sections];
+          [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
+          
+          return { sections: newSections };
+        });
+      },
+      
+      moveSectionDown: (id) => {
+        set((state) => {
+          const index = state.sections.findIndex((section) => section.id === id);
+          if (index === -1 || index >= state.sections.length - 1) return state;
+          
+          const newSections = [...state.sections];
+          [newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]];
+          
+          return { sections: newSections };
+        });
+      },
+      
+      updateWireframe: (updates) => {
+        set((state) => {
+          // Handle typography and colorScheme properly
+          let updatedTypography = updates.typography || state.typography;
+          let updatedColorScheme = updates.colorScheme || state.colorScheme;
+          
+          // Ensure typography has the correct format
+          if (updatedTypography && !isProperTypographyFormat(updatedTypography)) {
+            // If it's a Record<string, string>, create a proper format
+            if (typeof updatedTypography === 'object') {
+              updatedTypography = {
+                headings: (updatedTypography as Record<string, string>).headings || 'sans-serif',
+                body: (updatedTypography as Record<string, string>).body || 'sans-serif',
+              };
+            } else {
+              // Fallback to default
+              updatedTypography = {
+                headings: 'sans-serif',
+                body: 'sans-serif'
+              };
+            }
+          }
+          
+          // Return updated state
+          return {
+            ...state,
+            ...updates,
+            typography: updatedTypography,
+            colorScheme: updatedColorScheme,
+          };
+        });
+      },
+      
+      setWireframeData: (data) => {
+        set({
+          id: data.id || uuidv4(),
+          title: data.title || 'New Wireframe',
+          description: data.description || '',
+          sections: data.sections || [],
+          colorScheme: data.colorScheme || {
+            primary: '#3b82f6',
+            secondary: '#10b981',
+            accent: '#f59e0b',
+            background: '#ffffff',
+            text: '#111827'
+          },
+          typography: data.typography || {
+            headings: 'sans-serif',
+            body: 'sans-serif'
+          },
+          styleToken: data.styleToken || '',
+          wireframe: data
+        });
+      },
+      
+      updateCanvasSettings: (settings) => {
+        set((state) => ({
+          canvasSettings: {
+            ...state.canvasSettings,
+            ...settings
+          }
+        }));
+      },
+      
+      setDarkMode: (darkMode) => set({ darkMode }),
+      
+      setActiveDevice: (device) => set({ activeDevice: device }),
+      
+      undo: () => {
+        // Placeholder for undo functionality
+        console.log('Undo operation not implemented');
+      },
+      
+      redo: () => {
+        // Placeholder for redo functionality
+        console.log('Redo operation not implemented');
       }
-    } else {
-      // Use default or existing
-      typography = state.typography as {
-        headings: string;
-        body: string;
-        fontPairings?: string[];
-      } || {
-        headings: 'Inter',
-        body: 'Inter'
-      };
+    }),
+    {
+      name: 'wireframe-store'
     }
-
-    const wireframeData: WireframeData = {
-      id: data.id || state.id || uuidv4(),
-      title: data.title || state.title || 'New Wireframe',
-      sections: data.sections || state.sections || [],
-      description: data.description || state.description,
-      colorScheme: colorScheme,
-      typography: typography,
-      style: data.style || state.styleToken,
-      styleToken: data.styleToken || state.styleToken,
-      designTokens: data.designTokens || {},
-    };
-    
-    return {
-      id: wireframeData.id,
-      sections: wireframeData.sections,
-      wireframe: wireframeData,
-      title: wireframeData.title,
-      description: wireframeData.description,
-      colorScheme: wireframeData.colorScheme,
-      typography: wireframeData.typography,
-      styleToken: wireframeData.styleToken || state.styleToken,
-    };
-  }),
-}));
-
-export default useWireframeStore;
+  )
+);
