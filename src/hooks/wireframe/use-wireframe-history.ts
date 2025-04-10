@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { v4 as uuidv4 } from 'uuid';
 

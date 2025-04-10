@@ -1,5 +1,6 @@
 
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { toast } from 'sonner';
 
 /**
  * Export a wireframe to HTML format
@@ -22,6 +23,16 @@ export const exportToHTML = async (wireframeData: WireframeData): Promise<string
       const bgColor = sectionStyle.backgroundColor || (index % 2 === 0 ? colorScheme.background : '#f9fafb');
       const textColor = sectionStyle.color || colorScheme.text;
       
+      // Generate component HTML if components are available
+      const componentsHTML = section.components?.map((component, compIndex) => {
+        // Basic component rendering - can be expanded based on component types
+        return `
+          <div class="component component-${component.type || 'default'}" id="component-${compIndex}">
+            ${component.content || ''}
+          </div>
+        `;
+      }).join('\n') || '<p>This is a placeholder for the actual content.</p>';
+      
       return `
         <!-- ${section.name || section.sectionType || `Section ${index + 1}`} -->
         <section 
@@ -33,16 +44,15 @@ export const exportToHTML = async (wireframeData: WireframeData): Promise<string
             <h2 class="section-title">${section.name || section.sectionType || `Section ${index + 1}`}</h2>
             ${section.description ? `<p class="section-description">${section.description}</p>` : ''}
             
-            <!-- Section content would be rendered here -->
             <div class="section-content">
-              <p>This is a placeholder for the actual content of the ${section.name || section.sectionType || 'section'}.</p>
+              ${componentsHTML}
             </div>
           </div>
         </section>
       `;
     }).join('\n');
     
-    // Create the full HTML document
+    // Create the full HTML document with responsive design
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,6 +107,11 @@ export const exportToHTML = async (wireframeData: WireframeData): Promise<string
       margin-top: 2rem;
     }
     
+    /* Component styles */
+    .component {
+      margin-bottom: 1.5rem;
+    }
+    
     /* Responsive design */
     @media (max-width: 768px) {
       .section {
@@ -105,6 +120,16 @@ export const exportToHTML = async (wireframeData: WireframeData): Promise<string
       
       .section-title {
         font-size: 1.75rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .section {
+        padding: 2rem 0.75rem;
+      }
+      
+      .section-title {
+        font-size: 1.5rem;
       }
     }
   </style>
@@ -144,5 +169,169 @@ export const exportToJSON = (wireframeData: WireframeData): string => {
   } catch (error) {
     console.error('Error exporting wireframe to JSON:', error);
     throw new Error('Failed to export wireframe to JSON');
+  }
+};
+
+/**
+ * Export wireframe to PDF format
+ * This function prepares HTML and then uses a PDF conversion service or library
+ */
+export const exportToPDF = async (wireframeData: WireframeData): Promise<ArrayBuffer | null> => {
+  try {
+    // First generate HTML content
+    const htmlContent = await exportToHTML(wireframeData);
+    
+    // In a real implementation, you would integrate with a PDF generation library
+    // For example, using jsPDF, html2pdf.js, or a server-side PDF generation service
+    
+    console.log('PDF generation would happen here with the HTML content');
+    
+    // For demonstration purposes, we're just returning null
+    // In a real implementation, this would return the PDF as an ArrayBuffer
+    return null;
+  } catch (error) {
+    console.error('Error exporting wireframe to PDF:', error);
+    toast(`PDF export failed: ${error.message}`);
+    return null;
+  }
+};
+
+/**
+ * Export wireframe to image (PNG) format
+ */
+export const exportToPNG = async (wireframeData: WireframeData, canvasElement?: HTMLCanvasElement): Promise<string | null> => {
+  try {
+    if (!canvasElement) {
+      throw new Error('Canvas element is required for PNG export');
+    }
+    
+    // Get data URL from canvas
+    const dataUrl = canvasElement.toDataURL('image/png');
+    return dataUrl;
+  } catch (error) {
+    console.error('Error exporting wireframe to PNG:', error);
+    toast(`PNG export failed: ${error.message}`);
+    return null;
+  }
+};
+
+/**
+ * Export wireframe to SVG format
+ */
+export const exportToSVG = async (wireframeData: WireframeData, svgElement?: SVGElement): Promise<string | null> => {
+  try {
+    if (!svgElement) {
+      throw new Error('SVG element is required for SVG export');
+    }
+    
+    // Clone the SVG to avoid modifying the original
+    const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+    
+    // Serialize SVG to string
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(clonedSvg);
+    
+    // Create data URL
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(svgBlob);
+    
+    return url;
+  } catch (error) {
+    console.error('Error exporting wireframe to SVG:', error);
+    toast(`SVG export failed: ${error.message}`);
+    return null;
+  }
+};
+
+/**
+ * Main export function that handles different export formats
+ */
+export const exportWireframe = async (
+  wireframeData: WireframeData, 
+  format: 'html' | 'json' | 'pdf' | 'png' | 'svg' = 'html',
+  options: { 
+    canvasElement?: HTMLCanvasElement; 
+    svgElement?: SVGElement;
+    fileName?: string;
+  } = {}
+): Promise<void> => {
+  try {
+    // Default filename based on wireframe title
+    const fileName = options.fileName || `${wireframeData.title || 'wireframe'}-${format}`;
+    let result: string | ArrayBuffer | null = null;
+    let mimeType = '';
+    
+    // Generate export based on format
+    switch (format) {
+      case 'html':
+        result = await exportToHTML(wireframeData);
+        mimeType = 'text/html';
+        break;
+      case 'json':
+        result = exportToJSON(wireframeData);
+        mimeType = 'application/json';
+        break;
+      case 'pdf':
+        result = await exportToPDF(wireframeData);
+        mimeType = 'application/pdf';
+        break;
+      case 'png':
+        result = await exportToPNG(wireframeData, options.canvasElement);
+        mimeType = 'image/png';
+        break;
+      case 'svg':
+        result = await exportToSVG(wireframeData, options.svgElement);
+        mimeType = 'image/svg+xml';
+        break;
+    }
+    
+    if (!result) {
+      throw new Error(`Export to ${format.toUpperCase()} failed to generate content`);
+    }
+    
+    // Handle download for browser environment
+    if (typeof window !== 'undefined') {
+      // For data URLs (PNG, SVG)
+      if (typeof result === 'string' && result.startsWith('data:') || result.startsWith('blob:')) {
+        const link = document.createElement('a');
+        link.href = result;
+        link.download = `${fileName}.${format}`;
+        link.click();
+        
+        // Clean up blob URL if needed
+        if (result.startsWith('blob:')) {
+          setTimeout(() => URL.revokeObjectURL(result as string), 100);
+        }
+      } 
+      // For text content (HTML, JSON)
+      else if (typeof result === 'string') {
+        const blob = new Blob([result], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fileName}.${format}`;
+        link.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      } 
+      // For binary content (PDF)
+      else if (result instanceof ArrayBuffer) {
+        const blob = new Blob([result], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fileName}.${format}`;
+        link.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      }
+      
+      toast(`Wireframe exported as ${format.toUpperCase()} successfully`);
+    }
+  } catch (error) {
+    console.error(`Error exporting wireframe to ${format}:`, error);
+    toast(`Export failed: ${error.message}`);
   }
 };

@@ -1,274 +1,345 @@
 
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions } from './DeviceInfo';
-import PreviewHeader from './PreviewHeader';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { DeviceType, DEVICE_DIMENSIONS, mapDeviceType } from './DeviceInfo';
 import PreviewDisplay from './PreviewDisplay';
+import PreviewHeader from './PreviewHeader';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, Copy, Share2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { exportWireframe } from '@/utils/wireframe/export-utils';
+import WireframeExportDialog from '../export/WireframeExportDialog';
+import { WireframeAnalyticsService } from '@/services/analytics/wireframe-analytics-service';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
+import { Maximize2, Minimize2, Code, Download, Copy, Wrench } from 'lucide-react';
 
 interface WireframePreviewSystemProps {
-  wireframe: any;
+  wireframe: WireframeData;
+  defaultDevice?: DeviceType;
+  darkMode?: boolean;
   onSectionClick?: (sectionId: string) => void;
   onExport?: (format: string) => void;
   projectId?: string;
-  className?: string;
 }
 
 const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
   wireframe,
+  defaultDevice = 'desktop',
+  darkMode: initialDarkMode = false,
   onSectionClick,
   onExport,
-  projectId,
-  className = '',
+  projectId
 }) => {
-  const [activeDevice, setActiveDevice] = useState<DeviceType>('desktop');
-  const [previousDevice, setPreviousDevice] = useState<DeviceType | null>(null);
+  const { user } = useAuth();
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [deviceType, setDeviceType] = useState<DeviceType>(defaultDevice);
+  const [previousDevice, setPreviousDevice] = useState<DeviceType>(defaultDevice);
   const [isRotated, setIsRotated] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [showDevTools, setShowDevTools] = useState(false);
-  const [showComparison, setShowComparison] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [darkMode, setDarkMode] = useState(initialDarkMode);
+  const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'developer'>('preview');
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
-  const { toast } = useToast();
-
-  // Device rotation handler
-  const handleRotate = useCallback(() => {
-    if (activeDevice === 'desktop') return;
-
-    setIsRotated(!isRotated);
+  // Calculate device dimensions
+  const currentDimensions = useCallback(() => {
+    const dimensions = { ...DEVICE_DIMENSIONS[deviceType] };
     
-    // Switch between portrait and landscape modes
-    if (activeDevice === 'mobile' && !isRotated) {
-      setActiveDevice('mobileLandscape');
-    } else if (activeDevice === 'mobileLandscape' && isRotated) {
-      setActiveDevice('mobile');
-    } else if (activeDevice === 'tablet' && !isRotated) {
-      setActiveDevice('tabletLandscape');
-    } else if (activeDevice === 'tabletLandscape' && isRotated) {
-      setActiveDevice('tablet');
+    // Swap dimensions if rotated (except desktop)
+    if (isRotated && deviceType !== 'desktop') {
+      return { 
+        ...dimensions,
+        width: dimensions.height,
+        height: dimensions.width,
+        name: `${dimensions.name} (Rotated)`
+      };
     }
-  }, [activeDevice, isRotated]);
-  
-  // Device change handler
-  const handleDeviceChange = useCallback((device: DeviceType) => {
-    setPreviousDevice(activeDevice);
-    setActiveDevice(device);
-    setIsRotated(device === 'mobileLandscape' || device === 'tabletLandscape');
-  }, [activeDevice]);
+    
+    return dimensions;
+  }, [deviceType, isRotated]);
   
   // Format dimensions for display
   const formatDimensions = useCallback(() => {
-    const { width, height } = DEVICE_DIMENSIONS[activeDevice];
-    return `${width} × ${height}`;
-  }, [activeDevice]);
-
-  // Export wireframe
+    const dimensions = currentDimensions();
+    return `${dimensions.width} × ${dimensions.height}`;
+  }, [currentDimensions]);
+  
+  // Handle device rotation
+  const handleRotate = useCallback(() => {
+    if (deviceType === 'desktop') return;
+    setIsRotated(prev => !prev);
+  }, [deviceType]);
+  
+  // Handle device type change with analytics tracking
+  const handleDeviceChange = useCallback((device: DeviceType) => {
+    setPreviousDevice(deviceType);
+    setDeviceType(device);
+    
+    // Reset rotation when changing devices
+    setIsRotated(false);
+    
+    // Track device change in analytics
+    if (user && wireframe) {
+      WireframeAnalyticsService.trackDeviceChange(
+        user.id,
+        wireframe.id,
+        deviceType,
+        device
+      );
+    }
+  }, [deviceType, user, wireframe]);
+  
+  // Handle export with onExport callback and analytics
   const handleExport = useCallback((format: string) => {
+    // Call onExport callback if provided
     if (onExport) {
       onExport(format);
-    } else {
-      toast({
-        title: 'Export functionality',
-        description: `Export to ${format.toUpperCase()} will be available soon!`,
-        duration: 3000,
-      });
     }
-  }, [onExport, toast]);
-
-  // Share wireframe
-  const handleShare = useCallback(() => {
-    if (projectId) {
-      const shareUrl = `${window.location.origin}/wireframe-preview/${projectId}`;
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        toast({
-          title: 'Share link copied!',
-          description: 'The preview link has been copied to your clipboard',
-          duration: 3000,
-        });
-      });
-    } else {
-      toast({
-        title: 'Cannot share',
-        description: 'This wireframe needs to be saved first before sharing',
-        duration: 3000,
-      });
+    
+    // Track export in analytics
+    if (user && wireframe) {
+      WireframeAnalyticsService.trackExport(
+        user.id,
+        wireframe.id,
+        format
+      );
     }
-  }, [projectId, toast]);
+    
+    // Show export dialog for advanced export options
+    setShowExportDialog(true);
+  }, [onExport, user, wireframe]);
 
-  // Toggle comparison view
-  const toggleComparison = useCallback(() => {
-    setShowComparison(!showComparison);
-    if (!showComparison && !previousDevice) {
-      // If entering comparison mode and no previous device, set a different device
-      if (activeDevice === 'desktop') {
-        setPreviousDevice('mobile');
-      } else {
-        setPreviousDevice('desktop');
+  // Copy wireframe JSON to clipboard
+  const handleCopyJSON = useCallback(() => {
+    try {
+      const wireframeJson = JSON.stringify(wireframe, null, 2);
+      navigator.clipboard.writeText(wireframeJson);
+      toast('Wireframe JSON copied to clipboard');
+    } catch (error) {
+      console.error('Error copying wireframe JSON:', error);
+      toast('Failed to copy wireframe JSON');
+    }
+  }, [wireframe]);
+
+  // Toggle fullscreen mode
+  const toggleFullscreen = useCallback(() => {
+    setFullscreen(prev => !prev);
+  }, []);
+
+  // Toggle dark mode
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev);
+  }, []);
+
+  // Track section views
+  const handleSectionClick = useCallback((sectionId: string) => {
+    if (onSectionClick) {
+      onSectionClick(sectionId);
+    }
+    
+    // Track section view in analytics
+    if (user && wireframe) {
+      const section = wireframe.sections.find(s => s.id === sectionId);
+      if (section) {
+        WireframeAnalyticsService.trackSectionView(
+          user.id,
+          wireframe.id,
+          sectionId,
+          section.sectionType || 'unknown'
+        );
       }
     }
-  }, [showComparison, previousDevice, activeDevice]);
-
-  // Get current dimensions
-  const currentDimensions = DEVICE_DIMENSIONS[activeDevice];
-  const comparisonDimensions = previousDevice ? DEVICE_DIMENSIONS[previousDevice] : null;
+  }, [onSectionClick, user, wireframe]);
 
   return (
-    <Card className={`shadow-md overflow-hidden ${className}`}>
-      <PreviewHeader
-        activeDevice={activeDevice}
-        isRotated={isRotated}
-        onDeviceChange={handleDeviceChange}
-        onRotate={handleRotate}
-        formatDimensions={formatDimensions}
-        wireframeId={projectId}
-        onCompareClick={toggleComparison}
-        showCompare={true}
-      />
-
-      <Tabs defaultValue="preview" className="w-full">
-        <TabsList className="px-4 pt-2">
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="export">Export</TabsTrigger>
-          <TabsTrigger value="devtools" onClick={() => setShowDevTools(true)}>DevTools</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="preview" className="p-0">
-          <CardContent className={`flex flex-col lg:flex-row justify-center p-4 bg-gray-50 dark:bg-gray-900/30 overflow-auto transition-all ${darkMode ? "dark" : ""}`}>
-            <div className="flex-1 flex justify-center">
-              <PreviewDisplay
-                currentDimensions={currentDimensions}
-                darkMode={darkMode}
-                wireframe={wireframe}
-                deviceType={activeDevice}
-                onSectionClick={onSectionClick}
-              />
-            </div>
-
-            {showComparison && comparisonDimensions && (
-              <div className="flex-1 flex justify-center mt-4 lg:mt-0 lg:ml-4 border-t lg:border-t-0 lg:border-l pt-4 lg:pt-0 lg:pl-4">
+    <div className={`wireframe-preview-system ${fullscreen ? 'fixed inset-0 z-50 bg-background' : ''}`}>
+      <Card className="h-full shadow-sm border">
+        <CardHeader className="p-0">
+          <PreviewHeader
+            activeDevice={deviceType}
+            isRotated={isRotated}
+            onDeviceChange={handleDeviceChange}
+            onRotate={handleRotate}
+            formatDimensions={formatDimensions}
+            wireframeId={wireframe.id}
+            onFeedbackClick={() => {
+              // Feedback functionality could be implemented here
+              toast('Feedback functionality would be shown here');
+            }}
+            onCompareClick={() => {
+              // Compare functionality could be implemented here
+              toast('Compare functionality would be shown here');
+            }}
+            showCompare={true}
+          />
+          
+          <div className="border-b">
+            <Tabs defaultValue="preview" value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+              <div className="flex justify-between px-4 pt-1">
+                <TabsList>
+                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                  <TabsTrigger value="code">Code</TabsTrigger>
+                  <TabsTrigger value="developer">Developer</TabsTrigger>
+                </TabsList>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    onClick={toggleDarkMode}
+                    className="h-8 w-8"
+                    title={darkMode ? "Light Mode" : "Dark Mode"}
+                  >
+                    {darkMode ? "🌞" : "🌙"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleFullscreen}
+                    className="h-8 w-8"
+                    title={fullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                  >
+                    {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleExport('any')}
+                    className="h-8 w-8"
+                    title="Export"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Tabs>
+          </div>
+        </CardHeader>
+        
+        <CardContent className={`p-0 ${fullscreen ? 'h-[calc(100vh-112px)]' : 'h-[500px]'}`}>
+          <TabsContent value="preview" className="m-0 h-full">
+            <div className="flex h-full">
+              <div className="hidden lg:block lg:w-64 border-r p-4">
+                <h3 className="font-medium text-sm mb-2">Sections</h3>
+                <ScrollArea className="h-[calc(100%-2rem)]">
+                  <div className="space-y-1">
+                    {wireframe.sections.map((section) => (
+                      <div 
+                        key={section.id}
+                        className="px-2 py-1.5 text-sm rounded hover:bg-accent/10 cursor-pointer"
+                        onClick={() => handleSectionClick(section.id)}
+                      >
+                        {section.name || section.sectionType || 'Unnamed Section'}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+              
+              <div ref={canvasRef} className="flex-1 flex items-center justify-center p-4 overflow-auto">
                 <PreviewDisplay
-                  currentDimensions={comparisonDimensions}
+                  currentDimensions={currentDimensions()}
                   darkMode={darkMode}
                   wireframe={wireframe}
-                  deviceType={previousDevice as DeviceType}
-                  onSectionClick={onSectionClick}
+                  deviceType={mapDeviceType(deviceType)}
+                  onSectionClick={handleSectionClick}
                 />
               </div>
-            )}
-          </CardContent>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} />
-              <Label htmlFor="dark-mode">Dark Mode</Label>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="comparison" 
-                checked={showComparison} 
-                onCheckedChange={toggleComparison} 
-              />
-              <Label htmlFor="comparison">Side-by-side Comparison</Label>
-            </div>
-
-            {showComparison && (
-              <div className="pl-6 pt-2 border-l">
-                <p className="text-sm text-muted-foreground mb-2">Comparison Device</p>
-                <Tabs 
-                  value={previousDevice || 'desktop'} 
-                  onValueChange={(v) => setPreviousDevice(v as DeviceType)}
-                  className="w-full"
-                >
-                  <TabsList className="w-full">
-                    <TabsTrigger value="desktop" className="flex-1">Desktop</TabsTrigger>
-                    <TabsTrigger value="tablet" className="flex-1">Tablet</TabsTrigger>
-                    <TabsTrigger value="mobile" className="flex-1">Mobile</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            )}
-          </CardContent>
-        </TabsContent>
-
-        <TabsContent value="export">
-          <CardContent className="space-y-4">
-            <h3 className="text-lg font-medium">Export Options</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => handleExport('png')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                PNG Image
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => handleExport('pdf')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                PDF Document
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => handleExport('html')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                HTML Code
-              </Button>
-            </div>
-            <div className="pt-2">
-              <Button 
-                variant="secondary" 
-                className="w-full" 
-                onClick={handleShare}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Share Preview Link
-              </Button>
-            </div>
-          </CardContent>
-        </TabsContent>
-
-        <TabsContent value="devtools">
-          <CardContent className="space-y-4">
-            <h3 className="text-lg font-medium">Developer Tools</h3>
-            <div className="grid grid-cols-1 gap-3">
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Element Inspector</h4>
-                <p className="text-sm text-muted-foreground">
-                  Inspect elements in the wireframe. Click on any section to view its properties.
-                </p>
-              </div>
-              
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Responsive Checker</h4>
-                <p className="text-sm text-muted-foreground">
-                  Test your wireframe across different screen sizes.
-                </p>
-              </div>
-              
-              <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Performance Metrics</h4>
-                <p className="text-sm text-muted-foreground">
-                  View rendering performance statistics for your wireframe.
-                </p>
+          </TabsContent>
+          
+          <TabsContent value="code" className="m-0 h-full">
+            <div className="flex h-full">
+              <div className="flex-1 p-4">
+                <div className="flex justify-between mb-4">
+                  <h3 className="font-medium">Wireframe JSON</h3>
+                  <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                    <Copy className="h-3.5 w-3.5 mr-1" /> Copy JSON
+                  </Button>
+                </div>
+                <ScrollArea className="h-[calc(100%-3rem)] bg-muted/20 rounded-md border">
+                  <pre className="p-4 text-xs font-mono whitespace-pre-wrap">
+                    {JSON.stringify(wireframe, null, 2)}
+                  </pre>
+                </ScrollArea>
               </div>
             </div>
-          </CardContent>
-        </TabsContent>
-      </Tabs>
-    </Card>
+          </TabsContent>
+          
+          <TabsContent value="developer" className="m-0 h-full">
+            <div className="flex h-full">
+              <div className="flex-1 p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <h3 className="text-sm font-medium">Device Information</h3>
+                    </CardHeader>
+                    <CardContent className="text-xs">
+                      <ul className="space-y-1">
+                        <li><strong>Type:</strong> {deviceType}</li>
+                        <li><strong>Dimensions:</strong> {formatDimensions()}</li>
+                        <li><strong>Rotated:</strong> {isRotated ? 'Yes' : 'No'}</li>
+                        <li><strong>User Agent:</strong> {typeof window !== 'undefined' ? window.navigator.userAgent.substring(0, 50) + '...' : 'Not available'}</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <h3 className="text-sm font-medium">Wireframe Information</h3>
+                    </CardHeader>
+                    <CardContent className="text-xs">
+                      <ul className="space-y-1">
+                        <li><strong>ID:</strong> {wireframe.id}</li>
+                        <li><strong>Title:</strong> {wireframe.title}</li>
+                        <li><strong>Sections:</strong> {wireframe.sections.length}</li>
+                        <li><strong>Project ID:</strong> {projectId || 'Not available'}</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="lg:col-span-2">
+                    <CardHeader className="pb-2">
+                      <h3 className="text-sm font-medium">Developer Tools</h3>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleExport('html')}>
+                          Export HTML
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleExport('json')}>
+                          Export JSON
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
+                          Export PDF
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                          Copy JSON
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={toggleDarkMode}>
+                          Toggle Dark Mode
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+                          Toggle Fullscreen
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </CardContent>
+      </Card>
+      
+      <WireframeExportDialog
+        wireframe={wireframe}
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        canvasElement={canvasRef.current?.querySelector('canvas') as HTMLCanvasElement}
+      />
+    </div>
   );
 };
 
