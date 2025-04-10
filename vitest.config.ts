@@ -11,10 +11,12 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       reporter: ['text', 'json', 'html'],
+      exclude: ['node_modules/', 'src/test/'],
     },
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mjs,jsx,tsx}'],
   },
   resolve: {
     alias: {

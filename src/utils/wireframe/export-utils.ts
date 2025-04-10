@@ -3,11 +3,22 @@ import { toast } from 'sonner';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { recordClientError } from '@/utils/monitoring/api-usage';
 
 interface ExportOptions {
   canvasElement?: HTMLCanvasElement;
   svgElement?: SVGElement;
   fileName?: string;
+}
+
+/**
+ * Error class specifically for export operations
+ */
+export class ExportError extends Error {
+  constructor(message: string, public originalError?: Error) {
+    super(message);
+    this.name = 'ExportError';
+  }
 }
 
 /**
@@ -41,13 +52,22 @@ export const exportWireframe = async (
         await exportSvg(wireframeData, fileName, options);
         break;
       default:
-        throw new Error(`Unsupported export format: ${format}`);
+        throw new ExportError(`Unsupported export format: ${format}`);
     }
     
     toast(`Wireframe exported successfully as ${format.toUpperCase()}`);
   } catch (error) {
     console.error('Export error:', error);
-    toast(`Export failed: ${error.message}`);
+    
+    // Log the error for monitoring
+    await recordClientError(
+      `Export error: ${error instanceof Error ? error.message : String(error)}`,
+      error instanceof Error ? error.stack : undefined,
+      'WireframeExport'
+    ).catch(console.error);
+    
+    // Show user-friendly toast
+    toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     throw error;
   }
 };
@@ -56,19 +76,27 @@ export const exportWireframe = async (
  * Export wireframe as JSON
  */
 const exportJson = async (wireframeData: WireframeData, fileName: string): Promise<void> => {
-  const jsonString = JSON.stringify(wireframeData, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json' });
-  downloadBlob(blob, `${fileName}.json`);
+  try {
+    const jsonString = JSON.stringify(wireframeData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    downloadBlob(blob, `${fileName}.json`);
+  } catch (error) {
+    throw new ExportError('Failed to export as JSON', error instanceof Error ? error : undefined);
+  }
 };
 
 /**
  * Export wireframe as HTML
  */
 const exportHtml = async (wireframeData: WireframeData, fileName: string): Promise<void> => {
-  // Generate HTML from wireframe data
-  const htmlContent = generateHtmlFromWireframe(wireframeData);
-  const blob = new Blob([htmlContent], { type: 'text/html' });
-  downloadBlob(blob, `${fileName}.html`);
+  try {
+    // Generate HTML from wireframe data
+    const htmlContent = generateHtmlFromWireframe(wireframeData);
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    downloadBlob(blob, `${fileName}.html`);
+  } catch (error) {
+    throw new ExportError('Failed to export as HTML', error instanceof Error ? error : undefined);
+  }
 };
 
 /**
@@ -79,34 +107,38 @@ const exportPdf = async (
   fileName: string,
   options: ExportOptions
 ): Promise<void> => {
-  // Create PDF with jsPDF
-  const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'px'
-  });
-  
-  let canvas: HTMLCanvasElement;
-  
-  if (options.canvasElement) {
-    // Use provided canvas element
-    canvas = options.canvasElement;
-  } else {
-    // Render wireframe to canvas if canvasElement not provided
-    const element = document.getElementById('wireframe-canvas');
-    if (!element) {
-      throw new Error('Canvas element not found for PDF export');
+  try {
+    // Create PDF with jsPDF
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'px'
+    });
+    
+    let canvas: HTMLCanvasElement;
+    
+    if (options.canvasElement) {
+      // Use provided canvas element
+      canvas = options.canvasElement;
+    } else {
+      // Render wireframe to canvas if canvasElement not provided
+      const element = document.getElementById('wireframe-canvas');
+      if (!element) {
+        throw new ExportError('Canvas element not found for PDF export');
+      }
+      
+      canvas = await html2canvas(element);
     }
     
-    canvas = await html2canvas(element);
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${fileName}.pdf`);
+  } catch (error) {
+    throw new ExportError('Failed to export as PDF', error instanceof Error ? error : undefined);
   }
-  
-  const imgData = canvas.toDataURL('image/jpeg', 0.95);
-  const imgProps = pdf.getImageProperties(imgData);
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-  
-  pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-  pdf.save(`${fileName}.pdf`);
 };
 
 /**
@@ -117,29 +149,33 @@ const exportPng = async (
   fileName: string,
   options: ExportOptions
 ): Promise<void> => {
-  let canvas: HTMLCanvasElement;
-  
-  if (options.canvasElement) {
-    // Use provided canvas element
-    canvas = options.canvasElement;
-  } else {
-    // Render wireframe to canvas if canvasElement not provided
-    const element = document.getElementById('wireframe-canvas');
-    if (!element) {
-      throw new Error('Canvas element not found for PNG export');
+  try {
+    let canvas: HTMLCanvasElement;
+    
+    if (options.canvasElement) {
+      // Use provided canvas element
+      canvas = options.canvasElement;
+    } else {
+      // Render wireframe to canvas if canvasElement not provided
+      const element = document.getElementById('wireframe-canvas');
+      if (!element) {
+        throw new ExportError('Canvas element not found for PNG export');
+      }
+      
+      canvas = await html2canvas(element);
     }
     
-    canvas = await html2canvas(element);
+    // Convert canvas to PNG and download
+    canvas.toBlob((blob) => {
+      if (blob) {
+        downloadBlob(blob, `${fileName}.png`);
+      } else {
+        throw new ExportError('Failed to create PNG blob');
+      }
+    }, 'image/png');
+  } catch (error) {
+    throw new ExportError('Failed to export as PNG', error instanceof Error ? error : undefined);
   }
-  
-  // Convert canvas to PNG and download
-  canvas.toBlob((blob) => {
-    if (blob) {
-      downloadBlob(blob, `${fileName}.png`);
-    } else {
-      throw new Error('Failed to create PNG blob');
-    }
-  }, 'image/png');
 };
 
 /**
@@ -150,28 +186,32 @@ const exportSvg = async (
   fileName: string,
   options: ExportOptions
 ): Promise<void> => {
-  if (!options.svgElement) {
-    throw new Error('SVG element is required for SVG export');
+  try {
+    if (!options.svgElement) {
+      throw new ExportError('SVG element is required for SVG export');
+    }
+    
+    // Clone the SVG element to avoid modifying the original
+    const svgClone = options.svgElement.cloneNode(true) as SVGElement;
+    
+    // Ensure the SVG has width and height
+    if (!svgClone.getAttribute('width')) {
+      svgClone.setAttribute('width', '800');
+    }
+    if (!svgClone.getAttribute('height')) {
+      svgClone.setAttribute('height', '600');
+    }
+    
+    // Convert SVG to string
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgClone);
+    
+    // Create a blob from the SVG string
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    downloadBlob(blob, `${fileName}.svg`);
+  } catch (error) {
+    throw new ExportError('Failed to export as SVG', error instanceof Error ? error : undefined);
   }
-  
-  // Clone the SVG element to avoid modifying the original
-  const svgClone = options.svgElement.cloneNode(true) as SVGElement;
-  
-  // Ensure the SVG has width and height
-  if (!svgClone.getAttribute('width')) {
-    svgClone.setAttribute('width', '800');
-  }
-  if (!svgClone.getAttribute('height')) {
-    svgClone.setAttribute('height', '600');
-  }
-  
-  // Convert SVG to string
-  const serializer = new XMLSerializer();
-  const svgString = serializer.serializeToString(svgClone);
-  
-  // Create a blob from the SVG string
-  const blob = new Blob([svgString], { type: 'image/svg+xml' });
-  downloadBlob(blob, `${fileName}.svg`);
 };
 
 /**
@@ -242,48 +282,58 @@ export const generateHtmlFromWireframe = (wireframeData: WireframeData): string 
  * Helper function to download a blob as a file
  */
 const downloadBlob = (blob: Blob, fileName: string): void => {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  
-  // Clean up
-  setTimeout(() => {
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, 100);
+  try {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+  } catch (error) {
+    console.error('Error downloading blob:', error);
+    throw new ExportError('Failed to download file', error instanceof Error ? error : undefined);
+  }
 };
 
 /**
  * Helper function to convert base64 data to a blob
  */
 export const dataURItoBlob = (dataURI: string | ArrayBuffer): Blob => {
-  // Convert base64/URLEncoded data component to raw binary data held in a string
-  let byteString: string;
-  
-  // Fix for the TS errors: Make sure we're working with a string before using string methods
-  if (typeof dataURI === 'string') {
-    if (dataURI.startsWith('data:')) {
-      // Handle data URI
-      byteString = dataURI.split(',')[0].indexOf('base64') >= 0 ? 
-        atob(dataURI.split(',')[1]) : 
-        decodeURIComponent(dataURI.split(',')[1]);
+  try {
+    // Convert base64/URLEncoded data component to raw binary data held in a string
+    let byteString: string;
+    
+    // Fix for the TS errors: Make sure we're working with a string before using string methods
+    if (typeof dataURI === 'string') {
+      if (dataURI.startsWith('data:')) {
+        // Handle data URI
+        byteString = dataURI.split(',')[0].indexOf('base64') >= 0 ? 
+          atob(dataURI.split(',')[1]) : 
+          decodeURIComponent(dataURI.split(',')[1]);
+      } else {
+        // Handle plain string
+        byteString = dataURI;
+      }
     } else {
-      // Handle plain string
-      byteString = dataURI;
+      // Handle ArrayBuffer
+      throw new ExportError('Cannot convert ArrayBuffer to Blob - conversion not implemented');
     }
-  } else {
-    // Handle ArrayBuffer
-    throw new Error('Cannot convert ArrayBuffer to Blob - conversion not implemented');
+    
+    // Write the bytes of the string to a typed array
+    const ia = new Uint8Array(byteString.length);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    
+    return new Blob([ia], { type: 'application/octet-stream' });
+  } catch (error) {
+    console.error('Error converting data URI to blob:', error);
+    throw new ExportError('Failed to convert data to binary format', error instanceof Error ? error : undefined);
   }
-  
-  // Write the bytes of the string to a typed array
-  const ia = new Uint8Array(byteString.length);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
-  }
-  
-  return new Blob([ia], { type: 'application/octet-stream' });
 };
