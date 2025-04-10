@@ -23,11 +23,11 @@ const NavigationRenderer: React.FC<NavigationRendererProps> = ({
 }) => {
   const isActive = isSelected;
 
-  const handleComponentClick = (componentId: string) => (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleComponentClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    if (onClick) {
-      onClick(componentId);
+    if (onClick && component.id) {
+      onClick(component.id);
     }
   };
 
@@ -53,7 +53,7 @@ const NavigationRenderer: React.FC<NavigationRendererProps> = ({
         <div 
           key={item.id} 
           className={`navigation-item ${isActive ? 'active' : ''}`}
-          onClick={handleComponentClick(item.id)}
+          onClick={handleComponentClick}
         >
           {typeof item.content === 'string' ? item.content : JSON.stringify(item.content)}
         </div>

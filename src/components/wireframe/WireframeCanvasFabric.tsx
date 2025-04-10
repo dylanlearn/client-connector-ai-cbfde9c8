@@ -194,7 +194,7 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = memo(({
             }
           });
           
-          topPosition += height + 20;
+          topPosition = Number(topPosition) + Number(height) + 20;
         });
         
         fabricCanvas.renderAll();

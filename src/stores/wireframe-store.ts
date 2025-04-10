@@ -1,7 +1,14 @@
+
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+
+interface Typography {
+  headings: string;
+  body: string;
+  fontPairings?: string[];
+}
 
 export interface WireframeState {
   id: string;
@@ -16,11 +23,7 @@ export interface WireframeState {
     background: string;
     text?: string;
   };
-  typography: {
-    headings: string;
-    body: string;
-    fontPairings?: string[];
-  };
+  typography: Typography;
   activeSection: string | null;
   activeDevice: 'desktop' | 'tablet' | 'mobile';
   darkMode: boolean;
@@ -49,16 +52,25 @@ export interface WireframeState {
   setWireframe: (wireframe: WireframeData) => void;
 }
 
-function isProperTypographyFormat(typography: any): typography is { headings: string; body: string; fontPairings?: string[] } {
+// Function to check if an object has the proper typography format
+function isProperTypographyFormat(typography: any): typography is Typography {
   return typeof typography === 'object' && 
          typeof typography.headings === 'string' && 
          typeof typography.body === 'string' &&
          (typography.fontPairings === undefined || Array.isArray(typography.fontPairings));
 }
 
+// Function to convert record to Typography type
+function recordToTypography(record: Record<string, string>): Typography {
+  return {
+    headings: record.headings || 'sans-serif',
+    body: record.body || 'sans-serif'
+  };
+}
+
 export const useWireframeStore = create<WireframeState>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       id: uuidv4(),
       title: 'New Wireframe',
       description: '',
@@ -160,12 +172,10 @@ export const useWireframeStore = create<WireframeState>()(
           let updatedTypography = updates.typography || state.typography;
           let updatedColorScheme = updates.colorScheme || state.colorScheme;
           
+          // Handle typography conversion if needed
           if (updatedTypography && !isProperTypographyFormat(updatedTypography)) {
             if (typeof updatedTypography === 'object') {
-              updatedTypography = {
-                headings: (updatedTypography as Record<string, string>).headings || 'sans-serif',
-                body: (updatedTypography as Record<string, string>).body || 'sans-serif',
-              };
+              updatedTypography = recordToTypography(updatedTypography as Record<string, string>);
             } else {
               updatedTypography = {
                 headings: 'sans-serif',
@@ -184,6 +194,19 @@ export const useWireframeStore = create<WireframeState>()(
       },
       
       setWireframeData: (data) => {
+        // Ensure we have the correct typography format
+        let typographyData: Typography;
+        if (data.typography && isProperTypographyFormat(data.typography)) {
+          typographyData = data.typography;
+        } else if (data.typography && typeof data.typography === 'object') {
+          typographyData = recordToTypography(data.typography as unknown as Record<string, string>);
+        } else {
+          typographyData = {
+            headings: 'sans-serif',
+            body: 'sans-serif'
+          };
+        }
+        
         set({
           id: data.id || uuidv4(),
           title: data.title || 'New Wireframe',
@@ -196,10 +219,7 @@ export const useWireframeStore = create<WireframeState>()(
             background: '#ffffff',
             text: '#111827'
           },
-          typography: data.typography || {
-            headings: 'sans-serif',
-            body: 'sans-serif'
-          },
+          typography: typographyData,
           styleToken: data.styleToken || '',
           wireframe: data
         });

@@ -1,4 +1,3 @@
-
 // Add the missing function
 export const aiWireframeToWireframeData = (aiWireframe: any): any => {
   return {
@@ -183,6 +182,7 @@ export interface FeedbackModificationResult {
   modified?: boolean;
   changeDescription?: string;
   modifiedSections?: any[];
+  addedSections?: any[];
 }
 
 // Base version control interfaces

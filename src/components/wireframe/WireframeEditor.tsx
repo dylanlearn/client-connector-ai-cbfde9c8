@@ -23,7 +23,7 @@ import WireframeVisualizer from './WireframeVisualizer';
 interface WireframeEditorProps {
   projectId?: string;
   wireframeId?: string;
-  wireframeData?: WireframeData;
+  wireframe?: WireframeData;
   deviceType?: DeviceType;
   viewMode?: ViewMode;
   onUpdate?: (updatedWireframe: WireframeData) => void;
@@ -32,7 +32,7 @@ interface WireframeEditorProps {
 const WireframeEditor: React.FC<WireframeEditorProps> = ({ 
   projectId, 
   wireframeId, 
-  wireframeData,
+  wireframe,
   deviceType: propDeviceType = 'desktop', 
   viewMode: propViewMode = 'preview',
   onUpdate
@@ -78,13 +78,13 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
   const [viewMode, setViewMode] = useState<ViewMode>(propViewMode);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   
-  const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(wireframeData || null);
+  const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(wireframe || null);
 
   useEffect(() => {
-    if (wireframeData) {
-      setCurrentWireframe(wireframeData);
+    if (wireframe) {
+      setCurrentWireframe(wireframe);
     }
-  }, [wireframeData]);
+  }, [wireframe]);
 
   const handleSectionClick = useCallback((sectionId: string) => {
     setSelectedSectionId(sectionId);

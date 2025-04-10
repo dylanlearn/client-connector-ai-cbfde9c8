@@ -1,4 +1,3 @@
-
 import { WireframeData, AIWireframe } from './wireframe-types';
 
 export const wireframeService = {
@@ -9,22 +8,19 @@ export const wireframeService = {
       title: aiWireframe.title || 'Untitled Wireframe',
       description: aiWireframe.description || '',
       sections: aiWireframe.sections || [],
-      colorScheme: aiWireframe.design_tokens?.colorScheme || {
+      colorScheme: aiWireframe.colorScheme || {
         primary: '#3b82f6',
         secondary: '#10b981',
         accent: '#f59e0b',
-        background: '#ffffff'
+        background: '#ffffff',
+        text: '#111827'
       },
-      typography: aiWireframe.design_tokens?.typography || {
+      typography: aiWireframe.typography || {
         headings: 'sans-serif',
         body: 'sans-serif'
       },
-      style: aiWireframe.design_tokens?.style || '',
+      style: aiWireframe.style || '',
       designTokens: aiWireframe.design_tokens || {},
-      mobileLayouts: aiWireframe.mobile_layouts || {},
-      styleVariants: aiWireframe.style_variants || {},
-      designReasoning: aiWireframe.design_reasoning || {},
-      animations: aiWireframe.animations || {},
       imageUrl: aiWireframe.image_url || '',
       lastUpdated: aiWireframe.updated_at || ''
     };
@@ -46,7 +42,8 @@ export const wireframeService = {
         primary: '#3b82f6',
         secondary: '#10b981',
         accent: '#f59e0b',
-        background: '#ffffff'
+        background: '#ffffff',
+        text: '#111827'
       },
       typography: {
         headings: 'sans-serif',
@@ -73,3 +70,5 @@ export const wireframeService = {
     return aiWireframes.map(this.formatWireframeForDisplay);
   }
 };
+
+export default wireframeService;

@@ -1,4 +1,3 @@
-
 import { WireframeSection as WireframeSectionType, WireframeData, CopySuggestions, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 import React from 'react';
 
@@ -80,12 +79,13 @@ export interface VariantComponentProps extends BaseComponentRendererProps {
 }
 
 export interface WireframeVisualizerProps {
-  wireframe: WireframeData | undefined;
+  wireframe: WireframeData;
   darkMode?: boolean;
   deviceType?: DeviceType;
   viewMode?: ViewMode;
   onSectionClick?: (sectionId: string) => void;
-  selectedSectionId?: string;
+  selectedSectionId?: string | null;
   onSelect?: (sectionId: string) => void;
   preview?: boolean;
 }
+

@@ -85,7 +85,7 @@ const AdvancedWireframeGeneratorPage: React.FC = () => {
         <CardContent className="p-0">
           <WireframeEditor 
             projectId={projectId} 
-            wireframeData={wireframeData}
+            wireframe={wireframeData}
             onUpdate={(updatedWireframe) => setWireframeData(updatedWireframe)}
           />
         </CardContent>

@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeData, WireframeSection, WireframeComponent } from '../wireframe-types';
 
@@ -14,7 +15,17 @@ interface GenerationParams {
 export const WireframeGeneratorService = {
   generateWireframe(params: GenerationParams): WireframeData {
     const { sections, colorScheme } = params;
+    
+    // Ensure we have default values for required properties
+    const defaultColorScheme = {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    };
 
+    // Create and return a valid WireframeData object
     return {
       id: uuidv4(),
       title: params.title || 'New Wireframe',
@@ -22,17 +33,18 @@ export const WireframeGeneratorService = {
       sections: sections || [],
       style: params.style || {},
       colorScheme: {
-        primary: colorScheme.primary || '#3b82f6',
-        secondary: colorScheme.secondary || '#10b981',
-        accent: colorScheme.accent || '#f59e0b',
-        background: colorScheme.background || '#ffffff',
-        text: colorScheme.text || '#111827'
+        primary: colorScheme?.primary || defaultColorScheme.primary,
+        secondary: colorScheme?.secondary || defaultColorScheme.secondary,
+        accent: colorScheme?.accent || defaultColorScheme.accent,
+        background: colorScheme?.background || defaultColorScheme.background,
+        text: colorScheme?.text || defaultColorScheme.text
       },
       typography: params.typography || {
         headings: 'sans-serif',
         body: 'sans-serif'
-      },
-      components: params.components || []
+      }
     };
   }
 };
+
+export const wireframeGenerator = WireframeGeneratorService;

@@ -1,149 +1,317 @@
-
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import Wireframe from './Wireframe';
-import { useWireframeStore } from '@/stores/wireframe-store';
-import { v4 as uuidv4 } from 'uuid';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-
-const WireframeTest = () => {
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [viewMode, setViewMode] = useState<'preview' | 'code' | 'flowchart'>('preview');
-  
-  // Create a sample wireframe with properly typed data
-  const [sampleWireframe, setSampleWireframe] = useState<WireframeData>({
-    id: uuidv4(),
-    title: "Sample Wireframe",
-    sections: [
-      {
-        id: uuidv4(),
-        name: "Hero Section",
-        sectionType: "hero",
-        description: "Main hero section",
-        position: { x: 20, y: 20 },
-        dimensions: { width: 800, height: 400 }
-      },
-      {
-        id: uuidv4(),
-        name: "Features Section",
-        sectionType: "features",
-        description: "Features showcase",
-        position: { x: 20, y: 440 },
-        dimensions: { width: 800, height: 300 }
-      },
-      {
-        id: uuidv4(),
-        name: "Footer",
-        sectionType: "footer",
-        description: "Page footer",
-        position: { x: 20, y: 760 },
-        dimensions: { width: 800, height: 200 }
-      }
-    ],
-    style: "modern",
-    colorScheme: {
-      primary: "#3b82f6",
-      secondary: "#10b981",
-      accent: "#f59e0b",
-      background: "#ffffff"
-    }
-  });
-
-  const handleSectionClick = (sectionId: string) => {
-    setActiveSection(sectionId);
-  };
-
-  return (
-    <div className="wireframe-test">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            <span>Wireframe Test</span>
-            <div className="flex space-x-2">
-              <Button 
-                size="sm" 
-                variant={viewMode === 'preview' ? 'default' : 'outline'} 
-                onClick={() => setViewMode('preview')}
-              >
-                Preview
-              </Button>
-              <Button 
-                size="sm" 
-                variant={viewMode === 'code' ? 'default' : 'outline'} 
-                onClick={() => setViewMode('code')}
-              >
-                Code
-              </Button>
-              <Button 
-                size="sm" 
-                variant={viewMode === 'flowchart' ? 'default' : 'outline'} 
-                onClick={() => setViewMode('flowchart')}
-              >
-                Flowchart
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between mb-4">
-            <div className="flex space-x-2">
-              <Button 
-                size="sm" 
-                variant={deviceType === 'desktop' ? 'default' : 'outline'} 
-                onClick={() => setDeviceType('desktop')}
-              >
-                Desktop
-              </Button>
-              <Button 
-                size="sm" 
-                variant={deviceType === 'tablet' ? 'default' : 'outline'} 
-                onClick={() => setDeviceType('tablet')}
-              >
-                Tablet
-              </Button>
-              <Button 
-                size="sm" 
-                variant={deviceType === 'mobile' ? 'default' : 'outline'} 
-                onClick={() => setDeviceType('mobile')}
-              >
-                Mobile
-              </Button>
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setDarkMode(!darkMode)}
-            >
-              {darkMode ? 'Light Mode' : 'Dark Mode'}
-            </Button>
-          </div>
-          
-          <div className="border rounded-lg overflow-hidden">
-            <Wireframe 
-              wireframe={sampleWireframe}
-              viewMode={viewMode}
-              darkMode={darkMode}
-              deviceType={deviceType}
-              onSectionClick={handleSectionClick}
-              activeSection={activeSection}
-            />
-          </div>
-          
-          {activeSection && (
-            <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <h3 className="font-medium">Selected Section: {activeSection}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {sampleWireframe.sections.find(s => s.id === activeSection)?.description || 'No description'}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default WireframeTest;
+import { WireframeData } from '@/types/wireframe'; // Import the WireframeData type
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Switch } from "@/components/ui/switch"
+import { useForm } from 'react-hook-form';
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Progress } from "@/components/ui/progress"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { HoverCard, HoverCardContent, HoverCardDescription, HoverCardHeader, HoverCardTitle, HoverCardTrigger } from "@/components/ui/hover-card"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { ContextMenu, ContextMenuCheckboxItem, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Sonner, Toast, Toaster } from "@/components/ui/sonner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Timeline, TimelineContent, TimelineItem, TimelineSeparator, TimelineTrack } from "@/components/ui/timeline"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { CalendarDateRangePicker } from "@/components/ui/calendar-date-range-picker"
+import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Combobox, ComboboxContent, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxPopover } from "@/components/ui/combobox"
+import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
+import { DatePicker } from "@/components/ui/date-picker"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableFacetedFilter } from "@/components/ui/data-table-faceted-filter"
+import { DataTablePagination } from "@/components/ui/data-table-pagination"
+import { DataTableToolbar } from "@/components/ui/data-table-toolbar"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Listbox, ListboxContent, ListboxEmpty, ListboxGroup, ListboxItem, ListboxLabel, ListboxPopover, ListboxSeparator, ListboxTrigger } from "@/components/ui/listbox"
+import { Menubar, MenubarCheckboxItem, MenubarContent, MenubarGroup, MenubarItem, MenubarLabel, MenubarMenu, MenubarPortal, MenubarRadioGroup, MenubarRadioItem, MenubarSeparator, MenubarShortcut, MenubarSub, MenubarSubContent, MenubarSubTrigger, MenubarTrigger } from "@/components/ui/menubar"
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuViewport } from "@/components/ui/navigation-menu"
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from "@/components/ui/resizable"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectScrollUp, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
+import { Timeline, TimelineContent, TimelineItem, TimelineSeparator, TimelineTrack } from "@/components/ui/timeline"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
+import { Calendar } from "@/components/ui/calendar"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { CalendarDateRangePicker } from "@/components/ui/calendar-date-range-picker"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/components/ui/command"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardDescription,
+  HoverCardHeader,
+  HoverCardTitle,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import {
+  Menubar,
+  MenubarCheckboxItem,
+  MenubarContent,
+  MenubarGroup,
+  MenubarItem,
+  MenubarLabel,
+  MenubarMenu,
+  MenubarPortal,
+  MenubarRadioGroup,
+  MenubarRadioItem,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  NavigationMenuViewport,
+} from "@/components/ui/navigation-menu"
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizableSeparator,
+} from "@/components/ui/resizable"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollUp,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+  Listbox,
+  ListboxContent,
+  ListboxEmpty,
+  ListboxGroup,
+  ListboxItem,
+  ListboxLabel,
+  ListboxPopover,
+  ListboxSeparator,
+  ListboxTrigger,
+} from "@/components/ui/listbox"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import {
+  ScrollArea,
+  ScrollBar,
+} from "@/components/ui/scroll-area"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
+  Progress,
+} from "@/components/ui/progress"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
+  Skeleton,
+} from "@/components/ui/skeleton"
+import {
+  Sonner,
+  Toast,
+  Toaster,
+} from "@/components/ui/sonner"
+import {
+  AspectRat
