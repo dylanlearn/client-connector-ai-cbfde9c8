@@ -1,143 +1,88 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { WireframeData, WireframeVersion } from '@/types/wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { AdvancedWireframeGenerator } from '@/components/wireframe';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IntakeWireframeBridgeProps {
   intakeData: any;
   onWireframeGenerated?: (wireframe: WireframeData) => void;
+  projectId?: string;
 }
 
 const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   intakeData,
-  onWireframeGenerated
+  onWireframeGenerated,
+  projectId
 }) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [wireframeData, setWireframeData] = useState<WireframeData | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const generateWireframe = async () => {
-    setIsGenerating(true);
-    setError(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
+  const [bridgeProjectId] = useState(() => projectId || uuidv4());
+  
+  // Generate a prompt based on intake data
+  useEffect(() => {
+    if (!intakeData) return;
 
     try {
       // Extract relevant information from intake data
       const { 
         businessName, 
-        primaryColor, 
-        secondaryColor,
         businessType,
+        mission,
+        vision,
+        targetAudience,
+        industryType,
+        brandPersonality,
+        primaryColor,
         designPreferences = {},
       } = intakeData;
       
-      // Create sections based on business type and intake data
-      const sections = generateSections(intakeData);
+      // Create a descriptive prompt based on intake data
+      let prompt = `Create a ${businessType || 'business'} website`;
       
-      // Create the wireframe data structure
-      const generatedWireframe: WireframeData = {
-        id: uuidv4(), // Ensure ID is always provided
-        title: businessName || 'Wireframe Based on Intake Form',
-        description: `Wireframe for ${businessType || 'business'} website`,
-        sections,
-        layoutType: designPreferences.layoutStyle || 'standard',
-        colorScheme: {
-          primary: primaryColor || '#3b82f6',
-          secondary: secondaryColor || '#10b981',
-          accent: designPreferences.accentColor || '#f97316',
-          background: designPreferences.backgroundColor || '#ffffff',
-        },
-        typography: {
-          headings: designPreferences.headingFont || 'Inter',
-          body: designPreferences.bodyFont || 'Inter',
-          fontPairings: designPreferences.fontPairings || []
-        },
-        style: designPreferences.visualStyle || 'modern'
-      };
-      
-      setWireframeData(generatedWireframe);
-      
-      if (onWireframeGenerated) {
-        onWireframeGenerated(generatedWireframe);
+      if (businessName) {
+        prompt += ` for ${businessName}`;
       }
       
+      if (industryType) {
+        prompt += ` in the ${industryType} industry`;
+      }
+      
+      if (targetAudience) {
+        prompt += ` targeting ${targetAudience}`;
+      }
+      
+      if (mission || vision) {
+        prompt += `. The brand ${mission ? `has a mission to ${mission}` : ''}${mission && vision ? ' and' : ''}${vision ? ` envisions ${vision}` : ''}`;
+      }
+      
+      if (brandPersonality) {
+        prompt += `. The brand personality is ${brandPersonality}`;
+      }
+      
+      if (designPreferences.visualStyle) {
+        prompt += `. Use a ${designPreferences.visualStyle} design style`;
+      }
+      
+      setGeneratedPrompt(prompt);
     } catch (err) {
-      console.error("Error generating wireframe from intake data:", err);
-      setError("Failed to generate wireframe from intake data");
-    } finally {
-      setIsGenerating(false);
+      console.error("Error generating prompt from intake data:", err);
+      setError("Failed to process intake data");
     }
-  };
-  
-  // Generate wireframe sections based on intake data
-  const generateSections = (data: any): any[] => {
-    const sections: any[] = [];
+  }, [intakeData]);
+
+  // Handler for when a wireframe is generated
+  const handleWireframeGenerated = (generatedWireframe: WireframeData) => {
+    setWireframeData(generatedWireframe);
     
-    // Always add a hero section
-    sections.push({
-      id: uuidv4(),
-      name: "Hero Section",
-      sectionType: "hero",
-      description: `Main hero section for ${data.businessName || 'the website'}`,
-      components: [
-        {
-          id: uuidv4(),
-          type: "heading",
-          content: data.mainHeading || data.businessName || "Welcome to our website"
-        },
-        {
-          id: uuidv4(),
-          type: "paragraph",
-          content: data.tagline || data.businessDescription || "We provide exceptional products and services"
-        },
-        {
-          id: uuidv4(),
-          type: "button",
-          content: data.ctaText || "Get Started"
-        }
-      ],
-      layout: {
-        type: "flex",
-        direction: "column",
-        alignment: "center"
-      },
-      positionOrder: 0
-    });
-    
-    // Add features section if available
-    if (data.features && Array.isArray(data.features)) {
-      sections.push({
-        id: uuidv4(),
-        name: "Features Section",
-        sectionType: "features",
-        description: "Highlighting key features and benefits",
-        components: data.features.map((feature: string, index: number) => ({
-          id: uuidv4(),
-          type: "feature",
-          content: feature
-        })),
-        layout: {
-          type: "grid",
-          columns: Math.min(data.features.length, 3)
-        },
-        positionOrder: 1
-      });
+    if (onWireframeGenerated) {
+      onWireframeGenerated(generatedWireframe);
     }
     
-    // Add more sections based on business type
-    if (data.businessType === "ecommerce") {
-      sections.push({
-        id: uuidv4(),
-        name: "Product Showcase",
-        sectionType: "products",
-        description: "Featured products showcase",
-        components: [],
-        layout: { type: "grid", columns: 3 },
-        positionOrder: 2
-      });
-    }
-    
-    return sections;
+    setIsGenerating(false);
   };
   
   // Helper to render status message
@@ -154,7 +99,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       return <p className="text-green-500">Wireframe generated successfully!</p>;
     }
     
-    return null; // Return null instead of an empty string to fix the ReactNode error
+    return null;
   };
 
   return (
@@ -165,12 +110,18 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
         {renderStatus()}
       </div>
       
-      <Button 
-        onClick={generateWireframe} 
-        disabled={isGenerating || !intakeData}
-      >
-        {isGenerating ? "Generating..." : "Generate Wireframe"}
-      </Button>
+      {intakeData && (
+        <div className="space-y-4">
+          <AdvancedWireframeGenerator
+            projectId={bridgeProjectId}
+            initialPrompt={generatedPrompt}
+            onWireframeGenerated={handleWireframeGenerated}
+            enhancedCreativity={true}
+            intakeData={intakeData}
+            viewMode="preview"
+          />
+        </div>
+      )}
     </div>
   );
 };

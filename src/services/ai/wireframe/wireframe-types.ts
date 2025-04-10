@@ -119,10 +119,10 @@ export interface WireframeSection {
   layoutType?: string;
   positionOrder?: number;
   componentVariant?: string;
-  copySuggestions?: CopySuggestions | CopySuggestions[];
+  copySuggestions?: CopySuggestions;
   dimensions?: {
-    width: number;
-    height: number;
+    width: number | string;
+    height: number | string;
   };
   position?: {
     x: number;
@@ -161,16 +161,139 @@ export interface WireframeComponent {
   content?: string;
   style?: Record<string, any>;
   position?: { x: number; y: number };
-  dimensions?: { width: number; height: number };
+  dimensions?: { width: number | string; height: number | string };
   [key: string]: any;
 }
 
+// Update the CopySuggestions interface to include all potential fields
 export interface CopySuggestions {
   heading?: string;
   subheading?: string;
   cta?: string;
   body?: string;
-  [key: string]: any;
+  primaryCta?: string;
+  secondaryCta?: string;
+  
+  // Blog section
+  post1Title?: string;
+  post1Excerpt?: string;
+  post1Author?: string;
+  post1Date?: string;
+  post1Category?: string;
+  post2Title?: string;
+  post2Excerpt?: string;
+  post2Author?: string;
+  post2Date?: string;
+  post2Category?: string;
+  post3Title?: string;
+  post3Excerpt?: string;
+  post3Author?: string;
+  post3Date?: string;
+  post3Category?: string;
+  viewAllButton?: string;
+  
+  // Feature section
+  feature1Title?: string;
+  feature1Description?: string;
+  feature2Title?: string;
+  feature2Description?: string;
+  feature3Title?: string;
+  feature3Description?: string;
+  feature4Title?: string;
+  feature4Description?: string;
+  feature5Title?: string;
+  feature5Description?: string;
+  
+  // FAQ section
+  question1?: string;
+  answer1?: string;
+  question2?: string;
+  answer2?: string;
+  question3?: string;
+  answer3?: string;
+  question4?: string;
+  answer4?: string;
+  question5?: string;
+  answer5?: string;
+  supportText?: string;
+  supportCta?: string;
+  
+  // Testimonial section
+  testimonial1?: string;
+  author1?: string;
+  role1?: string;
+  testimonial2?: string;
+  author2?: string;
+  role2?: string;
+  testimonial3?: string;
+  author3?: string;
+  role3?: string;
+  
+  // Footer section
+  companyName?: string;
+  companyDescription?: string;
+  quickLinksTitle?: string;
+  resourcesTitle?: string;
+  contactTitle?: string;
+  address?: string;
+  cityStateZip?: string;
+  email?: string;
+  phone?: string;
+  copyright?: string;
+  
+  // Contact section
+  nameLabel?: string;
+  namePlaceholder?: string;
+  emailLabel?: string;
+  emailPlaceholder?: string;
+  subjectLabel?: string;
+  subjectPlaceholder?: string;
+  messageLabel?: string;
+  messagePlaceholder?: string;
+  submitButton?: string;
+  contactInfoTitle?: string;
+  addressTitle?: string;
+  phoneTitle?: string;
+  emailTitle?: string;
+  hoursTitle?: string;
+  emailAddress?: string;
+  hours?: string;
+  weekend?: string;
+  
+  // Pricing section
+  basicPlanName?: string;
+  basicPlanPrice?: string;
+  basicPlanPeriod?: string;
+  basicPlanDescription?: string;
+  basicFeature1?: string;
+  basicFeature2?: string;
+  basicFeature3?: string;
+  basicFeature4?: string;
+  basicPlanCta?: string;
+  
+  proPlanName?: string;
+  proPlanPrice?: string;
+  proPlanPeriod?: string;
+  proPlanDescription?: string;
+  proFeature1?: string;
+  proFeature2?: string;
+  proFeature3?: string;
+  proFeature4?: string;
+  proFeature5?: string;
+  proPlanCta?: string;
+  
+  enterprisePlanName?: string;
+  enterprisePlanPrice?: string;
+  enterprisePlanPeriod?: string;
+  enterprisePlanDescription?: string;
+  enterpriseFeature1?: string;
+  enterpriseFeature2?: string;
+  enterpriseFeature3?: string;
+  enterpriseFeature4?: string;
+  enterpriseFeature5?: string;
+  enterprisePlanCta?: string;
+
+  [key: string]: any; // Allow for additional dynamic fields
 }
 
 export interface WireframeResult {

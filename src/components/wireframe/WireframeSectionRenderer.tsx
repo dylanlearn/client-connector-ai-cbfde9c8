@@ -83,7 +83,10 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
           id: section.id || `section-${sectionIndex}`,
           style: section.style || {},
           children: section.components || [],
-          dimensions: section.dimensions || { width: '100%', height: 'auto' }
+          dimensions: { 
+            width: section.dimensions?.width || '100%', 
+            height: section.dimensions?.height || 'auto' 
+          }
         }}
         darkMode={darkMode}
         interactive={true}

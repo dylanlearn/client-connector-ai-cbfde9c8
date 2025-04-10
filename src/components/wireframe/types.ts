@@ -1,102 +1,63 @@
 
-import { WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { CopySuggestions, WireframeSection, WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import React from 'react';
 
-export interface WireframeRendererProps {
-  wireframeData: WireframeData;
-  viewMode?: 'preview' | 'code' | 'flowchart';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
-}
+export type ViewMode = 'preview' | 'editor' | 'flowchart' | 'code';
+export type DeviceType = 'desktop' | 'tablet' | 'mobile';
 
 export interface WireframeSectionRendererProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'code' | 'flowchart';
+  viewMode?: ViewMode;
   darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  deviceType?: DeviceType;
   sectionIndex?: number;
   onSectionClick?: (sectionId: string) => void;
   isSelected?: boolean;
-  onClick?: () => void;
-}
-
-export interface SectionRenderingOptions {
-  responsive?: boolean;
-  darkMode?: boolean;
-  showGrid?: boolean;
-  gridSize?: number;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  interactive?: boolean;
-  showBorders?: boolean;
-  colorScheme?: {
-    primary?: string;
-    secondary?: string;
-    background?: string;
-    text?: string;
-  };
-}
-
-export interface WireframeCanvasConfig {
-  width: number;
-  height: number;
-  zoom: number;
-  panOffset: { x: number, y: number };
-  showGrid: boolean;
-  snapToGrid: boolean;
-  gridSize: number;
-  backgroundColor: string;
-  gridType: 'lines' | 'dots' | 'columns';
-  snapTolerance: number;
-  showSmartGuides: boolean;
-  gridColor: string;
-  showRulers?: boolean;
-  rulerSize?: number;
-  rulerColor?: string;
-  rulerMarkings?: boolean;
-  historyEnabled?: boolean;
-  maxHistorySteps?: number;
-  [key: string]: any;
-}
-
-export interface InteractiveComponentOptions {
-  selectable?: boolean;
-  draggable?: boolean;
-  resizable?: boolean;
-  rotatable?: boolean;
-  lockMovementX?: boolean;
-  lockMovementY?: boolean;
-  hasControls?: boolean;
-  hasBorders?: boolean;
-  [key: string]: any;
-}
-
-// Add the missing interfaces that are causing errors
-
-export interface WireframeProps {
-  wireframe: any;
-  viewMode?: 'preview' | 'code' | 'flowchart';
-  darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
-  onSelect?: (wireframeId: string) => void;
 }
 
 export interface SectionComponentProps {
   section: WireframeSection;
-  viewMode?: 'preview' | 'code' | 'flowchart';
+  viewMode?: ViewMode;
   darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  deviceType?: DeviceType;
   isSelected?: boolean;
   onClick?: () => void;
 }
 
-export interface VariantComponentProps {
-  component?: any;
-  variant?: string;
-  data?: Record<string, any>;
-  viewMode?: 'preview' | 'code' | 'flowchart';
+export interface BaseComponentRendererProps {
+  component: any;
   darkMode?: boolean;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  interactive?: boolean;
+  onClick?: () => void;
+  isSelected?: boolean;
+  deviceType?: DeviceType;
+}
+
+export interface ComponentRendererProps extends BaseComponentRendererProps {
+  variant?: string;
+  viewMode?: ViewMode;
+}
+
+export interface WireframeRendererProps {
+  wireframe: WireframeData;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  onSectionClick?: (sectionId: string) => void;
+  selectedSectionId?: string;
+}
+
+export interface WireframeState extends Partial<WireframeData> {
+  title: string;
+  styleToken?: string;
+  id?: string;
+  sections: WireframeSection[];
+}
+
+export interface AdvancedWireframeGeneratorProps {
+  projectId?: string;
+  viewMode?: ViewMode;
+  onWireframeGenerated?: (wireframe: WireframeData) => void;
+  initialPrompt?: string;
+  enhancedCreativity?: boolean;
 }
