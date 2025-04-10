@@ -20,7 +20,8 @@ const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
   const adjustedProps = {
     ...props,
     viewMode: mappedViewMode as 'preview' | 'flowchart',
-    darkMode: props.darkMode || false // Ensure darkMode is always provided
+    darkMode: props.darkMode || false, // Ensure darkMode is always provided
+    deviceType: props.deviceType || 'desktop' // Ensure deviceType is always provided
   };
   
   // Select the renderer based on section type
