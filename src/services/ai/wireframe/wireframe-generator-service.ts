@@ -21,167 +21,73 @@ export class WireframeGeneratorService {
       console.log("Generating wireframe with params:", params);
       const startTime = performance.now();
       
-      // Check if we should call the edge function for better results
-      if (params.description) {
-        try {
-          // Call the edge function for generating wireframes
-          const { data, error } = await supabase.functions.invoke<{
-            success: boolean;
-            wireframe: any;
-            intentData?: any;
-            blueprint?: any;
-          }>('generate-advanced-wireframe', {
-            body: {
-              userInput: params.description,
-              projectId: params.projectId,
-              styleToken: params.style,
-              includeDesignMemory: true
-            }
-          });
-          
-          if (error) {
-            console.error("Edge function error:", error);
-            throw error;
-          }
-          
-          if (data?.success && data.wireframe) {
-            const endTime = performance.now();
-            const generationTime = (endTime - startTime) / 1000; // Convert to seconds
-            
-            // Transform the wireframe to ensure it has all required fields
-            const transformedWireframe = this.transformWireframeToFabricCompatible(data.wireframe);
-            
-            return {
-              wireframe: transformedWireframe,
-              generationTime,
-              success: true,
-              intentData: data.intentData,
-              blueprint: data.blueprint
-            };
-          }
-        } catch (edgeError) {
-          console.error("Edge function failed, falling back to local generation:", edgeError);
-          // Continue with local fallback if edge function fails
+      // Validate required parameters
+      if (!params.description) {
+        throw new Error("Description is required for wireframe generation");
+      }
+
+      // Call the edge function for generating wireframes
+      const { data, error } = await supabase.functions.invoke<{
+        success: boolean;
+        wireframe: any;
+        intentData?: any;
+        blueprint?: any;
+        model?: string;
+        usage?: any;
+      }>('generate-advanced-wireframe', {
+        body: {
+          userInput: params.description,
+          projectId: params.projectId,
+          styleToken: params.style,
+          colorScheme: params.colorScheme,
+          enhancedCreativity: params.enhancedCreativity,
+          creativityLevel: params.creativityLevel,
+          industry: params.industry,
+          includeDesignMemory: true
         }
+      });
+      
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to generate wireframe: ${error.message}`);
       }
       
-      // Local fallback implementation
-      // If there's a baseWireframe, use it as a starting point
-      let wireframeData = params.baseWireframe || {
-        id: uuidv4(), // Always ensure we have an ID
-        title: params.pageType || 'New Wireframe', // Ensure we always have a title
-        description: params.description || 'Generated wireframe',
-        sections: [],
-        style: params.style || 'modern',
-        colorScheme: params.colorScheme || {
-          primary: '#3b82f6',
-          secondary: '#10b981',
-          accent: '#f59e0b',
-          background: '#ffffff'
-        },
-        typography: {
-          headings: 'Inter',
-          body: 'Roboto',
-          fontPairings: ['Inter', 'Roboto']
-        }
-      };
-      
-      // Ensure ID is set even if it's passed in the params
-      if (!wireframeData.id) {
-        wireframeData.id = uuidv4();
-      }
-      
-      // Ensure title is set even if it's passed in the params
-      if (!wireframeData.title) {
-        wireframeData.title = params.pageType || 'New Wireframe';
-      }
-      
-      // Generate sections based on description
-      if (params.description && (!wireframeData.sections || wireframeData.sections.length === 0)) {
-        wireframeData.sections = this.generateSectionsFromDescription(params.description);
+      if (!data?.success || !data.wireframe) {
+        throw new Error("Wireframe generation failed: No data returned from the service");
       }
       
       const endTime = performance.now();
       const generationTime = (endTime - startTime) / 1000; // Convert to seconds
       
+      // Transform the wireframe to ensure it has all required fields
+      const transformedWireframe = this.transformWireframeToFabricCompatible(data.wireframe);
+      
       return {
-        wireframe: wireframeData,
+        wireframe: transformedWireframe,
         generationTime,
-        model: "local-generator",
-        success: true
+        model: data.model,
+        usage: data.usage,
+        success: true,
+        intentData: data.intentData,
+        blueprint: data.blueprint
       };
     } catch (error) {
       console.error("Error generating wireframe:", error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Generate wireframe sections based on a text description
-   */
-  private generateSectionsFromDescription(description: string): WireframeSection[] {
-    const sections: WireframeSection[] = [];
-    
-    // Simple heuristic to identify common sections from description
-    const keywords = {
-      hero: ['hero', 'header', 'banner', 'intro', 'introduction'],
-      features: ['features', 'benefits', 'services', 'offerings'],
-      about: ['about', 'company', 'team', 'story'],
-      testimonials: ['testimonial', 'review', 'feedback'],
-      pricing: ['pricing', 'plan', 'subscription', 'package'],
-      contact: ['contact', 'reach', 'form', 'email'],
-      footer: ['footer', 'bottom']
-    };
-    
-    let offsetY = 0;
-    const width = 1200;
-    
-    // Check for hero section (almost always include this)
-    sections.push({
-      id: uuidv4(),
-      name: 'Hero Section',
-      sectionType: 'hero',
-      description: 'Main hero section with headline and call to action',
-      position: { x: 0, y: offsetY },
-      dimensions: { width, height: 400 }
-    });
-    offsetY += 420; // Add some spacing
-    
-    // Check for other sections based on keywords
-    Object.entries(keywords).forEach(([sectionType, words]) => {
-      // Skip hero as we've already added it
-      if (sectionType === 'hero') return;
       
-      // Check if any keyword is in the description
-      if (words.some(word => description.toLowerCase().includes(word))) {
-        const height = sectionType === 'footer' ? 200 : 300;
-        
-        sections.push({
+      // Instead of falling back to mock data, return an error state
+      // that the UI can handle appropriately
+      return {
+        wireframe: {
           id: uuidv4(),
-          name: `${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} Section`,
-          sectionType,
-          description: `${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} section content`,
-          position: { x: 0, y: offsetY },
-          dimensions: { width, height }
-        });
-        
-        offsetY += height + 20; // Add some spacing
-      }
-    });
-    
-    // Always include a footer if not already added
-    if (!sections.find(section => section.sectionType === 'footer')) {
-      sections.push({
-        id: uuidv4(),
-        name: 'Footer Section',
-        sectionType: 'footer',
-        description: 'Footer with links and copyright',
-        position: { x: 0, y: offsetY },
-        dimensions: { width, height: 200 }
-      });
+          title: "Error Generating Wireframe",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          sections: [],
+          error: true
+        },
+        error: error instanceof Error ? error.message : "Unknown error occurred",
+        success: false
+      };
     }
-    
-    return sections;
   }
   
   /**
@@ -192,6 +98,16 @@ export class WireframeGeneratorService {
     
     // Make a deep copy to avoid modifying the original
     const transformed = JSON.parse(JSON.stringify(wireframe));
+    
+    // Ensure the wireframe has a valid ID
+    if (!transformed.id) {
+      transformed.id = uuidv4();
+    }
+    
+    // Ensure the wireframe has a title
+    if (!transformed.title) {
+      transformed.title = "Generated Wireframe";
+    }
     
     // Ensure all sections have position and dimensions
     if (transformed.sections && Array.isArray(transformed.sections)) {
@@ -237,26 +153,66 @@ export class WireframeGeneratorService {
    */
   async generateVariations(
     baseWireframe: any, 
-    variationCount: number = 3
+    variationCount: number = 3,
+    variationPrompt?: string
   ): Promise<WireframeGenerationResult[]> {
-    // Create array to hold variations
     const variations: WireframeGenerationResult[] = [];
     
-    // Generate variations
+    // Generate variations using the edge function
     for (let i = 0; i < variationCount; i++) {
-      // Deep clone the base wireframe
-      const clone = JSON.parse(JSON.stringify(baseWireframe));
-      
-      // Modify clone to create a variation
-      const variation = {
-        ...clone,
-        id: clone.id || uuidv4(), // Ensure ID is always present
-        title: `${clone.title} - Variation ${i + 1}`
-      };
-      
+      try {
+        // Call the edge function for generating variations
+        const { data, error } = await supabase.functions.invoke<{
+          success: boolean;
+          wireframe: any;
+          intentData?: any;
+          blueprint?: any;
+        }>('generate-advanced-wireframe', {
+          body: {
+            userInput: variationPrompt || `Create variation ${i+1} of the existing wireframe`,
+            baseWireframe: baseWireframe,
+            isVariation: true,
+            variationIndex: i + 1
+          }
+        });
+        
+        if (error) {
+          console.error(`Error generating variation ${i+1}:`, error);
+          continue;
+        }
+        
+        if (data?.success && data.wireframe) {
+          // Transform the wireframe variation
+          const transformedVariation = this.transformWireframeToFabricCompatible(data.wireframe);
+          
+          // Ensure a unique ID and appropriate title
+          transformedVariation.id = uuidv4();
+          transformedVariation.title = `${baseWireframe.title} - Variation ${i+1}`;
+          
+          variations.push({
+            wireframe: transformedVariation,
+            success: true,
+            intentData: data.intentData,
+            blueprint: data.blueprint
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to generate variation ${i+1}:`, err);
+      }
+    }
+    
+    // If no variations were successfully generated, return an error result
+    if (variations.length === 0) {
       variations.push({
-        wireframe: variation,
-        success: true
+        wireframe: {
+          id: uuidv4(),
+          title: "Variation Generation Failed",
+          description: "Could not generate variations of the wireframe",
+          sections: [],
+          error: true
+        },
+        success: false,
+        error: "Failed to generate variations"
       });
     }
     
