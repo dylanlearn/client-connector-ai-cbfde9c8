@@ -16,6 +16,16 @@ interface WireframeResultProps {
 const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback }) => {
   const [activeTab, setActiveTab] = React.useState('overview');
 
+  // Helper function to check if animationSuggestions is an object (not an array)
+  const isAnimationSuggestionsObject = (suggestions: any): suggestions is {
+    type?: string;
+    element?: string;
+    timing?: string;
+    effect?: string[];
+  } => {
+    return suggestions && !Array.isArray(suggestions);
+  };
+
   const renderComponent = (component: any, index: number) => (
     <div key={index} className="mb-2 border rounded-md p-2 bg-gray-50">
       <div className="text-sm font-medium">{component.type}</div>
@@ -95,7 +105,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
                 {/* Check if animationSuggestions is an object and not an array */}
-                {section.animationSuggestions && !Array.isArray(section.animationSuggestions) && (
+                {section.animationSuggestions && isAnimationSuggestionsObject(section.animationSuggestions) && (
                   <div className="grid grid-cols-2 gap-2">
                     {section.animationSuggestions.type && (
                       <div>
@@ -112,7 +122,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                   </div>
                 )}
                 {/* Check if animationSuggestions is an object and has timing property */}
-                {section.animationSuggestions && !Array.isArray(section.animationSuggestions) && section.animationSuggestions.timing && (
+                {section.animationSuggestions && isAnimationSuggestionsObject(section.animationSuggestions) && section.animationSuggestions.timing && (
                   <div className="mt-2">
                     <div className="text-xs text-gray-500">Timing:</div>
                     <div className="text-sm">{String(section.animationSuggestions.timing)}</div>
@@ -120,7 +130,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 )}
                 {/* Check if animationSuggestions is an object and has effect property as array */}
                 {section.animationSuggestions && 
-                  !Array.isArray(section.animationSuggestions) && 
+                  isAnimationSuggestionsObject(section.animationSuggestions) && 
                   section.animationSuggestions.effect && 
                   Array.isArray(section.animationSuggestions.effect) && (
                   <div className="mt-2">
