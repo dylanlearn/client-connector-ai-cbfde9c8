@@ -8,6 +8,7 @@ import {
   Controls,
   Background,
   useReactFlow,
+  BackgroundVariant,
 } from '@xyflow/react';
 import 'reactflow/dist/style.css';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +61,7 @@ const WireframeFlow: React.FC<WireframeFlowProps> = ({ wireframes, onSelect }) =
               className="bg-muted rounded-md"
             >
               <Controls />
-              <Background variant="lines" gap={12} size={1} />
+              <Background variant="dots" gap={12} size={1} />
             </ReactFlow>
           </CardContent>
         </Card>
