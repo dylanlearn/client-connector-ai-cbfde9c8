@@ -23,7 +23,7 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light", // Changed default to light
   storageKey = "ui-theme",
   attribute = "data-theme",
   enableSystem = true,

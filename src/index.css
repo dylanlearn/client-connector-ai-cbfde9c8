@@ -94,3 +94,13 @@
     linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
+
+/* Dezignsync logo gradient */
+.dezignsync-logo {
+  @apply bg-gradient-to-r from-[#ee682b] via-[#8439e9] to-[#6142e7] bg-clip-text text-transparent;
+}
+
+/* Dropdown styles */
+.dropdown-menu {
+  @apply bg-black text-white shadow-lg rounded-md;
+}
