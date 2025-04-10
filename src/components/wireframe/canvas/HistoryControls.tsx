@@ -42,9 +42,7 @@ const HistoryControls: React.FC<HistoryControlsProps> = ({
             <p>Undo (Ctrl+Z)</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
 
-      <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

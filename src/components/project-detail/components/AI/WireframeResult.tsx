@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -93,27 +94,35 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 Animation Suggestions
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
-                <div className="grid grid-cols-2 gap-2">
-                  {section.animationSuggestions.type && (
-                    <div>
-                      <div className="text-xs text-gray-500">Type:</div>
-                      <div className="text-sm">{String(section.animationSuggestions.type)}</div>
-                    </div>
-                  )}
-                  {section.animationSuggestions.element && (
-                    <div>
-                      <div className="text-xs text-gray-500">Element:</div>
-                      <div className="text-sm">{String(section.animationSuggestions.element)}</div>
-                    </div>
-                  )}
-                </div>
-                {section.animationSuggestions.timing && (
+                {/* Check if animationSuggestions is an object and not an array */}
+                {section.animationSuggestions && !Array.isArray(section.animationSuggestions) && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {section.animationSuggestions.type && (
+                      <div>
+                        <div className="text-xs text-gray-500">Type:</div>
+                        <div className="text-sm">{String(section.animationSuggestions.type)}</div>
+                      </div>
+                    )}
+                    {section.animationSuggestions.element && (
+                      <div>
+                        <div className="text-xs text-gray-500">Element:</div>
+                        <div className="text-sm">{String(section.animationSuggestions.element)}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Check if animationSuggestions is an object and has timing property */}
+                {section.animationSuggestions && !Array.isArray(section.animationSuggestions) && section.animationSuggestions.timing && (
                   <div className="mt-2">
                     <div className="text-xs text-gray-500">Timing:</div>
                     <div className="text-sm">{String(section.animationSuggestions.timing)}</div>
                   </div>
                 )}
-                {section.animationSuggestions.effect && Array.isArray(section.animationSuggestions.effect) && (
+                {/* Check if animationSuggestions is an object and has effect property as array */}
+                {section.animationSuggestions && 
+                  !Array.isArray(section.animationSuggestions) && 
+                  section.animationSuggestions.effect && 
+                  Array.isArray(section.animationSuggestions.effect) && (
                   <div className="mt-2">
                     <div className="text-xs text-gray-500">Effects:</div>
                     <div className="text-sm flex flex-wrap gap-1">
@@ -121,6 +130,17 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                         <Badge key={i} variant="outline" className="text-xs">{effect}</Badge>
                       ))}
                     </div>
+                  </div>
+                )}
+                {/* Handle if animationSuggestions is an array */}
+                {Array.isArray(section.animationSuggestions) && section.animationSuggestions.length > 0 && (
+                  <div>
+                    <div className="text-xs text-gray-500">Animation Suggestions:</div>
+                    <ul className="text-sm list-disc pl-4 mt-1">
+                      {section.animationSuggestions.map((suggestion, i) => (
+                        <li key={i}>{typeof suggestion === 'string' ? suggestion : JSON.stringify(suggestion)}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>

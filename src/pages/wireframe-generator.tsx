@@ -51,7 +51,9 @@ const WireframeGenerator = () => {
           </TabsContent>
           
           <TabsContent value="test">
-            <WireframeTest />
+            <TooltipProvider>
+              <WireframeTest />
+            </TooltipProvider>
           </TabsContent>
         </Tabs>
       </div>

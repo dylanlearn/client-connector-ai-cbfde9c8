@@ -9,6 +9,7 @@ import { useWireframeStore, WireframeState } from '@/stores/wireframe-store';
 import { Button } from '@/components/ui/button';
 import { Download, Copy, Edit3, Code2 } from 'lucide-react';
 import { exportToHTML } from '@/utils/wireframe/export-utils';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface EnhancedWireframeStudioProps {
   projectId: string;
@@ -141,57 +142,58 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   } : null;
   
   return (
-    <div className="enhanced-wireframe-studio">
-      <div className="flex items-center justify-between mb-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-              <TabsTrigger value="code">Code</TabsTrigger>
-              <TabsTrigger value="data">Data</TabsTrigger>
-            </TabsList>
-            
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={handleExportHTML}>
-                <Download className="h-4 w-4 mr-1" />
-                Export HTML
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                <Copy className="h-4 w-4 mr-1" />
-                Copy JSON
-              </Button>
-              {standalone && (
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Edit3 className="h-4 w-4" />
-                  Edit
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          <TabsContent value="preview" className="mt-0">
-            <AIWireframeRenderer 
-              wireframe={safeWireframe} 
-              onSectionClick={handleSectionClick}
-              className="w-full"
-            />
-          </TabsContent>
-          
-          <TabsContent value="code" className="mt-0">
-            <Card className="overflow-hidden">
-              <div className="p-4 bg-muted flex items-center justify-between">
-                <div className="flex items-center">
-                  <Code2 className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Generated Code</span>
-                </div>
-                <Button variant="ghost" size="sm" onClick={handleExportHTML}>
+    <TooltipProvider>
+      <div className="enhanced-wireframe-studio">
+        <div className="flex items-center justify-between mb-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex items-center justify-between">
+              <TabsList>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+                <TabsTrigger value="code">Code</TabsTrigger>
+                <TabsTrigger value="data">Data</TabsTrigger>
+              </TabsList>
+              
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={handleExportHTML}>
                   <Download className="h-4 w-4 mr-1" />
-                  Download
+                  Export HTML
                 </Button>
+                <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy JSON
+                </Button>
+                {standalone && (
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <Edit3 className="h-4 w-4" />
+                    Edit
+                  </Button>
+                )}
               </div>
-              <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-                {safeWireframe ? (
-                  <pre>{`<!DOCTYPE html>
+            </div>
+            
+            <TabsContent value="preview" className="mt-0">
+              <AIWireframeRenderer 
+                wireframe={safeWireframe} 
+                onSectionClick={handleSectionClick}
+                className="w-full"
+              />
+            </TabsContent>
+            
+            <TabsContent value="code" className="mt-0">
+              <Card className="overflow-hidden">
+                <div className="p-4 bg-muted flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Code2 className="h-4 w-4 mr-2" />
+                    <span className="font-medium">Generated Code</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handleExportHTML}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Download
+                  </Button>
+                </div>
+                <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
+                  {safeWireframe ? (
+                    <pre>{`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -214,37 +216,38 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   </div>
 </body>
 </html>`}</pre>
-                ) : (
-                  <p>No wireframe data available</p>
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="data" className="mt-0">
-            <Card className="overflow-hidden">
-              <div className="p-4 bg-muted flex items-center justify-between">
-                <div className="flex items-center">
-                  <Code2 className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Wireframe Data</span>
+                  ) : (
+                    <p>No wireframe data available</p>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleCopyJSON}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy JSON
-                </Button>
-              </div>
-              <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-                {safeWireframe ? (
-                  <pre>{JSON.stringify(safeWireframe, null, 2)}</pre>
-                ) : (
-                  <p>No wireframe data available</p>
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="data" className="mt-0">
+              <Card className="overflow-hidden">
+                <div className="p-4 bg-muted flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Code2 className="h-4 w-4 mr-2" />
+                    <span className="font-medium">Wireframe Data</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={handleCopyJSON}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy JSON
+                  </Button>
+                </div>
+                <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
+                  {safeWireframe ? (
+                    <pre>{JSON.stringify(safeWireframe, null, 2)}</pre>
+                  ) : (
+                    <p>No wireframe data available</p>
+                  )}
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 

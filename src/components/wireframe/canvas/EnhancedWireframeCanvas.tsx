@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Download, Undo, Redo, ZoomIn, ZoomOut, Grid3X3, PinOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { renderWireframeToCanvas } from '../utils/wireframe-renderer';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 interface EnhancedWireframeCanvasProps {
   projectId: string;
@@ -162,82 +163,84 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
   };
   
   return (
-    <div className={cn("enhanced-wireframe-canvas", className)}>
-      {!readOnly && (
-        <div className="canvas-controls flex flex-wrap gap-2 mb-4">
-          <div className="flex gap-1">
-            <Button size="sm" variant="outline" onClick={zoomIn} title="Zoom In">
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="outline" onClick={zoomOut} title="Zoom Out">
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Button 
-              size="sm" 
-              variant={canvasConfig.showGrid ? "secondary" : "outline"} 
-              onClick={toggleGrid} 
-              title="Toggle Grid"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button 
-              size="sm" 
-              variant={canvasConfig.snapToGrid ? "secondary" : "outline"} 
-              onClick={toggleSnapToGrid} 
-              title="Toggle Snap to Grid"
-            >
-              <PinOff className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="flex gap-1 ml-auto">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => fabricCanvas?.undo?.()}
-              disabled={!fabricCanvas?.canUndo}
-              title="Undo"
-            >
-              <Undo className="h-4 w-4" />
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => fabricCanvas?.redo?.()}
-              disabled={!fabricCanvas?.canRedo}
-              title="Redo"
-            >
-              <Redo className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="flex gap-1">
-            <Button size="sm" variant="outline" onClick={exportAsImage} title="Export as Image">
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button 
-              size="sm" 
-              variant="default" 
-              onClick={handleSave} 
-              disabled={isSaving}
-              className="gap-2"
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      <div className="canvas-container relative border rounded-md bg-background">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <TooltipProvider>
+      <div className={cn("enhanced-wireframe-canvas", className)}>
+        {!readOnly && (
+          <div className="canvas-controls flex flex-wrap gap-2 mb-4">
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" onClick={zoomIn} title="Zoom In">
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={zoomOut} title="Zoom Out">
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant={canvasConfig.showGrid ? "secondary" : "outline"} 
+                onClick={toggleGrid} 
+                title="Toggle Grid"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant={canvasConfig.snapToGrid ? "secondary" : "outline"} 
+                onClick={toggleSnapToGrid} 
+                title="Toggle Snap to Grid"
+              >
+                <PinOff className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="flex gap-1 ml-auto">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => fabricCanvas?.undo?.()}
+                disabled={!fabricCanvas?.canUndo}
+                title="Undo"
+              >
+                <Undo className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => fabricCanvas?.redo?.()}
+                disabled={!fabricCanvas?.canRedo}
+                title="Redo"
+              >
+                <Redo className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" onClick={exportAsImage} title="Export as Image">
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="default" 
+                onClick={handleSave} 
+                disabled={isSaving}
+                className="gap-2"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </Button>
+            </div>
           </div>
         )}
-        <canvas ref={canvasRef} className="w-full h-auto min-h-[600px]" />
+        
+        <div className="canvas-container relative border rounded-md bg-background">
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+          <canvas ref={canvasRef} className="w-full h-auto min-h-[600px]" />
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 

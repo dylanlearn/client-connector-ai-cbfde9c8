@@ -13,6 +13,7 @@ import { Loader2, Wand2, Sparkles, LayoutGrid, PencilRuler, Palette } from 'luci
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Industry options for wireframe generation
 const INDUSTRY_OPTIONS = [
@@ -113,143 +114,145 @@ const WireframeStudioPage: React.FC = () => {
   
   return (
     <DashboardLayout>
-      <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Wireframe Studio</h1>
-              <p className="text-muted-foreground mt-1">
-                {project ? `Project: ${project.name}` : 'Create and customize wireframes'}
-              </p>
+      <TooltipProvider>
+        <div className="container mx-auto p-6">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Wireframe Studio</h1>
+                <p className="text-muted-foreground mt-1">
+                  {project ? `Project: ${project.name}` : 'Create and customize wireframes'}
+                </p>
+              </div>
+              
+              {/* AI Generation Button */}
+              <Button 
+                variant={isExpanded ? "secondary" : "default"}
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                {isExpanded ? "Cancel" : "Generate with AI"}
+              </Button>
             </div>
             
-            {/* AI Generation Button */}
-            <Button 
-              variant={isExpanded ? "secondary" : "default"}
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="gap-2"
-            >
-              <Wand2 className="h-4 w-4" />
-              {isExpanded ? "Cancel" : "Generate with AI"}
-            </Button>
+            {/* AI Prompt Panel */}
+            {isExpanded && (
+              <Card className="mt-4 mb-6">
+                <CardHeader className="pb-3">
+                  <CardTitle>Generate Wireframe with AI</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="basic">Basic</TabsTrigger>
+                      <TabsTrigger value="advanced">Advanced Options</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Textarea
+                        placeholder="Describe the wireframe you want to create, e.g., 'A modern landing page for a fitness app with a hero section, features grid, testimonials, and pricing plans.'"
+                        value={promptValue}
+                        onChange={(e) => setPromptValue(e.target.value)}
+                        rows={4}
+                        className="resize-none"
+                      />
+                    </div>
+                    
+                    {activeTab === 'advanced' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Industry</label>
+                          <Select value={industry} onValueChange={setIndustry}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select industry" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {INDUSTRY_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Style</label>
+                          <Select value={style} onValueChange={setStyle}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select style" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STYLE_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2 col-span-1 md:col-span-2">
+                          <div className="flex justify-between">
+                            <label className="text-sm font-medium">Creativity Level</label>
+                            <span className="text-sm text-muted-foreground">{creativityLevel}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={creativityLevel}
+                            onChange={(e) => handleCreativityChange(e.target.value)}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Practical</span>
+                            <span>Creative</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2 border-t px-6 py-4">
+                  <Button variant="outline" onClick={() => setIsExpanded(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleGenerateWireframe}
+                    disabled={isGenerating || !promptValue.trim()}
+                    className="gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Generate Wireframe
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
           </div>
           
-          {/* AI Prompt Panel */}
-          {isExpanded && (
-            <Card className="mt-4 mb-6">
-              <CardHeader className="pb-3">
-                <CardTitle>Generate Wireframe with AI</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="basic">Basic</TabsTrigger>
-                    <TabsTrigger value="advanced">Advanced Options</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Textarea
-                      placeholder="Describe the wireframe you want to create, e.g., 'A modern landing page for a fitness app with a hero section, features grid, testimonials, and pricing plans.'"
-                      value={promptValue}
-                      onChange={(e) => setPromptValue(e.target.value)}
-                      rows={4}
-                      className="resize-none"
-                    />
-                  </div>
-                  
-                  {activeTab === 'advanced' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Industry</label>
-                        <Select value={industry} onValueChange={setIndustry}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select industry" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {INDUSTRY_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Style</label>
-                        <Select value={style} onValueChange={setStyle}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select style" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STYLE_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2 col-span-1 md:col-span-2">
-                        <div className="flex justify-between">
-                          <label className="text-sm font-medium">Creativity Level</label>
-                          <span className="text-sm text-muted-foreground">{creativityLevel}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          step="1"
-                          value={creativityLevel}
-                          onChange={(e) => handleCreativityChange(e.target.value)}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Practical</span>
-                          <span>Creative</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end gap-2 border-t px-6 py-4">
-                <Button variant="outline" onClick={() => setIsExpanded(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleGenerateWireframe}
-                  disabled={isGenerating || !promptValue.trim()}
-                  className="gap-2"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Generate Wireframe
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
+          <div className="bg-card rounded-lg shadow">
+            <EnhancedWireframeStudio 
+              projectId={effectiveProjectId} 
+              standalone={true}
+              initialData={currentWireframe?.wireframe}
+            />
+          </div>
         </div>
-        
-        <div className="bg-card rounded-lg shadow">
-          <EnhancedWireframeStudio 
-            projectId={effectiveProjectId} 
-            standalone={true}
-            initialData={currentWireframe?.wireframe}
-          />
-        </div>
-      </div>
+      </TooltipProvider>
     </DashboardLayout>
   );
 };

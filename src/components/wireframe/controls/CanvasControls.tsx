@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Grid, ZoomIn, ZoomOut, RotateCcw, Magnet } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 export interface ExtendedCanvasControlsProps {
@@ -57,37 +57,39 @@ const CanvasControls: React.FC<ExtendedCanvasControlsProps> = ({
       </div>
       
       <div className="flex items-center rounded-md border">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Toggle
-              pressed={showGrid}
-              onPressedChange={onToggleGrid}
-              aria-label="Toggle grid"
-              className="rounded-r-none border-r"
-            >
-              <Grid className="h-4 w-4" />
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent>
-            Show grid
-          </TooltipContent>
-        </Tooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={showGrid}
+                onPressedChange={onToggleGrid}
+                aria-label="Toggle grid"
+                className="rounded-r-none border-r"
+              >
+                <Grid className="h-4 w-4" />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+              Show grid
+            </TooltipContent>
+          </Tooltip>
         
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Toggle
-              pressed={snapToGrid}
-              onPressedChange={onToggleSnapToGrid}
-              aria-label="Toggle snap to grid"
-              className="rounded-l-none"
-            >
-              <Magnet className="h-4 w-4" />
-            </Toggle>
-          </TooltipTrigger>
-          <TooltipContent>
-            Snap to grid
-          </TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={snapToGrid}
+                onPressedChange={onToggleSnapToGrid}
+                aria-label="Toggle snap to grid"
+                className="rounded-l-none"
+              >
+                <Magnet className="h-4 w-4" />
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+              Snap to grid
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
