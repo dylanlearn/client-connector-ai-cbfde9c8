@@ -8,20 +8,29 @@ import { Card, CardContent } from '@/components/ui/card';
 interface EnhancedWireframeStudioProps {
   projectId: string;
   standalone?: boolean;
+  initialData?: any;
 }
 
 const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({ 
   projectId,
-  standalone = false
+  standalone = false,
+  initialData = null
 }) => {
   const { toast } = useToast();
-  const [canvasData, setCanvasData] = useState<any>(null);
+  const [canvasData, setCanvasData] = useState<any>(initialData);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Load saved canvas data if available
+  // Update canvas data when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setCanvasData(initialData);
+    }
+  }, [initialData]);
+  
+  // Load saved canvas data if available and no initialData provided
   useEffect(() => {
     const loadSavedData = async () => {
-      if (!projectId) return;
+      if (!projectId || initialData) return;
       
       setIsLoading(true);
       
@@ -45,7 +54,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     };
     
     loadSavedData();
-  }, [projectId, toast]);
+  }, [projectId, toast, initialData]);
   
   // Save canvas data
   const handleSaveCanvas = (data: any) => {

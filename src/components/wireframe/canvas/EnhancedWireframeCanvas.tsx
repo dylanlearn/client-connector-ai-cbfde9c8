@@ -60,9 +60,15 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       // Load initial data if available
       if (canvas && initialData) {
         try {
-          canvas.loadFromJSON(initialData, () => {
-            canvas.renderAll();
-          });
+          // If initialData is a wireframe structure (not a canvas JSON)
+          if (initialData.sections && Array.isArray(initialData.sections)) {
+            renderWireframeToCanvas(canvas, initialData);
+          } else {
+            // If initialData is a canvas JSON
+            canvas.loadFromJSON(initialData, () => {
+              canvas.renderAll();
+            });
+          }
         } catch (error) {
           console.error('Error loading canvas data:', error);
           toast({
@@ -74,6 +80,86 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       }
     }
   }, [canvasRef, isInitialized, initializeCanvas, initialData, toast]);
+  
+  // Update canvas when initialData changes
+  useEffect(() => {
+    if (canvas && initialData && initialData.sections) {
+      renderWireframeToCanvas(canvas, initialData);
+    }
+  }, [canvas, initialData]);
+  
+  // Function to render wireframe data to canvas
+  const renderWireframeToCanvas = (canvas: fabric.Canvas, wireframeData: any) => {
+    // Clear canvas
+    canvas.clear();
+    
+    // Skip if no sections
+    if (!wireframeData.sections || !Array.isArray(wireframeData.sections)) {
+      return;
+    }
+    
+    // Render each section
+    wireframeData.sections.forEach((section: any) => {
+      if (!section) return;
+      
+      const { position, dimensions, name, sectionType } = section;
+      const left = position?.x || 0;
+      const top = position?.y || 0;
+      const width = dimensions?.width || 200;
+      const height = dimensions?.height || 100;
+      
+      // Create a rectangle for the section
+      const rect = new fabric.Rect({
+        left,
+        top,
+        width,
+        height,
+        fill: '#f0f0f0',
+        stroke: '#333333',
+        strokeWidth: 1,
+        cornerSize: 10,
+        transparentCorners: false,
+        data: { 
+          id: section.id, 
+          type: 'section',
+          sectionType 
+        }
+      });
+      
+      // Create a text label for the section name
+      const text = new fabric.Text(name || `${sectionType || 'Section'}`, {
+        left: left + 10,
+        top: top + 10,
+        fontSize: 16,
+        fontFamily: 'Arial',
+        fill: '#333333'
+      });
+      
+      // Create a group for the section
+      const sectionGroup = new fabric.Group([rect, text], {
+        data: { 
+          id: section.id, 
+          type: 'section',
+          sectionType 
+        }
+      });
+      
+      // Add the section to canvas
+      canvas.add(sectionGroup);
+      
+      // If section has components, render them
+      if (section.components && Array.isArray(section.components)) {
+        section.components.forEach((component: any) => {
+          if (!component) return;
+          
+          // Render component based on type
+          // This is where you'd add logic for different component types
+        });
+      }
+    });
+    
+    canvas.renderAll();
+  };
   
   // Update container dimensions on resize
   useEffect(() => {
