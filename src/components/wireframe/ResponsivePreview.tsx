@@ -1,94 +1,80 @@
 
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import React, { useCallback } from 'react';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useWireframeStore } from '@/stores/wireframe-store';
-import { DeviceType, DEVICE_DIMENSIONS } from './preview/DeviceInfo';
-import PreviewHeader from './preview/PreviewHeader';
-import PreviewDisplay from './preview/PreviewDisplay';
+import WireframePreviewSystem from './preview/WireframePreviewSystem';
+import { useAuth } from '@/hooks/use-auth';
+import { WireframeAnalyticsService } from '@/services/analytics/wireframe-analytics-service';
 
 interface ResponsivePreviewProps {
   className?: string;
   onSectionClick?: (sectionId: string) => void;
+  projectId?: string;
+  onExport?: (format: string) => void;
 }
 
 const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({ 
   className,
-  onSectionClick
+  onSectionClick,
+  projectId,
+  onExport
 }) => {
-  const [activeDevice, setActiveDevice] = useState<DeviceType>('desktop');
-  const [isRotated, setIsRotated] = useState(false);
-  const { darkMode, wireframe } = useWireframeStore();
+  const { wireframe } = useWireframeStore();
+  const { user } = useAuth();
   
-  // Handle device rotation
-  const handleRotate = useCallback(() => {
-    setIsRotated(!isRotated);
-    
-    // Switch between portrait and landscape modes
-    if (activeDevice === 'mobile' && !isRotated) {
-      setActiveDevice('mobileLandscape');
-    } else if (activeDevice === 'mobileLandscape' && isRotated) {
-      setActiveDevice('mobile');
-    } else if (activeDevice === 'tablet' && !isRotated) {
-      setActiveDevice('tabletLandscape');
-    } else if (activeDevice === 'tabletLandscape' && isRotated) {
-      setActiveDevice('tablet');
+  // Handle export with analytics tracking
+  const handleExport = useCallback((format: string) => {
+    if (onExport) {
+      onExport(format);
     }
-  }, [activeDevice, isRotated]);
+    
+    // Track export event if user and wireframe are available
+    if (user && wireframe && wireframe.id) {
+      WireframeAnalyticsService.trackExport(
+        user.id,
+        wireframe.id,
+        format
+      );
+    }
+  }, [onExport, user, wireframe]);
   
-  // Handle device change
-  const handleDeviceChange = useCallback((device: DeviceType) => {
-    setActiveDevice(device);
-    setIsRotated(device === 'mobileLandscape' || device === 'tabletLandscape');
-  }, []);
-  
-  // Get current dimensions
-  const currentDimensions = DEVICE_DIMENSIONS[activeDevice];
-  
-  // Format device dimensions for display
-  const formatDimensions = useCallback(() => {
-    const { width, height } = currentDimensions;
-    return `${width} × ${height}`;
-  }, [currentDimensions]);
-
-  // Handle section click
-  const handleSectionClick = (sectionId: string) => {
+  // Handle section click with analytics tracking
+  const handleSectionClick = useCallback((sectionId: string) => {
     if (onSectionClick) {
       onSectionClick(sectionId);
     }
-  };
-  
-  // Determine device type for rendering
-  const getDeviceType = useCallback((): 'mobile' | 'tablet' | 'desktop' => {
-    if (activeDevice.includes('mobile')) return 'mobile';
-    if (activeDevice.includes('tablet')) return 'tablet';
-    return 'desktop';
-  }, [activeDevice]);
+    
+    // Track section view if user and wireframe are available
+    if (user && wireframe && wireframe.id) {
+      const section = wireframe.sections.find(s => s.id === sectionId);
+      if (section) {
+        WireframeAnalyticsService.trackSectionView(
+          user.id,
+          wireframe.id,
+          sectionId,
+          section.sectionType || 'unknown'
+        );
+      }
+    }
+  }, [onSectionClick, user, wireframe]);
   
   return (
     <Card className={cn("shadow-md overflow-hidden", className)}>
-      <CardHeader className="p-0">
-        <PreviewHeader
-          activeDevice={activeDevice}
-          isRotated={isRotated}
-          onDeviceChange={handleDeviceChange}
-          onRotate={handleRotate}
-          formatDimensions={formatDimensions}
-        />
-      </CardHeader>
-      
-      <CardContent className={cn(
-        "flex justify-center p-4 bg-gray-50 dark:bg-gray-900/30 overflow-auto transition-all",
-        darkMode ? "dark" : "",
-      )}>
-        <PreviewDisplay
-          currentDimensions={currentDimensions}
-          darkMode={darkMode}
+      {wireframe && (
+        <WireframePreviewSystem
           wireframe={wireframe}
-          deviceType={getDeviceType()}
           onSectionClick={handleSectionClick}
+          onExport={handleExport}
+          projectId={projectId}
         />
-      </CardContent>
+      )}
+      
+      {!wireframe && (
+        <div className="p-8 text-center">
+          <p className="text-muted-foreground">No wireframe data available</p>
+        </div>
+      )}
     </Card>
   );
 };
