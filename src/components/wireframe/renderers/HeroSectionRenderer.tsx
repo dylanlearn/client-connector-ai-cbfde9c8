@@ -1,67 +1,136 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion } from '@/utils/copy-suggestions-helper';
+import { Button } from '@/components/ui/button';
+import { Image } from 'lucide-react';
 
-const HeroSectionRenderer: React.FC<SectionComponentProps> = ({ 
-  section, 
-  darkMode = false, 
+export const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
+  section,
+  viewMode = 'preview',
+  darkMode = false,
   deviceType = 'desktop',
   isSelected = false,
-  onClick 
+  onClick
 }) => {
-  const style = section.style || {};
-  const copySuggestions = section.copySuggestions || {};
+  // Extract image component if it exists
+  const imageComponent = section.components?.find(c => c.type === 'image' || c.type === 'hero-image');
+  const headingComponent = section.components?.find(c => c.type === 'heading' || c.type === 'hero-heading');
+  const subheadingComponent = section.components?.find(c => c.type === 'subheading' || c.type === 'hero-subheading');
+  const ctaComponent = section.components?.find(c => c.type === 'button' || c.type === 'cta');
   
-  const heroClasses = `hero-section w-full p-8 ${isSelected ? 'ring-2 ring-primary' : ''}`;
-  
-  const renderHeroContent = () => (
-    <div className="container mx-auto">
-      <div className="max-w-3xl mx-auto text-center space-y-6">
-        <h1 className="text-4xl font-bold md:text-5xl lg:text-6xl">
-          {getSuggestion(copySuggestions, 'heading') || 'Hero Heading Goes Here'}
-        </h1>
-        
-        <p className="text-xl opacity-80">
-          {getSuggestion(copySuggestions, 'subheading') || 'This is a wireframe hero section. Add your compelling subheading here.'}
-        </p>
-        
-        {getSuggestion(copySuggestions, 'ctaText') && (
-          <div className="flex justify-center gap-4 mt-8">
-            <button 
-              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700"
-            >
-              {getSuggestion(copySuggestions, 'ctaText')}
-            </button>
-            
-            {getSuggestion(copySuggestions, 'secondaryCta') && (
-              <button 
-                className="px-6 py-3 bg-transparent border border-current font-medium rounded-md"
-              >
-                {getSuggestion(copySuggestions, 'secondaryCta')}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-  
-  const heroStyle: React.CSSProperties = {
-    backgroundColor: style.backgroundColor || (darkMode ? '#111827' : '#ffffff'),
-    color: style.color || (darkMode ? '#ffffff' : '#111827'),
-    ...style
+  // Handle click event
+  const handleClick = () => {
+    if (onClick) onClick();
   };
   
+  const getHeadingText = () => {
+    if (headingComponent?.content) {
+      return typeof headingComponent.content === 'string' 
+        ? headingComponent.content 
+        : 'Powerful Heading That Converts';
+    }
+    
+    return section.copySuggestions?.heading || 'Powerful Heading That Converts';
+  };
+  
+  const getSubheadingText = () => {
+    if (subheadingComponent?.content) {
+      return typeof subheadingComponent.content === 'string' 
+        ? subheadingComponent.content 
+        : 'A brief description of your product or service that clearly communicates your value proposition.';
+    }
+    
+    return section.copySuggestions?.subheading || 
+      'A brief description of your product or service that clearly communicates your value proposition.';
+  };
+  
+  const getCtaText = () => {
+    if (ctaComponent?.content) {
+      return typeof ctaComponent.content === 'string' ? ctaComponent.content : 'Get Started';
+    }
+    
+    return section.copySuggestions?.cta || 'Get Started';
+  };
+  
+  const getBackgroundStyle = () => {
+    // Start with section.style or an empty object
+    const style = section.style || {};
+    
+    if (section.backgroundColor) {
+      return { ...style, backgroundColor: section.backgroundColor };
+    }
+    
+    return style;
+  };
+  
+  const imageUrl = imageComponent?.url || 
+    imageComponent?.src || 
+    'https://via.placeholder.com/800x500?text=Hero+Image';
+  
   return (
-    <div 
-      className={heroClasses}
-      style={heroStyle}
-      onClick={onClick}
+    <div
+      className={cn(
+        'hero-section w-full',
+        deviceType === 'mobile' ? 'py-10' : 'py-16',
+        isSelected ? 'ring-2 ring-primary ring-inset' : '',
+        darkMode ? 'bg-gray-900 text-white' : 'bg-background text-foreground'
+      )}
+      style={getBackgroundStyle()}
+      onClick={handleClick}
       data-section-id={section.id}
-      data-testid="hero-section"
     >
-      {renderHeroContent()}
+      <div className="container px-4 mx-auto">
+        <div className={cn(
+          'flex flex-col items-center text-center',
+          deviceType === 'desktop' ? 'gap-8' : 'gap-6'
+        )}>
+          <h1 className={cn(
+            'font-bold tracking-tight',
+            deviceType === 'desktop' ? 'text-5xl md:text-6xl' : 'text-4xl',
+            darkMode ? 'text-white' : 'text-foreground'
+          )}>
+            {getHeadingText()}
+          </h1>
+          
+          <p className={cn(
+            'text-xl max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-muted-foreground'
+          )}>
+            {getSubheadingText()}
+          </p>
+          
+          <div className="flex flex-wrap gap-4 justify-center mt-2">
+            <Button size={deviceType === 'mobile' ? 'sm' : 'lg'} className="px-8">
+              {getCtaText()}
+            </Button>
+            
+            <Button 
+              size={deviceType === 'mobile' ? 'sm' : 'lg'} 
+              variant="outline"
+              className="px-8"
+            >
+              Learn More
+            </Button>
+          </div>
+          
+          {viewMode === 'preview' && (
+            <div className="mt-8 w-full max-w-4xl mx-auto overflow-hidden rounded-xl shadow-lg">
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt="Hero visual" 
+                  className="w-full h-auto object-cover"
+                />
+              ) : (
+                <div className="aspect-video bg-muted flex items-center justify-center">
+                  <Image className="w-16 h-16 text-muted-foreground/50" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

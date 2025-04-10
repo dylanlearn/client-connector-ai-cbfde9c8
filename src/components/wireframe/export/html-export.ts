@@ -2,126 +2,287 @@
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Generates HTML from wireframe data for export
+ * Generates a standalone HTML file from wireframe data
  */
 export function generateHtmlFromWireframe(wireframe: WireframeData): string {
-  const title = wireframe.title || 'Wireframe Export';
-  const description = wireframe.description || '';
   const colorScheme = wireframe.colorScheme || {
-    background: '#ffffff',
-    text: '#333333',
-    primary: '#0070f3',
-    secondary: '#f5f5f5',
-    accent: '#ffa500'
+    primary: '#3B82F6',
+    secondary: '#10B981',
+    accent: '#F59E0B',
+    background: '#FFFFFF',
+    text: '#111827'
   };
   
-  return `<!DOCTYPE html>
+  const typography = wireframe.typography || {
+    headings: 'Inter, system-ui, sans-serif',
+    body: 'Inter, system-ui, sans-serif'
+  };
+  
+  // Generate CSS variables from the color scheme and typography
+  const cssVariables = `
+    :root {
+      --color-primary: ${colorScheme.primary};
+      --color-secondary: ${colorScheme.secondary};
+      --color-accent: ${colorScheme.accent};
+      --color-background: ${colorScheme.background};
+      --color-text: ${colorScheme.text};
+      --font-headings: ${typography.headings};
+      --font-body: ${typography.body};
+    }
+  `;
+  
+  // Generate HTML sections from the wireframe sections
+  const sectionHtml = wireframe.sections.map(section => {
+    // Generate component HTML for each section
+    const componentsHtml = section.components?.map(component => {
+      // Handle different component types
+      switch (component.type) {
+        case 'heading':
+          return `<h2 class="component heading">${component.content || 'Heading'}</h2>`;
+        case 'subheading':
+          return `<h3 class="component subheading">${component.content || 'Subheading'}</h3>`;
+        case 'text':
+          return `<p class="component text">${component.content || 'Text content'}</p>`;
+        case 'button':
+          return `<button class="component button">${component.content || 'Button'}</button>`;
+        case 'image':
+          return `<div class="component image"><div class="placeholder-image">${component.content || 'Image'}</div></div>`;
+        case 'form':
+          return `<div class="component form">
+            <form>
+              <div class="form-field">
+                <label>Name</label>
+                <input type="text" placeholder="Name">
+              </div>
+              <div class="form-field">
+                <label>Email</label>
+                <input type="email" placeholder="Email">
+              </div>
+              <div class="form-field">
+                <label>Message</label>
+                <textarea placeholder="Message"></textarea>
+              </div>
+              <button type="button">Submit</button>
+            </form>
+          </div>`;
+        case 'navigation':
+          // Handle navigation items if provided
+          const navItems = Array.isArray(component.content) 
+            ? component.content.map(item => `<li class="nav-item">${item}</li>`).join('')
+            : '<li class="nav-item">Home</li><li class="nav-item">About</li><li class="nav-item">Contact</li>';
+          return `<nav class="component navigation"><ul class="nav-list">${navItems}</ul></nav>`;
+        default:
+          // Generic component
+          return `<div class="component ${component.type || 'generic'}">${
+            typeof component.content === 'string' ? component.content : 'Component'
+          }</div>`;
+      }
+    }).join('') || '';
+    
+    // Generate the section HTML with components
+    return `
+      <section class="wireframe-section ${section.sectionType || 'generic'}" data-section-id="${section.id}">
+        <div class="section-header">
+          <h2 class="section-name">${section.name || 'Section'}</h2>
+          <span class="section-type">${section.sectionType || 'generic'}</span>
+        </div>
+        <div class="section-content">
+          ${componentsHtml}
+        </div>
+      </section>
+    `;
+  }).join('');
+  
+  // Create the full HTML document
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${wireframe.title || 'Wireframe Export'}</title>
   <style>
-    :root {
-      --background: ${colorScheme.background};
-      --text: ${colorScheme.text || '#333333'};
-      --primary: ${colorScheme.primary};
-      --secondary: ${colorScheme.secondary || '#f5f5f5'};
-      --accent: ${colorScheme.accent || '#ffa500'};
-    }
+    ${cssVariables}
+    
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: var(--background);
-      color: var(--text);
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background-color: var(--color-background);
       margin: 0;
       padding: 0;
-      line-height: 1.5;
+      line-height: 1.6;
     }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-headings);
+    }
+    
     .wireframe-container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 2rem;
     }
+    
     .wireframe-header {
       margin-bottom: 2rem;
-      border-bottom: 1px solid #eaeaea;
       padding-bottom: 1rem;
+      border-bottom: 1px solid #e5e5e5;
     }
-    .wireframe-title {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-      color: var(--primary);
-    }
-    .wireframe-description {
-      font-size: 1.2rem;
-      color: #666;
-    }
+    
     .wireframe-section {
       margin-bottom: 2rem;
       padding: 1.5rem;
-      background: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #e5e5e5;
+      border-radius: 5px;
+      background-color: white;
     }
+    
     .section-header {
-      font-size: 1.8rem;
-      color: var(--primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #f0f0f0;
     }
-    .section-description {
-      margin-bottom: 1.5rem;
-      font-size: 1.1rem;
+    
+    .section-name {
+      font-size: 1.5rem;
+      margin: 0;
+      color: var(--color-primary);
     }
-    .component-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    
+    .section-type {
+      font-size: 0.8rem;
+      background-color: #f0f0f0;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+    }
+    
+    .section-content {
+      display: flex;
+      flex-direction: column;
       gap: 1rem;
     }
-    .component-item {
-      background: white;
+    
+    .component {
       padding: 1rem;
-      border-radius: 4px;
-      border: 1px solid #eaeaea;
+      border: 1px dashed #e0e0e0;
+      border-radius: 3px;
     }
-    .meta-info {
-      font-size: 0.8rem;
-      color: #999;
-      margin-top: 4rem;
+    
+    .heading {
+      font-size: 2rem;
+      margin: 0;
+      color: var(--color-text);
+    }
+    
+    .subheading {
+      font-size: 1.5rem;
+      margin: 0;
+      color: var(--color-text);
+      opacity: 0.9;
+    }
+    
+    .text {
+      margin: 0;
+    }
+    
+    .button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
       text-align: center;
+    }
+    
+    .placeholder-image {
+      width: 100%;
+      height: 200px;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      border-radius: 4px;
+    }
+    
+    .form {
+      width: 100%;
+    }
+    
+    .form-field {
+      margin-bottom: 1rem;
+    }
+    
+    .form-field label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    .form-field input,
+    .form-field textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+    }
+    
+    .form-field textarea {
+      min-height: 100px;
+    }
+    
+    .navigation {
+      padding: 1rem 0;
+    }
+    
+    .nav-list {
+      display: flex;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      gap: 1.5rem;
+    }
+    
+    .nav-item {
+      cursor: pointer;
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+    
+    @media (max-width: 768px) {
+      .wireframe-container {
+        padding: 1rem;
+      }
+      
+      .nav-list {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="wireframe-container">
     <header class="wireframe-header">
-      <h1 class="wireframe-title">${title}</h1>
-      <p class="wireframe-description">${description}</p>
+      <h1>${wireframe.title || 'Wireframe Export'}</h1>
+      ${wireframe.description ? `<p>${wireframe.description}</p>` : ''}
     </header>
-    
-    <main>
-      ${wireframe.sections?.map(section => `
-        <section class="wireframe-section">
-          <h2 class="section-header">${section.name || 'Unnamed Section'}</h2>
-          ${section.description ? `<p class="section-description">${section.description}</p>` : ''}
-          
-          ${section.components && section.components.length > 0 ? `
-          <div class="component-list">
-            ${section.components.map((component, index) => `
-              <div class="component-item">
-                <h3>${component.type || 'Component ' + (index + 1)}</h3>
-                ${component.content ? `<p>${JSON.stringify(component.content)}</p>` : ''}
-              </div>
-            `).join('')}
-          </div>
-          ` : '<p>No components in this section</p>'}
-        </section>
-      `).join('') || '<p>No sections available</p>'}
+    <main class="wireframe-content">
+      ${sectionHtml}
     </main>
-    
-    <footer class="meta-info">
-      <p>Exported from Wireframe Studio on ${new Date().toLocaleDateString()}</p>
+    <footer>
+      <p>Exported from Wireframe Studio</p>
     </footer>
   </div>
 </body>
 </html>`;
+
+  return html;
 }

@@ -1,96 +1,105 @@
 
 import { callOpenAI } from "./openai-client.ts";
 
-// Define the intent interface
+/**
+ * Interface for design intent extracted from user input
+ */
 export interface DesignIntent {
   purpose: string;
   target: string;
   visualTone: string;
-  content: string[];
   layout?: string;
+  content?: string[];
   specialRequirements?: string[];
   colorPreferences?: string[];
   typographyPreferences?: string[];
   accessibilityRequirements?: string[];
+  conversionGoals?: string[];
+  devicePriorities?: string[];
   [key: string]: any;
 }
 
 /**
- * Extract intent data from user input
+ * Extract design intent from user input
  */
 export async function extractIntent(userInput: string, styleToken?: string): Promise<DesignIntent> {
-  if (!userInput || typeof userInput !== 'string') {
-    throw new Error('Valid user input is required for intent extraction');
-  }
-
-  console.log("Extracting intent from user input:", userInput.substring(0, 100) + (userInput.length > 100 ? "..." : ""));
-
-  // Construct a prompt for the intent extraction
+  console.log("Extracting design intent from user input");
+  
   const prompt = `
-Extract the core intent and design parameters from this wireframe description:
+Analyze this wireframe request to extract the design intent:
 
 "${userInput}"
 
-Analyze this input and extract:
-1. purpose (what kind of website/application is needed)
-2. target (target audience or users)
-3. visualTone (design style preference, use "${styleToken || 'modern'}" if not explicitly specified)
-4. content (key content sections/elements that need to be included)
-5. layout (overall layout structure if mentioned)
-6. specialRequirements (any unique or specific requirements mentioned)
-7. colorPreferences (any color preferences or brand colors mentioned)
-8. typographyPreferences (any font or typography preferences)
-9. accessibilityRequirements (any accessibility considerations)
+Extract the following information:
+- Primary purpose of the website/app (e.g., ecommerce, portfolio, blog)
+- Target audience
+- Visual tone/style (unless a style token is provided)
+- Layout preferences (if mentioned)
+- Content needs
+- Special features or requirements
+- Color preferences (if mentioned)
+- Typography preferences (if mentioned)
+- Accessibility requirements (if mentioned)
+- Conversion goals (what actions should users take)
+- Device priorities (e.g., mobile-first, desktop-focused)
 
-Return a JSON object with these extracted intent elements. If information for a field is not provided, make a reasonable assumption based on the purpose and target audience. For 'content', always return an array of strings.
+Return a structured JSON object with these fields, using null for any information not provided.
+${styleToken ? `Note: The style token "${styleToken}" has been selected, so use this for the visual tone.` : ''}
 `;
 
   try {
-    console.log("Calling OpenAI for intent extraction");
     const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert product designer who extracts user intent for digital products. Return ONLY valid JSON.',
-      temperature: 0.3, // Lower temperature for more deterministic results
+      systemMessage: 'You are an expert UX researcher who specializes in understanding user requirements and extracting design intent.',
+      temperature: 0.3, // Lower temperature for more focused analysis
       model: "gpt-4o-mini"
     });
     
-    // Try to parse the JSON response
+    // Extract the JSON object from the response
     const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
                       response.match(/\{[\s\S]*\}/);
                       
     if (!jsonMatch || !jsonMatch[0]) {
-      console.error("Failed to extract JSON from OpenAI response:", response);
-      throw new Error("Failed to extract intent from AI response");
+      throw new Error("Failed to extract intent data from AI response");
     }
 
     let intentData: DesignIntent;
     try {
       intentData = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
     } catch (parseError) {
-      console.error("Error parsing intent JSON:", parseError, "Raw JSON:", jsonMatch[0]);
+      console.error("Error parsing intent data JSON:", parseError);
       throw new Error("Failed to parse intent data");
     }
     
-    // Ensure we have the minimal required intent data
-    if (!intentData || !intentData.purpose) {
-      console.error("Invalid intent data structure:", intentData);
-      throw new Error("Invalid intent data structure: missing critical fields");
+    // If style token is provided, override the visual tone
+    if (styleToken) {
+      intentData.visualTone = styleToken;
     }
     
-    // Set default values for missing fields
-    intentData.visualTone = intentData.visualTone || styleToken || 'modern';
-    intentData.content = intentData.content || [];
-    intentData.specialRequirements = intentData.specialRequirements || [];
+    // Ensure required fields are present
+    return {
+      purpose: intentData.purpose || "general website",
+      target: intentData.target || "general audience",
+      visualTone: intentData.visualTone || styleToken || "modern",
+      layout: intentData.layout || undefined,
+      content: intentData.content || [],
+      specialRequirements: intentData.specialRequirements || [],
+      colorPreferences: intentData.colorPreferences || [],
+      typographyPreferences: intentData.typographyPreferences || [],
+      accessibilityRequirements: intentData.accessibilityRequirements || [],
+      conversionGoals: intentData.conversionGoals || [],
+      devicePriorities: intentData.devicePriorities || ["desktop", "mobile", "tablet"]
+    };
     
-    console.log("Successfully extracted intent:", {
-      purpose: intentData.purpose,
-      target: intentData.target,
-      visualTone: intentData.visualTone,
-      contentCount: intentData.content?.length || 0
-    });
-    
-    return intentData;
   } catch (error) {
     console.error("Error extracting intent:", error);
-    throw new Error(`Failed to extract intent: ${error.message}`);
+    // Provide fallback intent if extraction fails
+    return {
+      purpose: "general website",
+      target: "general audience",
+      visualTone: styleToken || "modern",
+      content: ["header", "hero", "features", "about", "contact", "footer"],
+      specialRequirements: [],
+      devicePriorities: ["desktop", "mobile", "tablet"]
+    };
   }
 }

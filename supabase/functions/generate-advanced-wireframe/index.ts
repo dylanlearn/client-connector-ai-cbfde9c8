@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./cors.ts";
-import { callOpenAI } from "./openai-client.ts";
+import { callOpenAI, getTokenUsage } from "./openai-client.ts";
 import { extractIntent } from "./intent-extractor.ts";
 import { generateBlueprint, enhanceBlueprint } from "./blueprint-generator.ts";
 import { selectComponentVariants } from "./component-selector.ts";
@@ -80,18 +80,17 @@ async function generateWireframe(
     const generationTime = (endTime - startTime) / 1000; // in seconds
     console.log(`Wireframe generation completed in ${generationTime.toFixed(2)} seconds`);
     
-    // Return the final wireframe
+    // Get token usage data
+    const tokenUsage = getTokenUsage();
+    
+    // Return the final wireframe with real token usage data
     return {
       success: true,
       wireframe: blueprint,
       model: "gpt-4o",
       intentData,
       blueprint,
-      usage: {
-        total_tokens: 0, // We don't have exact token counts from the API
-        prompt_tokens: 0,
-        completion_tokens: 0
-      },
+      usage: tokenUsage,
       generationTime
     };
     
@@ -160,9 +159,13 @@ Return an array of suggestions in JSON format.
       throw new Error("Failed to parse suggestion data");
     }
     
+    // Get token usage data
+    const tokenUsage = getTokenUsage();
+    
     return {
       success: true,
-      suggestions: Array.isArray(suggestions) ? suggestions : []
+      suggestions: Array.isArray(suggestions) ? suggestions : [],
+      usage: tokenUsage
     };
     
   } catch (error) {

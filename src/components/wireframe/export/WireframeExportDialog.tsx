@@ -1,198 +1,139 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { exportWireframe, ExportError } from '@/utils/wireframe/export-utils';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { toast } from 'sonner';
-import { FileIcon, ImageIcon, FileTextIcon, FileJsonIcon, FileCodeIcon, Loader2, AlertCircle } from 'lucide-react';
-import { useGlobalErrorHandler } from '@/hooks/use-global-error-handler';
+import { ExportFormat, exportWireframe } from '@/utils/wireframe/export-utils';
+import { Loader2 } from 'lucide-react';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-interface WireframeExportDialogProps {
+export interface WireframeExportDialogProps {
   wireframe: WireframeData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  canvasElement?: HTMLCanvasElement;
-  svgElement?: SVGElement;
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   wireframe,
   open,
-  onOpenChange,
-  canvasElement,
-  svgElement
+  onOpenChange
 }) => {
-  const [exportFormat, setExportFormat] = useState<'html' | 'json' | 'pdf' | 'png' | 'svg'>('html');
+  const [format, setFormat] = useState<ExportFormat>('html');
   const [fileName, setFileName] = useState('');
   const [includeDesignSystem, setIncludeDesignSystem] = useState(true);
   const [includeComponents, setIncludeComponents] = useState(true);
-
-  const { 
-    isLoading: isExporting, 
-    error: exportError, 
-    wrapPromise,
-    clearError 
-  } = useGlobalErrorHandler({
-    component: 'WireframeExportDialog',
-    defaultErrorMessage: 'Failed to export wireframe'
-  });
-  
-  // Reset error when dialog opens/closes or format changes
-  React.useEffect(() => {
-    clearError();
-  }, [open, exportFormat, clearError]);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
-    if (!wireframe) {
-      toast('No wireframe data available for export');
-      return;
-    }
-
+    if (!wireframe) return;
+    
     try {
-      // Generate a default file name if not provided
-      const finalFileName = fileName || `${wireframe.title || 'wireframe'}-export`;
+      setIsExporting(true);
       
-      // Clone wireframe to avoid modifying the original
-      const exportData = JSON.parse(JSON.stringify(wireframe)) as WireframeData;
-      
-      // Optionally remove components if not needed
-      if (!includeComponents && exportData.sections) {
-        exportData.sections = exportData.sections.map(section => ({
-          ...section,
-          components: [] // Remove components
-        }));
-      }
-      
-      // Optionally remove design system if not needed
-      if (!includeDesignSystem) {
-        delete exportData.colorScheme;
-        delete exportData.typography;
-        delete exportData.designTokens;
-        delete exportData.styleToken;
-      }
-      
-      await wrapPromise(
-        exportWireframe(exportData, exportFormat, {
-          canvasElement,
-          svgElement,
-          fileName: finalFileName
-        }),
-        `Exporting wireframe as ${exportFormat.toUpperCase()}`
-      );
+      await exportWireframe(wireframe, format, {
+        fileName: fileName || undefined,
+        includeDesignSystem,
+        includeComponents
+      });
       
       // Close dialog after successful export
       onOpenChange(false);
     } catch (error) {
-      // Error already handled by wrapPromise
-      console.error('Export error details:', error);
+      // Error is already handled in exportWireframe function
+      console.error('Export error:', error);
+      toast({
+        title: 'Export Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  const formatIcon = {
-    html: <FileCodeIcon className="h-4 w-4" />,
-    json: <FileJsonIcon className="h-4 w-4" />,
-    pdf: <FileTextIcon className="h-4 w-4" />,
-    png: <ImageIcon className="h-4 w-4" />,
-    svg: <FileIcon className="h-4 w-4" />
+  const formatLabels: Record<ExportFormat, string> = {
+    html: 'HTML',
+    json: 'JSON',
+    pdf: 'PDF',
+    png: 'PNG',
+    svg: 'SVG'
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpenState) => {
-      if (!isExporting) {
-        onOpenChange(newOpenState);
-      }
-    }}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
           <DialogDescription>
             Choose your preferred export format and options.
           </DialogDescription>
         </DialogHeader>
-
+        
         <div className="grid gap-4 py-4">
-          <div>
-            <Label htmlFor="fileName" className="mb-2 block">
+          {/* File Name */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fileName" className="text-right">
               File Name (optional)
             </Label>
             <Input
               id="fileName"
-              placeholder="Enter file name (without extension)"
               value={fileName}
               onChange={(e) => setFileName(e.target.value)}
-              disabled={isExporting}
+              placeholder={wireframe?.title || "Wireframe"}
+              className="col-span-3"
             />
           </div>
-
-          <div>
-            <Label className="mb-2 block">Export Format</Label>
+          
+          {/* Format Selection */}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Format</Label>
             <RadioGroup
-              value={exportFormat}
-              onValueChange={(value) => setExportFormat(value as any)}
-              className="grid grid-cols-5 gap-2"
-              disabled={isExporting}
+              value={format}
+              onValueChange={(value) => setFormat(value as ExportFormat)}
+              className="col-span-3"
             >
-              {(['html', 'json', 'pdf', 'png', 'svg'] as const).map(format => (
-                <Label
-                  key={format}
-                  className={`flex flex-col items-center justify-center p-2 rounded-md border cursor-pointer ${
-                    isExporting ? 'opacity-50' : ''
-                  } ${
-                    exportFormat === format ? 'border-primary bg-primary/10' : 'border-border'
-                  }`}
-                  htmlFor={`format-${format}`}
-                >
-                  {formatIcon[format]}
-                  <RadioGroupItem
-                    value={format}
-                    id={`format-${format}`}
-                    className="sr-only"
-                    disabled={isExporting}
-                  />
-                  <span className="mt-1 text-xs uppercase">{format}</span>
-                </Label>
+              {Object.entries(formatLabels).map(([value, label]) => (
+                <div className="flex items-center space-x-2" key={value}>
+                  <RadioGroupItem value={value} id={value} />
+                  <Label htmlFor={value}>{label}</Label>
+                </div>
               ))}
             </RadioGroup>
           </div>
-
-          {exportError && (
-            <div className="p-3 rounded-md border border-destructive bg-destructive/10 text-destructive text-sm flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium">Export Error</p>
-                <p>{exportError.message}</p>
+          
+          {/* Options */}
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right">Options</Label>
+            <div className="col-span-3 space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="designSystem"
+                  checked={includeDesignSystem}
+                  onCheckedChange={(checked) => 
+                    setIncludeDesignSystem(checked === true)
+                  }
+                />
+                <Label htmlFor="designSystem">Include Design System</Label>
               </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="includeDesignSystem"
-                checked={includeDesignSystem}
-                onCheckedChange={(checked) => setIncludeDesignSystem(!!checked)}
-                disabled={isExporting}
-              />
-              <Label htmlFor="includeDesignSystem">Include Design System</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="includeComponents"
-                checked={includeComponents}
-                onCheckedChange={(checked) => setIncludeComponents(!!checked)}
-                disabled={isExporting}
-              />
-              <Label htmlFor="includeComponents">Include Components</Label>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="components"
+                  checked={includeComponents}
+                  onCheckedChange={(checked) => 
+                    setIncludeComponents(checked === true)
+                  }
+                />
+                <Label htmlFor="components">Include Components</Label>
+              </div>
             </div>
           </div>
         </div>
-
-        <DialogFooter>
+        
+        <div className="flex justify-between">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -210,10 +151,10 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
                 Exporting...
               </>
             ) : (
-              `Export as ${exportFormat.toUpperCase()}`
+              `Export as ${formatLabels[format]}`
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
