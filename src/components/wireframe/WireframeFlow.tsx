@@ -60,7 +60,7 @@ const WireframeFlow: React.FC<WireframeFlowProps> = ({ wireframes, onSelect }) =
               className="bg-muted rounded-md"
             >
               <Controls />
-              <Background variant="cross" gap={12} size={1} />
+              <Background variant="lines" gap={12} size={1} />
             </ReactFlow>
           </CardContent>
         </Card>
