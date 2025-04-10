@@ -14,15 +14,25 @@ export class EnhancedWireframeGenerator {
   static async generateWireframe(params: WireframeGenerationParams): Promise<EnhancedWireframeGenerationResult> {
     try {
       // For production, this would call the actual generation service
-      const result = await wireframeService.generateWireframe(params);
+      // Instead of calling wireframeService.generateWireframe which doesn't exist,
+      // we'll use the wireframeGenerator which has this functionality
       
-      // Add any enhanced properties
-      return {
-        ...result,
+      // Import the proper service that has generateWireframe
+      const { wireframeGenerator } = await import('./wireframe-generator-service');
+      
+      // Generate the basic wireframe
+      const wireframe = await wireframeGenerator.generateWireframe(params);
+      
+      // Create the result object with enhanced properties
+      const result: EnhancedWireframeGenerationResult = {
+        success: true,
+        wireframe: wireframe,
         intentData: {},  // In production, this would be populated with actual intent data
         blueprint: {},   // In production, this would be populated with actual blueprint data
         designTokens: {}, // In production, this would be populated with actual design tokens
-      } as EnhancedWireframeGenerationResult;
+      };
+      
+      return result;
     } catch (error) {
       console.error('Error in enhanced wireframe generation:', error);
       return {
