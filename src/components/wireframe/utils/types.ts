@@ -13,6 +13,7 @@ export interface WireframeCanvasConfig {
   snapTolerance: number;
   backgroundColor: string;
   showSmartGuides: boolean;
+  gridColor: string;
   showRulers?: boolean;
   rulerSize?: number;
   rulerColor?: string;

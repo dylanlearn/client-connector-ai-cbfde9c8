@@ -23,28 +23,13 @@ export interface WireframeCanvasConfig {
 }
 
 export interface SectionRenderingOptions {
+  responsive?: boolean;
   darkMode?: boolean;
   showGrid?: boolean;
   gridSize?: number;
-  showBorders?: boolean;
-  responsive?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
   interactive?: boolean;
-}
-
-export interface AlignmentGuide {
-  position: number;
-  orientation: 'horizontal' | 'vertical';
-  type: 'grid' | 'center' | 'edge' | 'spacing';
-  label?: string;
-  strength?: number;
-}
-
-export interface DropZoneIndicator {
-  id: string;
-  element: HTMLElement;
-  rect: DOMRect;
-  isHovering: boolean;
+  showBorders?: boolean;
 }
 
 export interface AlignmentGuide {
