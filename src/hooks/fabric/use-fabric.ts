@@ -21,7 +21,8 @@ const DEFAULT_CONFIG: WireframeCanvasConfig = {
   gridType: 'lines',
   snapTolerance: 5,
   backgroundColor: '#ffffff',
-  showSmartGuides: true
+  showSmartGuides: true,
+  gridColor: '#e0e0e0'
 };
 
 export function useFabric(options: UseFabricOptions = {}) {

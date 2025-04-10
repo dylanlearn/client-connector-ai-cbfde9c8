@@ -61,7 +61,8 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
     rulerColor: '#888888',
     rulerMarkings: true,
     historyEnabled: true,
-    maxHistorySteps: 50
+    maxHistorySteps: 50,
+    gridColor: '#e0e0e0'
   }), [width, height]);
   
   const [config, setConfig] = useState<WireframeCanvasConfig>({

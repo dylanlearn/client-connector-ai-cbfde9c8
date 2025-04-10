@@ -45,7 +45,12 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     backgroundColor: '#ffffff',
     showSmartGuides: true,
     showRulers: true,
-    rulerSize: 20
+    rulerSize: 20,
+    gridColor: '#e0e0e0',
+    rulerColor: '#bbbbbb',
+    rulerMarkings: true,
+    historyEnabled: true,
+    maxHistorySteps: 50
   });
 
   // Initialize canvas history

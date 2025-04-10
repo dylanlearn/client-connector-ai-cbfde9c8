@@ -1,3 +1,4 @@
+
 // Update the WireframeCanvasConfig interface by adding missing properties
 import { fabric } from 'fabric';
 

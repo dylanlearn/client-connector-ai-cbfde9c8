@@ -34,7 +34,8 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     gridType: 'lines',
     snapTolerance: 5,
     backgroundColor: '#ffffff',
-    showSmartGuides: true
+    showSmartGuides: true,
+    gridColor: '#e0e0e0'
   });
   
   const initializeCanvas = useCallback(() => {
