@@ -1,208 +1,231 @@
 
 import { callOpenAI } from "./openai-client.ts";
-import { DesignIntent } from "./intent-extractor.ts";
+import { extractIntent, DesignIntent } from "./intent-extractor.ts";
 import { v4 as uuid } from "https://deno.land/std@0.110.0/uuid/mod.ts";
 
-// Define the Blueprint interface
+/**
+ * BlueprintSection represents a section in the wireframe blueprint
+ */
+export interface BlueprintSection {
+  id: string;
+  name: string;
+  sectionType: string;
+  description?: string;
+  components?: any[];
+  layout?: any;
+  copysuggestions?: any;
+  [key: string]: any;
+}
+
+/**
+ * Blueprint represents the complete wireframe structure
+ */
 export interface Blueprint {
+  id: string;
   title: string;
   description: string;
   sections: BlueprintSection[];
+  colorScheme?: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text?: string;
+  };
+  typography?: {
+    headings: string;
+    body: string;
+    fontPairings?: string[];
+  };
   styleToken?: string;
-  colorScheme?: ColorScheme;
-  typography?: Typography;
-  designTokens?: Record<string, any>;
   mobileConsiderations?: string;
   accessibilityNotes?: string;
   [key: string]: any;
 }
 
-export interface BlueprintSection {
-  id: string;
-  name: string;
-  sectionType: string;
-  description: string;
-  layout?: LayoutConfig | string;
-  components?: any[];
-  copySuggestions?: Record<string, string>;
-  position?: { x: number; y: number };
-  dimensions?: { width: number; height: number };
-  style?: Record<string, any>;
-  variant?: string;
-}
-
-export interface LayoutConfig {
-  type: string;
-  direction?: string;
-  alignment?: string;
-  justifyContent?: string;
-  columns?: number;
-  gap?: number;
-  wrap?: boolean;
-}
-
-export interface ColorScheme {
-  primary: string;
-  secondary: string;
-  accent: string;
-  background: string;
-  text: string;
-}
-
-export interface Typography {
-  headings: string;
-  body: string;
-  fontPairings?: string[];
-}
-
 /**
- * Generate a layout blueprint based on extracted intent data
+ * Generate a complete wireframe blueprint based on user input and design intent
  */
-export async function generateLayoutBlueprint(intent: DesignIntent): Promise<Blueprint> {
-  if (!intent || typeof intent !== 'object') {
-    throw new Error('Valid intent data is required for blueprint generation');
-  }
-
-  const { purpose, target, visualTone, content } = intent;
-
-  if (!purpose || !target) {
-    throw new Error('Intent data is missing required fields');
-  }
-
-  console.log(`Generating blueprint for ${purpose} website targeting ${target}`);
-
-  // Construct a prompt for the layout blueprint generation
+export async function generateBlueprint(
+  userInput: string, 
+  intent: DesignIntent, 
+  styleToken?: string
+): Promise<Blueprint> {
+  console.log(`Generating blueprint from user input with style: ${styleToken || "default"}`);
+  
+  // Prepare a detailed prompt for the blueprint generation
   const prompt = `
-Generate a detailed wireframe layout blueprint for a ${purpose} website targeting ${target}.
-Visual tone: ${visualTone || 'modern and professional'}
+As an expert UI/UX designer, create a detailed website wireframe blueprint based on this description:
 
-Content to include:
-${Array.isArray(content) ? content.map(c => `- ${c}`).join('\n') : '- No specific content sections provided'}
+"${userInput}"
 
-Special requirements:
-${Array.isArray(intent.specialRequirements) ? intent.specialRequirements.map(r => `- ${r}`).join('\n') : '- None specified'}
+Design Intent Analysis:
+- Purpose: ${intent.purpose}
+- Target audience: ${intent.target}
+- Visual tone: ${intent.visualTone || styleToken || "modern"}
+- Content needs: ${intent.content?.join(", ") || "Standard website sections"}
+${intent.layout ? `- Layout preference: ${intent.layout}` : ""}
+${intent.specialRequirements?.length ? `- Special requirements: ${intent.specialRequirements.join(", ")}` : ""}
+${intent.colorPreferences?.length ? `- Color preferences: ${intent.colorPreferences.join(", ")}` : ""}
+${intent.typographyPreferences?.length ? `- Typography preferences: ${intent.typographyPreferences.join(", ")}` : ""}
+${intent.accessibilityRequirements?.length ? `- Accessibility requirements: ${intent.accessibilityRequirements.join(", ")}` : ""}
 
-The blueprint should include:
-1. A title for the wireframe
-2. An overall description
-3. A detailed sections array with at least the following sections:
-   - Navigation/header section
-   - Hero section
-   - Features or main content section
-   - Call to action section
-   - Footer section
-   - Any other sections that make sense for this specific website type
+Generate a comprehensive and professional wireframe blueprint as a JSON object with the following structure:
+{
+  "id": "generate-unique-id",
+  "title": "Website title based on description",
+  "description": "Brief summary of what this website is",
+  "sections": [
+    {
+      "id": "generate-unique-id",
+      "name": "Section Name (e.g. Hero, Features, etc)",
+      "sectionType": "hero/features/pricing/etc",
+      "description": "What this section does",
+      "layout": {
+        "type": "flex/grid",
+        "direction": "column/row",
+        "gap": "spacing value",
+        "padding": "padding value"
+      },
+      "backgroundColor": "#color-if-needed",
+      "components": []
+    }
+  ],
+  "colorScheme": {
+    "primary": "#hex",
+    "secondary": "#hex",
+    "accent": "#hex",
+    "background": "#hex",
+    "text": "#hex"
+  },
+  "typography": {
+    "headings": "font family for headings",
+    "body": "font family for body text"
+  },
+  "styleToken": "${styleToken || intent.visualTone || "modern"}",
+  "mobileConsiderations": "notes on mobile design",
+  "accessibilityNotes": "accessibility considerations"
+}
 
-For each section, provide:
-   - id (leave as "{{sectionId}}" and I'll generate it)
-   - name (descriptive name)
-   - sectionType (e.g., hero, features, testimonials, contact, etc.)
-   - description (what this section contains/does)
-   - layout (visual structure description as an object with type, direction, etc.)
-   - copySuggestions (sample text content for the section)
-   - style (any specific styling notes)
-   - variant (a specific variant if multiple options exist for this section type)
+Include all necessary sections based on the user's needs and best practices for the website's purpose.
+Each section should have a logical layout and proper organization.
+Ensure the design is coherent and follows modern web design principles.
+The color scheme should match the intended visual tone and purpose.
 
-Also include:
-- colorScheme: Appropriate color scheme object with primary, secondary, accent, background, and text colors (use hex codes)
-- typography: Font recommendations object with headings and body fonts
-- mobileConsiderations: Notes about how the design should adapt for mobile
-- accessibilityNotes: Important accessibility considerations
-
-Return ONLY a valid complete JSON object with these fields.
+Return ONLY the valid JSON object as your response.
 `;
 
   try {
-    console.log("Calling OpenAI for blueprint generation");
+    // Call OpenAI to generate the blueprint
+    console.log("Calling OpenAI to generate blueprint...");
     const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI architect who creates structured wireframe blueprints. Return ONLY valid JSON.',
-      temperature: 0.7,
+      systemMessage: 'You are an expert UI/UX designer with deep knowledge of wireframing, web design patterns, and user experience principles.',
+      temperature: 0.7, // Allow some creativity
       model: "gpt-4o"
     });
     
-    // Try to parse the JSON response
+    // Extract the JSON object from the response
     const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
                       response.match(/\{[\s\S]*\}/);
                       
     if (!jsonMatch || !jsonMatch[0]) {
-      console.error("Failed to extract JSON from OpenAI response:", response);
+      console.error("Failed to extract JSON from OpenAI response:", response.substring(0, 500) + "...");
       throw new Error("Failed to extract blueprint from AI response");
     }
 
     let blueprint: Blueprint;
     try {
-      blueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      const cleanedJson = jsonMatch[0].replace(/```json|```/g, '').trim();
+      blueprint = JSON.parse(cleanedJson);
     } catch (parseError) {
-      console.error("Error parsing blueprint JSON:", parseError, "Raw JSON:", jsonMatch[0]);
+      console.error("Error parsing blueprint JSON:", parseError);
       throw new Error("Failed to parse blueprint data");
     }
     
-    if (!blueprint || !blueprint.sections) {
-      console.error("Invalid blueprint data structure:", blueprint);
-      throw new Error("Invalid blueprint data structure");
+    // Validate the essential structure
+    if (!blueprint || !blueprint.sections || !Array.isArray(blueprint.sections)) {
+      throw new Error("Blueprint is missing required sections array");
     }
     
-    // Add any missing required fields
-    const enhancedBlueprint: Blueprint = {
-      title: blueprint.title || `${purpose.charAt(0).toUpperCase() + purpose.slice(1)} Website Wireframe`,
-      description: blueprint.description || `A wireframe blueprint for a ${purpose} website targeting ${target}`,
-      styleToken: visualTone || 'modern',
-      sections: blueprint.sections || [],
-      colorScheme: blueprint.colorScheme || {
-        primary: "#3B82F6", // Default blue
-        secondary: "#10B981", // Default green
-        accent: "#F59E0B", // Default amber
-        background: "#FFFFFF", // Default white
-        text: "#1F2937", // Default dark gray
-      },
-      typography: blueprint.typography || {
-        headings: "Inter",
-        body: "Roboto",
-      },
-      mobileConsiderations: blueprint.mobileConsiderations || "Ensure all sections stack properly on mobile and text remains readable.",
-      accessibilityNotes: blueprint.accessibilityNotes || "Ensure proper contrast ratios and keyboard navigation throughout the site."
-    };
-
-    // Generate UUIDs for all sections that don't have them
-    enhancedBlueprint.sections = enhancedBlueprint.sections.map(section => ({
+    // Ensure all sections have valid IDs
+    blueprint.sections = blueprint.sections.map(section => ({
       ...section,
-      id: section.id && section.id !== "{{sectionId}}" ? section.id : uuid(),
+      id: section.id || uuid()
     }));
-
-    // Add position and dimensions if missing
-    let currentY = 0;
-    const defaultWidth = 1200;
     
-    enhancedBlueprint.sections = enhancedBlueprint.sections.map((section) => {
-      if (!section.position) {
-        section.position = { x: 0, y: currentY };
-      }
-      
-      if (!section.dimensions) {
-        // Set reasonable default heights based on section type
-        let height = 400;
-        switch (section.sectionType.toLowerCase()) {
-          case 'hero': height = 600; break;
-          case 'navigation': case 'header': height = 80; break;
-          case 'footer': height = 200; break;
-          case 'features': case 'testimonials': height = 500; break;
-          case 'cta': height = 300; break;
-          default: height = 400;
-        }
-        
-        section.dimensions = { width: defaultWidth, height };
-      }
-      
-      // Update Y position for next section
-      currentY = section.position.y + section.dimensions.height + 20;
-      
-      return section;
+    // Ensure the blueprint has an ID
+    blueprint.id = blueprint.id || uuid();
+    
+    console.log(`Blueprint generated successfully with ${blueprint.sections.length} sections`);
+    return blueprint;
+  } catch (error) {
+    console.error("Error generating blueprint:", error);
+    throw new Error(`Failed to generate blueprint: ${error.message}`);
+  }
+}
+
+/**
+ * Add additional sections to an existing blueprint
+ */
+export async function enhanceBlueprint(
+  blueprint: Blueprint, 
+  additionalRequirements: string
+): Promise<Blueprint> {
+  if (!blueprint || !blueprint.sections) {
+    throw new Error('Valid blueprint with sections is required for enhancement');
+  }
+  
+  console.log("Enhancing existing blueprint with additional requirements");
+  
+  const prompt = `
+Enhance this existing wireframe blueprint with these additional requirements:
+
+EXISTING BLUEPRINT:
+${JSON.stringify(blueprint, null, 2)}
+
+ADDITIONAL REQUIREMENTS:
+${additionalRequirements}
+
+Modify the blueprint to incorporate these requirements while maintaining consistency with the existing design.
+You can:
+1. Add new sections
+2. Modify existing sections
+3. Adjust the color scheme or typography as needed
+4. Add any other elements needed to fulfill the requirements
+
+Return the complete enhanced blueprint as a JSON object.
+`;
+
+  try {
+    const response = await callOpenAI(prompt, {
+      systemMessage: 'You are an expert UI/UX designer specialized in enhancing wireframes with additional requirements.',
+      temperature: 0.5,
+      model: "gpt-4o-mini"
     });
     
-    console.log(`Blueprint generated successfully with ${enhancedBlueprint.sections.length} sections`);
+    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                      response.match(/\{[\s\S]*\}/);
+                      
+    if (!jsonMatch || !jsonMatch[0]) {
+      throw new Error("Failed to extract enhanced blueprint from AI response");
+    }
+
+    let enhancedBlueprint: Blueprint;
+    try {
+      enhancedBlueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+    } catch (parseError) {
+      throw new Error("Failed to parse enhanced blueprint data");
+    }
+    
+    // Validate the enhanced blueprint
+    if (!enhancedBlueprint || !enhancedBlueprint.sections || !Array.isArray(enhancedBlueprint.sections)) {
+      throw new Error("Enhanced blueprint is missing required sections array");
+    }
+    
+    console.log(`Blueprint enhanced successfully with ${enhancedBlueprint.sections.length} sections`);
     return enhancedBlueprint;
   } catch (error) {
-    console.error("Error generating layout blueprint:", error);
-    throw new Error(`Failed to generate layout blueprint: ${error.message}`);
+    console.error("Error enhancing blueprint:", error);
+    throw new Error(`Failed to enhance blueprint: ${error.message}`);
   }
 }

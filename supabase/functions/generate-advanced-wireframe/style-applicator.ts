@@ -1,6 +1,6 @@
 
 import { callOpenAI } from "./openai-client.ts";
-import { Blueprint, BlueprintSection } from "./blueprint-generator.ts";
+import { Blueprint } from "./blueprint-generator.ts";
 
 /**
  * Apply style modifiers to the wireframe
@@ -133,6 +133,7 @@ Return the complete wireframe with style enhancements applied.
     const response = await callOpenAI(prompt, {
       systemMessage: 'You are an expert UI stylist who applies beautiful and consistent visual styles to wireframes.',
       temperature: 0.4,
+      model: "gpt-4o-mini"
     });
     
     // Try to parse the JSON response
@@ -140,7 +141,7 @@ Return the complete wireframe with style enhancements applied.
                       response.match(/\{[\s\S]*\}/);
                       
     if (!jsonMatch || !jsonMatch[0]) {
-      console.error("Failed to extract JSON from OpenAI response:", response);
+      console.error("Failed to extract JSON from OpenAI response");
       console.log("Continuing with preset styles only");
       // If we can't parse the response, return wireframe with just the preset styles
       styledWireframe.styleToken = styleToken;
@@ -151,28 +152,25 @@ Return the complete wireframe with style enhancements applied.
     try {
       aiStyledWireframe = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
     } catch (parseError) {
-      console.error("Error parsing styled wireframe JSON:", parseError, "Raw JSON:", jsonMatch[0]);
-      console.log("Continuing with preset styles only");
+      console.error("Error parsing AI styled wireframe JSON:", parseError);
       // If parsing fails, return wireframe with just the preset styles
       styledWireframe.styleToken = styleToken;
       return styledWireframe;
     }
     
-    if (!aiStyledWireframe || !aiStyledWireframe.sections) {
-      console.error("Invalid styled wireframe data structure:", aiStyledWireframe);
-      console.log("Continuing with preset styles only");
-      // If the structure is invalid, return wireframe with just the preset styles
-      styledWireframe.styleToken = styleToken;
+    // Ensure the AI hasn't removed any sections or critical data
+    if (!aiStyledWireframe.sections || !Array.isArray(aiStyledWireframe.sections) || 
+        aiStyledWireframe.sections.length < styledWireframe.sections.length) {
+      console.warn("AI style modification lost sections, reverting to preset styling");
       return styledWireframe;
     }
     
-    // Ensure styleToken is carried forward
     aiStyledWireframe.styleToken = styleToken;
-    
+    console.log(`Successfully applied "${styleToken}" style to wireframe`);
     return aiStyledWireframe;
   } catch (error) {
     console.error("Error applying style modifiers:", error);
-    // If we encounter any error, return wireframe with just the preset styles
+    // Return the wireframe with just the preset styles if AI styling fails
     styledWireframe.styleToken = styleToken;
     return styledWireframe;
   }

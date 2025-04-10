@@ -1,58 +1,67 @@
 
 /**
- * Common Wireframe Types for the Edge Function
- */
-
-/**
- * Request parameters for wireframe generation
+ * Interface for wireframe generation request parameters
  */
 export interface WireframeGenerationRequest {
   userInput: string;
-  projectId?: string;
   styleToken?: string;
-  colorScheme?: string | Record<string, string>;
+  colorScheme?: any;
   enhancedCreativity?: boolean;
   creativityLevel?: number;
   industry?: string;
-  includeDesignMemory?: boolean;
   baseWireframe?: any;
   isVariation?: boolean;
-  variationIndex?: number;
-  [key: string]: any;
+  intakeData?: any;
 }
 
 /**
- * Response type for wireframe generation
+ * Interface for wireframe generation response
  */
 export interface WireframeGenerationResponse {
   success: boolean;
   wireframe?: any;
+  model?: string;
   intentData?: any;
   blueprint?: any;
-  model?: string;
-  usage?: any;
+  usage?: {
+    total_tokens: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+  };
+  error?: string;
+  errorType?: string;
+  errorDetails?: string;
+  generationTime?: number;
+}
+
+/**
+ * Interface for design suggestion input
+ */
+export interface SuggestionRequest {
+  wireframe: any;
+  sections?: any[];
+  targetSection?: string;
+}
+
+/**
+ * Interface for design suggestion
+ */
+export interface DesignSuggestion {
+  title: string;
+  description: string;
+  preview?: any;
+  justification?: string;
+  sectionId?: string;
+  changes?: any;
+}
+
+/**
+ * Interface for design suggestion response
+ */
+export interface SuggestionResponse {
+  success: boolean;
+  suggestions?: DesignSuggestion[];
   error?: string;
   errorType?: string;
   errorDetails?: string;
 }
-
-/**
- * CORS Headers for Edge Function
- */
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-/**
- * Required section types that should be present in a complete wireframe
- */
-export const REQUIRED_SECTION_TYPES = [
-  'navigation',
-  'hero', 
-  'features', 
-  'testimonials', 
-  'pricing', 
-  'cta', 
-  'footer'
-];

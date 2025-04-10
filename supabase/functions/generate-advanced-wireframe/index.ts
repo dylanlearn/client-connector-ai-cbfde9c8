@@ -2,16 +2,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./cors.ts";
 import { callOpenAI } from "./openai-client.ts";
+import { extractIntent } from "./intent-extractor.ts";
+import { generateBlueprint, enhanceBlueprint } from "./blueprint-generator.ts";
+import { selectComponentVariants } from "./component-selector.ts";
+import { applyStyleModifiers } from "./style-applicator.ts";
 import { WireframeGenerationRequest, WireframeGenerationResponse } from "./types.ts";
+import { v4 as uuid } from "https://deno.land/std@0.110.0/uuid/mod.ts";
 
 // Process the wireframe generation request
 async function generateWireframe(
   request: WireframeGenerationRequest
 ): Promise<WireframeGenerationResponse> {
   const startTime = performance.now();
+  console.log("Starting wireframe generation...");
   
   try {
-    console.log("Received generation request:", request.userInput);
+    console.log("Received generation request:", request.userInput?.substring(0, 100));
     
     // Extract the user's input
     const { 
@@ -29,112 +35,35 @@ async function generateWireframe(
       throw new Error("User input is required");
     }
     
-    // Generate wireframe blueprint
+    // Step 1: Extract design intent
+    console.log("Extracting design intent...");
+    const intentData = await extractIntent(userInput, styleToken);
+    console.log("Intent extraction complete", intentData);
+    
+    // Step 2: Generate wireframe blueprint
     console.log("Generating wireframe blueprint...");
+    let blueprint = await generateBlueprint(userInput, intentData, styleToken);
     
-    // Extract design intent
-    const intentPrompt = `
-      I need you to analyze the following website description and extract the user's intent, desired sections, and layout preferences.
-      
-      Description: ${userInput}
-      
-      Return a JSON object with the following structure:
-      {
-        "title": "Website title based on description",
-        "intentSummary": "Brief summary of the user's intent",
-        "targetAudience": "Who this website is for",
-        "desiredSections": ["array", "of", "section", "types"],
-        "tone": "Professional/Casual/Friendly/etc",
-        "requiredFeatures": ["array", "of", "key", "features"],
-        "industryCategory": "Category of business/organization"
-      }
-    `;
-    
-    // First extract the user's intent
-    const intentResponse = await callOpenAI(intentPrompt, {
-      model: "gpt-4o-mini",
-      systemMessage: "You are a helpful AI specializing in understanding website design requirements.",
-      temperature: 0.5, // Lower temperature for more deterministic results
-      maxTokens: 1000
-    });
-    
-    let intentData;
-    try {
-      intentData = JSON.parse(intentResponse);
-    } catch (err) {
-      console.error("Error parsing intent data:", err);
-      intentData = { 
-        title: "Unnamed Website", 
-        intentSummary: userInput.substring(0, 100),
-        desiredSections: ["hero", "features", "about", "contact"]
-      };
+    // Step 3: If we have a base wireframe and we're creating a variation, enhance the blueprint
+    if (baseWireframe && isVariation) {
+      console.log("Enhancing blueprint for variation based on existing wireframe");
+      blueprint = await enhanceBlueprint(
+        blueprint, 
+        `Create a variation that maintains the same purpose but with ${
+          enhancedCreativity ? "higher creativity" : "similar structure"
+        }. Focus on ${
+          creativityLevel > 7 ? "innovative and unique" : "practical and effective"
+        } design patterns.`
+      );
     }
     
-    // Generate the blueprint for the wireframe
-    const blueprintPrompt = `
-      Create a comprehensive wireframe blueprint for a website based on the following requirements:
-      
-      Description: ${userInput}
-      Intent Summary: ${intentData.intentSummary || "Not specified"}
-      Target Audience: ${intentData.targetAudience || "General"}
-      Tone: ${intentData.tone || "Professional"}
-      Industry: ${industry || intentData.industryCategory || "General"}
-      Style: ${styleToken || "Modern and clean"}
-      
-      ${enhancedCreativity ? `Use high creativity level (${creativityLevel}/10) to generate innovative design ideas.` : "Use a standard, conventional design approach."}
-      
-      Return a JSON object that represents the complete wireframe structure with the following format:
-      {
-        "id": "unique-wireframe-id",
-        "title": "Website Title",
-        "description": "Brief description of the wireframe",
-        "sections": [
-          {
-            "id": "section-id",
-            "name": "Section Name",
-            "sectionType": "hero/features/pricing/etc",
-            "description": "What this section does",
-            "layout": { "type": "flex/grid", "direction": "column/row", ... },
-            "components": [],
-            "copySuggestions": {
-              "heading": "Suggested heading text",
-              "subheading": "Suggested subheading text"
-            }
-          }
-        ],
-        "colorScheme": {
-          "primary": "#hex",
-          "secondary": "#hex",
-          "accent": "#hex",
-          "background": "#hex"
-        },
-        "typography": {
-          "headings": "font family for headings",
-          "body": "font family for body text"
-        },
-        "styleToken": "modern/classic/minimalist/etc",
-        "mobileConsiderations": "notes on mobile design",
-        "accessibilityNotes": "accessibility considerations"
-      }
-    `;
+    // Step 4: Select appropriate component variants
+    console.log("Selecting component variants...");
+    blueprint = await selectComponentVariants(blueprint);
     
-    // Call OpenAI to generate the wireframe blueprint
-    const blueprintResponse = await callOpenAI(blueprintPrompt, {
-      model: "gpt-4o",
-      systemMessage: "You are a professional UI/UX designer with expertise in creating wireframes that follow modern design principles and best practices.",
-      temperature: enhancedCreativity ? Math.min(0.4 + (creativityLevel / 10), 1.0) : 0.4,
-      maxTokens: 4000,
-    });
-    
-    // Parse the blueprint response
-    let blueprint;
-    try {
-      blueprint = JSON.parse(blueprintResponse);
-      console.log("Successfully generated blueprint");
-    } catch (err) {
-      console.error("Error parsing blueprint:", err, blueprintResponse);
-      throw new Error("Failed to generate wireframe blueprint");
-    }
+    // Step 5: Apply style modifiers
+    console.log("Applying style modifiers...");
+    blueprint = await applyStyleModifiers(blueprint, styleToken || intentData.visualTone);
     
     // Apply color scheme if provided
     if (colorScheme) {
@@ -143,9 +72,13 @@ async function generateWireframe(
         : colorScheme;
     }
     
+    // Add a unique ID if one doesn't exist
+    blueprint.id = blueprint.id || uuid();
+    
     // Calculate metrics
     const endTime = performance.now();
     const generationTime = (endTime - startTime) / 1000; // in seconds
+    console.log(`Wireframe generation completed in ${generationTime.toFixed(2)} seconds`);
     
     // Return the final wireframe
     return {
@@ -158,7 +91,8 @@ async function generateWireframe(
         total_tokens: 0, // We don't have exact token counts from the API
         prompt_tokens: 0,
         completion_tokens: 0
-      }
+      },
+      generationTime
     };
     
   } catch (error) {
@@ -167,6 +101,76 @@ async function generateWireframe(
       success: false,
       error: error.message,
       errorType: "GenerationError",
+      errorDetails: String(error)
+    };
+  }
+}
+
+// Process suggestion generation requests
+async function generateSuggestions(request: any): Promise<any> {
+  try {
+    const { wireframe, sections, targetSection } = request;
+    
+    if (!wireframe) {
+      throw new Error("Wireframe data is required for generating suggestions");
+    }
+    
+    const prompt = `
+Analyze this wireframe and provide design improvement suggestions:
+
+${JSON.stringify(wireframe, null, 2)}
+
+${targetSection ? `Focus on improving the section with ID: ${targetSection}` : 'Provide general improvements for the entire wireframe.'}
+
+Generate 3-5 specific, actionable suggestions that would improve the design in terms of:
+1. Visual hierarchy and user flow
+2. Content organization and readability
+3. Consistency and coherence
+4. User engagement
+5. Accessibility
+
+For each suggestion, provide:
+- A clear title
+- A detailed description of what to change
+- A preview of how the change would look (as a JSON snippet)
+- A justification for why this change improves the design
+
+Return an array of suggestions in JSON format.
+`;
+
+    const response = await callOpenAI(prompt, {
+      systemMessage: "You are an expert UI/UX designer who specializes in providing actionable wireframe improvement suggestions.",
+      temperature: 0.7,
+      model: "gpt-4o-mini"
+    });
+    
+    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                      response.match(/\[\s*\{[\s\S]*\}\s*\]/);
+                      
+    if (!jsonMatch || !jsonMatch[0]) {
+      console.error("Failed to extract JSON from OpenAI response for suggestions");
+      throw new Error("Failed to parse AI suggestions");
+    }
+
+    let suggestions;
+    try {
+      suggestions = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+    } catch (parseError) {
+      console.error("Error parsing suggestions JSON:", parseError);
+      throw new Error("Failed to parse suggestion data");
+    }
+    
+    return {
+      success: true,
+      suggestions: Array.isArray(suggestions) ? suggestions : []
+    };
+    
+  } catch (error) {
+    console.error("Error generating suggestions:", error);
+    return {
+      success: false,
+      error: error.message,
+      errorType: "SuggestionError",
       errorDetails: String(error)
     };
   }
@@ -184,7 +188,19 @@ serve(async (req) => {
     
     if (request.action === "generate-wireframe") {
       // Call the wireframe generation function
+      console.log("Processing generate-wireframe action");
       const result = await generateWireframe(request);
+      
+      // Return the result
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: result.success ? 200 : 400
+      });
+    }
+    else if (request.action === "generate-suggestions") {
+      // Call the suggestions generation function
+      console.log("Processing generate-suggestions action");
+      const result = await generateSuggestions(request);
       
       // Return the result
       return new Response(JSON.stringify(result), {
@@ -194,6 +210,7 @@ serve(async (req) => {
     }
     
     // Handle unknown action
+    console.error("Unknown action requested:", request.action);
     return new Response(
       JSON.stringify({
         success: false,
