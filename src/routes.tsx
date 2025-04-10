@@ -1,4 +1,3 @@
-
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -21,7 +20,6 @@ import Analytics from "./pages/Analytics";
 import Clients from "./pages/Clients";
 import { v4 as uuidv4 } from 'uuid';
 import WireframeStudioPage from "./pages/WireframeStudioPage";
-import Index from "./pages/Index";
 import Layout from "@/components/layout/Layout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import LoginPage from "@/pages/LoginPage";
@@ -37,6 +35,7 @@ import { TermsPage } from "@/pages/TermsPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
 import { Navigate } from "react-router-dom";
+import Index from "./pages/Index";
 
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
@@ -72,6 +71,10 @@ const getDemoProjectId = (): string => {
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <Index />,
+  },
+  {
+    path: "/landing",
     element: <Layout><LandingPage /></Layout>,
   },
   {
