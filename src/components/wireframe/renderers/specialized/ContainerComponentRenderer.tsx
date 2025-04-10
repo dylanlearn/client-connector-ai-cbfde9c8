@@ -54,9 +54,9 @@ const ContainerComponentRenderer: React.FC<BaseComponentRendererProps> = ({
       return {
         display: 'flex',
         flexDirection: typeof layout === 'object' 
-          ? layout.direction === 'horizontal' ? 'row' : 'column'
-          : flexDirection,
-        flexWrap: typeof layout === 'object' ? (layout.wrap ? 'wrap' : 'nowrap') : 'wrap',
+          ? layout.direction === 'horizontal' ? 'row' as const : 'column' as const
+          : flexDirection as React.CSSProperties['flexDirection'],
+        flexWrap: typeof layout === 'object' ? (layout.wrap ? 'wrap' as const : 'nowrap' as const) : 'wrap' as const,
         alignItems: typeof layout === 'object' ? layout.alignment || alignItems : alignItems,
         justifyContent: typeof layout === 'object' ? layout.justifyContent || justifyContent : justifyContent,
         gap: typeof layout === 'object' ? layout.gap || gap : gap,
@@ -74,7 +74,7 @@ const ContainerComponentRenderer: React.FC<BaseComponentRendererProps> = ({
     border,
     opacity: component.style?.opacity !== undefined ? component.style.opacity : 1,
     ...getLayoutStyles(),
-  };
+  } as React.CSSProperties;
 
   // Render children components if any
   const renderChildren = () => {

@@ -18,6 +18,7 @@ export interface WireframeSectionRendererProps {
   sectionIndex?: number;
   onSectionClick?: (sectionId: string) => void;
   isSelected?: boolean;
+  onClick?: () => void;
 }
 
 export interface SectionRenderingOptions {
@@ -68,4 +69,34 @@ export interface InteractiveComponentOptions {
   hasControls?: boolean;
   hasBorders?: boolean;
   [key: string]: any;
+}
+
+// Add the missing interfaces that are causing errors
+
+export interface WireframeProps {
+  wireframe: any;
+  viewMode?: 'preview' | 'code' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (wireframeId: string) => void;
+}
+
+export interface SectionComponentProps {
+  section: WireframeSection;
+  viewMode?: 'preview' | 'code' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  isSelected?: boolean;
+  onClick?: () => void;
+}
+
+export interface VariantComponentProps {
+  component?: any;
+  variant?: string;
+  data?: Record<string, any>;
+  viewMode?: 'preview' | 'code' | 'flowchart';
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
 }
