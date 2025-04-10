@@ -146,10 +146,17 @@ export function useAuth() {
   // Sign in with Google
   const signInWithGoogle = async () => {
     console.log('Signing in with Google');
+    
+    // Get the current URL origin (for redirect)
+    const origin = window.location.origin;
+    const redirectUrl = `${origin}/dashboard`;
+    
+    console.log('Redirect URL for Google login:', redirectUrl);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/dashboard'
+        redirectTo: redirectUrl
       }
     });
     

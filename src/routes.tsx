@@ -7,7 +7,6 @@ import { Settings } from "./pages/settings";
 import { ProjectDetailPage } from "./pages/project-detail/ProjectDetailPage";
 import NotFound from "./pages/NotFound";
 import DesignPicker from "./pages/DesignPicker";
-import Login from "./pages/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "./components/auth/AdminRoute";
 import AdminPanel from "./pages/AdminPanel";
@@ -23,7 +22,6 @@ import { v4 as uuidv4 } from 'uuid';
 import WireframeStudioPage from "./pages/WireframeStudioPage";
 import Layout from "@/components/layout/Layout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
-import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
@@ -32,6 +30,7 @@ import { PrivacyPage } from "@/pages/PrivacyPage";
 import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
 import { Navigate } from "react-router-dom";
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
@@ -71,7 +70,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <AuthLayout><LoginPage /></AuthLayout>,
+    element: <AuthLayout><Login /></AuthLayout>,
   },
   {
     path: "/register",

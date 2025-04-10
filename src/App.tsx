@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import router from './routes';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 function App() {
   return (
@@ -13,8 +14,10 @@ function App() {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <RouterProvider router={router} />
-      <Toaster />
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
