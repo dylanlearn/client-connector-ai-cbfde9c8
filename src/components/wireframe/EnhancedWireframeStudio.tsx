@@ -1,275 +1,290 @@
-import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import AIWireframeRenderer from './AIWireframeRenderer';
+import React, { useState, useEffect, useCallback } from 'react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { useWireframeStore, WireframeState } from '@/stores/wireframe-store';
-import { Button } from '@/components/ui/button';
-import { Download, Copy, Edit3, Code2 } from 'lucide-react';
-import { exportToHTML } from '@/utils/wireframe/export-utils';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { v4 as uuidv4 } from 'uuid';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Settings, Code, Eye, Smartphone, Tablet, Monitor } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useWireframeStore } from '@/stores/wireframe-store';
+import WireframeVisualizer from './WireframeVisualizer';
+import WireframeCanvasFabric from './WireframeCanvasFabric';
+import WireframeAISuggestions from './WireframeAISuggestions';
+import { DeviceType, ViewMode } from './types';
 
 interface EnhancedWireframeStudioProps {
-  projectId: string;
-  standalone?: boolean;
-  initialData?: WireframeData | null;
+  projectId?: string;
+  initialWireframe?: WireframeData;
+  onSave?: (wireframe: WireframeData) => void;
+  onExport?: (wireframe: WireframeData, format: string) => void;
+  readOnly?: boolean;
 }
 
-const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({ 
+// Helper function to ensure complete WireframeData
+const ensureCompleteWireframeData = (partialData: Partial<WireframeData>): WireframeData => {
+  return {
+    id: partialData.id || uuidv4(), // Ensure id is always present
+    title: partialData.title || 'New Wireframe',
+    description: partialData.description || '',
+    sections: partialData.sections || [],
+    colorScheme: partialData.colorScheme || {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    },
+    typography: partialData.typography || {
+      headings: 'sans-serif',
+      body: 'sans-serif'
+    },
+    style: partialData.style || '',
+    // Include other required fields with defaults
+    ...partialData
+  };
+};
+
+const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   projectId,
-  standalone = false,
-  initialData = null
+  initialWireframe,
+  onSave,
+  onExport,
+  readOnly = false
 }) => {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<string>('preview');
-  const { wireframe, setWireframe, setActiveSection } = useWireframeStore();
+  const [viewMode, setViewMode] = useState<ViewMode>('preview');
+  const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
+  const [showAISuggestions, setShowAISuggestions] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   
-  // Handle section click
-  const handleSectionClick = (sectionId: string, section: any) => {
-    setActiveSection(sectionId);
-    toast({
-      title: `Selected: ${section.name || section.sectionType || 'Section'}`,
-      description: "Click the Edit button to modify this section",
-      duration: 3000
-    });
-  };
+  const {
+    wireframe,
+    setWireframe,
+    darkMode,
+    toggleDarkMode,
+    setActiveDevice,
+    activeSection,
+    setActiveSection
+  } = useWireframeStore();
   
-  // Export wireframe to HTML
-  const handleExportHTML = async () => {
-    const currentWireframe = wireframe || initialData;
-    if (!currentWireframe) return;
-    
-    try {
-      // Cast wireframeData to required type with required id property
-      const wireframeData: WireframeData = {
-        id: currentWireframe.id || '',
-        title: currentWireframe.title || '',
-        sections: currentWireframe.sections || [],
-        // Include other required properties from WireframeData
-        ...currentWireframe
-      };
-      
-      const html = await exportToHTML(wireframeData);
-      
-      // Create a blob and download link
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${wireframeData.title || 'wireframe'}-export.html`;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Cleanup
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "HTML Export Complete",
-        description: "Your wireframe has been exported as HTML"
-      });
-    } catch (error) {
-      console.error("Export error:", error);
-      toast({
-        title: "Export Failed",
-        description: "Could not export wireframe to HTML",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Copy wireframe JSON
-  const handleCopyJSON = () => {
-    const currentWireframe = wireframe || initialData;
-    if (!currentWireframe) return;
-    
-    try {
-      const json = JSON.stringify(currentWireframe, null, 2);
-      navigator.clipboard.writeText(json);
-      
-      toast({
-        title: "JSON Copied",
-        description: "Wireframe JSON has been copied to clipboard"
-      });
-    } catch (error) {
-      console.error("Copy error:", error);
-      toast({
-        title: "Copy Failed",
-        description: "Could not copy wireframe JSON",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Update wireframe when initialData changes
+  // Initialize wireframe from props or create a new one
   useEffect(() => {
-    if (initialData) {
-      // Convert the wireframe data to the appropriate format
-      const { id, title, sections, description, colorScheme, typography, style, styleToken, designTokens } = initialData;
-      
-      // Prepare properly shaped data for the wireframe store
-      const wireframeData: Partial<WireframeData> = {
-        id: id || uuidv4(),
-        title: title || 'New Wireframe',
-        description: description,
-        // Ensure sections have the right properties
-        sections: (sections || []).map(section => ({
-          ...section,
-          // Ensure copySuggestions has the right format
-          copySuggestions: Array.isArray(section.copySuggestions) 
-            ? section.copySuggestions
-            : section.copySuggestions ? [section.copySuggestions] : [],
-          // Ensure animationSuggestions is an array
-          animationSuggestions: Array.isArray(section.animationSuggestions)
-            ? section.animationSuggestions
-            : section.animationSuggestions ? [section.animationSuggestions] : []
-        })),
-        // Ensure colorScheme has the right shape
-        colorScheme: {
-          primary: colorScheme?.primary || '#3b82f6',
-          secondary: colorScheme?.secondary || '#10b981',
-          accent: colorScheme?.accent || '#f59e0b',
-          background: colorScheme?.background || '#ffffff',
-          text: colorScheme?.text || '#111827'
-        },
-        // Ensure typography has the right shape
-        typography: {
-          headings: typography?.headings || 'Inter',
-          body: typography?.body || 'Inter',
-          fontPairings: typography?.fontPairings || []
-        },
-        style: style || styleToken,
-        styleToken: styleToken || style,
-        designTokens: designTokens || {}
-      };
-      
-      setWireframe(wireframeData);
+    if (initialWireframe) {
+      setWireframe(ensureCompleteWireframeData(initialWireframe));
+    } else if (!wireframe) {
+      // Create a default wireframe if none exists
+      setWireframe(ensureCompleteWireframeData({
+        id: uuidv4(),
+        title: 'New Wireframe',
+        description: 'Start designing your wireframe',
+        sections: []
+      }));
     }
-  }, [initialData, setWireframe]);
+  }, [initialWireframe, wireframe, setWireframe]);
   
-  // Get the effective wireframe data
-  const effectiveWireframe = wireframe || initialData;
+  // Handle section selection
+  const handleSectionClick = useCallback((sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    setActiveSection(sectionId);
+  }, [setActiveSection]);
   
-  // Cast the effective wireframe to ensure it has required properties for WireframeData
-  const safeWireframe: WireframeData | null = effectiveWireframe ? {
-    id: effectiveWireframe.id || '',
-    title: effectiveWireframe.title || '',
-    sections: effectiveWireframe.sections || [],
-    // Include other required properties
-    ...effectiveWireframe
-  } : null;
+  // Handle save action
+  const handleSave = useCallback(() => {
+    if (!wireframe) return;
+    
+    setIsLoading(true);
+    try {
+      if (onSave) {
+        onSave(wireframe);
+      }
+      toast({
+        title: "Success",
+        description: "Wireframe saved successfully",
+      });
+    } catch (error) {
+      console.error("Error saving wireframe:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save wireframe",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [wireframe, onSave, toast]);
+  
+  // Handle export action
+  const handleExport = useCallback((format: string) => {
+    if (!wireframe) return;
+    
+    setIsLoading(true);
+    try {
+      if (onExport) {
+        onExport(wireframe, format);
+      }
+      toast({
+        title: "Success",
+        description: `Wireframe exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      console.error("Error exporting wireframe:", error);
+      toast({
+        title: "Error",
+        description: "Failed to export wireframe",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [wireframe, onExport, toast]);
+  
+  // Toggle AI suggestions panel
+  const toggleAISuggestions = useCallback(() => {
+    setShowAISuggestions(prev => !prev);
+  }, []);
   
   return (
-    <TooltipProvider>
-      <div className="enhanced-wireframe-studio">
-        <div className="flex items-center justify-between mb-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="flex items-center justify-between">
-              <TabsList>
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-                <TabsTrigger value="code">Code</TabsTrigger>
-                <TabsTrigger value="data">Data</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={handleExportHTML}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Export HTML
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  Copy JSON
-                </Button>
-                {standalone && (
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <Edit3 className="h-4 w-4" />
-                    Edit
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <TabsContent value="preview" className="mt-0">
-              <AIWireframeRenderer 
-                wireframe={safeWireframe} 
-                onSectionClick={handleSectionClick}
-                className="w-full"
-              />
-            </TabsContent>
-            
-            <TabsContent value="code" className="mt-0">
-              <Card className="overflow-hidden">
-                <div className="p-4 bg-muted flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Code2 className="h-4 w-4 mr-2" />
-                    <span className="font-medium">Generated Code</span>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={handleExportHTML}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Download
-                  </Button>
-                </div>
-                <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-                  {safeWireframe ? (
-                    <pre>{`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${safeWireframe.title || 'Wireframe'}</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body>
-  <!-- Generated wireframe HTML would appear here -->
-  <div class="container mx-auto px-4">
-    <h1 class="text-3xl font-bold my-4">${safeWireframe.title || 'Wireframe'}</h1>
-    
-    ${safeWireframe.sections.map(section => `
-    <!-- ${section.name || section.sectionType || 'Section'} -->
-    <section class="my-8">
-      <h2 class="text-xl font-semibold mb-4">${section.name || ''}</h2>
-      <!-- Section content would be here -->
-    </section>
-    `).join('')}
-  </div>
-</body>
-</html>`}</pre>
-                  ) : (
-                    <p>No wireframe data available</p>
-                  )}
-                </div>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="data" className="mt-0">
-              <Card className="overflow-hidden">
-                <div className="p-4 bg-muted flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Code2 className="h-4 w-4 mr-2" />
-                    <span className="font-medium">Wireframe Data</span>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={handleCopyJSON}>
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy JSON
-                  </Button>
-                </div>
-                <div className="p-4 max-h-[600px] overflow-auto bg-black text-gray-300 font-mono text-sm">
-                  {safeWireframe ? (
-                    <pre>{JSON.stringify(safeWireframe, null, 2)}</pre>
-                  ) : (
-                    <p>No wireframe data available</p>
-                  )}
-                </div>
-              </Card>
-            </TabsContent>
+    <div className="enhanced-wireframe-studio">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-2">
+          <h2 className="text-xl font-bold">{wireframe?.title || 'Wireframe Studio'}</h2>
+          {isLoading && <Loader2 className="animate-spin h-4 w-4" />}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {/* View mode selector */}
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+            <TabsList>
+              <TabsTrigger value="preview" className="flex items-center">
+                <Eye className="h-4 w-4 mr-1" />
+                Preview
+              </TabsTrigger>
+              <TabsTrigger value="editor" className="flex items-center">
+                <Settings className="h-4 w-4 mr-1" />
+                Editor
+              </TabsTrigger>
+              <TabsTrigger value="code" className="flex items-center">
+                <Code className="h-4 w-4 mr-1" />
+                Code
+              </TabsTrigger>
+            </TabsList>
           </Tabs>
+          
+          {/* Device type selector */}
+          <div className="flex border rounded-md">
+            <Button 
+              variant={deviceType === 'desktop' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => {
+                setDeviceType('desktop');
+                setActiveDevice('desktop');
+              }}
+            >
+              <Monitor className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={deviceType === 'tablet' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => {
+                setDeviceType('tablet');
+                setActiveDevice('tablet');
+              }}
+            >
+              <Tablet className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={deviceType === 'mobile' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => {
+                setDeviceType('mobile');
+                setActiveDevice('mobile');
+              }}
+            >
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Dark mode toggle */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={toggleDarkMode}
+          >
+            {darkMode ? 'Light Mode' : 'Dark Mode'}
+          </Button>
+          
+          {/* AI Suggestions toggle */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={toggleAISuggestions}
+          >
+            {showAISuggestions ? 'Hide AI Suggestions' : 'Show AI Suggestions'}
+          </Button>
+          
+          {/* Save button */}
+          {!readOnly && (
+            <Button 
+              onClick={handleSave}
+              disabled={isLoading}
+            >
+              Save
+            </Button>
+          )}
         </div>
       </div>
-    </TooltipProvider>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className={`${showAISuggestions ? 'md:col-span-3' : 'md:col-span-4'}`}>
+          <Card>
+            <CardHeader className="p-4">
+              <CardTitle>Wireframe</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {viewMode === 'preview' && wireframe && (
+                <WireframeVisualizer
+                  wireframe={wireframe}
+                  darkMode={darkMode}
+                  deviceType={deviceType}
+                  viewMode={viewMode}
+                  onSectionClick={handleSectionClick}
+                  selectedSectionId={selectedSectionId}
+                  preview={true}
+                />
+              )}
+              
+              {viewMode === 'editor' && (
+                <WireframeCanvasFabric
+                  projectId={projectId}
+                  deviceType={deviceType}
+                  onSectionClick={handleSectionClick}
+                  editMode={!readOnly}
+                />
+              )}
+              
+              {viewMode === 'code' && (
+                <div className="p-4">
+                  <pre className="bg-muted p-4 rounded-md overflow-auto max-h-[600px]">
+                    <code>
+                      {JSON.stringify(wireframe, null, 2)}
+                    </code>
+                  </pre>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {showAISuggestions && (
+          <div className="md:col-span-1">
+            <WireframeAISuggestions onClose={toggleAISuggestions} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
+export { EnhancedWireframeStudio, ensureCompleteWireframeData };
 export default EnhancedWireframeStudio;

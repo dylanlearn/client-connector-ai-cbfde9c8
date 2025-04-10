@@ -6,7 +6,7 @@ import {
   WireframeSection, 
   WireframeComponent,
   WireframeGenerationParams
-} from '../wireframe-types';
+} from './wireframe-types';
 
 export const WireframeGeneratorService = {
   generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeData> => {
@@ -183,7 +183,7 @@ export const WireframeGeneratorService = {
       title: params.title || 'New Wireframe',
       description: params.description || '',
       sections: sections || [],
-      style: params.style || {},
+      style: params.style || '',
       colorScheme: safeColorScheme,
       typography: typography,
       designTokens: {},
@@ -196,3 +196,6 @@ export const WireframeGeneratorService = {
     };
   }
 };
+
+// Add the export for wireframeGenerator
+export const wireframeGenerator = WireframeGeneratorService;

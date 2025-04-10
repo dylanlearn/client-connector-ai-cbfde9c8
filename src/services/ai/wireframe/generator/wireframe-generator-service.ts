@@ -14,7 +14,7 @@ interface GenerationParams {
 
 export const WireframeGeneratorService = {
   generateWireframe(params: GenerationParams): WireframeData {
-    const { sections, colorScheme } = params;
+    const { sections, colorScheme, components } = params;
     
     // Ensure we have default values for required properties
     const defaultColorScheme = {
@@ -31,7 +31,7 @@ export const WireframeGeneratorService = {
       title: params.title || 'New Wireframe',
       description: params.description || '',
       sections: sections || [],
-      style: params.style || {},
+      style: params.style || '',
       colorScheme: {
         primary: colorScheme?.primary || defaultColorScheme.primary,
         secondary: colorScheme?.secondary || defaultColorScheme.secondary,
@@ -43,6 +43,8 @@ export const WireframeGeneratorService = {
         headings: 'sans-serif',
         body: 'sans-serif'
       }
+      // We're removing 'components' from here as it's not part of WireframeData
+      // Components should be added to sections instead
     };
   }
 };

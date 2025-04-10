@@ -314,4 +314,29 @@ import {
   Toaster,
 } from "@/components/ui/sonner"
 import {
-  AspectRat
+  AspectRatio,
+} from "@/components/ui/aspect-ratio"
+
+import { WireframeData as AIWireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData as ProjectWireframeData } from '@/types/wireframe';
+
+const convertWireframeData = (data: ProjectWireframeData): AIWireframeData => {
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description || '',
+    sections: data.sections || [],
+    colorScheme: data.colorScheme || {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    },
+    typography: data.typography || {
+      headings: 'sans-serif',
+      body: 'sans-serif'
+    },
+    style: typeof data.style === 'string' ? data.style : JSON.stringify(data.style)
+  };
+};

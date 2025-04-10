@@ -4,6 +4,8 @@ export * from './wireframe-service';
 
 // Specialized wireframe services
 export { WireframeGeneratorService } from './generator/wireframe-generator-service';
+// Also export wireframeGenerator
+export { wireframeGenerator } from './generator/wireframe-generator-service';
 // Export other members except WireframeGeneratorService
 export * from './data/wireframe-data-service';
 export * from './feedback/wireframe-feedback-service';

@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import {
   WireframeData,
@@ -6,7 +7,7 @@ import {
   WireframeGenerationParams,
   EnhancedWireframeGenerationResult,
   FeedbackModificationResult
-} from '../wireframe-types';
+} from './wireframe-types';
 import { WireframeGeneratorService } from './generator/wireframe-generator-service';
 import { WireframeFeedbackService } from './feedback/wireframe-feedback-service';
 import { WireframeManagementService } from './management/wireframe-management-service';
@@ -213,7 +214,8 @@ export const EnhancedWireframeGenerator = {
         success: true,
         modified: true,
         changeDescription: `Modified sections: ${modifiedSections.length}`,
-        modifiedSections: modifiedSections
+        modifiedSections: modifiedSections,
+        addedSections: [] // Add an empty array for the addedSections property
       };
     } catch (error: any) {
       console.error("Error modifying wireframe based on feedback:", error);
