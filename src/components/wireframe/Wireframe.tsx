@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { WireframeSection } from '@/types/wireframe';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import WireframeSectionRenderer from './WireframeSectionRenderer';
 import { WireframeProps } from './types';
 
@@ -13,45 +13,54 @@ const Wireframe: React.FC<WireframeProps> = ({
   activeSection,
   onSelect,
 }) => {
-  if (!wireframe || !wireframe.sections || wireframe.sections.length === 0) {
+  if (!wireframe || !wireframe.sections) {
     return (
       <div className="p-4 text-center">
-        <p className="text-gray-500">No wireframe data available to display</p>
+        <p className="text-muted-foreground">No wireframe data available</p>
       </div>
     );
   }
 
-  const handleClick = () => {
-    if (onSelect && wireframe.id) {
-      onSelect(wireframe.id);
+  const handleSectionClick = (sectionId: string) => {
+    if (onSectionClick) {
+      onSectionClick(sectionId);
+    }
+    
+    if (onSelect) {
+      onSelect(sectionId);
     }
   };
 
+  const sortedSections = [...wireframe.sections].sort((a, b) => {
+    // Sort by position.y if available, otherwise by order in array
+    if (a.position && b.position) {
+      return a.position.y - b.position.y;
+    }
+    return 0;
+  });
+
   return (
     <div 
-      className={`wireframe ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-white'}`}
-      style={{ 
-        maxWidth: deviceType === 'mobile' ? '375px' : deviceType === 'tablet' ? '768px' : '100%',
-        margin: '0 auto'
+      className={`wireframe-container ${darkMode ? 'dark' : ''}`}
+      data-testid="wireframe-container"
+      style={{
+        width: '100%',
+        backgroundColor: darkMode ? 'rgb(17, 24, 39)' : 'white',
+        color: darkMode ? 'white' : 'inherit',
       }}
-      onClick={onSelect ? handleClick : undefined}
     >
-      <div className="wireframe-sections">
-        {wireframe.sections.map((section: WireframeSection, index: number) => (
-          <div 
-            key={section.id || `section-${index}`} 
-            className={`mb-0 ${activeSection === section.id ? 'ring-2 ring-primary' : ''}`}
-          >
-            <WireframeSectionRenderer
-              section={section}
-              viewMode={viewMode}
-              darkMode={darkMode}
-              sectionIndex={index}
-              onSectionClick={onSectionClick}
-            />
-          </div>
-        ))}
-      </div>
+      {sortedSections.map((section: WireframeSection, index: number) => (
+        <WireframeSectionRenderer
+          key={section.id || `section-${index}`}
+          section={section}
+          viewMode={viewMode}
+          darkMode={darkMode}
+          deviceType={deviceType}
+          sectionIndex={index}
+          onSectionClick={handleSectionClick}
+          isSelected={activeSection === section.id}
+        />
+      ))}
     </div>
   );
 };

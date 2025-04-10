@@ -1,60 +1,35 @@
 
 import React from 'react';
-import { WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
-import BaseComponentRenderer, { BaseComponentRendererProps } from './specialized/BaseComponentRenderer';
-import TextComponentRenderer from './specialized/TextComponentRenderer';
-import ButtonComponentRenderer from './specialized/ButtonComponentRenderer';
-import ImageComponentRenderer from './specialized/ImageComponentRenderer';
 import ContainerComponentRenderer from './specialized/ContainerComponentRenderer';
+import { BaseComponentRendererProps } from './specialized/BaseComponentRenderer';
 
 /**
- * Factory that returns the appropriate renderer for a component based on its type
+ * Factory component that renders the appropriate component renderer based on component type
  */
-export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = (props) => {
-  const { component } = props;
-  
-  // If component is undefined or null, return nothing
+export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = ({
+  component,
+  darkMode = false,
+  interactive = false,
+  onClick,
+  isSelected = false,
+  deviceType = 'desktop',
+}) => {
   if (!component) {
     return null;
   }
-
-  // Select the appropriate renderer based on component type
-  switch (component.type) {
-    // Text components
-    case 'heading':
-    case 'h1':
-    case 'h2': 
-    case 'h3':
-    case 'h4':
-    case 'paragraph':
-    case 'text':
-      return <TextComponentRenderer {...props} />;
-      
-    // Button components
-    case 'button':
-    case 'cta':
-      return <ButtonComponentRenderer {...props} />;
-      
-    // Image components
-    case 'image':
-    case 'img':
-      return <ImageComponentRenderer {...props} />;
-      
-    // Container components
-    case 'container':
-    case 'section':
-    case 'flex':
-    case 'grid':
-    case 'layout':
-    case 'row':
-    case 'column':
-    case 'div':
-      return <ContainerComponentRenderer {...props} />;
-      
-    // Fallback for any other component types
-    default:
-      return <BaseComponentRenderer {...props} />;
-  }
+  
+  // Use the container renderer as default for now
+  // In a full implementation, you would have specialized renderers for different component types
+  return (
+    <ContainerComponentRenderer
+      component={component}
+      darkMode={darkMode}
+      interactive={interactive}
+      onClick={onClick}
+      isSelected={isSelected}
+      deviceType={deviceType}
+    />
+  );
 };
 
 export default ComponentRendererFactory;

@@ -1,8 +1,10 @@
 
 import React from 'react';
 import { WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
-import { cn } from '@/lib/utils';
 
+/**
+ * Props interface for all component renderers
+ */
 export interface BaseComponentRendererProps {
   component: WireframeComponent;
   darkMode?: boolean;
@@ -10,10 +12,12 @@ export interface BaseComponentRendererProps {
   onClick?: (componentId: string) => void;
   isSelected?: boolean;
   deviceType?: 'desktop' | 'tablet' | 'mobile';
+  [key: string]: any;
 }
 
 /**
- * Base component renderer that all specialized renderers inherit from
+ * Base renderer for wireframe components
+ * This is a generic placeholder - specific component renderers should be implemented
  */
 const BaseComponentRenderer: React.FC<BaseComponentRendererProps> = ({
   component,
@@ -29,30 +33,26 @@ const BaseComponentRenderer: React.FC<BaseComponentRendererProps> = ({
     }
   };
 
-  // Default styling based on component properties
-  const baseStyles = {
-    position: 'relative' as const,
-    width: component.dimensions?.width || '100%',
-    height: component.dimensions?.height || 'auto',
-    opacity: component.style?.opacity !== undefined ? component.style.opacity : 1,
-  };
+  if (!component) {
+    return null;
+  }
 
+  // Return a placeholder - this would be overridden in actual component renderers
   return (
     <div
-      className={cn(
-        "wireframe-component",
-        isSelected && "ring-2 ring-primary",
-        interactive && "cursor-pointer",
-        darkMode ? "text-white" : "text-gray-900"
-      )}
-      style={baseStyles}
+      className={`wireframe-base-component ${isSelected ? 'selected' : ''}`}
       onClick={handleClick}
-      data-component-id={component.id}
-      data-component-type={component.type}
+      style={{
+        border: '1px dashed #999',
+        padding: '1rem',
+        backgroundColor: darkMode ? '#2d3748' : '#f7fafc',
+        color: darkMode ? 'white' : 'black',
+        width: 'auto',
+        height: 'auto',
+        ...component.style
+      }}
     >
-      <div className="p-2 text-center text-xs text-muted-foreground border border-dashed">
-        {component.type} Component
-      </div>
+      {component.type}: {component.content || 'No content'}
     </div>
   );
 };

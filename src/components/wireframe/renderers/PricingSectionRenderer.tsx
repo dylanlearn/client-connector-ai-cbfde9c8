@@ -1,98 +1,173 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getBackgroundClass, getAlignmentClass } from '../utils/variant-utils';
 
 const PricingSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  const { componentVariant, data = {} } = section;
-  const {
-    title,
-    description,
-    plans = [],
-    backgroundStyle,
-    alignment
-  } = data;
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick();
+    }
+  };
   
-  // Style classes
-  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'center');
-
+  const copySuggestions = section.copySuggestions || {};
+  
+  // Pricing plans
+  const plans = [
+    {
+      name: copySuggestions.basicPlanName || 'Basic',
+      price: copySuggestions.basicPlanPrice || '$9',
+      period: copySuggestions.basicPlanPeriod || '/month',
+      description: copySuggestions.basicPlanDescription || 'Perfect for individuals and small projects',
+      features: [
+        copySuggestions.basicFeature1 || 'Feature one',
+        copySuggestions.basicFeature2 || 'Feature two',
+        copySuggestions.basicFeature3 || 'Feature three',
+        copySuggestions.basicFeature4 || 'Feature four'
+      ],
+      cta: copySuggestions.basicPlanCta || 'Get Started'
+    },
+    {
+      name: copySuggestions.proPlanName || 'Professional',
+      price: copySuggestions.proPlanPrice || '$29',
+      period: copySuggestions.proPlanPeriod || '/month',
+      description: copySuggestions.proPlanDescription || 'For professionals and growing teams',
+      features: [
+        copySuggestions.proFeature1 || 'Everything in Basic',
+        copySuggestions.proFeature2 || 'Pro feature one',
+        copySuggestions.proFeature3 || 'Pro feature two',
+        copySuggestions.proFeature4 || 'Pro feature three',
+        copySuggestions.proFeature5 || 'Pro feature four'
+      ],
+      cta: copySuggestions.proPlanCta || 'Get Started',
+      highlighted: true
+    },
+    {
+      name: copySuggestions.enterprisePlanName || 'Enterprise',
+      price: copySuggestions.enterprisePlanPrice || '$99',
+      period: copySuggestions.enterprisePlanPeriod || '/month',
+      description: copySuggestions.enterprisePlanDescription || 'For large organizations and complex needs',
+      features: [
+        copySuggestions.enterpriseFeature1 || 'Everything in Professional',
+        copySuggestions.enterpriseFeature2 || 'Enterprise feature one',
+        copySuggestions.enterpriseFeature3 || 'Enterprise feature two',
+        copySuggestions.enterpriseFeature4 || 'Enterprise feature three',
+        copySuggestions.enterpriseFeature5 || 'Enterprise feature four'
+      ],
+      cta: copySuggestions.enterprisePlanCta || 'Contact Sales'
+    }
+  ];
+  
   return (
-    <section className={`pricing-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
-      <div className={`container mx-auto ${alignmentClass}`}>
-        {(title || description) && (
-          <div className="section-header mb-12">
-            {title && (
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{title}</h2>
-            )}
-            
-            {description && (
-              <p className="text-lg opacity-80 max-w-3xl mx-auto">{description}</p>
-            )}
-          </div>
-        )}
+    <div 
+      className={cn(
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-gray-800' : 'bg-white',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
+      )}
+      onClick={handleClick}
+      style={section.style}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className={cn(
+            'text-3xl font-bold mb-4',
+            darkMode ? 'text-white' : 'text-gray-900'
+          )}>
+            {copySuggestions.heading || 'Simple, Transparent Pricing'}
+          </h2>
+          
+          <p className={cn(
+            'max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          )}>
+            {copySuggestions.subheading || 'Choose the plan that works best for you and your team.'}
+          </p>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {plans.map((plan: any, index: number) => (
+        <div className={cn(
+          'grid gap-8',
+          deviceType === 'mobile' ? 'grid-cols-1' : 
+          deviceType === 'tablet' ? 'grid-cols-2' : 
+          'grid-cols-3'
+        )}>
+          {plans.map((plan, i) => (
             <div 
-              key={index}
-              className={`pricing-plan rounded-lg p-6 ${
-                plan.featured 
-                  ? 'border-2 border-primary shadow-lg' 
-                  : 'border border-gray-200 dark:border-gray-700'
-              }`}
-            >
-              {plan.badge && (
-                <div className="inline-block px-3 py-1 text-xs font-semibold bg-primary text-white rounded-full mb-4">
-                  {plan.badge}
-                </div>
+              key={i} 
+              className={cn(
+                'p-6 rounded-lg border',
+                plan.highlighted && 'ring-2 ring-blue-500',
+                darkMode ? 
+                  plan.highlighted ? 'bg-gray-700 border-blue-500' : 'bg-gray-700 border-gray-600' : 
+                  plan.highlighted ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'
               )}
+            >
+              <h3 className={cn(
+                'text-xl font-bold mb-2',
+                darkMode ? 'text-white' : 'text-gray-900'
+              )}>
+                {plan.name}
+              </h3>
               
-              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-              
-              <div className="price-container mb-4">
-                <span className="text-3xl font-bold">{plan.price}</span>
-                {plan.interval && (
-                  <span className="text-sm opacity-80">/{plan.interval}</span>
-                )}
+              <div className="flex items-baseline mb-4">
+                <span className={cn(
+                  'text-4xl font-extrabold',
+                  darkMode ? 'text-white' : 'text-gray-900'
+                )}>
+                  {plan.price}
+                </span>
+                <span className={cn(
+                  'ml-1 text-lg',
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                )}>
+                  {plan.period}
+                </span>
               </div>
               
-              {plan.description && (
-                <p className="mb-6 opacity-80">{plan.description}</p>
-              )}
+              <p className={cn(
+                'mb-6',
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              )}>
+                {plan.description}
+              </p>
               
-              <ul className="space-y-2 mb-6">
-                {plan.features?.map((feature: string, i: number) => (
-                  <li key={i} className="flex items-center">
-                    <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    {feature}
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((feature, j) => (
+                  <li key={j} className="flex items-start">
+                    <span className={cn(
+                      'text-green-500 mr-2',
+                      darkMode ? 'text-green-400' : 'text-green-500'
+                    )}>
+                      ✓
+                    </span>
+                    <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
               
-              {plan.cta && (
-                <a 
-                  href={plan.cta.url || '#'}
-                  className={`block w-full py-2 px-4 text-center rounded-md ${
-                    plan.featured
-                      ? 'bg-primary hover:bg-primary-600 text-white'
-                      : 'border border-primary text-primary hover:bg-primary hover:text-white'
-                  }`}
-                >
-                  {plan.cta.label || 'Choose Plan'}
-                </a>
-              )}
+              <button className={cn(
+                'w-full py-2 rounded-md font-medium',
+                plan.highlighted ? 
+                  'bg-blue-600 hover:bg-blue-700 text-white' : 
+                  darkMode ? 'bg-gray-600 hover:bg-gray-500 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+              )}>
+                {plan.cta}
+              </button>
             </div>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

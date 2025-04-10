@@ -1,112 +1,150 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getBackgroundClass, getAlignmentClass } from '../utils/variant-utils';
 
 const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  const { componentVariant, data = {} } = section;
-  const {
-    headline,
-    description,
-    posts = [],
-    layoutStyle = 'grid',
-    backgroundStyle,
-    alignment,
-    showCategories,
-    showAuthors
-  } = data;
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick();
+    }
+  };
   
-  // Style classes
-  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'left');
+  const copySuggestions = section.copySuggestions || {};
   
-  // Layout specific classes
-  const layoutClass = layoutStyle === 'list' 
-    ? 'space-y-8' 
-    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-
+  // Sample blog posts
+  const posts = [
+    {
+      title: copySuggestions.post1Title || 'Getting Started with Our Product',
+      excerpt: copySuggestions.post1Excerpt || 'Learn how to set up your account and start using our product to improve your workflow.',
+      author: copySuggestions.post1Author || 'John Smith',
+      date: copySuggestions.post1Date || 'June 15, 2023',
+      category: copySuggestions.post1Category || 'Tutorials'
+    },
+    {
+      title: copySuggestions.post2Title || '5 Tips to Maximize Productivity',
+      excerpt: copySuggestions.post2Excerpt || 'Discover the best practices for getting more done in less time with our platform.',
+      author: copySuggestions.post2Author || 'Sarah Johnson',
+      date: copySuggestions.post2Date || 'June 10, 2023',
+      category: copySuggestions.post2Category || 'Best Practices'
+    },
+    {
+      title: copySuggestions.post3Title || 'New Features Release: What\'s New',
+      excerpt: copySuggestions.post3Excerpt || 'Explore the latest features we\'ve added to enhance your experience and productivity.',
+      author: copySuggestions.post3Author || 'Michael Brown',
+      date: copySuggestions.post3Date || 'June 5, 2023',
+      category: copySuggestions.post3Category || 'Updates'
+    }
+  ];
+  
+  if (deviceType === 'mobile') {
+    // Show fewer posts on mobile
+    posts.length = 2;
+  }
+  
   return (
-    <section className={`blog-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
-      <div className={`container mx-auto ${alignmentClass}`}>
-        {(headline || description) && (
-          <div className="section-header mb-12">
-            {headline && (
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{headline}</h2>
-            )}
-            
-            {description && (
-              <p className="text-lg opacity-80 max-w-3xl mx-auto">{description}</p>
-            )}
-          </div>
-        )}
+    <div 
+      className={cn(
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-gray-900' : 'bg-white',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
+      )}
+      onClick={handleClick}
+      style={section.style}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className={cn(
+            'text-3xl font-bold mb-4',
+            darkMode ? 'text-white' : 'text-gray-900'
+          )}>
+            {copySuggestions.heading || 'From Our Blog'}
+          </h2>
+          
+          <p className={cn(
+            'max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          )}>
+            {copySuggestions.subheading || 'Latest news, tips, and insights from our team.'}
+          </p>
+        </div>
         
-        <div className={layoutClass}>
-          {posts.map((post: any, index: number) => (
+        <div className={cn(
+          'grid gap-8',
+          deviceType === 'mobile' ? 'grid-cols-1' : 
+          deviceType === 'tablet' ? 'grid-cols-2' : 
+          'grid-cols-3'
+        )}>
+          {posts.map((post, i) => (
             <div 
-              key={index}
-              className={`blog-post ${
-                layoutStyle === 'list' 
-                  ? 'flex flex-col md:flex-row gap-6' 
-                  : ''
-              }`}
-            >
-              {/* Post Image */}
-              {post.image && (
-                <div className={`blog-post-image ${layoutStyle === 'list' ? 'md:w-1/3' : 'mb-4'}`}>
-                  <img 
-                    src={post.image} 
-                    alt={post.title}
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                </div>
+              key={i} 
+              className={cn(
+                'rounded-lg overflow-hidden',
+                darkMode ? 'bg-gray-800' : 'bg-white border border-gray-200'
               )}
-              
-              {/* Post Content */}
-              <div className={layoutStyle === 'list' && post.image ? 'md:w-2/3' : ''}>
-                {/* Category & Date */}
-                <div className="flex flex-wrap items-center gap-3 mb-3 text-sm">
-                  {showCategories && post.category && (
-                    <span className="bg-primary/10 text-primary px-2 py-1 rounded">
-                      {post.category}
-                    </span>
-                  )}
-                  
-                  {post.date && (
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {post.date}
-                    </span>
-                  )}
+            >
+              <div className={cn(
+                'h-48 bg-gray-300',
+                darkMode ? 'bg-gray-700' : 'bg-gray-200'
+              )}>
+                {/* Placeholder for image */}
+              </div>
+              <div className="p-6">
+                <div className={cn(
+                  'text-sm mb-2',
+                  darkMode ? 'text-blue-400' : 'text-blue-600'
+                )}>
+                  {post.category}
                 </div>
-                
-                {/* Title */}
-                <h3 className="text-xl font-bold mb-2">
-                  <a href={post.url || '#'} className="hover:text-primary">
-                    {post.title}
-                  </a>
+                <h3 className={cn(
+                  'text-xl font-bold mb-3',
+                  darkMode ? 'text-white' : 'text-gray-900'
+                )}>
+                  {post.title}
                 </h3>
-                
-                {/* Summary */}
-                {post.summary && (
-                  <p className="opacity-80 mb-4">{post.summary}</p>
-                )}
-                
-                {/* Author */}
-                {showAuthors && post.author && (
-                  <div className="flex items-center mt-4">
-                    <div className="w-8 h-8 rounded-full bg-gray-300 mr-3"></div>
-                    <span className="text-sm">{post.author}</span>
+                <p className={cn(
+                  'mb-4',
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                )}>
+                  {post.excerpt}
+                </p>
+                <div className="flex justify-between items-center">
+                  <div className={cn(
+                    'text-sm',
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  )}>
+                    {post.author}
                   </div>
-                )}
+                  <div className={cn(
+                    'text-sm',
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  )}>
+                    {post.date}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
+        
+        <div className="text-center mt-10">
+          <button className={cn(
+            'px-6 py-2 rounded-md font-medium',
+            darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+          )}>
+            {copySuggestions.viewAllButton || 'View All Posts'}
+          </button>
+        </div>
       </div>
-    </section>
+    </div>
   );
 };
 

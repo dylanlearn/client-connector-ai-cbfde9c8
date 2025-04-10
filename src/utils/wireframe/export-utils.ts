@@ -1,288 +1,148 @@
 
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Exports a wireframe to HTML
- * @param wireframe The wireframe data to export
- * @returns HTML string representation of the wireframe
+ * Export a wireframe to HTML format
  */
-export async function exportToHTML(wireframe: WireframeData): Promise<string> {
-  if (!wireframe) {
-    throw new Error('No wireframe data provided for export');
-  }
-  
-  const title = wireframe.title || 'Wireframe';
-  const colorScheme = wireframe.colorScheme || {
-    primary: '#3b82f6',
-    secondary: '#10b981',
-    accent: '#f97316',
-    background: '#ffffff',
-    text: '#111827'
-  };
-  
-  // Generate HTML for each section
-  const sectionsHTML = wireframe.sections.map(section => {
-    return generateSectionHTML(section, colorScheme);
-  }).join('\n\n');
-  
-  // Generate complete HTML document
-  const html = `<!DOCTYPE html>
+export const exportToHTML = async (wireframeData: WireframeData): Promise<string> => {
+  try {
+    // Create basic styling based on wireframe color scheme
+    const colorScheme = wireframeData.colorScheme || {
+      primary: '#3B82F6',
+      secondary: '#10B981',
+      accent: '#F59E0B',
+      background: '#FFFFFF',
+      text: '#1F2937'
+    };
+    
+    // Generate HTML for each section
+    const sectionsHTML = wireframeData.sections.map((section, index) => {
+      const sectionStyle = section.style || {};
+      const padding = sectionStyle.padding || '4rem 2rem';
+      const bgColor = sectionStyle.backgroundColor || (index % 2 === 0 ? colorScheme.background : '#f9fafb');
+      const textColor = sectionStyle.color || colorScheme.text;
+      
+      return `
+        <!-- ${section.name || section.sectionType || `Section ${index + 1}`} -->
+        <section 
+          id="${section.id || `section-${index}`}" 
+          class="section ${section.sectionType || 'default-section'}"
+          style="padding: ${padding}; background-color: ${bgColor}; color: ${textColor};"
+        >
+          <div class="container">
+            <h2 class="section-title">${section.name || section.sectionType || `Section ${index + 1}`}</h2>
+            ${section.description ? `<p class="section-description">${section.description}</p>` : ''}
+            
+            <!-- Section content would be rendered here -->
+            <div class="section-content">
+              <p>This is a placeholder for the actual content of the ${section.name || section.sectionType || 'section'}.</p>
+            </div>
+          </div>
+        </section>
+      `;
+    }).join('\n');
+    
+    // Create the full HTML document
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>${wireframeData.title || 'Wireframe Export'}</title>
   <style>
     :root {
       --color-primary: ${colorScheme.primary};
       --color-secondary: ${colorScheme.secondary};
       --color-accent: ${colorScheme.accent};
       --color-background: ${colorScheme.background};
-      --color-text: ${colorScheme.text || '#111827'};
+      --color-text: ${colorScheme.text};
     }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background-color: var(--color-background);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
       color: var(--color-text);
+      background-color: var(--color-background);
     }
-    .btn-primary {
-      background-color: var(--color-primary);
-      color: white;
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
     }
-    .btn-secondary {
-      background-color: var(--color-secondary);
-      color: white;
+    
+    .section {
+      width: 100%;
     }
-    .section-container {
-      margin: 2rem 0;
-      padding: 1rem;
-      border-radius: 0.375rem;
+    
+    .section-title {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    .section-description {
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+      opacity: 0.8;
+    }
+    
+    .section-content {
+      margin-top: 2rem;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .section {
+        padding: 3rem 1rem;
+      }
+      
+      .section-title {
+        font-size: 1.75rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container mx-auto px-4 py-8">
-    <h1 class="text-4xl font-bold mb-8 text-center">${title}</h1>
-    
+  <header style="background-color: ${colorScheme.primary}; color: white; padding: 1rem 0;">
+    <div class="container">
+      <h1>${wireframeData.title || 'Wireframe Export'}</h1>
+      ${wireframeData.description ? `<p>${wireframeData.description}</p>` : ''}
+    </div>
+  </header>
+  
+  <main>
     ${sectionsHTML}
-  </div>
+  </main>
+  
+  <footer style="background-color: #333; color: white; padding: 2rem 0; margin-top: 2rem; text-align: center;">
+    <div class="container">
+      <p>This wireframe was exported from the AI Wireframe Generator.</p>
+      <p>© ${new Date().getFullYear()} All rights reserved.</p>
+    </div>
+  </footer>
 </body>
 </html>`;
-
-  return html;
-}
-
-/**
- * Generates HTML for a wireframe section
- * @param section The section data
- * @param colorScheme The wireframe color scheme
- * @returns HTML string for the section
- */
-function generateSectionHTML(section: WireframeSection, colorScheme: any): string {
-  if (!section) return '';
-  
-  // Determine section CSS classes based on section type
-  let sectionClasses = 'section-container';
-  let backgroundStyle = '';
-  
-  switch (section.sectionType?.toLowerCase()) {
-    case 'hero':
-      sectionClasses += ' bg-primary bg-opacity-10';
-      backgroundStyle = `style="background-color: ${colorScheme.primary}20"`;
-      break;
-    case 'features':
-      sectionClasses += ' bg-secondary bg-opacity-10';
-      backgroundStyle = `style="background-color: ${colorScheme.secondary}15"`;
-      break;
-    case 'footer':
-      sectionClasses += ' bg-gray-100';
-      break;
-    default:
-      sectionClasses += ' border border-gray-200';
+  } catch (error) {
+    console.error('Error exporting wireframe to HTML:', error);
+    throw new Error('Failed to export wireframe to HTML');
   }
-  
-  // Generate components HTML if available
-  let componentsHTML = '';
-  if (section.components && Array.isArray(section.components) && section.components.length > 0) {
-    // Determine layout type
-    const layoutType = section.layoutType || 
-      (typeof section.layout === 'string' ? section.layout : section.layout?.type) || 
-      'vertical';
-    
-    // Apply layout grid classes
-    let layoutClasses = '';
-    switch (layoutType.toLowerCase()) {
-      case 'grid':
-        // Handle layout columns safely checking type
-        let columns = 3; // Default value
-        if (typeof section.layout === 'object' && section.layout && 'columns' in section.layout) {
-          columns = section.layout.columns || 3;
-        }
-        layoutClasses = `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(columns, 12)} gap-6`;
-        break;
-      case 'horizontal':
-        layoutClasses = 'flex flex-col md:flex-row items-center justify-between gap-6 flex-wrap';
-        break;
-      case 'vertical':
-      default:
-        layoutClasses = 'flex flex-col gap-6';
-    }
-    
-    // Generate component HTML
-    const componentList = section.components.map(component => {
-      return generateComponentHTML(component);
-    }).join('\n');
-    
-    componentsHTML = `<div class="${layoutClasses}">\n${componentList}\n</div>`;
-  }
-  
-  // Create section HTML
-  return `<!-- ${section.name || section.sectionType || 'Section'} -->
-<section class="${sectionClasses}" ${backgroundStyle} id="${section.id}">
-  <div class="max-w-6xl mx-auto">
-    <h2 class="text-2xl font-bold mb-6">${section.name || ''}</h2>
-    ${componentsHTML}
-  </div>
-</section>`;
-}
+};
 
 /**
- * Generates HTML for a wireframe component
- * @param component The component data
- * @returns HTML string for the component
+ * Export wireframe to JSON format
  */
-function generateComponentHTML(component: any): string {
-  if (!component || !component.type) {
-    return '';
+export const exportToJSON = (wireframeData: WireframeData): string => {
+  try {
+    return JSON.stringify(wireframeData, null, 2);
+  } catch (error) {
+    console.error('Error exporting wireframe to JSON:', error);
+    throw new Error('Failed to export wireframe to JSON');
   }
-  
-  const componentType = component.type.toLowerCase();
-  const componentContent = component.content || component.props?.content || component.props?.label || '';
-  
-  // Generate HTML based on component type
-  switch (componentType) {
-    case 'heading':
-    case 'h1':
-    case 'h2':
-    case 'h3':
-    case 'h4':
-    case 'h5':
-    case 'h6':
-      const level = component.level || component.props?.level || 2;
-      return `<h${level} class="font-bold text-${7 - level}xl">${componentContent}</h${level}>`;
-    
-    case 'text':
-    case 'paragraph':
-    case 'p':
-      return `<p class="text-base leading-relaxed">${componentContent}</p>`;
-    
-    case 'button':
-      return `<button class="btn-primary px-6 py-2 rounded-md font-medium">${componentContent}</button>`;
-    
-    case 'image':
-    case 'img':
-      return `<div class="bg-gray-200 rounded-md w-full aspect-video flex items-center justify-center">
-  <span class="text-gray-500">Image: ${componentContent || 'Placeholder'}</span>
-</div>`;
-    
-    case 'input':
-      return `<div class="w-full">
-  ${component.props?.label ? `<label class="block text-sm font-medium mb-1">${component.props.label}</label>` : ''}
-  <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="${component.props?.placeholder || 'Enter text...'}">
-</div>`;
-    
-    case 'card':
-      return `<div class="bg-white shadow rounded-lg p-6">
-  <h3 class="font-bold text-lg mb-2">${component.props?.title || componentContent || 'Card Title'}</h3>
-  <p class="text-gray-600 mb-4">${component.props?.content || 'Card content goes here'}</p>
-  <button class="btn-primary px-4 py-2 rounded-md text-sm font-medium">${component.props?.buttonText || 'Learn More'}</button>
-</div>`;
-    
-    case 'container':
-    case 'div':
-    case 'box':
-      return `<div class="p-4 border border-gray-200 rounded-md">
-  ${component.name || component.props?.label ? `<p class="text-sm text-gray-500 mb-2">${component.name || component.props?.label}</p>` : ''}
-  ${componentContent || ''}
-</div>`;
-    
-    case 'nav':
-    case 'menu':
-    case 'navigation':
-      const navItems = component.props?.items || ['Home', 'About', 'Features', 'Contact'];
-      const navLinks = navItems.map((item: string) => 
-        `<a href="#" class="px-4 py-2 hover:underline">${item}</a>`
-      ).join('\n');
-      
-      return `<nav class="flex flex-wrap gap-2">
-  ${navLinks}
-</nav>`;
-    
-    case 'form':
-      return `<form class="space-y-4 p-6 border border-gray-200 rounded-lg">
-  <h3 class="text-xl font-bold mb-4">${component.props?.title || componentContent || 'Form'}</h3>
-  <div>
-    <label class="block text-sm font-medium mb-1">Field 1</label>
-    <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md">
-  </div>
-  <div>
-    <label class="block text-sm font-medium mb-1">Field 2</label>
-    <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-md">
-  </div>
-  <button type="submit" class="btn-primary px-6 py-2 rounded-md">Submit</button>
-</form>`;
-    
-    default:
-      return `<div class="p-4 border border-gray-200 rounded-md">
-  <p>${componentType}: ${componentContent || 'Component'}</p>
-</div>`;
-  }
-}
-
-/**
- * Updates the function that processes layout data
- * @param layout The layout data
- * @returns CSS class string for the layout
- */
-export function processLayoutInformation(layout: any): string {
-  if (!layout) return '';
-  
-  const layoutProps = typeof layout === 'string' ? { type: layout } : layout;
-  
-  // Generate CSS class based on layout properties
-  const classes = [];
-  
-  if (layoutProps.type === 'grid' && typeof layoutProps.columns === 'number') {
-    classes.push('grid');
-    classes.push(`grid-cols-${layoutProps.columns || 1}`);
-    classes.push(`gap-${layoutProps.gap ? Math.min(12, Math.ceil(layoutProps.gap / 4)) : 4}`);
-  } else if (layoutProps.type === 'flex' || layoutProps.direction) {
-    classes.push('flex');
-    
-    if (layoutProps.direction === 'vertical') {
-      classes.push('flex-col');
-    }
-    
-    if (layoutProps.wrap) {
-      classes.push('flex-wrap');
-    }
-    
-    // Handle alignment
-    if (layoutProps.alignment) {
-      classes.push(`justify-${layoutProps.alignment}`);
-    }
-    
-    // Handle justification
-    if (layoutProps.justifyContent) {
-      classes.push(`justify-${layoutProps.justifyContent}`);
-    }
-    
-    // Add gap
-    if (layoutProps.gap !== undefined) {
-      classes.push(`gap-${typeof layoutProps.gap === 'number' ? Math.min(12, Math.ceil(layoutProps.gap / 4)) : 4}`);
-    }
-  }
-  
-  return classes.join(' ');
-}
+};

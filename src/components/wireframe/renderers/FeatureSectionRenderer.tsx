@@ -1,89 +1,90 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getBackgroundClass, getAlignmentClass } from '../utils/variant-utils';
 
 const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  const { componentVariant, data = {} } = section;
-  const {
-    title,
-    subtitle,
-    features = [],
-    columns = 3,
-    backgroundStyle,
-    alignment,
-    mediaType
-  } = data;
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick();
+    }
+  };
   
-  // Style classes
-  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'center');
+  const copySuggestions = section.copySuggestions || {};
   
-  // Grid columns based on specified count
-  const gridCols = columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 
-                   columns === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
-                   'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
-
+  // Generate fake feature items
+  const features = Array(6).fill(null).map((_, i) => ({
+    title: copySuggestions[`feature${i+1}Title`] || `Feature ${i+1}`,
+    description: copySuggestions[`feature${i+1}Description`] || 'Description of this amazing feature and how it benefits the user.',
+    icon: '📊'
+  }));
+  
   return (
-    <section className={`feature-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
-      <div className={`container mx-auto ${alignmentClass}`}>
-        {(title || subtitle) && (
-          <div className="section-header mb-12">
-            {title && (
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{title}</h2>
-            )}
-            
-            {subtitle && (
-              <p className="text-lg opacity-80 max-w-3xl mx-auto">{subtitle}</p>
-            )}
-          </div>
-        )}
+    <div 
+      className={cn(
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-gray-800' : 'bg-white',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
+      )}
+      onClick={handleClick}
+      style={section.style}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className={cn(
+            'text-3xl font-bold mb-4',
+            darkMode ? 'text-white' : 'text-gray-900'
+          )}>
+            {copySuggestions.heading || section.name || 'Features'}
+          </h2>
+          
+          <p className={cn(
+            'max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          )}>
+            {copySuggestions.subheading || 'Discover the powerful features that make our product stand out from the competition.'}
+          </p>
+        </div>
         
-        <div className={`grid ${gridCols} gap-8`}>
-          {features && features.map((feature, index) => (
-            <div key={index} className="feature-card">
-              {mediaType === 'icon' && feature.icon && (
-                <div className="icon-container mb-4">
-                  <div className="inline-flex items-center justify-center p-2 bg-primary-100 text-primary-600 rounded-lg">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={feature.icon} />
-                    </svg>
-                  </div>
-                </div>
+        <div className={cn(
+          'grid gap-8',
+          deviceType === 'mobile' ? 'grid-cols-1' : 
+          deviceType === 'tablet' ? 'grid-cols-2' : 
+          'grid-cols-3'
+        )}>
+          {features.map((feature, i) => (
+            <div 
+              key={i} 
+              className={cn(
+                'p-6 rounded-lg',
+                darkMode ? 'bg-gray-700' : 'bg-gray-50'
               )}
-              
-              {mediaType === 'image' && feature.image && (
-                <div className="image-container mb-4">
-                  <img 
-                    src={feature.image} 
-                    alt={feature.title}
-                    className="h-32 w-auto mx-auto object-cover rounded-md"
-                  />
-                </div>
-              )}
-              
-              {feature.badge && (
-                <div className="badge mb-2">
-                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-primary-100 text-primary-800">
-                    {feature.badge}
-                  </span>
-                </div>
-              )}
-              
-              <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-              
-              {feature.description && (
-                <p className="opacity-80">{feature.description}</p>
-              )}
+            >
+              <div className="text-3xl mb-4">{feature.icon}</div>
+              <h3 className={cn(
+                'text-xl font-semibold mb-2',
+                darkMode ? 'text-white' : 'text-gray-900'
+              )}>
+                {feature.title}
+              </h3>
+              <p className={cn(
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              )}>
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

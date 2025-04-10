@@ -1,76 +1,74 @@
 
 import React from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getBackgroundClass, getAlignmentClass } from '../utils/variant-utils';
 
 const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  const { componentVariant, data = {} } = section;
-  const {
-    headline,
-    subheadline,
-    cta,
-    ctaSecondary,
-    backgroundStyle,
-    alignment,
-    image,
-    mediaType
-  } = data;
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick();
+    }
+  };
   
-  // Style classes
-  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'center');
-  const variantPrefix = componentVariant?.split('-')[0] || 'hero';
-
+  const copySuggestions = section.copySuggestions || {};
+  
   return (
-    <div className={`hero-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
-      <div className={`container mx-auto ${alignmentClass}`}>
-        <div className="flex flex-col lg:flex-row items-center gap-8">
-          <div className={`hero-content ${mediaType !== 'none' ? 'lg:w-1/2' : 'w-full'}`}>
-            {headline && (
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">{headline}</h1>
-            )}
-            
-            {subheadline && (
-              <p className="text-lg sm:text-xl mb-6 opacity-85">{subheadline}</p>
-            )}
-            
-            {(cta || ctaSecondary) && (
-              <div className="flex flex-wrap gap-4 mt-6">
-                {cta && (
-                  <a 
-                    href={cta.url || '#'} 
-                    className="btn bg-primary hover:bg-primary-600 text-white px-6 py-2 rounded-md"
-                  >
-                    {cta.label || 'Learn More'}
-                  </a>
-                )}
-                
-                {ctaSecondary && (
-                  <a 
-                    href={ctaSecondary.url || '#'} 
-                    className="btn border border-primary text-primary hover:bg-primary hover:text-white px-6 py-2 rounded-md"
-                  >
-                    {ctaSecondary.label || 'Contact Us'}
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
+    <div 
+      className={cn(
+        'px-6 py-20 w-full flex flex-col items-center text-center',
+        darkMode ? 'bg-gray-900' : 'bg-gray-100',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
+      )}
+      onClick={handleClick}
+      style={{
+        minHeight: 'min(600px, 60vh)',
+        ...section.style
+      }}
+    >
+      <div className={cn(
+        'max-w-4xl mx-auto',
+        deviceType === 'mobile' ? 'px-4' : 'px-8'
+      )}>
+        <h1 className={cn(
+          'text-4xl md:text-5xl lg:text-6xl font-bold mb-6',
+          deviceType === 'mobile' && 'text-3xl'
+        )}>
+          {copySuggestions.heading || section.name || 'Compelling Headline'}
+        </h1>
+        
+        <p className={cn(
+          'text-lg md:text-xl mb-8 mx-auto',
+          darkMode ? 'text-gray-300' : 'text-gray-600',
+          deviceType === 'mobile' && 'text-base'
+        )}>
+          {copySuggestions.subheading || 'Supporting subtitle text that expands on the headline and connects with your audience.'}
+        </p>
+        
+        <div className={cn(
+          'flex gap-4 justify-center',
+          deviceType === 'mobile' && 'flex-col'
+        )}>
+          <button className={cn(
+            'px-6 py-3 rounded-md font-medium',
+            darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+          )}>
+            {copySuggestions.primaryCta || 'Primary Action'}
+          </button>
           
-          {mediaType !== 'none' && image && (
-            <div className="hero-media lg:w-1/2">
-              <img 
-                src={image} 
-                alt={headline || 'Hero'}
-                className="w-full h-auto rounded-md object-cover"
-              />
-            </div>
-          )}
+          <button className={cn(
+            'px-6 py-3 rounded-md font-medium',
+            darkMode ? 'bg-transparent border border-gray-300 text-gray-300' : 'bg-white border border-gray-300 text-gray-700'
+          )}>
+            {copySuggestions.secondaryCta || 'Secondary Action'}
+          </button>
         </div>
       </div>
     </div>

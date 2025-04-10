@@ -41,26 +41,33 @@ const ContainerComponentRenderer: React.FC<BaseComponentRendererProps> = ({
   const layout = component.layout || { type: 'flex', direction: 'column' };
   const layoutType = typeof layout === 'string' ? layout : layout.type;
   
-  // Determine container layout styles
+  // Determine container layout styles with proper TypeScript types
   const getLayoutStyles = () => {
     if (layoutType === 'grid') {
-      const columns = typeof layout === 'object' ? layout.columns || 3 : 3;
       return {
         display: 'grid',
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gridTemplateColumns: `repeat(${typeof layout === 'object' ? layout.columns || 3 : 3}, 1fr)`,
         gap: typeof layout === 'object' ? layout.gap || '1rem' : '1rem',
-      };
+      } as React.CSSProperties;
     } else {
+      // Define the flexDirection with proper typing
+      const flexDir = typeof layout === 'object' 
+        ? layout.direction === 'horizontal' ? 'row' as const : 'column' as const
+        : flexDirection as React.CSSProperties['flexDirection'];
+      
+      // Define flexWrap with proper typing
+      const flexWrap = typeof layout === 'object' 
+        ? (layout.wrap ? 'wrap' as const : 'nowrap' as const) 
+        : 'wrap' as const;
+      
       return {
         display: 'flex',
-        flexDirection: typeof layout === 'object' 
-          ? layout.direction === 'horizontal' ? 'row' as const : 'column' as const
-          : flexDirection as React.CSSProperties['flexDirection'],
-        flexWrap: typeof layout === 'object' ? (layout.wrap ? 'wrap' as const : 'nowrap' as const) : 'wrap' as const,
+        flexDirection: flexDir,
+        flexWrap, 
         alignItems: typeof layout === 'object' ? layout.alignment || alignItems : alignItems,
         justifyContent: typeof layout === 'object' ? layout.justifyContent || justifyContent : justifyContent,
         gap: typeof layout === 'object' ? layout.gap || gap : gap,
-      };
+      } as React.CSSProperties;
     }
   };
 
@@ -103,7 +110,7 @@ const ContainerComponentRenderer: React.FC<BaseComponentRendererProps> = ({
   };
 
   // For responsive behavior based on device type
-  const responsiveStyles = {
+  const responsiveStyles: Record<string, React.CSSProperties> = {
     desktop: {},
     tablet: { width: '100%' },
     mobile: { width: '100%', flexDirection: 'column' as const },

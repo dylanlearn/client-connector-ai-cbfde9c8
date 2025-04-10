@@ -1,94 +1,116 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getBackgroundClass, getAlignmentClass } from '../utils/variant-utils';
 
 const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  const { componentVariant, data = {} } = section;
-  const {
-    title,
-    subtitle,
-    testimonials = [],
-    backgroundStyle,
-    alignment,
-    mediaType
-  } = data;
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick();
+    }
+  };
   
-  // Style classes
-  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'center');
-
-  // Card layout based on number of testimonials
-  const gridCols = testimonials?.length === 1 ? 'grid-cols-1' : 
-                   testimonials?.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                   'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-
+  const copySuggestions = section.copySuggestions || {};
+  
+  // Sample testimonials
+  const testimonials = [
+    {
+      quote: copySuggestions.testimonial1 || 'This product has completely transformed how we operate. The efficiency gains alone have paid for the investment many times over.',
+      author: copySuggestions.author1 || 'Jane Smith',
+      role: copySuggestions.role1 || 'CEO, Company Name'
+    },
+    {
+      quote: copySuggestions.testimonial2 || 'The customer support is fantastic. Any time we had questions, the team was immediately responsive and helpful.',
+      author: copySuggestions.author2 || 'Michael Johnson',
+      role: copySuggestions.role2 || 'Director of Operations, Company Name'
+    },
+    {
+      quote: copySuggestions.testimonial3 || 'We evaluated several solutions before choosing this one. Three years later, we couldn\'t be happier with our decision.',
+      author: copySuggestions.author3 || 'Sarah Williams',
+      role: copySuggestions.role3 || 'CTO, Company Name'
+    }
+  ];
+  
   return (
-    <section className={`testimonial-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
-      <div className={`container mx-auto ${alignmentClass}`}>
-        {(title || subtitle) && (
-          <div className="section-header mb-12">
-            {title && (
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">{title}</h2>
-            )}
-            
-            {subtitle && (
-              <p className="text-lg opacity-80 max-w-3xl mx-auto">{subtitle}</p>
-            )}
-          </div>
-        )}
+    <div 
+      className={cn(
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-gray-900' : 'bg-gray-50',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
+      )}
+      onClick={handleClick}
+      style={section.style}
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className={cn(
+            'text-3xl font-bold mb-4',
+            darkMode ? 'text-white' : 'text-gray-900'
+          )}>
+            {copySuggestions.heading || 'What Our Customers Say'}
+          </h2>
+          
+          <p className={cn(
+            'max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-gray-600'
+          )}>
+            {copySuggestions.subheading || 'Don\'t just take our word for it. See what our satisfied customers have to say.'}
+          </p>
+        </div>
         
-        <div className={`grid ${gridCols} gap-6`}>
-          {testimonials && testimonials.map((testimonial, index) => (
+        <div className={cn(
+          'grid gap-8',
+          deviceType === 'mobile' ? 'grid-cols-1' : 
+          deviceType === 'tablet' ? 'grid-cols-2' : 
+          'grid-cols-3'
+        )}>
+          {testimonials.map((testimonial, i) => (
             <div 
-              key={index}
-              className="testimonial-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md"
+              key={i} 
+              className={cn(
+                'p-6 rounded-lg',
+                darkMode ? 'bg-gray-800' : 'bg-white shadow-md'
+              )}
             >
-              <div className="mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.51.88-3.995 3.356-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.511.88-3.996 3.356-3.996 5.849h4v10h-10z" />
-                </svg>
+              <div className={cn(
+                'text-4xl mb-4',
+                darkMode ? 'text-gray-500' : 'text-gray-300'
+              )}>
+                "
               </div>
-              
-              <p className="text-lg mb-4">{testimonial.quote}</p>
-              
-              <div className="flex items-center">
-                {mediaType === 'avatar' && testimonial.avatar && (
-                  <div className="flex-shrink-0 mr-3">
-                    <img 
-                      src={testimonial.avatar} 
-                      alt={testimonial.author}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  </div>
-                )}
-                
-                <div>
-                  <h4 className="font-bold">{testimonial.author}</h4>
-                  {testimonial.role && (
-                    <p className="text-sm opacity-70">{testimonial.role}</p>
-                  )}
-                </div>
-                
-                {mediaType === 'logo' && testimonial.brandLogo && (
-                  <div className="ml-auto">
-                    <img 
-                      src={testimonial.brandLogo} 
-                      alt="Company logo"
-                      className="h-8 w-auto"
-                    />
-                  </div>
-                )}
+              <p className={cn(
+                'mb-6 italic',
+                darkMode ? 'text-gray-300' : 'text-gray-600'
+              )}>
+                {testimonial.quote}
+              </p>
+              <div>
+                <p className={cn(
+                  'font-semibold',
+                  darkMode ? 'text-white' : 'text-gray-900'
+                )}>
+                  {testimonial.author}
+                </p>
+                <p className={cn(
+                  'text-sm',
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                )}>
+                  {testimonial.role}
+                </p>
               </div>
             </div>
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

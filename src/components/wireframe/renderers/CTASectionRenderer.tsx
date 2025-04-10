@@ -1,71 +1,61 @@
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getBackgroundClass, getAlignmentClass } from '../utils/variant-utils';
 
 const CTASectionRenderer: React.FC<SectionComponentProps> = ({
   section,
   viewMode = 'preview',
   darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  const { componentVariant, data = {} } = section;
-  const {
-    headline,
-    subheadline,
-    ctaLabel,
-    ctaUrl,
-    secondaryCtaLabel,
-    secondaryCtaUrl,
-    backgroundStyle,
-    alignment,
-    testimonial,
-  } = data;
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick();
+    }
+  };
   
-  // Style classes
-  const backgroundClass = getBackgroundClass(backgroundStyle, darkMode);
-  const alignmentClass = getAlignmentClass(alignment || 'center');
-
+  const copySuggestions = section.copySuggestions || {};
+  
   return (
-    <section className={`cta-section ${backgroundClass} py-16 px-4 sm:px-6 lg:px-8`}>
-      <div className={`container mx-auto ${alignmentClass}`}>
-        <div className="max-w-4xl mx-auto">
-          {headline && (
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">{headline}</h2>
-          )}
+    <div 
+      className={cn(
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-blue-900' : 'bg-blue-600',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
+      )}
+      onClick={handleClick}
+      style={section.style}
+    >
+      <div className={cn(
+        'max-w-4xl mx-auto text-center',
+        deviceType === 'mobile' ? 'px-4' : 'px-8'
+      )}>
+        <h2 className="text-white text-3xl font-bold mb-6">
+          {copySuggestions.heading || 'Ready to Get Started?'}
+        </h2>
+        
+        <p className="text-blue-100 text-lg mb-8">
+          {copySuggestions.subheading || 'Join thousands of satisfied customers using our product today.'}
+        </p>
+        
+        <div className={cn(
+          'flex gap-4 justify-center',
+          deviceType === 'mobile' && 'flex-col'
+        )}>
+          <button className="px-8 py-3 bg-white text-blue-600 rounded-md font-medium hover:bg-blue-50">
+            {copySuggestions.primaryCta || 'Get Started'}
+          </button>
           
-          {subheadline && (
-            <p className="text-lg sm:text-xl mb-8 opacity-90 max-w-3xl mx-auto">{subheadline}</p>
-          )}
-          
-          {testimonial && (
-            <div className="my-8 p-4 border-l-4 border-primary">
-              <p className="italic mb-2">{testimonial.quote}</p>
-              <p className="font-medium">{testimonial.author}</p>
-            </div>
-          )}
-          
-          <div className="flex flex-wrap gap-4 justify-center mt-8">
-            {ctaLabel && (
-              <a 
-                href={ctaUrl || '#'} 
-                className="btn bg-primary hover:bg-primary-600 text-white px-6 py-3 rounded-md font-semibold"
-              >
-                {ctaLabel}
-              </a>
-            )}
-            
-            {secondaryCtaLabel && (
-              <a 
-                href={secondaryCtaUrl || '#'} 
-                className="btn border border-current hover:bg-white/10 px-6 py-3 rounded-md font-semibold"
-              >
-                {secondaryCtaLabel}
-              </a>
-            )}
-          </div>
+          <button className="px-8 py-3 bg-transparent border border-white text-white rounded-md font-medium hover:bg-blue-800">
+            {copySuggestions.secondaryCta || 'Learn More'}
+          </button>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

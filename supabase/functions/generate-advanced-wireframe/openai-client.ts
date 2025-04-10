@@ -1,67 +1,185 @@
 
-interface OpenAIOptions {
-  model?: string;
+import { createParser } from "eventsource-parser";
+
+// Configuration interface for OpenAI calls
+interface OpenAICallOptions {
   systemMessage?: string;
   temperature?: number;
   maxTokens?: number;
+  topP?: number;
+  model?: string;
+  stream?: boolean;
 }
 
 /**
- * Call OpenAI API with proper error handling
+ * Helper function to call OpenAI API
  */
 export async function callOpenAI(
-  prompt: string, 
-  options: OpenAIOptions = {}
+  prompt: string,
+  options: OpenAICallOptions = {}
 ): Promise<string> {
-  // Get OpenAI API key with validation
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
   if (!openAIApiKey) {
-    throw new Error('OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable.');
+    throw new Error("OpenAI API key is not configured");
   }
 
   const {
-    model = 'gpt-4o',
-    systemMessage = 'You are a helpful assistant.',
+    systemMessage = "You are a helpful AI assistant specialized in UI/UX design and wireframing.",
     temperature = 0.7,
-    maxTokens = 2000
+    maxTokens = 2048,
+    topP = 1,
+    model = "gpt-4o-mini",
+    stream = false,
   } = options;
 
-  console.log(`Calling OpenAI API with model: ${model}, prompt length: ${prompt.length}`);
+  const messages = [
+    {
+      role: "system",
+      content: systemMessage,
+    },
+    {
+      role: "user",
+      content: prompt,
+    },
+  ];
+
+  const requestBody = {
+    model,
+    messages,
+    temperature,
+    max_tokens: maxTokens,
+    top_p: topP,
+    stream,
+  };
+
+  console.log(`Calling OpenAI API with model: ${model}`);
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    if (stream) {
+      return streamCompletion(requestBody, openAIApiKey);
+    } else {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${openAIApiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("OpenAI API error:", errorData);
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+  } catch (error) {
+    console.error("Error calling OpenAI:", error);
+    throw new Error(`Failed to call OpenAI: ${error.message}`);
+  }
+}
+
+/**
+ * Stream completion from OpenAI
+ */
+async function streamCompletion(
+  requestBody: any,
+  apiKey: string
+): Promise<string> {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ ...requestBody, stream: true }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+  }
+
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let fullContent = "";
+
+  // Create parser
+  const parser = createParser((event) => {
+    if (event.type === "event") {
+      if (event.data === "[DONE]") return;
+      try {
+        const json = JSON.parse(event.data);
+        const content = json.choices[0]?.delta?.content || "";
+        fullContent += content;
+      } catch (e) {
+        console.error("Error parsing OpenAI stream:", e);
+      }
+    }
+  });
+
+  // Process the response stream
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("Failed to get response reader");
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parser.feed(decoder.decode(value));
+    }
+  } catch (error) {
+    console.error("Error reading stream:", error);
+  } finally {
+    reader.releaseLock();
+  }
+
+  return fullContent;
+}
+
+/**
+ * Generate an image using OpenAI's DALL-E
+ */
+export async function generateImage(
+  prompt: string,
+  size: "1024x1024" | "1024x1792" | "1792x1024" = "1024x1024"
+) {
+  const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!openAIApiKey) {
+    throw new Error("OpenAI API key is not configured");
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAIApiKey}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openAIApiKey}`,
       },
       body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: prompt }
-        ],
-        temperature,
-        max_tokens: maxTokens
-      })
+        model: "dall-e-3",
+        prompt,
+        n: 1,
+        size,
+        quality: "standard",
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("OpenAI API error:", response.status, response.statusText, errorData);
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      console.error("DALL-E API error:", errorData);
+      throw new Error(`DALL-E API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    
-    if (!data.choices || data.choices.length === 0) {
-      console.error("No choices returned from OpenAI:", data);
-      throw new Error("No response choices returned from OpenAI API");
-    }
-
-    return data.choices[0].message.content;
+    return data.data[0]?.url;
   } catch (error) {
-    console.error("Error calling OpenAI API:", error);
-    throw new Error(`Failed to call OpenAI API: ${error.message}`);
+    console.error("Error generating image:", error);
+    throw new Error(`Failed to generate image: ${error.message}`);
   }
 }

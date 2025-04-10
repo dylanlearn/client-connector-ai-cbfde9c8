@@ -4,104 +4,58 @@ import { cn } from '@/lib/utils';
 import { VariantComponentProps } from '../types';
 
 const NavigationRenderer: React.FC<VariantComponentProps> = ({
-  variant = 'standard',
-  data = {},
+  component,
+  variant = 'default',
+  data,
   viewMode = 'preview',
   darkMode = false,
-  deviceType = 'desktop'
+  deviceType = 'desktop',
 }) => {
-  // Determine the renderer based on the variant
-  const renderByVariant = () => {
-    switch (variant) {
-      case 'centered':
-        return renderCenteredNav();
-      case 'withDropdown':
-        return renderNavWithDropdown();
-      case 'mobile':
-        return renderMobileNav();
-      case 'standard':
-      default:
-        return renderStandardNav();
-    }
-  };
+  // Default navigation links
+  const navLinks = component?.links || [
+    { label: 'Home', url: '#' },
+    { label: 'Features', url: '#' },
+    { label: 'Pricing', url: '#' },
+    { label: 'About', url: '#' },
+    { label: 'Contact', url: '#' }
+  ];
 
-  // Standard navigation with logo and items
-  const renderStandardNav = () => (
+  // This just renders a basic navigation bar for preview purposes
+  return (
     <div className={cn(
-      "flex justify-between items-center w-full px-4 py-2",
-      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800",
-      { "border-b": viewMode === 'preview' }
+      'w-full py-4 px-6',
+      darkMode ? 'bg-gray-800' : 'bg-white border-b',
+      viewMode === 'flowchart' && 'border-2 border-dashed'
     )}>
-      <div className="logo font-bold text-xl">
-        {data?.logoText || "Logo"}
-      </div>
-      <div className="nav-items flex space-x-4">
-        {['Home', 'About', 'Services', 'Contact'].map((item, index) => (
-          <div key={index} className="nav-item">
-            {item}
+      <div className={cn(
+        'flex items-center justify-between',
+        deviceType === 'mobile' && 'flex-col space-y-4'
+      )}>
+        <div className="font-bold text-lg">
+          {component?.logoText || data?.logoText || 'Brand Logo'}
+        </div>
+        
+        {deviceType !== 'mobile' ? (
+          <div className="flex items-center space-x-6">
+            {navLinks.map((link, i) => (
+              <div key={i} className={cn(
+                'text-sm',
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              )}>
+                {link.label}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // Centered navigation with logo in center
-  const renderCenteredNav = () => (
-    <div className={cn(
-      "flex flex-col items-center w-full px-4 py-2",
-      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800",
-      { "border-b": viewMode === 'preview' }
-    )}>
-      <div className="logo font-bold text-xl mb-2">
-        {data?.logoText || "Logo"}
-      </div>
-      <div className="nav-items flex space-x-6">
-        {['Home', 'About', 'Services', 'Products', 'Contact'].map((item, index) => (
-          <div key={index} className="nav-item">
-            {item}
+        ) : (
+          <div className="w-8 h-8 flex flex-col justify-around">
+            <span className={`block h-0.5 w-8 ${darkMode ? 'bg-white' : 'bg-black'}`}></span>
+            <span className={`block h-0.5 w-8 ${darkMode ? 'bg-white' : 'bg-black'}`}></span>
+            <span className={`block h-0.5 w-8 ${darkMode ? 'bg-white' : 'bg-black'}`}></span>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
-
-  // Navigation with dropdown menus
-  const renderNavWithDropdown = () => (
-    <div className={cn(
-      "flex justify-between items-center w-full px-4 py-2",
-      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800",
-      { "border-b": viewMode === 'preview' }
-    )}>
-      <div className="logo font-bold text-xl">
-        {data?.logoText || "Logo"}
-      </div>
-      <div className="nav-items flex space-x-4">
-        {['Home', 'Products ▼', 'Services ▼', 'About', 'Contact'].map((item, index) => (
-          <div key={index} className="nav-item">
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // Mobile navigation with hamburger menu
-  const renderMobileNav = () => (
-    <div className={cn(
-      "flex justify-between items-center w-full px-4 py-2",
-      darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800",
-      { "border-b": viewMode === 'preview' }
-    )}>
-      <div className="logo font-bold text-xl">
-        {data?.logoText || "Logo"}
-      </div>
-      <div className="hamburger cursor-pointer">
-        ☰
-      </div>
-    </div>
-  );
-
-  return renderByVariant();
 };
 
 export default NavigationRenderer;
