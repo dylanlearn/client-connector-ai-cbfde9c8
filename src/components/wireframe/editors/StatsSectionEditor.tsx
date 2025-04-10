@@ -12,6 +12,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { BarChartHorizontal, Plus, Trash } from 'lucide-react';
 import { getSuggestion } from '@/utils/copy-suggestions-helper';
+import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
 
 // Define the StatItem type
 interface StatItem {
@@ -28,20 +29,27 @@ interface StatsSectionEditorProps {
 const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpdate }) => {
   // Parse stats from copySuggestions or use defaults
   const getStats = (): StatItem[] => {
-    const statsString = getSuggestion(section.copySuggestions, 'stats', '[]');
     try {
-      // First try parsing it as JSON string
-      return JSON.parse(statsString);
-    } catch (e) {
-      // If it's not valid JSON and is an object with stats property
+      // Try to get stats as a string from copySuggestions
+      const statsString = getSuggestion(section.copySuggestions, 'stats', '[]');
+      
+      // Parse the stats string to an array
+      if (typeof statsString === 'string') {
+        return JSON.parse(statsString);
+      }
+      
+      // If stats is already an array on the copySuggestions object
       if (section.copySuggestions && 
           typeof section.copySuggestions === 'object' && 
           !Array.isArray(section.copySuggestions) &&
-          section.copySuggestions.stats && 
           Array.isArray(section.copySuggestions.stats)) {
         return section.copySuggestions.stats;
       }
+      
       // Return default empty array if all else fails
+      return [];
+    } catch (e) {
+      console.error("Error parsing stats:", e);
       return [];
     }
   };
@@ -57,10 +65,10 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
   }, [section.copySuggestions]);
 
   const updateCopySuggestions = () => {
-    const updatedCopySuggestions = {
+    const updatedCopySuggestions: Record<string, string> = {
       title,
       subtitle,
-      // Store stats as JSON string to be compatible with CopySuggestions interface
+      // Store stats as JSON string
       stats: JSON.stringify(stats)
     };
     
@@ -71,7 +79,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
     const newStats = [...stats, { value: '100', label: 'New Metric', suffix: '%' }];
     setStats(newStats);
     
-    const updatedCopySuggestions = {
+    const updatedCopySuggestions: Record<string, string> = {
       title,
       subtitle,
       stats: JSON.stringify(newStats)
@@ -85,7 +93,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
     newStats[index] = { ...newStats[index], [field]: value };
     setStats(newStats);
     
-    const updatedCopySuggestions = {
+    const updatedCopySuggestions: Record<string, string> = {
       title,
       subtitle,
       stats: JSON.stringify(newStats)
@@ -98,7 +106,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
     const newStats = stats.filter((_, i) => i !== index);
     setStats(newStats);
     
-    const updatedCopySuggestions = {
+    const updatedCopySuggestions: Record<string, string> = {
       title,
       subtitle,
       stats: JSON.stringify(newStats)
@@ -117,7 +125,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
-              const updatedCopySuggestions = {
+              const updatedCopySuggestions: Record<string, string> = {
                 ...((typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions)) 
                   ? section.copySuggestions 
                   : {}),
@@ -136,7 +144,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
             value={subtitle}
             onChange={(e) => {
               setSubtitle(e.target.value);
-              const updatedCopySuggestions = {
+              const updatedCopySuggestions: Record<string, string> = {
                 ...((typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions)) 
                   ? section.copySuggestions 
                   : {}),
