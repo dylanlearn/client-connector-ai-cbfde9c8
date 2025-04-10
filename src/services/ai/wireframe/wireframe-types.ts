@@ -1,4 +1,3 @@
-// Add the missing function
 export const aiWireframeToWireframeData = (aiWireframe: any): any => {
   return {
     id: aiWireframe.id || '',
@@ -154,6 +153,27 @@ export interface WireframeSection {
   type?: string; // Add type property
 }
 
+export interface FeedbackModificationResult {
+  wireframe: WireframeData;
+  success: boolean;
+  changes?: any[];
+  error?: string;
+  modified?: boolean;
+  changeDescription?: string;
+  modifiedSections?: any[];
+  addedSections?: any[];
+}
+
+// Add this interface for feedback modification params
+export interface FeedbackModificationParams {
+  wireframe: WireframeData;
+  feedback: string;
+  targetSections?: string[];
+  preferredStyle?: string;
+  preserveSections?: string[];
+}
+
+// Make sure CopySuggestions has all needed properties
 export interface CopySuggestions {
   [key: string]: string;
   heading?: string;
@@ -178,17 +198,6 @@ export interface DesignMemoryResponse {
   design_memory: DesignMemoryData;
   success: boolean;
   error?: string;
-}
-
-export interface FeedbackModificationResult {
-  wireframe: WireframeData;
-  success: boolean;
-  changes?: any[];
-  error?: string;
-  modified?: boolean;
-  changeDescription?: string;
-  modifiedSections?: any[];
-  addedSections?: any[];
 }
 
 // Base version control interfaces

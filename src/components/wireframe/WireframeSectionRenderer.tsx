@@ -13,6 +13,7 @@ import ContactSectionRenderer from './renderers/ContactSectionRenderer';
 import BlogSectionRenderer from './renderers/BlogSectionRenderer';
 import { cn } from '@/lib/utils';
 import ContainerComponentRenderer from './renderers/specialized/ContainerComponentRenderer';
+import { mapDeviceType } from './preview/DeviceInfo';
 
 const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
   section,
@@ -29,25 +30,28 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
     }
   };
 
+  // Map the extended device type to the simplified type
+  const simplifiedDeviceType = mapDeviceType(deviceType);
+
   const getSectionRenderer = () => {
     // Normalize section type for matching
     const sectionType = section.sectionType?.toLowerCase() || '';
     
     // Select the appropriate renderer based on section type
     if (sectionType === 'hero' || sectionType.startsWith('hero-')) {
-      return <HeroSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <HeroSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     } 
     else if (sectionType === 'features' || sectionType === 'feature' || sectionType.startsWith('feature')) {
-      return <FeatureSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <FeatureSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'cta' || sectionType.startsWith('cta-')) {
-      return <CTASectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <CTASectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'footer' || sectionType.startsWith('footer-')) {
-      return <FooterSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <FooterSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'testimonial' || sectionType === 'testimonials' || sectionType.startsWith('testimonial')) {
-      return <TestimonialSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <TestimonialSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'navigation' || sectionType === 'nav' || sectionType === 'header' || sectionType.startsWith('nav-')) {
       // For navigation, we need to create a component from section
@@ -67,21 +71,21 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
           variant={navComponent.variant} 
           viewMode={viewMode} 
           darkMode={darkMode} 
-          deviceType={deviceType} 
+          deviceType={simplifiedDeviceType} 
         />
       );
     }
     else if (sectionType === 'pricing' || sectionType === 'price' || sectionType.startsWith('price') || sectionType.startsWith('pricing')) {
-      return <PricingSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <PricingSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'faq' || sectionType === 'faqs' || sectionType.startsWith('faq')) {
-      return <FAQSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <FAQSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'contact' || sectionType === 'contactus' || sectionType.startsWith('contact')) {
-      return <ContactSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <ContactSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     else if (sectionType === 'blog' || sectionType === 'posts' || sectionType.startsWith('blog')) {
-      return <BlogSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={deviceType} isSelected={isSelected} onClick={handleClick} />;
+      return <BlogSectionRenderer section={section} viewMode={viewMode} darkMode={darkMode} deviceType={simplifiedDeviceType} isSelected={isSelected} onClick={handleClick} />;
     }
     
     // Default container renderer for unknown section types
@@ -102,7 +106,7 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
         interactive={true}
         onClick={handleClick}
         isSelected={isSelected}
-        deviceType={deviceType}
+        deviceType={simplifiedDeviceType}
       />
     );
   };

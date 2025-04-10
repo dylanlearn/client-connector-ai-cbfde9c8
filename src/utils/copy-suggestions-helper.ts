@@ -61,4 +61,3 @@ export const parseDimension = (value: string | number | undefined, defaultValue:
   const parsed = parseFloat(value);
   return isNaN(parsed) ? defaultValue : parsed;
 };
-

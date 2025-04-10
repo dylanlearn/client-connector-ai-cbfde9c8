@@ -2,9 +2,9 @@
 import { DeviceType } from "./preview/DeviceInfo";
 import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
 
-export type ViewMode = 'editor' | 'preview' | 'code' | 'split';
+export type ViewMode = 'editor' | 'preview' | 'code' | 'split' | 'flowchart';
 
-export { DeviceType };
+export type { DeviceType };
 
 export interface WireframeProps {
   wireframe: WireframeData;
@@ -14,6 +14,7 @@ export interface WireframeProps {
   onSectionClick?: (sectionId: string) => void;
   activeSection?: string | null;
   onSelect?: (id: string) => void;
+  className?: string;
 }
 
 export interface WireframeVisualizerProps {
@@ -44,11 +45,11 @@ export interface WireframeComponentRendererProps {
   viewMode?: ViewMode;
 }
 
-export interface WireframeSectionProps {
+export interface SectionComponentProps {
   section: WireframeSection;
   darkMode?: boolean;
-  onClick?: (sectionId: string) => void;
-  isActive?: boolean;
+  onClick?: () => void;
+  isSelected?: boolean;
   viewMode?: ViewMode;
   deviceType?: DeviceType;
 }
@@ -72,13 +73,13 @@ export interface WireframeSectionRendererProps {
   isSelected?: boolean;
 }
 
-export interface SectionComponentProps {
+export interface WireframeSectionProps {
   section: WireframeSection;
-  viewMode?: ViewMode;
   darkMode?: boolean;
+  onClick?: (sectionId: string) => void;
+  isActive?: boolean;
+  viewMode?: ViewMode;
   deviceType?: DeviceType;
-  isSelected?: boolean;
-  onClick?: () => void;
 }
 
 // Additional types for the wireframe editor
@@ -92,4 +93,3 @@ export interface SectionEditorProps {
   section: WireframeSection;
   onUpdate: (updates: Partial<WireframeSection>) => void;
 }
-
