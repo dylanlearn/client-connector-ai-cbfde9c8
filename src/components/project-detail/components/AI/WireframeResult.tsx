@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ThumbsUp, ThumbsDown, Code, Laptop, Smartphone, Palette, Type, Layout, Zap } from 'lucide-react';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 interface WireframeResultProps {
   wireframe: WireframeData;
@@ -16,7 +16,6 @@ interface WireframeResultProps {
 const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback }) => {
   const [activeTab, setActiveTab] = React.useState('overview');
 
-  // Helper function to check if animationSuggestions is an object (not an array)
   const isAnimationSuggestionsObject = (suggestions: any): suggestions is {
     type?: string;
     element?: string;
@@ -104,7 +103,6 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 Animation Suggestions
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
-                {/* Check if animationSuggestions is an object and not an array */}
                 {section.animationSuggestions && isAnimationSuggestionsObject(section.animationSuggestions) && (
                   <div className="grid grid-cols-2 gap-2">
                     {section.animationSuggestions.type && (
@@ -121,14 +119,12 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                     )}
                   </div>
                 )}
-                {/* Check if animationSuggestions is an object and has timing property */}
                 {section.animationSuggestions && isAnimationSuggestionsObject(section.animationSuggestions) && section.animationSuggestions.timing && (
                   <div className="mt-2">
                     <div className="text-xs text-gray-500">Timing:</div>
                     <div className="text-sm">{String(section.animationSuggestions.timing)}</div>
                   </div>
                 )}
-                {/* Check if animationSuggestions is an object and has effect property as array */}
                 {section.animationSuggestions && 
                   isAnimationSuggestionsObject(section.animationSuggestions) && 
                   section.animationSuggestions.effect && 
@@ -142,7 +138,6 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                     </div>
                   </div>
                 )}
-                {/* Handle if animationSuggestions is an array */}
                 {Array.isArray(section.animationSuggestions) && section.animationSuggestions.length > 0 && (
                   <div>
                     <div className="text-xs text-gray-500">Animation Suggestions:</div>
@@ -164,21 +159,7 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
                 Mobile Layout
               </h4>
               <div className="border rounded-md p-3 bg-gray-50">
-                <div className="text-xs text-gray-500">Structure:</div>
-                <div className="text-sm mb-2">{section.mobileLayout.structure && String(section.mobileLayout.structure)}</div>
-                
-                {section.mobileLayout.stackOrder && section.mobileLayout.stackOrder.length > 0 && (
-                  <div>
-                    <div className="text-xs text-gray-500">Stack Order:</div>
-                    <div className="text-sm">
-                      {section.mobileLayout.stackOrder.map((item, i) => (
-                        <Badge key={i} variant="outline" className="mr-1 mb-1">
-                          {i+1}. {String(item)}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {getMobileLayoutInfo(section)}
               </div>
             </div>
           )}
@@ -195,6 +176,28 @@ const WireframeResult: React.FC<WireframeResultProps> = ({ wireframe, onFeedback
       </CardContent>
     </Card>
   );
+
+  const getMobileLayoutInfo = (section: WireframeSection): React.ReactNode => {
+    if (!section.mobileLayout && !section.layout) {
+      return <p className="text-sm text-gray-500">No mobile-specific layout defined.</p>;
+    }
+    
+    const layoutInfo = section.mobileLayout || section.layout;
+    
+    return (
+      <div className="text-sm">
+        {layoutInfo && typeof layoutInfo === 'object' ? (
+          <div className="space-y-1">
+            {layoutInfo.type && <p>Type: {layoutInfo.type}</p>}
+            {layoutInfo.columns && <p>Columns: {layoutInfo.columns}</p>}
+            {layoutInfo.direction && <p>Direction: {layoutInfo.direction}</p>}
+          </div>
+        ) : (
+          <p>{typeof layoutInfo === 'string' ? layoutInfo : 'Complex layout configuration'}</p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">

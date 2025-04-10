@@ -37,7 +37,15 @@ const Wireframe: React.FC<WireframeProps> = ({
     // Sort by position.y if available, otherwise by order in array
     if (a.position && b.position) {
       return a.position.y - b.position.y;
+    } else if (a.y !== undefined && b.y !== undefined) {
+      return a.y - b.y;
     }
+    
+    // Fall back to order property if available
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    
     return 0;
   });
 

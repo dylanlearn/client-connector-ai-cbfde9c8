@@ -51,10 +51,12 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
     }
     else if (sectionType === 'navigation' || sectionType === 'nav' || sectionType === 'header' || sectionType.startsWith('nav-')) {
       // For navigation, we need to use the section as a component with a variant
+      const sectionVariant = section.variant || 'default';
+      
       return (
         <NavigationRenderer 
           component={section} 
-          variant={section.variant || 'default'} 
+          variant={sectionVariant} 
           viewMode={viewMode} 
           darkMode={darkMode} 
           deviceType={deviceType} 
@@ -84,8 +86,8 @@ const WireframeSectionRenderer: React.FC<WireframeSectionRendererProps> = ({
           style: section.style || {},
           children: section.components || [],
           dimensions: { 
-            width: section.dimensions?.width || '100%', 
-            height: section.dimensions?.height || 'auto' 
+            width: section.dimensions?.width || section.width || '100%', 
+            height: section.dimensions?.height || section.height || 'auto' 
           }
         }}
         darkMode={darkMode}

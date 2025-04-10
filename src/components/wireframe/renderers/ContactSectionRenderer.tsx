@@ -1,208 +1,222 @@
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { Mail, MapPin, Phone, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { getSuggestion, createStyleObject } from '@/utils/copy-suggestions-helper';
 
 const ContactSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
-  viewMode = 'preview',
   darkMode = false,
   deviceType = 'desktop',
   isSelected = false,
-  onClick
+  onClick,
 }) => {
-  const handleClick = () => {
-    if (onClick && section.id) {
-      onClick();
-    }
-  };
+  // Extract copy suggestions for the contact section
+  const copySuggestions = section.copySuggestions;
   
-  // Create a properly typed style object
-  const styles = createStyleObject(section.style);
+  // Extract section style, defaulting to an empty object
+  const sectionStyle = section.style || {};
   
+  // Create CSS properties object properly handling textAlign
+  const styleProps = createStyleObject({
+    backgroundColor: section.backgroundColor || sectionStyle.backgroundColor || (darkMode ? '#1f2937' : '#f9fafb'),
+    textAlign: section.style?.textAlign || 'left',
+    padding: section.padding || sectionStyle.padding || '3rem 1.5rem',
+    gap: section.gap || sectionStyle.gap || '2rem'
+  });
+
   return (
     <div 
       className={cn(
-        'px-6 py-16 w-full',
-        darkMode ? 'bg-gray-900' : 'bg-gray-100',
-        isSelected && 'ring-2 ring-inset ring-primary',
-        viewMode === 'flowchart' && 'border-2 border-dashed'
+        "contact-section w-full",
+        isSelected ? "ring-2 ring-offset-2 ring-primary ring-offset-transparent" : "",
+        darkMode ? "text-white" : "text-gray-800",
+        deviceType === 'mobile' ? "px-4 py-8" : "px-8 py-12"
       )}
-      onClick={handleClick}
-      style={styles}
+      style={styleProps}
+      onClick={onClick}
     >
-      <div className={cn('max-w-5xl mx-auto')}>
-        <div className="text-center mb-12">
+      <div className="container mx-auto">
+        {/* Section Header */}
+        <div className={cn("text-center mb-10", deviceType === 'mobile' ? "mb-6" : "")}>
           <h2 className={cn(
-            'text-3xl font-bold mb-4',
-            darkMode ? 'text-white' : 'text-gray-900'
+            "text-3xl font-bold mb-4", 
+            deviceType === 'mobile' ? "text-2xl" : "",
+            darkMode ? "text-white" : "text-gray-900"
           )}>
-            {getSuggestion(section.copySuggestions, 'heading', 'Contact Us')}
+            {getSuggestion(copySuggestions, 'heading', 'Contact Us')}
           </h2>
           
           <p className={cn(
-            'max-w-2xl mx-auto',
-            darkMode ? 'text-gray-300' : 'text-gray-600'
+            "text-lg max-w-2xl mx-auto", 
+            deviceType === 'mobile' ? "text-base" : "",
+            darkMode ? "text-gray-300" : "text-gray-600"
           )}>
-            {getSuggestion(section.copySuggestions, 'subheading', 'Have questions or need assistance? Reach out to our team using the form below.')}
+            {getSuggestion(copySuggestions, 'subheading', 'We\'d love to hear from you. Send us a message and we\'ll respond as soon as possible.')}
           </p>
         </div>
         
         <div className={cn(
-          deviceType === 'mobile' ? 'flex flex-col gap-8' : 'grid grid-cols-3 gap-8'
+          "flex flex-wrap",
+          deviceType === 'mobile' ? "flex-col" : "flex-row"
         )}>
           {/* Contact Form */}
           <div className={cn(
-            'col-span-2',
-            deviceType === 'mobile' && 'order-2'
+            "w-full", 
+            deviceType === 'mobile' ? "mb-8" : "lg:w-7/12 pr-8"
           )}>
-            <form className="space-y-6">
-              <div>
-                <label 
-                  htmlFor="name" 
-                  className={cn(
-                    'block mb-2 font-medium',
-                    darkMode ? 'text-white' : 'text-gray-700'
-                  )}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              <form>
+                <div className="mb-4">
+                  <label 
+                    htmlFor="name" 
+                    className={`block mb-2 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
+                  >
+                    {getSuggestion(copySuggestions, 'nameLabel', 'Your Name')}
+                  </label>
+                  <input 
+                    type="text" 
+                    id="name"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder={getSuggestion(copySuggestions, 'namePlaceholder', 'Enter your full name')}
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label 
+                    htmlFor="email" 
+                    className={`block mb-2 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
+                  >
+                    {getSuggestion(copySuggestions, 'emailLabel', 'Email Address')}
+                  </label>
+                  <input 
+                    type="email" 
+                    id="email"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder={getSuggestion(copySuggestions, 'emailPlaceholder', 'Enter your email')}
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label 
+                    htmlFor="subject" 
+                    className={`block mb-2 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
+                  >
+                    {getSuggestion(copySuggestions, 'subjectLabel', 'Subject')}
+                  </label>
+                  <input 
+                    type="text" 
+                    id="subject"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder={getSuggestion(copySuggestions, 'subjectPlaceholder', 'What is this about?')}
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label 
+                    htmlFor="message" 
+                    className={`block mb-2 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}
+                  >
+                    {getSuggestion(copySuggestions, 'messageLabel', 'Message')}
+                  </label>
+                  <textarea 
+                    id="message" 
+                    rows={4}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder={getSuggestion(copySuggestions, 'messagePlaceholder', 'Your message here...')}
+                  ></textarea>
+                </div>
+                
+                <button 
+                  type="submit"
+                  className="w-full px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
                 >
-                  {getSuggestion(section.copySuggestions, 'nameLabel', 'Name')}
-                </label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  className="w-full px-4 py-2 border rounded-md"
-                  placeholder={getSuggestion(section.copySuggestions, 'namePlaceholder', 'Your name')}
-                />
-              </div>
-              
-              <div>
-                <label 
-                  htmlFor="email" 
-                  className={cn(
-                    'block mb-2 font-medium',
-                    darkMode ? 'text-white' : 'text-gray-700'
-                  )}
-                >
-                  {getSuggestion(section.copySuggestions, 'emailLabel', 'Email')}
-                </label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  className="w-full px-4 py-2 border rounded-md"
-                  placeholder={getSuggestion(section.copySuggestions, 'emailPlaceholder', 'Your email address')}
-                />
-              </div>
-              
-              <div>
-                <label 
-                  htmlFor="subject" 
-                  className={cn(
-                    'block mb-2 font-medium',
-                    darkMode ? 'text-white' : 'text-gray-700'
-                  )}
-                >
-                  {getSuggestion(section.copySuggestions, 'subjectLabel', 'Subject')}
-                </label>
-                <input 
-                  type="text" 
-                  id="subject" 
-                  className="w-full px-4 py-2 border rounded-md"
-                  placeholder={getSuggestion(section.copySuggestions, 'subjectPlaceholder', 'What is this regarding?')}
-                />
-              </div>
-              
-              <div>
-                <label 
-                  htmlFor="message" 
-                  className={cn(
-                    'block mb-2 font-medium',
-                    darkMode ? 'text-white' : 'text-gray-700'
-                  )}
-                >
-                  {getSuggestion(section.copySuggestions, 'messageLabel', 'Message')}
-                </label>
-                <textarea 
-                  id="message" 
-                  className="w-full px-4 py-2 border rounded-md h-32"
-                  placeholder={getSuggestion(section.copySuggestions, 'messagePlaceholder', 'Your message...')}
-                ></textarea>
-              </div>
-              
-              <button type="submit" className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700">
-                {getSuggestion(section.copySuggestions, 'submitButton', 'Send Message')}
-              </button>
-            </form>
+                  {getSuggestion(copySuggestions, 'submitButton', 'Send Message')}
+                </button>
+              </form>
+            </div>
           </div>
-          
+
           {/* Contact Information */}
           <div className={cn(
-            'col-span-1',
-            darkMode ? 'bg-gray-800' : 'bg-white',
-            'p-6 rounded-lg shadow',
-            deviceType === 'mobile' && 'order-1'
+            "w-full", 
+            deviceType === 'mobile' ? "" : "lg:w-5/12"
           )}>
-            <h3 className={cn(
-              'text-xl font-semibold mb-4',
-              darkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              {getSuggestion(section.copySuggestions, 'contactInfoTitle', 'Contact Information')}
-            </h3>
-            
-            <div className="space-y-6">
-              {/* Address */}
-              <div>
-                <p className={cn(
-                  'font-medium',
-                  darkMode ? 'text-white' : 'text-gray-900'
-                )}>
-                  {getSuggestion(section.copySuggestions, 'addressTitle', 'Address')}
-                </p>
-                <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                  {getSuggestion(section.copySuggestions, 'address', '123 Business Street, Suite 100')}
-                </p>
-              </div>
+            <div className="h-full bg-primary/10 rounded-lg p-6">
+              <h3 className={cn(
+                "text-xl font-semibold mb-6",
+                darkMode ? "text-white" : "text-gray-800"
+              )}>
+                {getSuggestion(copySuggestions, 'contactInfoTitle', 'Contact Information')}
+              </h3>
               
-              {/* Phone */}
-              <div>
-                <p className={cn(
-                  'font-medium',
-                  darkMode ? 'text-white' : 'text-gray-900'
-                )}>
-                  {getSuggestion(section.copySuggestions, 'phoneTitle', 'Phone')}
-                </p>
-                <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                  {getSuggestion(section.copySuggestions, 'phone', '+1 (555) 123-4567')}
-                </p>
-              </div>
-              
-              {/* Email */}
-              <div>
-                <p className={cn(
-                  'font-medium',
-                  darkMode ? 'text-white' : 'text-gray-900'
-                )}>
-                  {getSuggestion(section.copySuggestions, 'emailTitle', 'Email')}
-                </p>
-                <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                  {getSuggestion(section.copySuggestions, 'emailAddress', 'contact@company.com')}
-                </p>
-              </div>
-              
-              {/* Hours */}
-              <div>
-                <p className={cn(
-                  'font-medium',
-                  darkMode ? 'text-white' : 'text-gray-900'
-                )}>
-                  {getSuggestion(section.copySuggestions, 'hoursTitle', 'Hours')}
-                </p>
-                <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                  {getSuggestion(section.copySuggestions, 'hours', 'Monday - Friday: 9AM - 5PM')}
-                </p>
-                <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-                  {getSuggestion(section.copySuggestions, 'weekend', 'Weekend: Closed')}
-                </p>
+              <div className="space-y-6">
+                {/* Address */}
+                <div className="flex">
+                  <div className="flex-shrink-0 mr-3">
+                    <MapPin className={`h-6 w-6 ${darkMode ? 'text-gray-300' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">
+                      {getSuggestion(copySuggestions, 'addressTitle', 'Our Address')}
+                    </h4>
+                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {getSuggestion(copySuggestions, 'address', '1234 Street Name, City, ST 12345')}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Phone */}
+                <div className="flex">
+                  <div className="flex-shrink-0 mr-3">
+                    <Phone className={`h-6 w-6 ${darkMode ? 'text-gray-300' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">
+                      {getSuggestion(copySuggestions, 'phoneTitle', 'Phone Number')}
+                    </h4>
+                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {getSuggestion(copySuggestions, 'phone', '+1 (555) 123-4567')}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Email */}
+                <div className="flex">
+                  <div className="flex-shrink-0 mr-3">
+                    <Mail className={`h-6 w-6 ${darkMode ? 'text-gray-300' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">
+                      {getSuggestion(copySuggestions, 'emailTitle', 'Email Address')}
+                    </h4>
+                    <a 
+                      href={`mailto:${getSuggestion(copySuggestions, 'emailAddress', 'info@company.com')}`} 
+                      className="text-primary hover:underline"
+                    >
+                      {getSuggestion(copySuggestions, 'emailAddress', 'info@company.com')}
+                    </a>
+                  </div>
+                </div>
+                
+                {/* Hours */}
+                <div className="flex pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex-shrink-0 mr-3">
+                    <Clock className={`h-6 w-6 ${darkMode ? 'text-gray-300' : 'text-primary'}`} />
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-1">
+                      {getSuggestion(copySuggestions, 'hoursTitle', 'Business Hours')}
+                    </h4>
+                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {getSuggestion(copySuggestions, 'hours', 'Monday - Friday: 9am - 5pm')}
+                    </p>
+                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {getSuggestion(copySuggestions, 'weekend', 'Weekends: Closed')}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

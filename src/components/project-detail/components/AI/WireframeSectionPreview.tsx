@@ -99,11 +99,14 @@ const WireframeSectionPreview: React.FC<WireframeSectionPreviewProps> = ({ secti
       // Handle string layout
       return section.layout === 'centered' ? 'items-center text-center' :
         section.layout === 'right' ? 'items-end text-right' : 'items-start';
-    } else {
+    } else if (typeof section.layout === 'object') {
       // Handle object layout
-      return section.layout.type === 'centered' ? 'items-center text-center' :
-        section.layout.type === 'right' ? 'items-end text-right' : 'items-start';
+      const layoutType = section.layout.type;
+      return layoutType === 'centered' ? 'items-center text-center' :
+        layoutType === 'right' ? 'items-end text-right' : 'items-start';
     }
+    
+    return 'items-start';
   };
 
   return (

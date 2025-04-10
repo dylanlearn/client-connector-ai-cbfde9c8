@@ -1,5 +1,5 @@
 
-import { WireframeSection as WireframeSectionType, WireframeData, CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection as WireframeSectionType, WireframeData, CopySuggestions, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 import React from 'react';
 
 export type ViewMode = 'preview' | 'editor' | 'flowchart' | 'code';
@@ -25,7 +25,7 @@ export interface SectionComponentProps {
 }
 
 export interface BaseComponentRendererProps {
-  component: any;
+  component: WireframeComponent;
   darkMode?: boolean;
   interactive?: boolean;
   onClick?: () => void;
@@ -50,7 +50,7 @@ export interface WireframeRendererProps {
 export interface WireframeState extends Partial<WireframeData> {
   title: string;
   styleToken?: string;
-  id: string; // Make id required to match WireframeData
+  id?: string;
   sections: WireframeSectionType[];
 }
 
@@ -63,7 +63,6 @@ export interface AdvancedWireframeGeneratorProps {
   intakeData?: any; // Add intakeData prop
 }
 
-// Update WireframeProps to match how it's being used in the codebase
 export interface WireframeProps {
   wireframe: WireframeData;
   viewMode?: ViewMode;
@@ -75,7 +74,6 @@ export interface WireframeProps {
   className?: string;
 }
 
-// Add VariantComponentProps interface
 export interface VariantComponentProps extends BaseComponentRendererProps {
   variant?: string;
   viewMode?: ViewMode;

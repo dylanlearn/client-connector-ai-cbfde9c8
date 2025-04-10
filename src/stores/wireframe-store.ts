@@ -1,23 +1,7 @@
 
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-
-export interface WireframeSection {
-  id: string;
-  name: string;
-  sectionType: string;
-  description?: string;
-  layoutType?: string;
-  components?: any[];
-  dimensions?: {
-    width: number | string;
-    height: number | string;
-  };
-  copySuggestions?: any;
-  animationSuggestions?: any[];
-  order?: number;
-  designReasoning?: string;
-}
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 export interface WireframeState {
   id?: string;
@@ -38,6 +22,7 @@ export interface WireframeState {
     zoom: number;
     position: { x: number; y: number };
   };
+  wireframe?: WireframeData; // Add wireframe property
   addSection: (section: Omit<WireframeSection, "id">) => void;
   updateSection: (id: string, updates: Partial<WireframeSection>) => void;
   removeSection: (id: string) => void;
@@ -53,6 +38,7 @@ export interface WireframeState {
   setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
   updateCanvasSettings: (settings: Partial<{ zoom: number; position: { x: number; y: number } }>) => void;
   updateWireframe: (updates: Partial<WireframeState>) => void;
+  setWireframe: (data: Partial<WireframeData>) => void; // Add method to set wireframe
 }
 
 export const useWireframeStore = create<WireframeState>((set) => ({
@@ -83,6 +69,7 @@ export const useWireframeStore = create<WireframeState>((set) => ({
     zoom: 1,
     position: { x: 0, y: 0 }
   },
+  wireframe: undefined, // Initialize wireframe property
   
   addSection: (section) => set((state) => {
     const newSection = {
@@ -91,22 +78,50 @@ export const useWireframeStore = create<WireframeState>((set) => ({
       ...section
     };
     
+    const newSections = [...state.sections, newSection];
+    
+    // Also update the wireframe object if it exists
+    const updatedWireframe = state.wireframe 
+      ? { ...state.wireframe, sections: newSections } 
+      : undefined;
+    
     return {
-      sections: [...state.sections, newSection],
-      activeSection: newSection.id
+      sections: newSections,
+      activeSection: newSection.id,
+      wireframe: updatedWireframe,
     };
   }),
   
-  updateSection: (id, updates) => set((state) => ({
-    sections: state.sections.map(section => 
+  updateSection: (id, updates) => set((state) => {
+    const updatedSections = state.sections.map(section => 
       section.id === id ? { ...section, ...updates } : section
-    )
-  })),
+    );
+    
+    // Also update the wireframe object if it exists
+    const updatedWireframe = state.wireframe 
+      ? { ...state.wireframe, sections: updatedSections } 
+      : undefined;
+    
+    return {
+      sections: updatedSections,
+      wireframe: updatedWireframe,
+    };
+  }),
   
-  removeSection: (id) => set((state) => ({
-    sections: state.sections.filter(section => section.id !== id),
-    activeSection: state.activeSection === id ? null : state.activeSection
-  })),
+  removeSection: (id) => set((state) => {
+    const filteredSections = state.sections.filter(section => section.id !== id);
+    
+    // Also update the wireframe object if it exists
+    const updatedWireframe = state.wireframe 
+      ? { ...state.wireframe, sections: filteredSections } 
+      : undefined;
+    
+    return {
+      sections: filteredSections,
+      activeSection: state.activeSection === id ? null : state.activeSection,
+      wireframe: updatedWireframe,
+    };
+  }),
   
   moveSectionUp: (id) => set((state) => {
     const index = state.sections.findIndex(s => s.id === id);
@@ -117,7 +132,15 @@ export const useWireframeStore = create<WireframeState>((set) => ({
     newSections[index - 1] = newSections[index];
     newSections[index] = temp;
     
-    return { sections: newSections };
+    // Also update the wireframe object if it exists
+    const updatedWireframe = state.wireframe 
+      ? { ...state.wireframe, sections: newSections } 
+      : undefined;
+    
+    return { 
+      sections: newSections,
+      wireframe: updatedWireframe,
+    };
   }),
   
   moveSectionDown: (id) => set((state) => {
@@ -129,7 +152,15 @@ export const useWireframeStore = create<WireframeState>((set) => ({
     newSections[index + 1] = newSections[index];
     newSections[index] = temp;
     
-    return { sections: newSections };
+    // Also update the wireframe object if it exists
+    const updatedWireframe = state.wireframe 
+      ? { ...state.wireframe, sections: newSections } 
+      : undefined;
+    
+    return { 
+      sections: newSections,
+      wireframe: updatedWireframe,
+    };
   }),
   
   setActiveSection: (id) => set({ activeSection: id }),
@@ -144,15 +175,31 @@ export const useWireframeStore = create<WireframeState>((set) => ({
     newSections.splice(oldOrder, 1);
     newSections.splice(newOrder, 0, section);
     
-    return { sections: newSections };
+    // Also update the wireframe object if it exists
+    const updatedWireframe = state.wireframe 
+      ? { ...state.wireframe, sections: newSections } 
+      : undefined;
+    
+    return { 
+      sections: newSections,
+      wireframe: updatedWireframe,
+    };
   }),
   
   updateColorScheme: (colorScheme) => set((state) => ({
-    colorScheme: { ...state.colorScheme, ...colorScheme }
+    colorScheme: { ...state.colorScheme, ...colorScheme },
+    wireframe: state.wireframe ? {
+      ...state.wireframe,
+      colorScheme: { ...state.wireframe.colorScheme, ...colorScheme }
+    } : undefined
   })),
   
   updateTypography: (typography) => set((state) => ({
-    typography: { ...state.typography, ...typography }
+    typography: { ...state.typography, ...typography },
+    wireframe: state.wireframe ? {
+      ...state.wireframe,
+      typography: { ...state.wireframe.typography, ...typography }
+    } : undefined
   })),
   
   toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
@@ -169,7 +216,30 @@ export const useWireframeStore = create<WireframeState>((set) => ({
     canvasSettings: { ...state.canvasSettings, ...settings }
   })),
   
-  updateWireframe: (updates) => set((state) => ({ ...state, ...updates }))
+  updateWireframe: (updates) => set((state) => ({ ...state, ...updates })),
+  
+  // Add method to set wireframe data
+  setWireframe: (data) => set((state) => {
+    const wireframeData: WireframeData = {
+      id: data.id || state.id || uuidv4(),
+      title: data.title || state.title || 'New Wireframe',
+      sections: data.sections || state.sections || [],
+      description: data.description || state.description,
+      colorScheme: data.colorScheme || state.colorScheme,
+      typography: data.typography || state.typography,
+      style: data.style || state.styleToken,
+      styleToken: data.styleToken || state.styleToken,
+      designTokens: data.designTokens || {},
+    };
+    
+    return {
+      sections: wireframeData.sections,
+      wireframe: wireframeData,
+      title: wireframeData.title,
+      description: wireframeData.description,
+      styleToken: wireframeData.styleToken || state.styleToken,
+    };
+  }),
 }));
 
 export default useWireframeStore;
