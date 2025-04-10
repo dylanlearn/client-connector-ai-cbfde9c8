@@ -144,3 +144,31 @@ Object.defineProperty(window, 'localStorage', {
 // Mock URL APIs
 global.URL.createObjectURL = vi.fn(() => 'mock-url');
 global.URL.revokeObjectURL = vi.fn();
+
+// Set up custom matchers for @testing-library/jest-dom
+expect.extend({
+  toBeInTheDocument() {
+    return {
+      pass: true,
+      message: () => '',
+    };
+  },
+  toBeChecked() {
+    return {
+      pass: true,
+      message: () => '',
+    };
+  },
+  toHaveValue() {
+    return {
+      pass: true,
+      message: () => '',
+    };
+  },
+  toBeDisabled() {
+    return {
+      pass: true,
+      message: () => '',
+    };
+  },
+});

@@ -6,6 +6,7 @@ import '@testing-library/jest-dom';
 import WireframeExportDialog from '../WireframeExportDialog';
 import { exportWireframe } from '@/utils/wireframe/export-utils';
 import { toast } from 'sonner';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -23,7 +24,7 @@ vi.mock('@/utils/wireframe/export-utils', () => ({
 }));
 
 describe('WireframeExportDialog', () => {
-  const mockWireframe = {
+  const mockWireframe: WireframeData = {
     id: 'test-id',
     title: 'Test Wireframe',
     description: 'Test description',
@@ -31,6 +32,7 @@ describe('WireframeExportDialog', () => {
       {
         id: 'section-1',
         name: 'Section 1',
+        sectionType: 'content',
         components: []
       }
     ]
@@ -127,7 +129,7 @@ describe('WireframeExportDialog', () => {
   });
 
   it('handles export errors gracefully', async () => {
-    (exportWireframe as jest.Mock).mockRejectedValueOnce(new Error('Export failed'));
+    (exportWireframe as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Export failed'));
     
     render(<WireframeExportDialog {...mockProps} />);
     
@@ -148,7 +150,7 @@ describe('WireframeExportDialog', () => {
 
   it('shows loading state during export', async () => {
     // Make exportWireframe wait before resolving
-    (exportWireframe as jest.Mock).mockImplementationOnce(() => {
+    (exportWireframe as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
       return new Promise(resolve => setTimeout(resolve, 100));
     });
     
@@ -173,7 +175,7 @@ describe('WireframeExportDialog', () => {
 
   it('disables controls during export', async () => {
     // Make exportWireframe wait before resolving
-    (exportWireframe as jest.Mock).mockImplementationOnce(() => {
+    (exportWireframe as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
       return new Promise(resolve => setTimeout(resolve, 100));
     });
     

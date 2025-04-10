@@ -1,266 +1,127 @@
 
-import { WireframeData } from "@/types/wireframe";
-import { WireframeSection } from "@/services/ai/wireframe/wireframe-types";
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Generates an HTML document from wireframe data
+ * Generates HTML from wireframe data for export
  */
-export const generateHtmlFromWireframe = (wireframe: WireframeData): string => {
-  const {
-    title = 'Wireframe',
-    description = '',
-    sections = [],
-    colorScheme = {
-      primary: '#4F46E5',
-      secondary: '#A855F7',
-      accent: '#F59E0B',
-      background: '#FFFFFF',
-      text: '#111827',
-    },
-    typography = {
-      headings: 'Raleway, sans-serif',
-      body: 'Inter, sans-serif'
-    }
-  } = wireframe;
-
-  // Generate CSS variables from the design tokens
-  const cssVariables = `
-    :root {
-      --color-primary: ${colorScheme.primary};
-      --color-secondary: ${colorScheme.secondary};
-      --color-accent: ${colorScheme.accent};
-      --color-background: ${colorScheme.background};
-      --color-text: ${colorScheme.text || '#111827'};
-      --font-headings: ${typography.headings};
-      --font-body: ${typography.body};
-    }
-  `;
-
-  // Generate HTML for each section
-  const sectionsHtml = sections.map(section => generateSectionHtml(section)).join('\n');
-
-  // Create the full HTML document
-  return `
-<!DOCTYPE html>
+export function generateHtmlFromWireframe(wireframe: WireframeData): string {
+  const title = wireframe.title || 'Wireframe Export';
+  const description = wireframe.description || '';
+  const colorScheme = wireframe.colorScheme || {
+    background: '#ffffff',
+    text: '#333333',
+    primary: '#0070f3',
+    secondary: '#f5f5f5',
+    accent: '#ffa500'
+  };
+  
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)}</title>
+  <title>${title}</title>
   <style>
-    ${cssVariables}
-    
+    :root {
+      --background: ${colorScheme.background};
+      --text: ${colorScheme.text || '#333333'};
+      --primary: ${colorScheme.primary};
+      --secondary: ${colorScheme.secondary || '#f5f5f5'};
+      --accent: ${colorScheme.accent || '#ffa500'};
+    }
     body {
-      font-family: var(--font-body);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: var(--background);
+      color: var(--text);
       margin: 0;
       padding: 0;
-      background-color: var(--color-background);
-      color: var(--color-text);
+      line-height: 1.5;
     }
-    
-    h1, h2, h3, h4, h5, h6 {
-      font-family: var(--font-headings);
-    }
-    
-    .container {
+    .wireframe-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 1rem;
-    }
-    
-    .section {
-      padding: 2rem 0;
-    }
-    
-    .hero {
-      padding: 4rem 0;
-      text-align: center;
-      background-color: var(--color-primary);
-      color: white;
-    }
-    
-    .cta {
-      padding: 3rem 0;
-      text-align: center;
-      background-color: var(--color-accent);
-      color: white;
-    }
-    
-    .feature {
       padding: 2rem;
-      margin: 1rem 0;
-      border: 1px solid #eee;
-      border-radius: 8px;
     }
-    
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
+    .wireframe-header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid #eaeaea;
+      padding-bottom: 1rem;
     }
-    
-    .button {
-      display: inline-block;
-      padding: 0.5rem 1.5rem;
-      background-color: var(--color-primary);
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-weight: bold;
-      margin: 0.5rem;
-    }
-    
-    .faq-item {
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border: 1px solid #eee;
-      border-radius: 4px;
-    }
-    
-    .faq-question {
-      font-weight: bold;
+    .wireframe-title {
+      font-size: 2.5rem;
       margin-bottom: 0.5rem;
+      color: var(--primary);
     }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
+    .wireframe-description {
+      font-size: 1.2rem;
+      color: #666;
+    }
+    .wireframe-section {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: #f9f9f9;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .section-header {
+      font-size: 1.8rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+    .section-description {
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+    }
+    .component-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .component-item {
+      background: white;
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid #eaeaea;
+    }
+    .meta-info {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 4rem;
+      text-align: center;
     }
   </style>
-  <!-- Import Google Fonts based on typography settings -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Raleway:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="wireframe-export">
-    ${description ? `<div class="container"><p class="description">${escapeHtml(description)}</p></div>` : ''}
+  <div class="wireframe-container">
+    <header class="wireframe-header">
+      <h1 class="wireframe-title">${title}</h1>
+      <p class="wireframe-description">${description}</p>
+    </header>
     
-    ${sectionsHtml}
-  </div>
-  
-  <footer>
-    <div class="container">
-      <p>Generated from wireframe: ${escapeHtml(title)}</p>
-    </div>
-  </footer>
-</body>
-</html>
-  `;
-};
-
-/**
- * Generates HTML for a specific wireframe section
- */
-const generateSectionHtml = (section: WireframeSection): string => {
-  const { sectionType, name, data = {}, description = '' } = section;
-  
-  switch (sectionType) {
-    case 'hero':
-      return `
-        <section class="section hero">
-          <div class="container">
-            <h1>${escapeHtml(data.headline || name)}</h1>
-            ${data.subheadline ? `<p>${escapeHtml(data.subheadline)}</p>` : ''}
-            ${data.content ? `<div>${data.content}</div>` : ''}
-            ${data.buttonText ? `<a href="#" class="button">${escapeHtml(data.buttonText)}</a>` : ''}
-          </div>
-        </section>
-      `;
-    
-    case 'cta':
-      return `
-        <section class="section cta">
-          <div class="container">
-            <h2>${escapeHtml(data.headline || name)}</h2>
-            ${data.content ? `<div>${data.content}</div>` : ''}
-            ${data.buttonText ? `<a href="#" class="button">${escapeHtml(data.buttonText)}</a>` : ''}
-          </div>
-        </section>
-      `;
-    
-    case 'feature':
-    case 'feature-grid':
-      // For feature sections, check if there are items to display in a grid
-      if (Array.isArray(data.items) && data.items.length > 0) {
-        const featuresHtml = data.items.map((item: any) => `
-          <div class="feature">
-            <h3>${escapeHtml(item.title || '')}</h3>
-            <p>${escapeHtml(item.description || '')}</p>
-          </div>
-        `).join('');
-        
-        return `
-          <section class="section">
-            <div class="container">
-              <h2>${escapeHtml(data.headline || name)}</h2>
-              ${data.description ? `<p>${escapeHtml(data.description)}</p>` : ''}
-              <div class="features-grid">
-                ${featuresHtml}
+    <main>
+      ${wireframe.sections?.map(section => `
+        <section class="wireframe-section">
+          <h2 class="section-header">${section.name || 'Unnamed Section'}</h2>
+          ${section.description ? `<p class="section-description">${section.description}</p>` : ''}
+          
+          ${section.components && section.components.length > 0 ? `
+          <div class="component-list">
+            ${section.components.map((component, index) => `
+              <div class="component-item">
+                <h3>${component.type || 'Component ' + (index + 1)}</h3>
+                ${component.content ? `<p>${JSON.stringify(component.content)}</p>` : ''}
               </div>
-            </div>
-          </section>
-        `;
-      } else {
-        return `
-          <section class="section">
-            <div class="container">
-              <h2>${escapeHtml(name)}</h2>
-              ${description ? `<p>${escapeHtml(description)}</p>` : ''}
-              ${data.content ? `<div>${data.content}</div>` : ''}
-            </div>
-          </section>
-        `;
-      }
-    
-    case 'faq':
-      let faqItems = '';
-      
-      if (Array.isArray(data.items) && data.items.length > 0) {
-        faqItems = data.items.map((item: any) => `
-          <div class="faq-item">
-            <div class="faq-question">${escapeHtml(item.question || '')}</div>
-            <div class="faq-answer">${escapeHtml(item.answer || '')}</div>
+            `).join('')}
           </div>
-        `).join('');
-      }
-      
-      return `
-        <section class="section">
-          <div class="container">
-            <h2>${escapeHtml(data.headline || name || 'FAQ')}</h2>
-            <div class="faq-list">
-              ${faqItems}
-            </div>
-          </div>
+          ` : '<p>No components in this section</p>'}
         </section>
-      `;
+      `).join('') || '<p>No sections available</p>'}
+    </main>
     
-    default:
-      // Generic section for any other type
-      return `
-        <section class="section">
-          <div class="container">
-            <h2>${escapeHtml(name)}</h2>
-            ${description ? `<p>${escapeHtml(description)}</p>` : ''}
-            ${data.content ? `<div>${data.content}</div>` : ''}
-          </div>
-        </section>
-      `;
-  }
-};
-
-/**
- * Escapes HTML special characters to prevent XSS
- */
-const escapeHtml = (unsafe: string): string => {
-  if (!unsafe) return '';
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-};
+    <footer class="meta-info">
+      <p>Exported from Wireframe Studio on ${new Date().toLocaleDateString()}</p>
+    </footer>
+  </div>
+</body>
+</html>`;
+}

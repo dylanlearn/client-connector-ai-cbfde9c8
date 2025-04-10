@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { exportWireframe, generateHtmlFromWireframe, dataURItoBlob, ExportError } from '../export-utils';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -38,7 +39,7 @@ vi.mock('jspdf', () => ({
 }));
 
 describe('Export Utils', () => {
-  const mockWireframeData = {
+  const mockWireframeData: WireframeData = {
     id: 'test-id',
     title: 'Test Wireframe',
     description: 'Test description',
@@ -46,6 +47,7 @@ describe('Export Utils', () => {
       {
         id: 'section-1',
         name: 'Section 1',
+        sectionType: 'content',
         description: 'Section 1 description',
         components: []
       }
@@ -90,22 +92,22 @@ describe('Export Utils', () => {
   describe('exportWireframe', () => {
     it('should export as JSON successfully', async () => {
       await exportWireframe(mockWireframeData, 'json');
-      expect(toast).toHaveBeenCalledWith('Wireframe exported successfully as JSON');
+      expect(toast.success).toHaveBeenCalledWith('Wireframe exported successfully as JSON');
     });
     
     it('should export as HTML successfully', async () => {
       await exportWireframe(mockWireframeData, 'html');
-      expect(toast).toHaveBeenCalledWith('Wireframe exported successfully as HTML');
+      expect(toast.success).toHaveBeenCalledWith('Wireframe exported successfully as HTML');
     });
     
     it('should export as PDF successfully', async () => {
       await exportWireframe(mockWireframeData, 'pdf');
-      expect(toast).toHaveBeenCalledWith('Wireframe exported successfully as PDF');
+      expect(toast.success).toHaveBeenCalledWith('Wireframe exported successfully as PDF');
     });
 
     it('should export as PNG successfully', async () => {
       await exportWireframe(mockWireframeData, 'png');
-      expect(toast).toHaveBeenCalledWith('Wireframe exported successfully as PNG');
+      expect(toast.success).toHaveBeenCalledWith('Wireframe exported successfully as PNG');
     });
 
     it('should throw and handle error for unsupported format', async () => {
@@ -131,7 +133,8 @@ describe('Export Utils', () => {
     });
 
     it('should handle empty wireframe data', () => {
-      const html = generateHtmlFromWireframe({ id: 'empty', sections: [] });
+      const emptyData = { id: 'empty', title: 'Empty', sections: [] };
+      const html = generateHtmlFromWireframe(emptyData as WireframeData);
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('Wireframe Export');
       expect(html).not.toContain('wireframe-section');
@@ -143,7 +146,9 @@ describe('Export Utils', () => {
         colorScheme: {
           background: '#f0f0f0',
           text: '#333333',
-          primary: '#0070f3'
+          primary: '#0070f3',
+          secondary: '#f5f5f5',
+          accent: '#ffa500'
         }
       };
       const html = generateHtmlFromWireframe(dataWithColors);
