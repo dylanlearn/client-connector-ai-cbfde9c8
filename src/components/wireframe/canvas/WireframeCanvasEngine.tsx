@@ -47,14 +47,15 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({ width = 1
     setIsInitialized(true);
 
     if (config.showGrid) {
-      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType, config.gridColor);
+      // Fix: Pass only the required arguments to createCanvasGrid
+      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
       gridLines.forEach(line => fabricCanvas.add(line));
     }
 
     return () => {
       fabricCanvas.dispose();
     };
-  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType, config.gridColor]);
+  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType]);
 
   return (
     <canvas ref={canvasRef} width={width} height={height} />

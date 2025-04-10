@@ -54,13 +54,13 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     setIsInitialized(true);
     
     if (config.showGrid) {
-      // Apply grid to canvas
-      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType, config.gridColor);
+      // Fix: Pass only the required arguments to createCanvasGrid
+      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
       gridLines.forEach(line => fabricCanvas.add(line));
     }
     
     return fabricCanvas;
-  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType, config.gridColor]);
+  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType]);
   
   useEffect(() => {
     return () => {

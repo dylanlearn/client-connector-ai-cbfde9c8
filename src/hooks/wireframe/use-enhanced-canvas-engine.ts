@@ -97,7 +97,8 @@ export function useEnhancedCanvasEngine(options: UseEnhancedCanvasEngineOptions 
     
     // Add grid if enabled
     if (config.showGrid) {
-      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType, config.gridColor);
+      // Fix: Pass only the required arguments to createCanvasGrid
+      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
       gridLines.forEach(line => fabricCanvas.add(line));
     }
     
@@ -107,7 +108,7 @@ export function useEnhancedCanvasEngine(options: UseEnhancedCanvasEngineOptions 
     }
     
     return fabricCanvas;
-  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType, config.gridColor, config.historyEnabled, saveHistoryState]);
+  }, [config.width, config.height, config.backgroundColor, config.showGrid, config.gridSize, config.gridType, config.historyEnabled, saveHistoryState]);
   
   // Cleanup
   useEffect(() => {

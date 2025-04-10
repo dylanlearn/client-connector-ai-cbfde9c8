@@ -1,3 +1,4 @@
+
 import { fabric } from 'fabric';
 import { AlignmentGuide } from './types';
 
@@ -82,7 +83,8 @@ export function generateSnapGuidelines(
 export function createCanvasGrid(
   canvas: fabric.Canvas, 
   gridSize: number = 10, 
-  gridType: 'lines' | 'dots' | 'columns' = 'lines'
+  gridType: 'lines' | 'dots' | 'columns' = 'lines',
+  gridColor: string = '#e0e0e0'
 ): fabric.Line[] {
   const gridLines: fabric.Line[] = [];
   
@@ -92,7 +94,6 @@ export function createCanvasGrid(
   const height = canvas.getHeight();
   
   // Default style for grid lines
-  const gridColor = '#e0e0e0';
   const gridStrokeWidth = 1;
   
   switch (gridType) {
