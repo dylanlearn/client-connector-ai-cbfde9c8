@@ -152,11 +152,8 @@ export const exportWireframeAsImage = async (wireframe: WireframeData, options: 
       throw new ExportError('Canvas element is required to export as image.');
     }
     
-    // Convert the canvas to a data URL
-    const dataURL = canvasElement.toDataURL({
-      format: format,
-      quality: 1
-    });
+    // Convert the canvas to a data URL - fix the toDataURL call
+    const dataURL = canvasElement.toDataURL(format === 'png' ? 'image/png' : 'image/svg+xml');
     
     // Create a download link
     const link = document.createElement('a');

@@ -1,6 +1,3 @@
-
-// Fix the title property error in this file
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -17,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { exportWireframeAsPDF, exportWireframeAsImage, exportWireframeAsHTML } from '@/utils/wireframe/export-utils';
-import { Download, FileCode, FileImage, FilePdf } from 'lucide-react';
+import { Download, FileCode, FileImage, File } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface WireframeExportDialogProps {
@@ -57,6 +54,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
       }
       
       toast({
+        title: "Export successful",
         description: `Successfully exported wireframe as ${exportFormat.toUpperCase()}.`
       });
       
@@ -86,7 +84,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
         <Tabs defaultValue="pdf" className="mt-4" onValueChange={(value) => setExportFormat(value as any)}>
           <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="pdf" className="flex flex-col items-center gap-1 py-2">
-              <FilePdf className="h-4 w-4" />
+              <File className="h-4 w-4" />
               <span className="text-xs">PDF</span>
             </TabsTrigger>
             <TabsTrigger value="png" className="flex flex-col items-center gap-1 py-2">
