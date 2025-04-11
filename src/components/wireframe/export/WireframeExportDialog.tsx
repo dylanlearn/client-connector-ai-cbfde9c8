@@ -1,70 +1,102 @@
+
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { exportWireframeAsPDF, exportWireframeAsImage, exportWireframeAsHTML } from '@/utils/wireframe/export-utils';
-import { Download, FileCode, FileImage, File } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { exportWireframeAsHTML, exportWireframeAsImage, exportWireframeAsPDF } from '@/utils/wireframe/export-utils';
+import { Download, FileText, FileImage, FilePdf, Loader2 } from 'lucide-react';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { useToast } from '@/hooks/use-toast';
 
-export interface WireframeExportDialogProps {
-  wireframe: WireframeData;
+interface WireframeExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  canvasElement?: HTMLCanvasElement;
+  wireframe: WireframeData;
+  canvasElement?: HTMLCanvasElement | null;
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
-  wireframe,
   open,
   onOpenChange,
+  wireframe,
   canvasElement
 }) => {
+  const [exportType, setExportType] = useState<'image' | 'pdf' | 'html'>('image');
+  const [filename, setFilename] = useState(wireframe.title?.toLowerCase().replace(/\s+/g, '-') || 'wireframe');
+  const [isExporting, setIsExporting] = useState(false);
+  const [htmlOptions, setHtmlOptions] = useState({
+    includeCSS: true,
+    includeJS: false,
+    responsive: true
+  });
+  const [imageOptions, setImageOptions] = useState({
+    scale: 2,
+    backgroundColor: '#ffffff'
+  });
+  const [pdfOptions, setPdfOptions] = useState({
+    pageSize: 'a4',
+    scale: 2
+  });
+  
   const { toast } = useToast();
-  const [exportFormat, setExportFormat] = useState<'pdf' | 'png' | 'svg' | 'html'>('pdf');
-  const [includeStyles, setIncludeStyles] = useState<boolean>(true);
-  const [includeInteractivity, setIncludeInteractivity] = useState<boolean>(false);
-  const [filename, setFilename] = useState<string>(wireframe?.title || 'wireframe-export');
-  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   const handleExport = async () => {
+    if (!wireframe) return;
+    
     setIsExporting(true);
+    
     try {
-      switch (exportFormat) {
+      // Get the element to export if canvasElement is not provided
+      const element = canvasElement || document.getElementById('wireframe-preview-container');
+      
+      switch (exportType) {
+        case 'image':
+          await exportWireframeAsImage(element, wireframe, {
+            scale: imageOptions.scale,
+            backgroundColor: imageOptions.backgroundColor,
+            filename
+          });
+          break;
+          
         case 'pdf':
-          await exportWireframeAsPDF(wireframe, { filename });
+          await exportWireframeAsPDF(element, wireframe, {
+            scale: pdfOptions.scale,
+            filename,
+            pageSize: pdfOptions.pageSize === 'a4' 
+              ? [595.28, 841.89] 
+              : pdfOptions.pageSize === 'letter' 
+                ? [612, 792]
+                : [1024, 768]
+          });
           break;
-        case 'png':
-        case 'svg':
-          await exportWireframeAsImage(wireframe, { format: exportFormat, filename, canvasElement });
-          break;
+          
         case 'html':
-          await exportWireframeAsHTML(wireframe, { filename, includeStyles, includeInteractivity });
+          exportWireframeAsHTML(wireframe, {
+            includeCSS: htmlOptions.includeCSS,
+            includeJS: htmlOptions.includeJS,
+            filename,
+            responsive: htmlOptions.responsive
+          });
           break;
       }
       
       toast({
-        title: "Export successful",
-        description: `Successfully exported wireframe as ${exportFormat.toUpperCase()}.`
+        title: 'Export Successful',
+        description: `Your wireframe has been exported as ${exportType.toUpperCase()}.`,
       });
       
       onOpenChange(false);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Export error:', error);
+      
       toast({
-        title: "Export failed",
-        description: `Failed to export as ${exportFormat.toUpperCase()}. Please try again.`,
-        variant: "destructive"
+        title: 'Export Failed',
+        description: 'There was an error exporting your wireframe.',
+        variant: 'destructive',
       });
     } finally {
       setIsExporting(false);
@@ -73,98 +105,164 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
           <DialogDescription>
-            Export your wireframe in different formats for sharing or implementation.
+            Choose a format to export your wireframe
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="pdf" className="mt-4" onValueChange={(value) => setExportFormat(value as any)}>
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="pdf" className="flex flex-col items-center gap-1 py-2">
-              <File className="h-4 w-4" />
-              <span className="text-xs">PDF</span>
-            </TabsTrigger>
-            <TabsTrigger value="png" className="flex flex-col items-center gap-1 py-2">
+        <Tabs defaultValue={exportType} onValueChange={(value) => setExportType(value as any)} className="pt-2">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="image" className="flex items-center gap-2">
               <FileImage className="h-4 w-4" />
-              <span className="text-xs">PNG</span>
+              Image
             </TabsTrigger>
-            <TabsTrigger value="svg" className="flex flex-col items-center gap-1 py-2">
-              <FileImage className="h-4 w-4" />
-              <span className="text-xs">SVG</span>
+            <TabsTrigger value="pdf" className="flex items-center gap-2">
+              <FilePdf className="h-4 w-4" />
+              PDF
             </TabsTrigger>
-            <TabsTrigger value="html" className="flex flex-col items-center gap-1 py-2">
-              <FileCode className="h-4 w-4" />
-              <span className="text-xs">HTML</span>
+            <TabsTrigger value="html" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              HTML
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="html">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>HTML Export Options</Label>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="include-styles"
-                      checked={includeStyles}
-                      onCheckedChange={(checked: boolean) => setIncludeStyles(checked)}
-                    />
-                    <label
-                      htmlFor="include-styles"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include styles
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="include-interactivity" 
-                      checked={includeInteractivity}
-                      onCheckedChange={(checked: boolean) => setIncludeInteractivity(checked)}
-                    />
-                    <label
-                      htmlFor="include-interactivity"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include interactive elements
-                    </label>
-                  </div>
-                </div>
+          <div className="space-y-4 mb-4">
+            <div>
+              <Label htmlFor="filename">Filename</Label>
+              <Input
+                id="filename"
+                value={filename}
+                onChange={(e) => setFilename(e.target.value)}
+                placeholder="wireframe-export"
+              />
+            </div>
+          </div>
+          
+          <TabsContent value="image" className="space-y-4">
+            <div>
+              <Label htmlFor="scale">Image Quality</Label>
+              <Select 
+                value={String(imageOptions.scale)} 
+                onValueChange={(value) => setImageOptions({...imageOptions, scale: Number(value)})}
+              >
+                <SelectTrigger id="scale">
+                  <SelectValue placeholder="Select quality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Normal (1x)</SelectItem>
+                  <SelectItem value="2">High (2x)</SelectItem>
+                  <SelectItem value="3">Ultra (3x)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="background">Background Color</Label>
+              <div className="flex gap-2">
+                <div 
+                  className="w-10 h-10 rounded border cursor-pointer" 
+                  style={{ backgroundColor: imageOptions.backgroundColor }}
+                />
+                <Input
+                  id="background"
+                  value={imageOptions.backgroundColor}
+                  onChange={(e) => setImageOptions({...imageOptions, backgroundColor: e.target.value})}
+                  placeholder="#FFFFFF"
+                />
               </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="pdf" className="space-y-4">
+            <div>
+              <Label htmlFor="pageSize">Page Size</Label>
+              <Select 
+                value={pdfOptions.pageSize} 
+                onValueChange={(value) => setPdfOptions({...pdfOptions, pageSize: value})}
+              >
+                <SelectTrigger id="pageSize">
+                  <SelectValue placeholder="Select page size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="a4">A4</SelectItem>
+                  <SelectItem value="letter">Letter</SelectItem>
+                  <SelectItem value="custom">Custom (1024x768)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="pdfScale">Image Quality</Label>
+              <Select 
+                value={String(pdfOptions.scale)} 
+                onValueChange={(value) => setPdfOptions({...pdfOptions, scale: Number(value)})}
+              >
+                <SelectTrigger id="pdfScale">
+                  <SelectValue placeholder="Select quality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Normal (1x)</SelectItem>
+                  <SelectItem value="2">High (2x)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="html" className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="includeCSS" 
+                checked={htmlOptions.includeCSS}
+                onCheckedChange={(checked) => 
+                  setHtmlOptions({...htmlOptions, includeCSS: checked === true})}
+              />
+              <Label htmlFor="includeCSS">Include CSS</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="includeJS" 
+                checked={htmlOptions.includeJS}
+                onCheckedChange={(checked) => 
+                  setHtmlOptions({...htmlOptions, includeJS: checked === true})}
+              />
+              <Label htmlFor="includeJS">Include JavaScript</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="responsive" 
+                checked={htmlOptions.responsive}
+                onCheckedChange={(checked) => 
+                  setHtmlOptions({...htmlOptions, responsive: checked === true})}
+              />
+              <Label htmlFor="responsive">Responsive Design</Label>
             </div>
           </TabsContent>
         </Tabs>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="filename">Filename</Label>
-            <Input
-              id="filename"
-              value={filename}
-              onChange={(e) => setFilename(e.target.value)}
-              placeholder="Enter filename"
-            />
-          </div>
-        </div>
-        
-        <div className="flex justify-end gap-2 mt-4">
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          
           <Button onClick={handleExport} disabled={isExporting}>
             {isExporting ? (
-              "Exporting..."
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Exporting...
+              </>
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Export
+                Export {exportType.toUpperCase()}
               </>
             )}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
