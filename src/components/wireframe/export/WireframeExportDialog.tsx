@@ -67,7 +67,8 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
     setIsExporting(true);
     try {
       if (containerRef?.current) {
-        await exportWireframeAsPDF(wireframe, containerRef.current);
+        // Remove the second argument if the function expects only one
+        await exportWireframeAsPDF(wireframe);
       } else {
         // Implementation would need a DOM element reference
         // This is a placeholder that would be connected to a real element
@@ -85,7 +86,8 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
     setIsExporting(true);
     try {
       if (containerRef?.current) {
-        await exportWireframeAsImage(wireframe, containerRef.current);
+        // Remove the second argument if the function expects only one
+        await exportWireframeAsImage(wireframe);
       } else {
         // Implementation would need a DOM element reference
         // This is a placeholder that would be connected to a real element
