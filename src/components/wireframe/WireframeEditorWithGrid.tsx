@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { useWireframeEditor } from '@/hooks/wireframe/use-wireframe-editor';
+import { useWireframeEditor } from '@/hooks/wireframe/use-wireframe-editor.tsx';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
