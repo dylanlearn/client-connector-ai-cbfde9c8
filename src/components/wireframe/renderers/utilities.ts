@@ -39,6 +39,16 @@ export const normalizeCopySuggestions = (
 };
 
 /**
+ * Process copy suggestions into a usable format
+ * This handles both array and object formats
+ */
+export const processCopySuggestions = (
+  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined
+): Record<string, string> => {
+  return normalizeCopySuggestions(copySuggestions);
+};
+
+/**
  * Safely get a value from copySuggestions, handling both object and array formats
  */
 export const getSuggestion = (

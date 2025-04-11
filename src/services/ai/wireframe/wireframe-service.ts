@@ -1,22 +1,19 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { AIWireframe, WireframeData, WireframeGenerationParams, WireframeGenerationResult, WireframeSection } from './wireframe-types';
 import { generateWireframeFromPrompt, generateWireframeVariation } from './api/wireframe-generator';
 import { getSuggestedCopy } from './content/copy-suggestions';
 import { getCombinedAIMemory } from './wireframe-memory-service';
+import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
 
 /**
  * Generate a new wireframe based on a description
  */
-export const generateWireframe = async (
-  params: WireframeGenerationParams
-): Promise<WireframeGenerationResult> => {
+export const generateWireframe = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
   try {
     console.log('Wireframe generation request:', params);
     
     // Process style if it's a string
     let processedStyle: Record<string, any> = {};
-    
     if (params.style) {
       if (typeof params.style === 'object') {
         processedStyle = params.style;
@@ -26,11 +23,13 @@ export const generateWireframe = async (
           processedStyle = JSON.parse(params.style);
         } catch (e) {
           // If not valid JSON, use it as a style description
-          processedStyle = { description: params.style };
+          processedStyle = {
+            description: params.style
+          };
         }
       }
     }
-
+    
     // Get previous context if available
     const memory = await getCombinedAIMemory();
     
@@ -39,11 +38,11 @@ export const generateWireframe = async (
       ...params,
       style: processedStyle
     });
-
+    
     // Add copy suggestions to the sections
-    const wireframeWithCopy = {
+    const wireframeWithCopy: WireframeData = {
       ...wireframe,
-      sections: wireframe.sections.map((section: WireframeSection) => {
+      sections: wireframe.sections.map((section) => {
         return {
           ...section,
           copySuggestions: getSuggestedCopy(section.sectionType)
@@ -69,19 +68,17 @@ export const generateWireframe = async (
 /**
  * Generate a variation of an existing wireframe
  */
-export const generateWireframeVariationWithStyle = async (
-  params: WireframeGenerationParams
-): Promise<WireframeGenerationResult> => {
+export const generateWireframeVariationWithStyle = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
   try {
     console.log('Wireframe variation request:', params);
     
     // Generate the variation
     const wireframeVariation = await generateWireframeVariation(params);
-
+    
     // Add copy suggestions to the sections
-    const wireframeWithCopy = {
+    const wireframeWithCopy: WireframeData = {
       ...wireframeVariation,
-      sections: wireframeVariation.sections.map((section: WireframeSection) => {
+      sections: wireframeVariation.sections.map((section) => {
         return {
           ...section,
           copySuggestions: getSuggestedCopy(section.sectionType)
@@ -133,3 +130,12 @@ export const createDefaultWireframe = (): WireframeData => {
     }
   };
 };
+
+// Export as a named wireframeService object
+export const wireframeService = {
+  generateWireframe,
+  generateWireframeVariationWithStyle,
+  createDefaultWireframe
+};
+
+export default wireframeService;

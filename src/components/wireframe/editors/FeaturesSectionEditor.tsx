@@ -1,267 +1,114 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
+import { processCopySuggestions } from '../renderers/utilities';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Trash2, Plus, Image } from 'lucide-react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { processCopySuggestions } from '../renderers/utilities';
 
 interface FeaturesSectionEditorProps {
   section: WireframeSection;
-  onUpdate: (updates: Partial<WireframeSection>) => void;
+  onUpdate: (updatedSection: WireframeSection) => void;
 }
 
 const FeaturesSectionEditor: React.FC<FeaturesSectionEditorProps> = ({
   section,
   onUpdate
 }) => {
-  const [activeTab, setActiveTab] = useState('content');
-  
-  // Process copy suggestions to ensure we're working with an object
+  // Process copy suggestions into a readable format
   const copySuggestions = processCopySuggestions(section.copySuggestions);
   
   // Extract features from section data
   const features = section.data?.features || [];
   
-  // Update heading
-  const updateHeading = (heading: string) => {
-    onUpdate({
-      copySuggestions: {
-        ...copySuggestions,
-        heading
-      }
-    });
-  };
+  // Set up form with default values from section
+  const { register, handleSubmit } = useForm({
+    defaultValues: {
+      heading: copySuggestions.heading || 'Key Features',
+      subheading: copySuggestions.subheading || 'Discover what makes our product special',
+      features: features.map((f: any) => ({
+        title: f.title || '',
+        description: f.description || '',
+      })) || []
+    }
+  });
   
-  // Update subheading
-  const updateSubheading = (subheading: string) => {
-    onUpdate({
+  // Handle form submission
+  const onSubmit = (data: any) => {
+    const updatedSection = {
+      ...section,
       copySuggestions: {
-        ...copySuggestions,
-        subheading
+        heading: data.heading,
+        subheading: data.subheading
+      },
+      data: {
+        ...section.data,
+        features: data.features
       }
-    });
-  };
-  
-  // Add a new feature
-  const addFeature = () => {
-    const newFeature = {
-      id: `feature-${Date.now()}`,
-      title: 'New Feature',
-      description: 'Description of the new feature',
-      icon: 'sparkles'
     };
     
-    onUpdate({
-      data: {
-        ...section.data,
-        features: [...features, newFeature]
-      }
-    });
+    onUpdate(updatedSection);
   };
   
-  // Remove a feature
-  const removeFeature = (index: number) => {
-    const updatedFeatures = [...features];
-    updatedFeatures.splice(index, 1);
-    
-    onUpdate({
-      data: {
-        ...section.data,
-        features: updatedFeatures
-      }
-    });
-  };
-  
-  // Update a feature
-  const updateFeature = (index: number, updates: any) => {
-    const updatedFeatures = [...features];
-    updatedFeatures[index] = {
-      ...updatedFeatures[index],
-      ...updates
-    };
-    
-    onUpdate({
-      data: {
-        ...section.data,
-        features: updatedFeatures
-      }
-    });
-  };
-  
-  // Update layout type
-  const updateLayoutType = (layoutType: string) => {
-    onUpdate({
-      layout: {
-        ...(typeof section.layout === 'object' ? section.layout : {}),
-        type: layoutType
-      }
-    });
-  };
-
   return (
-    <div className="features-section-editor space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3">
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="layout">Layout</TabsTrigger>
-          <TabsTrigger value="style">Style</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="content" className="space-y-6 pt-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Edit Features Section</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="heading">Section Heading</Label>
-              <Input 
-                id="heading" 
-                value={copySuggestions.heading || ''} 
-                onChange={(e) => updateHeading(e.target.value)}
-                placeholder="Features Heading"
+              <Input
+                id="heading"
+                placeholder="Enter section heading"
+                {...register('heading')}
               />
             </div>
             
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="subheading">Section Subheading</Label>
-              <Textarea 
-                id="subheading" 
-                value={copySuggestions.subheading || ''} 
-                onChange={(e) => updateSubheading(e.target.value)}
-                placeholder="Features subheading text"
-                rows={2}
+              <Textarea
+                id="subheading"
+                placeholder="Enter section subheading"
+                {...register('subheading')}
               />
             </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Features</h3>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={addFeature}
-                className="flex items-center gap-1"
-              >
-                <Plus className="h-4 w-4" /> Add Feature
-              </Button>
-            </div>
             
-            {features.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <p className="text-muted-foreground">No features added yet</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={addFeature}
-                    className="mt-2"
-                  >
-                    Add Your First Feature
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {features.map((feature, index) => (
-                  <Card key={feature.id || index}>
-                    <CardContent className="p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Feature {index + 1}</h4>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeFeature(index)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`feature-${index}-title`}>Title</Label>
-                          <Input 
-                            id={`feature-${index}-title`} 
-                            value={feature.title || ''} 
-                            onChange={(e) => updateFeature(index, { title: e.target.value })}
-                            placeholder="Feature Title"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`feature-${index}-description`}>Description</Label>
-                          <Textarea 
-                            id={`feature-${index}-description`} 
-                            value={feature.description || ''} 
-                            onChange={(e) => updateFeature(index, { description: e.target.value })}
-                            placeholder="Feature Description"
-                            rows={2}
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`feature-${index}-image`}>Image URL</Label>
-                          <div className="flex gap-2">
-                            <Input 
-                              id={`feature-${index}-image`} 
-                              value={feature.imageUrl || ''} 
-                              onChange={(e) => updateFeature(index, { imageUrl: e.target.value })}
-                              placeholder="https://example.com/image.jpg"
-                            />
-                            <Button variant="outline" size="icon" className="flex-shrink-0">
-                              <Image className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="layout" className="space-y-6 pt-4">
-          <div className="space-y-2">
-            <Label>Layout Type</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant={typeof section.layout === 'object' && section.layout.type === 'grid' ? 'default' : 'outline'}
-                className="justify-start"
-                onClick={() => updateLayoutType('grid')}
-              >
-                Grid
-              </Button>
-              <Button
-                variant={typeof section.layout === 'object' && section.layout.type === 'list' ? 'default' : 'outline'}
-                className="justify-start"
-                onClick={() => updateLayoutType('list')}
-              >
-                List
-              </Button>
-              <Button
-                variant={typeof section.layout === 'object' && section.layout.type === 'carousel' ? 'default' : 'outline'}
-                className="justify-start"
-                onClick={() => updateLayoutType('carousel')}
-              >
-                Carousel
-              </Button>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Features</h3>
+              {features.map((feature: any, index: number) => (
+                <div key={index} className="p-4 border rounded-md space-y-3">
+                  <div>
+                    <Label htmlFor={`features.${index}.title`}>Feature Title</Label>
+                    <Input
+                      id={`features.${index}.title`}
+                      placeholder="Enter feature title"
+                      {...register(`features.${index}.title`)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor={`features.${index}.description`}>Feature Description</Label>
+                    <Textarea
+                      id={`features.${index}.description`}
+                      placeholder="Enter feature description"
+                      {...register(`features.${index}.description`)}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           
-          {/* Additional layout options would go here */}
-        </TabsContent>
-        
-        <TabsContent value="style" className="space-y-6 pt-4">
-          {/* Style options would go here */}
-          <p className="text-muted-foreground">Style options coming soon...</p>
-        </TabsContent>
-      </Tabs>
-    </div>
+          <Button type="submit">Update Section</Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
