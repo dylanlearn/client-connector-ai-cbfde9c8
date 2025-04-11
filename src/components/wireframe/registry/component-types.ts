@@ -24,7 +24,7 @@ export const deviceBreakpoints = {
  */
 export interface ComponentField {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'color' | 'select' | 'text' | 'image' | 'range';
+  type: 'string' | 'number' | 'boolean' | 'color' | 'select' | 'text' | 'image' | 'range' | 'textarea' | 'array';
   label: string;
   description?: string;
   defaultValue?: any;
@@ -33,6 +33,7 @@ export interface ComponentField {
   max?: number;
   step?: number;
   required?: boolean;
+  id?: string; // Add the id property that was missing
 }
 
 /**
@@ -64,6 +65,7 @@ export interface ComponentVariant {
   preview?: string;
   defaultData?: Partial<WireframeComponent>;
   styles?: StyleConfig;
+  thumbnail?: string; // Add the thumbnail property
 }
 
 /**

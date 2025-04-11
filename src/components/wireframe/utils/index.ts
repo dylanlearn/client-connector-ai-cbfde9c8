@@ -39,20 +39,23 @@ export {
 export * from './responsive-utils';
 
 // Export grid utilities - explicitly re-export from grid-utils
-export {
-  generateSnapGuidelines,
+export { 
   createCanvasGrid,
-  snapObjectToGuidelines,
-  getObjectBounds as getGridObjectBounds,
+  removeGridFromCanvas,
+  updateCanvasGrid,
   calculateColumnPositions,
   calculateGridPositions,
   getResponsiveGridConfig,
   getBreakpointFromWidth,
+  getObjectBounds,
+  generateSnapGuidelines,
+  snapObjectToGuidelines,
   DEFAULT_GRID_CONFIG,
   TAILWIND_BREAKPOINTS,
-  type GridConfig,
-  type GridBreakpoint
 } from './grid-utils';
+
+// Re-export types from grid-utils
+export type { GridConfig, GridBreakpoint } from './grid-utils';
 
 // Export new alignment guides utilities
 export * from './alignment-guides';

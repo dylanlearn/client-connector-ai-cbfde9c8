@@ -1,140 +1,112 @@
 
 import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { 
   GridConfig, 
   DEFAULT_GRID_CONFIG, 
   GridBreakpoint, 
   getResponsiveGridConfig 
 } from '@/components/wireframe/utils/grid-utils';
-import { DeviceType } from '@/components/wireframe/utils/responsive-utils';
 
-export interface UseGridSystemOptions {
-  initialConfig?: Partial<GridConfig>;
-  persistConfig?: boolean;
-  responsiveMode?: boolean;
-}
-
-export interface ResponsiveOptions {
-  device: DeviceType;
-  width: number;
-}
-
-export function useGridSystem(options: UseGridSystemOptions = {}) {
-  const { 
-    initialConfig = {},
-    persistConfig = true,
-    responsiveMode = true
-  } = options;
-  
-  // Initialize grid configuration
+/**
+ * Hook for managing grid system settings
+ */
+export function useGridSystem(initialConfig?: Partial<GridConfig>) {
+  const { toast } = useToast();
   const [gridConfig, setGridConfig] = useState<GridConfig>({
     ...DEFAULT_GRID_CONFIG,
     ...initialConfig
   });
   
-  // Current responsive options
-  const [responsiveOptions, setResponsiveOptions] = useState<ResponsiveOptions>({
-    device: 'desktop',
-    width: window.innerWidth
-  });
-  
-  // Get responsive grid config based on current options
-  const responsiveGridConfig = responsiveMode 
-    ? getResponsiveGridConfig(responsiveOptions.width, gridConfig.breakpoints)
-    : gridConfig;
-  
-  // Update grid config
-  const updateGridConfig = useCallback((updates: Partial<GridConfig>) => {
-    setGridConfig(prev => {
-      const newConfig = { ...prev, ...updates };
-      
-      // Save to localStorage if persistConfig is true
-      if (persistConfig) {
-        try {
-          localStorage.setItem('wireframe-grid-config', JSON.stringify(newConfig));
-        } catch (e) {
-          console.error('Could not save grid config to localStorage');
-        }
-      }
-      
-      return newConfig;
-    });
-  }, [persistConfig]);
-  
   // Toggle grid visibility
   const toggleGridVisibility = useCallback(() => {
-    updateGridConfig({ visible: !gridConfig.visible });
-  }, [gridConfig.visible, updateGridConfig]);
+    setGridConfig(prev => {
+      const updated = { ...prev, visible: !prev.visible };
+      
+      toast({
+        title: updated.visible ? 'Grid Enabled' : 'Grid Disabled',
+        description: updated.visible 
+          ? 'Grid is now visible.' 
+          : 'Grid is now hidden.'
+      });
+      
+      return updated;
+    });
+  }, [toast]);
   
-  // Toggle grid snap
+  // Toggle snap to grid
   const toggleSnapToGrid = useCallback(() => {
-    updateGridConfig({ snapToGrid: !gridConfig.snapToGrid });
-  }, [gridConfig.snapToGrid, updateGridConfig]);
+    setGridConfig(prev => {
+      const updated = { ...prev, snapToGrid: !prev.snapToGrid };
+      
+      toast({
+        title: updated.snapToGrid ? 'Snap to Grid Enabled' : 'Snap to Grid Disabled',
+        description: updated.snapToGrid 
+          ? 'Elements will snap to grid points.' 
+          : 'Elements can be placed freely.'
+      });
+      
+      return updated;
+    });
+  }, [toast]);
   
-  // Toggle breakpoints visibility
-  const toggleBreakpointsVisibility = useCallback(() => {
-    updateGridConfig({ showBreakpoints: !gridConfig.showBreakpoints });
-  }, [gridConfig.showBreakpoints, updateGridConfig]);
+  // Set grid size
+  const setGridSize = useCallback((size: number) => {
+    setGridConfig(prev => ({ ...prev, size }));
+    
+    toast({
+      title: 'Grid Size Updated',
+      description: `Grid size set to ${size}px.`
+    });
+  }, [toast]);
   
-  // Change grid type - making sure we only use allowed values
-  const changeGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
-    updateGridConfig({ type });
-  }, [updateGridConfig]);
+  // Set grid type
+  const setGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
+    setGridConfig(prev => ({ ...prev, type }));
+    
+    toast({
+      title: 'Grid Type Changed',
+      description: `Grid type set to ${type}.`
+    });
+  }, [toast]);
   
-  // Change grid size
-  const changeGridSize = useCallback((size: number) => {
-    updateGridConfig({ size });
-  }, [updateGridConfig]);
-  
-  // Change columns
-  const changeColumns = useCallback((columns: number) => {
-    updateGridConfig({ columns });
-  }, [updateGridConfig]);
-  
-  // Change gutter size
-  const changeGutter = useCallback((gutterSize: number) => {
-    updateGridConfig({ gutterSize });
-  }, [updateGridConfig]);
-  
-  // Update responsive options
-  const updateResponsiveOptions = useCallback((options: Partial<ResponsiveOptions>) => {
-    setResponsiveOptions(prev => ({ ...prev, ...options }));
+  // Set grid color
+  const setGridColor = useCallback((color: string) => {
+    setGridConfig(prev => ({ ...prev, color }));
   }, []);
   
-  // Handle breakpoint click
-  const handleBreakpointClick = useCallback((breakpoint: GridBreakpoint) => {
-    updateResponsiveOptions({ width: breakpoint.width });
-  }, [updateResponsiveOptions]);
+  // Set columns
+  const setColumns = useCallback((columns: number) => {
+    setGridConfig(prev => ({ ...prev, columns }));
+    
+    toast({
+      title: 'Grid Columns Updated',
+      description: `Grid now has ${columns} columns.`
+    });
+  }, [toast]);
   
-  // Reset grid config to defaults
-  const resetGridConfig = useCallback(() => {
-    setGridConfig(DEFAULT_GRID_CONFIG);
-    if (persistConfig) {
-      try {
-        localStorage.removeItem('wireframe-grid-config');
-      } catch (e) {
-        console.error('Could not remove grid config from localStorage');
-      }
-    }
-  }, [persistConfig]);
-
+  // Set responsive grid config
+  const setResponsiveGridConfig = useCallback((width: number) => {
+    const responsiveConfig = getResponsiveGridConfig(gridConfig, width);
+    setGridConfig(responsiveConfig);
+  }, [gridConfig]);
+  
+  // Update grid config
+  const updateGridConfig = useCallback((config: Partial<GridConfig>) => {
+    setGridConfig(prev => ({ ...prev, ...config }));
+  }, []);
+  
   return {
-    // Grid configuration
-    gridConfig: responsiveGridConfig,
-    baseGridConfig: gridConfig,
-    // Responsive options
-    responsiveOptions,
-    updateResponsiveOptions,
-    // Actions
-    updateGridConfig,
+    gridConfig,
     toggleGridVisibility,
     toggleSnapToGrid,
-    toggleBreakpointsVisibility,
-    changeGridType,
-    changeGridSize,
-    changeColumns,
-    changeGutter,
-    handleBreakpointClick,
-    resetGridConfig
+    setGridSize,
+    setGridType,
+    setGridColor,
+    setColumns,
+    setResponsiveGridConfig,
+    updateGridConfig
   };
 }
+
+export default useGridSystem;

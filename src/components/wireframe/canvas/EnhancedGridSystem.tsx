@@ -3,8 +3,13 @@ import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Ruler } from 'lucide-react';
-import { GridConfig, DEFAULT_GRID_CONFIG, GridBreakpoint } from '@/components/wireframe/utils/grid-utils';
-import { calculateColumnPositions, calculateGridPositions } from '@/components/wireframe/utils/grid-utils';
+import { 
+  GridConfig, 
+  DEFAULT_GRID_CONFIG, 
+  GridBreakpoint,
+  calculateColumnPositions,
+  calculateGridPositions
+} from '@/components/wireframe/utils/grid-utils';
 import { useTheme } from '@/hooks/use-theme';
 
 export type GridType = 'lines' | 'dots' | 'columns' | 'custom';
