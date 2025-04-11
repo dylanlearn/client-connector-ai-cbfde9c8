@@ -32,3 +32,5 @@ export const wireframeSections = {
   updateSections,
   deleteSections
 };
+
+export default wireframeSections;

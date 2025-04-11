@@ -28,6 +28,7 @@ export function useWireframeFeedbackProcessor(options: UseWireframeFeedbackProce
       // Configure update options
       const updateOptions: FeedbackUpdateOptions = {
         createNewVersion: options.createNewVersion,
+        applyChanges: true,
         saveChanges: true,
         ...processingOptions
       };
@@ -46,13 +47,13 @@ export function useWireframeFeedbackProcessor(options: UseWireframeFeedbackProce
         if (result.success) {
           toast({
             title: "Feedback Applied",
-            description: result.message || result.changes.description,
+            description: result.message || "Changes applied successfully",
             variant: "default",
           });
         } else {
           toast({
             title: "Couldn't Apply Feedback",
-            description: result.error || "No changes could be applied based on the feedback",
+            description: result.message || "No changes could be applied based on the feedback",
             variant: "destructive",
           });
         }

@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
-import wireframeMemoryService from "@/services/ai/wireframe/wireframe-memory-service";
+import { default as wireframeMemoryService } from "@/services/ai/wireframe/wireframe-memory-service";
 import { useWireframeHistory } from "./use-wireframe-history";
 import { useWireframeSections } from "./use-wireframe-sections";
 import { v4 as uuidv4 } from 'uuid';
@@ -128,7 +128,6 @@ export const useWireframeEditor = (
     redo: historyManager.redo,
     canUndo: historyManager.canUndo,
     canRedo: historyManager.canRedo,
-    resetHistory: historyManager.resetHistory,
     saveWireframe: saveWireframeData,
     historySize: historyManager.history.length,
     pastStates: historyManager.history.slice(0, historyManager.historyIndex),

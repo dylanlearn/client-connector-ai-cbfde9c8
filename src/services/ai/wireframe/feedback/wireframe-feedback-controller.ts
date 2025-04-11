@@ -1,6 +1,16 @@
+
 import { wireframeApiService } from '../api/wireframe-api-service';
-import { WireframeData } from '../wireframe-types';
+import { WireframeData, WireframeSection } from '../wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Options for feedback-driven wireframe updates
+ */
+export interface FeedbackUpdateOptions {
+  createNewVersion?: boolean;
+  applyChanges?: boolean;
+  saveChanges?: boolean;
+}
 
 /**
  * Service class for processing wireframe feedback and modifying wireframes.
@@ -33,11 +43,11 @@ export class WireframeFeedbackController {
     }
     
     // Example modification: Add a new section based on feedback
-    const newSection = {
+    const newSection: WireframeSection = {
       id: uuidv4(),
       name: 'AI Generated Section',
-      type: 'hero',
-      content: `This section was generated based on the feedback: ${feedback}`,
+      sectionType: 'hero', // Using the correct property name
+      description: `This section was generated based on the feedback: ${feedback}`,
       style: {
         padding: '20px',
         backgroundColor: '#f0f0f0'
@@ -64,10 +74,7 @@ export class WireframeFeedbackController {
    * @param options.applyChanges Whether to apply the changes directly to the original wireframe.
    * @returns A promise that resolves when the feedback has been submitted.
    */
-  async processFeedback(wireframeId: string, feedback: string, options: {
-    createNewVersion?: boolean;
-    applyChanges?: boolean;
-  } = {}): Promise<{
+  async processFeedback(wireframeId: string, feedback: string, options: FeedbackUpdateOptions = {}): Promise<{
     success: boolean;
     message: string;
     wireframeId: string;
@@ -129,6 +136,7 @@ export class WireframeFeedbackController {
           
           const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
           
+          // Safely check for versionResult before accessing properties
           if (versionResult && typeof versionResult === 'object' && versionResult.id) {
             newVersionId = versionResult.id;
             console.log('Created new wireframe version:', newVersionId);
@@ -152,7 +160,17 @@ export class WireframeFeedbackController {
     }
   }
 
-  // Additional methods for feedback analysis, etc. can be added here
+  /**
+   * Process wireframe feedback and apply changes
+   * @param wireframeId The ID of the wireframe
+   * @param feedback The feedback text
+   * @param options Update options
+   * @returns The processing result
+   */
+  static async processWireframeFeedback(wireframeId: string, feedback: string, options: FeedbackUpdateOptions = {}) {
+    const controller = new WireframeFeedbackController();
+    return controller.processFeedback(wireframeId, feedback, options);
+  }
 }
 
 export const wireframeFeedbackController = new WireframeFeedbackController();
