@@ -1,188 +1,203 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { toast } from 'sonner';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
-export interface HistoryState {
-  wireframe: WireframeData;
+interface HistoryEntry {
+  wireframeData: WireframeData;
   timestamp: number;
-  id: string;
   description: string;
 }
 
-export interface UseWireframeHistoryOptions {
-  wireframeId: string;
-  initialWireframe?: WireframeData;
-  maxHistoryStates?: number;
-  onChange?: (wireframe: WireframeData) => void;
-  saveToStorage?: boolean;
+interface UseWireframeHistoryOptions {
+  maxHistorySize?: number;
+  autoSave?: boolean;
+  autoSaveInterval?: number; // in milliseconds
 }
 
-export function useWireframeHistory({
-  wireframeId,
-  initialWireframe,
-  maxHistoryStates = 50,
-  onChange,
-  saveToStorage = true
-}: UseWireframeHistoryOptions) {
-  // Store history states
-  const [history, setHistory] = useState<HistoryState[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(-1);
-  const [isHistoryAction, setIsHistoryAction] = useState<boolean>(false);
+export function useWireframeHistory(
+  initialData: WireframeData,
+  options: UseWireframeHistoryOptions = {}
+) {
+  const {
+    maxHistorySize = 50,
+    autoSave = false,
+    autoSaveInterval = 30000 // 30 seconds
+  } = options;
   
-  // Get storage key
-  const storageKey = `wireframe-history-${wireframeId}`;
+  const [currentData, setCurrentData] = useState<WireframeData>(initialData);
+  const [history, setHistory] = useState<HistoryEntry[]>([{
+    wireframeData: initialData,
+    timestamp: Date.now(),
+    description: 'Initial state'
+  }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const isProcessingHistoryAction = useRef(false);
+  const { toast } = useToast();
   
-  // Local storage for history persistence
-  const { getItem, setItem } = useLocalStorage();
-
-  // Initialize history with the initial wireframe if provided
+  // Update canUndo and canRedo whenever history or historyIndex changes
   useEffect(() => {
-    if (initialWireframe && history.length === 0) {
-      const initialState: HistoryState = {
-        wireframe: JSON.parse(JSON.stringify(initialWireframe)), // Deep copy
-        timestamp: Date.now(),
-        id: uuidv4(),
-        description: 'Initial state'
-      };
-      
-      setHistory([initialState]);
-      setCurrentIndex(0);
-      
-      // Save to localStorage if enabled
-      if (saveToStorage) {
-        setItem(storageKey, JSON.stringify([initialState]));
+    setCanUndo(historyIndex > 0);
+    setCanRedo(historyIndex < history.length - 1);
+  }, [history, historyIndex]);
+  
+  // Auto-save functionality
+  useEffect(() => {
+    if (!autoSave) return;
+    
+    const timer = setInterval(() => {
+      // Only save if changes have been made since last history entry
+      const lastEntry = history[historyIndex];
+      if (
+        lastEntry && 
+        JSON.stringify(lastEntry.wireframeData) !== JSON.stringify(currentData)
+      ) {
+        addToHistory(currentData, 'Auto-saved');
       }
-    } else if (saveToStorage && history.length === 0) {
-      // Try to load history from localStorage
-      const savedHistory = getItem(storageKey);
-      if (savedHistory) {
-        try {
-          const parsedHistory = JSON.parse(savedHistory) as HistoryState[];
-          setHistory(parsedHistory);
-          setCurrentIndex(parsedHistory.length - 1);
-        } catch (e) {
-          console.error('Failed to parse wireframe history:', e);
-        }
-      }
-    }
-  }, [initialWireframe, history.length, saveToStorage, storageKey, getItem, setItem]);
-
-  // Save wireframe state to history
-  const saveHistoryState = useCallback((
-    wireframe: WireframeData,
-    description: string = 'Wireframe updated'
+    }, autoSaveInterval);
+    
+    return () => clearInterval(timer);
+  }, [autoSave, autoSaveInterval, currentData, history, historyIndex]);
+  
+  // Add a new entry to the history
+  const addToHistory = useCallback((
+    data: WireframeData, 
+    description: string = 'Update'
   ) => {
-    const newState: HistoryState = {
-      wireframe: JSON.parse(JSON.stringify(wireframe)), // Deep copy
-      timestamp: Date.now(),
-      id: uuidv4(),
-      description
-    };
+    if (isProcessingHistoryAction.current) return;
     
     setHistory(prevHistory => {
-      // If we're not at the end of the history, remove future states
-      const newHistory = prevHistory.slice(0, currentIndex + 1);
+      // If we're not at the end of the history, remove all entries after the current index
+      const newHistory = prevHistory.slice(0, historyIndex + 1);
       
-      // Add new state
-      const updatedHistory = [...newHistory, newState];
+      // Add the new entry
+      const newEntry: HistoryEntry = {
+        wireframeData: JSON.parse(JSON.stringify(data)), // Deep clone to prevent mutation
+        timestamp: Date.now(),
+        description
+      };
       
-      // Limit history size
-      if (updatedHistory.length > maxHistoryStates) {
-        const trimmedHistory = updatedHistory.slice(updatedHistory.length - maxHistoryStates);
-        
-        // Save to localStorage if enabled
-        if (saveToStorage) {
-          setItem(storageKey, JSON.stringify(trimmedHistory));
-        }
-        
-        return trimmedHistory;
-      }
+      // Add to history and trim if necessary
+      const updatedHistory = [...newHistory, newEntry].slice(-maxHistorySize);
       
-      // Save to localStorage if enabled
-      if (saveToStorage) {
-        setItem(storageKey, JSON.stringify(updatedHistory));
-      }
+      // Update the history index to point to the new entry
+      setHistoryIndex(updatedHistory.length - 1);
       
       return updatedHistory;
     });
-    
-    setCurrentIndex(prevIndex => {
-      const newIndex = prevIndex + 1;
-      return Math.min(newIndex, maxHistoryStates - 1);
+  }, [historyIndex, maxHistorySize]);
+  
+  // Update the current data
+  const updateWireframe = useCallback((updates: Partial<WireframeData>, description?: string) => {
+    setCurrentData(prevData => {
+      const newData = {
+        ...prevData,
+        ...updates
+      };
+      
+      // Don't add to history here to prevent duplicate entries
+      // History entry will be added explicitly when needed
+      
+      return newData;
     });
-  }, [currentIndex, maxHistoryStates, saveToStorage, storageKey, setItem]);
+  }, []);
+  
+  // Update a specific section
+  const updateSection = useCallback((sectionId: string, updates: Partial<WireframeSection>, description?: string) => {
+    setCurrentData(prevData => {
+      const newSections = prevData.sections.map(section => 
+        section.id === sectionId ? { ...section, ...updates } : section
+      );
+      
+      return {
+        ...prevData,
+        sections: newSections
+      };
+    });
+    
+    // Optionally add to history immediately or defer to explicit save
+  }, []);
+  
+  // Save the current state to history with a description
+  const saveToHistory = useCallback((description: string = 'Update') => {
+    addToHistory(currentData, description);
+  }, [addToHistory, currentData]);
   
   // Undo to previous state
   const undo = useCallback(() => {
-    if (currentIndex <= 0) {
-      toast('Nothing to undo');
-      return null;
-    }
+    if (historyIndex <= 0 || isProcessingHistoryAction.current) return;
     
-    setIsHistoryAction(true);
-    const newIndex = currentIndex - 1;
-    const previousState = history[newIndex];
+    isProcessingHistoryAction.current = true;
     
-    setCurrentIndex(newIndex);
+    const prevIndex = historyIndex - 1;
+    const prevEntry = history[prevIndex];
     
-    if (onChange && previousState) {
-      onChange(previousState.wireframe);
-      
-      toast(previousState.description || 'Previous change undone');
-    }
+    setCurrentData(prevEntry.wireframeData);
+    setHistoryIndex(prevIndex);
     
-    setIsHistoryAction(false);
-    return previousState?.wireframe || null;
-  }, [currentIndex, history, onChange]);
+    toast({
+      title: 'Undo Successful',
+      description: `Reverted to: ${prevEntry.description}`,
+      duration: 2000
+    });
+    
+    isProcessingHistoryAction.current = false;
+  }, [history, historyIndex, toast]);
   
   // Redo to next state
   const redo = useCallback(() => {
-    if (currentIndex >= history.length - 1) {
-      toast('Nothing to redo');
-      return null;
-    }
+    if (historyIndex >= history.length - 1 || isProcessingHistoryAction.current) return;
     
-    setIsHistoryAction(true);
-    const newIndex = currentIndex + 1;
-    const nextState = history[newIndex];
+    isProcessingHistoryAction.current = true;
     
-    setCurrentIndex(newIndex);
+    const nextIndex = historyIndex + 1;
+    const nextEntry = history[nextIndex];
     
-    if (onChange && nextState) {
-      onChange(nextState.wireframe);
-      
-      toast(nextState.description || 'Next change redone');
-    }
+    setCurrentData(nextEntry.wireframeData);
+    setHistoryIndex(nextIndex);
     
-    setIsHistoryAction(false);
-    return nextState?.wireframe || null;
-  }, [currentIndex, history, onChange]);
+    toast({
+      title: 'Redo Successful',
+      description: `Restored: ${nextEntry.description}`,
+      duration: 2000
+    });
+    
+    isProcessingHistoryAction.current = false;
+  }, [history, historyIndex, toast]);
   
-  // Get current wireframe
-  const getCurrentWireframe = useCallback(() => {
-    if (history.length === 0 || currentIndex < 0) {
-      return initialWireframe || null;
-    }
+  // Go to a specific history entry
+  const goToHistoryEntry = useCallback((index: number) => {
+    if (index < 0 || index >= history.length || isProcessingHistoryAction.current) return;
     
-    return history[currentIndex]?.wireframe || null;
-  }, [history, currentIndex, initialWireframe]);
-  
-  // Check if undo/redo are available
-  const canUndo = currentIndex > 0;
-  const canRedo = currentIndex < history.length - 1;
+    isProcessingHistoryAction.current = true;
+    
+    const entry = history[index];
+    setCurrentData(entry.wireframeData);
+    setHistoryIndex(index);
+    
+    toast({
+      title: 'History Navigation',
+      description: `Jumped to: ${entry.description}`,
+      duration: 2000
+    });
+    
+    isProcessingHistoryAction.current = false;
+  }, [history, toast]);
   
   return {
+    currentData,
     history,
-    currentIndex,
-    saveHistoryState,
-    undo,
-    redo,
+    historyIndex,
     canUndo,
     canRedo,
-    isHistoryAction,
-    getCurrentWireframe
+    updateWireframe,
+    updateSection,
+    saveToHistory,
+    undo,
+    redo,
+    goToHistoryEntry
   };
 }

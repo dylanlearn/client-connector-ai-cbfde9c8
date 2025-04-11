@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { getSuggestion, createStyleObject, processCopySuggestions } from './utilities';
 
 const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -21,6 +21,9 @@ const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
   // Use the createStyleObject utility to ensure type safety
   const styles = createStyleObject(section.style);
   const feature = section.data?.feature || {};
+  
+  // Use processCopySuggestions to handle both object and array formats
+  const copySuggestions = processCopySuggestions(section.copySuggestions);
   
   return (
     <div 
@@ -49,14 +52,14 @@ const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
           </div>
           
           <h2 className="text-3xl font-bold">
-            {getSuggestion(section.copySuggestions, 'heading', feature.title || 'Feature Title')}
+            {getSuggestion(copySuggestions, 'heading', feature.title || 'Feature Title')}
           </h2>
           
           <p className={cn(
             'text-lg',
             darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {getSuggestion(section.copySuggestions, 'subheading', feature.description || 'Feature description explaining the benefits and value of this specific feature to the user.')}
+            {getSuggestion(copySuggestions, 'subheading', feature.description || 'Feature description explaining the benefits and value of this specific feature to the user.')}
           </p>
           
           {feature.bullets && Array.isArray(feature.bullets) && feature.bullets.length > 0 ? (
@@ -87,11 +90,11 @@ const FeatureSectionRenderer: React.FC<SectionComponentProps> = ({
             </ul>
           )}
           
-          {/* Use getSuggestion instead of directly accessing ctaText */}
-          {getSuggestion(section.copySuggestions, 'ctaText', '') && (
+          {/* Use getSuggestion for CTA text */}
+          {getSuggestion(copySuggestions, 'ctaText', '') && (
             <div className="pt-4">
               <button className="px-6 py-2.5 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
-                {getSuggestion(section.copySuggestions, 'ctaText', 'Learn More')}
+                {getSuggestion(copySuggestions, 'ctaText', 'Learn More')}
               </button>
             </div>
           )}

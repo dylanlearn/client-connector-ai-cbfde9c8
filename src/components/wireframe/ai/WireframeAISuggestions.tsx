@@ -1,286 +1,197 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Loader2, Sparkles, Check, X } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Sparkles, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface WireframeAISuggestionsProps {
-  wireframeId?: string;
-  focusedSectionId?: string;
-  onClose: () => void;
   onApplySuggestion?: (suggestion: any) => void;
-}
-
-// Define the Suggestion interface
-interface Suggestion {
-  title: string;
-  description: string;
-  previewJSON?: string;
-  improvement: string;
-  sectionId?: string;
-  changes?: any;
+  onClose?: () => void;
 }
 
 const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
-  wireframeId,
-  focusedSectionId,
-  onClose,
-  onApplySuggestion
+  onApplySuggestion,
+  onClose
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
-  const [isApplying, setIsApplying] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('content');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const { toast } = useToast();
-
-  // Fetch suggestions when the component mounts
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!wireframeId) {
-        setError('No wireframe ID provided');
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        // Call the Supabase edge function to get AI suggestions
-        const { data, error } = await supabase.functions.invoke('generate-advanced-wireframe', {
-          body: {
-            action: 'generate-suggestions',
-            wireframeId,
-            targetSection: focusedSectionId,
-          }
-        });
-
-        if (error) throw error;
-
-        if (data && data.success && Array.isArray(data.suggestions)) {
-          setSuggestions(data.suggestions);
-        } else {
-          throw new Error('Invalid response from suggestions API');
-        }
-      } catch (err) {
-        console.error('Error fetching suggestions:', err);
-        setError('Failed to get AI suggestions. Please try again later.');
-        setSuggestions([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (wireframeId) {
-      fetchSuggestions();
-    } else {
-      // For demo purposes, provide some default suggestions if no wireframeId
-      setSuggestions([
-        {
-          title: 'Improve Color Contrast',
-          description: 'Enhance readability by increasing contrast between text and background colors.',
-          improvement: 'Accessibility',
-          changes: {
-            colorScheme: {
-              text: '#111827',
-              background: '#ffffff'
-            }
-          }
-        },
-        {
-          title: 'Add Clear Call-to-Action',
-          description: 'Make your hero section more effective with a prominent call-to-action button.',
-          improvement: 'Conversion',
-          changes: {
-            cta: {
-              text: 'Get Started',
-              style: 'primary'
-            }
-          }
-        },
-        {
-          title: 'Optimize Mobile Layout',
-          description: 'Adjust spacing and font sizes to improve mobile experience.',
-          improvement: 'Responsiveness',
-          changes: {
-            mobile: {
-              padding: '1rem',
-              fontSize: '90%'
-            }
-          }
-        }
-      ]);
-      setIsLoading(false);
-    }
-  }, [wireframeId, focusedSectionId]);
-
-  // Handle applying a suggestion
-  const handleApplySuggestion = (suggestion: Suggestion) => {
-    setSelectedSuggestion(suggestion);
-  };
-
-  // Handle confirmation of applying the suggestion
-  const handleConfirm = async () => {
-    if (!selectedSuggestion || !onApplySuggestion) return;
-
-    setIsApplying(true);
-
-    try {
-      // Apply the suggestion
-      onApplySuggestion(selectedSuggestion);
-
+  
+  // Simulate generating AI suggestions
+  const generateSuggestions = async () => {
+    if (!prompt.trim()) {
       toast({
-        title: 'Suggestion Applied',
-        description: 'The AI suggestion has been applied to your wireframe.',
+        title: "Prompt Required",
+        description: "Please enter a prompt to generate suggestions",
+        variant: "destructive"
       });
-
-      // Close the dialog
-      setSelectedSuggestion(null);
-      onClose();
-    } catch (err) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // This would be replaced with an actual AI API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Mock suggestions based on the tab
+      const mockSuggestions = {
+        content: [
+          { id: '1', text: 'Add a compelling heading that highlights the main value proposition.' },
+          { id: '2', text: 'Use more concise language in the feature descriptions.' },
+          { id: '3', text: 'Add social proof elements to build credibility.' }
+        ],
+        style: [
+          { id: '1', text: 'Use a higher contrast between text and background for better readability.' },
+          { id: '2', text: 'Implement a more consistent color scheme throughout the wireframe.' },
+          { id: '3', text: 'Add more whitespace around key elements for visual breathing room.' }
+        ],
+        layout: [
+          { id: '1', text: 'Reorder sections to prioritize the most important information.' },
+          { id: '2', text: 'Use a grid layout for the features section for better organization.' },
+          { id: '3', text: 'Make the call-to-action more prominent in the hero section.' }
+        ]
+      };
+      
+      setSuggestions(mockSuggestions[activeTab as keyof typeof mockSuggestions]);
+      
       toast({
-        title: 'Failed to Apply Suggestion',
-        description: 'There was an error applying the suggestion.',
-        variant: 'destructive',
+        title: "Suggestions Generated",
+        description: `Generated ${mockSuggestions[activeTab as keyof typeof mockSuggestions].length} suggestions based on your prompt.`
+      });
+      
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+      toast({
+        title: "Failed to Generate Suggestions",
+        description: "There was an error generating AI suggestions. Please try again.",
+        variant: "destructive"
       });
     } finally {
-      setIsApplying(false);
+      setIsLoading(false);
     }
   };
-
+  
+  // Apply a selected suggestion
+  const applySuggestion = (suggestion: any) => {
+    if (onApplySuggestion) {
+      onApplySuggestion(suggestion);
+      
+      toast({
+        title: "Suggestion Applied",
+        description: "The AI suggestion has been applied to your wireframe."
+      });
+    }
+  };
+  
   return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            AI Design Suggestions
-          </DialogTitle>
-          <DialogDescription>
-            Smart recommendations to improve your wireframe design
-          </DialogDescription>
-        </DialogHeader>
-
-        {isLoading && (
-          <div className="flex justify-center items-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Generating AI suggestions...</span>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-destructive/10 p-4 rounded-md text-destructive">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!isLoading && !error && suggestions.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No suggestions available at this time.</p>
-          </div>
-        )}
-
-        <div className="grid gap-4">
-          {suggestions.map((suggestion, index) => (
-            <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{suggestion.title}</CardTitle>
-                <CardDescription>
-                  {suggestion.improvement && (
-                    <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full mr-2">
-                      {suggestion.improvement}
-                    </span>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm">{suggestion.description}</p>
-              </CardContent>
-              <CardFooter>
+    <div className="wireframe-ai-suggestions space-y-6">
+      <div className="flex flex-col space-y-2">
+        <h3 className="text-lg font-medium">AI-Powered Suggestions</h3>
+        <p className="text-sm text-muted-foreground">
+          Get AI suggestions to improve your wireframe's content, style, and layout.
+        </p>
+      </div>
+      
+      <div className="flex gap-2">
+        <Input 
+          placeholder="Describe what you want to improve..."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          className="flex-grow"
+        />
+        <Button 
+          onClick={generateSuggestions}
+          disabled={isLoading || !prompt.trim()}
+          className="gap-2"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Generate
+            </>
+          )}
+        </Button>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3">
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="style">Style</TabsTrigger>
+          <TabsTrigger value="layout">Layout</TabsTrigger>
+        </TabsList>
+        
+        {['content', 'style', 'layout'].map((tab) => (
+          <TabsContent key={tab} value={tab}>
+            {suggestions.length > 0 ? (
+              <div className="space-y-4">
+                {suggestions.map((suggestion) => (
+                  <Card key={suggestion.id}>
+                    <CardHeader className="py-4">
+                      <CardTitle className="text-sm font-medium">Suggestion {suggestion.id}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-2">
+                      <p>{suggestion.text}</p>
+                    </CardContent>
+                    <CardFooter className="flex justify-end py-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="gap-1"
+                        onClick={() => applySuggestion(suggestion)}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Apply
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+                
                 <Button 
-                  variant="default" 
+                  variant="ghost" 
                   size="sm" 
-                  className="w-full"
-                  onClick={() => handleApplySuggestion(suggestion)}
+                  className="gap-1 w-full" 
+                  onClick={generateSuggestions}
                 >
-                  Apply Suggestion
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate Suggestions
                 </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                {prompt ? (
+                  <p className="text-muted-foreground">
+                    Click "Generate" to get AI-powered suggestions.
+                  </p>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Enter a prompt to generate AI-powered suggestions.
+                  </p>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
+      
+      {onClose && (
+        <div className="flex justify-end">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-        </DialogFooter>
-      </DialogContent>
-
-      {/* Confirmation Dialog */}
-      {selectedSuggestion && (
-        <Dialog open={!!selectedSuggestion} onOpenChange={() => setSelectedSuggestion(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Apply Suggestion</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to apply this suggestion? This will modify your wireframe.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="bg-muted p-4 rounded-md">
-              <h4 className="font-medium">{selectedSuggestion.title}</h4>
-              <p className="text-sm mt-1">{selectedSuggestion.description}</p>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                disabled={isApplying}
-                onClick={() => setSelectedSuggestion(null)}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button
-                variant="default"
-                onClick={handleConfirm}
-                disabled={isApplying}
-              >
-                {isApplying ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Applying...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Apply
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        </div>
       )}
-    </Dialog>
+    </div>
   );
 };
 

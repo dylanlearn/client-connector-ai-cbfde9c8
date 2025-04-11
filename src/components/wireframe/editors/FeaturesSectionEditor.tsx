@@ -1,372 +1,264 @@
 
 import React, { useState } from 'react';
-import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { ColorPicker } from '@/components/ui/color-picker';
-import { Plus, Trash2, MoveUp, MoveDown } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import RichTextEditor from './RichTextEditor';
-import { getSuggestion } from '@/utils/copy-suggestions-helper';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Trash2, Plus, Image } from 'lucide-react';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { processCopySuggestions } from '../renderers/utilities';
 
 interface FeaturesSectionEditorProps {
   section: WireframeSection;
   onUpdate: (updates: Partial<WireframeSection>) => void;
 }
 
-interface FeatureItem {
-  id: string;
-  title: string;
-  description: string;
-  icon?: string;
-  imageUrl?: string;
-  link?: string;
-}
-
-const FeaturesSectionEditor: React.FC<FeaturesSectionEditorProps> = ({ section, onUpdate }) => {
+const FeaturesSectionEditor: React.FC<FeaturesSectionEditorProps> = ({
+  section,
+  onUpdate
+}) => {
   const [activeTab, setActiveTab] = useState('content');
   
-  // Get data from section or use defaults
-  const backgroundColor = section.backgroundColor || section.style?.backgroundColor || '#ffffff';
-  const heading = section.data?.heading || getSuggestion(section.copySuggestions, 'heading', 'Our Features');
-  const subheading = section.data?.subheading || getSuggestion(section.copySuggestions, 'subheading', 'What makes our product special');
+  // Process copy suggestions to ensure we're working with an object
+  const copySuggestions = processCopySuggestions(section.copySuggestions);
   
-  // Initialize feature items
-  const initialFeatures = section.data?.features || [];
-  const [features, setFeatures] = useState<FeatureItem[]>(initialFeatures);
-  const layout = section.data?.layout || 'grid';
-  const columns = section.data?.columns || 3;
-  const variant = section.data?.variant || section.componentVariant || 'standard';
+  // Extract features from section data
+  const features = section.data?.features || [];
   
-  // Handle content updates
-  const handleContentChange = (field: string, value: any) => {
-    const updatedData = {
-      ...(section.data || {}),
-      [field]: value
-    };
-    onUpdate({ data: updatedData });
+  // Update heading
+  const updateHeading = (heading: string) => {
+    onUpdate({
+      copySuggestions: {
+        ...copySuggestions,
+        heading
+      }
+    });
   };
   
-  // Handle style updates
-  const handleStyleChange = (field: string, value: any) => {
-    const updatedStyle = {
-      ...(section.style || {}),
-      [field]: value
-    };
-    onUpdate({ style: updatedStyle, [field]: value });
+  // Update subheading
+  const updateSubheading = (subheading: string) => {
+    onUpdate({
+      copySuggestions: {
+        ...copySuggestions,
+        subheading
+      }
+    });
   };
   
-  // Feature management
+  // Add a new feature
   const addFeature = () => {
     const newFeature = {
       id: `feature-${Date.now()}`,
       title: 'New Feature',
-      description: 'Description of this feature',
-      icon: 'star'
+      description: 'Description of the new feature',
+      icon: 'sparkles'
     };
     
-    const updatedFeatures = [...features, newFeature];
-    setFeatures(updatedFeatures);
-    handleContentChange('features', updatedFeatures);
-  };
-  
-  const updateFeature = (id: string, field: string, value: any) => {
-    const updatedFeatures = features.map(feature => {
-      if (feature.id === id) {
-        return { ...feature, [field]: value };
+    onUpdate({
+      data: {
+        ...section.data,
+        features: [...features, newFeature]
       }
-      return feature;
     });
-    
-    setFeatures(updatedFeatures);
-    handleContentChange('features', updatedFeatures);
   };
   
-  const deleteFeature = (id: string) => {
-    const updatedFeatures = features.filter(feature => feature.id !== id);
-    setFeatures(updatedFeatures);
-    handleContentChange('features', updatedFeatures);
-  };
-  
-  const moveFeature = (id: string, direction: 'up' | 'down') => {
-    const index = features.findIndex(feature => feature.id === id);
-    if (
-      (direction === 'up' && index === 0) || 
-      (direction === 'down' && index === features.length - 1)
-    ) {
-      return;
-    }
-    
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
+  // Remove a feature
+  const removeFeature = (index: number) => {
     const updatedFeatures = [...features];
-    const [removed] = updatedFeatures.splice(index, 1);
-    updatedFeatures.splice(newIndex, 0, removed);
+    updatedFeatures.splice(index, 1);
     
-    setFeatures(updatedFeatures);
-    handleContentChange('features', updatedFeatures);
+    onUpdate({
+      data: {
+        ...section.data,
+        features: updatedFeatures
+      }
+    });
+  };
+  
+  // Update a feature
+  const updateFeature = (index: number, updates: any) => {
+    const updatedFeatures = [...features];
+    updatedFeatures[index] = {
+      ...updatedFeatures[index],
+      ...updates
+    };
+    
+    onUpdate({
+      data: {
+        ...section.data,
+        features: updatedFeatures
+      }
+    });
+  };
+  
+  // Update layout type
+  const updateLayoutType = (layoutType: string) => {
+    onUpdate({
+      layout: {
+        ...(typeof section.layout === 'object' ? section.layout : {}),
+        type: layoutType
+      }
+    });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="features-section-editor space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid grid-cols-3">
           <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="layout">Layout</TabsTrigger>
           <TabsTrigger value="style">Style</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="content" className="space-y-4 pt-4">
+        <TabsContent value="content" className="space-y-6 pt-4">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="heading">Heading</Label>
-              <Input
-                id="heading"
-                value={heading}
-                onChange={(e) => handleContentChange('heading', e.target.value)}
-                placeholder="Features Section Heading"
+              <Label htmlFor="heading">Section Heading</Label>
+              <Input 
+                id="heading" 
+                value={copySuggestions.heading || ''} 
+                onChange={(e) => updateHeading(e.target.value)}
+                placeholder="Features Heading"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="subheading">Subheading</Label>
-              <RichTextEditor
-                id="subheading"
-                value={subheading}
-                onChange={(value) => handleContentChange('subheading', value)}
-                minHeight="100px"
-                placeholder="Features Section Subheading"
+              <Label htmlFor="subheading">Section Subheading</Label>
+              <Textarea 
+                id="subheading" 
+                value={copySuggestions.subheading || ''} 
+                onChange={(e) => updateSubheading(e.target.value)}
+                placeholder="Features subheading text"
+                rows={2}
               />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="layout">Feature Layout</Label>
-              <Select 
-                value={layout} 
-                onValueChange={(value) => handleContentChange('layout', value)}
-              >
-                <SelectTrigger id="layout">
-                  <SelectValue placeholder="Grid" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="grid">Grid</SelectItem>
-                  <SelectItem value="list">Vertical List</SelectItem>
-                  <SelectItem value="alternating">Alternating</SelectItem>
-                  <SelectItem value="cards">Cards</SelectItem>
-                  <SelectItem value="compact">Compact</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {layout === 'grid' && (
-              <div className="space-y-2">
-                <Label htmlFor="columns">Columns</Label>
-                <Select 
-                  value={String(columns)} 
-                  onValueChange={(value) => handleContentChange('columns', parseInt(value))}
-                >
-                  <SelectTrigger id="columns">
-                    <SelectValue placeholder="3" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 Column</SelectItem>
-                    <SelectItem value="2">2 Columns</SelectItem>
-                    <SelectItem value="3">3 Columns</SelectItem>
-                    <SelectItem value="4">4 Columns</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="variant">Feature Style Variant</Label>
-              <Select 
-                value={variant} 
-                onValueChange={(value) => {
-                  handleContentChange('variant', value);
-                  onUpdate({ componentVariant: value });
-                }}
-              >
-                <SelectTrigger id="variant">
-                  <SelectValue placeholder="Standard" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="icon-top">Icons on Top</SelectItem>
-                  <SelectItem value="icon-left">Icons on Left</SelectItem>
-                  <SelectItem value="image">With Images</SelectItem>
-                  <SelectItem value="minimal">Minimal</SelectItem>
-                  <SelectItem value="boxed">Boxed</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="features" className="space-y-4 pt-4">
+          
           <div className="space-y-4">
-            <Button onClick={addFeature} variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" /> Add Feature
-            </Button>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Features</h3>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={addFeature}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" /> Add Feature
+              </Button>
+            </div>
             
-            <div className="space-y-4 mt-4">
-              {features.length === 0 ? (
-                <div className="text-center p-4 border border-dashed rounded-md text-muted-foreground">
-                  No features. Click the button above to add one.
-                </div>
-              ) : (
-                features.map((feature, index) => (
-                  <Card key={feature.id} className="relative">
-                    <CardContent className="pt-4 space-y-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`title-${feature.id}`}>Feature Title</Label>
-                        <Input
-                          id={`title-${feature.id}`}
-                          value={feature.title}
-                          onChange={(e) => updateFeature(feature.id, 'title', e.target.value)}
-                          placeholder="Feature Title"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`description-${feature.id}`}>Description</Label>
-                        <RichTextEditor
-                          id={`description-${feature.id}`}
-                          value={feature.description}
-                          onChange={(value) => updateFeature(feature.id, 'description', value)}
-                          minHeight="100px"
-                          placeholder="Feature description"
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-2">
-                          <Label htmlFor={`icon-${feature.id}`}>Icon Name</Label>
-                          <Input
-                            id={`icon-${feature.id}`}
-                            value={feature.icon || ''}
-                            onChange={(e) => updateFeature(feature.id, 'icon', e.target.value)}
-                            placeholder="star"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor={`imageUrl-${feature.id}`}>Image URL (optional)</Label>
-                          <Input
-                            id={`imageUrl-${feature.id}`}
-                            value={feature.imageUrl || ''}
-                            onChange={(e) => updateFeature(feature.id, 'imageUrl', e.target.value)}
-                            placeholder="https://example.com/image.jpg"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`link-${feature.id}`}>Link URL (optional)</Label>
-                        <Input
-                          id={`link-${feature.id}`}
-                          value={feature.link || ''}
-                          onChange={(e) => updateFeature(feature.id, 'link', e.target.value)}
-                          placeholder="#"
-                        />
-                      </div>
-                      
-                      <div className="flex justify-between mt-2">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => moveFeature(feature.id, 'up')}
-                            disabled={index === 0}
-                          >
-                            <MoveUp className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => moveFeature(feature.id, 'down')}
-                            disabled={index === features.length - 1}
-                          >
-                            <MoveDown className="h-4 w-4" />
-                          </Button>
-                        </div>
+            {features.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-6">
+                  <p className="text-muted-foreground">No features added yet</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={addFeature}
+                    className="mt-2"
+                  >
+                    Add Your First Feature
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {features.map((feature, index) => (
+                  <Card key={feature.id || index}>
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Feature {index + 1}</h4>
                         <Button 
-                          variant="destructive" 
-                          size="icon" 
-                          onClick={() => deleteFeature(feature.id)}
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeFeature(index)}
+                          className="h-8 w-8 p-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`feature-${index}-title`}>Title</Label>
+                          <Input 
+                            id={`feature-${index}-title`} 
+                            value={feature.title || ''} 
+                            onChange={(e) => updateFeature(index, { title: e.target.value })}
+                            placeholder="Feature Title"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor={`feature-${index}-description`}>Description</Label>
+                          <Textarea 
+                            id={`feature-${index}-description`} 
+                            value={feature.description || ''} 
+                            onChange={(e) => updateFeature(index, { description: e.target.value })}
+                            placeholder="Feature Description"
+                            rows={2}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor={`feature-${index}-image`}>Image URL</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              id={`feature-${index}-image`} 
+                              value={feature.imageUrl || ''} 
+                              onChange={(e) => updateFeature(index, { imageUrl: e.target.value })}
+                              placeholder="https://example.com/image.jpg"
+                            />
+                            <Button variant="outline" size="icon" className="flex-shrink-0">
+                              <Image className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
         
-        <TabsContent value="style" className="space-y-4 pt-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="backgroundColor">Background Color</Label>
-              <div className="flex items-center space-x-2">
-                <ColorPicker
-                  id="backgroundColor"
-                  color={backgroundColor}
-                  onChange={(color) => handleStyleChange('backgroundColor', color)}
-                />
-                <Input
-                  value={backgroundColor}
-                  onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-                  className="w-32"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="padding">Padding</Label>
-              <Select 
-                value={section.style?.padding || section.padding || '6'} 
-                onValueChange={(value) => handleStyleChange('padding', value)}
+        <TabsContent value="layout" className="space-y-6 pt-4">
+          <div className="space-y-2">
+            <Label>Layout Type</Label>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant={typeof section.layout === 'object' && section.layout.type === 'grid' ? 'default' : 'outline'}
+                className="justify-start"
+                onClick={() => updateLayoutType('grid')}
               >
-                <SelectTrigger id="padding">
-                  <SelectValue placeholder="Large (24px)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">None (0px)</SelectItem>
-                  <SelectItem value="2">Small (8px)</SelectItem>
-                  <SelectItem value="4">Medium (16px)</SelectItem>
-                  <SelectItem value="6">Large (24px)</SelectItem>
-                  <SelectItem value="8">Extra Large (32px)</SelectItem>
-                  <SelectItem value="12">XXL (48px)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="gap">Item Spacing</Label>
-              <Select 
-                value={section.style?.gap || section.gap || '4'} 
-                onValueChange={(value) => handleStyleChange('gap', value)}
+                Grid
+              </Button>
+              <Button
+                variant={typeof section.layout === 'object' && section.layout.type === 'list' ? 'default' : 'outline'}
+                className="justify-start"
+                onClick={() => updateLayoutType('list')}
               >
-                <SelectTrigger id="gap">
-                  <SelectValue placeholder="Medium (16px)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">None (0px)</SelectItem>
-                  <SelectItem value="2">Small (8px)</SelectItem>
-                  <SelectItem value="4">Medium (16px)</SelectItem>
-                  <SelectItem value="6">Large (24px)</SelectItem>
-                  <SelectItem value="8">Extra Large (32px)</SelectItem>
-                  <SelectItem value="12">XXL (48px)</SelectItem>
-                </SelectContent>
-              </Select>
+                List
+              </Button>
+              <Button
+                variant={typeof section.layout === 'object' && section.layout.type === 'carousel' ? 'default' : 'outline'}
+                className="justify-start"
+                onClick={() => updateLayoutType('carousel')}
+              >
+                Carousel
+              </Button>
             </div>
           </div>
+          
+          {/* Additional layout options would go here */}
+        </TabsContent>
+        
+        <TabsContent value="style" className="space-y-6 pt-4">
+          {/* Style options would go here */}
+          <p className="text-muted-foreground">Style options coming soon...</p>
         </TabsContent>
       </Tabs>
     </div>
