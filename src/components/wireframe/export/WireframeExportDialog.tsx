@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { exportWireframeAsHTML, exportWireframeAsPDF, exportWireframeAsImage } from '@/utils/wireframe/export-utils';
-import { Download, FileCode, FileImage, FileText, Loader2 } from 'lucide-react';
+import { Download, FileCode, FileImage, FileText, Loader2, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 export interface WireframeExportDialogProps {
   wireframe: WireframeData;
@@ -28,6 +29,11 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   const [activeTab, setActiveTab] = useState('html');
   const [isExporting, setIsExporting] = useState(false);
   const [exportedCode, setExportedCode] = useState<string>('');
+  const [copied, setCopied] = useState(false);
+  
+  // Create a fallback container ref if none is provided
+  const localContainerRef = useRef<HTMLDivElement>(null);
+  const effectiveContainerRef = containerRef || localContainerRef;
   
   // Determine the open state from either prop
   const dialogOpen = isOpen !== undefined ? isOpen : open;
@@ -55,46 +61,100 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
       link.download = `${wireframe.title || 'wireframe'}.html`;
       link.click();
       URL.revokeObjectURL(url);
+      
+      toast.success("HTML exported successfully!");
     } catch (error) {
       console.error('Error exporting as HTML:', error);
+      toast.error("Failed to export as HTML", { 
+        description: error instanceof Error ? error.message : "Unknown error" 
+      });
     } finally {
       setIsExporting(false);
     }
   };
   
-  // Export as PDF handler - requires a DOM element to render
+  // Copy HTML to clipboard
+  const handleCopyHTML = async () => {
+    if (!exportedCode) {
+      try {
+        const html = await exportWireframeAsHTML(wireframe);
+        setExportedCode(html);
+        await navigator.clipboard.writeText(html);
+        setCopied(true);
+        toast.success("HTML copied to clipboard");
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Error copying HTML:', error);
+        toast.error("Failed to copy HTML");
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(exportedCode);
+        setCopied(true);
+        toast.success("HTML copied to clipboard");
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error('Error copying HTML:', error);
+        toast.error("Failed to copy HTML");
+      }
+    }
+  };
+  
+  // Export as PDF handler
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      if (containerRef?.current) {
+      if (effectiveContainerRef.current) {
         // Pass the HTMLElement from the containerRef
-        await exportWireframeAsPDF(containerRef.current);
+        const pdfBlob = await exportWireframeAsPDF(effectiveContainerRef.current);
+        
+        // Create downloadable file from the returned blob
+        const url = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${wireframe.title || 'wireframe'}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        toast.success("PDF exported successfully!");
       } else {
-        // Implementation would need a DOM element reference
-        // This is a placeholder that would be connected to a real element
-        alert('PDF export needs to be connected to a DOM element rendering the wireframe');
+        throw new Error("No container element available for PDF export");
       }
     } catch (error) {
       console.error('Error exporting as PDF:', error);
+      toast.error("Failed to export as PDF", { 
+        description: error instanceof Error ? error.message : "No container element available" 
+      });
     } finally {
       setIsExporting(false);
     }
   };
   
-  // Export as Image handler - requires a DOM element to render
+  // Export as Image handler
   const handleExportImage = async () => {
     setIsExporting(true);
     try {
-      if (containerRef?.current) {
+      if (effectiveContainerRef.current) {
         // Pass the HTMLElement from the containerRef
-        await exportWireframeAsImage(containerRef.current);
+        const imageBlob = await exportWireframeAsImage(effectiveContainerRef.current);
+        
+        // Create downloadable file from the returned blob
+        const url = URL.createObjectURL(imageBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${wireframe.title || 'wireframe'}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        toast.success("Image exported successfully!");
       } else {
-        // Implementation would need a DOM element reference
-        // This is a placeholder that would be connected to a real element
-        alert('Image export needs to be connected to a DOM element rendering the wireframe');
+        throw new Error("No container element available for image export");
       }
     } catch (error) {
       console.error('Error exporting as image:', error);
+      toast.error("Failed to export as image", { 
+        description: error instanceof Error ? error.message : "No container element available" 
+      });
     } finally {
       setIsExporting(false);
     }
@@ -106,6 +166,15 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
         </DialogHeader>
+        
+        {/* Create a hidden div for the fallback container ref if needed */}
+        {!containerRef && (
+          <div 
+            ref={localContainerRef} 
+            className="hidden" 
+            dangerouslySetInnerHTML={{ __html: '<div>Fallback container for export</div>' }}
+          />
+        )}
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mb-4">
@@ -127,23 +196,36 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
             <div className="text-sm">
               Export your wireframe as an HTML file that can be viewed in any browser.
             </div>
-            <Button 
-              onClick={handleExportHTML} 
-              className="w-full"
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export as HTML
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleExportHTML} 
+                className="flex-1"
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export as HTML
+                  </>
+                )}
+              </Button>
+              <Button 
+                onClick={handleCopyHTML} 
+                variant="outline"
+                disabled={isExporting}
+              >
+                {copied ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </TabsContent>
           
           <TabsContent value="pdf" className="space-y-4">
@@ -167,6 +249,11 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
                 </>
               )}
             </Button>
+            {!containerRef && (
+              <p className="text-xs text-yellow-600">
+                Note: To export as PDF, you need to provide a container reference to the dialog.
+              </p>
+            )}
           </TabsContent>
           
           <TabsContent value="image" className="space-y-4">
@@ -190,6 +277,11 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
                 </>
               )}
             </Button>
+            {!containerRef && (
+              <p className="text-xs text-yellow-600">
+                Note: To export as image, you need to provide a container reference to the dialog.
+              </p>
+            )}
           </TabsContent>
         </Tabs>
         

@@ -1,6 +1,9 @@
 
 import React from 'react';
 import ContainerComponentRenderer from './specialized/ContainerComponentRenderer';
+import ButtonComponentRenderer from './specialized/ButtonComponentRenderer';
+import TextComponentRenderer from './specialized/TextComponentRenderer';
+import ImageComponentRenderer from './specialized/ImageComponentRenderer';
 import { BaseComponentRendererProps } from './specialized/BaseComponentRenderer';
 
 /**
@@ -18,18 +21,60 @@ export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = ({
     return null;
   }
   
-  // Use the container renderer as default for now
-  // In a full implementation, you would have specialized renderers for different component types
-  return (
-    <ContainerComponentRenderer
-      component={component}
-      darkMode={darkMode}
-      interactive={interactive}
-      onClick={onClick}
-      isSelected={isSelected}
-      deviceType={deviceType}
-    />
-  );
+  // Select the appropriate renderer based on component type
+  switch(component.type?.toLowerCase()) {
+    case 'button':
+      return (
+        <ButtonComponentRenderer
+          component={component}
+          darkMode={darkMode}
+          interactive={interactive}
+          onClick={onClick}
+          isSelected={isSelected}
+          deviceType={deviceType}
+        />
+      );
+      
+    case 'text':
+      return (
+        <TextComponentRenderer
+          component={component}
+          darkMode={darkMode}
+          interactive={interactive}
+          onClick={onClick}
+          isSelected={isSelected}
+          deviceType={deviceType}
+        />
+      );
+      
+    case 'image':
+      return (
+        <ImageComponentRenderer
+          component={component}
+          darkMode={darkMode}
+          interactive={interactive}
+          onClick={onClick}
+          isSelected={isSelected}
+          deviceType={deviceType}
+        />
+      );
+      
+    case 'container':
+    case 'group':
+    case 'box':
+    default:
+      // Use container renderer for container types and as fallback
+      return (
+        <ContainerComponentRenderer
+          component={component}
+          darkMode={darkMode}
+          interactive={interactive}
+          onClick={onClick}
+          isSelected={isSelected}
+          deviceType={deviceType}
+        />
+      );
+  }
 };
 
 export default ComponentRendererFactory;
