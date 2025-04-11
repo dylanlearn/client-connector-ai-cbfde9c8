@@ -108,7 +108,7 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
         </Tabs>
       </div>
       
-      <div className="flex justify-center p-4 bg-muted/30 min-h-[400px]">
+      <div id="wireframe-preview-container" className="flex justify-center p-4 bg-muted/30 min-h-[400px]">
         <PreviewDisplay
           currentDimensions={currentDimensions}
           darkMode={darkMode}

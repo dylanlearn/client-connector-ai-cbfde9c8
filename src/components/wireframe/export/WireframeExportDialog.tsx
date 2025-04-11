@@ -1,141 +1,158 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { 
-  FileText, 
-  Image as ImageIcon,
-  FileCode,
-  Download
-} from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { exportWireframeAsHTML, exportWireframeAsPDF, exportWireframeAsImage } from '@/utils/wireframe/export-utils';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  exportWireframeAsHTML,
-  exportWireframeAsPDF,
-  exportWireframeAsImage
-} from '@/utils/wireframe/export-utils';
+import { Download, FileText, Image, FilePdf } from 'lucide-react';
 
-interface WireframeExportDialogProps {
+export interface WireframeExportDialogProps {
   wireframe: WireframeData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({ 
-  wireframe, 
-  open, 
-  onOpenChange 
+const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
+  wireframe,
+  open,
+  onOpenChange
 }) => {
-  const [activeTab, setActiveTab] = useState('pdf');
-  const [isExporting, setIsExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'html' | 'pdf' | 'image'>('html');
+  const [filename, setFilename] = useState(wireframe.title || 'wireframe');
+  const [quality, setQuality] = useState<string>('90');
+  const [scale, setScale] = useState<string>('2');
   
-  const handleExport = async (format: 'pdf' | 'png' | 'html') => {
-    setIsExporting(true);
+  const handleExport = () => {
+    const options = {
+      filename,
+      quality: parseInt(quality) / 100,
+      scale: parseInt(scale)
+    };
+
+    // Get the wireframe element
+    const wireframeElement = document.getElementById('wireframe-preview-container');
     
-    try {
-      const element = document.getElementById('wireframe-canvas');
-      
-      switch(format) {
-        case 'pdf':
-          await exportWireframeAsPDF(element, wireframe, {
-            filename: wireframe.title || 'wireframe'
-          });
-          break;
-        case 'png':
-          await exportWireframeAsImage(element, wireframe, {
-            filename: wireframe.title || 'wireframe'
-          });
-          break;
-        case 'html':
-          exportWireframeAsHTML(wireframe, {
-            filename: wireframe.title || 'wireframe'
-          });
-          break;
-      }
-    } catch (error) {
-      console.error('Export error:', error);
-    } finally {
-      setIsExporting(false);
+    switch (exportFormat) {
+      case 'html':
+        exportWireframeAsHTML(wireframe, options);
+        break;
+      case 'pdf':
+        exportWireframeAsPDF(wireframeElement, wireframe, options);
+        break;
+      case 'image':
+        exportWireframeAsImage(wireframeElement, wireframe, options);
+        break;
     }
+    
+    // Close the dialog after export
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
-          <DialogDescription>
-            Export your wireframe in various formats
-          </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pdf">PDF</TabsTrigger>
-            <TabsTrigger value="png">PNG</TabsTrigger>
-            <TabsTrigger value="html">HTML</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="pdf" className="py-4">
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Export your wireframe as a PDF document that can be shared or printed.
+        <div className="py-4">
+          <Tabs value={exportFormat} onValueChange={(value) => setExportFormat(value as any)}>
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="html" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                HTML
+              </TabsTrigger>
+              <TabsTrigger value="pdf" className="flex items-center gap-2">
+                <FilePdf className="h-4 w-4" />
+                PDF
+              </TabsTrigger>
+              <TabsTrigger value="image" className="flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Image
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="html">
+              <p className="text-sm text-muted-foreground mb-4">
+                Export as HTML that can be viewed in any browser.
               </p>
-              <Button 
-                onClick={() => handleExport('pdf')} 
-                disabled={isExporting}
-                className="w-full"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export as PDF'}
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="png" className="py-4">
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Export your wireframe as a PNG image.
+            </TabsContent>
+            
+            <TabsContent value="pdf">
+              <p className="text-sm text-muted-foreground mb-4">
+                Export as PDF document for easy sharing.
               </p>
-              <Button 
-                onClick={() => handleExport('png')}
-                disabled={isExporting}
-                className="w-full"
-              >
-                <ImageIcon className="mr-2 h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export as PNG'}
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="html" className="py-4">
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Export your wireframe as an HTML file.
+            </TabsContent>
+            
+            <TabsContent value="image">
+              <p className="text-sm text-muted-foreground mb-4">
+                Export as PNG image that can be used in presentations.
               </p>
-              <Button 
-                onClick={() => handleExport('html')}
-                disabled={isExporting}
-                className="w-full"
-              >
-                <FileCode className="mr-2 h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export as HTML'}
-              </Button>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="filename">Filename</Label>
+                <Input 
+                  id="filename"
+                  value={filename} 
+                  onChange={(e) => setFilename(e.target.value)}
+                  placeholder="wireframe"
+                />
+              </div>
+              
+              {exportFormat !== 'html' && (
+                <div className="space-y-2">
+                  <Label htmlFor="scale">Scale</Label>
+                  <Select value={scale} onValueChange={setScale}>
+                    <SelectTrigger id="scale">
+                      <SelectValue placeholder="Select scale" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1x (Low)</SelectItem>
+                      <SelectItem value="2">2x (Medium)</SelectItem>
+                      <SelectItem value="3">3x (High)</SelectItem>
+                      <SelectItem value="4">4x (Very High)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-          </TabsContent>
-        </Tabs>
+            
+            {exportFormat === 'image' && (
+              <div className="space-y-2">
+                <Label htmlFor="quality">Quality</Label>
+                <Select value={quality} onValueChange={setQuality}>
+                  <SelectTrigger id="quality">
+                    <SelectValue placeholder="Select quality" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="70">70% (Low)</SelectItem>
+                    <SelectItem value="80">80% (Medium)</SelectItem>
+                    <SelectItem value="90">90% (High)</SelectItem>
+                    <SelectItem value="100">100% (Best)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
         
-        <DialogFooter>
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-        </DialogFooter>
+          <Button onClick={handleExport} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

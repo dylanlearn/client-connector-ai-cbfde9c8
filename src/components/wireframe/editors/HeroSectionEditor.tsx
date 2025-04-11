@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { 
-  Input, 
-  Textarea, 
   FormItem,
   FormLabel,
   FormControl 
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Select, 
   SelectTrigger, 

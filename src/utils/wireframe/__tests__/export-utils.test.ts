@@ -12,13 +12,15 @@ import {
 global.URL.createObjectURL = vi.fn(() => 'blob:test-url');
 global.URL.revokeObjectURL = vi.fn();
 
-// Mock document functions
-document.createElement = vi.fn(() => ({
+// Create a proper mock for document.createElement
+const mockElement = {
   href: '',
   download: '',
   click: vi.fn(),
-}));
+};
 
+// Mock document functions properly with type casting to avoid TypeScript errors
+document.createElement = vi.fn().mockImplementation(() => mockElement as unknown as HTMLElement);
 document.body.appendChild = vi.fn();
 document.body.removeChild = vi.fn();
 
