@@ -29,38 +29,30 @@ const AppSidebar = () => {
 
   return (
     <>
-      {/* Mobile sidebar toggle */}
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-16 left-0 z-30 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-800 border-r transition-transform duration-300 ease-in-out ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="py-4 h-full overflow-y-auto">
+          <SidebarNavigation currentPath={location.pathname} />
+        </div>
+      </aside>
+
+      {/* Mobile sidebar toggle - positioned below the header */}
       <button
-        className="fixed top-4 left-4 z-50 md:hidden bg-white dark:bg-gray-800 p-2 rounded-md shadow-md"
+        className="fixed top-20 left-4 z-40 md:hidden bg-white dark:bg-gray-800 p-2 rounded-md shadow-md"
         onClick={toggleMobileSidebar}
         aria-label="Toggle sidebar"
       >
         {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-gray-800 border-r transition-transform duration-300 ease-in-out ${
-          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
-      >
-        <div className="flex h-16 items-center border-b px-6">
-          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="currentColor">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-            </svg>
-            <span className="font-bold text-xl">DezignSync</span>
-          </div>
-        </div>
-        <div className="py-4 h-[calc(100vh-4rem)] overflow-y-auto">
-          <SidebarNavigation currentPath={location.pathname} />
-        </div>
-      </aside>
-
       {/* Mobile overlay */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+          className="fixed inset-0 bg-black/50 z-20 md:hidden mt-16" 
           onClick={toggleMobileSidebar}
           aria-hidden="true"
         />

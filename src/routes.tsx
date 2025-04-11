@@ -1,3 +1,4 @@
+
 import { createBrowserRouter, matchPath } from "react-router-dom";
 import { DesignProcessProvider } from "@/contexts/design-process/DesignProcessProvider";
 import DesignProcessPage from "./pages/DesignProcessPage";
@@ -27,7 +28,9 @@ import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
 import { Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Header from "./components/layout/Header";
 
+// Admin routes check function
 interface WindowWithAdminRoutes extends Window {
   checkAdminRoutes?: () => void;
 }
@@ -62,7 +65,7 @@ const getDemoProjectId = (): string => {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Index />,
+    element: <Layout><Index /></Layout>,
   },
   {
     path: "/login",
@@ -74,75 +77,77 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Dashboard />,
+    element: <Layout><Dashboard /></Layout>,
   },
   {
     path: "/settings",
-    element: <Settings />,
+    element: <Layout><Settings /></Layout>,
   },
   {
     path: "/project/:projectId",
-    element: <ProjectDetailPage />,
+    element: <Layout><ProjectDetailPage /></Layout>,
   },
   {
     path: "/wireframe/:projectId?",
-    element: <WireframeStudioPage />,
+    element: <Layout><WireframeStudioPage /></Layout>,
   },
   {
     path: "/design-canvas/:id?",
-    element: <DesignCanvasPage />,
+    element: <Layout><DesignCanvasPage /></Layout>,
   },
   {
     path: "/design-process",
     element: (
-      <DesignProcessProvider>
-        <DesignProcessPage />
-      </DesignProcessProvider>
+      <Layout>
+        <DesignProcessProvider>
+          <DesignProcessPage />
+        </DesignProcessProvider>
+      </Layout>
     ),
   },
   {
     path: '/projects',
-    element: <Projects />,
+    element: <Layout><Projects /></Layout>,
   },
   {
     path: '/project/:projectId/wireframe-studio',
-    element: <WireframeStudioPage />,
+    element: <Layout><WireframeStudioPage /></Layout>,
   },
   {
     path: '/wireframe-studio',
-    element: <WireframeStudioPage />,
+    element: <Layout><WireframeStudioPage /></Layout>,
   },
   {
     path: '/wireframe-studio/:projectId',
-    element: <WireframeStudioPage />,
+    element: <Layout><WireframeStudioPage /></Layout>,
   },
   {
     path: '/design-picker',
-    element: <DesignPicker />,
+    element: <Layout><DesignPicker /></Layout>,
   },
   {
     path: '/intake-form',
-    element: <IntakeForm />,
+    element: <Layout><IntakeForm /></Layout>,
   },
   {
     path: '/website-analyzer',
-    element: <WebsiteAnalyzer />,
+    element: <Layout><WebsiteAnalyzer /></Layout>,
   },
   {
     path: '/feedback-analysis',
-    element: <FeedbackAnalysis />,
+    element: <Layout><FeedbackAnalysis /></Layout>,
   },
   {
     path: '/ai-suggestions',
-    element: <AIDesignSuggestions />,
+    element: <Layout><AIDesignSuggestions /></Layout>,
   },
   {
     path: '/analytics',
-    element: <Analytics />,
+    element: <Layout><Analytics /></Layout>,
   },
   {
     path: '/clients',
-    element: <Clients />,
+    element: <Layout><Clients /></Layout>,
   },
   {
     path: '/privacy',
@@ -150,23 +155,23 @@ const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: <AdminRoute><AdminPanel /></AdminRoute>,
+    element: <AdminRoute><Layout><AdminPanel /></Layout></AdminRoute>,
   },
   {
     path: '/admin/analytics',
-    element: <AdminRoute><AdminAnalytics /></AdminRoute>,
+    element: <AdminRoute><Layout><AdminAnalytics /></Layout></AdminRoute>,
   },
   {
     path: '/admin/supabase-audit',
-    element: <AdminRoute><AdminAnalytics /></AdminRoute>,
+    element: <AdminRoute><Layout><AdminAnalytics /></Layout></AdminRoute>,
   },
   {
     path: '/admin/audit-and-monitoring',
-    element: <AdminRoute><AdminAnalytics /></AdminRoute>,
+    element: <AdminRoute><Layout><AdminAnalytics /></Layout></AdminRoute>,
   },
   {
     path: '*',
-    element: <NotFound />,
+    element: <Layout><NotFound /></Layout>,
   },
 ]);
 

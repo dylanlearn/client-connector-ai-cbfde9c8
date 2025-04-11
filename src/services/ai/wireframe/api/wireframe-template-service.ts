@@ -1,8 +1,9 @@
+
 // Define a basic template for wireframes
 const emptyWireframe = {
   id: 'empty-template',
   title: 'Empty Template',
-  description: 'An empty wireframe template', // Added required description field
+  description: 'An empty wireframe template',
   sections: [],
   colorScheme: {
     primary: '#3182CE',
