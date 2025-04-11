@@ -25,6 +25,9 @@ export interface ResponsiveOptions<T> {
   default: T;
 }
 
+// Re-export DeviceType from DeviceInfo to avoid import conflicts
+export type { DeviceType } from '../preview/DeviceInfo';
+
 /**
  * Get responsive value based on current device type
  */
@@ -38,10 +41,7 @@ export function getResponsiveValue<T>(
     case 'tablet':
       return options.md || options.default;
     case 'desktop':
-    case 'desktop-lg':
       return options.lg || options.xl || options.default;
-    case 'desktop-xl':
-      return options.xl || options['2xl'] || options.default;
     default:
       return options.default;
   }
@@ -53,9 +53,7 @@ export function getResponsiveValue<T>(
 export function getDeviceTypeFromWidth(width: number): DeviceType {
   if (width < BREAKPOINT_VALUES.sm) return 'mobile';
   if (width < BREAKPOINT_VALUES.lg) return 'tablet';
-  if (width < BREAKPOINT_VALUES.xl) return 'desktop';
-  if (width < BREAKPOINT_VALUES['2xl']) return 'desktop-lg';
-  return 'desktop-xl';
+  return 'desktop';
 }
 
 /**
@@ -139,10 +137,6 @@ export function getBreakpointForDevice(deviceType: DeviceType): BreakpointKey {
       return 'md';
     case 'desktop':
       return 'lg';
-    case 'desktop-lg':
-      return 'xl';
-    case 'desktop-xl':
-      return '2xl';
     default:
       return 'lg';
   }
@@ -185,8 +179,6 @@ export function getResponsiveGridColumns(deviceType: DeviceType): number {
     case 'tablet':
       return 8;
     case 'desktop':
-    case 'desktop-lg':
-    case 'desktop-xl':
       return 12;
     default:
       return 12;

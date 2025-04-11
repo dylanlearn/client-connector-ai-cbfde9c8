@@ -28,12 +28,13 @@ export interface ComponentField {
   label: string;
   description?: string;
   defaultValue?: any;
-  options?: string[] | { label: string; value: string }[];
+  options?: string[] | { label: string; value: string | number }[];
   min?: number;
   max?: number;
   step?: number;
   required?: boolean;
-  id?: string; // Add the id property that was missing
+  id?: string;
+  itemType?: string; // Added for array item type specification
 }
 
 /**
@@ -65,7 +66,8 @@ export interface ComponentVariant {
   preview?: string;
   defaultData?: Partial<WireframeComponent>;
   styles?: StyleConfig;
-  thumbnail?: string; // Add the thumbnail property
+  thumbnail?: string;
+  defaultContent?: any; // Added for default content in variants
 }
 
 /**

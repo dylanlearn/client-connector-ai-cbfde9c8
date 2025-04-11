@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const featureGridComponents: ComponentDefinition = {
@@ -90,6 +91,7 @@ export const featureGridComponents: ComponentDefinition = {
     {
       id: 'title',
       name: 'Section Title',
+      label: 'Section Title',
       type: 'text',
       description: 'Main heading for the feature section',
       defaultValue: 'Our Features'
@@ -97,6 +99,7 @@ export const featureGridComponents: ComponentDefinition = {
     {
       id: 'subtitle',
       name: 'Section Subtitle',
+      label: 'Section Subtitle',
       type: 'textarea',
       description: 'Supporting text beneath the title',
       defaultValue: 'Discover what makes our product special.'
@@ -104,18 +107,20 @@ export const featureGridComponents: ComponentDefinition = {
     {
       id: 'columns',
       name: 'Number of Columns',
+      label: 'Number of Columns',
       type: 'select',
       description: 'Number of columns in the feature grid',
       options: [
-        { label: '2 Columns', value: 2 },
-        { label: '3 Columns', value: 3 },
-        { label: '4 Columns', value: 4 }
+        { label: '2 Columns', value: '2' },
+        { label: '3 Columns', value: '3' },
+        { label: '4 Columns', value: '4' }
       ],
-      defaultValue: 3
+      defaultValue: '3'
     },
     {
       id: 'mediaType',
       name: 'Media Type',
+      label: 'Media Type',
       type: 'select',
       description: 'Type of media to display with features',
       options: [
@@ -128,6 +133,7 @@ export const featureGridComponents: ComponentDefinition = {
     {
       id: 'backgroundStyle',
       name: 'Background Style',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the section',
       options: [
@@ -141,6 +147,7 @@ export const featureGridComponents: ComponentDefinition = {
     {
       id: 'alignment',
       name: 'Content Alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -152,8 +159,12 @@ export const featureGridComponents: ComponentDefinition = {
     }
   ],
   defaultData: {
+    id: 'feature-grid-section',
+    type: 'feature',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
     sectionType: 'feature',
-    componentVariant: 'feature-startup-001',
     name: 'Feature Grid Section',
     data: {
       title: 'Why Choose Us',
@@ -162,6 +173,7 @@ export const featureGridComponents: ComponentDefinition = {
       mediaType: 'icon',
       backgroundStyle: 'light',
       alignment: 'center'
-    }
+    },
+    componentVariant: 'feature-startup-001'
   }
 };

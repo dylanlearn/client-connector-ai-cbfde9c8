@@ -17,9 +17,14 @@ export interface WireframeComponent {
   resizeStrategy?: 'fixed' | 'auto-height' | 'stretch-children';
   children?: WireframeComponent[];
   props?: Record<string, any>;
-  sectionType?: string; // Add the sectionType property
-  title?: string; // Add the title property for some components
-  copyright?: string; // Add the copyright property for footer components
+  sectionType?: string;
+  title?: string;
+  subtitle?: string;
+  copyright?: string;
+  componentVariant?: string;
+  links?: any[];
+  data?: Record<string, any>;
+  name?: string;
 }
 
 /**

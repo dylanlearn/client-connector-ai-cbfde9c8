@@ -20,7 +20,6 @@ export {
   remToPx,
   // Newly added exports
   type ResponsiveOptions,
-  type DeviceType as ResponsiveDeviceType,
   type BreakpointKey,
   BREAKPOINT_VALUES,
   getBreakpointForDevice,
@@ -31,14 +30,24 @@ export {
   responsiveTailwindClasses,
 } from '../utils/responsive-utils';
 
-// Export grid utilities
-export {
-  type GridConfig,
-  type GridBreakpoint,
-  DEFAULT_GRID_CONFIG,
-  getResponsiveGridConfig,
-  TAILWIND_BREAKPOINTS,
+// Export grid utilities - explicitly re-export from grid-utils
+export { 
+  createCanvasGrid,
+  removeGridFromCanvas,
+  updateCanvasGrid,
   calculateColumnPositions,
   calculateGridPositions,
+  getResponsiveGridConfig,
   getBreakpointFromWidth,
+  getObjectBounds,
+  generateSnapGuidelines,
+  snapObjectToGuidelines,
+  DEFAULT_GRID_CONFIG,
+  TAILWIND_BREAKPOINTS,
 } from '../utils/grid-utils';
+
+// Re-export types from grid-utils
+export type { GridConfig, GridBreakpoint } from '../utils/grid-utils';
+
+// Export new alignment guides utilities
+export * from './alignment-guides';

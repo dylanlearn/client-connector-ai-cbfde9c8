@@ -1,327 +1,471 @@
+// Fix for the type error on line 210 (incomplete WireframeComponent)
+import { WireframeComponent } from '@/types/wireframe-component';
+import { ComponentDefinition, ComponentVariant } from './component-types';
 
-import { ComponentDefinition, ComponentField } from './component-types';
-
-// Default hero component definition
+// Define proper default components
 export const defaultHeroComponent: ComponentDefinition = {
   type: 'hero',
   name: 'Hero Section',
-  description: 'A prominent header section, typically at the top of a page',
-  category: 'layout',
+  description: 'A hero section for landing pages',
   icon: 'layout',
   variants: [
     {
-      id: 'centered',
-      name: 'Centered Hero',
-      description: 'A centered hero section with title, subtitle and CTA',
-      thumbnail: '/placeholder.svg',
+      id: 'hero-standard',
+      name: 'Standard Hero',
+      description: 'Standard hero section with headline, subheadline and CTA',
+      thumbnail: '/thumbnails/hero-standard.png',
       defaultContent: {
-        title: 'Welcome to our platform',
-        subtitle: 'The best solution for your needs',
-        alignment: 'center',
-        ctaText: 'Get Started',
-        backgroundType: 'color'
+        headline: 'Build amazing products',
+        subheadline: 'Our platform helps you create and launch faster',
+        ctaText: 'Get Started'
       }
     },
     {
-      id: 'split',
-      name: 'Split Hero',
-      description: 'A hero section with content on one side and image on the other',
-      thumbnail: '/placeholder.svg',
+      id: 'hero-image',
+      name: 'Hero with Image',
+      description: 'Hero section with a large background image',
+      thumbnail: '/thumbnails/hero-image.png',
       defaultContent: {
-        title: 'Welcome to our platform',
-        subtitle: 'The best solution for your needs',
-        alignment: 'left',
-        ctaText: 'Get Started',
-        backgroundType: 'image',
-        imagePosition: 'right'
+        headline: 'Visually Stunning',
+        subheadline: 'Capture attention with a beautiful image',
+        imageUrl: '/images/hero-image.jpg'
+      }
+    },
+    {
+      id: 'hero-video',
+      name: 'Hero with Video',
+      description: 'Hero section with an engaging video background',
+      thumbnail: '/thumbnails/hero-video.png',
+      defaultContent: {
+        headline: 'Engage with Video',
+        subheadline: 'Showcase your product with a captivating video',
+        videoUrl: '/videos/hero-video.mp4'
       }
     }
   ],
   fields: [
     {
-      name: 'title',
+      id: 'headline',
+      name: 'Headline',
+      label: 'Headline',
       type: 'text',
-      label: 'Title',
-      defaultValue: 'Welcome to our platform',
-      description: 'The main heading for the hero section',
-      id: 'title-field'
+      description: 'Main headline for the hero section',
+      defaultValue: 'Build amazing products'
     },
     {
-      name: 'subtitle',
-      type: 'text',
-      label: 'Subtitle',
-      defaultValue: 'The best solution for your needs',
-      description: 'The supportive text under the main heading',
-      id: 'subtitle-field'
+      id: 'subheadline',
+      name: 'Subheadline',
+      label: 'Subheadline',
+      type: 'textarea',
+      description: 'Supporting text beneath the headline',
+      defaultValue: 'Our platform helps you create and launch faster'
     },
     {
-      name: 'alignment',
+      id: 'ctaText',
+      name: 'CTA Button Text',
+      label: 'CTA Button Text',
+      type: 'text',
+      description: 'Text for the call to action button',
+      defaultValue: 'Get Started'
+    },
+    {
+      id: 'ctaUrl',
+      name: 'CTA Button URL',
+      label: 'CTA Button URL',
+      type: 'text',
+      description: 'URL for the call to action button',
+      defaultValue: '/signup'
+    },
+    {
+      id: 'backgroundStyle',
+      name: 'Background Style',
+      label: 'Background Style',
       type: 'select',
-      label: 'Alignment',
+      description: 'The background style of the section',
+      options: [
+        { label: 'Light', value: 'light' },
+        { label: 'Dark', value: 'dark' },
+        { label: 'Gradient', value: 'gradient' }
+      ],
+      defaultValue: 'light'
+    },
+    {
+      id: 'imageUrl',
+      name: 'Image URL',
+      label: 'Image URL',
+      type: 'image',
+      description: 'URL for the background image',
+      defaultValue: ''
+    },
+    {
+      id: 'videoUrl',
+      name: 'Video URL',
+      label: 'Video URL',
+      type: 'image',
+      description: 'URL for the background video',
+      defaultValue: ''
+    },
+    {
+      id: 'alignment',
+      name: 'Content Alignment',
+      label: 'Content Alignment',
+      type: 'select',
+      description: 'How the content should be aligned',
       options: [
         { label: 'Left', value: 'left' },
         { label: 'Center', value: 'center' },
         { label: 'Right', value: 'right' }
       ],
-      defaultValue: 'center',
-      description: 'Horizontal alignment of content',
-      id: 'alignment-field'
+      defaultValue: 'center'
     },
     {
-      name: 'ctaText',
-      type: 'text',
-      label: 'CTA Text',
-      defaultValue: 'Get Started',
-      description: 'Call-to-action button text',
-      id: 'cta-text-field'
-    },
-    {
-      name: 'backgroundType',
-      type: 'select',
-      label: 'Background Type',
-      options: [
-        { label: 'Color', value: 'color' },
-        { label: 'Image', value: 'image' }
-      ],
-      defaultValue: 'color',
-      description: 'Type of background for the hero section',
-      id: 'background-type-field'
+      id: 'showStats',
+      name: 'Show Statistics',
+      label: 'Show Statistics',
+      type: 'boolean',
+      description: 'Whether to display statistics',
+      defaultValue: false
     }
   ],
   defaultData: {
-    title: 'Welcome to our platform',
-    subtitle: 'The best solution for your needs'
+    id: 'hero-section',
+    type: 'hero',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
+    title: 'Hero Section',
+    subtitle: 'A powerful hero section to capture attention',
+    sectionType: 'hero',
+    componentVariant: 'hero-standard'
   }
 };
 
-// Default features component definition
 export const defaultFeaturesComponent: ComponentDefinition = {
   type: 'features',
   name: 'Features Section',
-  description: 'Display key features or benefits',
-  category: 'content',
+  description: 'Display product or service features',
   icon: 'grid',
   variants: [
     {
-      id: 'grid',
+      id: 'features-grid',
       name: 'Features Grid',
-      description: 'Features displayed in a grid layout',
-      thumbnail: '/placeholder.svg',
+      description: 'Grid layout of features with icons',
+      thumbnail: '/thumbnails/features-grid.png',
       defaultContent: {
-        title: 'Our Features',
-        subtitle: 'What makes us special',
+        title: 'Our Amazing Features',
         features: [
-          { id: '1', type: 'feature', content: 'Feature 1' },
-          { id: '2', type: 'feature', content: 'Feature 2' },
-          { id: '3', type: 'feature', content: 'Feature 3' }
+          { title: 'Feature 1', description: 'Description of feature 1' },
+          { title: 'Feature 2', description: 'Description of feature 2' },
+          { title: 'Feature 3', description: 'Description of feature 3' }
         ]
       }
     },
     {
-      id: 'alternating',
-      name: 'Alternating Features',
-      description: 'Features displayed in alternating layout',
-      thumbnail: '/placeholder.svg',
+      id: 'features-list',
+      name: 'Features List',
+      description: 'List layout of features with descriptions',
+      thumbnail: '/thumbnails/features-list.png',
       defaultContent: {
-        title: 'Our Features',
-        subtitle: 'What makes us special',
+        title: 'Key Features',
         features: [
-          { id: '1', type: 'feature', content: 'Feature 1' },
-          { id: '2', type: 'feature', content: 'Feature 2' },
-          { id: '3', type: 'feature', content: 'Feature 3' }
+          { title: 'Feature A', description: 'Detailed description of feature A' },
+          { title: 'Feature B', description: 'Detailed description of feature B' },
+          { title: 'Feature C', description: 'Detailed description of feature C' }
         ]
       }
     }
   ],
   fields: [
     {
-      name: 'title',
+      id: 'title',
+      name: 'Section Title',
+      label: 'Section Title',
       type: 'text',
-      label: 'Title',
-      defaultValue: 'Our Features',
-      description: 'The heading for the features section',
-      id: 'features-title-field'
+      description: 'Main heading for the features section',
+      defaultValue: 'Our Features'
     },
     {
-      name: 'subtitle',
-      type: 'text',
-      label: 'Subtitle',
-      defaultValue: 'What makes us special',
-      description: 'The subheading for the features section',
-      id: 'features-subtitle-field'
-    },
-    {
-      name: 'features',
-      type: 'array',
+      id: 'features',
+      name: 'Features',
       label: 'Features',
-      itemType: 'text',
-      defaultValue: ['Feature 1', 'Feature 2', 'Feature 3'],
+      type: 'array',
+      itemType: 'feature',
       description: 'List of features to display',
-      id: 'features-list-field'
+      defaultValue: []
+    },
+    {
+      id: 'layoutStyle',
+      name: 'Layout Style',
+      label: 'Layout Style',
+      type: 'select',
+      description: 'The layout style for blog posts',
+      options: [
+        { label: 'Grid', value: 'grid' },
+        { label: 'List', value: 'list' }
+      ],
+      defaultValue: 'grid'
     }
   ],
   defaultData: {
-    title: 'Our Features',
-    subtitle: 'What makes us special'
+    id: 'features-section',
+    type: 'features',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
+    title: 'Features Section',
+    subtitle: 'Showcase your product features',
+    sectionType: 'features',
+    componentVariant: 'features-grid'
   }
 };
 
-// Default testimonials component definition
 export const defaultTestimonialsComponent: ComponentDefinition = {
   type: 'testimonials',
   name: 'Testimonials Section',
-  description: 'Display customer testimonials or reviews',
-  category: 'social proof',
-  icon: 'quote',
+  description: 'Display customer testimonials',
+  icon: 'message-square',
   variants: [
     {
-      id: 'cards',
+      id: 'testimonials-cards',
       name: 'Testimonial Cards',
-      description: 'Testimonials displayed as cards',
-      thumbnail: '/placeholder.svg',
+      description: 'Customer testimonials displayed as cards',
+      thumbnail: '/thumbnails/testimonials-cards.png',
       defaultContent: {
         title: 'What Our Customers Say',
         testimonials: [
-          { id: '1', type: 'testimonial', content: 'Great product!' },
-          { id: '2', type: 'testimonial', content: 'Excellent service!' }
+          { 
+            quote: 'This product changed how we work!',
+            author: 'Jane Smith',
+            company: 'Acme Inc.'
+          }
+        ]
+      }
+    },
+    {
+      id: 'testimonials-slider',
+      name: 'Testimonial Slider',
+      description: 'Customer testimonials displayed in a slider',
+      thumbnail: '/thumbnails/testimonials-slider.png',
+      defaultContent: {
+        title: 'Customer Love',
+        testimonials: [
+          { 
+            quote: 'Incredible service and support.',
+            author: 'John Doe',
+            company: 'Beta Corp'
+          }
         ]
       }
     }
   ],
   fields: [
     {
-      name: 'title',
+      id: 'title',
+      name: 'Section Title',
+      label: 'Section Title',
       type: 'text',
-      label: 'Title',
-      defaultValue: 'What Our Customers Say',
-      description: 'The heading for testimonials section',
-      id: 'testimonials-title-field'
+      description: 'Main heading for the testimonials section',
+      defaultValue: 'What Our Customers Say'
     },
     {
-      name: 'testimonials',
-      type: 'array',
+      id: 'testimonials',
+      name: 'Testimonials',
       label: 'Testimonials',
-      itemType: 'text',
-      defaultValue: ['Great product!', 'Excellent service!'],
+      type: 'array',
+      itemType: 'testimonial',
       description: 'List of testimonials to display',
-      id: 'testimonials-list-field'
+      defaultValue: []
+    },
+    {
+      id: 'layoutStyle',
+      name: 'Layout Style',
+      label: 'Layout Style',
+      type: 'select',
+      description: 'The layout style for blog posts',
+      options: [
+        { label: 'Cards', value: 'cards' },
+        { label: 'Slider', value: 'slider' }
+      ],
+      defaultValue: 'cards'
     }
   ],
   defaultData: {
-    title: 'What Our Customers Say'
+    id: 'testimonials-section',
+    type: 'testimonials',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 400 },
+    zIndex: 1,
+    title: 'Testimonials',
+    sectionType: 'testimonials',
+    componentVariant: 'testimonials-cards'
   }
 };
 
-// Default CTA component definition
 export const defaultCTAComponent: ComponentDefinition = {
   type: 'cta',
-  name: 'Call to Action',
-  description: 'A section prompting the user to take action',
-  category: 'conversion',
-  icon: 'zap',
+  name: 'Call to Action Section',
+  description: 'A call to action section',
+  icon: 'arrow-right-circle',
   variants: [
     {
-      id: 'simple',
-      name: 'Simple CTA',
-      description: 'A simple centered call to action',
-      thumbnail: '/placeholder.svg',
+      id: 'cta-standard',
+      name: 'Standard CTA',
+      description: 'Standard call to action with heading and button',
+      thumbnail: '/thumbnails/cta-standard.png',
       defaultContent: {
-        title: 'Ready to get started?',
-        subtitle: 'Join thousands of satisfied customers',
-        buttonText: 'Sign Up Now',
-        buttonVariant: 'primary'
+        headline: 'Ready to get started?',
+        ctaText: 'Sign Up Now'
+      }
+    },
+    {
+      id: 'cta-split',
+      name: 'Split CTA',
+      description: 'Call to action with split layout and image',
+      thumbnail: '/thumbnails/cta-split.png',
+      defaultContent: {
+        headline: 'Transform Your Business',
+        ctaText: 'Learn More',
+        imageUrl: '/images/cta-image.jpg'
       }
     }
   ],
   fields: [
     {
-      name: 'title',
+      id: 'headline',
+      name: 'Headline',
+      label: 'Headline',
       type: 'text',
-      label: 'Title',
-      defaultValue: 'Ready to get started?',
-      description: 'The main heading for the CTA section',
-      id: 'cta-title-field'
+      description: 'Main heading for the CTA',
+      defaultValue: 'Ready to get started?'
     },
     {
-      name: 'subtitle',
+      id: 'ctaText',
+      name: 'CTA Button Text',
+      label: 'CTA Button Text',
       type: 'text',
-      label: 'Subtitle',
-      defaultValue: 'Join thousands of satisfied customers',
-      description: 'The supportive text for the CTA section',
-      id: 'cta-subtitle-field'
+      description: 'Text for the call to action button',
+      defaultValue: 'Sign Up Now'
     },
     {
-      name: 'buttonText',
+      id: 'ctaUrl',
+      name: 'CTA Button URL',
+      label: 'CTA Button URL',
       type: 'text',
-      label: 'Button Text',
-      defaultValue: 'Sign Up Now',
-      description: 'Text displayed on the CTA button',
-      id: 'cta-button-text-field'
+      description: 'URL for the call to action button',
+      defaultValue: '/signup'
     },
     {
-      name: 'buttonVariant',
+      id: 'imageUrl',
+      name: 'Image URL',
+      label: 'Image URL',
+      type: 'image',
+      description: 'URL for the background image',
+      defaultValue: ''
+    },
+    {
+      id: 'backgroundStyle',
+      name: 'Background Style',
+      label: 'Background Style',
       type: 'select',
-      label: 'Button Variant',
+      description: 'The background style of the section',
       options: [
-        { label: 'Primary', value: 'primary' },
-        { label: 'Secondary', value: 'secondary' }
+        { label: 'Light', value: 'light' },
+        { label: 'Dark', value: 'dark' },
+        { label: 'Gradient', value: 'gradient' }
       ],
-      defaultValue: 'primary',
-      description: 'The visual style of the button',
-      id: 'cta-button-variant-field'
+      defaultValue: 'light'
     }
   ],
   defaultData: {
-    title: 'Ready to get started?',
-    subtitle: 'Join thousands of satisfied customers'
+    id: 'cta-section',
+    type: 'cta',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 300 },
+    zIndex: 1,
+    title: 'Call to Action',
+    subtitle: 'Drive user engagement with a compelling CTA',
+    sectionType: 'cta',
+    componentVariant: 'cta-standard'
   }
 };
 
-// Default footer component definition
 export const defaultFooterComponent: ComponentDefinition = {
   type: 'footer',
   name: 'Footer Section',
-  description: 'A footer section with copyright and links',
-  category: 'layout',
-  icon: 'corner-down-left',
+  description: 'Site footer with links and information',
+  icon: 'layout-grid',
   variants: [
     {
-      id: 'standard',
+      id: 'footer-standard',
       name: 'Standard Footer',
-      description: 'A standard footer with copyright and links',
-      thumbnail: '/placeholder.svg',
+      description: 'Standard footer with columns of links',
+      thumbnail: '/thumbnails/footer-standard.png',
       defaultContent: {
-        copyright: '© 2024 My Company',
-        links: ['About', 'Contact', 'Privacy Policy']
+        links: [
+          { title: 'Company', items: ['About', 'Careers', 'Contact'] },
+          { title: 'Resources', items: ['Blog', 'Help', 'Support'] }
+        ],
+        copyright: '© 2023 Your Company. All rights reserved.'
+      }
+    },
+    {
+      id: 'footer-minimal',
+      name: 'Minimal Footer',
+      description: 'Minimal footer with copyright and social links',
+      thumbnail: '/thumbnails/footer-minimal.png',
+      defaultContent: {
+        copyright: '© 2023 Your Company. All rights reserved.',
+        socialLinks: [
+          { icon: 'facebook', url: '/facebook' },
+          { icon: 'twitter', url: '/twitter' }
+        ]
       }
     }
   ],
   fields: [
     {
-      name: 'copyright',
-      type: 'text',
-      label: 'Copyright',
-      defaultValue: '© 2024 My Company',
-      description: 'Copyright text for the footer',
-      id: 'footer-copyright-field'
+      id: 'links',
+      name: 'Links',
+      label: 'Links',
+      type: 'array',
+      itemType: 'linkGroup',
+      description: 'List of links to display in the footer',
+      defaultValue: []
     },
     {
-      name: 'links',
+      id: 'copyright',
+      name: 'Copyright Text',
+      label: 'Copyright Text',
+      type: 'text',
+      description: 'Copyright text for the footer',
+      defaultValue: '© 2023 Your Company. All rights reserved.'
+    },
+    {
+      id: 'socialLinks',
+      name: 'Social Links',
+      label: 'Social Links',
       type: 'array',
-      label: 'Links',
-      itemType: 'text',
-      defaultValue: ['About', 'Contact', 'Privacy Policy'],
-      description: 'List of links to display in the footer',
-      id: 'footer-links-field'
+      itemType: 'socialLink',
+      description: 'List of social media links',
+      defaultValue: []
     }
   ],
   defaultData: {
-    copyright: '© 2024 My Company',
-    links: ['About', 'Contact', 'Privacy Policy']
+    id: 'footer-section',
+    type: 'footer',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 300 },
+    zIndex: 1,
+    copyright: '© 2023 Your Company. All rights reserved.',
+    sectionType: 'footer',
+    links: [
+      { title: 'Company', items: ['About', 'Careers', 'Contact'] },
+      { title: 'Resources', items: ['Blog', 'Help', 'Support'] }
+    ],
+    componentVariant: 'footer-standard'
   }
 };
 
-// Export all component definitions for register-components.ts
 export const defaultComponents = [
   defaultHeroComponent,
   defaultFeaturesComponent,

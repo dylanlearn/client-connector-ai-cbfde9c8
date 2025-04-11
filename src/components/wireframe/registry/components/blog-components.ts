@@ -91,7 +91,8 @@ export const blogComponents: ComponentDefinition = {
   fields: [
     {
       id: 'headline',
-      name: 'Headline',
+      name: 'Section Title',
+      label: 'Section Title',
       type: 'text',
       description: 'Main heading for the blog section',
       defaultValue: 'Latest Updates'
@@ -99,6 +100,7 @@ export const blogComponents: ComponentDefinition = {
     {
       id: 'description',
       name: 'Description',
+      label: 'Description',
       type: 'textarea',
       description: 'Supporting text beneath the headline',
       defaultValue: 'Stay up-to-date with our latest news and product updates.'
@@ -106,6 +108,7 @@ export const blogComponents: ComponentDefinition = {
     {
       id: 'layoutStyle',
       name: 'Layout Style',
+      label: 'Layout Style',
       type: 'select',
       description: 'The layout style for blog posts',
       options: [
@@ -118,6 +121,7 @@ export const blogComponents: ComponentDefinition = {
     {
       id: 'backgroundStyle',
       name: 'Background Style',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the section',
       options: [
@@ -131,6 +135,7 @@ export const blogComponents: ComponentDefinition = {
     {
       id: 'alignment',
       name: 'Content Alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -143,6 +148,7 @@ export const blogComponents: ComponentDefinition = {
     {
       id: 'showCategories',
       name: 'Show Categories',
+      label: 'Show Categories',
       type: 'boolean',
       description: 'Whether to display post categories',
       defaultValue: true
@@ -150,14 +156,19 @@ export const blogComponents: ComponentDefinition = {
     {
       id: 'showAuthors',
       name: 'Show Authors',
+      label: 'Show Authors',
       type: 'boolean',
       description: 'Whether to display post authors',
       defaultValue: true
     }
   ],
   defaultData: {
+    id: 'blog-section',
+    type: 'blog',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
     sectionType: 'blog',
-    componentVariant: 'blog-startup-001',
     name: 'Blog Section',
     data: {
       headline: 'Latest Updates',
@@ -167,6 +178,7 @@ export const blogComponents: ComponentDefinition = {
       alignment: 'center',
       showCategories: true,
       showAuthors: true
-    }
+    },
+    componentVariant: 'blog-startup-001'
   }
 };

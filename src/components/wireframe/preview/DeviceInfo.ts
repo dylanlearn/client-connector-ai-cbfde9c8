@@ -1,71 +1,61 @@
 
-export type DeviceType = 'desktop' | 'tablet' | 'tabletLandscape' | 'mobile' | 'mobileLandscape' | 'mobileSm';
+/**
+ * Available device types for responsive preview
+ */
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
+/**
+ * Device dimensions for responsive preview
+ */
 export interface DeviceDimensions {
-  name: string;
   width: number;
   height: number;
+  name: string;
   devicePixelRatio?: number;
-  userAgent?: string;
-  aspectRatio?: number;
 }
 
+/**
+ * Standard device dimensions for preview
+ */
 export const DEVICE_DIMENSIONS: Record<DeviceType, DeviceDimensions> = {
-  desktop: {
-    name: 'Desktop',
-    width: 1280,
-    height: 720,
-    devicePixelRatio: 1,
-    aspectRatio: 16 / 9
-  },
-  tablet: {
-    name: 'Tablet',
-    width: 768,
-    height: 1024,
-    devicePixelRatio: 2,
-    userAgent: 'iPad',
-    aspectRatio: 3 / 4
-  },
-  tabletLandscape: {
-    name: 'Tablet Landscape',
-    width: 1024,
-    height: 768,
-    devicePixelRatio: 2,
-    userAgent: 'iPad',
-    aspectRatio: 4 / 3
-  },
   mobile: {
-    name: 'Mobile',
     width: 375,
     height: 667,
-    devicePixelRatio: 2,
-    userAgent: 'iPhone',
-    aspectRatio: 9 / 16
+    name: 'Mobile',
+    devicePixelRatio: 2
   },
-  mobileLandscape: {
-    name: 'Mobile Landscape',
-    width: 667,
-    height: 375,
-    devicePixelRatio: 2,
-    userAgent: 'iPhone',
-    aspectRatio: 16 / 9
+  tablet: {
+    width: 768,
+    height: 1024,
+    name: 'Tablet',
+    devicePixelRatio: 2
   },
-  mobileSm: {
-    name: 'Small Mobile',
-    width: 320,
-    height: 568,
-    devicePixelRatio: 2,
-    userAgent: 'iPhone SE',
-    aspectRatio: 9 / 16
+  desktop: {
+    width: 1280,
+    height: 800,
+    name: 'Desktop',
+    devicePixelRatio: 1
   }
 };
 
-export const mapDeviceType = (deviceType: DeviceType): 'desktop' | 'tablet' | 'mobile' => {
-  if (deviceType === 'desktop') return 'desktop';
-  if (deviceType === 'tablet' || deviceType === 'tabletLandscape') return 'tablet';
-  return 'mobile';
-};
+/**
+ * Map a string to a valid device type
+ */
+export function mapDeviceType(device: string): DeviceType {
+  switch (device) {
+    case 'mobile':
+      return 'mobile';
+    case 'tablet':
+      return 'tablet';
+    case 'desktop':
+    default:
+      return 'desktop';
+  }
+}
 
-export const getDeviceDimensions = (deviceType: DeviceType): DeviceDimensions => {
+/**
+ * Get device dimensions based on device type
+ */
+export function getDeviceDimensions(deviceType: DeviceType): DeviceDimensions {
   return DEVICE_DIMENSIONS[deviceType] || DEVICE_DIMENSIONS.desktop;
-};
+}
