@@ -3,71 +3,76 @@ import { WireframeGenerationParams, WireframeGenerationResult } from '../wirefra
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Mock implementation of generating a wireframe using AI
+ * Mock implementation for generating a wireframe using AI
  */
 export const generateWireframeWithAI = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
-  // Create a mock wireframe with basic sections based on parameters
-  const mockWireframe = {
+  // Simulate AI processing time
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Create a simple wireframe structure based on the provided parameters
+  const wireframe = {
     id: uuidv4(),
-    title: params.description || 'Generated Wireframe',
-    description: params.contentRequirements || 'AI-generated wireframe',
+    title: params.description || 'AI Generated Wireframe',
+    description: params.designRequirements || '',
     sections: [
       {
         id: uuidv4(),
-        name: 'Hero Section',
+        name: 'Header Section',
         sectionType: 'hero',
-        copySuggestions: {
-          heading: 'Welcome to Your Website',
-          subheading: 'A professional solution for your business',
-          ctaText: 'Get Started'
+        description: 'Main hero section with headline and CTA',
+        components: [],
+        layout: {
+          type: 'flex',
+          direction: 'column',
+          alignItems: 'center',
+          justifyContent: 'center'
         }
       },
       {
         id: uuidv4(),
-        name: 'Features Section',
+        name: 'Features',
         sectionType: 'features',
-        copySuggestions: {
-          heading: 'Our Features',
-          subheading: 'What makes us different'
+        description: 'Features showcase section',
+        components: [],
+        layout: {
+          type: 'grid',
+          columns: 3,
+          gap: 16
         }
       },
       {
         id: uuidv4(),
-        name: 'Contact Section',
-        sectionType: 'contact',
-        copySuggestions: {
-          heading: 'Get In Touch',
-          subheading: 'We\'d love to hear from you'
+        name: 'Footer',
+        sectionType: 'footer',
+        description: 'Footer with links and contact information',
+        components: [],
+        layout: {
+          type: 'grid',
+          columns: 4,
+          gap: 16
         }
       }
     ],
     colorScheme: {
-      primary: '#3b82f6',
-      secondary: '#10b981',
-      accent: '#f59e0b',
+      primary: '#3182ce',
+      secondary: '#805ad5',
+      accent: '#ed8936',
       background: '#ffffff',
-      text: '#111827'
+      text: '#1a202c'
     },
     typography: {
       headings: 'sans-serif',
-      body: 'sans-serif'
-    }
+      body: 'sans-serif',
+      fontPairings: ['Roboto/Open Sans']
+    },
+    style: params.style || {}
   };
-
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 500));
-
+  
   return {
-    wireframe: mockWireframe,
-    intentData: {
-      purpose: 'Create a professional website',
-      targetAudience: 'Business professionals',
-      designStyle: 'Modern and clean'
-    },
-    blueprint: {
-      layout: 'Standard',
-      sections: ['hero', 'features', 'contact', 'footer']
-    },
-    success: true
+    wireframe,
+    success: true,
+    error: undefined,
+    generationTime: 1.2,
+    model: 'gpt-4-turbo'
   };
 };

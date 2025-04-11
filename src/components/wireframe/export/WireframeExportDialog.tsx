@@ -60,7 +60,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
         return;
       }
       setIsExporting('pdf');
-      const blob = await exportWireframeAsPDF(elementRef, wireframe);
+      const blob = await exportWireframeAsPDF(elementRef);
       saveAs(blob, `${wireframe.title || 'wireframe'}.pdf`);
     } catch (error) {
       console.error('Error exporting PDF:', error);
@@ -78,7 +78,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
         return;
       }
       setIsExporting('image');
-      const blob = await exportWireframeAsImage(elementRef, wireframe);
+      const blob = await exportWireframeAsImage(elementRef);
       saveAs(blob, `${wireframe.title || 'wireframe'}.png`);
     } catch (error) {
       console.error('Error exporting image:', error);

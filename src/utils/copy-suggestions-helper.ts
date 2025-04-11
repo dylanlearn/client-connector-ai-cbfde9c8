@@ -2,6 +2,29 @@
 import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
 
 /**
+ * Safely converts a CopySuggestions object or array into a Record<string, string> 
+ * that can be safely used with components expecting string values
+ */
+export const normalizeCopySuggestions = (
+  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined,
+  defaultValue: string = ''
+): Record<string, string> => {
+  if (!copySuggestions) return {};
+  
+  // Handle array of suggestions
+  if (Array.isArray(copySuggestions)) {
+    // Convert the first item if available
+    if (copySuggestions.length > 0) {
+      return { ...copySuggestions[0] };
+    }
+    return {};
+  }
+  
+  // Handle object format (already in Record<string, string> format)
+  return { ...copySuggestions };
+};
+
+/**
  * Safely get a value from copySuggestions, handling both object and array formats
  */
 export const getSuggestion = (
