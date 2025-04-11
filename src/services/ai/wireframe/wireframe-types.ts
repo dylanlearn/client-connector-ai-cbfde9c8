@@ -162,7 +162,9 @@ export interface WireframeGenerationParams {
   styleToken?: string;
   feedbackMode?: boolean;
   isVariation?: boolean;
+  intakeData?: Record<string, any>;
   customParams?: Record<string, any>;
+  styleChanges?: Record<string, any>;
 }
 
 // Result of wireframe generation

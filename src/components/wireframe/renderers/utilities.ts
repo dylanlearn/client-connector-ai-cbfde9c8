@@ -1,176 +1,146 @@
 
 import { WireframeSection, WireframeComponent, CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
 
-// Helper functions for wireframe component rendering
-
-/**
- * Gets a suggested text value for a specific key, or returns a fallback
- */
-export function getSuggestedText(
-  copySuggestions: CopySuggestions | undefined,
-  key: string,
-  fallback: string = ''
-): string {
-  if (!copySuggestions) return fallback;
-  return copySuggestions[key] || fallback;
-}
-
-/**
- * Alternative name for getSuggestedText to maintain compatibility
- */
-export function getSuggestion(
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined, 
-  key: string, 
-  defaultValue: string = ''
-): string {
-  // First normalize the copySuggestions to a Record<string, string>
-  const normalizedSuggestions = normalizeCopySuggestions(copySuggestions);
+// Helper function to create a style object from a WireframeComponent or WireframeSection
+export const createStyleObject = (component: WireframeComponent | WireframeSection): React.CSSProperties => {
+  const styles: React.CSSProperties = {};
   
-  // Then retrieve the value or return the default
-  return String(normalizedSuggestions[key] || defaultValue);
-}
-
-/**
- * Transforms a section type to a more readable display format
- */
-export function formatSectionType(sectionType: string): string {
-  if (!sectionType) return 'Unknown Section';
+  // Add base styles from the style property if it exists
+  if (component.style && typeof component.style === 'object') {
+    Object.assign(styles, component.style);
+  }
   
-  // Split by hyphens and capitalize
-  return sectionType
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
-/**
- * Gets responsive class based on the current device
- */
-export function getResponsiveClass(component: WireframeComponent, deviceType: string): string {
-  if (!component.responsive) return '';
+  // Add background color if available
+  if ('backgroundColor' in component && component.backgroundColor) {
+    styles.backgroundColor = component.backgroundColor;
+  }
   
-  const responsiveClasses = {
-    mobile: component.responsive.mobile?.className || '',
-    tablet: component.responsive.tablet?.className || '',
-    desktop: component.responsive.desktop?.className || ''
-  };
-  
-  return responsiveClasses[deviceType as keyof typeof responsiveClasses] || '';
-}
-
-/**
- * Merges component styles with responsive styles for current device
- */
-export function getResponsiveStyles(
-  component: WireframeComponent,
-  deviceType: string
-): Record<string, any> {
-  const baseStyles = component.style || {};
-  
-  if (!component.responsive) return baseStyles;
-  
-  const deviceStyles = component.responsive[deviceType as keyof typeof component.responsive] || {};
-  
-  return {
-    ...baseStyles,
-    ...deviceStyles
-  };
-}
-
-/**
- * Create a style object that handles text-align correctly for React CSS Properties
- */
-export function createStyleObject(styles: Record<string, any> = {}): React.CSSProperties {
-  const result: Record<string, any> = { ...styles };
-  
-  // Handle textAlign specifically - cast it to a valid CSS text-align value
-  if (styles?.textAlign) {
-    switch (styles.textAlign) {
-      case 'left':
-      case 'center':
-      case 'right':
-      case 'justify':
-        result.textAlign = styles.textAlign as 'left' | 'center' | 'right' | 'justify';
-        break;
-      default:
-        // Use a safe default if the value isn't recognized
-        result.textAlign = 'left';
+  // Add dimension styles if available
+  if ('dimensions' in component && component.dimensions) {
+    if (component.dimensions.width !== undefined) {
+      styles.width = component.dimensions.width;
+    }
+    
+    if (component.dimensions.height !== undefined) {
+      styles.height = component.dimensions.height;
     }
   }
   
-  return result as React.CSSProperties;
-}
-
-/**
- * Helper to safely convert string or number dimensions to numeric values for calculations
- */
-export function parseDimension(value: string | number | undefined, defaultValue: number = 0): number {
-  if (value === undefined) return defaultValue;
-  
-  if (typeof value === 'number') return value;
-  
-  // Try to parse the string as a number
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? defaultValue : parsed;
-}
-
-/**
- * Create a color scheme object from a wireframe
- */
-export function createColorScheme(wireframe: any): Record<string, string> {
-  const colorScheme = wireframe?.colorScheme || {
-    primary: '#3182ce',
-    secondary: '#805ad5',
-    accent: '#ed8936',
-    background: '#ffffff',
-    text: '#1a202c'
-  };
-  
-  return colorScheme;
-}
-
-/**
- * Safely converts a CopySuggestions object or array into a Record<string, string> 
- * that can be safely used with components expecting string values
- */
-export function normalizeCopySuggestions(
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined,
-  defaultValue: string = ''
-): Record<string, string> {
-  if (!copySuggestions) return {};
-  
-  // Handle array of suggestions
-  if (Array.isArray(copySuggestions)) {
-    // Convert the first item if available
-    if (copySuggestions.length > 0) {
-      return { ...copySuggestions[0] };
+  // Add position styles if available
+  if ('position' in component && component.position) {
+    if (component.position.x !== undefined) {
+      styles.left = component.position.x;
     }
-    return {};
+    
+    if (component.position.y !== undefined) {
+      styles.top = component.position.y;
+    }
   }
   
-  // Handle object format (already in Record<string, string> format)
-  return { ...copySuggestions };
-}
+  // Add shorthand properties if available
+  if ('x' in component && component.x !== undefined) {
+    styles.left = component.x;
+  }
+  
+  if ('y' in component && component.y !== undefined) {
+    styles.top = component.y;
+  }
+  
+  if ('width' in component && component.width !== undefined) {
+    styles.width = component.width;
+  }
+  
+  if ('height' in component && component.height !== undefined) {
+    styles.height = component.height;
+  }
+  
+  if ('padding' in component && component.padding !== undefined) {
+    styles.padding = component.padding;
+  }
+  
+  if ('gap' in component && component.gap !== undefined) {
+    styles.gap = component.gap;
+  }
+  
+  if ('zIndex' in component && component.zIndex !== undefined) {
+    styles.zIndex = component.zIndex;
+  }
+  
+  return styles;
+};
 
-/**
- * Processes copy suggestions to collect all available text from section
- */
-export function processCopySuggestions(section: WireframeSection): Record<string, string> {
-  const result: Record<string, string> = {};
+// Helper to safely get copy suggestions
+export const getCopySuggestions = (section: WireframeSection): CopySuggestions => {
+  return section.copySuggestions || {};
+};
+
+// Helper to format class names
+export const formatClassNames = (...classes: (string | undefined | null | false)[]): string => {
+  return classes.filter(Boolean).join(' ');
+};
+
+// Helper to check if a layout is a grid
+export const isGridLayout = (section: WireframeSection): boolean => {
+  if (!section.layout) return false;
   
-  // Include copy suggestions
-  if (section.copySuggestions) {
-    Object.assign(result, normalizeCopySuggestions(section.copySuggestions));
+  if (typeof section.layout === 'string') {
+    return section.layout.includes('grid');
   }
   
-  // Include data if available
-  if (section.data) {
-    Object.entries(section.data).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        result[key] = value;
-      }
-    });
+  return section.layout.type === 'grid';
+};
+
+// Helper to check if a layout is a flex layout
+export const isFlexLayout = (section: WireframeSection): boolean => {
+  if (!section.layout) return false;
+  
+  if (typeof section.layout === 'string') {
+    return section.layout.includes('flex');
   }
   
-  return result;
-}
+  return section.layout.type === 'flex';
+};
+
+// Helper to get layout properties
+export const getLayoutProperties = (section: WireframeSection): Record<string, any> => {
+  if (!section.layout) return {};
+  
+  if (typeof section.layout === 'string') {
+    return { type: section.layout };
+  }
+  
+  return section.layout;
+};
+
+// Get a safe color value with fallback
+export const getColor = (
+  colorScheme: Record<string, string> | undefined, 
+  colorKey: string, 
+  fallback: string = '#000000'
+): string => {
+  if (!colorScheme) return fallback;
+  return colorScheme[colorKey] || fallback;
+};
+
+// Normalize section data for rendering
+export const normalizeSectionData = (section: WireframeSection): Record<string, any> => {
+  return section.data || {};
+};
+
+// Helper to create an ID safe for CSS
+export const createSafeId = (id: string): string => {
+  return `wf-${id.replace(/[^a-zA-Z0-9]/g, '-')}`;
+};
+
+// Export all utilities
+export default {
+  createStyleObject,
+  getCopySuggestions,
+  formatClassNames,
+  isGridLayout,
+  isFlexLayout,
+  getLayoutProperties,
+  getColor,
+  normalizeSectionData,
+  createSafeId
+};

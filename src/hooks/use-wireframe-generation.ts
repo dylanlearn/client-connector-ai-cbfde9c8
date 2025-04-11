@@ -1,14 +1,15 @@
 
 import { useState, useCallback } from "react";
 import { useToast, Toast } from "@/hooks/use-toast";
-import { useWireframeGenerator } from "./wireframe/use-wireframe-generator";
-import { useWireframeStorage } from "./wireframe/use-wireframe-storage";
-import { useWireframeFeedback } from "./wireframe/use-wireframe-feedback";
+import { useWireframeGenerator } from "@/hooks/wireframe/use-wireframe-generator";
+import { useWireframeStorage } from "@/hooks/wireframe/use-wireframe-storage";
+import { useWireframeFeedback } from "@/hooks/wireframe/use-wireframe-feedback";
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,
   AIWireframe
 } from "@/services/ai/wireframe/wireframe-types";
+import { v4 as uuidv4 } from "uuid";
 
 export function useWireframeGeneration() {
   const [creativityLevel, setCreativityLevel] = useState<number>(8);
@@ -71,6 +72,25 @@ export function useWireframeGeneration() {
     // Handle params object directly
     return generateWireframeBase(generationParams);
   }, [generateWireframeBase, creativityLevel]);
+
+  // Replace the default wireframe with a properly typed version
+  const defaultWireframe = {
+    id: uuidv4(),
+    title: 'New Wireframe',
+    description: 'Generated wireframe from prompt',
+    sections: [],
+    colorScheme: {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#000000'
+    },
+    typography: {
+      headings: 'Inter',
+      body: 'Inter'
+    }
+  };
 
   return {
     isGenerating,
