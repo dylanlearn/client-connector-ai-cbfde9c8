@@ -1,77 +1,111 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData } from '../wireframe-types';
+import { WireframeData, WireframeSection } from '../wireframe-types';
 
 /**
- * Create an empty wireframe with default structure
+ * Create a minimal empty wireframe with basic structure
  */
-export const createEmptyWireframe = (): WireframeData => {
+export function createEmptyWireframe(): WireframeData {
   return {
     id: uuidv4(),
     title: 'New Wireframe',
-    description: 'An empty wireframe',
+    description: 'Start adding sections to your wireframe',
     sections: [],
     colorScheme: {
       primary: '#3b82f6',
       secondary: '#10b981',
       accent: '#f59e0b',
       background: '#ffffff',
-      text: '#000000'
+      text: '#111827'
     },
     typography: {
       headings: 'Inter',
       body: 'Inter'
     }
   };
-};
+}
 
 /**
- * List of available wireframe templates
+ * Create a landing page wireframe template
  */
-export const templates = [
-  {
-    id: 'business',
-    name: 'Business Website',
-    description: 'Template for business websites',
-    thumbnail: '/thumbnails/business-template.png'
-  },
-  {
-    id: 'portfolio',
-    name: 'Portfolio',
-    description: 'Template for portfolio websites',
-    thumbnail: '/thumbnails/portfolio-template.png'
-  },
-  {
-    id: 'ecommerce',
-    name: 'E-commerce',
-    description: 'Template for online stores',
-    thumbnail: '/thumbnails/ecommerce-template.png'
-  },
-  {
-    id: 'landing',
-    name: 'Landing Page',
-    description: 'Template for landing pages',
-    thumbnail: '/thumbnails/landing-template.png'
-  }
-];
+export function createLandingPageTemplate(): WireframeData {
+  return {
+    id: uuidv4(),
+    title: 'Landing Page Template',
+    description: 'A standard landing page with essential sections',
+    sections: [
+      {
+        id: uuidv4(),
+        name: 'Navigation',
+        sectionType: 'navigation',
+        componentVariant: 'horizontal',
+        description: 'Main navigation bar'
+      },
+      {
+        id: uuidv4(),
+        name: 'Hero',
+        sectionType: 'hero',
+        componentVariant: 'centered',
+        description: 'Hero section with headline and call to action'
+      },
+      {
+        id: uuidv4(),
+        name: 'Features',
+        sectionType: 'features',
+        componentVariant: 'grid',
+        description: 'Key product features'
+      },
+      {
+        id: uuidv4(),
+        name: 'CTA',
+        sectionType: 'cta',
+        componentVariant: 'centered',
+        description: 'Call to action section'
+      },
+      {
+        id: uuidv4(),
+        name: 'Footer',
+        sectionType: 'footer',
+        componentVariant: 'simple',
+        description: 'Page footer with links and copyright'
+      }
+    ],
+    colorScheme: {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    },
+    typography: {
+      headings: 'Inter',
+      body: 'Inter'
+    }
+  };
+}
 
 /**
- * Get a wireframe template by ID
+ * Get a specific wireframe template by ID
  */
-export const getTemplateById = (templateId: string) => {
-  return templates.find(template => template.id === templateId);
-};
+export function getWireframeTemplate(templateId: string): WireframeData | null {
+  // This would normally load templates from a database or API
+  // For now, just return the landing page template for any ID
+  return createLandingPageTemplate();
+}
 
 /**
- * Get all available templates
+ * Get a list of all available wireframe templates
  */
-export const getAllTemplates = () => {
-  return templates;
-};
+export function getAllWireframeTemplates(): WireframeData[] {
+  return [
+    createLandingPageTemplate(),
+    // Add more templates here
+  ];
+}
 
 export default {
   createEmptyWireframe,
-  getTemplateById,
-  getAllTemplates,
-  templates
+  createLandingPageTemplate,
+  getWireframeTemplate,
+  getAllWireframeTemplates
 };

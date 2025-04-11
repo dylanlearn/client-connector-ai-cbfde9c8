@@ -1,8 +1,6 @@
 
-import { WireframeSection } from "@/services/ai/wireframe/wireframe-types";
-
 /**
- * Type definition for copy suggestions used in wireframe sections
+ * Copy suggestions interface for section content
  */
 export interface CopySuggestions {
   heading?: string;
@@ -11,147 +9,123 @@ export interface CopySuggestions {
   primaryCta?: string;
   secondaryCta?: string;
   supportText?: string;
-  supportCta?: string;
   [key: string]: string | undefined;
 }
 
 /**
- * Safely converts a CopySuggestions object or array into a Record<string, string> 
- * that can be safely used with components expecting string values
+ * Process copy suggestions for a section, ensuring it's in the correct format
  */
-export const normalizeCopySuggestions = (
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined,
-  defaultValue: string = ''
-): Record<string, string> => {
-  if (!copySuggestions) return {};
-  
-  // Handle array of suggestions
-  if (Array.isArray(copySuggestions)) {
-    // Convert the first item if available
-    if (copySuggestions.length > 0) {
-      return { ...copySuggestions[0] };
-    }
-    return {};
+export function processCopySuggestions(suggestions: CopySuggestions | CopySuggestions[] | undefined): CopySuggestions {
+  // Handle undefined suggestions
+  if (!suggestions) {
+    return {
+      heading: 'Section Heading',
+      subheading: 'Section subheading or description text goes here.'
+    };
   }
-  
-  // Handle object format (already in Record<string, string> format)
-  return { ...copySuggestions };
-};
 
-/**
- * Process copy suggestions into a usable format
- * This handles both array and object formats
- */
-export const processCopySuggestions = (
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined
-): Record<string, string> => {
-  return normalizeCopySuggestions(copySuggestions);
-};
-
-/**
- * Safely get a value from copySuggestions, handling both object and array formats
- */
-export const getSuggestion = (
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined, 
-  key: string, 
-  defaultValue: string = ''
-): string => {
-  // First normalize the copySuggestions to a Record<string, string>
-  const normalizedSuggestions = normalizeCopySuggestions(copySuggestions);
-  
-  // Then retrieve the value or return the default
-  return String(normalizedSuggestions[key] || defaultValue);
-};
-
-/**
- * Create a style object that handles text-align correctly for React CSS Properties
- */
-export const createStyleObject = (styles: Record<string, any> = {}): React.CSSProperties => {
-  const result: Record<string, any> = { ...styles };
-  
-  // Handle textAlign specifically - cast it to a valid CSS text-align value
-  if (styles?.textAlign) {
-    switch (styles.textAlign) {
-      case 'left':
-      case 'center':
-      case 'right':
-      case 'justify':
-        result.textAlign = styles.textAlign as 'left' | 'center' | 'right' | 'justify';
-        break;
-      default:
-        // Use a safe default if the value isn't recognized
-        result.textAlign = 'left';
-    }
+  // Handle array of suggestions (return the first one)
+  if (Array.isArray(suggestions)) {
+    return suggestions.length > 0 
+      ? suggestions[0] 
+      : {
+          heading: 'Section Heading',
+          subheading: 'Section subheading or description text goes here.'
+        };
   }
-  
-  return result as React.CSSProperties;
-};
+
+  // Return the suggestions object directly
+  return suggestions;
+}
 
 /**
- * Helper to safely convert string or number dimensions to numeric values for calculations
+ * Get suggested copy based on section type
  */
-export const parseDimension = (value: string | number | undefined, defaultValue: number = 0): number => {
-  if (value === undefined) return defaultValue;
-  
-  if (typeof value === 'number') return value;
-  
-  // Try to parse the string as a number
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? defaultValue : parsed;
-};
+export function getSuggestedCopy(sectionType: string): CopySuggestions {
+  switch (sectionType.toLowerCase()) {
+    case 'hero':
+      return {
+        heading: 'Powerful Solution for Your Business',
+        subheading: 'Streamline your workflow and boost productivity with our intuitive platform',
+        primaryCta: 'Get Started',
+        secondaryCta: 'Learn More'
+      };
+    
+    case 'features':
+      return {
+        heading: 'Key Features',
+        subheading: 'Discover what makes our product special',
+        supportText: 'Our platform offers everything you need to succeed'
+      };
+    
+    case 'testimonials':
+      return {
+        heading: 'What Our Clients Say',
+        subheading: 'Trusted by businesses worldwide'
+      };
+    
+    case 'pricing':
+      return {
+        heading: 'Simple, Transparent Pricing',
+        subheading: 'Choose the plan that works for you',
+        primaryCta: 'Get Started',
+        supportText: 'No hidden fees. Cancel anytime.'
+      };
+    
+    case 'cta':
+      return {
+        heading: 'Ready to Get Started?',
+        subheading: 'Join thousands of satisfied customers today',
+        ctaText: 'Sign Up Now'
+      };
+    
+    case 'contact':
+      return {
+        heading: 'Get in Touch',
+        subheading: 'We'd love to hear from you',
+        supportText: 'Our team is ready to answer your questions'
+      };
+    
+    case 'footer':
+      return {
+        supportText: '© 2025 Your Company. All rights reserved.'
+      };
+    
+    case 'navigation':
+      return {
+        heading: 'Your Brand'
+      };
+    
+    case 'about':
+      return {
+        heading: 'About Us',
+        subheading: 'Our story and mission'
+      };
+    
+    case 'faq':
+      return {
+        heading: 'Frequently Asked Questions',
+        subheading: 'Find answers to common questions'
+      };
+      
+    case 'stats':
+      return {
+        heading: 'Our Impact',
+        subheading: 'See the numbers that drive our success'
+      };
+      
+    default:
+      return {
+        heading: `${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)} Section`,
+        subheading: 'Section description goes here'
+      };
+  }
+}
 
 /**
- * Create a color scheme object from a wireframe
+ * Get a suggestion for a specific section from the AI
  */
-export const createColorScheme = (wireframe: any): Record<string, string> => {
-  const colorScheme = wireframe?.colorScheme || {
-    primary: '#3182ce',
-    secondary: '#805ad5',
-    accent: '#ed8936',
-    background: '#ffffff',
-    text: '#1a202c'
-  };
-  
-  return colorScheme;
-};
-
-/**
- * Determine if a section is empty (has no content or components)
- */
-export const isSectionEmpty = (section: WireframeSection | undefined): boolean => {
-  if (!section) return true;
-  if (!section.components || section.components.length === 0) return true;
-  
-  // Check if the components have any content
-  const hasContent = section.components.some(component => {
-    return component.content || component.src || component.children?.length > 0;
-  });
-  
-  return !hasContent;
-};
-
-/**
- * Get appropriate CSS classes for a section or component
- */
-export const getClassNames = (element: any, baseClass: string = ''): string => {
-  const classes = [baseClass];
-  
-  if (element?.className) {
-    classes.push(element.className);
-  }
-  
-  // Add responsive classes if any
-  if (element?.responsive?.mobile?.className) {
-    classes.push(`sm:${element.responsive.mobile.className}`);
-  }
-  
-  if (element?.responsive?.tablet?.className) {
-    classes.push(`md:${element.responsive.tablet.className}`);
-  }
-  
-  if (element?.responsive?.desktop?.className) {
-    classes.push(`lg:${element.responsive.desktop.className}`);
-  }
-  
-  return classes.filter(Boolean).join(' ');
-};
+export function getSuggestion(sectionType: string, elementType: string): string {
+  const suggestions = getSuggestedCopy(sectionType);
+  return suggestions[elementType] || `${elementType} for ${sectionType}`;
+}

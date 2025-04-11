@@ -1,131 +1,109 @@
 
-import { WireframeGenerationParams, WireframeGenerationResult, WireframeData } from '../wireframe-types';
-import { generateWireframeFromPrompt, generateWireframeFromTemplate } from './wireframe-generator';
-import { v4 as uuidv4 } from 'uuid';
+import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from '../wireframe-types';
 
 /**
- * Service for wireframe API operations
+ * API client for wireframe services
  */
-const wireframeApiService = {
+export const wireframeApiService = {
   /**
-   * Generate a new wireframe
+   * Generate a wireframe via API
    */
-  generate: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
+  generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
     try {
-      const wireframe = await generateWireframeFromPrompt(params);
+      // This would normally call an API endpoint
+      // For now, simulate an API response
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('API: Generate wireframe request', params);
+      
+      // Create a mock wireframe response
+      const wireframe: WireframeData = {
+        id: crypto.randomUUID(),
+        title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
+        description: params.description || 'Generated wireframe',
+        sections: [
+          {
+            id: crypto.randomUUID(),
+            name: 'Navigation',
+            sectionType: 'navigation',
+            description: 'Main navigation bar',
+            componentVariant: 'horizontal',
+            components: []
+          },
+          {
+            id: crypto.randomUUID(),
+            name: 'Hero',
+            sectionType: 'hero',
+            description: 'Hero section with headline and call to action',
+            componentVariant: 'centered',
+            components: []
+          },
+          {
+            id: crypto.randomUUID(),
+            name: 'Features',
+            sectionType: 'features',
+            description: 'Key product features',
+            componentVariant: 'grid',
+            components: []
+          }
+        ],
+        colorScheme: {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          background: '#ffffff',
+          text: '#111827'
+        },
+        typography: {
+          headings: 'Inter',
+          body: 'Inter'
+        }
+      };
+      
       return {
         wireframe,
         success: true,
         message: 'Wireframe generated successfully'
       };
     } catch (error) {
-      console.error('Error generating wireframe:', error);
+      console.error('API error generating wireframe:', error);
       return {
         wireframe: null,
         success: false,
-        message: `Error generating wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `API error: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   },
   
   /**
-   * Generate a wireframe from a template
+   * Save a wireframe via API
    */
-  generateFromTemplate: async (
-    templateId: string, 
-    params: WireframeGenerationParams
-  ): Promise<WireframeGenerationResult> => {
+  saveWireframe: async (wireframe: WireframeData): Promise<boolean> => {
     try {
-      const wireframe = await generateWireframeFromTemplate(templateId, params);
-      return {
-        wireframe,
-        success: true,
-        message: 'Wireframe generated from template successfully'
-      };
+      // This would normally call an API endpoint
+      console.log('API: Save wireframe', wireframe.id);
+      return true;
     } catch (error) {
-      console.error('Error generating wireframe from template:', error);
-      return {
-        wireframe: null,
-        success: false,
-        message: `Error generating wireframe from template: ${error instanceof Error ? error.message : 'Unknown error'}`
-      };
+      console.error('API error saving wireframe:', error);
+      return false;
     }
   },
   
   /**
-   * Export a wireframe to different formats
+   * Get a wireframe by ID via API
    */
-  exportWireframe: async (wireframeId: string, format: 'html' | 'image' | 'pdf') => {
-    // Implementation would go here
-    return { success: true, format, url: `example.com/wireframe/${wireframeId}.${format}` };
-  },
-
-  /**
-   * Get wireframe by ID
-   */
-  getWireframe: async (wireframeId: string): Promise<WireframeData> => {
-    // This would fetch from an API in a real implementation
-    return {
-      id: wireframeId,
-      title: 'Retrieved Wireframe',
-      description: 'This wireframe was retrieved from the API',
-      sections: [],
-      colorScheme: {
-        primary: '#3182ce',
-        secondary: '#805ad5',
-        accent: '#ed8936',
-        background: '#ffffff',
-        text: '#1a202c'
-      },
-      typography: {
-        headings: 'sans-serif',
-        body: 'sans-serif'
-      }
-    };
-  },
-  
-  /**
-   * Update wireframe feedback
-   */
-  updateWireframeFeedback: async (wireframeId: string, feedback: string, rating?: number) => {
-    // This would update the feedback in a real implementation
-    return { 
-      success: true, 
-      wireframeId, 
-      message: 'Feedback updated successfully' 
-    };
-  },
-  
-  /**
-   * Create a new version of a wireframe
-   */
-  createWireframeVersion: async (wireframeId: string, wireframeData: WireframeData) => {
-    // This would create a new version in a real implementation
-    const newVersion = {
-      ...wireframeData,
-      id: uuidv4(),
-      version: 2,
-      createdAt: new Date()
-    };
-    
-    return { 
-      success: true, 
-      wireframe: newVersion
-    };
-  },
-  
-  /**
-   * Update wireframe data
-   */
-  updateWireframeData: async (wireframeId: string, wireframeData: Partial<WireframeData>) => {
-    // This would update the wireframe data in a real implementation
-    return { 
-      success: true, 
-      wireframeId, 
-      message: 'Wireframe data updated successfully' 
-    };
+  getWireframe: async (wireframeId: string): Promise<WireframeData | null> => {
+    try {
+      // This would normally call an API endpoint
+      console.log('API: Get wireframe', wireframeId);
+      return null;
+    } catch (error) {
+      console.error('API error getting wireframe:', error);
+      return null;
+    }
   }
 };
 
-export { wireframeApiService };
 export default wireframeApiService;

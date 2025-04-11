@@ -1,153 +1,63 @@
 
-import { 
-  WireframeData, 
-  WireframeSection, 
-  WireframeComponent 
-} from './wireframe-types';
+import { WireframeComponent } from './wireframe-types';
 
 /**
- * Interface for content preferences in AI memory
+ * Interface for AI memory related to wireframe generation
  */
-interface AIContentPreferences {
-  tone?: string;
-  style?: string;
-  targetAudience?: string;
-  keyMessages?: string[];
-  brandVoice?: string;
-  [key: string]: any;
+export interface AICombinedMemory {
+  projectContext: any;
+  userPreferences: any;
+  previousWireframes: any[];
+  designDecisions: any[];
+  userFeedback: any[];
 }
 
 /**
- * Interface for style preferences in AI memory
+ * Interface for user feedback on AI-generated content
  */
-interface AIStylePreferences {
-  colorScheme?: Record<string, string>;
-  typography?: {
-    headings?: string;
-    body?: string;
-  };
-  visualStyle?: string;
-  layoutPreferences?: string[];
-  components?: string[];
-  [key: string]: any;
-}
-
-/**
- * Interface for industry preferences in AI memory
- */
-interface AIIndustryPreferences {
-  industry?: string;
-  subIndustry?: string;
-  competitorStyles?: string[];
-  marketTrends?: string[];
-  [key: string]: any;
-}
-
-/**
- * Interface for user feedback in AI memory
- */
-interface AIUserFeedback {
-  positiveAspects?: string[];
-  negativeAspects?: string[];
-  suggestedChanges?: string[];
-  generalFeedback?: string;
-  [key: string]: any;
-}
-
-/**
- * Interface for wireframe memory
- */
-interface AIWireframeMemory {
-  previousWireframes?: WireframeData[];
-  recentSections?: WireframeSection[];
-  recentComponents?: WireframeComponent[];
-  patternRecognition?: Record<string, any>;
-  [key: string]: any;
-}
-
-/**
- * Combined memory interface
- */
-interface AICombinedMemory {
-  content?: AIContentPreferences;
-  style?: AIStylePreferences;
-  industry?: AIIndustryPreferences;
-  feedback?: AIUserFeedback;
-  wireframes?: AIWireframeMemory;
-  [key: string]: any;
+export interface AIUserFeedback {
+  userId: string;
+  projectId: string;
+  feedbackType: 'positive' | 'negative' | 'suggestion';
+  content: string;
+  context: any;
+  timestamp: string;
 }
 
 /**
  * Get the combined AI memory for wireframe generation
  */
-export const getCombinedAIMemory = async (): Promise<AICombinedMemory> => {
-  // This would pull from a database or state management system in a real app
-  // For now, we'll return a simple placeholder memory
+export async function getCombinedAIMemory(): Promise<AICombinedMemory> {
+  // This would normally fetch from a database or API
+  // For now, return an empty memory structure
   return {
-    content: {
-      tone: 'professional',
-      style: 'direct',
-      targetAudience: 'business professionals',
-      keyMessages: ['reliability', 'innovation', 'simplicity']
-    },
-    style: {
-      colorScheme: {
-        primary: '#3b82f6',
-        secondary: '#10b981',
-        accent: '#f59e0b',
-        background: '#ffffff',
-        text: '#000000'
-      },
-      typography: {
-        headings: 'Inter',
-        body: 'Inter'
-      },
-      visualStyle: 'modern minimalist'
-    },
-    industry: {
-      industry: 'technology',
-      subIndustry: 'software'
-    }
+    projectContext: {},
+    userPreferences: {},
+    previousWireframes: [],
+    designDecisions: [],
+    userFeedback: []
   };
-};
+}
 
 /**
- * Save user feedback to AI memory
+ * Save user feedback about an AI-generated wireframe
  */
-export const saveUserFeedback = async (feedback: AIUserFeedback): Promise<boolean> => {
-  console.log('Saving user feedback to AI memory:', feedback);
-  // In a real implementation, this would save to a database
+export async function saveUserFeedback(feedback: AIUserFeedback): Promise<boolean> {
+  // This would normally save to a database or API
+  console.log('Saving user feedback:', feedback);
   return true;
-};
+}
 
 /**
- * Get wireframe suggestions based on memory
+ * Get wireframe suggestions based on current project context
  */
-export const getWireframeSuggestions = async (): Promise<any[]> => {
-  // This would generate suggestions based on stored memory in a real implementation
-  return [
-    {
-      type: 'section',
-      sectionType: 'hero',
-      confidence: 0.9,
-      reason: 'Commonly used in similar websites'
-    },
-    {
-      type: 'colorScheme',
-      scheme: {
-        primary: '#2563eb',
-        secondary: '#059669'
-      },
-      confidence: 0.8,
-      reason: 'Matches brand preferences'
-    }
-  ];
-};
+export async function getWireframeSuggestions(): Promise<any[]> {
+  // This would normally generate suggestions based on AI analysis
+  return [];
+}
 
-export const wireframeMemoryService = {
+export default {
   getCombinedAIMemory,
   saveUserFeedback,
   getWireframeSuggestions
 };
-
-export default wireframeMemoryService;
