@@ -1,14 +1,18 @@
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { Component, ErrorInfo, ReactNode, useCallback } from "react";
 import { AlertMessage } from "@/components/ui/alert-message";
 import { Button } from "@/components/ui/button";
 import { recordClientError } from "@/utils/monitoring/api-usage";
 import { toast } from "sonner";
+import { ClientErrorLogger } from "@/utils/monitoring/client-error-logger";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  component?: string;
+  showReset?: boolean;
+  resetLabel?: string;
 }
 
 interface ErrorBoundaryState {
@@ -32,12 +36,22 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    // Extract component name from component stack or use provided component name
+    const componentName = this.props.component || 
+      this.extractComponentName(errorInfo.componentStack) || 
+      'Unknown';
+    
     // Log the error to our monitoring service
     recordClientError(
       error.message,
       error.stack,
-      errorInfo.componentStack.split('\n')[1]?.trim() || 'Unknown'
+      componentName,
+      undefined,
+      { componentStack: errorInfo.componentStack }
     ).catch(console.error);
+    
+    // Also log to our client error logger
+    ClientErrorLogger.logError(error, componentName);
     
     console.error("Uncaught error:", error, errorInfo);
     
@@ -50,6 +64,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
+  }
+
+  // Extract component name from component stack
+  extractComponentName(componentStack: string): string | null {
+    const lines = componentStack.split('\n');
+    if (lines.length > 1) {
+      const match = lines[1].trim().match(/in ([A-Za-z0-9_]+)/);
+      return match ? match[1] : null;
+    }
+    return null;
+  }
+
+  handleReset = (): void => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
   }
 
   render(): ReactNode {
@@ -84,12 +112,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               >
                 Reload Page
               </Button>
-              <Button 
-                onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
-                variant="outline"
-              >
-                Try Again
-              </Button>
+              {this.props.showReset !== false && (
+                <Button 
+                  onClick={this.handleReset}
+                  variant="outline"
+                >
+                  {this.props.resetLabel || 'Try Again'}
+                </Button>
+              )}
             </div>
           </AlertMessage>
         </div>
@@ -100,18 +130,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-export { ErrorBoundary };
-
 // Custom hook to help with error handling in function components
-export function useErrorHandler(componentName?: string) {
-  return (error: Error) => {
+function useErrorHandler(componentName?: string) {
+  return useCallback((error: Error, context?: string) => {
     console.error(`Error in ${componentName || 'component'}:`, error);
-    recordClientError(
-      error.message,
-      error.stack,
-      componentName
-    ).catch(console.error);
     
+    // Log to client error logger
+    ClientErrorLogger.logError(
+      error, 
+      componentName || 'UnknownComponent', 
+      undefined, 
+      context ? { context } : undefined
+    );
+    
+    // Show a toast notification
     toast.error("An error occurred", {
       description: error.message,
       action: {
@@ -119,5 +151,9 @@ export function useErrorHandler(componentName?: string) {
         onClick: () => window.location.reload(),
       },
     });
-  };
+    
+    return error; // Return error to allow for chaining
+  }, [componentName]);
 }
+
+export { ErrorBoundary, useErrorHandler };

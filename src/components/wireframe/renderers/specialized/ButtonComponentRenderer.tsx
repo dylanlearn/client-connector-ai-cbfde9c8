@@ -1,9 +1,7 @@
 
 import React from 'react';
-import { WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
-import { cn } from '@/lib/utils';
 import { BaseComponentRendererProps } from './BaseComponentRenderer';
-import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 /**
  * Specialized renderer for button components
@@ -17,86 +15,53 @@ const ButtonComponentRenderer: React.FC<BaseComponentRendererProps> = ({
   deviceType = 'desktop',
 }) => {
   const handleClick = (e: React.MouseEvent) => {
-    // Prevent event bubbling if interactive
     if (interactive) {
+      // In interactive mode, allow the button to do its native action
+    } else {
+      // In edit/preview mode, select the component instead
+      e.preventDefault();
       e.stopPropagation();
-      if (onClick && component.id) {
+      if (onClick) {
         onClick(component.id);
       }
     }
   };
 
-  // Get button styles
-  const {
-    backgroundColor = '#3b82f6',
-    color = '#ffffff',
-    borderRadius = '0.375rem',
-    fontSize = '0.875rem',
-    fontWeight = '500',
-    padding = '0.5rem 1rem',
-    width,
-    height,
-    variant = 'default',
-    size = 'default',
-  } = component.style || {};
+  // Get button variant from component props
+  const variant = component.props?.variant || 'default';
+  const size = component.props?.size || 'default';
 
-  // Get button content - ensure it's a string
-  const buttonText = typeof component.content === 'string' 
-    ? component.content 
-    : 'Button';
+  // Apply device-specific styles
+  const responsiveStyles = component.responsive?.[deviceType] || {};
   
-  // Handle button variants
-  const getButtonVariant = () => {
-    switch (variant) {
-      case 'outline':
-        return 'outline';
-      case 'ghost':
-        return 'ghost';
-      case 'link':
-        return 'link';
-      case 'destructive':
-        return 'destructive';
-      case 'secondary':
-        return 'secondary';
-      default:
-        return 'default';
-    }
+  // Merge all styles
+  const styles = {
+    ...component.style,
+    ...responsiveStyles,
   };
 
-  // Custom styling for when we want to override shadcn defaults
-  const customStyle = component.style?.customStyle ? {
-    backgroundColor,
-    color,
-    borderRadius,
-    fontSize,
-    fontWeight,
-    padding,
-    width: width || 'auto',
-    height: height || 'auto',
-  } : {};
-
   return (
-    <div 
+    <button
       className={cn(
-        "wireframe-button-component",
-        isSelected && "ring-2 ring-primary p-1",
-        interactive && !component.style?.disabled && "cursor-pointer"
+        'px-4 py-2 rounded font-medium transition-colors',
+        variant === 'default' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : '',
+        variant === 'outline' ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground' : '',
+        variant === 'ghost' ? 'hover:bg-accent hover:text-accent-foreground' : '',
+        size === 'sm' ? 'text-sm px-3 py-1' : '',
+        size === 'lg' ? 'text-lg px-5 py-3' : '',
+        darkMode ? 'dark-theme' : '',
+        isSelected ? 'ring-2 ring-primary ring-offset-2' : '',
+        component.className
       )}
+      onClick={handleClick}
+      style={styles}
+      aria-label={component.props?.ariaLabel}
+      disabled={component.props?.disabled}
       data-component-id={component.id}
       data-component-type="button"
-      onClick={(e) => e.stopPropagation()} // Prevent parent clicks
     >
-      <Button
-        variant={getButtonVariant() as any}
-        size={size as any}
-        disabled={component.style?.disabled}
-        className={cn(component.style?.className)}
-        style={component.style?.customStyle ? customStyle : {}}
-        onClick={handleClick}
-      >
-        {buttonText}
-      </Button>
-    </div>
+      {component.content || 'Button'}
+    </button>
   );
 };
 

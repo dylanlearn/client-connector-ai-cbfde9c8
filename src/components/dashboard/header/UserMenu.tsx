@@ -23,7 +23,14 @@ export const UserMenu = () => {
       navigate("/login");
     } catch (error) {
       console.error("Error signing out:", error);
-      logClientError("Sign out error", "UserMenu", user?.id, true, { errorDetails: error });
+      // Fix type error by passing the right parameters
+      logClientError(
+        error instanceof Error ? error : new Error("Sign out error"), 
+        "UserMenu", 
+        user?.id,
+        true, // showToast
+        { errorDetails: error }
+      );
     }
   };
   

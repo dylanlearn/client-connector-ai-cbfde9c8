@@ -1,186 +1,83 @@
 
 /**
- * Copy suggestions type for wireframe sections
+ * Type definitions for wireframe components and sections
  */
-export type CopySuggestions = {
-  [key: string]: string;
-  heading?: string;
-  subheading?: string;
-  ctaText?: string;
-  primaryCta?: string;
-  secondaryCta?: string;
-  supportText?: string;
-  supportCta?: string;
-};
 
-/**
- * Wireframe section interface
- */
-export interface WireframeSection {
+// Basic shared properties for components and sections
+export interface BaseElement {
   id: string;
   name?: string;
-  type?: string;
-  sectionType?: string;
   description?: string;
-  copySuggestions?: CopySuggestions | CopySuggestions[];
-  style?: Record<string, any>;
-  layout?: {
-    type: string;
-    direction?: string;
-    alignment?: string;
-    justifyContent?: string;
-    columns?: number;
-    gap?: number;
-    wrap?: boolean;
-    alignItems?: string;
-    minHeight?: string | number;
-    [key: string]: any;
-  } | string;
-  components?: WireframeComponent[];
-  dimensions?: {
-    width: string | number;
-    height: string | number;
-  };
-  position?: {
-    x: number;
-    y: number;
-  };
-  backgroundColor?: string;
-  stats?: Array<{
-    id: string;
-    value: string;
-    label: string;
-  }>;
-  [key: string]: any;
 }
 
-/**
- * Wireframe component interface
- */
-export interface WireframeComponent {
-  id: string;
+// Component definition
+export interface WireframeComponent extends BaseElement {
   type: string;
   content?: string;
-  style?: Record<string, any>;
-  props?: Record<string, any>;
-  children?: WireframeComponent[];
   src?: string;
   alt?: string;
-  [key: string]: any;
+  props?: Record<string, any>;
+  children?: WireframeComponent[];
+  style?: Record<string, any>;
+  className?: string;
+  responsive?: {
+    mobile?: Partial<Record<string, any>>;
+    tablet?: Partial<Record<string, any>>;
+    desktop?: Partial<Record<string, any>>;
+  };
 }
 
-/**
- * Wireframe data interface
- */
+// Section definition
+export interface WireframeSection extends BaseElement {
+  sectionType: string;
+  backgroundColor?: string;
+  components?: WireframeComponent[];
+  copySuggestions?: Record<string, string>;
+  style?: Record<string, any>;
+}
+
+// Complete wireframe data structure
 export interface WireframeData {
   id: string;
   title: string;
   description?: string;
   sections: WireframeSection[];
-  layoutType?: string;
-  colorScheme?: {
+  style?: Record<string, any>;
+  colorScheme: {
     primary: string;
     secondary: string;
     accent: string;
     background: string;
-    text?: string;
+    text: string;
   };
-  typography?: {
+  typography: {
     headings: string;
     body: string;
-    fontPairings?: string[];
   };
-  designTokens?: Record<string, any>;
-  mobileConsiderations?: string;
-  accessibilityNotes?: string;
-  style?: string | object;
-  pages?: any[];
-  styleToken?: string;
-  darkMode?: boolean;
-  mobileLayouts?: any;
-  styleVariants?: any;
-  designReasoning?: any;
-  animations?: any;
-  imageUrl?: string;
-  [key: string]: any;
 }
 
-/**
- * Wireframe generation parameters
- */
+// Parameters for wireframe generation
 export interface WireframeGenerationParams {
-  projectId?: string;
-  description: string;
-  designRequirements?: string;
-  contentRequirements?: string;
-  styling?: string;
-  style?: string | Record<string, any>;
-  layoutPreferences?: string;
-  layoutType?: string;
-  enhancedCreativity?: boolean;
-  creativityLevel?: number;
-  colorScheme?: string | Record<string, string>;
-  styleToken?: string;
+  description?: string;
   industry?: string;
-  intakeData?: any;
-  stylePreferences?: string;
+  style?: string;
   optimizeForDevices?: boolean;
   generatePreview?: boolean;
-  baseWireframe?: WireframeData;
-  isVariation?: boolean;
-  feedbackMode?: boolean;
-  [key: string]: any;
+  colorScheme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    text?: string;
+  };
 }
 
-/**
- * Wireframe generation result
- */
+// Result of wireframe generation
 export interface WireframeGenerationResult {
   wireframe: WireframeData;
-  intentData?: Record<string, any>;
-  blueprint?: Record<string, any>;
-  designTokens?: Record<string, any>;
-  tokenUsage?: {
-    prompt: number;
-    completion: number;
-    total: number;
-  };
-  message?: string;
-  success?: boolean;
-  error?: string;
+  success: boolean;
   generationTime?: number;
-  imageUrl?: string;
   model?: string;
-}
-
-/**
- * Enhanced wireframe generation result
- */
-export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
-  blueprint: Record<string, any>;
-  intentData: Record<string, any>;
-}
-
-/**
- * AI Wireframe model
- */
-export interface AIWireframe {
-  id: string;
-  projectId: string;
-  name?: string;
-  description?: string;
-  data: WireframeData;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy?: string;
-  status: 'draft' | 'published' | 'archived';
-  tags?: string[];
-  version?: number;
-  feedback?: string | string[];
-  title?: string;
-  sections?: WireframeSection[];
-  wireframe_data?: any;
-  design_tokens?: any;
-  image_url?: string;
-  updated_at?: string;
+  imageUrl?: string;
+  error?: string;
 }
