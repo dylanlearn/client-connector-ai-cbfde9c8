@@ -1,5 +1,100 @@
 import { ComponentDefinition } from '../component-types';
 
+// Export the hero variants for use in other components
+export const heroVariants = [
+  {
+    id: 'hero-creative-001',
+    name: 'Creative Hero',
+    description: 'Creative-focused hero with bold typography',
+    thumbnail: '/thumbnails/hero-creative-001.png',
+    variant: 'hero-creative-001'
+  },
+  {
+    id: 'hero-creative-002',
+    name: 'Studio Hero',
+    description: 'Full-width image hero with overlay text',
+    thumbnail: '/thumbnails/hero-creative-002.png',
+    variant: 'hero-creative-002'
+  },
+  {
+    id: 'hero-creative-003',
+    name: 'Editorial Hero',
+    description: 'Text-driven editorial hero with serif fonts',
+    thumbnail: '/thumbnails/hero-creative-003.png',
+    variant: 'hero-creative-003'
+  },
+  {
+    id: 'hero-startup-001',
+    name: 'Product Launch',
+    description: 'SaaS-style hero with image and dual CTAs',
+    thumbnail: '/thumbnails/hero-startup-001.png',
+    variant: 'hero-startup-001'
+  },
+  {
+    id: 'hero-startup-002',
+    name: 'Modern App',
+    description: 'Dark mode hero with device mockup',
+    thumbnail: '/thumbnails/hero-startup-002.png',
+    variant: 'hero-startup-002'
+  },
+  {
+    id: 'hero-startup-003',
+    name: 'Software Hero',
+    description: 'Feature-focused hero with background gradient',
+    thumbnail: '/thumbnails/hero-startup-003.png',
+    variant: 'hero-startup-003'
+  },
+  {
+    id: 'hero-startup-004',
+    name: 'Enterprise Hero',
+    description: 'Corporate hero with trust badges',
+    thumbnail: '/thumbnails/hero-startup-004.png',
+    variant: 'hero-startup-004'
+  },
+  {
+    id: 'hero-ecom-001',
+    name: 'Collection Launch',
+    description: 'E-commerce hero with product focus',
+    thumbnail: '/thumbnails/hero-ecom-001.png',
+    variant: 'hero-ecom-001'
+  },
+  {
+    id: 'hero-ecom-002',
+    name: 'Product Spotlight',
+    description: 'Clean product hero with lifestyle imagery',
+    thumbnail: '/thumbnails/hero-ecom-002.png',
+    variant: 'hero-ecom-002'
+  },
+  {
+    id: 'hero-ecom-003',
+    name: 'Premium Hero',
+    description: 'High-end product hero with minimal design',
+    thumbnail: '/thumbnails/hero-ecom-003.png',
+    variant: 'hero-ecom-003'
+  },
+  {
+    id: 'hero-flex-001',
+    name: 'Personal Brand',
+    description: 'Personal brand hero for coaches or creators',
+    thumbnail: '/thumbnails/hero-flex-001.png',
+    variant: 'hero-flex-001'
+  },
+  {
+    id: 'hero-flex-002',
+    name: 'Course Launch',
+    description: 'Educational hero for online courses',
+    thumbnail: '/thumbnails/hero-flex-002.png',
+    variant: 'hero-flex-002'
+  },
+  {
+    id: 'hero-flex-003',
+    name: 'Freelancer Hero',
+    description: 'Portfolio-style hero for freelancers',
+    thumbnail: '/thumbnails/hero-flex-003.png',
+    variant: 'hero-flex-003'
+  }
+];
+
 export const heroComponents: ComponentDefinition = {
   type: 'hero',
   name: 'Hero Section',
