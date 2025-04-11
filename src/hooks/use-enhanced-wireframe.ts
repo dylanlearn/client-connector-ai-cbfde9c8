@@ -1,191 +1,94 @@
 
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { EnhancedWireframeGenerator } from '@/services/ai/wireframe/enhanced-wireframe-generator';
-import { wireframeService } from '@/services/ai/wireframe/wireframe-service';
-import { WireframeData, WireframeGenerationParams } from '@/services/ai/wireframe/wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
+import { EnhancedWireframeGenerator } from '@/services/ai/wireframe/enhanced-wireframe-generator';
+import { 
+  WireframeGenerationParams, 
+  EnhancedWireframeGenerationResult, 
+  WireframeData 
+} from '@/services/ai/wireframe/wireframe-types';
 
-// Adding a custom saveWireframe function since it doesn't exist in wireframeService
-const saveWireframe = async (projectId: string, wireframe: WireframeData, description?: string) => {
-  // This is a placeholder function - in a real app this would save to a database
-  console.log('Saving wireframe for project:', projectId, 'description:', description);
-  return wireframe.title || 'Wireframe';
-};
-
-export const useAdvancedWireframe = () => {
-  const { toast } = useToast();
+export function useAdvancedWireframe() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(null);
-  const [generationResults, setGenerationResults] = useState<any[]>([]);
-  const [intentData, setIntentData] = useState<any>(null);
-  const [blueprint, setBlueprint] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [generationResults, setGenerationResults] = useState<EnhancedWireframeGenerationResult | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const { toast } = useToast();
+  
+  // Get intent data from the generation results
+  const intentData = generationResults?.intentData || null;
+  
+  // Get blueprint data from generation results
+  const blueprint = generationResults?.blueprint || null;
 
   const generateWireframe = useCallback(async (params: WireframeGenerationParams) => {
-    setIsGenerating(true);
-    setError(null);
-    
     try {
-      // Ensure we have a description
-      if (!params.description) {
-        throw new Error('Description is required');
-      }
+      setIsGenerating(true);
+      setError(null);
       
-      // Generate the wireframe
-      const result = await EnhancedWireframeGenerator.generateWireframe({
-        ...params,
-        projectId: params.projectId || uuidv4(),
-      });
+      const result = await EnhancedWireframeGenerator.generateWireframe(params);
       
-      if (!result.success || !result.wireframe) {
-        throw new Error(result.error || 'Failed to generate wireframe');
-      }
-      
-      // Store the results
-      setCurrentWireframe(result.wireframe);
-      setGenerationResults(prev => [...prev, result]);
-      
-      // Store intent data and blueprint if available
-      if (result.intentData) {
-        setIntentData(result.intentData);
-      }
-      
-      if (result.blueprint) {
-        setBlueprint(result.blueprint);
+      if (result && result.wireframe) {
+        setCurrentWireframe(result.wireframe);
+        setGenerationResults(result as EnhancedWireframeGenerationResult);
       }
       
       return result;
-    } catch (error) {
-      console.error('Error generating wireframe:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(errorMessage);
+    } catch (err) {
+      console.error("Error generating wireframe:", err);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      
+      setError(err instanceof Error ? err : new Error(errorMessage));
       
       toast({
-        title: 'Generation Failed',
+        title: "Wireframe generation failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive"
       });
       
       return {
+        wireframe: null,
         success: false,
-        error: errorMessage,
-        wireframe: null
+        error: errorMessage
       };
     } finally {
       setIsGenerating(false);
     }
   }, [toast]);
-
-  const generateVariations = useCallback(async (wireframeData: WireframeData, count: number = 3) => {
-    setIsGenerating(true);
-    setError(null);
+  
+  const saveWireframe = useCallback(async (projectId: string, description: string) => {
+    if (!currentWireframe) return null;
     
     try {
-      const variations = [];
-      
-      for (let i = 0; i < count; i++) {
-        const result = await EnhancedWireframeGenerator.generateWireframe({
-          description: wireframeData.description || 'Generate variation',
-          baseWireframe: wireframeData,
-          isVariation: true,
-          variationIndex: i,
-          enhancedCreativity: true,
-          creativityLevel: 8 + i // Increase creativity for each variation
-        });
-        
-        if (result.success && result.wireframe) {
-          variations.push(result.wireframe);
-        }
-      }
-      
-      return variations;
-    } catch (error) {
-      console.error('Error generating variations:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(errorMessage);
+      // In a real implementation, you'd save the wireframe to the database here
       
       toast({
-        title: 'Variation Generation Failed',
-        description: errorMessage,
-        variant: 'destructive',
+        title: "Wireframe saved",
+        description: "Your wireframe has been saved successfully"
       });
       
-      return [];
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [toast]);
-
-  const saveWireframeHandler = useCallback(async (projectId: string, description?: string) => {
-    if (!currentWireframe) {
-      toast({
-        title: 'No Wireframe to Save',
-        description: 'Please generate a wireframe first',
-        variant: 'destructive',
-      });
-      return null;
-    }
-    
-    try {
-      const displayName = await saveWireframe(projectId, currentWireframe, description);
+      return currentWireframe;
+    } catch (err) {
+      console.error("Error saving wireframe:", err);
       
       toast({
-        title: 'Wireframe Saved',
-        description: `Wireframe "${displayName}" has been saved successfully`,
-      });
-      
-      return displayName;
-    } catch (error) {
-      console.error('Error saving wireframe:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      toast({
-        title: 'Save Failed',
-        description: errorMessage,
-        variant: 'destructive',
+        title: "Failed to save wireframe",
+        description: err instanceof Error ? err.message : "Unknown error occurred",
+        variant: "destructive"
       });
       
       return null;
     }
   }, [currentWireframe, toast]);
-
-  const generateCreativeVariations = useCallback(async () => {
-    if (!currentWireframe) {
-      setError('No wireframe to generate variations from');
-      return [];
-    }
-    
-    try {
-      const resultVariations = await generateVariations(currentWireframe);
-      
-      if (!resultVariations.length) {
-        setError('Failed to generate variations');
-        return [];
-      }
-      
-      return resultVariations;
-    } catch (error) {
-      console.error('Error generating creative variations:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(errorMessage);
-      
-      toast({
-        title: 'Variation Generation Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      
-      return [];
-    }
-  }, [currentWireframe, generateVariations, toast]);
-
+  
+  // Add a new function to apply feedback
   const applyFeedback = useCallback(async (wireframeData: WireframeData, feedback: string) => {
     setIsGenerating(true);
     setError(null);
     
     try {
-      const result = await EnhancedWireframeGenerator.modifyWireframeBasedOnFeedback(wireframeData, feedback);
+      const result = await EnhancedWireframeGenerator.applyFeedback(wireframeData, feedback);
       
       if (!result.success || !result.wireframe) {
         throw new Error(result.error || 'Failed to apply feedback');
@@ -199,10 +102,10 @@ export const useAdvancedWireframe = () => {
       });
       
       return result;
-    } catch (error) {
-      console.error('Error applying feedback:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(errorMessage);
+    } catch (err) {
+      console.error('Error applying feedback:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(err instanceof Error ? err : new Error(errorMessage));
       
       toast({
         title: 'Feedback Application Failed',
@@ -219,18 +122,16 @@ export const useAdvancedWireframe = () => {
       setIsGenerating(false);
     }
   }, [toast]);
-
+  
   return {
     isGenerating,
     currentWireframe,
     generationResults,
     intentData,
     blueprint,
-    error,
     generateWireframe,
-    saveWireframe: saveWireframeHandler,
-    generateCreativeVariations,
+    saveWireframe,
     applyFeedback,
-    setCurrentWireframe
+    error
   };
-};
+}
