@@ -1,7 +1,7 @@
 import React from 'react';
 import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
-import { getSuggestion } from '@/utils/copy-suggestions-helper';
+import { getSuggestion, createStyleObject } from './utilities';
 
 /**
  * Generic component renderer for wireframe sections
@@ -20,14 +20,8 @@ const ComponentRenderer: React.FC<SectionComponentProps> = ({
                          section.backgroundColor || 
                          'transparent';
   
-  // Apply text alignment from the section style
-  const textAlign = section.style?.textAlign || section?.textAlign || 'left';
-  
-  // Apply padding from section style
-  const padding = section.style?.padding || section.padding || '2rem';
-  
-  // Apply gap for flex/grid containers
-  const gap = section.style?.gap || section.gap || '1rem';
+  // Create properly typed style object using our utility
+  const styles = createStyleObject(section.style);
   
   // Determine if we should add dark mode styles
   const darkModeStyles = darkMode ? 
@@ -64,13 +58,7 @@ const ComponentRenderer: React.FC<SectionComponentProps> = ({
         selectionStyles,
         viewMode === 'flowchart' && 'border border-dashed border-gray-400'
       )}
-      style={{
-        backgroundColor,
-        textAlign: textAlign as any,
-        padding,
-        gap,
-        ...section.style
-      }}
+      style={styles}
       onClick={handleClick}
       data-section-id={section.id}
       data-section-type={section.sectionType}
