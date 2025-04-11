@@ -3,16 +3,17 @@ import React, { useState } from 'react';
 import { 
   Input, 
   Textarea, 
-  Label, 
+  FormItem,
+  FormLabel,
+  FormControl 
+} from '@/components/ui/form';
+import { 
   Select, 
   SelectTrigger, 
   SelectValue, 
   SelectContent, 
-  SelectItem,
-  FormItem,
-  FormLabel,
-  FormControl
-} from '@/components/ui';
+  SelectItem 
+} from '@/components/ui/select';
 import { ChromePicker } from 'react-color';
 import { Button } from '@/components/ui/button';
 import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';

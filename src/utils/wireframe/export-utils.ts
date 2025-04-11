@@ -1,369 +1,203 @@
 
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-// Helper to download a file
-const downloadFile = (content: string | Blob, fileName: string, mimeType: string) => {
-  const blob = typeof content === 'string' 
-    ? new Blob([content], { type: mimeType }) 
-    : content;
-  
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+// Type for export options
+interface ExportOptions {
+  filename?: string;
+  quality?: number;
+  scale?: number;
+}
+
+/**
+ * Generate HTML representation of wireframe
+ */
+export const generateHtmlFromWireframe = (wireframe: WireframeData): string => {
+  const { title, sections } = wireframe;
+
+  // Create basic HTML template
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${title || 'Wireframe Export'}</title>
+      <style>
+        body {
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          margin: 0;
+          padding: 0;
+          color: #333;
+          line-height: 1.6;
+        }
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 1rem;
+        }
+        .wireframe-section {
+          margin-bottom: 2rem;
+          padding: 1rem;
+          border: 1px dashed #ccc;
+        }
+        h1, h2, h3 {
+          margin-top: 0;
+        }
+        .wireframe-header {
+          padding: 1rem 0;
+          margin-bottom: 2rem;
+          border-bottom: 1px solid #eee;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="wireframe-header">
+          <h1>${title || 'Wireframe Export'}</h1>
+        </div>
+        ${sections.map((section, index) => `
+          <div class="wireframe-section" id="section-${section.id || index}">
+            <h2>${section.name || `Section ${index + 1}`}</h2>
+            <div class="section-content">
+              <pre>${JSON.stringify(section, null, 2)}</pre>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </body>
+    </html>
+  `;
+
+  return html;
 };
 
-// Export wireframe as PNG image
-export const exportWireframeAsImage = async (
-  element: HTMLElement | null,
-  wireframe: WireframeData,
-  options: {
-    scale?: number;
-    backgroundColor?: string;
-    filename?: string;
-  } = {}
-): Promise<string | null> => {
-  if (!element) return null;
+/**
+ * Handle export errors with a formatted message
+ */
+export const handleExportError = (error: string): string => {
+  console.error('Export error:', error);
+  return `
+    <div class="export-error">
+      <h3>Export Error</h3>
+      <p>${error}</p>
+    </div>
+  `;
+};
 
-  const { scale = 2, backgroundColor = '#ffffff', filename = 'wireframe' } = options;
-  
+/**
+ * Export wireframe as HTML file
+ */
+export const exportWireframeAsHTML = (
+  wireframe: WireframeData, 
+  options: ExportOptions = {}
+): void => {
   try {
-    const canvas = await html2canvas(element, {
-      scale,
-      backgroundColor,
-      logging: false,
-      allowTaint: true,
-      useCORS: true
-    });
+    const html = generateHtmlFromWireframe(wireframe);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
     
-    const imgData = canvas.toDataURL('image/png');
-    downloadFile(imgData, `${filename}.png`, 'image/png');
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${options.filename || wireframe.title || 'wireframe'}.html`;
     
-    return imgData;
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
   } catch (error) {
-    console.error('Error exporting wireframe as image:', error);
-    return null;
+    console.error('Error exporting as HTML:', error);
   }
 };
 
-// Export wireframe as PDF document
+/**
+ * Export wireframe as PDF file
+ */
 export const exportWireframeAsPDF = async (
   element: HTMLElement | null,
   wireframe: WireframeData,
-  options: {
-    scale?: number;
-    filename?: string;
-    pageSize?: [number, number];
-    margin?: number;
-  } = {}
-): Promise<string | null> => {
-  if (!element) return null;
-  
-  const { 
-    scale = 2, 
-    filename = 'wireframe', 
-    pageSize = [595.28, 841.89], // A4 size
-    margin = 20
-  } = options;
-  
+  options: ExportOptions = {}
+): Promise<void> => {
+  if (!element) {
+    console.error('No element provided for PDF export');
+    return;
+  }
+
   try {
+    // Capture canvas from DOM element
     const canvas = await html2canvas(element, {
-      scale,
-      backgroundColor: '#ffffff',
+      scale: options.scale || 2,
       logging: false,
+      useCORS: true,
       allowTaint: true,
-      useCORS: true
     });
     
-    const imgData = canvas.toDataURL('image/png');
+    const imgData = canvas.toDataURL('image/png', options.quality || 0.92);
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: [pageSize[0], pageSize[1]]
+      orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+      unit: 'mm',
     });
     
-    // Add wireframe title as header
+    // Calculate dimensions
+    const imgWidth = 210; // A4 width in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    // Add title
     pdf.setFontSize(16);
-    pdf.text(wireframe.title || 'Wireframe', margin, margin);
+    pdf.text(wireframe.title || 'Wireframe', 105, 15, { align: 'center' });
     
-    // Add wireframe description if available
-    if (wireframe.description) {
-      pdf.setFontSize(12);
-      pdf.text(wireframe.description, margin, margin + 20);
-    }
-    
-    const imageWidth = pageSize[0] - (margin * 2);
-    const imageHeight = (canvas.height * imageWidth) / canvas.width;
-    
-    // Add the wireframe image
-    pdf.addImage(imgData, 'PNG', margin, margin + 40, imageWidth, imageHeight);
+    // Add image
+    pdf.addImage(imgData, 'PNG', 0, 30, imgWidth, imgHeight);
     
     // Save PDF
-    pdf.save(`${filename}.pdf`);
-    
-    return imgData;
+    pdf.save(`${options.filename || wireframe.title || 'wireframe'}.pdf`);
   } catch (error) {
-    console.error('Error exporting wireframe as PDF:', error);
-    return null;
+    console.error('Error exporting as PDF:', error);
   }
 };
 
-// Generate HTML from wireframe data
-export const exportWireframeAsHTML = (
+/**
+ * Export wireframe as PNG image
+ */
+export const exportWireframeAsImage = async (
+  element: HTMLElement | null,
   wireframe: WireframeData,
-  options: {
-    includeCSS?: boolean;
-    includeJS?: boolean;
-    filename?: string;
-    responsive?: boolean;
-  } = {}
-): void => {
-  const { 
-    includeCSS = true, 
-    includeJS = true, 
-    filename = 'wireframe',
-    responsive = true
-  } = options;
-  
-  // Generate HTML content
-  const html = generateHtmlFromWireframe(wireframe, {
-    includeCSS,
-    includeJS,
-    responsive
-  });
+  options: ExportOptions = {}
+): Promise<void> => {
+  if (!element) {
+    console.error('No element provided for image export');
+    return;
+  }
 
-  // Download the HTML file
-  downloadFile(html, `${filename}.html`, 'text/html');
-};
-
-// Generate HTML from wireframe data (exportable for testing)
-export const generateHtmlFromWireframe = (
-  wireframe: WireframeData,
-  options: {
-    includeCSS?: boolean;
-    includeJS?: boolean;
-    responsive?: boolean;
-  } = {}
-): string => {
-  const { 
-    includeCSS = true, 
-    includeJS = true, 
-    responsive = true
-  } = options;
-  
-  // Generate CSS variables from wireframe color scheme
-  const colorVariables = wireframe.colorScheme ? `
-    :root {
-      --color-primary: ${wireframe.colorScheme.primary || '#3B82F6'};
-      --color-secondary: ${wireframe.colorScheme.secondary || '#10B981'};
-      --color-accent: ${wireframe.colorScheme.accent || '#F59E0B'};
-      --color-background: ${wireframe.colorScheme.background || '#FFFFFF'};
-      --color-text: ${wireframe.colorScheme.text || '#111827'};
-    }
-  ` : '';
-  
-  // Basic CSS for the wireframe
-  const baseCSS = `
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: ${wireframe.typography?.body || 'sans-serif'};
-      color: var(--color-text, #111827);
-      background-color: var(--color-background, #FFFFFF);
-      line-height: 1.5;
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-      font-family: ${wireframe.typography?.headings || 'sans-serif'};
-      margin-bottom: 0.5rem;
-    }
-    
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1rem;
-    }
-    
-    .btn {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background-color: var(--color-primary, #3B82F6);
-      color: white;
-      text-decoration: none;
-      border-radius: 0.25rem;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.2s;
-    }
-    
-    .btn:hover {
-      background-color: var(--color-primary-dark, #2563EB);
-    }
-    
-    .btn-secondary {
-      background-color: transparent;
-      color: var(--color-primary, #3B82F6);
-      border: 1px solid var(--color-primary, #3B82F6);
-    }
-    
-    .btn-secondary:hover {
-      background-color: var(--color-primary-light, #DBEAFE);
-    }
-    
-    ${responsive ? `
-    @media (max-width: 768px) {
-      .container {
-        padding: 0 0.5rem;
-      }
-    }` : ''}
-  `;
-  
-  // Generate section HTML based on section type
-  const generateSectionHTML = (section: WireframeSection): string => {
-    const sectionType = section.sectionType?.toLowerCase() || '';
-    const sectionData = section.data || {};
-    const sectionStyle = section.style || {};
-    
-    // Common style attributes
-    const bgColor = sectionStyle.backgroundColor ? `background-color: ${sectionStyle.backgroundColor};` : '';
-    const textAlign = sectionStyle.textAlign ? `text-align: ${sectionStyle.textAlign};` : '';
-    const padding = sectionStyle.padding || '2rem 0';
-    
-    let sectionHTML = '';
-    
-    // Generate HTML based on section type
-    if (sectionType.includes('hero')) {
-      sectionHTML = `
-        <section id="${section.id}" class="hero" style="padding: ${padding}; ${bgColor} ${textAlign}">
-          <div class="container">
-            <h1>${sectionData.heading || 'Hero Title'}</h1>
-            ${sectionData.subheading ? `<p class="hero-subheading">${sectionData.subheading}</p>` : ''}
-            <div class="hero-actions">
-              ${sectionData.ctaText ? `<a href="${sectionData.ctaUrl || '#'}" class="btn">${sectionData.ctaText}</a>` : ''}
-              ${sectionData.secondaryCtaText ? `<a href="${sectionData.secondaryCtaUrl || '#'}" class="btn btn-secondary">${sectionData.secondaryCtaText}</a>` : ''}
-            </div>
-          </div>
-        </section>
-      `;
-    } else if (sectionType.includes('feature')) {
-      let featuresHTML = '';
-      if (Array.isArray(sectionData.features)) {
-        featuresHTML = sectionData.features.map((feature: any) => `
-          <div class="feature-item">
-            ${feature.icon ? `<div class="feature-icon">${feature.icon}</div>` : ''}
-            <h3>${feature.title || 'Feature Title'}</h3>
-            <p>${feature.description || 'Feature description goes here.'}</p>
-          </div>
-        `).join('');
-      }
-      
-      sectionHTML = `
-        <section id="${section.id}" class="features" style="padding: ${padding}; ${bgColor} ${textAlign}">
-          <div class="container">
-            ${sectionData.heading ? `<h2>${sectionData.heading}</h2>` : ''}
-            ${sectionData.subheading ? `<p>${sectionData.subheading}</p>` : ''}
-            <div class="features-grid">
-              ${featuresHTML}
-            </div>
-          </div>
-        </section>
-      `;
-    } else {
-      // Generic section for unsupported types
-      sectionHTML = `
-        <section id="${section.id}" class="${sectionType}" style="padding: ${padding}; ${bgColor} ${textAlign}">
-          <div class="container">
-            ${sectionData.heading ? `<h2>${sectionData.heading}</h2>` : ''}
-            ${sectionData.content ? `<div>${sectionData.content}</div>` : ''}
-          </div>
-        </section>
-      `;
-    }
-    
-    return sectionHTML;
-  };
-  
-  // Generate sections HTML
-  const sectionsHTML = wireframe.sections.map(generateSectionHTML).join('\n');
-  
-  // Create the full HTML document
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${wireframe.title || 'Wireframe'}</title>
-  ${includeCSS ? `<style>
-    ${colorVariables}
-    ${baseCSS}
-  </style>` : ''}
-</head>
-<body>
-  ${sectionsHTML}
-  
-  ${includeJS ? `<script>
-    // Any JavaScript can go here
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('Wireframe loaded');
+  try {
+    // Capture canvas from DOM element
+    const canvas = await html2canvas(element, {
+      scale: options.scale || 2,
+      logging: false,
+      useCORS: true,
+      allowTaint: true,
     });
-  </script>` : ''}
-</body>
-</html>`;
-};
-
-// Handle export errors (exportable for testing)
-export const handleExportError = (errorMessage: string): string => {
-  console.error('Export error:', errorMessage);
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Export Error</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      color: #e11d48;
-      background-color: #fff1f2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      padding: 1rem;
-    }
     
-    .error-container {
-      max-width: 500px;
-      padding: 2rem;
-      background-color: white;
-      border: 1px solid #fecdd3;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
+    // Convert to PNG
+    const imgData = canvas.toDataURL('image/png', options.quality || 0.92);
     
-    h1 {
-      margin-top: 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="error-container">
-    <h1>Export Error</h1>
-    <p>${errorMessage}</p>
-  </div>
-</body>
-</html>`;
+    // Create download link
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `${options.filename || wireframe.title || 'wireframe'}.png`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Error exporting as image:', error);
+  }
 };

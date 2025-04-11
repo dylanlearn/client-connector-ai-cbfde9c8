@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,6 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
-  const [canvasElement, setCanvasElement] = useState<HTMLCanvasElement | null>(null);
   
   // Get current device dimensions
   const currentDimensions: DeviceDimensions = DEVICE_DIMENSIONS[deviceType];
@@ -122,7 +122,6 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
         wireframe={wireframe}
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
-        canvasElement={canvasElement}
       />
     </div>
   );
