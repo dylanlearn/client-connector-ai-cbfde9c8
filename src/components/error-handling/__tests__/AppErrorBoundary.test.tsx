@@ -79,6 +79,7 @@ describe('AppErrorBoundary', () => {
       expect.any(String),
       expect.any(String),
       "AppErrorBoundary",
+      "test-user-123",
       { userId: "test-user-123" }
     );
   });

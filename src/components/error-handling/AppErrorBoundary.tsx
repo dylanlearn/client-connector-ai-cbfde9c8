@@ -34,7 +34,8 @@ export function AppErrorBoundary({ children, userId, onError }: AppErrorBoundary
         error.message,
         error.stack,
         "AppErrorBoundary",
-        { userId }
+        userId,
+        { userId }  // Pass userId as metadata instead
       ).catch(console.error);
     }
   };
