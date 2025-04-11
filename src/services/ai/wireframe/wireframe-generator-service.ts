@@ -1,168 +1,23 @@
 
-// src/services/ai/wireframe/wireframe-generator-service.ts
-
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  WireframeData, 
-  WireframeSection, 
-  WireframeComponent,
-  WireframeGenerationParams
-} from './wireframe-types';
+import { WireframeData, WireframeSection, WireframeComponent } from '../wireframe-types';
+
+interface GenerationParams {
+  title?: string;
+  description?: string;
+  sections?: WireframeSection[];
+  style?: any;
+  colorScheme?: any;
+  typography?: any;
+  components?: WireframeComponent[];
+}
 
 export const WireframeGeneratorService = {
-  generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeData> => {
-    // Mock data for demonstration purposes
-    const sections: WireframeSection[] = [
-      {
-        id: uuidv4(),
-        name: 'Header',
-        sectionType: 'navigation',
-        components: [
-          {
-            id: uuidv4(),
-            type: 'text',
-            content: 'Website Title',
-            style: {
-              fontSize: '24px',
-              fontWeight: 'bold'
-            }
-          },
-          {
-            id: uuidv4(),
-            type: 'navigation',
-            content: ['Home', 'About', 'Services', 'Contact'],
-            style: {
-              display: 'flex',
-              justifyContent: 'space-around'
-            }
-          }
-        ]
-      },
-      {
-        id: uuidv4(),
-        name: 'Hero Section',
-        sectionType: 'hero',
-        components: [
-          {
-            id: uuidv4(),
-            type: 'image',
-            url: 'https://via.placeholder.com/800x400',
-            altText: 'Hero Image',
-            style: {
-              width: '100%',
-              height: 'auto'
-            }
-          },
-          {
-            id: uuidv4(),
-            type: 'text',
-            content: 'Welcome to Our Website',
-            style: {
-              fontSize: '36px',
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }
-          },
-          {
-            id: uuidv4(),
-            type: 'text',
-            content: 'A brief description of what we offer.',
-            style: {
-              fontSize: '18px',
-              textAlign: 'center'
-            }
-          },
-          {
-            id: uuidv4(),
-            type: 'button',
-            content: 'Learn More',
-            style: {
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              padding: '15px 32px',
-              textAlign: 'center',
-              textDecoration: 'none',
-              display: 'inline-block',
-              fontSize: '16px',
-              borderRadius: '5px'
-            }
-          }
-        ]
-      },
-      {
-        id: uuidv4(),
-        name: 'Content Section',
-        sectionType: 'content',
-        components: [
-          {
-            id: uuidv4(),
-            type: 'text',
-            content: 'About Us',
-            style: {
-              fontSize: '24px',
-              fontWeight: 'bold'
-            }
-          },
-          {
-            id: uuidv4(),
-            type: 'text',
-            content: 'A detailed description about our company and services.',
-            style: {
-              fontSize: '16px'
-            }
-          }
-        ]
-      },
-      {
-        id: uuidv4(),
-        name: 'Contact Form',
-        sectionType: 'contact',
-        components: [
-          {
-            id: uuidv4(),
-            type: 'form',
-            fields: ['Name', 'Email', 'Message'],
-            style: {
-              display: 'flex',
-              flexDirection: 'column'
-            }
-          },
-          {
-            id: uuidv4(),
-            type: 'button',
-            content: 'Submit',
-            style: {
-              backgroundColor: '#008CBA',
-              color: 'white',
-              padding: '15px 32px',
-              textAlign: 'center',
-              textDecoration: 'none',
-              display: 'inline-block',
-              fontSize: '16px',
-              borderRadius: '5px'
-            }
-          }
-        ]
-      },
-      {
-        id: uuidv4(),
-        name: 'Footer',
-        sectionType: 'footer',
-        components: [
-          {
-            id: uuidv4(),
-            type: 'text',
-            content: '© 2023 My Company',
-            style: {
-              textAlign: 'center'
-            }
-          }
-        ]
-      }
-    ];
-
-    // Mock color scheme and typography
-    const colorScheme = {
+  generateWireframe(params: GenerationParams): WireframeData {
+    const { sections, colorScheme, components } = params;
+    
+    // Ensure we have default values for required properties
+    const defaultColorScheme = {
       primary: '#3b82f6',
       secondary: '#10b981',
       accent: '#f59e0b',
@@ -170,38 +25,28 @@ export const WireframeGeneratorService = {
       text: '#111827'
     };
 
-    const typography = {
-      headings: 'sans-serif',
-      body: 'sans-serif'
-    };
-    
-    // Ensure colorScheme has the required structure
-    const safeColorScheme = {
-      primary: colorScheme.primary || '#3b82f6',
-      secondary: colorScheme.secondary || '#10b981',
-      accent: colorScheme.accent || '#f59e0b',
-      background: colorScheme.background || '#ffffff',
-      text: colorScheme.text || '#111827'
-    };
-
+    // Create and return a valid WireframeData object
     return {
       id: uuidv4(),
       title: params.title || 'New Wireframe',
       description: params.description || '',
       sections: sections || [],
       style: params.style || '',
-      colorScheme: safeColorScheme,
-      typography: typography,
-      designTokens: {},
-      mobileLayouts: {},
-      styleVariants: {},
-      designReasoning: {},
-      animations: {},
-      imageUrl: '',
-      lastUpdated: new Date().toISOString()
+      colorScheme: {
+        primary: colorScheme?.primary || defaultColorScheme.primary,
+        secondary: colorScheme?.secondary || defaultColorScheme.secondary,
+        accent: colorScheme?.accent || defaultColorScheme.accent,
+        background: colorScheme?.background || defaultColorScheme.background,
+        text: colorScheme?.text || defaultColorScheme.text
+      },
+      typography: params.typography || {
+        headings: 'sans-serif',
+        body: 'sans-serif'
+      }
+      // We're removing 'components' from here as it's not part of WireframeData
+      // Components should be added to sections instead
     };
   }
 };
 
-// Add the export for wireframeGenerator
 export const wireframeGenerator = WireframeGeneratorService;

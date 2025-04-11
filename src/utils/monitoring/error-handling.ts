@@ -1,5 +1,6 @@
 
-import { recordClientError } from "./api-usage";
+import { toast } from 'sonner';
+import { recordClientError } from './api-usage';
 import { getErrorHandlingConfig } from "./error-config";
 
 /**
@@ -17,7 +18,10 @@ export function initializeErrorHandling(): void {
     // Record the client error with appropriate metadata
     recordClientError(
       error.message || 'Unhandled Promise Rejection',
-      error.stack
+      error.stack,
+      'Global', // componentName parameter
+      undefined, // userId parameter
+      { type: 'UnhandledRejection' } // metadata
     ).catch(console.error);
   });
   
@@ -32,7 +36,10 @@ export function initializeErrorHandling(): void {
       
       recordClientError(
         event.error.message || 'Uncaught Error',
-        event.error.stack
+        event.error.stack,
+        'Global', // componentName parameter
+        undefined, // userId parameter
+        { type: 'UncaughtError' } // metadata
       ).catch(console.error);
     }
   });
@@ -67,7 +74,10 @@ export function initializeErrorHandling(): void {
       
       recordClientError(
         `Network request failed: ${(error as Error).message}`,
-        (error as Error).stack
+        (error as Error).stack,
+        'API', // componentName parameter
+        undefined, // userId parameter
+        { type: 'NetworkError' } // metadata
       ).catch(console.error);
       
       throw error;
