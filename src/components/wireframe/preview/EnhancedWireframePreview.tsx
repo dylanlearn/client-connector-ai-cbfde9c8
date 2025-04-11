@@ -1,34 +1,14 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { 
-  Monitor, 
-  Smartphone, 
-  Tablet, 
-  Moon, 
-  Sun, 
-  Eye, 
-  Code, 
-  Download,
-  RefreshCw,
-  Settings
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import React, { useState, useEffect, useRef } from 'react';
 import { DeviceType, DEVICE_DIMENSIONS } from './DeviceInfo';
-import PreviewDisplay from './PreviewDisplay';
-import WireframeExportDialog from '../export/WireframeExportDialog';
-import { ResizablePanel } from '@/components/ui/resizable';
-import { Separator } from '@/components/ui/separator';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import WireframeCanvas from '../WireframeCanvas';
+import Wireframe from '../Wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Monitor, Tablet, Smartphone, Moon, Sun, Download, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { exportWireframeAsHTML, exportWireframeAsImage, exportWireframeAsPDF } from '@/utils/wireframe/export-utils';
+import { saveAs } from 'file-saver';
 import { useToast } from '@/hooks/use-toast';
 
 interface EnhancedWireframePreviewProps {
@@ -38,6 +18,9 @@ interface EnhancedWireframePreviewProps {
   className?: string;
 }
 
+/**
+ * Enhanced wireframe preview component with device switching, dark mode, and export options
+ */
 const EnhancedWireframePreview: React.FC<EnhancedWireframePreviewProps> = ({
   wireframe,
   onSectionClick,
@@ -46,18 +29,36 @@ const EnhancedWireframePreview: React.FC<EnhancedWireframePreviewProps> = ({
 }) => {
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
-  const [scale, setScale] = useState<number>(1);
-  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [isRotated, setIsRotated] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1);
+  const previewRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // Get current device dimensions
-  const currentDimensions = DEVICE_DIMENSIONS[deviceType];
+  // Get current dimensions based on device type and rotation
+  const getCurrentDimensions = () => {
+    const baseDimensions = DEVICE_DIMENSIONS[deviceType];
+    if (isRotated && deviceType !== 'desktop') {
+      return {
+        width: baseDimensions.height,
+        height: baseDimensions.width
+      };
+    }
+    return baseDimensions;
+  };
+  
+  const currentDimensions = getCurrentDimensions();
+  
+  // Format dimensions for display
+  const formatDimensions = () => {
+    const { width, height } = currentDimensions;
+    return `${width}×${height}`;
+  };
   
   // Handle device type change
   const handleDeviceChange = (newDevice: DeviceType) => {
     setDeviceType(newDevice);
+    // Reset rotation when changing devices
+    setIsRotated(false);
   };
   
   // Toggle dark mode
@@ -65,248 +66,234 @@ const EnhancedWireframePreview: React.FC<EnhancedWireframePreviewProps> = ({
     setDarkMode(!darkMode);
   };
   
-  // Handle export button click
-  const handleExportClick = () => {
-    setExportDialogOpen(true);
-    
-    // If onExport callback is provided, call it
-    if (onExport) {
-      onExport('dialog-opened');
+  // Toggle device rotation
+  const handleRotate = () => {
+    if (deviceType !== 'desktop') {
+      setIsRotated(!isRotated);
     }
   };
-
-  // Handle scale change
+  
+  // Handle zoom in
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.1, 2));
-  };
-
-  const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.1, 0.5));
-  };
-
-  const handleResetZoom = () => {
-    setScale(1);
-  };
-
-  // Copy HTML to clipboard
-  const handleCopyHtml = () => {
-    // A simple representation - in a real app this would be more sophisticated
-    const htmlRepresentation = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${wireframe.title || 'Wireframe Preview'}</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}">
-  <!-- Generated from Wireframe: ${wireframe.id} -->
-  <div class="container mx-auto">
-    <h1 class="text-2xl font-bold my-4">${wireframe.title || 'Wireframe'}</h1>
-    <!-- Sections would be rendered here -->
-  </div>
-</body>
-</html>
-    `.trim();
-
-    navigator.clipboard.writeText(htmlRepresentation).then(() => {
-      toast({
-        title: "HTML Copied",
-        description: "HTML representation copied to clipboard",
-      });
-    }).catch(err => {
-      toast({
-        title: "Copy Failed",
-        description: "Could not copy HTML to clipboard",
-        variant: "destructive"
-      });
-    });
+    setZoom(Math.min(zoom + 0.1, 2));
   };
   
-  // Generate screenshot using html2canvas (mock implementation)
-  const takeScreenshot = () => {
-    toast({
-      title: "Screenshot Captured",
-      description: "Screenshot functionality would be implemented here",
-    });
+  // Handle zoom out
+  const handleZoomOut = () => {
+    setZoom(Math.max(zoom - 0.1, 0.5));
   };
-
-  return (
-    <Card className={cn("shadow-md overflow-hidden", className)}>
-      <CardHeader className="pb-2 border-b">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg font-medium">
-            Wireframe Preview: {wireframe.title || 'Untitled'}
-          </CardTitle>
-
-          <Tabs 
-            defaultValue="preview" 
-            value={viewMode}
-            onValueChange={(value) => setViewMode(value as 'preview' | 'code')}
-            className="w-auto"
-          >
-            <TabsList>
-              <TabsTrigger value="preview" className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                <span>Preview</span>
-              </TabsTrigger>
-              <TabsTrigger value="code" className="flex items-center gap-1">
-                <Code className="h-4 w-4" />
-                <span>Code</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </CardHeader>
+  
+  // Reset zoom
+  const handleResetZoom = () => {
+    setZoom(1);
+  };
+  
+  // Export wireframe
+  const handleExport = async (format: 'html' | 'pdf' | 'png') => {
+    if (!wireframe) return;
+    
+    try {
+      // Show loading toast
+      toast({
+        title: 'Exporting wireframe...',
+        description: `Preparing ${format.toUpperCase()} export`,
+      });
       
-      <div className="flex justify-between items-center p-2 border-b bg-muted/30">
-        <Tabs 
-          defaultValue="desktop" 
-          value={deviceType}
-          onValueChange={(value) => handleDeviceChange(value as DeviceType)}
-          className="w-auto"
-        >
-          <TabsList>
-            <TabsTrigger value="desktop" className="flex items-center gap-1">
-              <Monitor className="h-4 w-4" />
-              <span className="hidden sm:inline">Desktop</span>
-            </TabsTrigger>
-            <TabsTrigger value="tablet" className="flex items-center gap-1">
-              <Tablet className="h-4 w-4" />
-              <span className="hidden sm:inline">Tablet</span>
-            </TabsTrigger>
-            <TabsTrigger value="mobile" className="flex items-center gap-1">
-              <Smartphone className="h-4 w-4" />
-              <span className="hidden sm:inline">Mobile</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-background rounded-md border px-1">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleZoomOut}
-              className="h-6 w-6"
-              title="Zoom out"
+      // Call onExport callback if provided
+      if (onExport) {
+        onExport(format);
+      }
+      
+      switch (format) {
+        case 'html':
+          const htmlContent = await exportWireframeAsHTML(wireframe);
+          const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+          saveAs(htmlBlob, `${wireframe.title || 'wireframe'}.html`);
+          break;
+          
+        case 'pdf':
+          if (previewRef.current) {
+            const pdfBlob = await exportWireframeAsPDF(previewRef.current, wireframe);
+            saveAs(pdfBlob, `${wireframe.title || 'wireframe'}.pdf`);
+          }
+          break;
+          
+        case 'png':
+          if (previewRef.current) {
+            const pngBlob = await exportWireframeAsImage(previewRef.current, wireframe);
+            saveAs(pngBlob, `${wireframe.title || 'wireframe'}.png`);
+          }
+          break;
+      }
+      
+      // Show success toast
+      toast({
+        title: 'Export successful',
+        description: `Wireframe exported as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Export failed',
+        description: `Failed to export as ${format.toUpperCase()}. Please try again.`,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Get device name for display
+  const getDeviceName = (deviceType: DeviceType): string => {
+    switch (deviceType) {
+      case 'desktop': return 'Desktop';
+      case 'tablet': return 'Tablet';
+      case 'tabletLandscape': return 'Tablet Landscape';
+      case 'mobile': return 'Mobile';
+      case 'mobileLandscape': return 'Mobile Landscape';
+      case 'mobileSm': return 'Small Mobile';
+      default: return 'Device';
+    }
+  };
+  
+  return (
+    <div className={cn('wireframe-preview', className)}>
+      <div className="flex flex-col space-y-4">
+        {/* Device controls */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4 p-4 border rounded-lg bg-card">
+          <div className="flex flex-wrap gap-2">
+            <Tabs 
+              value={deviceType} 
+              onValueChange={(value) => handleDeviceChange(value as DeviceType)}
+              className="w-full sm:w-auto"
             >
-              -
-            </Button>
-            <span className="text-xs w-10 text-center">
-              {Math.round(scale * 100)}%
-            </span>
+              <TabsList>
+                <TabsTrigger value="desktop" className="flex items-center gap-1">
+                  <Monitor className="h-4 w-4" />
+                  <span className="hidden sm:inline">Desktop</span>
+                </TabsTrigger>
+                <TabsTrigger value="tablet" className="flex items-center gap-1">
+                  <Tablet className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tablet</span>
+                </TabsTrigger>
+                <TabsTrigger value="mobile" className="flex items-center gap-1">
+                  <Smartphone className="h-4 w-4" />
+                  <span className="hidden sm:inline">Mobile</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
             <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleZoomIn}
-              className="h-6 w-6"
-              title="Zoom in"
+              variant="outline" 
+              size="sm" 
+              onClick={handleRotate}
+              disabled={deviceType === 'desktop'}
+              className="flex items-center gap-1"
             >
-              +
+              <RefreshCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Rotate</span>
             </Button>
           </div>
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={toggleDarkMode}
-            className="flex items-center gap-1"
-          >
-            {darkMode ? (
-              <>
-                <Sun className="h-4 w-4" />
-                <span className="hidden sm:inline">Light</span>
-              </>
-            ) : (
-              <>
-                <Moon className="h-4 w-4" />
-                <span className="hidden sm:inline">Dark</span>
-              </>
-            )}
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Options</span>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleDarkMode}
+              className="flex items-center gap-1"
+            >
+              {darkMode ? (
+                <>
+                  <Sun className="h-4 w-4" />
+                  <span className="hidden sm:inline">Light</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Dark</span>
+                </>
+              )}
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleZoomOut}
+                disabled={zoom <= 0.5}
+              >
+                <ZoomOut className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleCopyHtml}>
-                Copy HTML
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={takeScreenshot}>
-                Take Screenshot
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleResetZoom}>
-                Reset Zoom
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExportClick}
-            className="flex items-center gap-1"
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleResetZoom}
+                disabled={zoom === 1}
+              >
+                {Math.round(zoom * 100)}%
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleZoomIn}
+                disabled={zoom >= 2}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <Tabs defaultValue="html" className="w-full sm:w-auto">
+              <TabsList>
+                <TabsTrigger value="html" onClick={() => handleExport('html')}>
+                  HTML
+                </TabsTrigger>
+                <TabsTrigger value="pdf" onClick={() => handleExport('pdf')}>
+                  PDF
+                </TabsTrigger>
+                <TabsTrigger value="png" onClick={() => handleExport('png')}>
+                  PNG
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+        
+        {/* Device info */}
+        <div className="flex justify-between items-center px-4">
+          <div className="text-sm text-muted-foreground">
+            {getDeviceName(deviceType)} • {formatDimensions()}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {wireframe.title}
+          </div>
+        </div>
+        
+        {/* Preview container */}
+        <div className="flex justify-center p-8 bg-muted/30 rounded-lg overflow-auto">
+          <div 
+            ref={previewRef}
+            className="transition-all duration-300"
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top center'
+            }}
           >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
-        </div>
-      </div>
-      
-      <div 
-        ref={previewContainerRef}
-        className="flex justify-center p-4 bg-muted/30 min-h-[400px] overflow-auto"
-      >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'top center', transition: 'transform 0.2s' }}>
-          <TabsContent value="preview" className="mt-0">
-            <PreviewDisplay
-              currentDimensions={currentDimensions}
+            <WireframeCanvas
+              deviceType={deviceType === 'desktop' ? 'desktop' : deviceType === 'tablet' || deviceType === 'tabletLandscape' ? 'tablet' : 'mobile'}
               darkMode={darkMode}
-              wireframe={wireframe}
-              deviceType={deviceType}
               onSectionClick={onSectionClick}
-            />
-          </TabsContent>
-          
-          <TabsContent value="code" className="mt-0 bg-background p-4 rounded-md min-w-[600px]">
-            <pre className="text-sm overflow-x-auto">
-              <code>
-                {`<!-- Generated wireframe HTML -->
-<div class="wireframe-container ${darkMode ? 'dark' : ''}">
-  ${wireframe.sections.map((section, i) => `
-  <!-- Section: ${section.name || section.sectionType} -->
-  <section class="wireframe-section" data-section-id="${section.id}">
-    <!-- Section content would be rendered here -->
-  </section>
-  `).join('')}
-</div>`}
-              </code>
-            </pre>
-          </TabsContent>
+              className="shadow-lg"
+            >
+              <Wireframe
+                wireframe={wireframe}
+                viewMode="preview"
+                darkMode={darkMode}
+                deviceType={deviceType === 'desktop' ? 'desktop' : deviceType === 'tablet' || deviceType === 'tabletLandscape' ? 'tablet' : 'mobile'}
+                onSectionClick={onSectionClick}
+              />
+            </WireframeCanvas>
+          </div>
         </div>
       </div>
-      
-      <CardFooter className="flex justify-between border-t p-2 text-xs text-muted-foreground">
-        <div>
-          {wireframe.sections?.length || 0} sections
-        </div>
-        <div>
-          Device: {currentDimensions.name} ({currentDimensions.width}×{currentDimensions.height})
-        </div>
-      </CardFooter>
-      
-      <WireframeExportDialog
-        wireframe={wireframe}
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
-      />
-    </Card>
+    </div>
   );
 };
 

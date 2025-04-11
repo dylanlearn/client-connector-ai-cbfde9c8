@@ -41,6 +41,11 @@ export interface WireframeSection {
   copySuggestions?: {
     heading?: string;
     subheading?: string;
+    ctaText?: string;
+    primaryCta?: string;
+    secondaryCta?: string;
+    supportText?: string;
+    supportCta?: string;
     [key: string]: any;
   };
   dimensions?: {
@@ -51,6 +56,12 @@ export interface WireframeSection {
     x: number;
     y: number;
   };
+  // Stats property for StatsSectionRenderer
+  stats?: Array<{
+    id: string;
+    value: string;
+    label: string;
+  }>;
   // Additional styling properties
   backgroundColor?: string;
   textAlign?: string;

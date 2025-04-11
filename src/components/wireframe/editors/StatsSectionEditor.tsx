@@ -30,7 +30,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate({
       copySuggestions: {
-        ...section.copySuggestions,
+        ...(section.copySuggestions || {}),
         heading: e.target.value
       }
     });
@@ -40,7 +40,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onUpdate({
       copySuggestions: {
-        ...section.copySuggestions,
+        ...(section.copySuggestions || {}),
         subheading: e.target.value
       }
     });
@@ -83,6 +83,15 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
     onUpdate({ stats: updatedStats });
   };
 
+  // Extract heading and subheading from copySuggestions safely
+  const heading = section.copySuggestions && typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions) 
+    ? section.copySuggestions.heading || ""
+    : "";
+  
+  const subheading = section.copySuggestions && typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions) 
+    ? section.copySuggestions.subheading || ""
+    : "";
+
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
@@ -90,7 +99,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
           <Label htmlFor="section-title">Section Title</Label>
           <Input 
             id="section-title"
-            value={section.copySuggestions?.heading || ""}
+            value={heading}
             onChange={handleTitleChange}
             placeholder="Enter section title"
           />
@@ -100,7 +109,7 @@ const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpda
           <Label htmlFor="section-description">Section Description</Label>
           <Textarea
             id="section-description"
-            value={section.copySuggestions?.subheading || ""}
+            value={subheading}
             onChange={handleDescriptionChange}
             placeholder="Enter section description"
             rows={3}

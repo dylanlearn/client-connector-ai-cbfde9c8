@@ -2,7 +2,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { createStyleObject } from './utilities';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 const BlogSectionRenderer: React.FC<SectionComponentProps> = ({
   section,

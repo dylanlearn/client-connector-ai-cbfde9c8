@@ -2,7 +2,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { createStyleObject } from './utilities';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 const StatsSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -44,9 +45,9 @@ const StatsSectionRenderer: React.FC<SectionComponentProps> = ({
         'max-w-6xl mx-auto',
         deviceType === 'mobile' ? 'px-4' : 'px-8'
       )}>
-        {(section.copySuggestions?.heading || section.copySuggestions?.subheading) && (
+        {(section.copySuggestions) && (
           <div className="text-center mb-12">
-            {section.copySuggestions?.heading && (
+            {getSuggestion(section.copySuggestions, 'heading') && (
               <h2 className={cn(
                 'text-3xl font-bold mb-4',
                 darkMode ? 'text-white' : 'text-gray-900'
@@ -55,7 +56,7 @@ const StatsSectionRenderer: React.FC<SectionComponentProps> = ({
               </h2>
             )}
             
-            {section.copySuggestions?.subheading && (
+            {getSuggestion(section.copySuggestions, 'subheading') && (
               <p className={cn(
                 'text-lg max-w-3xl mx-auto',
                 darkMode ? 'text-gray-300' : 'text-gray-600'

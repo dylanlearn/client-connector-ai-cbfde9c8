@@ -11,7 +11,7 @@ export const getSuggestion = (
 ): string => {
   if (!copySuggestions) return defaultValue;
   
-  // If it's an array, try to find the key in any of the objects
+  // Handle array of suggestions
   if (Array.isArray(copySuggestions)) {
     for (const suggestion of copySuggestions) {
       if (suggestion && suggestion[key]) {
@@ -21,7 +21,7 @@ export const getSuggestion = (
     return defaultValue;
   }
   
-  // If it's an object, directly access the key
+  // Handle object format
   return String(copySuggestions[key] || defaultValue);
 };
 

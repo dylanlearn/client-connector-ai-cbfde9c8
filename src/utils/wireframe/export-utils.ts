@@ -1,193 +1,197 @@
 
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-
-interface ExportOptions {
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  darkMode?: boolean;
-  fileName?: string;
-}
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 /**
- * Export a wireframe as an HTML file
+ * Export wireframe as HTML
  */
 export const exportWireframeAsHTML = async (
-  wireframe: WireframeData,
-  options: ExportOptions = {}
-): Promise<boolean> => {
-  try {
-    const {
-      deviceType = 'desktop',
-      darkMode = false,
-      fileName = `wireframe-${wireframe.id?.substring(0, 8) || 'export'}`
-    } = options;
-
-    // Generate the HTML content (simplified version)
-    const htmlContent = `
+  wireframe: WireframeData
+): Promise<string> => {
+  const { title, sections } = wireframe;
+  
+  let htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${wireframe.title || 'Wireframe Export'}</title>
+  <title>${title}</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    body {
-      background-color: ${darkMode ? '#111827' : '#ffffff'};
-      color: ${darkMode ? '#ffffff' : '#111827'};
-    }
-    .wireframe-section {
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border: 1px solid ${darkMode ? '#374151' : '#e5e7eb'};
-      border-radius: 0.5rem;
-    }
+    body { font-family: system-ui, -apple-system, sans-serif; }
   </style>
 </head>
-<body>
-  <div class="container mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-6">${wireframe.title || 'Untitled Wireframe'}</h1>
+<body class="min-h-screen bg-gray-50">
+  `;
+  
+  // Add each section
+  sections.forEach((section: WireframeSection) => {
+    const sectionType = section.sectionType?.toLowerCase() || 'generic';
     
-    ${wireframe.sections?.map(section => `
-      <div class="wireframe-section" data-section-type="${section.sectionType || 'section'}">
-        <h2 class="text-xl font-semibold mb-2">${section.name || section.sectionType || 'Unnamed Section'}</h2>
-        <div class="section-content">
-          ${section.copySuggestions?.heading ? `<h3 class="text-lg font-medium">${section.copySuggestions.heading}</h3>` : ''}
-          ${section.copySuggestions?.subheading ? `<p class="text-gray-500 dark:text-gray-400">${section.copySuggestions.subheading}</p>` : ''}
-          <!-- More section content would be rendered here -->
+    switch (sectionType) {
+      case 'hero':
+        htmlContent += `
+  <section class="bg-blue-600 text-white py-20 px-4">
+    <div class="max-w-6xl mx-auto text-center">
+      <h1 class="text-4xl font-bold mb-6">${getSuggestion(section.copySuggestions, 'heading', 'Welcome to ' + title)}</h1>
+      <p class="text-xl mb-8">${getSuggestion(section.copySuggestions, 'subheading', 'This is a wireframe export of your design.')}</p>
+      <button class="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium">Get Started</button>
+    </div>
+  </section>`;
+        break;
+        
+      case 'feature':
+      case 'features':
+        htmlContent += `
+  <section class="py-16 px-4">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">Features</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">1</div>
+          <h3 class="text-xl font-semibold mb-2">Feature One</h3>
+          <p class="text-gray-600">Description of the first feature and its benefits.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">2</div>
+          <h3 class="text-xl font-semibold mb-2">Feature Two</h3>
+          <p class="text-gray-600">Description of the second feature and its benefits.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">3</div>
+          <h3 class="text-xl font-semibold mb-2">Feature Three</h3>
+          <p class="text-gray-600">Description of the third feature and its benefits.</p>
         </div>
       </div>
-    `).join('') || '<p>No sections available</p>'}
-  </div>
+    </div>
+  </section>`;
+        break;
+        
+      case 'cta':
+        htmlContent += `
+  <section class="bg-blue-600 text-white py-12 px-4">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+      <p class="text-lg mb-8">Join thousands of satisfied customers using our products.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <button class="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium">Get Started</button>
+        <button class="border border-white text-white px-6 py-3 rounded-lg font-medium">Learn More</button>
+      </div>
+    </div>
+  </section>`;
+        break;
+        
+      case 'footer':
+        htmlContent += `
+  <footer class="bg-gray-800 text-white py-12 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div>
+          <h3 class="text-lg font-bold mb-4">About Us</h3>
+          <p class="text-gray-400">A brief description of the company and its mission.</p>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white">Home</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Features</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Pricing</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold mb-4">Support</h3>
+          <ul class="space-y-2">
+            <li><a href="#" class="text-gray-400 hover:text-white">Help Center</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Documentation</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">API Reference</a></li>
+            <li><a href="#" class="text-gray-400 hover:text-white">Status</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold mb-4">Contact</h3>
+          <p class="text-gray-400 mb-2">info@example.com</p>
+          <p class="text-gray-400">+1 (555) 123-4567</p>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+        <p class="text-gray-400">&copy; ${new Date().getFullYear()} ${title}. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>`;
+        break;
+        
+      default:
+        htmlContent += `
+  <section class="py-12 px-4">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-2xl font-bold mb-6">${section.name || section.sectionType || 'Section'}</h2>
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <p>Content for ${section.name || section.sectionType || 'this section'}</p>
+      </div>
+    </div>
+  </section>`;
+    }
+  });
+  
+  // Close HTML
+  htmlContent += `
 </body>
 </html>
-    `.trim();
-
-    // Create a download link and trigger it
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${fileName}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    return true;
-  } catch (error) {
-    console.error("Error exporting wireframe as HTML:", error);
-    return false;
-  }
+  `;
+  
+  return htmlContent;
 };
 
 /**
- * Export a wireframe as a PDF document
- * This is a simplified implementation - a real one would use a PDF generation library
+ * Export wireframe as PDF
  */
 export const exportWireframeAsPDF = async (
-  wireframe: WireframeData,
-  options: ExportOptions = {}
-): Promise<boolean> => {
-  try {
-    const {
-      fileName = `wireframe-${wireframe.id?.substring(0, 8) || 'export'}`
-    } = options;
-
-    console.log(`Export wireframe as PDF with options:`, options);
-    
-    // In a real implementation, this would use a library like jsPDF or
-    // a server-side API to generate the PDF
-    
-    // For now, we'll just show a message in the console and return success
-    console.log(`Exported ${fileName}.pdf`);
-    
-    // Mock the download for demonstration purposes
-    setTimeout(() => {
-      alert(`PDF export functionality would normally create ${fileName}.pdf`);
-    }, 500);
-    
-    return true;
-  } catch (error) {
-    console.error("Error exporting wireframe as PDF:", error);
-    return false;
-  }
+  wireframeContainer: HTMLElement,
+  wireframe: WireframeData
+): Promise<Blob> => {
+  const canvas = await html2canvas(wireframeContainer, {
+    scale: 1,
+    useCORS: true,
+    logging: false,
+    allowTaint: true,
+  });
+  
+  // Create PDF with appropriate dimensions
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({
+    orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+    unit: 'px',
+    format: [canvas.width, canvas.height]
+  });
+  
+  // Add image to PDF
+  pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+  
+  // Return as blob
+  return pdf.output('blob');
 };
 
 /**
- * Export a wireframe as a PNG image
- * This is a simplified implementation - a real one would use html2canvas or similar
+ * Export wireframe as image (PNG)
  */
 export const exportWireframeAsImage = async (
-  wireframe: WireframeData,
-  options: ExportOptions = {}
-): Promise<boolean> => {
-  try {
-    const {
-      fileName = `wireframe-${wireframe.id?.substring(0, 8) || 'export'}`
-    } = options;
-
-    console.log(`Export wireframe as image with options:`, options);
-    
-    // In a real implementation, this would use html2canvas to capture the wireframe display,
-    // then convert that to an image file
-    
-    // For now, we'll just show a message in the console and return success
-    console.log(`Exported ${fileName}.png`);
-    
-    // Mock the download for demonstration purposes
-    setTimeout(() => {
-      alert(`Image export functionality would normally create ${fileName}.png`);
-    }, 500);
-    
-    return true;
-  } catch (error) {
-    console.error("Error exporting wireframe as image:", error);
-    return false;
-  }
-};
-
-/**
- * Get the mime type for an export format
- */
-export function getExportMimeType(format: string): string {
-  switch (format.toLowerCase()) {
-    case 'html':
-      return 'text/html';
-    case 'pdf':
-      return 'application/pdf';
-    case 'png':
-    case 'image':
-      return 'image/png';
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg';
-    case 'svg':
-      return 'image/svg+xml';
-    case 'json':
-      return 'application/json';
-    default:
-      return 'text/plain';
-  }
-}
-
-/**
- * Prepare a filename for download (adds extension if needed)
- */
-export function prepareExportFilename(
-  wireframe: WireframeData,
-  format: string,
-  suggestedName?: string
-): string {
-  // Generate a base filename from the wireframe info
-  const baseFileName = suggestedName || 
-    (wireframe.title ? 
-      wireframe.title.toLowerCase().replace(/[^a-z0-9]/g, '-') : 
-      `wireframe-${wireframe.id?.substring(0, 8) || 'export'}`);
+  wireframeContainer: HTMLElement,
+  wireframe: WireframeData
+): Promise<Blob> => {
+  const canvas = await html2canvas(wireframeContainer, {
+    scale: 2, // Higher scale for better quality
+    useCORS: true,
+    logging: false,
+    allowTaint: true,
+  });
   
-  // Add the appropriate extension if not already present
-  const extension = format.toLowerCase();
-  if (baseFileName.endsWith(`.${extension}`)) {
-    return baseFileName;
-  }
-  return `${baseFileName}.${extension}`;
-}
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob as Blob);
+    }, 'image/png');
+  });
+};

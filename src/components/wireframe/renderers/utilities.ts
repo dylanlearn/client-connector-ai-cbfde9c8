@@ -105,3 +105,83 @@ export function processResponsiveDimensions(
     height: section.dimensions.height || defaultDimensions.height
   };
 }
+
+/**
+ * Create a color scheme object based on user input
+ */
+export function createColorScheme(colorScheme: string | Record<string, string> | undefined): Record<string, string> {
+  if (!colorScheme) {
+    // Default color scheme
+    return {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#8b5cf6',
+      background: '#ffffff',
+      text: '#1f2937'
+    };
+  }
+  
+  // If colorScheme is already an object, return it
+  if (typeof colorScheme === 'object') {
+    return {
+      primary: colorScheme.primary || '#3b82f6',
+      secondary: colorScheme.secondary || '#10b981',
+      accent: colorScheme.accent || '#8b5cf6',
+      background: colorScheme.background || '#ffffff',
+      text: colorScheme.text || '#1f2937'
+    };
+  }
+  
+  // Parse color scheme from string
+  try {
+    // Check if it's a valid JSON string
+    if (colorScheme.startsWith('{') && colorScheme.endsWith('}')) {
+      const parsed = JSON.parse(colorScheme);
+      return {
+        primary: parsed.primary || '#3b82f6',
+        secondary: parsed.secondary || '#10b981',
+        accent: parsed.accent || '#8b5cf6',
+        background: parsed.background || '#ffffff',
+        text: parsed.text || '#1f2937'
+      };
+    }
+    
+    // Handle simple color scheme string formats: "blue", "dark", "light", etc.
+    switch (colorScheme.toLowerCase()) {
+      case 'blue':
+        return {
+          primary: '#3b82f6',
+          secondary: '#60a5fa',
+          accent: '#93c5fd',
+          background: '#ffffff',
+          text: '#1f2937'
+        };
+      case 'dark':
+        return {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#8b5cf6',
+          background: '#1f2937',
+          text: '#f9fafb'
+        };
+      case 'light':
+      default:
+        return {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#8b5cf6',
+          background: '#ffffff',
+          text: '#1f2937'
+        };
+    }
+  } catch (error) {
+    console.error('Error parsing color scheme:', error);
+    return {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#8b5cf6',
+      background: '#ffffff',
+      text: '#1f2937'
+    };
+  }
+}

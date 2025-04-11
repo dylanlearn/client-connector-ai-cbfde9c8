@@ -1,93 +1,66 @@
 
-export const aiWireframeToWireframeData = (aiWireframe: any): any => {
-  return {
-    id: aiWireframe.id || '',
-    title: aiWireframe.title || 'Untitled Wireframe',
-    description: aiWireframe.description || '',
-    sections: aiWireframe.sections || [],
-    colorScheme: aiWireframe.colorScheme || {},
-    typography: aiWireframe.typography || {},
-    style: aiWireframe.style || '',
-    designTokens: aiWireframe.designTokens || {},
-  };
+/**
+ * Copy suggestions type for wireframe sections
+ */
+export type CopySuggestions = {
+  [key: string]: string;
+  heading?: string;
+  subheading?: string;
+  ctaText?: string;
+  primaryCta?: string;
+  secondaryCta?: string;
+  supportText?: string;
+  supportCta?: string;
 };
 
-// Export the necessary types
-export interface WireframeGenerationParams {
-  projectId?: string;
-  description: string;
-  stylePreferences?: string[];
-  style?: string;
-  layoutPreferences?: string[];
-  baseWireframe?: any;
-  componentPreferences?: string[];
-  colorScheme?: Record<string, string>;
-  typography?: Record<string, string>;
-  creativityLevel?: number;
-  enhancedCreativity?: boolean;
-  saveMemory?: boolean;
-  intakeData?: any;
-  prompt?: string;
-  [key: string]: any;
-}
-
-export interface WireframeGenerationResult {
-  wireframe: WireframeData;
-  success: boolean;
-  error?: string;
-  imageUrl?: string;
-  intentData?: any;
-  blueprint?: any;
-  generationTime?: number;
-  model?: string;
-  usage?: any;
-}
-
-export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
-  intentData: any;
-  blueprint: any;
-  designTokens: Record<string, any>;
-  layoutAnalysis?: any;
-  variations?: WireframeData[];
-}
-
-export interface AIWireframe {
+/**
+ * Wireframe section interface
+ */
+export interface WireframeSection {
   id: string;
-  project_id: string;
-  prompt: string;
+  name?: string;
+  type?: string;
+  sectionType?: string;
   description?: string;
-  design_tokens?: Record<string, any>;
-  mobile_layouts?: any;
-  style_variants?: any;
-  design_reasoning?: any;
-  animations?: any;
-  generation_params?: any;
-  image_url?: string;
-  created_at?: string;
-  updated_at?: string;
-  title?: string;
-  data?: any;
-  wireframe_data?: any;
-  sections?: WireframeSection[];
-}
-
-export interface WireframeComponent {
-  id: string;
-  type: string;
-  content?: string | Record<string, any>;
+  copySuggestions?: CopySuggestions | CopySuggestions[];
   style?: Record<string, any>;
-  children?: WireframeComponent[];
-  props?: Record<string, any>;
-  src?: string;
-  alt?: string;
+  layout?: {
+    type: string;
+    direction?: string;
+    alignment?: string;
+    justifyContent?: string;
+    columns?: number;
+    gap?: number;
+    wrap?: boolean;
+    [key: string]: any;
+  } | string;
+  components?: Array<any>;
+  dimensions?: {
+    width: string | number;
+    height: string | number;
+  };
+  position?: {
+    x: number;
+    y: number;
+  };
+  backgroundColor?: string;
+  stats?: Array<{
+    id: string;
+    value: string;
+    label: string;
+  }>;
   [key: string]: any;
 }
 
+/**
+ * Wireframe data interface
+ */
 export interface WireframeData {
   id: string;
   title: string;
   description?: string;
   sections: WireframeSection[];
+  layoutType?: string;
   colorScheme?: {
     primary: string;
     secondary: string;
@@ -100,137 +73,72 @@ export interface WireframeData {
     body: string;
     fontPairings?: string[];
   };
-  style?: string;
-  styleToken?: string;
   designTokens?: Record<string, any>;
+  mobileConsiderations?: string;
+  accessibilityNotes?: string;
+  style?: string | object;
+  pages?: any[];
+  styleToken?: string;
+  darkMode?: boolean;
   mobileLayouts?: any;
   styleVariants?: any;
   designReasoning?: any;
   animations?: any;
   imageUrl?: string;
-  lastUpdated?: string;
-  layoutType?: string;
-  metadata?: any;
-  error?: string;
+  [key: string]: any;
 }
 
-export interface WireframeSection {
-  id: string;
-  name: string;
-  sectionType: string;
-  description?: string;
+/**
+ * Wireframe generation parameters
+ */
+export interface WireframeGenerationParams {
+  projectId?: string;
+  description: string;
+  designRequirements?: string;
+  contentRequirements?: string;
+  styling?: string;
+  style?: string | Record<string, any>;
+  layoutPreferences?: string;
   layoutType?: string;
-  dimensions?: {
-    width: string | number;
-    height: string | number;
+  enhancedCreativity?: boolean;
+  creativityLevel?: number;
+  colorScheme?: string | Record<string, string>;
+  styleToken?: string;
+  industry?: string;
+  intakeData?: any;
+  [key: string]: any;
+}
+
+/**
+ * Wireframe generation result
+ */
+export interface WireframeGenerationResult {
+  wireframe: WireframeData;
+  intentData?: Record<string, any>;
+  blueprint?: Record<string, any>;
+  designTokens?: Record<string, any>;
+  tokenUsage?: {
+    prompt: number;
+    completion: number;
+    total: number;
   };
-  components?: WireframeComponent[];
-  copySuggestions?: CopySuggestions | CopySuggestions[];
-  animationSuggestions?: any[];
-  style?: any;
-  order?: number;
-  key?: string;
-  designReasoning?: string;
-  // Additional properties needed based on errors
-  data?: any;
-  position?: { x: number, y: number };
-  x?: number;
-  y?: number;
-  width?: number | string;
-  height?: number | string;
-  backgroundColor?: string;
-  padding?: string;
-  gap?: string | number;
-  layout?: any;
-  mobileLayout?: any;
-  dynamicElements?: any;
-  styleVariants?: any;
-  variant?: string;
-  layoutScore?: number;
-  optimizationSuggestions?: any[];
-  patternMatch?: any;
-  positionOrder?: number;
-  componentVariant?: string;
-  type?: string; // Add type property
+  message?: string;
 }
 
-export interface FeedbackModificationResult {
-  wireframe: WireframeData;
-  success: boolean;
-  changes?: any[];
-  error?: string;
-  modified?: boolean;
-  changeDescription?: string;
-  modifiedSections?: any[];
-  addedSections?: any[];
-}
-
-// Add this interface for feedback modification params
-export interface FeedbackModificationParams {
-  wireframe: WireframeData;
-  feedback: string;
-  targetSections?: string[];
-  preferredStyle?: string;
-  preserveSections?: string[];
-}
-
-// Make sure CopySuggestions has all needed properties
-export interface CopySuggestions {
-  [key: string]: string;
-  heading?: string;
-  subheading?: string;
-  ctaText?: string;
-  ctaUrl?: string;
-  primaryCta?: string;
-  secondaryCta?: string;
-}
-
-export interface DesignMemoryData {
+/**
+ * AI Wireframe model
+ */
+export interface AIWireframe {
   id: string;
-  project_id: string;
-  context: string;
-  preferences: Record<string, any>;
-  previous_designs: any[];
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface DesignMemoryResponse {
-  design_memory: DesignMemoryData;
-  success: boolean;
-  error?: string;
-}
-
-// Base version control interfaces
-export interface WireframeVersion {
-  id: string;
-  wireframe_id: string;
-  version_number: number;
-  branch_name: string;
-  data: WireframeData;
-  parent_version_id?: string;
-  is_current: boolean;
-  change_description?: string;
-  created_at: string;
-  created_by?: string;
-}
-
-export interface BranchInfo {
-  id: string;
+  projectId: string;
   name: string;
-  wireframe_id: string;
-  created_at: string;
-  is_default: boolean;
   description?: string;
-  created_by?: string;
-}
-
-export interface VersionCreationOptions {
-  wireframeId: string;
   data: WireframeData;
-  parentVersionId?: string;
-  changeDescription?: string;
+  createdAt: Date;
+  updatedAt: Date;
   createdBy?: string;
-  branchName?: string;
-  versionNumber?: number;
+  status: 'draft' | 'published' | 'archived';
+  tags?: string[];
+  version?: number;
+  feedback?: string[];
 }
