@@ -1,11 +1,13 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { useToast } from '@/hooks/use-toast';
 
 interface WireframeHistoryOptions {
   maxHistorySize?: number;
   autoSave?: boolean;
+  debounceTime?: number;
+  onSave?: (wireframe: WireframeData) => Promise<void>;
 }
 
 interface WireframeHistoryState {
@@ -19,7 +21,12 @@ export function useWireframeHistory(
   options: WireframeHistoryOptions = {}
 ) {
   // Set default options
-  const { maxHistorySize = 50, autoSave = false } = options;
+  const { 
+    maxHistorySize = 50, 
+    autoSave = false, 
+    debounceTime = 500,
+    onSave 
+  } = options;
   
   // Initialize history state
   const [history, setHistory] = useState<WireframeHistoryState>({
@@ -30,27 +37,77 @@ export function useWireframeHistory(
 
   // Store the last action timestamp to prevent rapid history updates
   const lastActionTimestampRef = useRef<number>(0);
+  
+  // Store the debounced save timeout
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const { toast } = useToast();
   
+  // Update history when initialWireframe changes externally
+  useEffect(() => {
+    if (initialWireframe && !history.present) {
+      setHistory({
+        past: [],
+        present: initialWireframe,
+        future: [],
+      });
+    }
+  }, [initialWireframe]);
+  
+  // Handle autosave
+  const handleAutoSave = useCallback((wireframe: WireframeData) => {
+    if (!autoSave || !onSave) return;
+    
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set a new timeout for the save operation
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await onSave(wireframe);
+      } catch (error) {
+        console.error("Error autosaving wireframe:", error);
+        toast({
+          title: "Autosave failed",
+          description: "Your changes couldn't be saved automatically",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    }, debounceTime);
+  }, [autoSave, onSave, toast, debounceTime]);
+  
   // Update wireframe and add to history
-  const updateWireframe = useCallback((newWireframe: WireframeData, actionName?: string) => {
-    // Prevent updates if there's no current wireframe
+  const updateWireframe = useCallback((
+    newWireframe: WireframeData, 
+    actionName?: string,
+    skipHistory?: boolean
+  ) => {
+    // Prevent updates if there's no wireframe or new wireframe
     if (!newWireframe) return;
     
     const now = Date.now();
-    // Don't add to history if update happens too quickly after the previous one (debounce)
-    const shouldAddToHistory = now - lastActionTimestampRef.current > 500;
+    // Don't add to history if update happens too quickly after the previous one or skipHistory is true
+    const shouldAddToHistory = !skipHistory && now - lastActionTimestampRef.current > debounceTime;
     
     setHistory((prevHistory) => {
       const { past, present } = prevHistory;
       
       // If we should add to history and we have a present state
       if (shouldAddToHistory && present) {
-        return {
+        // Create new history state
+        const newHistoryState = {
           past: [...past, present].slice(-maxHistorySize), // Limit history size
           present: newWireframe,
           future: [], // Clear redo history when a new action is performed
         };
+        
+        // Trigger autosave if enabled
+        handleAutoSave(newWireframe);
+        
+        return newHistoryState;
       } else {
         // Just update the present state without affecting history
         return {
@@ -67,17 +124,12 @@ export function useWireframeHistory(
       if (actionName) {
         toast({
           title: `Action: ${actionName}`,
-          description: "Change has been applied and added to history",
+          description: "Change has been added to history",
           duration: 1500,
         });
       }
-      
-      // If autoSave is enabled, we could implement saving logic here
-      if (autoSave) {
-        // Implement autosave logic if needed
-      }
     }
-  }, [maxHistorySize, toast, autoSave]);
+  }, [maxHistorySize, toast, handleAutoSave, debounceTime]);
   
   // Undo the last action
   const undo = useCallback(() => {
@@ -88,6 +140,9 @@ export function useWireframeHistory(
       
       const previous = past[past.length - 1];
       const newPast = past.slice(0, past.length - 1);
+      
+      // Trigger autosave if enabled
+      handleAutoSave(previous);
       
       toast({
         title: "Undo",
@@ -101,7 +156,7 @@ export function useWireframeHistory(
         future: [present, ...future],
       };
     });
-  }, [toast]);
+  }, [toast, handleAutoSave]);
   
   // Redo the last undone action
   const redo = useCallback(() => {
@@ -112,6 +167,9 @@ export function useWireframeHistory(
       
       const next = future[0];
       const newFuture = future.slice(1);
+      
+      // Trigger autosave if enabled
+      handleAutoSave(next);
       
       toast({
         title: "Redo",
@@ -125,7 +183,7 @@ export function useWireframeHistory(
         future: newFuture,
       };
     });
-  }, [toast]);
+  }, [toast, handleAutoSave]);
   
   // Reset history with a new wireframe
   const resetHistory = useCallback((newWireframe: WireframeData | null) => {
@@ -134,7 +192,72 @@ export function useWireframeHistory(
       present: newWireframe,
       future: [],
     });
-  }, []);
+    
+    // Trigger autosave if enabled
+    if (newWireframe) {
+      handleAutoSave(newWireframe);
+    }
+    
+    toast({
+      title: "History Reset",
+      description: "Wireframe history has been reset",
+      duration: 1500,
+    });
+  }, [toast, handleAutoSave]);
+  
+  // Save current state explicitly
+  const saveWireframe = useCallback(async () => {
+    if (!onSave || !history.present) return false;
+    
+    try {
+      await onSave(history.present);
+      
+      toast({
+        title: "Saved",
+        description: "Wireframe saved successfully",
+        duration: 1500,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error saving wireframe:", error);
+      
+      toast({
+        title: "Save Failed",
+        description: "Could not save wireframe",
+        variant: "destructive",
+        duration: 3000,
+      });
+      
+      return false;
+    }
+  }, [history.present, onSave, toast]);
+  
+  // Add a snapshot to history without changing present state
+  const addSnapshot = useCallback((snapshotName: string) => {
+    if (!history.present) return;
+    
+    lastActionTimestampRef.current = Date.now();
+    
+    // We're simply adding the current state to history without changing it
+    setHistory((prevHistory) => {
+      const { past, present } = prevHistory;
+      
+      if (!present) return prevHistory;
+      
+      return {
+        past: [...past, present].slice(-maxHistorySize),
+        present,
+        future: [], // Clear redo history when a snapshot is added
+      };
+    });
+    
+    toast({
+      title: "Snapshot Added",
+      description: `"${snapshotName}" snapshot saved to history`,
+      duration: 1500,
+    });
+  }, [history.present, maxHistorySize, toast]);
   
   // Check if undo/redo are available
   const canUndo = history.past.length > 0;
@@ -148,6 +271,10 @@ export function useWireframeHistory(
     canUndo,
     canRedo,
     resetHistory,
+    saveWireframe,
+    addSnapshot,
     historySize: history.past.length + 1 + history.future.length,
+    pastStates: history.past.length,
+    futureStates: history.future.length,
   };
 }

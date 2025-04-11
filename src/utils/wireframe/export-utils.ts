@@ -131,6 +131,32 @@ export const exportWireframeAsHTML = (
     responsive = true
   } = options;
   
+  // Generate HTML content
+  const html = generateHtmlFromWireframe(wireframe, {
+    includeCSS,
+    includeJS,
+    responsive
+  });
+
+  // Download the HTML file
+  downloadFile(html, `${filename}.html`, 'text/html');
+};
+
+// Generate HTML from wireframe data (exportable for testing)
+export const generateHtmlFromWireframe = (
+  wireframe: WireframeData,
+  options: {
+    includeCSS?: boolean;
+    includeJS?: boolean;
+    responsive?: boolean;
+  } = {}
+): string => {
+  const { 
+    includeCSS = true, 
+    includeJS = true, 
+    responsive = true
+  } = options;
+  
   // Generate CSS variables from wireframe color scheme
   const colorVariables = wireframe.colorScheme ? `
     :root {
@@ -268,10 +294,11 @@ export const exportWireframeAsHTML = (
     return sectionHTML;
   };
   
-  // Generate complete HTML document
+  // Generate sections HTML
   const sectionsHTML = wireframe.sections.map(generateSectionHTML).join('\n');
   
-  const htmlContent = `<!DOCTYPE html>
+  // Create the full HTML document
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -293,7 +320,50 @@ export const exportWireframeAsHTML = (
   </script>` : ''}
 </body>
 </html>`;
+};
 
-  // Download the HTML file
-  downloadFile(htmlContent, `${filename}.html`, 'text/html');
+// Handle export errors (exportable for testing)
+export const handleExportError = (errorMessage: string): string => {
+  console.error('Export error:', errorMessage);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Export Error</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      color: #e11d48;
+      background-color: #fff1f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 1rem;
+    }
+    
+    .error-container {
+      max-width: 500px;
+      padding: 2rem;
+      background-color: white;
+      border: 1px solid #fecdd3;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    
+    h1 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <h1>Export Error</h1>
+    <p>${errorMessage}</p>
+  </div>
+</body>
+</html>`;
 };
