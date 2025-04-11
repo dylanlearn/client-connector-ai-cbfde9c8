@@ -103,7 +103,12 @@ export function useWireframeHistory(
       
       return newData;
     });
-  }, []);
+    
+    // If description is provided, automatically add to history
+    if (description) {
+      addToHistory(currentData, description);
+    }
+  }, [currentData, addToHistory]);
   
   // Update a specific section
   const updateSection = useCallback((sectionId: string, updates: Partial<WireframeSection>, description?: string) => {
@@ -118,16 +123,19 @@ export function useWireframeHistory(
       };
     });
     
-    // Optionally add to history immediately or defer to explicit save
-  }, []);
+    // If description is provided, automatically add to history
+    if (description) {
+      addToHistory(currentData, description);
+    }
+  }, [currentData, addToHistory]);
   
   // Save the current state to history with a description
   const saveToHistory = useCallback((description: string = 'Update') => {
     addToHistory(currentData, description);
   }, [addToHistory, currentData]);
   
-  // Undo to previous state
-  const undo = useCallback(() => {
+  // Undo to previous state - renamed to goBack for test compatibility
+  const goBack = useCallback(() => {
     if (historyIndex <= 0 || isProcessingHistoryAction.current) return;
     
     isProcessingHistoryAction.current = true;
@@ -147,8 +155,11 @@ export function useWireframeHistory(
     isProcessingHistoryAction.current = false;
   }, [history, historyIndex, toast]);
   
-  // Redo to next state
-  const redo = useCallback(() => {
+  // Alias for goBack for API compatibility
+  const undo = goBack;
+  
+  // Redo to next state - renamed to goForward for test compatibility
+  const goForward = useCallback(() => {
     if (historyIndex >= history.length - 1 || isProcessingHistoryAction.current) return;
     
     isProcessingHistoryAction.current = true;
@@ -167,6 +178,9 @@ export function useWireframeHistory(
     
     isProcessingHistoryAction.current = false;
   }, [history, historyIndex, toast]);
+  
+  // Alias for goForward for API compatibility
+  const redo = goForward;
   
   // Go to a specific history entry
   const goToHistoryEntry = useCallback((index: number) => {
@@ -187,6 +201,32 @@ export function useWireframeHistory(
     isProcessingHistoryAction.current = false;
   }, [history, toast]);
   
+  // Clear history - renamed from clearHistory for test compatibility
+  const clearHistory = useCallback(() => {
+    setHistory([{
+      wireframeData: currentData,
+      timestamp: Date.now(),
+      description: 'Reset history'
+    }]);
+    setHistoryIndex(0);
+  }, [currentData]);
+  
+  // Reset history with a new wireframe
+  const resetHistory = useCallback((newWireframe: WireframeData) => {
+    setCurrentData(newWireframe);
+    clearHistory();
+  }, [clearHistory]);
+  
+  // Add a snapshot without changing the current state
+  const addSnapshot = useCallback((snapshotName: string) => {
+    addToHistory(currentData, snapshotName);
+  }, [addToHistory, currentData]);
+  
+  // Calculate history size stats
+  const historySize = history.length;
+  const pastStates = historyIndex;
+  const futureStates = history.length - historyIndex - 1;
+  
   return {
     currentData,
     history,
@@ -198,6 +238,21 @@ export function useWireframeHistory(
     saveToHistory,
     undo,
     redo,
-    goToHistoryEntry
+    goToHistoryEntry,
+    // Compatibility with test cases
+    goBack,
+    goForward,
+    clearHistory,
+    // Additional features
+    resetHistory,
+    addSnapshot,
+    historySize,
+    pastStates,
+    futureStates,
+    // Also expose the current data as wireframe for use-wireframe-editor
+    wireframe: currentData
   };
 }
+
+// Export the hook as default
+export default useWireframeHistory;

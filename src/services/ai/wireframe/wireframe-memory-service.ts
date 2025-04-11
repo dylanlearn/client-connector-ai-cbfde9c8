@@ -35,7 +35,7 @@ export async function getWireframeFromMemory(wireframeId: string): Promise<any |
   return null;
 }
 
-const wireframeMemoryService = {
+export const wireframeMemoryService = {
   getCombinedAIMemory,
   saveWireframeToMemory,
   getWireframeFromMemory

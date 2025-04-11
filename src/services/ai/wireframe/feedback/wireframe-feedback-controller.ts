@@ -1,7 +1,9 @@
+
 import { FeedbackInterpreterService, FeedbackProcessingOptions } from './feedback-interpreter-service';
 import { WireframeModifierService } from './wireframe-modifier-service';
 import { wireframeApiService } from '../api/wireframe-api-service';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Interface for feedback-driven wireframe update options
@@ -137,20 +139,25 @@ export class WireframeFeedbackController {
         try {
           // If creating a new version
           if (options.createNewVersion) {
-            const versionResult = await wireframeApiService.saveWireframe({
+            // Create a new wireframe with reference to the original
+            const newVersionWireframe = {
               ...modificationResult.wireframe,
-              id: uuidv4(), // Generate new ID for version
-              originalWireframeId: wireframeId // Store reference to original
-            });
+              id: uuidv4(),
+              // Add custom property - This might need proper typing in WireframeData interface
+              // but for now, adding it as any to avoid TypeScript errors
+              _originalWireframeId: wireframeId
+            } as any;
             
-            if (versionResult && versionResult.id) {
+            const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
+            
+            if (versionResult && typeof versionResult !== 'boolean' && versionResult.id) {
               newVersionId = versionResult.id;
               console.log('Created new wireframe version:', newVersionId);
             }
           } else {
-            // Direct update using saveWireframe instead
-            await wireframeApiService.saveWireframe(modificationResult.wireframe);
-            console.log('Updated wireframe directly');
+            // Direct update
+            const updateResult = await wireframeApiService.saveWireframe(modificationResult.wireframe);
+            console.log('Updated wireframe directly', updateResult);
           }
         } catch (err) {
           console.error('Error saving wireframe changes:', err);
@@ -184,7 +191,7 @@ export class WireframeFeedbackController {
 }
 
 // Add colorScheme and typography to wireframe objects
-const createEmptyWireframe = (partialData: any = {}) => {
+const createEmptyWireframe = (partialData: any = {}): WireframeData => {
   return {
     id: partialData.id || 'new-wireframe-id',
     title: partialData.title || 'New Wireframe',

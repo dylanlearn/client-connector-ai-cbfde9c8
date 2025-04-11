@@ -16,14 +16,22 @@ export class WireframeFeedbackService {
       // Use saveWireframe with an updated feedback property
       const wireframe = await wireframeApiService.getWireframe(wireframeId);
       if (wireframe) {
-        return await wireframeApiService.saveWireframe({
-          ...wireframe,
-          feedback: {
-            ...(wireframe.feedback || {}),
-            ...feedback,
-            updatedAt: new Date().toISOString()
-          }
-        });
+        // Clone the wireframe to avoid modifying the original
+        const updatedWireframe = { ...wireframe };
+        
+        // Add the feedback as metadata instead of directly on the wireframe object
+        if (!updatedWireframe.metadata) {
+          updatedWireframe.metadata = {};
+        }
+        
+        // Store feedback in metadata
+        (updatedWireframe.metadata as any).feedback = {
+          ...((updatedWireframe.metadata as any)?.feedback || {}),
+          ...feedback,
+          updatedAt: new Date().toISOString()
+        };
+        
+        return await wireframeApiService.saveWireframe(updatedWireframe);
       }
       throw new Error(`Wireframe with ID ${wireframeId} not found`);
     } catch (error) {

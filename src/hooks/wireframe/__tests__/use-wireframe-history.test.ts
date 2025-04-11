@@ -1,3 +1,4 @@
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { vi } from 'vitest';
 import { useWireframeHistory } from "../use-wireframe-history";
@@ -41,7 +42,7 @@ describe('useWireframeHistory hook', () => {
     }
   });
 
-  // Use the mock wireframe data instead of a string
+  // Use the mock wireframe data
   const initialWireframe = createMockWireframe('initial');
   
   beforeEach(() => {
@@ -57,7 +58,7 @@ describe('useWireframeHistory hook', () => {
   it('should update wireframe data', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
 
-    // Use a proper wireframe update object instead of a string
+    // Use a proper wireframe update object
     const update = { title: 'Updated Title' };
     
     act(() => {

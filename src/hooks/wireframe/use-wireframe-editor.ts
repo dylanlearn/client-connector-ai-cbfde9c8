@@ -1,7 +1,8 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { WireframeData, WireframeSection } from "@/services/ai/wireframe/wireframe-types";
-import { wireframeMemoryService } from "@/services/ai/wireframe/wireframe-memory-service";
+import wireframeMemoryService from "@/services/ai/wireframe/wireframe-memory-service";
 import { useWireframeHistory } from "./use-wireframe-history";
 import { useWireframeSections } from "./use-wireframe-sections";
 import { v4 as uuidv4 } from 'uuid';
@@ -33,7 +34,7 @@ export const useWireframeEditor = (
     };
   });
 
-  // Replace getProject with direct wireframe loading
+  // Load wireframe data
   const loadWireframe = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -71,8 +72,8 @@ export const useWireframeEditor = (
     }
   }, [projectId, toast]);
 
-  // Replace saveProject with wireframe saving
-  const saveWireframe = useCallback(async () => {
+  // Save wireframe data
+  const saveWireframeData = useCallback(async () => {
     try {
       await wireframeMemoryService.saveWireframeToMemory(projectId, wireframe);
       
@@ -95,21 +96,10 @@ export const useWireframeEditor = (
     }
   }, [projectId, wireframe, toast]);
 
-  const {
-    wireframe: historyWireframe,
-    updateWireframe,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    resetHistory,
-    saveWireframe: saveHistoryWireframe,
-    addSnapshot,
-    historySize,
-    pastStates,
-    futureStates,
-  } = useWireframeHistory(wireframe);
-
+  // Use the wireframe history hook with our current wireframe
+  const historyManager = useWireframeHistory(wireframe);
+  
+  // Use the wireframe sections hook with the current wireframe from history
   const {
     sections,
     addSection,
@@ -117,31 +107,32 @@ export const useWireframeEditor = (
     removeSection,
     moveSectionUp,
     moveSectionDown,
-  } = useWireframeSections(wireframe, updateWireframe);
+  } = useWireframeSections(historyManager.currentData, historyManager.updateWireframe);
 
+  // Load wireframe on mount
   useEffect(() => {
     loadWireframe();
   }, [loadWireframe]);
 
   return {
     isLoading,
-    wireframe: historyWireframe,
+    wireframe: historyManager.currentData,
     sections,
     addSection,
     updateSection,
     removeSection,
     moveSectionUp,
     moveSectionDown,
-    updateWireframe,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-    resetHistory,
-    saveWireframe,
-    addSnapshot,
-    historySize,
-    pastStates,
-    futureStates,
+    updateWireframe: historyManager.updateWireframe,
+    undo: historyManager.undo,
+    redo: historyManager.redo,
+    canUndo: historyManager.canUndo,
+    canRedo: historyManager.canRedo,
+    resetHistory: () => historyManager.resetHistory(wireframe),
+    saveWireframe: saveWireframeData,
+    addSnapshot: historyManager.addSnapshot,
+    historySize: historyManager.historySize,
+    pastStates: historyManager.pastStates,
+    futureStates: historyManager.futureStates,
   };
 };

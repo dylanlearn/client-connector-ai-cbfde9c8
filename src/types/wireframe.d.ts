@@ -108,7 +108,7 @@ export interface WireframeData {
     fontPairings?: string[];
   };
   designTokens?: Record<string, any>;
-  mobileConsiderations?: string; // Add this field
+  mobileConsiderations?: string;
   accessibilityNotes?: string;
   style?: string | object;
   pages?: any[];
@@ -119,6 +119,8 @@ export interface WireframeData {
   designReasoning?: any;
   animations?: any;
   imageUrl?: string;
+  metadata?: Record<string, any>; // For storing additional data like feedback
+  _originalWireframeId?: string; // For version tracking
   [key: string]: any;
 }
 
