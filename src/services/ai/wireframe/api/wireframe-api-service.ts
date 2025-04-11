@@ -1,6 +1,6 @@
 
 import { WireframeGenerationParams, WireframeGenerationResult, WireframeData } from '../wireframe-types';
-import { generateWireframe, generateWireframeFromTemplate } from './wireframe-generator';
+import { generateWireframeFromPrompt, generateWireframeFromTemplate } from './wireframe-generator';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -11,7 +11,21 @@ const wireframeApiService = {
    * Generate a new wireframe
    */
   generate: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
-    return await generateWireframe(params);
+    try {
+      const wireframe = await generateWireframeFromPrompt(params);
+      return {
+        wireframe,
+        success: true,
+        message: 'Wireframe generated successfully'
+      };
+    } catch (error) {
+      console.error('Error generating wireframe:', error);
+      return {
+        wireframe: null,
+        success: false,
+        message: `Error generating wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   },
   
   /**
@@ -21,7 +35,21 @@ const wireframeApiService = {
     templateId: string, 
     params: WireframeGenerationParams
   ): Promise<WireframeGenerationResult> => {
-    return await generateWireframeFromTemplate(templateId, params);
+    try {
+      const wireframe = await generateWireframeFromTemplate(templateId, params);
+      return {
+        wireframe,
+        success: true,
+        message: 'Wireframe generated from template successfully'
+      };
+    } catch (error) {
+      console.error('Error generating wireframe from template:', error);
+      return {
+        wireframe: null,
+        success: false,
+        message: `Error generating wireframe from template: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
   },
   
   /**

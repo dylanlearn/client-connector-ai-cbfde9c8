@@ -1,111 +1,27 @@
 
-import { WireframeSection, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection } from "@/services/ai/wireframe/wireframe-types";
 
-// Define CopySuggestions type here since it's missing from wireframe-types
+/**
+ * Type definition for copy suggestions used in wireframe sections
+ */
 export interface CopySuggestions {
-  [key: string]: string;
+  heading?: string;
+  subheading?: string;
+  ctaText?: string;
+  primaryCta?: string;
+  secondaryCta?: string;
+  supportText?: string;
+  supportCta?: string;
+  [key: string]: string | undefined;
 }
 
-// Helper function to create a style object from a WireframeComponent or WireframeSection
-export const createStyleObject = (component: WireframeComponent | WireframeSection | Record<string, any>): React.CSSProperties => {
-  const styles: React.CSSProperties = {};
-  
-  // If the input is null or undefined, return empty styles
-  if (!component) return styles;
-
-  // Add base styles from the style property if it exists
-  if (component.style && typeof component.style === 'object') {
-    Object.assign(styles, component.style);
-  }
-  
-  // Add background color if available
-  if ('backgroundColor' in component && component.backgroundColor) {
-    styles.backgroundColor = component.backgroundColor;
-  }
-  
-  // Add dimension styles if available
-  if ('dimensions' in component && component.dimensions) {
-    if (component.dimensions.width !== undefined) {
-      styles.width = component.dimensions.width;
-    }
-    
-    if (component.dimensions.height !== undefined) {
-      styles.height = component.dimensions.height;
-    }
-  }
-  
-  // Add position styles if available
-  if ('position' in component && component.position) {
-    if (component.position.x !== undefined) {
-      styles.left = component.position.x;
-    }
-    
-    if (component.position.y !== undefined) {
-      styles.top = component.position.y;
-    }
-  }
-  
-  // Add shorthand properties if available
-  if ('x' in component && component.x !== undefined) {
-    styles.left = component.x;
-  }
-  
-  if ('y' in component && component.y !== undefined) {
-    styles.top = component.y;
-  }
-  
-  if ('width' in component && component.width !== undefined) {
-    styles.width = component.width;
-  }
-  
-  if ('height' in component && component.height !== undefined) {
-    styles.height = component.height;
-  }
-  
-  if ('padding' in component && component.padding !== undefined) {
-    styles.padding = component.padding;
-  }
-  
-  if ('gap' in component && component.gap !== undefined) {
-    styles.gap = component.gap;
-  }
-  
-  if ('zIndex' in component && component.zIndex !== undefined) {
-    styles.zIndex = component.zIndex;
-  }
-  
-  return styles;
-};
-
-// Helper to safely get copy suggestions
-export const getCopySuggestions = (section: WireframeSection): CopySuggestions => {
-  return section.copySuggestions || {};
-};
-
-// Export the getSuggestion function to handle both object and array formats
-export const getSuggestion = (
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined, 
-  key: string, 
+/**
+ * Safely converts a CopySuggestions object or array into a Record<string, string> 
+ * that can be safely used with components expecting string values
+ */
+export const normalizeCopySuggestions = (
+  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined,
   defaultValue: string = ''
-): string => {
-  if (!copySuggestions) return defaultValue;
-  
-  // Handle array of suggestions
-  if (Array.isArray(copySuggestions)) {
-    // Convert the first item if available
-    if (copySuggestions.length > 0) {
-      return copySuggestions[0][key] || defaultValue;
-    }
-    return defaultValue;
-  }
-  
-  // Handle object format
-  return String(copySuggestions[key] || defaultValue);
-};
-
-// Add the processCopySuggestions utility that's needed by some components
-export const processCopySuggestions = (
-  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined
 ): Record<string, string> => {
   if (!copySuggestions) return {};
   
@@ -122,7 +38,61 @@ export const processCopySuggestions = (
   return { ...copySuggestions };
 };
 
-// Helper to create color scheme
+/**
+ * Safely get a value from copySuggestions, handling both object and array formats
+ */
+export const getSuggestion = (
+  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined, 
+  key: string, 
+  defaultValue: string = ''
+): string => {
+  // First normalize the copySuggestions to a Record<string, string>
+  const normalizedSuggestions = normalizeCopySuggestions(copySuggestions);
+  
+  // Then retrieve the value or return the default
+  return String(normalizedSuggestions[key] || defaultValue);
+};
+
+/**
+ * Create a style object that handles text-align correctly for React CSS Properties
+ */
+export const createStyleObject = (styles: Record<string, any> = {}): React.CSSProperties => {
+  const result: Record<string, any> = { ...styles };
+  
+  // Handle textAlign specifically - cast it to a valid CSS text-align value
+  if (styles?.textAlign) {
+    switch (styles.textAlign) {
+      case 'left':
+      case 'center':
+      case 'right':
+      case 'justify':
+        result.textAlign = styles.textAlign as 'left' | 'center' | 'right' | 'justify';
+        break;
+      default:
+        // Use a safe default if the value isn't recognized
+        result.textAlign = 'left';
+    }
+  }
+  
+  return result as React.CSSProperties;
+};
+
+/**
+ * Helper to safely convert string or number dimensions to numeric values for calculations
+ */
+export const parseDimension = (value: string | number | undefined, defaultValue: number = 0): number => {
+  if (value === undefined) return defaultValue;
+  
+  if (typeof value === 'number') return value;
+  
+  // Try to parse the string as a number
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
+/**
+ * Create a color scheme object from a wireframe
+ */
 export const createColorScheme = (wireframe: any): Record<string, string> => {
   const colorScheme = wireframe?.colorScheme || {
     primary: '#3182ce',
@@ -135,76 +105,43 @@ export const createColorScheme = (wireframe: any): Record<string, string> => {
   return colorScheme;
 };
 
-// Helper to format class names
-export const formatClassNames = (...classes: (string | undefined | null | false)[]): string => {
+/**
+ * Determine if a section is empty (has no content or components)
+ */
+export const isSectionEmpty = (section: WireframeSection | undefined): boolean => {
+  if (!section) return true;
+  if (!section.components || section.components.length === 0) return true;
+  
+  // Check if the components have any content
+  const hasContent = section.components.some(component => {
+    return component.content || component.src || component.children?.length > 0;
+  });
+  
+  return !hasContent;
+};
+
+/**
+ * Get appropriate CSS classes for a section or component
+ */
+export const getClassNames = (element: any, baseClass: string = ''): string => {
+  const classes = [baseClass];
+  
+  if (element?.className) {
+    classes.push(element.className);
+  }
+  
+  // Add responsive classes if any
+  if (element?.responsive?.mobile?.className) {
+    classes.push(`sm:${element.responsive.mobile.className}`);
+  }
+  
+  if (element?.responsive?.tablet?.className) {
+    classes.push(`md:${element.responsive.tablet.className}`);
+  }
+  
+  if (element?.responsive?.desktop?.className) {
+    classes.push(`lg:${element.responsive.desktop.className}`);
+  }
+  
   return classes.filter(Boolean).join(' ');
-};
-
-// Helper to check if a layout is a grid
-export const isGridLayout = (section: WireframeSection): boolean => {
-  if (!section.layout) return false;
-  
-  if (typeof section.layout === 'string') {
-    return section.layout.includes('grid');
-  }
-  
-  return section.layout.type === 'grid';
-};
-
-// Helper to check if a layout is a flex layout
-export const isFlexLayout = (section: WireframeSection): boolean => {
-  if (!section.layout) return false;
-  
-  if (typeof section.layout === 'string') {
-    return section.layout.includes('flex');
-  }
-  
-  return section.layout.type === 'flex';
-};
-
-// Helper to get layout properties
-export const getLayoutProperties = (section: WireframeSection): Record<string, any> => {
-  if (!section.layout) return {};
-  
-  if (typeof section.layout === 'string') {
-    return { type: section.layout };
-  }
-  
-  return section.layout;
-};
-
-// Get a safe color value with fallback
-export const getColor = (
-  colorScheme: Record<string, string> | undefined, 
-  colorKey: string, 
-  fallback: string = '#000000'
-): string => {
-  if (!colorScheme) return fallback;
-  return colorScheme[colorKey] || fallback;
-};
-
-// Normalize section data for rendering
-export const normalizeSectionData = (section: WireframeSection): Record<string, any> => {
-  return section.data || {};
-};
-
-// Helper to create an ID safe for CSS
-export const createSafeId = (id: string): string => {
-  return `wf-${id.replace(/[^a-zA-Z0-9]/g, '-')}`;
-};
-
-// Export all utilities as a default export as well
-export default {
-  createStyleObject,
-  getCopySuggestions,
-  getSuggestion,
-  processCopySuggestions,
-  createColorScheme,
-  formatClassNames,
-  isGridLayout,
-  isFlexLayout,
-  getLayoutProperties,
-  getColor,
-  normalizeSectionData,
-  createSafeId
 };

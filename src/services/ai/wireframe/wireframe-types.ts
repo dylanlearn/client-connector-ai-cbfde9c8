@@ -169,8 +169,9 @@ export interface WireframeGenerationParams {
 
 // Result of wireframe generation
 export interface WireframeGenerationResult {
-  wireframe: WireframeData;
+  wireframe: WireframeData | null;
   success: boolean;
+  message?: string;
   generationTime?: number;
   model?: string;
   imageUrl?: string;

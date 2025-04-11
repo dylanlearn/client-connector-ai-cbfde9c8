@@ -130,3 +130,76 @@ export async function generateWireframeVariation(
     return createEmptyWireframe();
   }
 }
+
+/**
+ * Generate a wireframe from a template
+ * @param templateId Template identifier
+ * @param params Generation parameters
+ */
+export async function generateWireframeFromTemplate(
+  templateId: string, 
+  params: WireframeGenerationParams
+): Promise<WireframeData> {
+  try {
+    console.log(`Generating wireframe from template ${templateId}:`, params);
+    
+    // This would use a predefined template in a real implementation
+    // For now, we'll create a placeholder based on the template ID
+    
+    // Simulate a delay for the generation
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Create a wireframe with sections based on the template
+    const wireframe: WireframeData = {
+      id: uuidv4(),
+      title: `Template ${templateId} Wireframe`,
+      description: params.description || `Generated wireframe from template ${templateId}`,
+      sections: [
+        {
+          id: uuidv4(),
+          name: 'Template Navigation',
+          sectionType: 'navigation',
+          description: 'Template-based navigation',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Template Hero',
+          sectionType: 'hero',
+          description: 'Template-based hero section',
+          components: []
+        }
+      ],
+      colorScheme: {
+        primary: '#3b82f6',
+        secondary: '#10b981',
+        accent: '#f59e0b',
+        background: '#ffffff',
+        text: '#000000'
+      },
+      typography: {
+        headings: 'Inter',
+        body: 'Inter'
+      }
+    };
+    
+    return wireframe;
+  } catch (error) {
+    console.error(`Error generating wireframe from template ${templateId}:`, error);
+    return createEmptyWireframe();
+  }
+}
+
+// Named exports
+export const wireframeGenerator = {
+  generateWireframeFromPrompt,
+  generateWireframeVariation,
+  generateWireframeFromTemplate
+};
+
+// Default export
+export default {
+  generateWireframeFromPrompt,
+  generateWireframeVariation,
+  generateWireframeFromTemplate
+};
