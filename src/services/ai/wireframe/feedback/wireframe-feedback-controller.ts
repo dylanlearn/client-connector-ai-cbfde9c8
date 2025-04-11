@@ -139,9 +139,13 @@ export class WireframeFeedbackController {
           const saveResult = await wireframeApiService.saveWireframe(newVersionWireframe);
           
           // Handle the result safely with explicit null check
-          if (saveResult !== null && saveResult !== undefined && typeof saveResult === 'object' && 'id' in saveResult) {
-            newVersionId = saveResult.id;
-            console.log('Created new wireframe version:', newVersionId);
+          if (saveResult !== null && saveResult !== undefined && typeof saveResult === 'object') {
+            // Type assertion after thorough check to make TypeScript happy
+            const typedResult = saveResult as { id: string };
+            if ('id' in typedResult) {
+              newVersionId = typedResult.id;
+              console.log('Created new wireframe version:', newVersionId);
+            }
           }
         }
       }
