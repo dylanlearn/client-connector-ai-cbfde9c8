@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "./cors.ts";
-import { callOpenAI, getTokenUsage } from "./openai-client.ts";
+import { callOpenAI, getTokenUsage, resetTokenUsage } from "./openai-client.ts";
 import { extractIntent } from "./intent-extractor.ts";
 import { generateBlueprint, enhanceBlueprint } from "./blueprint-generator.ts";
 import { selectComponentVariants } from "./component-selector.ts";
@@ -15,6 +15,9 @@ async function generateWireframe(
 ): Promise<WireframeGenerationResponse> {
   const startTime = performance.now();
   console.log("Starting wireframe generation...");
+  
+  // Reset token usage tracking for this request
+  resetTokenUsage();
   
   try {
     console.log("Received generation request:", request.userInput?.substring(0, 100));
@@ -73,7 +76,7 @@ async function generateWireframe(
     }
     
     // Add a unique ID if one doesn't exist
-    blueprint.id = blueprint.id || uuid();
+    blueprint.id = blueprint.id || crypto.randomUUID();
     
     // Calculate metrics
     const endTime = performance.now();
@@ -87,7 +90,7 @@ async function generateWireframe(
     return {
       success: true,
       wireframe: blueprint,
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       intentData,
       blueprint,
       usage: tokenUsage,
@@ -140,23 +143,25 @@ Return an array of suggestions in JSON format.
     const response = await callOpenAI(prompt, {
       systemMessage: "You are an expert UI/UX designer who specializes in providing actionable wireframe improvement suggestions.",
       temperature: 0.7,
-      model: "gpt-4o-mini"
+      model: "gpt-4o-mini",
+      responseFormat: { type: "json_object" }
     });
     
-    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                      response.match(/\[\s*\{[\s\S]*\}\s*\]/);
-                      
-    if (!jsonMatch || !jsonMatch[0]) {
-      console.error("Failed to extract JSON from OpenAI response for suggestions");
-      throw new Error("Failed to parse AI suggestions");
-    }
-
     let suggestions;
     try {
-      suggestions = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      suggestions = JSON.parse(response);
     } catch (parseError) {
       console.error("Error parsing suggestions JSON:", parseError);
-      throw new Error("Failed to parse suggestion data");
+      
+      // Try to extract JSON if it's wrapped in markdown code blocks or text
+      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                         response.match(/(\{[\s\S]*\})/);
+                         
+      if (jsonMatch) {
+        suggestions = JSON.parse(jsonMatch[1].trim());
+      } else {
+        throw new Error("Failed to parse AI suggestions");
+      }
     }
     
     // Get token usage data

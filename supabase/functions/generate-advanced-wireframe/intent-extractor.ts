@@ -1,114 +1,79 @@
 
 import { callOpenAI } from "./openai-client.ts";
 
-// Define the DesignIntent interface
-export interface DesignIntent {
-  purpose: string;
-  targetAudience: string[];
-  keyFeatures: string[];
-  contentPriorities: string[];
-  visualTone: string;
-  brandPersonality?: string[];
-  industryCategory?: string;
-  interactionPatterns?: string[];
-  inspirationalReferences?: string[];
-  colorPreferences?: string[];
-  functionalRequirements?: string[];
-}
-
-// Default design intent template
-const defaultIntent: DesignIntent = {
-  purpose: "General website",
-  targetAudience: ["General users"],
-  keyFeatures: ["Information display"],
-  contentPriorities: ["Clarity", "Readability"],
-  visualTone: "modern",
-  brandPersonality: ["Professional"],
-  industryCategory: "General",
-  interactionPatterns: ["Standard navigation"],
-  inspirationalReferences: [],
-  colorPreferences: [],
-  functionalRequirements: []
-};
-
 /**
- * Extract design intent from the user's input
+ * Extract design intent from user input for wireframe generation
  */
-export async function extractIntent(
-  userInput: string,
-  styleHint?: string
-): Promise<DesignIntent> {
-  console.log("Extracting design intent from input");
+export async function extractIntent(userInput: string, styleToken?: string): Promise<any> {
+  const systemPrompt = `You are an expert UX/UI designer who analyzes user requirements and extracts clear design intent. 
+  Extract the following information from the user's wireframe request:
+  1. Page Purpose: What is this page for?
+  2. Target Audience: Who will use this page?
+  3. Key Sections: What are the main content sections needed?
+  4. Visual Tone: What visual style is appropriate?
+  5. Color Preferences: Any color preferences mentioned?
+  6. Functionality: What interactive elements are needed?
   
+  Format your response as a valid JSON object with these keys.`;
+
+  const userPrompt = `Analyze this wireframe request and extract the design intent:
+  "${userInput}"
+  ${styleToken ? `Style preference: ${styleToken}` : ''}
+  `;
+
   try {
-    const prompt = `
-Analyze this wireframe request and extract the design intent:
-
-"${userInput}"
-
-${styleHint ? `The user has indicated a style preference of: "${styleHint}"` : ''}
-
-Extract the following information:
-1. Purpose: What is the main purpose of this website/app?
-2. Target audience: Who will use this wireframe?
-3. Key features: What are the main features or sections needed?
-4. Content priorities: What content should be emphasized?
-5. Visual tone: What visual style is appropriate (modern, minimal, playful, etc.)?
-6. Brand personality: What traits should the design convey?
-7. Industry category: What industry is this for?
-8. Interaction patterns: What user interactions are important?
-9. Inspirational references: Any references mentioned?
-10. Color preferences: Any color preferences mentioned?
-11. Functional requirements: Any specific functional needs?
-
-Return ONLY a valid JSON object with these properties. Do not include ANY explanatory text or notes.
-`;
-
-    const response = await callOpenAI(prompt, {
-      systemMessage: "You are an expert UX researcher specializing in analyzing design requirements and extracting intent.",
-      temperature: 0.4,
+    const response = await callOpenAI(userPrompt, {
+      systemMessage: systemPrompt,
+      temperature: 0.3,
       model: "gpt-4o-mini",
       responseFormat: { type: "json_object" }
     });
-    
-    // Parse the response 
-    let extractedIntent: DesignIntent;
+
+    // Parse the response into a JSON object
+    let intentData;
     try {
-      extractedIntent = JSON.parse(response);
-    } catch (parseError) {
-      // Try to extract JSON if direct parsing fails
+      intentData = JSON.parse(response);
+    } catch (error) {
+      console.error("Failed to parse intent data JSON:", error);
+      // Try to extract JSON if it's wrapped in markdown code blocks or text
       const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                      response.match(/\{[\s\S]*\}/);
-                      
-      if (!jsonMatch || !jsonMatch[0]) {
-        console.error("Failed to extract JSON from OpenAI response");
-        throw new Error("Failed to parse intent extraction response");
-      }
+                         response.match(/(\{[\s\S]*\})/);
       
-      try {
-        extractedIntent = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
-      } catch (innerParseError) {
-        console.error("Error parsing intent JSON:", innerParseError);
-        throw new Error("Failed to parse intent data");
+      if (jsonMatch) {
+        intentData = JSON.parse(jsonMatch[1].trim());
+      } else {
+        // Provide a basic fallback
+        intentData = {
+          pagePurpose: "Website page based on user request",
+          targetAudience: "Website visitors",
+          keySections: ["Main content section"],
+          visualTone: styleToken || "professional",
+          colorPreferences: [],
+          functionality: []
+        };
       }
     }
+
+    // Add a timestamp
+    intentData.extractedAt = new Date().toISOString();
     
-    console.log("Intent extraction successful");
-    
-    // Merge with defaults to ensure all properties exist
-    return {
-      ...defaultIntent,
-      ...extractedIntent,
-      // If style hint is provided and no visual tone was extracted, use the hint
-      visualTone: extractedIntent.visualTone || styleHint || defaultIntent.visualTone
-    };
+    // Add the original style token if provided
+    if (styleToken) {
+      intentData.styleToken = styleToken;
+    }
+
+    return intentData;
   } catch (error) {
     console.error("Error extracting intent:", error);
-    
-    // Return default intent with style hint if available
+    // Return a basic fallback
     return {
-      ...defaultIntent,
-      visualTone: styleHint || defaultIntent.visualTone
+      pagePurpose: "Website page based on user request",
+      targetAudience: "Website visitors",
+      keySections: ["Main content section"],
+      visualTone: styleToken || "professional",
+      colorPreferences: [],
+      functionality: [],
+      error: error.message
     };
   }
 }

@@ -1,132 +1,162 @@
-
 import { callOpenAI } from "./openai-client.ts";
-import { DesignIntent } from "./intent-extractor.ts";
 
 /**
- * Generate a wireframe blueprint from the user input and extracted intent
+ * Generate a wireframe blueprint from user input and design intent
  */
-export async function generateBlueprint(
-  userInput: string, 
-  intentData: DesignIntent, 
-  styleToken?: string
-) {
-  console.log("Generating wireframe blueprint...");
-  
-  const prompt = `
-Generate a detailed wireframe blueprint based on the following design intent:
+export async function generateBlueprint(userInput: string, intentData: any, styleToken?: string): Promise<any> {
+  const systemPrompt = `You are a professional UX/UI designer with expertise in creating wireframes.
+Based on the provided user description and design intent, generate a complete wireframe blueprint.
+Your response should ONLY be a valid JSON object with the following structure:
+{
+  "id": "unique-id",
+  "title": "Title derived from user input",
+  "description": "Description based on user input",
+  "sections": [
+    {
+      "id": "section-id",
+      "name": "Section Name",
+      "sectionType": "hero | features | testimonials | pricing | contact | footer | etc",
+      "components": [...],
+      "layoutType": "grid | flex | standard",
+      "description": "Description of this section's purpose"
+    }
+  ],
+  "colorScheme": {
+    "primary": "#hexcolor",
+    "secondary": "#hexcolor",
+    "accent": "#hexcolor",
+    "background": "#hexcolor",
+    "text": "#hexcolor"
+  },
+  "typography": {
+    "headings": "font-family",
+    "body": "font-family"
+  },
+  "designTokens": {},
+  "styleToken": "${styleToken || 'standard'}",
+  "designReasoning": "Explanation of key design decisions"
+}`;
 
-${JSON.stringify(intentData, null, 2)}
+  const userPrompt = `Design intent: ${JSON.stringify(intentData)}
+User input: ${userInput}
+${styleToken ? `Style: ${styleToken}` : ''}
 
-Original user request: "${userInput}"
-
-The wireframe blueprint should include:
-1. A structured layout with clear sections (hero, features, testimonials, etc.)
-2. Appropriate content structure for each section
-3. Responsive design considerations
-4. Proper hierarchy of information
-5. Navigation and user flow elements
-
-Return a complete wireframe JSON structure with the following:
-- id: UUID for the wireframe
-- title: Clear title based on intent
-- description: Brief description
-- sections: Array of sections, each with:
-  * id: Unique identifier
-  * name: Descriptive name
-  * sectionType: Type of section (hero, features, etc.)
-  * order: Display order
-  * data: Content and configuration for the section
-  * style: Visual styling properties
-
-Each section should have appropriate subsections, content placeholders, and styling.
-${styleToken ? `Apply the "${styleToken}" visual style throughout the wireframe.` : ''}
-
-Return only valid JSON without any explanations or comments.
-`;
+Generate a complete wireframe blueprint that fulfills this request. The wireframe should have 3-7 well-structured sections.`;
 
   try {
-    const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI/UX designer specializing in wireframe creation. You create detailed, structured wireframes based on design requirements.',
+    const response = await callOpenAI(userPrompt, { 
+      systemMessage: systemPrompt,
       temperature: 0.7,
-      model: "gpt-4o-mini"
+      model: "gpt-4o-mini",
+      responseFormat: { type: "json_object" }
     });
     
-    // Extract the JSON object from the response
-    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                      response.match(/\{[\s\S]*\}/);
-                      
-    if (!jsonMatch || !jsonMatch[0]) {
-      throw new Error("Failed to extract blueprint data from AI response");
-    }
-
+    // Parse the response into a JSON object
+    let blueprint;
     try {
-      const blueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
-      console.log("Blueprint generation successful");
-      return blueprint;
-    } catch (parseError) {
-      console.error("Error parsing blueprint JSON:", parseError);
-      throw new Error("Failed to parse blueprint data");
+      blueprint = JSON.parse(response);
+    } catch (error) {
+      console.error("Failed to parse blueprint JSON:", error);
+      // Try to extract JSON if it's wrapped in markdown code blocks or text
+      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                         response.match(/(\{[\s\S]*\})/);
+      
+      if (jsonMatch) {
+        blueprint = JSON.parse(jsonMatch[1].trim());
+      } else {
+        throw new Error("Could not extract valid JSON from the response");
+      }
     }
     
+    // Ensure the blueprint has a unique ID
+    if (!blueprint.id) {
+      blueprint.id = crypto.randomUUID();
+    }
+    
+    return blueprint;
   } catch (error) {
     console.error("Error generating blueprint:", error);
-    throw error;
+    // Return a minimal valid blueprint as fallback
+    return {
+      id: crypto.randomUUID(),
+      title: "Wireframe from " + userInput.substring(0, 30),
+      description: userInput,
+      sections: [
+        {
+          id: crypto.randomUUID(),
+          name: "Main Section",
+          sectionType: "content",
+          components: [],
+          layoutType: "standard",
+          description: "Generated as fallback due to error"
+        }
+      ],
+      colorScheme: {
+        primary: "#3b82f6",
+        secondary: "#10b981",
+        accent: "#f59e0b",
+        background: "#ffffff",
+        text: "#111827"
+      },
+      typography: {
+        headings: "sans-serif",
+        body: "sans-serif"
+      },
+      designTokens: {},
+      styleToken: styleToken || "standard",
+      designReasoning: "Fallback design created due to generation error"
+    };
   }
 }
 
 /**
  * Enhance an existing blueprint with additional details or variations
  */
-export async function enhanceBlueprint(
-  blueprint: any, 
-  enhancementInstructions: string
-) {
-  console.log("Enhancing wireframe blueprint...");
+export async function enhanceBlueprint(blueprint: any, enhancementDirections: string): Promise<any> {
+  const systemPrompt = `You are a professional UX/UI designer. 
+Enhance the provided wireframe blueprint according to the enhancement directions.
+Maintain the original structure but improve or modify it according to the directions.
+Return ONLY a valid JSON object with the enhanced blueprint.`;
+
+  const userPrompt = `Original blueprint: ${JSON.stringify(blueprint)}
   
-  const prompt = `
-Enhance and improve this existing wireframe blueprint according to these instructions:
+Enhancement directions: ${enhancementDirections}
 
-${enhancementInstructions}
-
-Current blueprint:
-${JSON.stringify(blueprint, null, 2)}
-
-Make these specific improvements:
-1. Enhance the visual design elements
-2. Improve content structure and flow
-3. Add more detailed component specifications
-4. Ensure responsive design considerations are included
-5. Add any missing sections that would improve the user experience
-
-Return the enhanced blueprint as valid JSON without any explanations or comments.
-`;
+Return the enhanced blueprint as a complete, valid JSON object.`;
 
   try {
-    const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI/UX designer specializing in wireframe enhancement. You improve existing wireframes while maintaining their core structure and intent.',
+    const response = await callOpenAI(userPrompt, {
+      systemMessage: systemPrompt,
       temperature: 0.7,
-      model: "gpt-4o-mini"
+      model: "gpt-4o-mini", 
+      responseFormat: { type: "json_object" }
     });
     
-    // Extract the JSON object from the response
-    const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                      response.match(/\{[\s\S]*\}/);
-                      
-    if (!jsonMatch || !jsonMatch[0]) {
-      throw new Error("Failed to extract enhanced blueprint data from AI response");
-    }
-
+    // Parse the response into a JSON object
+    let enhancedBlueprint;
     try {
-      const enhancedBlueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
-      console.log("Blueprint enhancement successful");
-      return enhancedBlueprint;
-    } catch (parseError) {
-      console.error("Error parsing enhanced blueprint JSON:", parseError);
-      throw new Error("Failed to parse enhanced blueprint data");
+      enhancedBlueprint = JSON.parse(response);
+    } catch (error) {
+      console.error("Failed to parse enhanced blueprint JSON:", error);
+      // Try to extract JSON if it's wrapped in markdown code blocks or text
+      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                         response.match(/(\{[\s\S]*\})/);
+      
+      if (jsonMatch) {
+        enhancedBlueprint = JSON.parse(jsonMatch[1].trim());
+      } else {
+        // Fall back to the original blueprint
+        return blueprint;
+      }
     }
     
+    // Ensure we keep the same ID
+    enhancedBlueprint.id = blueprint.id;
+    
+    return enhancedBlueprint;
   } catch (error) {
     console.error("Error enhancing blueprint:", error);
-    throw error;
+    // Return the original blueprint as fallback
+    return blueprint;
   }
 }

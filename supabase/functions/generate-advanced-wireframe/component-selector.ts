@@ -1,147 +1,98 @@
+
 import { callOpenAI } from "./openai-client.ts";
 
 /**
- * Select appropriate component variants for the wireframe based on its purpose and style
+ * Select appropriate component variants for each section in the wireframe
  */
 export async function selectComponentVariants(blueprint: any): Promise<any> {
-  console.log("Selecting component variants...");
-  
-  // If no sections, return blueprint as is
   if (!blueprint || !blueprint.sections || blueprint.sections.length === 0) {
-    console.log("No sections found in blueprint for component selection");
     return blueprint;
   }
   
-  // Define component variants for common section types
-  const componentVariantLibrary = {
-    hero: ["centered", "split", "background-image", "video-background", "animated", "minimal"],
-    features: ["grid", "cards", "icons", "tabs", "accordion", "carousel"],
-    testimonials: ["quotes", "cards", "slider", "grid", "video"],
-    pricing: ["columns", "toggle", "cards", "table", "tiered"],
-    cta: ["centered", "split", "banner", "popup", "floating"],
-    footer: ["simple", "multi-column", "social-focused", "newsletter", "map"],
-    nav: ["horizontal", "vertical", "hamburger", "mega-menu", "transparent"],
-    gallery: ["grid", "masonry", "carousel", "lightbox", "filterable"],
-    contact: ["inline", "split", "map", "multi-step", "floating"],
-    team: ["grid", "cards", "list", "carousel", "directory"],
-    faq: ["accordion", "tabs", "grouped", "search", "categories"],
+  // Prepare a deep copy to avoid modifying the original blueprint
+  const enhancedBlueprint = JSON.parse(JSON.stringify(blueprint));
+  
+  // Process each section to add appropriate component variants
+  for (let i = 0; i < enhancedBlueprint.sections.length; i++) {
+    const section = enhancedBlueprint.sections[i];
+    
+    // Only process sections that don't already have a componentVariant
+    if (!section.componentVariant) {
+      section.componentVariant = selectVariantForSectionType(section.sectionType);
+    }
+    
+    // Add copySuggestions if not present
+    if (!section.copySuggestions) {
+      section.copySuggestions = generateCopySuggestions(section);
+    }
+  }
+  
+  return enhancedBlueprint;
+}
+
+/**
+ * Select an appropriate component variant based on section type
+ */
+function selectVariantForSectionType(sectionType: string): string {
+  const variantMappings: Record<string, string[]> = {
+    'hero': ['centered', 'split', 'fullscreen', 'minimal', 'animated'],
+    'features': ['grid', 'cards', 'list', 'alternating', 'tabbed'],
+    'testimonials': ['carousel', 'grid', 'masonry', 'quotes', 'cards'],
+    'pricing': ['comparative', 'cards', 'tiered', 'simple', 'toggle'],
+    'contact': ['simple', 'split', 'map', 'fullWidth', 'boxed'],
+    'footer': ['simple', 'multiColumn', 'minimal', 'centered', 'social'],
+    'navigation': ['horizontal', 'sticky', 'hamburger', 'sidebar', 'transparent'],
+    'cta': ['centered', 'banner', 'split', 'floating', 'fullWidth'],
+    'gallery': ['grid', 'masonry', 'carousel', 'fullscreen', 'lightbox'],
+    'about': ['team', 'story', 'timeline', 'values', 'mission'],
+    'faq': ['accordion', 'tabs', 'grid', 'simple', 'searchable']
   };
   
-  try {
-    // If the blueprint already has appropriate component variants defined, just validate and return
-    let allSectionsHaveVariants = true;
-    const sectionsWithMissingVariants = [];
-    
-    for (const section of blueprint.sections) {
-      const sectionType = section.sectionType?.toLowerCase() || "";
-      if (!section.componentVariant) {
-        allSectionsHaveVariants = false;
-        sectionsWithMissingVariants.push(section);
-      }
-    }
-    
-    // If all sections have variants, return as is
-    if (allSectionsHaveVariants) {
-      return blueprint;
-    }
-    
-    // For sections missing variants, automatically assign the most appropriate one
-    for (const section of sectionsWithMissingVariants) {
-      const sectionType = section.sectionType?.toLowerCase() || "";
-      
-      // Extract base type (e.g., "hero-centered" -> "hero")
-      const baseType = Object.keys(componentVariantLibrary).find(type => 
-        sectionType === type || sectionType.startsWith(`${type}-`)
-      );
-      
-      if (baseType && componentVariantLibrary[baseType]) {
-        // If section type already includes variant (e.g., "hero-centered"), extract it
-        const variantMatch = sectionType.match(new RegExp(`${baseType}-(.+)`));
-        if (variantMatch && variantMatch[1]) {
-          section.componentVariant = variantMatch[1];
-        } else {
-          // Otherwise assign the first/default variant
-          section.componentVariant = componentVariantLibrary[baseType][0];
-        }
-      }
-    }
-    
-    // For more complex or ambiguous cases, use AI to suggest variants
-    const prompt = `
-Analyze this wireframe blueprint and select the most appropriate component variant for each section:
+  // Get available variants for this section type or use a default set
+  const variants = variantMappings[sectionType] || ['standard', 'minimal', 'detailed', 'custom'];
+  
+  // Select a random variant from the available options
+  const randomIndex = Math.floor(Math.random() * variants.length);
+  return variants[randomIndex];
+}
 
-${JSON.stringify(blueprint, null, 2)}
-
-For each section in the wireframe:
-1. Identify the section type (e.g., hero, features, testimonials)
-2. Select the most appropriate component variant based on:
-   - The purpose of the website/page
-   - Target audience
-   - Visual style/tone
-   - Content needs
-3. Update the section's "componentVariant" property with the selected variant
-
-Available component variants:
-${JSON.stringify(componentVariantLibrary, null, 2)}
-
-Return the updated blueprint with component variants selected for all sections.
-Return only valid JSON without any explanations or comments.
-`;
-
-    const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI component specialist who selects the most appropriate component variants for wireframes.',
-      temperature: 0.4,
-      model: "gpt-4o-mini",
-      responseFormat: { type: "json_object" }
-    });
-    
-    // Extract the JSON object from the response
-    let updatedBlueprint;
-    try {
-      updatedBlueprint = JSON.parse(response);
-    } catch (parseError) {
-      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                      response.match(/\{[\s\S]*\}/);
-                      
-      if (!jsonMatch || !jsonMatch[0]) {
-        console.error("Failed to extract component variants from AI response");
-        return blueprint; // Return original blueprint if we couldn't parse the response
-      }
-
-      try {
-        updatedBlueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
-      } catch (innerParseError) {
-        console.error("Error parsing component variants JSON:", innerParseError);
-        return blueprint; // Return original blueprint if we couldn't parse the response
-      }
-    }
-    
-    console.log("Component variant selection successful");
-    return updatedBlueprint;
-    
-  } catch (error) {
-    console.error("Error selecting component variants:", error);
-    
-    // If AI selection fails, manually assign default variants
-    for (const section of blueprint.sections) {
-      const sectionType = section.sectionType?.toLowerCase() || "";
-      
-      // Extract base type (e.g., "hero-centered" -> "hero")
-      for (const baseType of Object.keys(componentVariantLibrary)) {
-        if (sectionType === baseType || sectionType.startsWith(`${baseType}-`)) {
-          if (!section.componentVariant) {
-            section.componentVariant = componentVariantLibrary[baseType][0];
-          }
-          break;
-        }
-      }
-      
-      // If no match found, assign a generic variant
-      if (!section.componentVariant) {
-        section.componentVariant = "standard";
-      }
-    }
-    
-    return blueprint; // Return blueprint with fallback variants
+/**
+ * Generate copy suggestions based on the section type and purpose
+ */
+function generateCopySuggestions(section: any): Record<string, string> {
+  const suggestions: Record<string, string> = {};
+  
+  // Add default heading based on section name
+  suggestions.heading = section.name;
+  
+  switch (section.sectionType) {
+    case 'hero':
+      suggestions.subheading = "Discover what makes us different";
+      suggestions.ctaText = "Get Started";
+      break;
+    case 'features':
+      suggestions.subheading = "Our key features and benefits";
+      break;
+    case 'testimonials':
+      suggestions.heading = "What Our Clients Say";
+      suggestions.subheading = "Trusted by businesses worldwide";
+      break;
+    case 'pricing':
+      suggestions.heading = "Simple, Transparent Pricing";
+      suggestions.subheading = "No hidden fees. Choose the plan that works for you.";
+      break;
+    case 'contact':
+      suggestions.heading = "Get In Touch";
+      suggestions.subheading = "We'd love to hear from you";
+      break;
+    case 'cta':
+      suggestions.heading = "Ready to Get Started?";
+      suggestions.ctaText = "Join Now";
+      break;
+    default:
+      suggestions.subheading = "Learn more about " + (section.name || section.sectionType);
+      break;
   }
+  
+  return suggestions;
 }
