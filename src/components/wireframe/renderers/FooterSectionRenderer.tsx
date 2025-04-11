@@ -1,154 +1,215 @@
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { cn } from '@/lib/utils';
 
 const FooterSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
-  viewMode = 'preview',
-  darkMode = false,
-  deviceType = 'desktop',
-  isSelected = false,
-  onClick
+  darkMode,
+  viewMode,
+  deviceType,
+  isSelected,
+  onClick,
 }) => {
-  const handleClick = () => {
-    if (onClick && section.id) {
+  // Extract footer data with fallbacks
+  const columns = section.data?.columns || [];
+  const logoText = section.data?.logoText || 'Company';
+  const logoUrl = section.data?.logoUrl;
+  const tagline = section.data?.tagline || 'Building better experiences';
+  const copyright = section.data?.copyright || `© ${new Date().getFullYear()} ${logoText}. All rights reserved.`;
+  const socialLinks = section.data?.socialLinks || [];
+  
+  // Get section styling with fallbacks
+  const sectionStyle = section.style || {};
+  const backgroundColor = sectionStyle.backgroundColor || (darkMode ? '#111827' : '#f3f4f6');
+  const textColor = sectionStyle.textColor || (darkMode ? '#ffffff' : '#111827');
+  
+  // Handle section click
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onClick) {
       onClick();
     }
   };
   
-  // Quick links for the footer
-  const quickLinks = [
-    { label: 'Home', url: '#' },
-    { label: 'About', url: '#' },
-    { label: 'Features', url: '#' },
-    { label: 'Pricing', url: '#' },
-    { label: 'Contact', url: '#' },
-  ];
-  
-  // Resources links
-  const resourceLinks = [
-    { label: 'Blog', url: '#' },
-    { label: 'Documentation', url: '#' },
-    { label: 'Support', url: '#' },
-    { label: 'FAQ', url: '#' },
-  ];
-  
-  // Create properly typed style object
-  const styles = createStyleObject(section.style);
+  // Determine layout
+  const isMobile = deviceType === 'mobile';
   
   return (
-    <footer 
+    <footer
       className={cn(
-        'px-6 py-12 w-full',
-        darkMode ? 'bg-gray-900' : 'bg-gray-100',
-        isSelected && 'ring-2 ring-inset ring-primary',
-        viewMode === 'flowchart' && 'border-2 border-dashed'
+        'wireframe-section footer-section py-10 px-4',
+        {
+          'border-2 border-blue-500': isSelected,
+          'dark': darkMode,
+        }
       )}
+      style={{
+        backgroundColor,
+        color: textColor,
+      }}
       onClick={handleClick}
-      style={styles}
+      data-section-id={section.id}
+      data-section-type={section.sectionType}
     >
       <div className="max-w-7xl mx-auto">
-        <div className={cn(
-          deviceType === 'mobile' ? 'grid grid-cols-1 gap-8' : 
-          deviceType === 'tablet' ? 'grid grid-cols-2 gap-8' : 
-          'grid grid-cols-4 gap-8'
-        )}>
-          {/* Company info */}
-          <div>
-            <h3 className={cn(
-              'text-lg font-bold mb-4',
-              darkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              {getSuggestion(section.copySuggestions, 'companyName', 'Company Name')}
-            </h3>
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5'} gap-8`}>
+          {/* Logo and company info */}
+          <div className={isMobile ? 'mb-8' : 'col-span-1 lg:col-span-2'}>
+            <div className="flex items-center mb-4">
+              {logoUrl ? (
+                <img src={logoUrl} alt={logoText} className="h-8 w-auto mr-2" />
+              ) : (
+                <div className="h-8 w-8 bg-blue-600 text-white flex items-center justify-center rounded mr-2">
+                  <span className="font-bold">{logoText.charAt(0)}</span>
+                </div>
+              )}
+              <span className="text-lg font-bold">{logoText}</span>
+            </div>
             <p className={cn(
-              'mb-4',
-              darkMode ? 'text-gray-400' : 'text-gray-600'
+              'mb-4 max-w-xs opacity-80',
+              { 'text-gray-300': darkMode, 'text-gray-600': !darkMode }
             )}>
-              {getSuggestion(section.copySuggestions, 'companyDescription', 'A brief description of your company and what you do.')}
+              {tagline}
             </p>
-          </div>
-          
-          {/* Quick Links */}
-          <div>
-            <h3 className={cn(
-              'text-lg font-bold mb-4',
-              darkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              {getSuggestion(section.copySuggestions, 'quickLinksTitle', 'Quick Links')}
-            </h3>
-            <ul className="space-y-2">
-              {quickLinks.map((link, i) => (
-                <li key={i}>
+            
+            {/* Social links */}
+            {socialLinks.length > 0 ? (
+              <div className="flex space-x-4 mt-4">
+                {socialLinks.map((social: any, index: number) => (
                   <a 
-                    href={link.url} 
+                    key={social.id || `social-${index}`} 
+                    href={social.url || '#'} 
                     className={cn(
-                      darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                      'h-8 w-8 flex items-center justify-center rounded-full',
+                      { 'bg-gray-800 text-white hover:bg-gray-700': !darkMode, 
+                        'bg-gray-700 text-white hover:bg-gray-600': darkMode }
                     )}
                   >
-                    {link.label}
+                    <span>{social.icon || social.name?.charAt(0) || '#'}</span>
                   </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          {/* Resources */}
-          <div>
-            <h3 className={cn(
-              'text-lg font-bold mb-4',
-              darkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              {getSuggestion(section.copySuggestions, 'resourcesTitle', 'Resources')}
-            </h3>
-            <ul className="space-y-2">
-              {resourceLinks.map((link, i) => (
-                <li key={i}>
+                ))}
+              </div>
+            ) : (
+              <div className="flex space-x-4 mt-4">
+                {['X', 'f', 'in', 'ig'].map((icon, index) => (
                   <a 
-                    href={link.url} 
+                    key={index} 
+                    href="#" 
                     className={cn(
-                      darkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                      'h-8 w-8 flex items-center justify-center rounded-full',
+                      { 'bg-gray-800 text-white hover:bg-gray-700': !darkMode, 
+                        'bg-gray-700 text-white hover:bg-gray-600': darkMode }
                     )}
                   >
-                    {link.label}
+                    <span>{icon}</span>
                   </a>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </div>
+            )}
           </div>
           
-          {/* Contact */}
-          <div>
-            <h3 className={cn(
-              'text-lg font-bold mb-4',
-              darkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              {getSuggestion(section.copySuggestions, 'contactTitle', 'Contact Us')}
-            </h3>
-            <address className={cn(
-              'not-italic',
-              darkMode ? 'text-gray-400' : 'text-gray-600'
-            )}>
-              {getSuggestion(section.copySuggestions, 'address', '123 Main Street')}<br />
-              {getSuggestion(section.copySuggestions, 'cityStateZip', 'City, State 12345')}<br />
-              <a 
-                href={`mailto:${getSuggestion(section.copySuggestions, 'email', 'info@example.com')}`}
-                className={darkMode ? 'text-blue-400' : 'text-blue-600'}
-              >
-                {getSuggestion(section.copySuggestions, 'email', 'info@example.com')}
-              </a>
-            </address>
-          </div>
+          {/* Footer columns */}
+          {columns.length > 0 ? columns.map((column: any, index: number) => (
+            <div key={column.id || `column-${index}`}>
+              <h4 className="text-base font-semibold mb-4">{column.title || `Column ${index + 1}`}</h4>
+              <ul className="space-y-2">
+                {(column.links || []).map((link: any, linkIndex: number) => (
+                  <li key={linkIndex}>
+                    <a 
+                      href={link.url || '#'} 
+                      className={cn(
+                        'hover:underline',
+                        { 'text-gray-300 hover:text-white': darkMode, 'text-gray-600 hover:text-gray-900': !darkMode }
+                      )}
+                    >
+                      {link.text || `Link ${linkIndex + 1}`}
+                    </a>
+                  </li>
+                ))}
+                
+                {/* Display placeholder links if none are defined */}
+                {(!column.links || column.links.length === 0) && (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <li key={i}>
+                      <a 
+                        href="#" 
+                        className={cn(
+                          'hover:underline',
+                          { 'text-gray-300 hover:text-white': darkMode, 'text-gray-600 hover:text-gray-900': !darkMode }
+                        )}
+                      >
+                        Link {i + 1}
+                      </a>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          )) : (
+            // Display placeholder columns if none are defined
+            Array.from({ length: isMobile ? 2 : 3 }).map((_, index) => (
+              <div key={`placeholder-column-${index}`}>
+                <h4 className="text-base font-semibold mb-4">{
+                  index === 0 ? 'Company' : 
+                  index === 1 ? 'Resources' : 'Support'
+                }</h4>
+                <ul className="space-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <li key={i}>
+                      <a 
+                        href="#" 
+                        className={cn(
+                          'hover:underline',
+                          { 'text-gray-300 hover:text-white': darkMode, 'text-gray-600 hover:text-gray-900': !darkMode }
+                        )}
+                      >
+                        {index === 0 && ['About', 'Team', 'Careers', 'Blog'][i]}
+                        {index === 1 && ['Docs', 'Help', 'Community', 'Pricing'][i]}
+                        {index === 2 && ['Contact', 'FAQ', 'Support', 'Status'][i]}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
         </div>
         
-        {/* Copyright */}
+        {/* Copyright section */}
         <div className={cn(
-          'mt-12 pt-8 border-t text-center',
-          darkMode ? 'border-gray-800 text-gray-400' : 'border-gray-200 text-gray-600'
+          'border-t pt-6 mt-10',
+          { 'border-gray-800': darkMode, 'border-gray-200': !darkMode }
         )}>
-          {getSuggestion(section.copySuggestions, 'copyright', `© ${new Date().getFullYear()} Company Name. All rights reserved.`)}
+          <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'flex-row justify-between items-center'}`}>
+            <p className={cn(
+              'text-sm',
+              { 'text-gray-400': darkMode, 'text-gray-500': !darkMode }
+            )}>
+              {copyright}
+            </p>
+            
+            <div className="flex space-x-6">
+              <a 
+                href="#" 
+                className={cn(
+                  'text-sm hover:underline',
+                  { 'text-gray-400 hover:text-gray-300': darkMode, 'text-gray-500 hover:text-gray-700': !darkMode }
+                )}
+              >
+                Privacy Policy
+              </a>
+              <a 
+                href="#" 
+                className={cn(
+                  'text-sm hover:underline',
+                  { 'text-gray-400 hover:text-gray-300': darkMode, 'text-gray-500 hover:text-gray-700': !darkMode }
+                )}
+              >
+                Terms of Service
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

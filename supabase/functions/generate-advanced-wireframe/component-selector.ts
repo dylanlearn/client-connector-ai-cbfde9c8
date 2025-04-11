@@ -1,141 +1,64 @@
+
 import { callOpenAI } from "./openai-client.ts";
-import { Blueprint, BlueprintSection } from "./blueprint-generator.ts";
-import { v4 as uuid } from "https://deno.land/std@0.110.0/uuid/mod.ts";
 
 /**
- * Component definition for the wireframe
+ * Select appropriate component variants for the wireframe based on its purpose and style
  */
-export interface WireframeComponent {
-  id: string;
-  type: string;
-  content?: string | Record<string, any>;
-  style?: Record<string, any>;
-  children?: WireframeComponent[];
-  props?: Record<string, any>;
-  variant?: string;
-  [key: string]: any;
-}
-
-/**
- * Select appropriate component variants based on the blueprint
- */
-export async function selectComponentVariants(blueprint: Blueprint): Promise<Blueprint> {
-  if (!blueprint || !blueprint.sections) {
-    throw new Error('Valid blueprint with sections is required for component variant selection');
-  }
-
-  console.log(`Selecting component variants for blueprint with ${blueprint.sections.length} sections`);
-
-  // Deep clone the blueprint to avoid mutating the original
-  const enhancedBlueprint: Blueprint = JSON.parse(JSON.stringify(blueprint));
-
-  // Process each section to add appropriate components
-  const completedSections: BlueprintSection[] = [];
-
-  for (const section of enhancedBlueprint.sections) {
-    try {
-      const enhancedSection = await enhanceSectionWithComponents(section, blueprint.styleToken || "modern");
-      completedSections.push(enhancedSection);
-    } catch (error) {
-      console.error(`Error enhancing section ${section.name}:`, error);
-      // If enhancement fails, keep the original section
-      completedSections.push(section);
-    }
-  }
-
-  enhancedBlueprint.sections = completedSections;
+export async function selectComponentVariants(blueprint: any): Promise<any> {
+  console.log("Selecting component variants...");
   
-  return enhancedBlueprint;
-}
-
-/**
- * Enhance a single section with appropriate components
- */
-async function enhanceSectionWithComponents(section: BlueprintSection, styleToken: string): Promise<BlueprintSection> {
-  // Create a prompt for this specific section
+  // If no sections, return blueprint as is
+  if (!blueprint || !blueprint.sections || blueprint.sections.length === 0) {
+    console.log("No sections found in blueprint for component selection");
+    return blueprint;
+  }
+  
   const prompt = `
-Generate appropriate components for this wireframe section:
-${JSON.stringify(section, null, 2)}
+Analyze this wireframe blueprint and select the most appropriate component variants for each section:
 
-Design style: ${styleToken}
+${JSON.stringify(blueprint, null, 2)}
 
-Return an enhanced version of the section with:
-1. An array of component objects in the "components" property
-2. Enhanced layout information
-3. Responsive design considerations
-4. Detailed style properties matching the ${styleToken} design style
+For each section in the wireframe:
+1. Identify the section type (e.g., hero, features, testimonials)
+2. Select the most appropriate component variant based on:
+   - The purpose of the website/page
+   - Target audience
+   - Visual style/tone
+   - Content needs
+3. Update the section's "componentVariant" property with the selected variant
+4. Add any necessary component-specific configuration to the section's "data" object
 
-For each component, include:
-- id (use "{{componentId}}" and I'll generate it)
-- type (e.g., heading, text, button, image, container, etc.)
-- content (what text/data should be shown)
-- style (appropriate styling properties)
-- children (if the component has child elements)
-- props (any special properties needed)
-- variant (if the component has multiple possible variants)
-
-Return the entire enhanced section object as a valid JSON object.
+Return the updated blueprint with component variants selected for all sections.
+Return only valid JSON without any explanations or comments.
 `;
 
   try {
     const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UI component designer who selects the best component variants for wireframe sections.',
-      temperature: 0.5,
+      systemMessage: 'You are an expert UI component specialist who selects the most appropriate component variants for wireframes.',
+      temperature: 0.4, // Lower temperature for more focused/deterministic selections
+      model: "gpt-4o-mini"
     });
     
+    // Extract the JSON object from the response
     const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
                       response.match(/\{[\s\S]*\}/);
                       
     if (!jsonMatch || !jsonMatch[0]) {
-      console.error("Failed to extract JSON from OpenAI response for section component selection");
-      // If we can't parse the response, return the original section
-      return section;
+      console.error("Failed to extract component variants from AI response");
+      return blueprint; // Return original blueprint if we couldn't parse the response
     }
 
-    let enhancedSection: BlueprintSection;
     try {
-      enhancedSection = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      const updatedBlueprint = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      console.log("Component variant selection successful");
+      return updatedBlueprint;
     } catch (parseError) {
-      console.error("Error parsing enhanced section JSON:", parseError);
-      return section;
+      console.error("Error parsing component variants JSON:", parseError);
+      return blueprint; // Return original blueprint if we couldn't parse the response
     }
     
-    if (!enhancedSection) {
-      console.error("Invalid enhanced section data");
-      return section;
-    }
-    
-    // Ensure all components have IDs
-    if (enhancedSection.components && Array.isArray(enhancedSection.components)) {
-      enhancedSection.components = generateComponentIds(enhancedSection.components);
-    }
-    
-    return enhancedSection;
   } catch (error) {
-    console.error(`Error enhancing section ${section.name}:`, error);
-    // If anything goes wrong, return the original section
-    return section;
+    console.error("Error selecting component variants:", error);
+    return blueprint; // Return original blueprint on error
   }
-}
-
-/**
- * Recursively assign IDs to all components in a component tree
- */
-function generateComponentIds(components: WireframeComponent[]): WireframeComponent[] {
-  if (!components || !Array.isArray(components)) return [];
-  
-  return components.map(component => {
-    // Generate an ID if missing or template
-    const componentWithId = {
-      ...component,
-      id: (!component.id || component.id === "{{componentId}}") ? uuid() : component.id
-    };
-    
-    // Process children recursively if they exist
-    if (componentWithId.children && Array.isArray(componentWithId.children)) {
-      componentWithId.children = generateComponentIds(componentWithId.children);
-    }
-    
-    return componentWithId;
-  });
 }
