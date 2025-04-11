@@ -1,52 +1,63 @@
-import { getSuggestion as getSuggestionHelper, createStyleObject as createStyleObjectHelper, createColorScheme as createColorSchemeHelper } from '@/utils/copy-suggestions-helper';
-import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
+
+import { WireframeSection, WireframeComponent, CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
+
+// Helper functions for wireframe component rendering
 
 /**
- * Re-export helper functions from copy-suggestions-helper for convenience
- * and to maintain backward compatibility with existing components
+ * Gets a suggested text value for a specific key, or returns a fallback
  */
-export const getSuggestion = getSuggestionHelper;
-export const createStyleObject = createStyleObjectHelper;
-export const createColorScheme = createColorSchemeHelper;
-
-/**
- * Helper function to safely access nested properties
- */
-export function getNestedProperty(obj: any, path: string, defaultValue: any = undefined): any {
-  const keys = path.split('.');
-  let current = obj;
-  
-  for (const key of keys) {
-    if (current === undefined || current === null) {
-      return defaultValue;
-    }
-    current = current[key];
-  }
-  
-  return current !== undefined ? current : defaultValue;
+export function getSuggestedText(
+  copySuggestions: CopySuggestions | undefined,
+  key: string,
+  fallback: string = ''
+): string {
+  if (!copySuggestions) return fallback;
+  return copySuggestions[key] || fallback;
 }
 
 /**
- * Generate CSS classes conditionally based on a condition
+ * Transforms a section type to a more readable display format
  */
-export function classIf(condition: boolean, className: string): string {
-  return condition ? className : '';
+export function formatSectionType(sectionType: string): string {
+  if (!sectionType) return 'Unknown Section';
+  
+  // Split by hyphens and capitalize
+  return sectionType
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 /**
- * Process CopySuggestions to handle both object and array formats
- * This helps resolve TypeScript errors with CopySuggestions | CopySuggestions[]
+ * Gets responsive class based on the current device
  */
-export function processCopySuggestions(suggestions: CopySuggestions | CopySuggestions[] | undefined): CopySuggestions {
-  if (!suggestions) {
-    return {};
-  }
+export function getResponsiveClass(component: WireframeComponent, deviceType: string): string {
+  if (!component.responsive) return '';
   
-  // If it's an array, use the first item or empty object
-  if (Array.isArray(suggestions)) {
-    return suggestions[0] || {};
-  }
+  const responsiveClasses = {
+    mobile: component.responsive.mobile?.className || '',
+    tablet: component.responsive.tablet?.className || '',
+    desktop: component.responsive.desktop?.className || ''
+  };
   
-  // Otherwise return as is
-  return suggestions;
+  return responsiveClasses[deviceType as keyof typeof responsiveClasses] || '';
+}
+
+/**
+ * Merges component styles with responsive styles for current device
+ */
+export function getResponsiveStyles(
+  component: WireframeComponent,
+  deviceType: string
+): Record<string, any> {
+  const baseStyles = component.style || {};
+  
+  if (!component.responsive) return baseStyles;
+  
+  const deviceStyles = component.responsive[deviceType as keyof typeof component.responsive] || {};
+  
+  return {
+    ...baseStyles,
+    ...deviceStyles
+  };
 }
