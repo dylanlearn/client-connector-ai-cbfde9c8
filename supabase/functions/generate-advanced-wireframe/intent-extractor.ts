@@ -1,120 +1,114 @@
 
 import { callOpenAI } from "./openai-client.ts";
 
+// Define the DesignIntent interface
 export interface DesignIntent {
-  pageType: string;
-  industryCategory: string;
-  targetAudience: string;
-  coreFunctionality: string[];
+  purpose: string;
+  targetAudience: string[];
   keyFeatures: string[];
   contentPriorities: string[];
   visualTone: string;
-  brandPersonality: string[];
-  callToActionType: string;
-  userGoals: string[];
-  businessGoals: string[];
-  usabilityConsiderations: string[];
-  accessibilityNeeds: string[];
+  brandPersonality?: string[];
+  industryCategory?: string;
+  interactionPatterns?: string[];
+  inspirationalReferences?: string[];
+  colorPreferences?: string[];
+  functionalRequirements?: string[];
 }
 
+// Default design intent template
+const defaultIntent: DesignIntent = {
+  purpose: "General website",
+  targetAudience: ["General users"],
+  keyFeatures: ["Information display"],
+  contentPriorities: ["Clarity", "Readability"],
+  visualTone: "modern",
+  brandPersonality: ["Professional"],
+  industryCategory: "General",
+  interactionPatterns: ["Standard navigation"],
+  inspirationalReferences: [],
+  colorPreferences: [],
+  functionalRequirements: []
+};
+
 /**
- * Extract design intent from user input to guide wireframe generation
+ * Extract design intent from the user's input
  */
 export async function extractIntent(
   userInput: string,
-  styleToken?: string
+  styleHint?: string
 ): Promise<DesignIntent> {
-  console.log("Extracting design intent from input...");
-
-  const prompt = `
-Analyze this design request and extract the design intent in a structured format:
+  console.log("Extracting design intent from input");
+  
+  try {
+    const prompt = `
+Analyze this wireframe request and extract the design intent:
 
 "${userInput}"
 
-Extract and infer the following information (make reasonable assumptions for anything not explicitly stated):
-- Page type (landing page, product page, dashboard, etc.)
-- Industry category
-- Target audience
-- Core functionality needs
-- Key features required
-- Content priorities
-- Visual tone/style ${styleToken ? `(considering the specified style: "${styleToken}")` : ''}
-- Brand personality traits
-- Call-to-action types
-- User goals
-- Business objectives
-- Usability considerations
-- Accessibility needs
+${styleHint ? `The user has indicated a style preference of: "${styleHint}"` : ''}
 
-Return a JSON object with these fields:
-{
-  "pageType": "",
-  "industryCategory": "",
-  "targetAudience": "",
-  "coreFunctionality": [""],
-  "keyFeatures": [""],
-  "contentPriorities": [""],
-  "visualTone": "",
-  "brandPersonality": [""],
-  "callToActionType": "",
-  "userGoals": [""],
-  "businessGoals": [""],
-  "usabilityConsiderations": [""],
-  "accessibilityNeeds": [""]
-}
+Extract the following information:
+1. Purpose: What is the main purpose of this website/app?
+2. Target audience: Who will use this wireframe?
+3. Key features: What are the main features or sections needed?
+4. Content priorities: What content should be emphasized?
+5. Visual tone: What visual style is appropriate (modern, minimal, playful, etc.)?
+6. Brand personality: What traits should the design convey?
+7. Industry category: What industry is this for?
+8. Interaction patterns: What user interactions are important?
+9. Inspirational references: Any references mentioned?
+10. Color preferences: Any color preferences mentioned?
+11. Functional requirements: Any specific functional needs?
 
-Only return valid JSON without any explanations or comments.
+Return ONLY a valid JSON object with these properties. Do not include ANY explanatory text or notes.
 `;
 
-  try {
     const response = await callOpenAI(prompt, {
-      systemMessage: 'You are an expert UX researcher who extracts design intent from client requirements.',
-      temperature: 0.2,
+      systemMessage: "You are an expert UX researcher specializing in analyzing design requirements and extracting intent.",
+      temperature: 0.4,
       model: "gpt-4o-mini",
       responseFormat: { type: "json_object" }
     });
     
+    // Parse the response 
+    let extractedIntent: DesignIntent;
     try {
-      // Parse the JSON response
-      let intent: DesignIntent;
-      try {
-        intent = JSON.parse(response);
-      } catch (parseError) {
-        // If direct parsing fails, attempt to extract JSON from a potentially text response
-        const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                          response.match(/\{[\s\S]*\}/);
-                          
-        if (!jsonMatch || !jsonMatch[0]) {
-          throw new Error("Failed to extract intent data from AI response");
-        }
-        
-        intent = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      extractedIntent = JSON.parse(response);
+    } catch (parseError) {
+      // Try to extract JSON if direct parsing fails
+      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
+                      response.match(/\{[\s\S]*\}/);
+                      
+      if (!jsonMatch || !jsonMatch[0]) {
+        console.error("Failed to extract JSON from OpenAI response");
+        throw new Error("Failed to parse intent extraction response");
       }
       
-      console.log("Intent extraction successful");
-      return intent;
-    } catch (parseError) {
-      console.error("Error parsing intent JSON:", parseError);
-      throw new Error("Failed to parse intent data from AI response");
+      try {
+        extractedIntent = JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
+      } catch (innerParseError) {
+        console.error("Error parsing intent JSON:", innerParseError);
+        throw new Error("Failed to parse intent data");
+      }
     }
+    
+    console.log("Intent extraction successful");
+    
+    // Merge with defaults to ensure all properties exist
+    return {
+      ...defaultIntent,
+      ...extractedIntent,
+      // If style hint is provided and no visual tone was extracted, use the hint
+      visualTone: extractedIntent.visualTone || styleHint || defaultIntent.visualTone
+    };
   } catch (error) {
     console.error("Error extracting intent:", error);
     
-    // Provide a fallback intent structure if extraction fails
+    // Return default intent with style hint if available
     return {
-      pageType: "generic website",
-      industryCategory: "general",
-      targetAudience: "general audience",
-      coreFunctionality: ["information display"],
-      keyFeatures: ["content sections"],
-      contentPriorities: ["clear information hierarchy"],
-      visualTone: styleToken || "professional",
-      brandPersonality: ["reliable"],
-      callToActionType: "learn more",
-      userGoals: ["find information"],
-      businessGoals: ["present information clearly"],
-      usabilityConsiderations: ["intuitive navigation"],
-      accessibilityNeeds: ["screen reader compatible"]
+      ...defaultIntent,
+      visualTone: styleHint || defaultIntent.visualTone
     };
   }
 }
