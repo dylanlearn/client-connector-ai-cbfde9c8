@@ -100,7 +100,6 @@ export const useWireframeEditor = (
   const historyManager = useWireframeHistory(wireframe);
   
   // Use the wireframe sections hook with the current wireframe from history
-  // Remove the extra argument that was causing the TypeScript error
   const {
     sections,
     addSection,

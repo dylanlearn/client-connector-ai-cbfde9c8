@@ -135,12 +135,12 @@ export class WireframeFeedbackController {
             }
           };
           
-          // Fix: Make sure versionResult is properly handled
-          const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
+          // Save the new version
+          const saveResult = await wireframeApiService.saveWireframe(newVersionWireframe);
           
-          // Check if versionResult is an object with an id property
-          if (versionResult && typeof versionResult === 'object' && 'id' in versionResult) {
-            newVersionId = versionResult.id;
+          // Handle the result safely
+          if (saveResult && typeof saveResult === 'object' && 'id' in saveResult) {
+            newVersionId = saveResult.id;
             console.log('Created new wireframe version:', newVersionId);
           }
         }
