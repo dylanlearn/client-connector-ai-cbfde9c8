@@ -1,72 +1,56 @@
 
-import { WireframeData, WireframeSection, CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
-import { fabric } from 'fabric';
+import { WireframeSection } from "@/services/ai/wireframe/wireframe-types";
 
-export type ViewMode = 'preview' | 'flowchart' | 'edit' | 'code' | 'editor';
-export type DeviceType = 'desktop' | 'tablet' | 'mobile';
+export type DeviceType = 'desktop' | 'tablet' | 'mobile' | 'responsive' | string;
+export type ViewMode = 'preview' | 'edit' | 'editor' | 'code' | 'flowchart';
 
-export interface WireframeProps {
-  wireframe: WireframeData;
-  viewMode?: ViewMode;
+export interface BaseComponentProps {
   darkMode?: boolean;
-  deviceType?: DeviceType;
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
-  onSelect?: (sectionId: string) => void;
-  className?: string;
-}
-
-export interface WireframeVisualizerProps {
-  wireframe: WireframeData;
-  darkMode?: boolean;
-  deviceType?: DeviceType;
-  viewMode?: ViewMode;
-  onSectionClick?: (sectionId: string) => void;
-  selectedSectionId?: string | null;
-  onSelect?: (sectionId: string) => void;
-  preview?: boolean;
-}
-
-export interface WireframeRendererProps {
-  wireframeData: WireframeData;
-  viewMode?: ViewMode;
-  darkMode?: boolean;
-  deviceType?: DeviceType;
-  onSectionClick?: (sectionId: string) => void;
-  activeSection?: string | null;
-}
-
-export interface WireframeAISuggestionsProps {
-  wireframe?: WireframeData;
-  onClose: () => void;
-  onApplySuggestion?: (suggestion: any) => void;
-  sectionId?: string;
-}
-
-export interface WireframeSectionRendererProps {
-  section: WireframeSection;
-  viewMode?: ViewMode;
-  darkMode?: boolean;
-  deviceType?: DeviceType;
-  sectionIndex?: number;
-  onSectionClick?: (sectionId: string) => void;
-  isSelected?: boolean;
+  interactive?: boolean;
 }
 
 export interface SectionComponentProps {
   section: WireframeSection;
-  viewMode?: ViewMode;
   darkMode?: boolean;
   deviceType?: DeviceType;
+  viewMode?: ViewMode;
   isSelected?: boolean;
-  onClick?: () => void;
+  onClick?: (sectionId: string) => void;
+  onEdit?: (sectionId: string) => void;
+  editable?: boolean;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
-export interface FabricCanvasState {
-  canvas: fabric.Canvas | null;
-  isInitialized: boolean;
+export interface ComponentRendererProps {
+  section: WireframeSection;
+  darkMode: boolean;
+  deviceType: DeviceType;
+  viewMode: 'preview' | 'flowchart';
+  isSelected: boolean;
+  onClick: (sectionId: string) => void;
+}
+
+export interface WireframeAISuggestionsProps {
+  wireframeId?: string;
+  sectionId?: string;
+  onClose?: () => void;
+  onApplySuggestion?: (suggestion: any) => void;
+}
+
+export interface WireframeCanvasConfig {
+  width: number;
+  height: number;
   zoom: number;
   panOffset: { x: number; y: number };
-  canUndo: boolean;
-  canRedo: boolean;
+  backgroundColor?: string;
+  showGrid?: boolean;
+  gridSize?: number;
+  snapToGrid?: boolean;
+  gridColor?: string;
+  showRulers?: boolean;
+  rulerColor?: string;
+  rulerSize?: number;
+  gridType?: 'lines' | 'dots' | 'columns';
+  showSmartGuides?: boolean;
 }

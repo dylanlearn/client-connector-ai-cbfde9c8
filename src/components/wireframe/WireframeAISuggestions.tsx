@@ -2,139 +2,306 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { WireframeAISuggestionsProps } from './types';
 import { X, CheckCircle, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+
+interface WireframeAISuggestionsProps {
+  wireframeId?: string;
+  sectionId?: string;
+  onApplySuggestion?: (suggestion: any) => void;
+  onClose?: () => void;
+}
+
+interface Suggestion {
+  id: string;
+  title: string;
+  description: string;
+  preview: any;
+  justification: string;
+  type: 'layout' | 'content' | 'style' | 'structure';
+  applied?: boolean;
+}
 
 const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
-  wireframe,
-  onClose,
+  wireframeId,
+  sectionId,
   onApplySuggestion,
-  sectionId
+  onClose
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [selectedSuggestion, setSelectedSuggestion] = useState<number | null>(null);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
+  const [wireframeData, setWireframeData] = useState<any>(null);
 
-  useEffect(() => {
-    if (wireframe) {
-      generateSuggestions();
-    }
-  }, [wireframe, sectionId]);
-
+  // Function to generate AI suggestions
   const generateSuggestions = async () => {
-    if (!wireframe) return;
+    if (!wireframeData) {
+      toast({
+        title: "No wireframe data",
+        description: "Please provide wireframe data to generate suggestions.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const sectionsToAnalyze = sectionId 
-        ? wireframe.sections.filter(s => s.id === sectionId)
-        : wireframe.sections;
-      
+      // Call the generate-suggestions function
       const { data, error } = await supabase.functions.invoke('generate-advanced-wireframe', {
         body: {
           action: 'generate-suggestions',
-          wireframe: wireframe,
-          sections: sectionsToAnalyze,
-          targetSection: sectionId
+          wireframe: wireframeData,
+          targetSection: sectionId,
         }
       });
 
       if (error) {
-        throw new Error(error.message);
+        throw new Error(`Failed to generate suggestions: ${error.message}`);
       }
 
-      if (data?.suggestions) {
-        setSuggestions(data.suggestions);
+      if (data && data.suggestions && Array.isArray(data.suggestions)) {
+        // Add unique IDs and default values to suggestions
+        const processedSuggestions: Suggestion[] = data.suggestions.map((suggestion: any, index: number) => ({
+          id: `suggestion-${index}`,
+          title: suggestion.title || `Suggestion ${index + 1}`,
+          description: suggestion.description || 'No description provided',
+          preview: suggestion.preview || {},
+          justification: suggestion.justification || 'No justification provided',
+          type: suggestion.type || 'style',
+          applied: false,
+        }));
+        
+        setSuggestions(processedSuggestions);
+        
+        // Show success toast
+        toast({
+          title: "Suggestions Generated",
+          description: `Generated ${processedSuggestions.length} suggestions for your wireframe.`,
+        });
       } else {
         setSuggestions([]);
         toast({
-          title: "No suggestions available",
-          description: "Our AI couldn't generate any meaningful suggestions for this wireframe.",
-          variant: "default"
+          title: "No Suggestions",
+          description: "Couldn't generate any suggestions for this wireframe.",
+          variant: "destructive",
         });
       }
-    } catch (err) {
-      console.error("Error generating suggestions:", err);
+    } catch (error) {
+      console.error("Error generating suggestions:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate AI suggestions. Please try again later.",
-        variant: "destructive"
+        title: "Failed to Generate Suggestions",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
       });
-      setSuggestions([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleApplySuggestion = (suggestion: any) => {
+  // Function to apply a suggestion
+  const applySuggestion = (suggestion: Suggestion) => {
     if (onApplySuggestion) {
-      onApplySuggestion(suggestion);
+      onApplySuggestion(suggestion.preview);
+      
+      // Mark this suggestion as applied
+      setSuggestions(prev => 
+        prev.map(s => s.id === suggestion.id ? { ...s, applied: true } : s)
+      );
+      
+      // Show success toast
+      toast({
+        title: "Suggestion Applied",
+        description: `Applied "${suggestion.title}" to your wireframe.`,
+      });
     }
-    onClose();
   };
 
+  // Generate dummy suggestions for development and demo purposes
+  const generateDummySuggestions = () => {
+    const dummySuggestions: Suggestion[] = [
+      {
+        id: "suggestion-1",
+        title: "Improve Hero Section Contrast",
+        description: "The contrast between text and background in the hero section could be improved for better readability.",
+        preview: {
+          style: {
+            backgroundColor: "#1E293B",
+            color: "#F8FAFC"
+          }
+        },
+        justification: "Increasing the contrast helps with accessibility and makes the call to action stand out more.",
+        type: "style"
+      },
+      {
+        id: "suggestion-2",
+        title: "Restructure Features Section",
+        description: "Change the features section layout from vertical list to card grid for better visual balance.",
+        preview: {
+          layout: {
+            type: "grid",
+            columns: 3,
+            gap: 24
+          }
+        },
+        justification: "A grid layout presents feature comparisons more effectively and uses screen space more efficiently.",
+        type: "layout"
+      },
+      {
+        id: "suggestion-3",
+        title: "Add Testimonial Section",
+        description: "Adding social proof through testimonials would strengthen credibility.",
+        preview: {
+          sectionType: "testimonials",
+          name: "Customer Testimonials",
+          copySuggestions: {
+            heading: "What Our Customers Say",
+            subheading: "Don't just take our word for it"
+          }
+        },
+        justification: "Social proof is one of the most effective persuasion techniques in marketing.",
+        type: "structure"
+      }
+    ];
+    
+    setSuggestions(dummySuggestions);
+  };
+
+  // Show suggestion details when selected
+  const showSuggestionDetails = (suggestion: Suggestion) => {
+    setSelectedSuggestion(suggestion);
+  };
+
+  useEffect(() => {
+    // If we have wireframe data, generate suggestions automatically
+    if (wireframeData) {
+      // For production, call the generateSuggestions function
+      // For development/demo, use the dummy suggestions
+      generateDummySuggestions();
+    }
+  }, [wireframeData]);
+
   return (
-    <Card className="w-full max-w-4xl h-[80vh] overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center">
-          <Sparkles className="h-5 w-5 mr-2 text-amber-500" />
-          AI Design Suggestions
-        </CardTitle>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
-      </CardHeader>
-      <CardContent className="h-[calc(100%-70px)] overflow-auto">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-muted-foreground">Analyzing design and generating suggestions...</p>
-          </div>
-        ) : suggestions.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {suggestions.map((suggestion, index) => (
-              <div 
-                key={`suggestion-${index}`}
-                className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedSuggestion === index ? 'border-primary ring-2 ring-primary/20' : 'hover:border-primary/50'
-                }`}
-                onClick={() => setSelectedSuggestion(index)}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{suggestion.title}</h3>
-                  {selectedSuggestion === index && (
-                    <Button 
-                      size="sm" 
-                      className="flex items-center gap-1"
-                      onClick={() => handleApplySuggestion(suggestion)}
-                    >
-                      <CheckCircle className="h-3 w-3" />
-                      Apply
-                    </Button>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">{suggestion.description}</p>
-                {suggestion.preview && (
-                  <div className="bg-muted rounded-md p-3 text-xs">
-                    <pre className="whitespace-pre-wrap">{JSON.stringify(suggestion.preview, null, 2)}</pre>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-muted-foreground">No suggestions available. Try analyzing a different section.</p>
-            <Button className="mt-4" onClick={generateSuggestions}>
-              Generate New Suggestions
+    <div className="wireframe-ai-suggestions">
+      <Card className="mb-4">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            AI Design Suggestions
+          </CardTitle>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={generateDummySuggestions}
+              disabled={isLoading}
+            >
+              Generate Demo Suggestions
             </Button>
+            
+            {onClose && (
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        
+        <CardContent>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+              <p className="text-muted-foreground">Analyzing wireframe and generating suggestions...</p>
+            </div>
+          ) : suggestions.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="suggestions-list space-y-2">
+                {suggestions.map(suggestion => (
+                  <div
+                    key={suggestion.id}
+                    className={`suggestion-item p-3 border rounded-lg cursor-pointer transition-all ${
+                      selectedSuggestion?.id === suggestion.id ? 'bg-muted border-primary' : 'hover:bg-muted/50'
+                    } ${suggestion.applied ? 'border-green-500/30 bg-green-50 dark:bg-green-950/10' : ''}`}
+                    onClick={() => showSuggestionDetails(suggestion)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium flex items-center gap-2">
+                        {suggestion.title}
+                        {suggestion.applied && (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        )}
+                      </h4>
+                      <span className="text-xs px-2 py-1 bg-muted rounded-full">
+                        {suggestion.type}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      {suggestion.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              
+              {selectedSuggestion && (
+                <div className="suggestion-details border rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-2">{selectedSuggestion.title}</h3>
+                  <p className="text-sm mb-4">
+                    {selectedSuggestion.description}
+                  </p>
+                  
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium mb-1">Why this matters:</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedSuggestion.justification}
+                    </p>
+                  </div>
+                  
+                  <div className="preview-section mb-4">
+                    <h4 className="text-sm font-medium mb-1">Preview:</h4>
+                    <div className="bg-muted/50 rounded-md p-3 text-xs overflow-auto max-h-40">
+                      <pre>{JSON.stringify(selectedSuggestion.preview, null, 2)}</pre>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => applySuggestion(selectedSuggestion)}
+                      disabled={selectedSuggestion.applied}
+                      className="w-full"
+                    >
+                      {selectedSuggestion.applied ? (
+                        <span className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Applied
+                        </span>
+                      ) : (
+                        'Apply Suggestion'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-2" />
+              <h3 className="text-lg font-medium">No Suggestions Yet</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mt-1 mb-4">
+                AI can analyze your wireframe and provide suggestions to improve layout, content, and style.
+              </p>
+              <Button
+                onClick={generateSuggestions}
+                disabled={isLoading || !wireframeData}
+              >
+                Generate Suggestions
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
