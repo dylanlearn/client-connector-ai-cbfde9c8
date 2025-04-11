@@ -79,7 +79,7 @@ export class WireframeFeedbackController {
     message: string;
     wireframeId: string;
     newVersionId?: string;
-    wireframe?: WireframeData; // Add wireframe to the return type
+    wireframe?: WireframeData;
   }> {
     try {
       // Get the original wireframe
@@ -135,10 +135,11 @@ export class WireframeFeedbackController {
             }
           };
           
+          // Fix: Make sure versionResult is properly handled
           const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
           
-          // Fix null checks: Use optional chaining and nullish coalescing
-          if (versionResult?.id) {
+          // Check if versionResult is an object with an id property
+          if (versionResult && typeof versionResult === 'object' && 'id' in versionResult) {
             newVersionId = versionResult.id;
             console.log('Created new wireframe version:', newVersionId);
           }

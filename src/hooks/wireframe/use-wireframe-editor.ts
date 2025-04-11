@@ -100,6 +100,7 @@ export const useWireframeEditor = (
   const historyManager = useWireframeHistory(wireframe);
   
   // Use the wireframe sections hook with the current wireframe from history
+  // Remove the extra argument that was causing the TypeScript error
   const {
     sections,
     addSection,
@@ -107,7 +108,7 @@ export const useWireframeEditor = (
     removeSection,
     moveSectionUp,
     moveSectionDown,
-  } = useWireframeSections(historyManager.currentData);  // Fix: Remove the second argument here
+  } = useWireframeSections(historyManager.currentData);
 
   // Load wireframe on mount
   useEffect(() => {
