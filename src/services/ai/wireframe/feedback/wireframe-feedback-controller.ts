@@ -140,17 +140,18 @@ export class WireframeFeedbackController {
           // If creating a new version
           if (options.createNewVersion) {
             // Create a new wireframe with reference to the original
-            const newVersionWireframe = {
+            const newVersionWireframe: WireframeData = {
               ...modificationResult.wireframe,
               id: uuidv4(),
-              // Add custom property - This might need proper typing in WireframeData interface
-              // but for now, adding it as any to avoid TypeScript errors
-              _originalWireframeId: wireframeId
-            } as any;
+              metadata: {
+                ...modificationResult.wireframe.metadata,
+                originalWireframeId: wireframeId
+              }
+            };
             
             const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
             
-            if (versionResult && typeof versionResult !== 'boolean' && versionResult.id) {
+            if (versionResult && typeof versionResult === 'object' && versionResult.id) {
               newVersionId = versionResult.id;
               console.log('Created new wireframe version:', newVersionId);
             }

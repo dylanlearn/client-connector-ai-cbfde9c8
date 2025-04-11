@@ -128,11 +128,10 @@ export const useWireframeEditor = (
     redo: historyManager.redo,
     canUndo: historyManager.canUndo,
     canRedo: historyManager.canRedo,
-    resetHistory: () => historyManager.resetHistory(wireframe),
+    resetHistory: historyManager.resetHistory,
     saveWireframe: saveWireframeData,
-    addSnapshot: historyManager.addSnapshot,
-    historySize: historyManager.historySize,
-    pastStates: historyManager.pastStates,
-    futureStates: historyManager.futureStates,
+    historySize: historyManager.history.length,
+    pastStates: historyManager.history.slice(0, historyManager.historyIndex),
+    futureStates: historyManager.history.slice(historyManager.historyIndex + 1)
   };
 };

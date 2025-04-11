@@ -1,7 +1,7 @@
 
 import { WireframeGenerationParams, WireframeGenerationResult, WireframeData } from './wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
-import { wireframeService as baseWireframeService } from './wireframe-service';
+import { wireframeService } from './wireframe-service';
 
 /**
  * Extended wireframe service with advanced capabilities
@@ -22,7 +22,7 @@ class AdvancedWireframeService {
       };
       
       // Use the base wireframe service for generation
-      const result = await baseWireframeService.generateWireframe(enhancedParams);
+      const result = await wireframeService.generateWireframe(enhancedParams);
       
       if (!result.success || !result.wireframe) {
         throw new Error(result.message || 'Failed to generate wireframe');
@@ -63,10 +63,13 @@ class AdvancedWireframeService {
       const updatedWireframe = {
         ...wireframeData,
         updatedAt: new Date().toISOString(),
-        feedback: [
-          ...(wireframeData.feedback || []),
-          { text: feedback, timestamp: new Date().toISOString() }
-        ]
+        metadata: {
+          ...(wireframeData.metadata || {}),
+          feedbackHistory: [
+            ...((wireframeData.metadata?.feedbackHistory as any[]) || []),
+            { text: feedback, timestamp: new Date().toISOString() }
+          ]
+        }
       };
       
       return {

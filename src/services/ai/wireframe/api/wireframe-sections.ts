@@ -24,3 +24,11 @@ export const deleteSections = async (wireframeId: string) => {
   console.log(`Deleting sections for wireframe ${wireframeId}`);
   return true;
 };
+
+// Export as wireframeSections object to fix the import issue in wireframe-storage.ts
+export const wireframeSections = {
+  saveSections,
+  getSections,
+  updateSections,
+  deleteSections
+};

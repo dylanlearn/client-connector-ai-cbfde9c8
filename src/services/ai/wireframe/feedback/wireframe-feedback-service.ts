@@ -25,10 +25,13 @@ export class WireframeFeedbackService {
         }
         
         // Store feedback in metadata
-        (updatedWireframe.metadata as any).feedback = {
-          ...((updatedWireframe.metadata as any)?.feedback || {}),
-          ...feedback,
-          updatedAt: new Date().toISOString()
+        updatedWireframe.metadata = {
+          ...updatedWireframe.metadata,
+          feedback: {
+            ...(updatedWireframe.metadata?.feedback || {}),
+            ...feedback,
+            updatedAt: new Date().toISOString()
+          }
         };
         
         return await wireframeApiService.saveWireframe(updatedWireframe);
