@@ -1,116 +1,81 @@
 
-import { describe, it, expect, vi } from 'vitest';
-import { 
-  generateHtmlFromWireframe, 
-  handleExportError,
-  exportWireframeAsHTML,
-  exportWireframeAsPDF,
-  exportWireframeAsImage
-} from '../export-utils';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { exportWireframeAsHTML, exportWireframeAsPDF, exportWireframeAsImage } from '../export-utils';
 
-// Mock the downloadFile functionality
-global.URL.createObjectURL = vi.fn(() => 'blob:test-url');
-global.URL.revokeObjectURL = vi.fn();
-
-// Mock html2canvas and jsPDF
+// Mock dependencies
 vi.mock('html2canvas', () => ({
   default: vi.fn(() => Promise.resolve({
-    toDataURL: vi.fn(() => 'data:image/png;base64,test'),
-    height: 600,
-    width: 800
+    toDataURL: () => 'mock-data-url',
+    toBlob: (cb) => cb(new Blob(['mock-blob'])),
+    width: 800,
+    height: 600
   }))
 }));
 
 vi.mock('jspdf', () => ({
-  jsPDF: vi.fn(() => ({
-    setFontSize: vi.fn(),
-    text: vi.fn(),
-    addImage: vi.fn(),
-    save: vi.fn()
-  }))
+  default: class MockJsPDF {
+    constructor() { }
+    addImage() { return this; }
+    output() { return new Blob(['mock-pdf']); }
+  }
 }));
 
-describe('Export Utils', () => {
-  // Properly create an HTMLAnchorElement mock for testing
-  const mockAnchorElement = document.createElement('a');
-  mockAnchorElement.href = '';
-  mockAnchorElement.download = '';
-  mockAnchorElement.click = vi.fn();
-  
-  // Store the original createElement method before overriding
-  const originalCreateElement = document.createElement;
+describe('Wireframe Export Utils', () => {
+  let mockWireframe;
+  let mockElement;
 
-  // Override createElement specifically for 'a' elements
-  document.createElement = vi.fn((tagName: string) => {
-    if (tagName === 'a') {
-      return mockAnchorElement;
-    }
-    return originalCreateElement.call(document, tagName);
-  });
-  
-  // Mock document.body methods
-  document.body.appendChild = vi.fn();
-  document.body.removeChild = vi.fn();
-  
-  it('should generate HTML from wireframe', () => {
-    const wireframe = {
-      id: 'test-wireframe',
-      title: 'Test Wireframe',
-      sections: []
+  beforeEach(() => {
+    mockWireframe = {
+      id: 'mock-id',
+      title: 'Mock Wireframe',
+      sections: [
+        {
+          id: 'section-1',
+          name: 'Hero Section',
+          sectionType: 'hero',
+          copySuggestions: {
+            heading: 'Welcome to Mock Wireframe',
+            subheading: 'This is a mock wireframe for testing'
+          }
+        },
+        {
+          id: 'section-2',
+          name: 'Features Section',
+          sectionType: 'features'
+        }
+      ]
     };
-    
-    const result = generateHtmlFromWireframe(wireframe);
-    expect(result).toBeDefined();
-    expect(result).toContain('Test Wireframe');
+
+    mockElement = document.createElement('div');
   });
-  
-  it('should handle export errors', () => {
-    const errorMessage = 'Test error message';
-    const result = handleExportError(errorMessage);
-    expect(result).toContain(errorMessage);
+
+  describe('exportWireframeAsHTML', () => {
+    it('should generate HTML from wireframe data', async () => {
+      const html = await exportWireframeAsHTML(mockWireframe);
+      expect(typeof html).toBe('string');
+      expect(html).toContain('<!DOCTYPE html>');
+      expect(html).toContain(mockWireframe.title);
+      expect(html).toContain('Welcome to Mock Wireframe');
+    });
+
+    it('should include sections based on their type', async () => {
+      const html = await exportWireframeAsHTML(mockWireframe);
+      expect(html).toContain('hero');
+      expect(html).toContain('features');
+    });
   });
-  
-  it('should export wireframe as HTML', () => {
-    const wireframe = {
-      id: 'test-wireframe',
-      title: 'Test Wireframe',
-      sections: []
-    };
-    
-    exportWireframeAsHTML(wireframe);
-    
-    expect(document.createElement).toHaveBeenCalledWith('a');
-    expect(document.body.appendChild).toHaveBeenCalled();
-    expect(document.body.removeChild).toHaveBeenCalled();
+
+  describe('exportWireframeAsPDF', () => {
+    it('should generate PDF from element', async () => {
+      const blob = await exportWireframeAsPDF(mockElement, mockWireframe);
+      expect(blob).toBeInstanceOf(Blob);
+    });
   });
-  
-  it('should export wireframe as PDF', async () => {
-    const wireframe = {
-      id: 'test-wireframe',
-      title: 'Test Wireframe',
-      sections: []
-    };
-    
-    const mockElement = document.createElement('div');
-    
-    await exportWireframeAsPDF(mockElement, wireframe);
-    
-    // Assertions would verify that html2canvas and jsPDF were called correctly
-  });
-  
-  it('should export wireframe as image', async () => {
-    const wireframe = {
-      id: 'test-wireframe',
-      title: 'Test Wireframe',
-      sections: []
-    };
-    
-    const mockElement = document.createElement('div');
-    
-    await exportWireframeAsImage(mockElement, wireframe);
-    
-    expect(document.createElement).toHaveBeenCalledWith('a');
-    expect(document.body.appendChild).toHaveBeenCalled();
-    expect(document.body.removeChild).toHaveBeenCalled();
+
+  describe('exportWireframeAsImage', () => {
+    it('should generate Image from element', async () => {
+      const blob = await exportWireframeAsImage(mockElement, mockWireframe);
+      expect(blob).toBeInstanceOf(Blob);
+    });
   });
 });

@@ -1,13 +1,12 @@
 import React from 'react';
-import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
-import { getSuggestion, createStyleObject } from './utilities';
+import { getSuggestion, createStyleObject } from '@/utils/copy-suggestions-helper';
 
 /**
  * Generic component renderer for wireframe sections
  * This component renders a section with a consistent structure across the application
  */
-const ComponentRenderer: React.FC<SectionComponentProps> = ({
+const ComponentRenderer: React.FC<any> = ({
   section,
   darkMode,
   deviceType,

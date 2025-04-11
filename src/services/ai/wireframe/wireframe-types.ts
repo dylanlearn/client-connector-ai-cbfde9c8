@@ -145,6 +145,7 @@ export interface WireframeGenerationResult {
   error?: string;
   generationTime?: number;
   imageUrl?: string;
+  model?: string;
 }
 
 /**
@@ -170,7 +171,7 @@ export interface AIWireframe {
   status: 'draft' | 'published' | 'archived';
   tags?: string[];
   version?: number;
-  feedback?: string[];
+  feedback?: string | string[];
   title?: string;
   sections?: any[];
   wireframe_data?: any;

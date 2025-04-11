@@ -1,169 +1,175 @@
 
 import React, { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DeviceType } from '../types';
+import { Button } from '@/components/ui/button';
+import { Monitor, Smartphone, Tablet, Moon, Sun, Download, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { DEVICE_DIMENSIONS } from './DeviceInfo';
-import WireframePreviewSection from './WireframePreviewSection';
-import { Download, MonitorSmartphone, Smartphone, Tablet } from 'lucide-react';
 import { saveAs } from 'file-saver';
+import WireframePreviewSection from './WireframePreviewSection';
 import WireframeExportDialog from '../export/WireframeExportDialog';
-import { exportWireframeAsImage } from '@/utils/wireframe/export-utils';
 
-interface EnhancedWireframePreviewProps {
+export interface EnhancedWireframePreviewProps {
   wireframe: WireframeData;
-  darkMode?: boolean;
   onExport?: (format: string) => void;
-  className?: string;
+  containerRef?: React.RefObject<HTMLDivElement>;
+  onSectionClick?: (sectionId: string) => void;
 }
 
 const EnhancedWireframePreview: React.FC<EnhancedWireframePreviewProps> = ({
   wireframe,
-  darkMode = false,
   onExport,
-  className
+  containerRef: externalContainerRef,
+  onSectionClick
 }) => {
-  const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
+  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(1);
-  const [showExportDialog, setShowExportDialog] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [showExportDialog, setShowExportDialog] = useState<boolean>(false);
   
-  const handleDeviceChange = (device: DeviceType) => {
+  // Create a local ref if an external one is not provided
+  const localContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = externalContainerRef || localContainerRef;
+  
+  const deviceDimensions = {
+    desktop: { width: 1200, height: 'auto' },
+    tablet: { width: 768, height: 'auto' },
+    mobile: { width: 375, height: 'auto' }
+  };
+  
+  const handleDeviceChange = (device: 'desktop' | 'tablet' | 'mobile') => {
     setDeviceType(device);
   };
   
-  const handleZoomChange = (newZoom: number) => {
-    setZoom(Math.min(Math.max(0.25, newZoom), 2));
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
   };
   
-  // Get device dimensions based on selected device
-  const deviceDimensions = DEVICE_DIMENSIONS[deviceType];
-  
-  // Calculate container style based on device and zoom
-  const containerStyle: React.CSSProperties = {
-    width: `${deviceDimensions.width * zoom}px`,
-    height: `${deviceDimensions.height * zoom}px`,
-    transform: `scale(${zoom})`,
-    transformOrigin: 'top left',
-    overflow: 'hidden',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    backgroundColor: darkMode ? '#1a202c' : '#ffffff',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    transition: 'all 0.3s ease'
-  };
-  
-  // Calculate wrapper dimensions to account for scaling
-  const wrapperStyle: React.CSSProperties = {
-    width: `${deviceDimensions.width * zoom}px`,
-    height: `${deviceDimensions.height * zoom}px`,
-  };
-  
-  const handleQuickExport = async () => {
-    if (containerRef.current) {
-      try {
-        const blob = await exportWireframeAsImage(containerRef.current, wireframe);
-        saveAs(blob, `${wireframe.title || 'wireframe'}.png`);
-      } catch (error) {
-        console.error('Error exporting image:', error);
-      }
+  const handleExport = (format: string) => {
+    if (onExport) {
+      onExport(format);
     }
   };
   
+  const handleZoomIn = () => {
+    if (zoom < 2) {
+      setZoom(prev => Math.min(prev + 0.1, 2));
+    }
+  };
+  
+  const handleZoomOut = () => {
+    if (zoom > 0.5) {
+      setZoom(prev => Math.max(prev - 0.1, 0.5));
+    }
+  };
+  
+  const handleResetZoom = () => {
+    setZoom(1);
+  };
+  
+  const handleSectionClick = (sectionId: string) => {
+    if (onSectionClick) {
+      onSectionClick(sectionId);
+    }
+  };
+
   return (
-    <div className={`enhanced-wireframe-preview ${className}`}>
-      <div className="controls-bar flex items-center justify-between mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-        <div className="device-selector">
-          <Tabs 
-            value={deviceType} 
-            onValueChange={(v) => handleDeviceChange(v as DeviceType)}
-            className="device-tabs"
-          >
-            <TabsList>
-              <TabsTrigger value="desktop" className="flex items-center gap-1">
-                <MonitorSmartphone className="h-4 w-4" /> Desktop
-              </TabsTrigger>
-              <TabsTrigger value="tablet" className="flex items-center gap-1">
-                <Tablet className="h-4 w-4" /> Tablet
-              </TabsTrigger>
-              <TabsTrigger value="mobile" className="flex items-center gap-1">
-                <Smartphone className="h-4 w-4" /> Mobile
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+    <div className="enhanced-wireframe-preview">
+      <div className="controls flex flex-wrap justify-between items-center p-2 border-b mb-4">
+        <Tabs 
+          value={deviceType}
+          onValueChange={(value) => handleDeviceChange(value as 'desktop' | 'tablet' | 'mobile')}
+        >
+          <TabsList>
+            <TabsTrigger value="desktop" className="flex items-center gap-1">
+              <Monitor className="h-4 w-4" />
+              <span className="hidden sm:inline">Desktop</span>
+            </TabsTrigger>
+            <TabsTrigger value="tablet" className="flex items-center gap-1">
+              <Tablet className="h-4 w-4" />
+              <span className="hidden sm:inline">Tablet</span>
+            </TabsTrigger>
+            <TabsTrigger value="mobile" className="flex items-center gap-1">
+              <Smartphone className="h-4 w-4" />
+              <span className="hidden sm:inline">Mobile</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         
-        <div className="tools flex items-center gap-2">
-          <div className="zoom-controls flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleZoomChange(zoom - 0.25)}
-              disabled={zoom <= 0.25}
-            >
-              -
-            </Button>
-            <span className="text-sm font-medium">
-              {Math.round(zoom * 100)}%
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleZoomChange(zoom + 0.25)}
-              disabled={zoom >= 2}
-            >
-              +
-            </Button>
-          </div>
-          
+        <div className="flex gap-2">
           <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleQuickExport}
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleDarkMode}
+            title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             className="flex items-center gap-1"
           >
-            <Download className="h-4 w-4" /> Export
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleZoomIn}
+            title="Zoom In"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleZoomOut}
+            title="Zoom Out"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleResetZoom}
+            title="Reset Zoom"
+          >
+            <RefreshCw className="h-4 w-4" />
           </Button>
           
           <Button 
             variant="outline" 
-            size="sm"
+            size="sm" 
             onClick={() => setShowExportDialog(true)}
+            className="flex items-center gap-1"
           >
-            More Options
+            <Download className="h-4 w-4" />
+            <span>Export</span>
           </Button>
         </div>
       </div>
       
-      <div className="preview-device-info text-sm text-gray-500 mb-2">
-        {deviceDimensions.name} - {deviceDimensions.width}x{deviceDimensions.height}px
-      </div>
-      
-      <div className="preview-wrapper" style={wrapperStyle}>
-        <div 
-          ref={containerRef}
-          className="preview-container" 
-          style={containerStyle}
-        >
-          <div className="wireframe-content">
-            {wireframe && wireframe.sections && wireframe.sections.map((section, index) => (
-              <WireframePreviewSection 
-                key={section.id || `section-${index}`}
-                section={section}
-                darkMode={darkMode}
-                deviceType={
-                  deviceType === 'mobile' || deviceType === 'mobileLandscape' || deviceType === 'mobileSm' ? 'mobile' : 
-                  deviceType === 'tablet' || deviceType === 'tabletLandscape' ? 'tablet' : 
-                  'desktop'
-                }
-              />
-            ))}
+      <div
+        ref={containerRef}
+        className={`wireframe-preview ${darkMode ? 'dark-mode bg-gray-900 text-white' : 'light-mode bg-white text-gray-900'} overflow-auto border rounded-md transition-all`}
+        style={{
+          width: `${deviceDimensions[deviceType].width}px`,
+          maxWidth: '100%',
+          margin: '0 auto',
+          transform: `scale(${zoom})`,
+          transformOrigin: 'top center',
+          transition: 'transform 0.3s ease'
+        }}
+      >
+        {wireframe.sections?.map((section, index) => (
+          <div key={section.id || index} onClick={() => handleSectionClick(section.id)}>
+            <WireframePreviewSection
+              section={section}
+              darkMode={darkMode}
+              deviceType={deviceType}
+              className={`mb-4 ${section.backgroundColor ? '' : 'border'}`}
+            />
           </div>
-        </div>
+        ))}
       </div>
       
-      <WireframeExportDialog 
+      <WireframeExportDialog
         isOpen={showExportDialog}
         onClose={() => setShowExportDialog(false)}
         wireframe={wireframe}

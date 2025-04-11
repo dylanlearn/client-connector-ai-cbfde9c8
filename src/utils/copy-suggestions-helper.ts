@@ -14,15 +14,19 @@ export const getSuggestion = (
   // Handle array of suggestions
   if (Array.isArray(copySuggestions)) {
     for (const suggestion of copySuggestions) {
-      if (suggestion && suggestion[key]) {
-        return String(suggestion[key]);
+      if (suggestion && typeof suggestion === 'object' && key in suggestion) {
+        return String(suggestion[key] || defaultValue);
       }
     }
     return defaultValue;
   }
   
   // Handle object format
-  return String(copySuggestions[key] || defaultValue);
+  if (typeof copySuggestions === 'object' && key in copySuggestions) {
+    return String(copySuggestions[key] || defaultValue);
+  }
+  
+  return defaultValue;
 };
 
 /**
