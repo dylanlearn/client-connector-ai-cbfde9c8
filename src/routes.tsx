@@ -29,6 +29,7 @@ import { Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Header from "./components/layout/Header";
+import Home from "./pages/Home";
 
 // Admin routes check function
 interface WindowWithAdminRoutes extends Window {
@@ -68,6 +69,10 @@ const router = createBrowserRouter([
     element: <Layout><Index /></Layout>,
   },
   {
+    path: "/home",
+    element: <Layout><Home /></Layout>,
+  },
+  {
     path: "/login",
     element: <AuthLayout><Login /></AuthLayout>,
   },
@@ -77,53 +82,59 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <Layout><Dashboard /></Layout>,
+    element: <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>,
   },
   {
     path: "/settings",
-    element: <Layout><Settings /></Layout>,
+    element: <ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>,
   },
   {
     path: "/project/:projectId",
-    element: <Layout><ProjectDetailPage /></Layout>,
+    element: <ProtectedRoute><Layout><ProjectDetailPage /></Layout></ProtectedRoute>,
   },
   {
     path: "/wireframe/:projectId?",
-    element: <Layout><WireframeStudioPage /></Layout>,
+    element: <ProtectedRoute><Layout><WireframeStudioPage /></Layout></ProtectedRoute>,
   },
   {
     path: "/design-canvas/:id?",
-    element: <Layout><DesignCanvasPage /></Layout>,
+    element: <ProtectedRoute><Layout><DesignCanvasPage /></Layout></ProtectedRoute>,
   },
   {
     path: "/design-process",
     element: (
-      <Layout>
-        <DesignProcessProvider>
-          <DesignProcessPage />
-        </DesignProcessProvider>
-      </Layout>
+      <ProtectedRoute>
+        <Layout>
+          <DesignProcessProvider>
+            <DesignProcessPage />
+          </DesignProcessProvider>
+        </Layout>
+      </ProtectedRoute>
     ),
   },
   {
     path: '/projects',
-    element: <Layout><Projects /></Layout>,
+    element: <ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>,
   },
   {
     path: '/project/:projectId/wireframe-studio',
-    element: <Layout><WireframeStudioPage /></Layout>,
+    element: <ProtectedRoute><Layout><WireframeStudioPage /></Layout></ProtectedRoute>,
   },
   {
     path: '/wireframe-studio',
-    element: <Layout><WireframeStudioPage /></Layout>,
+    element: <ProtectedRoute><Layout><WireframeStudioPage /></Layout></ProtectedRoute>,
   },
   {
     path: '/wireframe-studio/:projectId',
-    element: <Layout><WireframeStudioPage /></Layout>,
+    element: <ProtectedRoute><Layout><WireframeStudioPage /></Layout></ProtectedRoute>,
+  },
+  {
+    path: '/wireframe-generator',
+    element: <ProtectedRoute><Layout><WireframeStudioPage /></Layout></ProtectedRoute>,
   },
   {
     path: '/design-picker',
-    element: <Layout><DesignPicker /></Layout>,
+    element: <ProtectedRoute><Layout><DesignPicker /></Layout></ProtectedRoute>,
   },
   {
     path: '/intake-form',
@@ -131,23 +142,23 @@ const router = createBrowserRouter([
   },
   {
     path: '/website-analyzer',
-    element: <Layout><WebsiteAnalyzer /></Layout>,
+    element: <ProtectedRoute><Layout><WebsiteAnalyzer /></Layout></ProtectedRoute>,
   },
   {
     path: '/feedback-analysis',
-    element: <Layout><FeedbackAnalysis /></Layout>,
+    element: <ProtectedRoute><Layout><FeedbackAnalysis /></Layout></ProtectedRoute>,
   },
   {
     path: '/ai-suggestions',
-    element: <Layout><AIDesignSuggestions /></Layout>,
+    element: <ProtectedRoute><Layout><AIDesignSuggestions /></Layout></ProtectedRoute>,
   },
   {
     path: '/analytics',
-    element: <Layout><Analytics /></Layout>,
+    element: <ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>,
   },
   {
     path: '/clients',
-    element: <Layout><Clients /></Layout>,
+    element: <ProtectedRoute><Layout><Clients /></Layout></ProtectedRoute>,
   },
   {
     path: '/privacy',

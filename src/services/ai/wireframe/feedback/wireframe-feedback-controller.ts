@@ -1,213 +1,159 @@
-
-import { FeedbackInterpreterService, FeedbackProcessingOptions } from './feedback-interpreter-service';
-import { WireframeModifierService } from './wireframe-modifier-service';
 import { wireframeApiService } from '../api/wireframe-api-service';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData } from '../wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Interface for feedback-driven wireframe update options
- */
-export interface FeedbackUpdateOptions extends FeedbackProcessingOptions {
-  createNewVersion?: boolean;
-  saveChanges?: boolean;
-  applyThreshold?: number; // Confidence threshold for applying changes (0-1)
-}
-
-/**
- * Interface for feedback update result
- */
-export interface FeedbackUpdateResult {
-  success: boolean;
-  wireframe: WireframeData;
-  changes: {
-    description: string;
-    modifiedSections: string[];
-    addedSections: string[];
-    removedSections: string[];
-  };
-  message?: string;
-  error?: string;
-  newVersionId?: string;
-}
-
-/**
- * Controller service that processes feedback and applies appropriate wireframe updates
+ * Service class for processing wireframe feedback and modifying wireframes.
  */
 export class WireframeFeedbackController {
+  constructor() {
+    // You can inject dependencies here if needed, e.g., an AI service
+  }
+
   /**
-   * Process user feedback and update the wireframe accordingly
+   * Simulates modifying a wireframe based on feedback using AI.
+   * @param wireframe The original wireframe data.
+   * @param feedback The feedback string.
+   * @returns A promise that resolves to the modified wireframe data.
    */
-  static async processWireframeFeedback(
-    wireframeId: string,
-    feedbackText: string,
-    options: FeedbackUpdateOptions = {}
-  ): Promise<FeedbackUpdateResult> {
-    try {
-      console.log(`Processing feedback for wireframe ${wireframeId}:`, feedbackText);
-      
-      // Retrieve the current wireframe
-      let wireframe: WireframeData;
-      
-      try {
-        const retrievedWireframe = await wireframeApiService.getWireframe(wireframeId);
-        
-        if (!retrievedWireframe) {
-          throw new Error(`Wireframe with ID ${wireframeId} not found`);
-        }
-        
-        wireframe = {
-          id: retrievedWireframe.id,
-          title: retrievedWireframe.title || '',
-          description: retrievedWireframe.description || '',
-          sections: retrievedWireframe.sections || [],
-          colorScheme: retrievedWireframe.colorScheme || {
-            primary: '#3182CE',
-            secondary: '#805AD5',
-            accent: '#ED8936',
-            background: '#FFFFFF',
-            text: '#1A202C'
-          },
-          typography: retrievedWireframe.typography || {
-            headings: 'Inter',
-            body: 'Inter'
-          }
-        };
-      } catch (err) {
-        console.error('Error retrieving wireframe:', err);
-        return {
-          success: false,
-          wireframe: createEmptyWireframe({ id: wireframeId }),
-          changes: { description: '', modifiedSections: [], addedSections: [], removedSections: [] },
-          error: `Failed to retrieve wireframe: ${err instanceof Error ? err.message : String(err)}`
-        };
-      }
-      
-      // Step 1: Interpret the feedback
-      const interpretationOptions: FeedbackProcessingOptions = {
-        wireframeId,
-        contextualSections: wireframe.sections,
-        userId: options.userId,
-        detailedAnalysis: true
+  private async modifyWireframeBasedOnFeedback(
+    wireframe: WireframeData,
+    feedback: string
+  ): Promise<{ success: boolean; message?: string; wireframe: WireframeData }> {
+    // Simulate AI processing - replace with actual AI logic
+    console.log('Simulating AI modification based on feedback:', feedback);
+    
+    // Basic validation
+    if (!wireframe || !wireframe.sections) {
+      return {
+        success: false,
+        message: 'Invalid wireframe data',
+        wireframe
       };
+    }
+    
+    // Example modification: Add a new section based on feedback
+    const newSection = {
+      id: uuidv4(),
+      name: 'AI Generated Section',
+      type: 'hero',
+      content: `This section was generated based on the feedback: ${feedback}`,
+      style: {
+        padding: '20px',
+        backgroundColor: '#f0f0f0'
+      }
+    };
+    
+    const modifiedWireframe: WireframeData = {
+      ...wireframe,
+      sections: [...wireframe.sections, newSection]
+    };
+    
+    return {
+      success: true,
+      wireframe: modifiedWireframe
+    };
+  }
+
+  /**
+   * Processes feedback for a wireframe, potentially creating a new version or applying changes.
+   * @param wireframeId The ID of the wireframe to provide feedback for.
+   * @param feedback The feedback string.
+   * @param options Options to control the feedback processing behavior.
+   * @param options.createNewVersion Whether to create a new version of the wireframe.
+   * @param options.applyChanges Whether to apply the changes directly to the original wireframe.
+   * @returns A promise that resolves when the feedback has been submitted.
+   */
+  async processFeedback(wireframeId: string, feedback: string, options: {
+    createNewVersion?: boolean;
+    applyChanges?: boolean;
+  } = {}): Promise<{
+    success: boolean;
+    message: string;
+    wireframeId: string;
+    newVersionId?: string;
+  }> {
+    try {
+      // Get the original wireframe
+      const wireframe = await wireframeApiService.getWireframe(wireframeId);
       
-      const interpretation = await FeedbackInterpreterService.interpretFeedback(
-        feedbackText, 
-        interpretationOptions
-      );
-      
-      // Apply confidence threshold if specified
-      const applyThreshold = options.applyThreshold || 0.6;
-      const eligibleChanges = interpretation.suggestedChanges.filter(
-        change => change.confidence >= applyThreshold
-      );
-      
-      if (eligibleChanges.length === 0) {
+      if (!wireframe) {
         return {
           success: false,
-          wireframe,
-          changes: { description: 'No high-confidence changes identified', modifiedSections: [], addedSections: [], removedSections: [] },
-          message: 'The feedback was processed, but no changes were made due to low confidence in interpretation.'
+          message: `Wireframe with ID ${wireframeId} not found`,
+          wireframeId
         };
       }
       
-      // Step 2: Apply the interpretation to modify the wireframe
-      const modificationResult = WireframeModifierService.applyFeedbackToWireframe(
+      // Validate feedback
+      if (!feedback || feedback.trim() === '') {
+        return {
+          success: false,
+          message: 'Feedback cannot be empty',
+          wireframeId
+        };
+      }
+      
+      // Process the feedback and get AI-modified wireframe
+      const modificationResult = await this.modifyWireframeBasedOnFeedback(
         wireframe,
-        { ...interpretation, suggestedChanges: eligibleChanges }
+        feedback
       );
       
-      // If no changes were made, return early
-      if (!modificationResult.modified) {
+      if (!modificationResult.success) {
         return {
           success: false,
-          wireframe,
-          changes: { 
-            description: 'No changes were made to the wireframe', 
-            modifiedSections: [], 
-            addedSections: [], 
-            removedSections: [] 
-          },
-          message: 'The feedback was processed, but no meaningful changes could be applied to the wireframe.'
+          message: modificationResult.message || 'Failed to process feedback',
+          wireframeId
         };
       }
       
-      // Step 3: Save the changes if requested
       let newVersionId: string | undefined;
       
-      if (options.saveChanges) {
-        try {
-          // If creating a new version
-          if (options.createNewVersion) {
-            // Create a new wireframe with reference to the original
-            const newVersionWireframe: WireframeData = {
-              ...modificationResult.wireframe,
-              id: uuidv4(),
-              metadata: {
-                ...modificationResult.wireframe.metadata,
-                originalWireframeId: wireframeId
-              }
-            };
-            
-            const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
-            
-            if (versionResult && typeof versionResult === 'object' && versionResult.id) {
-              newVersionId = versionResult.id;
-              console.log('Created new wireframe version:', newVersionId);
+      // Save changes based on options
+      if (options.applyChanges) {
+        // Apply changes directly to the original wireframe
+        await wireframeApiService.saveWireframe(modificationResult.wireframe);
+        
+        // If creating a new version
+        if (options.createNewVersion) {
+          // Create a new wireframe with reference to the original
+          const newVersionWireframe: WireframeData = {
+            ...modificationResult.wireframe,
+            id: uuidv4(),
+            metadata: {
+              ...modificationResult.wireframe.metadata,
+              originalWireframeId: wireframeId
             }
-          } else {
-            // Direct update
-            const updateResult = await wireframeApiService.saveWireframe(modificationResult.wireframe);
-            console.log('Updated wireframe directly', updateResult);
+          };
+          
+          const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
+          
+          if (versionResult && typeof versionResult === 'object' && versionResult.id) {
+            newVersionId = versionResult.id;
+            console.log('Created new wireframe version:', newVersionId);
           }
-        } catch (err) {
-          console.error('Error saving wireframe changes:', err);
-          // Continue with the result even if saving failed
         }
       }
       
       return {
         success: true,
-        wireframe: modificationResult.wireframe,
-        changes: {
-          description: modificationResult.changeDescription,
-          modifiedSections: modificationResult.modifiedSections,
-          addedSections: modificationResult.addedSections,
-          removedSections: modificationResult.removedSections
-        },
-        message: `Successfully applied feedback: ${modificationResult.changeDescription}`,
+        message: 'Feedback processed successfully',
+        wireframeId,
         newVersionId
       };
     } catch (error) {
-      console.error('Error in processWireframeFeedback:', error);
-      
+      console.error('Failed to process wireframe feedback:', error);
       return {
         success: false,
-        wireframe: createEmptyWireframe({ id: wireframeId }),
-        changes: { description: '', modifiedSections: [], addedSections: [], removedSections: [] },
-        error: `Failed to process feedback: ${error instanceof Error ? error.message : String(error)}`
+        message: 'Failed to process wireframe feedback',
+        wireframeId
       };
     }
   }
+
+  // Additional methods for feedback analysis, etc. can be added here
 }
 
-// Add colorScheme and typography to wireframe objects
-const createEmptyWireframe = (partialData: any = {}): WireframeData => {
-  return {
-    id: partialData.id || 'new-wireframe-id',
-    title: partialData.title || 'New Wireframe',
-    description: partialData.description || 'Created from feedback controller',
-    sections: partialData.sections || [],
-    colorScheme: partialData.colorScheme || {
-      primary: '#3182CE',
-      secondary: '#805AD5',
-      accent: '#ED8936',
-      background: '#FFFFFF',
-      text: '#1A202C'
-    },
-    typography: partialData.typography || {
-      headings: 'Inter',
-      body: 'Inter'
-    }
-  };
-};
+export const wireframeFeedbackController = new WireframeFeedbackController();
+export default wireframeFeedbackController;
