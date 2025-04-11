@@ -1,6 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeSection, WireframeComponent } from '../wireframe-types';
+import { WireframeData, WireframeSection, WireframeComponent } from './wireframe-types';
 
 interface GenerationParams {
   title?: string;
