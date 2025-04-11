@@ -1,7 +1,7 @@
 
 import { WireframeSection } from "@/services/ai/wireframe/wireframe-types";
 
-export type DeviceType = 'desktop' | 'tablet' | 'mobile' | 'responsive' | string;
+export type DeviceType = 'desktop' | 'tablet' | 'tabletLandscape' | 'mobile' | 'mobileLandscape' | 'mobileSm';
 export type ViewMode = 'preview' | 'edit' | 'editor' | 'code' | 'flowchart';
 
 export interface BaseComponentProps {
@@ -20,6 +20,8 @@ export interface SectionComponentProps {
   editable?: boolean;
   style?: React.CSSProperties;
   className?: string;
+  sectionIndex?: number;
+  onSectionClick?: (sectionId: string) => void;
 }
 
 export interface ComponentRendererProps {
@@ -31,8 +33,50 @@ export interface ComponentRendererProps {
   onClick: (sectionId: string) => void;
 }
 
+export interface WireframeProps {
+  wireframe: any;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  onSelect?: (sectionId: string) => void;
+  className?: string;
+}
+
+export interface WireframeRendererProps {
+  wireframeData: any;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+}
+
+export interface WireframeSectionRendererProps {
+  section: WireframeSection;
+  viewMode?: ViewMode;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  isSelected?: boolean;
+  sectionIndex?: number;
+  onSectionClick?: (sectionId: string) => void;
+}
+
+export interface WireframeVisualizerProps {
+  wireframe: any;
+  darkMode?: boolean;
+  deviceType?: DeviceType;
+  viewMode?: ViewMode;
+  onSectionClick?: (sectionId: string) => void;
+  selectedSectionId?: string | null;
+  onSelect?: (sectionId: string) => void;
+  preview?: boolean;
+}
+
 export interface WireframeAISuggestionsProps {
   wireframeId?: string;
+  wireframe?: any;
   sectionId?: string;
   onClose?: () => void;
   onApplySuggestion?: (suggestion: any) => void;

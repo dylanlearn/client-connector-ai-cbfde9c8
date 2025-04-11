@@ -1,186 +1,214 @@
 
 import React from 'react';
-import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
+import { SectionComponentProps } from '../types';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const PricingSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
-  darkMode,
-  viewMode,
-  deviceType,
-  isSelected,
-  onClick,
+  viewMode = 'preview',
+  darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  // Extract pricing plans from section data with fallbacks
-  const plans = section.data?.plans || [];
-  const heading = section.data?.heading || 'Simple, Transparent Pricing';
-  const subheading = section.data?.subheading || 'Choose the plan that works best for you';
-  
-  // Get section styling with fallbacks
-  const sectionStyle = section.style || {};
-  const backgroundColor = sectionStyle.backgroundColor || (darkMode ? '#1f2937' : '#ffffff');
-  const textColor = sectionStyle.textColor || (darkMode ? '#ffffff' : '#111827');
-  
-  // Handle section click
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClick) {
-      onClick();
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick(section.id);
     }
   };
   
+  // Pricing plan data
+  const plans = [
+    {
+      name: getSuggestion(section.copySuggestions, 'plan1Name', 'Basic'),
+      price: getSuggestion(section.copySuggestions, 'plan1Price', '$9'),
+      period: getSuggestion(section.copySuggestions, 'plan1Period', '/month'),
+      description: getSuggestion(section.copySuggestions, 'plan1Description', 'Perfect for individuals and small projects'),
+      features: [
+        getSuggestion(section.copySuggestions, 'plan1Feature1', '5 Projects'),
+        getSuggestion(section.copySuggestions, 'plan1Feature2', '10GB Storage'),
+        getSuggestion(section.copySuggestions, 'plan1Feature3', 'Basic Support'),
+        getSuggestion(section.copySuggestions, 'plan1Feature4', 'Email Notifications'),
+      ],
+      cta: getSuggestion(section.copySuggestions, 'plan1Cta', 'Get Started'),
+      popular: false
+    },
+    {
+      name: getSuggestion(section.copySuggestions, 'plan2Name', 'Pro'),
+      price: getSuggestion(section.copySuggestions, 'plan2Price', '$29'),
+      period: getSuggestion(section.copySuggestions, 'plan2Period', '/month'),
+      description: getSuggestion(section.copySuggestions, 'plan2Description', 'For professional users and growing teams'),
+      features: [
+        getSuggestion(section.copySuggestions, 'plan2Feature1', '20 Projects'),
+        getSuggestion(section.copySuggestions, 'plan2Feature2', '50GB Storage'),
+        getSuggestion(section.copySuggestions, 'plan2Feature3', 'Priority Support'),
+        getSuggestion(section.copySuggestions, 'plan2Feature4', 'Advanced Analytics'),
+        getSuggestion(section.copySuggestions, 'plan2Feature5', 'Team Collaboration'),
+      ],
+      cta: getSuggestion(section.copySuggestions, 'plan2Cta', 'Get Started'),
+      popular: true
+    },
+    {
+      name: getSuggestion(section.copySuggestions, 'plan3Name', 'Enterprise'),
+      price: getSuggestion(section.copySuggestions, 'plan3Price', '$99'),
+      period: getSuggestion(section.copySuggestions, 'plan3Period', '/month'),
+      description: getSuggestion(section.copySuggestions, 'plan3Description', 'For large organizations with advanced needs'),
+      features: [
+        getSuggestion(section.copySuggestions, 'plan3Feature1', 'Unlimited Projects'),
+        getSuggestion(section.copySuggestions, 'plan3Feature2', '500GB Storage'),
+        getSuggestion(section.copySuggestions, 'plan3Feature3', 'Dedicated Support'),
+        getSuggestion(section.copySuggestions, 'plan3Feature4', 'Custom Integrations'),
+        getSuggestion(section.copySuggestions, 'plan3Feature5', 'Advanced Security'),
+        getSuggestion(section.copySuggestions, 'plan3Feature6', 'SLA Guarantees'),
+      ],
+      cta: getSuggestion(section.copySuggestions, 'plan3Cta', 'Contact Sales'),
+      popular: false
+    }
+  ];
+  
+  // Determine variant
+  const variant = section.componentVariant || 'columns';
+  
+  // Create properly typed style object
+  const styles = createStyleObject(section.style);
+  
   return (
-    <div
+    <div 
       className={cn(
-        'wireframe-section pricing-section py-12 md:py-16 px-4',
-        {
-          'border-2 border-blue-500': isSelected,
-          'dark': darkMode,
-        }
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-gray-900' : 'bg-white',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
-      style={{
-        backgroundColor,
-        color: textColor,
-      }}
       onClick={handleClick}
-      data-section-id={section.id}
-      data-section-type={section.sectionType}
+      style={styles}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className={cn(
-            'text-2xl md:text-3xl lg:text-4xl font-bold mb-4',
-            { 'text-white': darkMode }
+            'text-3xl font-bold mb-4',
+            darkMode ? 'text-white' : 'text-gray-900'
           )}>
-            {heading}
+            {getSuggestion(section.copySuggestions, 'heading', 'Simple, Transparent Pricing')}
           </h2>
+          
           <p className={cn(
-            'text-lg opacity-80 max-w-3xl mx-auto',
-            { 'text-gray-300': darkMode, 'text-gray-600': !darkMode }
+            'max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {subheading}
+            {getSuggestion(section.copySuggestions, 'subheading', 'Choose the plan that best fits your needs. All plans include a 14-day free trial.')}
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {plans.length > 0 ? plans.map((plan: any, index: number) => {
-            const isPopular = plan.isPopular || plan.popular || false;
-            
-            return (
-              <div key={plan.id || `plan-${index}`} className={cn(
-                'pricing-plan relative p-6 rounded-lg border',
-                {
-                  'border-blue-500 shadow-lg': isPopular,
-                  'border-gray-300': !isPopular && !darkMode,
-                  'border-gray-700': !isPopular && darkMode,
-                  'bg-gray-800': darkMode,
-                  'bg-white': !darkMode,
-                }
-              )}>
-                {isPopular && (
-                  <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-3">
-                    <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      Popular
-                    </div>
+        {/* Columns layout */}
+        {variant === 'columns' && (
+          <div className={cn(
+            'grid gap-8',
+            deviceType === 'mobile' ? 'grid-cols-1' : 
+            deviceType === 'tablet' ? 'grid-cols-2' : 
+            'grid-cols-3'
+          )}>
+            {plans.map((plan, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  'rounded-lg overflow-hidden',
+                  plan.popular && 'ring-2 ring-blue-500 ring-offset-2',
+                  darkMode ? 'bg-gray-800' : 'bg-white border border-gray-200',
+                )}
+              >
+                {plan.popular && (
+                  <div className={cn(
+                    'bg-blue-600 text-white text-center py-2 font-medium',
+                  )}>
+                    Most Popular
                   </div>
                 )}
                 
-                <h3 className="text-xl font-bold mb-2">{plan.name || `Plan ${index + 1}`}</h3>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold">{plan.price || `$${(index + 1) * 10}`}</span>
-                  <span className="text-sm opacity-70">{plan.billingPeriod || '/month'}</span>
-                </div>
-                <p className="mb-6 opacity-80">{plan.description || 'Plan description placeholder'}</p>
-                
-                <ul className="space-y-3 mb-8">
-                  {(plan.features || []).map((feature: string, i: number) => (
-                    <li key={i} className="flex items-start">
-                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-600 mr-2">✓</span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
+                <div className="p-6">
+                  <h3 className={cn(
+                    'text-xl font-bold mb-2',
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  )}>
+                    {plan.name}
+                  </h3>
                   
-                  {/* Display placeholder features if none are defined */}
-                  {(!plan.features || plan.features.length === 0) && (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <li key={i} className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-600 mr-2">✓</span>
-                        <span>Feature {i + 1} included</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-                
-                <button className={cn(
-                  'w-full py-3 px-4 rounded-lg font-medium',
-                  {
-                    'bg-blue-600 text-white hover:bg-blue-700': isPopular,
-                    'bg-gray-200 text-gray-800 hover:bg-gray-300': !isPopular && !darkMode,
-                    'bg-gray-700 text-white hover:bg-gray-600': !isPopular && darkMode,
-                  }
-                )}>
-                  {plan.ctaText || 'Get Started'}
-                </button>
-              </div>
-            );
-          }) : (
-            // Display placeholder plans if none are defined
-            ['Basic', 'Pro', 'Enterprise'].map((planName, index) => {
-              const isPopular = index === 1; // Make the middle plan popular by default
-              
-              return (
-                <div key={`placeholder-plan-${index}`} className={cn(
-                  'pricing-plan relative p-6 rounded-lg border',
-                  {
-                    'border-blue-500 shadow-lg': isPopular,
-                    'border-gray-300': !isPopular && !darkMode,
-                    'border-gray-700': !isPopular && darkMode,
-                    'bg-gray-800': darkMode,
-                    'bg-white': !darkMode,
-                  }
-                )}>
-                  {isPopular && (
-                    <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-3">
-                      <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        Popular
-                      </div>
-                    </div>
-                  )}
-                  
-                  <h3 className="text-xl font-bold mb-2">{planName}</h3>
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold">${(index + 1) * 10}</span>
-                    <span className="text-sm opacity-70">/month</span>
-                  </div>
-                  <p className="mb-6 opacity-80">
-                    {index === 0 && "Perfect for individuals and small projects"}
-                    {index === 1 && "Ideal for growing businesses and teams"}
-                    {index === 2 && "Advanced features for large organizations"}
+                  <p className={cn(
+                    'mb-4',
+                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                  )}>
+                    {plan.description}
                   </p>
                   
-                  <ul className="space-y-3 mb-8">
-                    {Array.from({ length: 4 + index }).map((_, i) => (
-                      <li key={i} className="flex items-start">
-                        <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-600 mr-2">✓</span>
-                        <span>Feature {i + 1} included</span>
+                  <div className="flex items-baseline mb-6">
+                    <span className={cn(
+                      'text-4xl font-bold',
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    )}>
+                      {plan.price}
+                    </span>
+                    <span className={cn(
+                      'ml-1 text-gray-500',
+                    )}>
+                      {plan.period}
+                    </span>
+                  </div>
+                  
+                  <ul className="space-y-3 mb-6">
+                    {plan.features.map((feature, j) => (
+                      <li key={j} className="flex items-center">
+                        <svg className={cn(
+                          'h-5 w-5 mr-2',
+                          darkMode ? 'text-blue-400' : 'text-blue-500'
+                        )} fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                        </svg>
+                        <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{feature}</span>
                       </li>
                     ))}
                   </ul>
                   
                   <button className={cn(
-                    'w-full py-3 px-4 rounded-lg font-medium',
-                    {
-                      'bg-blue-600 text-white hover:bg-blue-700': isPopular,
-                      'bg-gray-200 text-gray-800 hover:bg-gray-300': !isPopular && !darkMode,
-                      'bg-gray-700 text-white hover:bg-gray-600': !isPopular && darkMode,
-                    }
+                    'w-full py-2 px-4 rounded font-medium',
+                    plan.popular ? 
+                      'bg-blue-600 text-white hover:bg-blue-700' : 
+                      darkMode ? 
+                        'bg-gray-700 text-white hover:bg-gray-600' : 
+                        'bg-gray-200 text-gray-800 hover:bg-gray-300'
                   )}>
-                    Get Started
+                    {plan.cta}
                   </button>
                 </div>
-              );
-            })
-          )}
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Toggle variant (simplified) */}
+        {variant === 'toggle' && (
+          <div className="mb-8 text-center">
+            <div className="inline-flex items-center bg-gray-200 rounded-full p-1">
+              <button className="px-4 py-2 rounded-full bg-white shadow">Monthly</button>
+              <button className="px-4 py-2 rounded-full">Yearly</button>
+            </div>
+            <p className={cn(
+              'mt-2 text-sm',
+              darkMode ? 'text-gray-400' : 'text-gray-600'
+            )}>
+              Save 20% with yearly billing
+            </p>
+          </div>
+        )}
+        
+        {/* Additional note */}
+        <div className="text-center mt-12">
+          <p className={cn(
+            'text-sm',
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          )}>
+            {getSuggestion(section.copySuggestions, 'additionalNote', 'All plans include our core features. Need something custom? Contact our sales team.')}
+          </p>
         </div>
       </div>
     </div>

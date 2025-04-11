@@ -14,7 +14,7 @@ const FAQSectionRenderer: React.FC<SectionComponentProps> = ({
 }) => {
   const handleClick = () => {
     if (onClick && section.id) {
-      onClick();
+      onClick(section.id);
     }
   };
   

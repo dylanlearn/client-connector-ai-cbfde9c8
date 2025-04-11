@@ -9,12 +9,16 @@ import FeaturesSectionRenderer from './FeaturesSectionRenderer';
 import TestimonialsSectionRenderer from './TestimonialsSectionRenderer';
 import PricingSectionRenderer from './PricingSectionRenderer';
 import FooterSectionRenderer from './FooterSectionRenderer';
+import FAQSectionRenderer from './FAQSectionRenderer';
+import BlogSectionRenderer from './BlogSectionRenderer';
+import TestimonialSectionRenderer from './TestimonialSectionRenderer';
+import FeatureSectionRenderer from './FeatureSectionRenderer';
 
 /**
  * Factory component that returns the appropriate section renderer
  */
 const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
-  const { section, viewMode } = props;
+  const { section, viewMode, onClick } = props;
   
   // Map ViewMode to ComponentRenderer compatible viewMode
   const mappedViewMode = viewMode === 'edit' || viewMode === 'editor' || viewMode === 'code' 
@@ -28,7 +32,7 @@ const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
     darkMode: props.darkMode || false, // Ensure darkMode is always provided
     deviceType: props.deviceType || 'desktop', // Ensure deviceType is always provided
     isSelected: props.isSelected || false, // Ensure isSelected is always provided
-    onClick: props.onClick || (() => {}) // Ensure onClick is always provided with a default no-op function
+    onClick: onClick || ((sectionId: string) => {}) // Ensure onClick is always provided with a default no-op function
   };
   
   // Normalize section type to handle variations
@@ -43,24 +47,40 @@ const SectionRendererFactory: React.FC<SectionComponentProps> = (props) => {
     return <CTASectionRenderer {...props} />;
   }
   
-  if (sectionType === 'features' || sectionType.startsWith('feature')) {
-    return <FeaturesSectionRenderer {...adjustedProps} />;
+  if (sectionType === 'features' || sectionType.startsWith('feature-')) {
+    return <FeaturesSectionRenderer {...props} />;
+  }
+
+  if (sectionType === 'feature' || sectionType === 'single-feature') {
+    return <FeatureSectionRenderer {...props} />;
   }
   
-  if (sectionType === 'testimonials' || sectionType === 'testimonial' || sectionType.startsWith('testimonial-')) {
-    return <TestimonialsSectionRenderer {...adjustedProps} />;
+  if (sectionType === 'testimonials' || sectionType.startsWith('testimonials-')) {
+    return <TestimonialsSectionRenderer {...props} />;
+  }
+
+  if (sectionType === 'testimonial' || sectionType.startsWith('testimonial-')) {
+    return <TestimonialSectionRenderer {...props} />;
   }
   
   if (sectionType === 'pricing' || sectionType.startsWith('pricing-')) {
-    return <PricingSectionRenderer {...adjustedProps} />;
+    return <PricingSectionRenderer {...props} />;
   }
   
   if (sectionType === 'footer' || sectionType.startsWith('footer-')) {
-    return <FooterSectionRenderer {...adjustedProps} />;
+    return <FooterSectionRenderer {...props} />;
+  }
+
+  if (sectionType === 'faq' || sectionType.startsWith('faq-')) {
+    return <FAQSectionRenderer {...props} />;
+  }
+
+  if (sectionType === 'blog' || sectionType.startsWith('blog-')) {
+    return <BlogSectionRenderer {...props} />;
   }
   
   // Fall back to the generic component renderer for any unhandled types
-  return <ComponentRenderer {...adjustedProps} />;
+  return <ComponentRenderer {...props} />;
 };
 
 export default SectionRendererFactory;

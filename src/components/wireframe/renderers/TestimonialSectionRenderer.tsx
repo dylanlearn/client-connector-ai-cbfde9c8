@@ -14,28 +14,9 @@ const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
 }) => {
   const handleClick = () => {
     if (onClick && section.id) {
-      onClick();
+      onClick(section.id);
     }
   };
-  
-  // Sample testimonials
-  const testimonials = [
-    {
-      quote: getSuggestion(section.copySuggestions, 'testimonial1', 'This product has completely transformed how we operate. The efficiency gains alone have paid for the investment many times over.'),
-      author: getSuggestion(section.copySuggestions, 'author1', 'Jane Smith'),
-      role: getSuggestion(section.copySuggestions, 'role1', 'CEO, Company Name')
-    },
-    {
-      quote: getSuggestion(section.copySuggestions, 'testimonial2', 'The customer support is fantastic. Any time we had questions, the team was immediately responsive and helpful.'),
-      author: getSuggestion(section.copySuggestions, 'author2', 'Michael Johnson'),
-      role: getSuggestion(section.copySuggestions, 'role2', 'Director of Operations, Company Name')
-    },
-    {
-      quote: getSuggestion(section.copySuggestions, 'testimonial3', 'We evaluated several solutions before choosing this one. Three years later, we couldn\'t be happier with our decision.'),
-      author: getSuggestion(section.copySuggestions, 'author3', 'Sarah Williams'),
-      role: getSuggestion(section.copySuggestions, 'role3', 'CTO, Company Name')
-    }
-  ];
   
   // Create properly typed style object
   const styles = createStyleObject(section.style);
@@ -44,73 +25,43 @@ const TestimonialSectionRenderer: React.FC<SectionComponentProps> = ({
     <div 
       className={cn(
         'px-6 py-16 w-full',
-        darkMode ? 'bg-gray-900' : 'bg-gray-50',
+        darkMode ? 'bg-gray-900' : 'bg-gray-100',
         isSelected && 'ring-2 ring-inset ring-primary',
         viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
       onClick={handleClick}
       style={styles}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className={cn(
-            'text-3xl font-bold mb-4',
-            darkMode ? 'text-white' : 'text-gray-900'
-          )}>
-            {getSuggestion(section.copySuggestions, 'heading', 'What Our Customers Say')}
-          </h2>
-          
-          <p className={cn(
-            'max-w-3xl mx-auto',
-            darkMode ? 'text-gray-300' : 'text-gray-600'
-          )}>
-            {getSuggestion(section.copySuggestions, 'subheading', 'Don\'t just take our word for it. See what our satisfied customers have to say.')}
-          </p>
-        </div>
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="text-yellow-500 mb-4 text-3xl">★★★★★</div>
         
-        <div className={cn(
-          'grid gap-8',
-          deviceType === 'mobile' ? 'grid-cols-1' : 
-          deviceType === 'tablet' ? 'grid-cols-2' : 
-          'grid-cols-3'
-        )}>
-          {testimonials.map((testimonial, i) => (
-            <div 
-              key={i} 
-              className={cn(
-                'p-6 rounded-lg',
-                darkMode ? 'bg-gray-800' : 'bg-white shadow-md'
-              )}
-            >
-              <div className={cn(
-                'text-4xl mb-4',
-                darkMode ? 'text-gray-500' : 'text-gray-300'
-              )}>
-                "
-              </div>
-              <p className={cn(
-                'mb-6 italic',
-                darkMode ? 'text-gray-300' : 'text-gray-600'
-              )}>
-                {testimonial.quote}
-              </p>
-              <div>
+        <blockquote>
+          <p className={cn(
+            'text-xl md:text-2xl italic mb-6',
+            darkMode ? 'text-white' : 'text-gray-800'
+          )}>
+            "{getSuggestion(section.copySuggestions, 'quote', 'This product has completely transformed our business operations. The intuitive interface and powerful features have improved our efficiency by over 40%. I wish we had found it sooner!')}"
+          </p>
+          
+          <footer>
+            <div className="flex justify-center items-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-gray-300 mr-4"></div>
+              <div className="text-left">
                 <p className={cn(
                   'font-semibold',
                   darkMode ? 'text-white' : 'text-gray-900'
                 )}>
-                  {testimonial.author}
+                  {getSuggestion(section.copySuggestions, 'author', 'Sarah Johnson')}
                 </p>
                 <p className={cn(
-                  'text-sm',
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 )}>
-                  {testimonial.role}
+                  {getSuggestion(section.copySuggestions, 'position', 'CEO at TechCorp')}
                 </p>
               </div>
             </div>
-          ))}
-        </div>
+          </footer>
+        </blockquote>
       </div>
     </div>
   );

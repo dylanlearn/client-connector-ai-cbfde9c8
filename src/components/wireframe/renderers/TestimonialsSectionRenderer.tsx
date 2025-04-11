@@ -1,143 +1,193 @@
 
 import React from 'react';
-import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
+import { SectionComponentProps } from '../types';
+import { getSuggestion, createStyleObject } from './utilities';
 
 const TestimonialsSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
-  darkMode,
-  viewMode,
-  deviceType,
-  isSelected,
-  onClick,
+  viewMode = 'preview',
+  darkMode = false,
+  deviceType = 'desktop',
+  isSelected = false,
+  onClick
 }) => {
-  // Extract testimonials from section data with fallbacks
-  const testimonials = section.data?.testimonials || [];
-  const heading = section.data?.heading || 'What Our Customers Say';
-  const subheading = section.data?.subheading || 'Hear from the people who trust us';
-  
-  // Get section styling with fallbacks
-  const sectionStyle = section.style || {};
-  const backgroundColor = sectionStyle.backgroundColor || (darkMode ? '#1f2937' : '#f9fafb');
-  const textColor = sectionStyle.textColor || (darkMode ? '#ffffff' : '#111827');
-  
-  // Handle section click
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClick) {
-      onClick();
+  const handleClick = () => {
+    if (onClick && section.id) {
+      onClick(section.id);
     }
   };
   
+  // Testimonial data
+  const testimonials = [
+    {
+      text: getSuggestion(section.copySuggestions, 'testimonial1', 'This product has completely transformed how we operate. The efficiency gains have been remarkable, and the support team is always responsive and helpful.'),
+      author: getSuggestion(section.copySuggestions, 'author1', 'Sarah Johnson'),
+      position: getSuggestion(section.copySuggestions, 'position1', 'CEO, TechCorp'),
+    },
+    {
+      text: getSuggestion(section.copySuggestions, 'testimonial2', 'We\'ve tried numerous solutions in the past, but nothing compares to this. It\'s intuitive, powerful, and has become an essential part of our daily operations.'),
+      author: getSuggestion(section.copySuggestions, 'author2', 'Michael Chen'),
+      position: getSuggestion(section.copySuggestions, 'position2', 'Director of Operations, InnovateCo'),
+    },
+    {
+      text: getSuggestion(section.copySuggestions, 'testimonial3', 'The implementation was seamless, and our team quickly adapted to the new system. The ROI we\'ve seen in just three months has exceeded our expectations.'),
+      author: getSuggestion(section.copySuggestions, 'author3', 'Emily Rodriguez'),
+      position: getSuggestion(section.copySuggestions, 'position3', 'CTO, FutureTech'),
+    },
+  ];
+  
+  // Determine variant
+  const variant = section.componentVariant || 'cards';
+  
+  // Create properly typed style object
+  const styles = createStyleObject(section.style);
+  
   return (
-    <div
+    <div 
       className={cn(
-        'wireframe-section testimonials-section py-12 md:py-16 px-4',
-        {
-          'border-2 border-blue-500': isSelected,
-          'dark': darkMode,
-        }
+        'px-6 py-16 w-full',
+        darkMode ? 'bg-gray-900' : 'bg-white',
+        isSelected && 'ring-2 ring-inset ring-primary',
+        viewMode === 'flowchart' && 'border-2 border-dashed'
       )}
-      style={{
-        backgroundColor,
-        color: textColor,
-      }}
       onClick={handleClick}
-      data-section-id={section.id}
-      data-section-type={section.sectionType}
+      style={styles}
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className={cn(
-            'text-2xl md:text-3xl lg:text-4xl font-bold mb-4',
-            { 'text-white': darkMode }
+            'text-3xl font-bold mb-4',
+            darkMode ? 'text-white' : 'text-gray-900'
           )}>
-            {heading}
+            {getSuggestion(section.copySuggestions, 'heading', 'What Our Customers Say')}
           </h2>
+          
           <p className={cn(
-            'text-lg opacity-80 max-w-3xl mx-auto',
-            { 'text-gray-300': darkMode, 'text-gray-600': !darkMode }
+            'max-w-3xl mx-auto',
+            darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {subheading}
+            {getSuggestion(section.copySuggestions, 'subheading', 'Read testimonials from our satisfied clients and discover how we\'ve helped businesses like yours.')}
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.length > 0 ? testimonials.map((testimonial: any, index: number) => (
-            <div key={testimonial.id || `testimonial-${index}`} className={cn(
-              'testimonial-item p-6 rounded-lg',
-              { 'bg-gray-800': darkMode, 'bg-white': !darkMode }
-            )}>
-              <div className="mb-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className={`text-${i < (testimonial.rating || 5) ? 'yellow' : 'gray'}-400`}>★</span>
-                ))}
-              </div>
-              <p className={cn(
-                'italic mb-4',
-                { 'text-gray-300': darkMode, 'text-gray-600': !darkMode }
-              )}>
-                "{testimonial.quote || 'This product/service exceeded my expectations!'}"
-              </p>
-              <div className="flex items-center">
-                <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                  {testimonial.avatar ? (
-                    <img 
-                      src={testimonial.avatar} 
-                      alt={testimonial.name || 'Customer'} 
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span>{(testimonial.name || 'Customer').charAt(0)}</span>
-                  )}
-                </div>
+        {/* Cards layout */}
+        {variant === 'cards' && (
+          <div className={cn(
+            'grid gap-8',
+            deviceType === 'mobile' ? 'grid-cols-1' : 
+            deviceType === 'tablet' ? 'grid-cols-2' : 
+            'grid-cols-3'
+          )}>
+            {testimonials.map((testimonial, i) => (
+              <div 
+                key={i} 
+                className={cn(
+                  'p-6 rounded-lg',
+                  darkMode ? 'bg-gray-800' : 'bg-gray-50',
+                  'flex flex-col'
+                )}
+              >
+                <div className="mb-4 text-yellow-500 text-xl">★★★★★</div>
+                <p className={cn(
+                  'mb-6 flex-grow',
+                  darkMode ? 'text-gray-300' : 'text-gray-600'
+                )}>
+                  "{testimonial.text}"
+                </p>
                 <div>
-                  <h4 className="font-medium">{testimonial.name || `Customer ${index + 1}`}</h4>
+                  <p className={cn(
+                    'font-semibold',
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  )}>
+                    {testimonial.author}
+                  </p>
                   <p className={cn(
                     'text-sm',
-                    { 'text-gray-400': darkMode, 'text-gray-500': !darkMode }
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
                   )}>
-                    {testimonial.title || testimonial.company || 'Verified Customer'}
+                    {testimonial.position}
                   </p>
                 </div>
               </div>
-            </div>
-          )) : (
-            // Display placeholder testimonials if none are defined
-            Array.from({ length: 3 }).map((_, index) => (
-              <div key={`placeholder-testimonial-${index}`} className={cn(
-                'testimonial-item p-6 rounded-lg',
-                { 'bg-gray-800': darkMode, 'bg-white': !darkMode }
-              )}>
-                <div className="mb-4">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className="text-yellow-400">★</span>
-                  ))}
-                </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Quotes layout */}
+        {variant === 'quotes' && (
+          <div className="space-y-12">
+            {testimonials.map((testimonial, i) => (
+              <blockquote 
+                key={i} 
+                className={cn(
+                  'border-l-4 pl-6',
+                  darkMode ? 'border-blue-500' : 'border-blue-600'
+                )}
+              >
                 <p className={cn(
-                  'italic mb-4',
-                  { 'text-gray-300': darkMode, 'text-gray-600': !darkMode }
+                  'text-xl italic mb-4',
+                  darkMode ? 'text-gray-300' : 'text-gray-700'
                 )}>
-                  "This product/service exceeded my expectations! The quality and customer service were outstanding."
+                  "{testimonial.text}"
                 </p>
-                <div className="flex items-center">
-                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                    <span>C</span>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Customer {index + 1}</h4>
-                    <p className={cn(
-                      'text-sm',
-                      { 'text-gray-400': darkMode, 'text-gray-500': !darkMode }
-                    )}>
-                      Verified Customer
-                    </p>
-                  </div>
-                </div>
+                <footer>
+                  <p className={cn(
+                    'font-semibold',
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  )}>
+                    {testimonial.author}
+                  </p>
+                  <p className={cn(
+                    'text-sm',
+                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                  )}>
+                    {testimonial.position}
+                  </p>
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        )}
+        
+        {/* Slider layout (simplified version) */}
+        {variant === 'slider' && (
+          <div className={cn(
+            'p-8 rounded-lg',
+            darkMode ? 'bg-gray-800' : 'bg-gray-50',
+            'relative'
+          )}>
+            <div className="text-center">
+              <div className="mb-6 text-yellow-500 text-xl">★★★★★</div>
+              <p className={cn(
+                'text-xl italic mb-8 max-w-3xl mx-auto',
+                darkMode ? 'text-white' : 'text-gray-700'
+              )}>
+                "{testimonials[0].text}"
+              </p>
+              <div>
+                <p className={cn(
+                  'font-semibold',
+                  darkMode ? 'text-white' : 'text-gray-900'
+                )}>
+                  {testimonials[0].author}
+                </p>
+                <p className={cn(
+                  'text-sm',
+                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                )}>
+                  {testimonials[0].position}
+                </p>
               </div>
-            ))
-          )}
-        </div>
+            </div>
+            
+            <div className="flex justify-center mt-8 space-x-2">
+              <button className="w-3 h-3 bg-blue-600 rounded-full"></button>
+              <button className="w-3 h-3 bg-gray-300 rounded-full"></button>
+              <button className="w-3 h-3 bg-gray-300 rounded-full"></button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

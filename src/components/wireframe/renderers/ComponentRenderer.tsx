@@ -1,6 +1,7 @@
 import React from 'react';
 import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 /**
  * Generic component renderer for wireframe sections
@@ -20,7 +21,7 @@ const ComponentRenderer: React.FC<SectionComponentProps> = ({
                          'transparent';
   
   // Apply text alignment from the section style
-  const textAlign = section.style?.textAlign || section.textAlign || 'left';
+  const textAlign = section.style?.textAlign || section?.textAlign || 'left';
   
   // Apply padding from section style
   const padding = section.style?.padding || section.padding || '2rem';
@@ -45,6 +46,12 @@ const ComponentRenderer: React.FC<SectionComponentProps> = ({
     ? 'ring-2 ring-primary ring-offset-2' 
     : '';
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(section.id);
+    }
+  };
+
   return (
     <div
       id={`section-${section.id}`}
@@ -64,7 +71,7 @@ const ComponentRenderer: React.FC<SectionComponentProps> = ({
         gap,
         ...section.style
       }}
-      onClick={() => onClick(section.id)}
+      onClick={handleClick}
       data-section-id={section.id}
       data-section-type={section.sectionType}
     >
@@ -81,18 +88,18 @@ const ComponentRenderer: React.FC<SectionComponentProps> = ({
           {/* Handle section with copySuggestions */}
           {section.copySuggestions && (
             <div className="space-y-4">
-              {section.copySuggestions.heading && (
-                <h2 className="text-2xl font-bold">{section.copySuggestions.heading}</h2>
+              {getSuggestion(section.copySuggestions, 'heading') && (
+                <h2 className="text-2xl font-bold">{getSuggestion(section.copySuggestions, 'heading')}</h2>
               )}
               
-              {section.copySuggestions.subheading && (
-                <p className="text-lg">{section.copySuggestions.subheading}</p>
+              {getSuggestion(section.copySuggestions, 'subheading') && (
+                <p className="text-lg">{getSuggestion(section.copySuggestions, 'subheading')}</p>
               )}
               
               {/* Other copy elements like CTA buttons, etc */}
-              {section.copySuggestions.ctaText && (
+              {getSuggestion(section.copySuggestions, 'ctaText') && (
                 <button className="px-4 py-2 bg-primary text-white rounded-md">
-                  {section.copySuggestions.ctaText}
+                  {getSuggestion(section.copySuggestions, 'ctaText')}
                 </button>
               )}
             </div>

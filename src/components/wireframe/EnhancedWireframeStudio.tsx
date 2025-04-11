@@ -186,7 +186,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
       {showAISuggestions && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <WireframeAISuggestions
-            wireframe={wireframeData}
+            wireframeId={wireframeData.id}
             onClose={() => setShowAISuggestions(false)}
             onApplySuggestion={(suggestion) => {
               setWireframeData((prevData) => {
