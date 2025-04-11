@@ -129,15 +129,14 @@ export class WireframeFeedbackController {
           if (options.createNewVersion) {
             const versionResult = await wireframeApiService.createWireframeVersion(
               wireframeId,
-              modificationResult.wireframe,
-              {
-                description: `Applied feedback: ${modificationResult.changeDescription}`,
-                userId: options.userId
-              }
+              modificationResult.wireframe
             );
             
-            newVersionId = versionResult.version_id;
-            console.log('Created new wireframe version:', newVersionId);
+            // Assuming the API returns the version ID in a known property
+            if (versionResult && versionResult.wireframe && versionResult.wireframe.id) {
+              newVersionId = versionResult.wireframe.id;
+              console.log('Created new wireframe version:', newVersionId);
+            }
           } else {
             // Direct update
             await wireframeApiService.updateWireframeData(

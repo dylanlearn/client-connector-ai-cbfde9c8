@@ -2,27 +2,38 @@
 import { WireframeData } from '../wireframe-types';
 
 /**
- * Mock implementation of optimizing a wireframe for different devices
+ * Optimizes wireframe for different devices
  */
 export const optimizeWireframeForDevice = async (wireframe: WireframeData): Promise<WireframeData> => {
-  // Make a deep copy of the wireframe to avoid mutation
-  const optimizedWireframe = JSON.parse(JSON.stringify(wireframe));
+  // This is a mock implementation that would normally contain device-specific optimizations
+  // For a real implementation, we'd modify the sections to be more responsive
   
-  // Add device-specific layouts
-  optimizedWireframe.mobileLayouts = {
-    stackSections: true,
-    reducedPadding: true,
-    adaptiveImages: true
-  };
+  // Create a deep copy to avoid modifying the original object
+  const optimizedWireframe = JSON.parse(JSON.stringify(wireframe)) as WireframeData;
   
-  // Add mobile considerations
-  optimizedWireframe.mobileConsiderations = 'Optimized for mobile with adjusted spacing and font sizes.';
+  // Add mobile considerations if not already present
+  if (!optimizedWireframe.mobileConsiderations) {
+    optimizedWireframe.mobileConsiderations = "This wireframe has been optimized for mobile devices.";
+  }
   
-  // Add accessibility notes
-  optimizedWireframe.accessibilityNotes = 'Optimized for screen readers and keyboard navigation.';
-
-  // Simulate processing time
-  await new Promise(resolve => setTimeout(resolve, 200));
-
+  // For each section, ensure they have responsive layouts
+  optimizedWireframe.sections = optimizedWireframe.sections.map(section => {
+    if (!section.layout) {
+      section.layout = {
+        type: 'flex',
+        direction: 'column',
+        wrap: true
+      };
+    } else if (typeof section.layout === 'object') {
+      // Ensure layout has responsive properties
+      section.layout = {
+        ...section.layout,
+        wrap: section.layout.wrap !== undefined ? section.layout.wrap : true
+      };
+    }
+    
+    return section;
+  });
+  
   return optimizedWireframe;
 };
