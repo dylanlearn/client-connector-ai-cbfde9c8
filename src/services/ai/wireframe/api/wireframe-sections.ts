@@ -1,166 +1,272 @@
+import { v4 as uuidv4 } from 'uuid';
+import { generateComponent } from './wireframe-components';
+import { CopySuggestions, AnimationSuggestion } from '../wireframe-types';
 
-import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
-import { 
-  WireframeSection, 
-  WireframeComponent,
-  CopySuggestions
-} from "../wireframe-types";
+type Json = string | number | boolean | null | { [property: string]: Json } | Json[];
 
 /**
- * Service for managing wireframe sections in the database
+ * Generate a hero section
  */
-export const wireframeSections = {
-  /**
-   * Get all sections for a wireframe
-   */
-  getSections: async (wireframeId: string): Promise<WireframeSection[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('wireframe_sections')
-        .select('*')
-        .eq('wireframe_id', wireframeId)
-        .order('position_order', { ascending: true });
-      
-      if (error) {
-        console.error("Error fetching wireframe sections:", error);
-        return [];
-      }
-      
-      // Convert from database format to WireframeSection type
-      return (data || []).map(section => {
-        // Cast the database record to include the fields we need
-        const dbSection = section as unknown as {
-          id: string;
-          name: string;
-          section_type: string;
-          layout_type: string;
-          layout: Json;
-          components: Json;
-          copy_suggestions: Json;
-          design_reasoning: string;
-          mobile_layout: Json;
-          animation_suggestions: Json;
-          dynamic_elements: Json;
-          style_variants: Json;
-          position_order: number;
-          description: string;
-        };
-        
-        return {
-          id: dbSection.id,
-          name: dbSection.name,
-          sectionType: dbSection.section_type,
-          layoutType: dbSection.layout_type,
-          layout: dbSection.layout as any,
-          components: dbSection.components as unknown as WireframeComponent[],
-          copySuggestions: dbSection.copy_suggestions as unknown as CopySuggestions,
-          designReasoning: dbSection.design_reasoning,
-          mobileLayout: dbSection.mobile_layout as any,
-          animationSuggestions: dbSection.animation_suggestions as any,
-          dynamicElements: dbSection.dynamic_elements as any,
-          styleVariants: dbSection.style_variants as any,
-          positionOrder: dbSection.position_order,
-          description: dbSection.description
-        };
-      });
-    } catch (error) {
-      console.error("Error in getSections:", error);
-      return [];
-    }
-  },
+export const generateHeroSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Hero Section';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'A powerful solution for your business';
   
-  /**
-   * Save sections for a wireframe
-   */
-  saveSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
-    try {
-      if (!Array.isArray(sections) || sections.length === 0) {
-        return true; // No sections to save
-      }
-      
-      const sectionPromises = sections.map((section, index) => {
-        // Convert section to database format
-        const dbSection = {
-          wireframe_id: wireframeId,
-          position_order: index,
-          name: section.name || "",
-          section_type: section.sectionType || "",
-          description: section.description || "",
-          layout_type: section.layoutType || "",
-          layout: (section.layout || {}) as Json,
-          components: (section.components || []) as unknown as Json,
-          copy_suggestions: (section.copySuggestions || {}) as unknown as Json,
-          design_reasoning: section.designReasoning || "",
-          mobile_layout: section.mobileLayout as Json,
-          animation_suggestions: section.animationSuggestions as Json,
-          dynamic_elements: section.dynamicElements as Json,
-          style_variants: section.styleVariants as Json
-        };
-        
-        return supabase
-          .from('wireframe_sections')
-          .insert(dbSection);
-      });
-      
-      await Promise.all(sectionPromises);
-      return true;
-    } catch (error) {
-      console.error("Error saving wireframe sections:", error);
-      return false;
-    }
-  },
-  
-  /**
-   * Update sections for a wireframe
-   */
-  updateSections: async (wireframeId: string, sections: WireframeSection[]): Promise<boolean> => {
-    try {
-      // First, delete all existing sections for this wireframe
-      const { error: deleteError } = await supabase
-        .from('wireframe_sections')
-        .delete()
-        .eq('wireframe_id', wireframeId);
-      
-      if (deleteError) {
-        console.error("Error deleting existing wireframe sections:", deleteError);
-        return false;
-      }
-      
-      // Then insert all sections with position order
-      if (sections && sections.length > 0) {
-        return await wireframeSections.saveSections(wireframeId, sections);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Error updating wireframe sections:", error);
-      return false;
-    }
-  },
-  
-  /**
-   * Delete all sections for a wireframe
-   */
-  deleteSections: async (wireframeId: string): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('wireframe_sections')
-        .delete()
-        .eq('wireframe_id', wireframeId);
-        
-      if (error) {
-        console.error("Error deleting wireframe sections:", error);
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Error in deleteSections:", error);
-      return false;
-    }
-  }
+  return {
+    id: uuidv4(),
+    name: 'Hero Section',
+    sectionType: 'hero',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('button', { content: 'Learn More' })
+    ],
+    style: style
+  };
 };
 
-// Also export as wireframeSectionsService for backward compatibility
-export const wireframeSectionsService = wireframeSections;
+/**
+ * Generate a features section
+ */
+export const generateFeaturesSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Features Section';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Key features of our product';
+  
+  return {
+    id: uuidv4(),
+    name: 'Features Section',
+    sectionType: 'features',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('grid', {
+        columns: 3,
+        items: [
+          { title: 'Feature 1', description: 'Description of feature 1' },
+          { title: 'Feature 2', description: 'Description of feature 2' },
+          { title: 'Feature 3', description: 'Description of feature 3' }
+        ]
+      })
+    ],
+    style: style
+  };
+};
+
+/**
+ * Generate a contact section
+ */
+export const generateContactSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[],
+  animationSuggestions?: AnimationSuggestion[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Contact Us';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Get in touch with us';
+  
+  const section: any = {
+    id: uuidv4(),
+    name: 'Contact Section',
+    sectionType: 'contact',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('form', {
+        fields: [
+          { label: 'Name', type: 'text' },
+          { label: 'Email', type: 'email' },
+          { label: 'Message', type: 'textarea' }
+        ],
+        submitButtonText: 'Send Message'
+      })
+    ],
+    style: style
+  };
+  
+  // section.animationSuggestions = suggestions as Json[];
+  // section.animationSuggestions = suggestions as unknown as Json[];
+  // section.animationSuggestions = suggestions as AnimationSuggestion[];
+  section.animationSuggestions = suggestions as unknown as any;
+  
+  return section;
+};
+
+/**
+ * Generate a pricing section
+ */
+export const generatePricingSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Pricing Plans';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Choose the plan that fits your needs';
+  
+  return {
+    id: uuidv4(),
+    name: 'Pricing Section',
+    sectionType: 'pricing',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('grid', {
+        columns: 3,
+        items: [
+          { title: 'Basic', price: '$9', features: ['Feature 1', 'Feature 2'] },
+          { title: 'Standard', price: '$19', features: ['Feature 1', 'Feature 2', 'Feature 3'] },
+          { title: 'Premium', price: '$29', features: ['Feature 1', 'Feature 2', 'Feature 3', 'Feature 4'] }
+        ]
+      })
+    ],
+    style: style
+  };
+};
+
+/**
+ * Generate a gallery section
+ */
+export const generateGallerySection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Image Gallery';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Our beautiful collection of images';
+  
+  return {
+    id: uuidv4(),
+    name: 'Gallery Section',
+    sectionType: 'gallery',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('grid', {
+        columns: 3,
+        items: [
+          { image: 'image1.jpg', alt: 'Image 1' },
+          { image: 'image2.jpg', alt: 'Image 2' },
+          { image: 'image3.jpg', alt: 'Image 3' }
+        ]
+      })
+    ],
+    style: style
+  };
+};
+
+/**
+ * Generate a testimonials section
+ */
+export const generateTestimonialsSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'What Our Clients Say';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Trusted by businesses worldwide';
+  
+  return {
+    id: uuidv4(),
+    name: 'Testimonials Section',
+    sectionType: 'testimonials',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('grid', {
+        columns: 1,
+        items: [
+          { quote: 'Great service!', author: 'John Doe' },
+          { quote: 'Excellent product!', author: 'Jane Smith' }
+        ]
+      })
+    ],
+    style: style
+  };
+};
+
+/**
+ * Generate a CTA section
+ */
+export const generateCTASection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Call to Action';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Ready to get started?';
+  
+  return {
+    id: uuidv4(),
+    name: 'CTA Section',
+    sectionType: 'cta',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('button', { content: 'Get Started' })
+    ],
+    style: style
+  };
+};
+
+/**
+ * Generate a FAQ section
+ */
+export const generateFAQSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  const heading = suggestions && suggestions.length > 0 ? suggestions[0].heading : 'Frequently Asked Questions';
+  const subheading = suggestions && suggestions.length > 0 ? suggestions[0].subheading : 'Find answers to common questions';
+  
+  return {
+    id: uuidv4(),
+    name: 'FAQ Section',
+    sectionType: 'faq',
+    description: description,
+    components: [
+      generateComponent('heading', { content: heading }),
+      generateComponent('paragraph', { content: subheading }),
+      generateComponent('list', {
+        items: [
+          { question: 'Question 1', answer: 'Answer 1' },
+          { question: 'Question 2', answer: 'Answer 2' }
+        ]
+      })
+    ],
+    style: style
+  };
+};
+
+/**
+ * Generate a contact section
+ */
+export const generateFooterSection = async (
+  description: string,
+  style?: Record<string, any>,
+  suggestions?: CopySuggestions[]
+): Promise<any> => {
+  return {
+    id: uuidv4(),
+    name: 'Footer Section',
+    sectionType: 'footer',
+    description: description,
+    components: [
+      generateComponent('paragraph', { content: '© 2024 Your Company. All rights reserved.' })
+    ],
+    style: style
+  };
+};

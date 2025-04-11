@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import WireframeExportDialog from '../WireframeExportDialog';
 import { renderWithProviders } from '@/test/helpers/component-test-helpers';
-import { vi } from 'vitest';
 
 describe('WireframeExportDialog', () => {
   it('renders export dialog correctly', () => {

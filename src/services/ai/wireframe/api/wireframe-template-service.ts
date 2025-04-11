@@ -1,16 +1,15 @@
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-
-// Mock wireframe template service
-const defaultTemplate: WireframeData = {
-  id: 'template-default',
-  title: 'Default Template',
+// Define a basic template for wireframes
+const emptyWireframe = {
+  id: 'empty-template',
+  title: 'Empty Template',
+  description: 'An empty wireframe template', // Added required description field
   sections: [],
   colorScheme: {
-    primary: '#3b82f6',
-    secondary: '#10b981',
-    accent: '#f59e0b',
-    background: '#ffffff',
-    text: '#000000'
+    primary: '#3182CE',
+    secondary: '#805AD5',
+    accent: '#ED8936',
+    background: '#FFFFFF',
+    text: '#1A202C'
   },
   typography: {
     headings: 'Inter',
@@ -18,12 +17,13 @@ const defaultTemplate: WireframeData = {
   }
 };
 
-export const getTemplate = async (templateId: string): Promise<WireframeData> => {
-  // In a real implementation, this would fetch from a database or other source
-  return Promise.resolve(defaultTemplate);
+// Function to create a new wireframe from a template
+export const createWireframeFromTemplate = async (templateId: string): Promise<any> => {
+  // In a real application, this would fetch the template from a database or other source
+  // For this example, we'll just return the empty template
+  return Promise.resolve(emptyWireframe);
 };
 
-export const listTemplates = async (): Promise<WireframeData[]> => {
-  // In a real implementation, this would fetch a list of templates
-  return Promise.resolve([defaultTemplate]);
+export default {
+  createWireframeFromTemplate
 };

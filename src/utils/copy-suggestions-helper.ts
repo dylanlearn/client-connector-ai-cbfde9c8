@@ -15,13 +15,19 @@ export const normalizeCopySuggestions = (
   if (Array.isArray(copySuggestions)) {
     // Convert the first item if available
     if (copySuggestions.length > 0) {
-      return { ...copySuggestions[0] };
+      return Object.fromEntries(
+        Object.entries(copySuggestions[0])
+          .map(([key, value]) => [key, String(value || defaultValue)])
+      );
     }
     return {};
   }
   
   // Handle object format (already in Record<string, string> format)
-  return { ...copySuggestions };
+  return Object.fromEntries(
+    Object.entries(copySuggestions)
+      .map(([key, value]) => [key, String(value || defaultValue)])
+  );
 };
 
 /**

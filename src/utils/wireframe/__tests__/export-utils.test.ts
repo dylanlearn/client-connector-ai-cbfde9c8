@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi } from 'vitest';
 import { 
   exportWireframeAsHTML, 
@@ -26,34 +25,35 @@ vi.mock('jspdf', () => ({
 }));
 
 describe('Export Utils', () => {
-  const mockWireframe = {
+  const testWireframe = {
     id: 'test-id',
     title: 'Test Wireframe',
+    description: 'Test wireframe description',
     sections: [
       {
         id: 'section-1',
-        name: 'Hero Section',
+        name: 'Test Section',
         sectionType: 'hero',
-        description: 'A hero section'
+        description: 'A test section'
       }
     ],
     colorScheme: {
-      primary: '#3182ce',
-      secondary: '#805ad5',
-      accent: '#ed8936',
-      background: '#ffffff',
-      text: '#1a202c'
+      primary: '#3182CE',
+      secondary: '#805AD5',
+      accent: '#ED8936',
+      background: '#FFFFFF',
+      text: '#1A202C'
     },
     typography: {
-      headings: 'sans-serif',
-      body: 'sans-serif'
+      headings: 'Inter',
+      body: 'Inter'
     }
   };
 
   it('should generate HTML from wireframe', async () => {
-    const html = await exportWireframeAsHTML(mockWireframe);
+    const html = await exportWireframeAsHTML(testWireframe);
     expect(html).toContain('Test Wireframe');
-    expect(html).toContain('Hero Section');
+    expect(html).toContain('Test Section');
   });
 
   it('should generate PDF from element', async () => {
@@ -69,7 +69,7 @@ describe('Export Utils', () => {
   });
 
   it('should generate HTML code for web projects', () => {
-    const html = generateHtmlFromWireframe(mockWireframe);
+    const html = generateHtmlFromWireframe(testWireframe);
     expect(html).toContain('Test Wireframe');
     expect(html).toContain('wireframe-section-hero');
   });

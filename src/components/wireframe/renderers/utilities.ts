@@ -70,22 +70,41 @@ export function getStyleOrFallback(
 
 /**
  * Get a suggestion from copy suggestions or return fallback
+ * Supports both object and array formats of CopySuggestions
  */
 export function getSuggestion(
-  suggestions?: CopySuggestions | null,
-  key?: string,
+  suggestions?: CopySuggestions | CopySuggestions[] | null,
+  key: string = '',
   fallback: string = ''
 ): string {
   if (!suggestions || !key) return fallback;
-  return (suggestions[key] as string) || fallback;
+  
+  // Handle array format
+  if (Array.isArray(suggestions)) {
+    // Use the first item in the array if available
+    return suggestions.length > 0 && suggestions[0][key] 
+      ? String(suggestions[0][key]) 
+      : fallback;
+  }
+  
+  // Handle object format
+  return suggestions[key] ? String(suggestions[key]) : fallback;
 }
 
 /**
  * Process copy suggestions object to ensure all needed fields
  */
 export function processCopySuggestions(
-  suggestions?: CopySuggestions | null
+  suggestions?: CopySuggestions | CopySuggestions[] | null
 ): CopySuggestions {
   if (!suggestions) return {};
+  
+  // Handle array format
+  if (Array.isArray(suggestions)) {
+    // Use the first item in the array if available
+    return suggestions.length > 0 ? { ...suggestions[0] } : {};
+  }
+  
+  // Handle object format
   return { ...suggestions };
 }

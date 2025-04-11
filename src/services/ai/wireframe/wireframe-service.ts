@@ -147,11 +147,27 @@ export const createDefaultWireframe = (): WireframeData => {
   };
 };
 
+/**
+ * Create a minimal wireframe data object from partial data
+ */
+export const createMinimalWireframeData = (partialData: Partial<WireframeData> = {}): WireframeData => {
+  const defaultWireframe = createDefaultWireframe();
+  return {
+    ...defaultWireframe,
+    ...partialData,
+    id: partialData.id || defaultWireframe.id,
+    title: partialData.title || defaultWireframe.title,
+    description: partialData.description || defaultWireframe.description,
+    sections: partialData.sections || defaultWireframe.sections
+  };
+};
+
 // Export as a named wireframeService object
 export const wireframeService = {
   generateWireframe,
   generateWireframeVariationWithStyle,
-  createDefaultWireframe
+  createDefaultWireframe,
+  createMinimalWireframeData
 };
 
 export default wireframeService;

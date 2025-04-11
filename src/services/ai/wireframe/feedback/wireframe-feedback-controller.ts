@@ -1,4 +1,3 @@
-
 import { FeedbackInterpreterService, FeedbackProcessingOptions } from './feedback-interpreter-service';
 import { WireframeModifierService } from './wireframe-modifier-service';
 import { wireframeApiService } from '../api/wireframe-api-service';
@@ -175,3 +174,24 @@ export class WireframeFeedbackController {
     }
   }
 }
+
+// Add colorScheme and typography to wireframe objects
+const createEmptyWireframe = (partialData: any = {}) => {
+  return {
+    id: 'new-wireframe-id',
+    title: partialData.title || 'New Wireframe',
+    description: partialData.description || 'Created from feedback controller',
+    sections: partialData.sections || [],
+    colorScheme: partialData.colorScheme || {
+      primary: '#3182CE',
+      secondary: '#805AD5',
+      accent: '#ED8936',
+      background: '#FFFFFF',
+      text: '#1A202C'
+    },
+    typography: partialData.typography || {
+      headings: 'Inter',
+      body: 'Inter'
+    }
+  };
+};

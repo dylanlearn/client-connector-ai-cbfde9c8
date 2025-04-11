@@ -1,78 +1,184 @@
-
-import { WireframeGenerationParams, WireframeGenerationResult } from '../wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
+import { WireframeData, WireframeSection } from '../../wireframe-types';
+import { generateSections } from './wireframe-sections';
+import { generateColorScheme } from './wireframe-colors';
+import { generateTypography } from './wireframe-typography';
+import { generateDesignTokens } from './wireframe-design-tokens';
+import { generateLayoutType } from './wireframe-layout';
+import { generateMobileConsiderations } from './wireframe-mobile';
+import { generateAccessibilityNotes } from './wireframe-accessibility';
+import { generateDesignReasoning } from './wireframe-reasoning';
+import { generateAnimations } from './wireframe-animations';
+import { generateStyleVariants } from './wireframe-style-variants';
 
 /**
- * Mock implementation for generating a wireframe using AI
+ * Generate a wireframe based on AI analysis of the description
  */
-export const generateWireframeWithAI = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
-  // Simulate AI processing time
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Create a simple wireframe structure based on the provided parameters
-  const wireframe = {
-    id: uuidv4(),
-    title: params.description || 'AI Generated Wireframe',
-    description: params.designRequirements || '',
-    sections: [
-      {
-        id: uuidv4(),
-        name: 'Header Section',
-        sectionType: 'hero',
-        description: 'Main hero section with headline and CTA',
-        components: [],
-        layout: {
-          type: 'flex',
-          direction: 'column',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Features',
-        sectionType: 'features',
-        description: 'Features showcase section',
-        components: [],
-        layout: {
-          type: 'grid',
-          columns: 3,
-          gap: 16
-        }
-      },
-      {
-        id: uuidv4(),
-        name: 'Footer',
-        sectionType: 'footer',
-        description: 'Footer with links and contact information',
-        components: [],
-        layout: {
-          type: 'grid',
-          columns: 4,
-          gap: 16
-        }
+export const generateWireframeFromAI = async (
+  description: string,
+  options: {
+    style?: string | Record<string, any>;
+    industry?: string;
+    targetAudience?: string;
+    colorPreferences?: string | string[];
+    sections?: string[];
+    enhancedCreativity?: boolean;
+    feedbackMode?: boolean;
+  } = {}
+): Promise<WireframeData> => {
+  try {
+    // Generate wireframe components based on description
+    const {
+      title,
+      sections,
+      colorScheme,
+      typography,
+      layoutType,
+      designTokens,
+      mobileConsiderations,
+      accessibilityNotes,
+      designReasoning,
+      animations,
+      styleVariants
+    } = await analyzeAndGenerateWireframeComponents(description, options);
+
+    // Process typography to ensure fontPairings is a string if it exists
+    const processTypography = (typography: any) => {
+      // If fontPairings is an array, convert it to a comma-separated string
+      if (typography && typography.fontPairings && Array.isArray(typography.fontPairings)) {
+        return {
+          ...typography,
+          fontPairings: typography.fontPairings.join(',')
+        };
       }
-    ],
-    colorScheme: {
-      primary: '#3182ce',
-      secondary: '#805ad5',
-      accent: '#ed8936',
-      background: '#ffffff',
-      text: '#1a202c'
-    },
-    typography: {
-      headings: 'sans-serif',
-      body: 'sans-serif',
-      fontPairings: ['Roboto/Open Sans']
-    },
-    style: params.style || {}
-  };
-  
+      return typography;
+    };
+
+    // Create the wireframe data
+    const wireframeData: WireframeData = {
+      id: uuidv4(),
+      title: title || 'AI Generated Wireframe',
+      description: description || 'Generated based on AI analysis',
+      sections: sections,
+      colorScheme: colorScheme,
+      typography: processTypography(typography),
+      layoutType: layoutType,
+      designTokens: designTokens,
+      mobileConsiderations: mobileConsiderations,
+      accessibilityNotes: accessibilityNotes,
+      designReasoning: designReasoning,
+      animations: animations,
+      styleVariants: styleVariants
+    };
+
+    return wireframeData;
+  } catch (error) {
+    console.error('Error generating wireframe from AI:', error);
+    throw error;
+  }
+};
+
+/**
+ * Analyze description and generate wireframe components
+ */
+async function analyzeAndGenerateWireframeComponents(
+  description: string,
+  options: {
+    style?: string | Record<string, any>;
+    industry?: string;
+    targetAudience?: string;
+    colorPreferences?: string | string[];
+    sections?: string[];
+    enhancedCreativity?: boolean;
+    feedbackMode?: boolean;
+  }
+) {
+  // Extract style information
+  const styleInfo = typeof options.style === 'string' 
+    ? { description: options.style } 
+    : options.style || {};
+
+  // Generate title based on description
+  const title = generateTitle(description);
+
+  // Generate sections based on description and options
+  const sections = await generateSections(description, {
+    requestedSections: options.sections,
+    industry: options.industry,
+    targetAudience: options.targetAudience,
+    enhancedCreativity: options.enhancedCreativity
+  });
+
+  // Generate color scheme based on description and preferences
+  const colorScheme = await generateColorScheme(description, {
+    preferences: options.colorPreferences,
+    style: styleInfo,
+    industry: options.industry
+  });
+
+  // Generate typography based on description and style
+  const typography = await generateTypography(description, {
+    style: styleInfo,
+    industry: options.industry
+  });
+
+  // Generate layout type based on description
+  const layoutType = await generateLayoutType(description);
+
+  // Generate design tokens based on color scheme and typography
+  const designTokens = await generateDesignTokens(colorScheme, typography);
+
+  // Generate mobile considerations
+  const mobileConsiderations = await generateMobileConsiderations(sections);
+
+  // Generate accessibility notes
+  const accessibilityNotes = await generateAccessibilityNotes(colorScheme, typography);
+
+  // Generate design reasoning
+  const designReasoning = await generateDesignReasoning(description, {
+    sections,
+    colorScheme,
+    typography,
+    style: styleInfo
+  });
+
+  // Generate animations if enhanced creativity is enabled
+  const animations = options.enhancedCreativity 
+    ? await generateAnimations(sections) 
+    : undefined;
+
+  // Generate style variants if enhanced creativity is enabled
+  const styleVariants = options.enhancedCreativity 
+    ? await generateStyleVariants(colorScheme) 
+    : undefined;
+
   return {
-    wireframe,
-    success: true,
-    error: undefined,
-    generationTime: 1.2,
-    model: 'gpt-4-turbo'
+    title,
+    sections,
+    colorScheme,
+    typography,
+    layoutType,
+    designTokens,
+    mobileConsiderations,
+    accessibilityNotes,
+    designReasoning,
+    animations,
+    styleVariants
   };
+}
+
+/**
+ * Generate a title based on the description
+ */
+function generateTitle(description: string): string {
+  // Simple implementation - extract first few words or use generic title
+  const words = description.split(' ');
+  if (words.length > 3) {
+    return words.slice(0, 3).join(' ') + ' Wireframe';
+  }
+  return 'AI Generated Wireframe';
+}
+
+export default {
+  generateWireframeFromAI
 };
