@@ -1,231 +1,174 @@
 
-import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { 
-  Card, 
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { BarChartHorizontal, Plus, Trash } from 'lucide-react';
-import { getSuggestion } from '@/utils/copy-suggestions-helper';
-import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
-
-// Define the StatItem type
-interface StatItem {
-  value: string;
-  label: string;
-  suffix?: string;
-}
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Plus, Trash } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface StatsSectionEditorProps {
-  section: any;
-  onUpdate: (updates: any) => void;
+  section: WireframeSection;
+  onUpdate: (updates: Partial<WireframeSection>) => void;
 }
 
 const StatsSectionEditor: React.FC<StatsSectionEditorProps> = ({ section, onUpdate }) => {
-  // Parse stats from copySuggestions or use defaults
-  const getStats = (): StatItem[] => {
-    try {
-      // Try to get stats as a string from copySuggestions
-      const statsString = getSuggestion(section.copySuggestions, 'stats', '[]');
-      
-      // Parse the stats string to an array
-      if (typeof statsString === 'string') {
-        return JSON.parse(statsString);
+  const stats = section.stats || [];
+
+  // Handle title update
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onUpdate({
+      copySuggestions: {
+        ...section.copySuggestions,
+        heading: e.target.value
       }
-      
-      // If stats is already an array on the copySuggestions object
-      if (section.copySuggestions && 
-          typeof section.copySuggestions === 'object' && 
-          !Array.isArray(section.copySuggestions) &&
-          Array.isArray(section.copySuggestions.stats)) {
-        return section.copySuggestions.stats;
+    });
+  };
+
+  // Handle description update
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onUpdate({
+      copySuggestions: {
+        ...section.copySuggestions,
+        subheading: e.target.value
       }
-      
-      // Return default empty array if all else fails
-      return [];
-    } catch (e) {
-      console.error("Error parsing stats:", e);
-      return [];
-    }
+    });
   };
 
-  const [title, setTitle] = useState(getSuggestion(section.copySuggestions, 'title', 'Statistics & Metrics'));
-  const [subtitle, setSubtitle] = useState(getSuggestion(section.copySuggestions, 'subtitle', 'Key performance indicators'));
-  const [stats, setStats] = useState<StatItem[]>(getStats());
-
-  useEffect(() => {
-    setTitle(getSuggestion(section.copySuggestions, 'title', 'Statistics & Metrics'));
-    setSubtitle(getSuggestion(section.copySuggestions, 'subtitle', 'Key performance indicators'));
-    setStats(getStats());
-  }, [section.copySuggestions]);
-
-  const updateCopySuggestions = () => {
-    const updatedCopySuggestions: Record<string, string> = {
-      title,
-      subtitle,
-      // Store stats as JSON string
-      stats: JSON.stringify(stats)
+  // Handle stat value update
+  const handleStatValueChange = (index: number, value: string) => {
+    const updatedStats = [...stats];
+    updatedStats[index] = {
+      ...updatedStats[index],
+      value: value
     };
-    
-    onUpdate({ copySuggestions: updatedCopySuggestions });
+    onUpdate({ stats: updatedStats });
   };
 
-  const addStat = () => {
-    const newStats = [...stats, { value: '100', label: 'New Metric', suffix: '%' }];
-    setStats(newStats);
-    
-    const updatedCopySuggestions: Record<string, string> = {
-      title,
-      subtitle,
-      stats: JSON.stringify(newStats)
+  // Handle stat label update
+  const handleStatLabelChange = (index: number, label: string) => {
+    const updatedStats = [...stats];
+    updatedStats[index] = {
+      ...updatedStats[index],
+      label: label
     };
-    
-    onUpdate({ copySuggestions: updatedCopySuggestions });
+    onUpdate({ stats: updatedStats });
   };
 
-  const updateStat = (index: number, field: keyof StatItem, value: string) => {
-    const newStats = [...stats];
-    newStats[index] = { ...newStats[index], [field]: value };
-    setStats(newStats);
-    
-    const updatedCopySuggestions: Record<string, string> = {
-      title,
-      subtitle,
-      stats: JSON.stringify(newStats)
+  // Add a new stat
+  const handleAddStat = () => {
+    const newStat = {
+      id: uuidv4(),
+      value: "100+",
+      label: "New Statistic"
     };
-    
-    onUpdate({ copySuggestions: updatedCopySuggestions });
+    onUpdate({ stats: [...stats, newStat] });
   };
 
-  const removeStat = (index: number) => {
-    const newStats = stats.filter((_, i) => i !== index);
-    setStats(newStats);
-    
-    const updatedCopySuggestions: Record<string, string> = {
-      title,
-      subtitle,
-      stats: JSON.stringify(newStats)
-    };
-    
-    onUpdate({ copySuggestions: updatedCopySuggestions });
+  // Remove a stat
+  const handleRemoveStat = (index: number) => {
+    const updatedStats = [...stats];
+    updatedStats.splice(index, 1);
+    onUpdate({ stats: updatedStats });
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <div className="grid gap-4">
-        <div>
-          <Label htmlFor="title">Section Title</Label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              const updatedCopySuggestions: Record<string, string> = {
-                ...((typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions)) 
-                  ? section.copySuggestions 
-                  : {}),
-                title: e.target.value,
-                subtitle,
-                stats: JSON.stringify(stats)
-              };
-              onUpdate({ copySuggestions: updatedCopySuggestions });
-            }}
+    <Card>
+      <CardContent className="pt-6 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="section-title">Section Title</Label>
+          <Input 
+            id="section-title"
+            value={section.copySuggestions?.heading || ""}
+            onChange={handleTitleChange}
+            placeholder="Enter section title"
           />
         </div>
-        <div>
-          <Label htmlFor="subtitle">Section Subtitle</Label>
-          <Input
-            id="subtitle"
-            value={subtitle}
-            onChange={(e) => {
-              setSubtitle(e.target.value);
-              const updatedCopySuggestions: Record<string, string> = {
-                ...((typeof section.copySuggestions === 'object' && !Array.isArray(section.copySuggestions)) 
-                  ? section.copySuggestions 
-                  : {}),
-                title,
-                subtitle: e.target.value,
-                stats: JSON.stringify(stats)
-              };
-              onUpdate({ copySuggestions: updatedCopySuggestions });
-            }}
+
+        <div className="space-y-2">
+          <Label htmlFor="section-description">Section Description</Label>
+          <Textarea
+            id="section-description"
+            value={section.copySuggestions?.subheading || ""}
+            onChange={handleDescriptionChange}
+            placeholder="Enter section description"
+            rows={3}
           />
         </div>
-      </div>
 
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Stats & Metrics</h3>
-          <Button onClick={addStat} size="sm" variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Stat
-          </Button>
+        <div className="space-y-2">
+          <div className="flex justify-between items-center mb-2">
+            <Label>Statistics</Label>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddStat}
+              className="flex items-center gap-1"
+            >
+              <Plus className="h-4 w-4" /> Add Stat
+            </Button>
+          </div>
+
+          <Table>
+            <TableCaption>Manage your statistics</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Value</TableHead>
+                <TableHead>Label</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stats.map((stat, index) => (
+                <TableRow key={stat.id || index}>
+                  <TableCell>
+                    <Input
+                      value={stat.value || ""}
+                      onChange={(e) => handleStatValueChange(index, e.target.value)}
+                      placeholder="Stat value"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={stat.label || ""}
+                      onChange={(e) => handleStatLabelChange(index, e.target.value)}
+                      placeholder="Stat description"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveStat(index)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {stats.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                    No statistics added. Click "Add Stat" to add one.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-
-        <div className="space-y-4">
-          {stats.map((stat, index) => (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium flex items-center">
-                  <BarChartHorizontal className="h-4 w-4 mr-2" />
-                  Stat {index + 1}
-                </CardTitle>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => removeStat(index)}
-                >
-                  <Trash className="h-4 w-4 text-destructive" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3">
-                  <div>
-                    <Label htmlFor={`value-${index}`}>Value</Label>
-                    <Input 
-                      id={`value-${index}`}
-                      value={stat.value} 
-                      onChange={(e) => updateStat(index, 'value', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`label-${index}`}>Label</Label>
-                    <Input 
-                      id={`label-${index}`}
-                      value={stat.label} 
-                      onChange={(e) => updateStat(index, 'label', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`suffix-${index}`}>Suffix (optional)</Label>
-                    <Input 
-                      id={`suffix-${index}`}
-                      value={stat.suffix || ''} 
-                      onChange={(e) => updateStat(index, 'suffix', e.target.value)}
-                      placeholder="%"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {stats.length === 0 && (
-            <Card>
-              <CardContent className="text-center p-6 text-muted-foreground">
-                <BarChartHorizontal className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p>No stats added yet. Click the button above to add your first stat.</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

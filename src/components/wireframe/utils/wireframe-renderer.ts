@@ -1,4 +1,3 @@
-
 import { fabric } from 'fabric';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
@@ -99,9 +98,10 @@ const renderSection = (
     darkMode?: boolean;
     primaryColor?: string;
     secondaryColor?: string;
+    deviceType?: 'desktop' | 'tablet' | 'mobile';
   } = {}
 ): fabric.Object => {
-  const { readOnly = false, darkMode = false, primaryColor, secondaryColor } = options;
+  const { readOnly = false, darkMode = false, primaryColor, secondaryColor, deviceType = 'desktop' } = options;
   
   // Default styles based on section type
   const getSectionStyle = (sectionType: string) => {
@@ -120,12 +120,75 @@ const renderSection = (
           opacity: 0.1,
           height: 300
         };
+      case 'feature':
+        return {
+          fill: secondaryColor || '#0ea5e9',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 350
+        };
+      case 'cta':
+        return {
+          fill: primaryColor || '#8b5cf6',
+          textColor: '#ffffff',
+          opacity: 0.2,
+          height: 200
+        };
+      case 'testimonials':
+        return {
+          fill: secondaryColor || '#f59e0b',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 350
+        };
+      case 'testimonial':
+        return {
+          fill: secondaryColor || '#f59e0b',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 250
+        };
+      case 'stats':
+        return {
+          fill: primaryColor || '#6366f1',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 250
+        };
+      case 'pricing':
+        return {
+          fill: primaryColor || '#14b8a6',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 450
+        };
+      case 'faq':
+        return {
+          fill: secondaryColor || '#8b5cf6',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 400
+        };
       case 'footer':
         return {
           fill: darkMode ? '#1f2937' : '#f3f4f6',
           textColor: darkMode ? '#e5e7eb' : '#111827',
           opacity: 1,
           height: 200
+        };
+      case 'blog':
+        return {
+          fill: secondaryColor || '#ec4899',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 400
+        };
+      case 'contact':
+        return {
+          fill: primaryColor || '#0ea5e9',
+          textColor: '#ffffff',
+          opacity: 0.1,
+          height: 350
         };
       default:
         return {
@@ -137,15 +200,37 @@ const renderSection = (
     }
   };
   
+  // Adjust section dimensions based on device type
+  const getSectionDimensions = (baseHeight: number) => {
+    switch (deviceType) {
+      case 'mobile':
+        return {
+          width: 375,
+          height: baseHeight * 1.5 // Mobile often requires more height
+        };
+      case 'tablet':
+        return {
+          width: 768,
+          height: baseHeight * 1.2
+        };
+      default:
+        return {
+          width: 1200,
+          height: baseHeight
+        };
+    }
+  };
+  
   // Get style based on section type
   const sectionStyle = getSectionStyle(section.sectionType || 'generic');
+  const dimensions = getSectionDimensions(sectionStyle.height);
   
   // Create section background
   const background = new fabric.Rect({
     left: section.position?.x || 0,
     top: section.position?.y || 0,
-    width: section.dimensions?.width || 1200,
-    height: section.dimensions?.height || sectionStyle.height,
+    width: section.dimensions?.width || dimensions.width,
+    height: section.dimensions?.height || dimensions.height,
     fill: section.style?.backgroundColor || section.backgroundColor || sectionStyle.fill,
     stroke: darkMode ? '#4a5568' : '#e5e7eb',
     strokeWidth: 1,
@@ -166,7 +251,7 @@ const renderSection = (
   const label = new fabric.Text(section.name || `Section`, {
     left: (section.position?.x || 0) + 10,
     top: (section.position?.y || 0) + 10,
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Arial',
     fontWeight: '600',
     fill: sectionStyle.textColor,
@@ -177,36 +262,43 @@ const renderSection = (
   const typeLabel = new fabric.Text(section.sectionType || 'generic', {
     left: (section.position?.x || 0) + 10,
     top: (section.position?.y || 0) + 30,
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Arial',
     fontStyle: 'italic',
     fill: sectionStyle.textColor,
     opacity: 0.7,
     selectable: false,
   });
+
+  // Create component count label if section has components
+  const componentCount = section.components?.length || 0;
+  const componentLabel = componentCount > 0 ? new fabric.Text(`${componentCount} components`, {
+    left: (section.position?.x || 0) + 10,
+    top: (section.position?.y || 0) + 50,
+    fontSize: 12,
+    fontFamily: 'Arial',
+    fill: sectionStyle.textColor,
+    opacity: 0.7,
+    selectable: false,
+  }) : null;
   
   // Create a group for the section
-  const sectionGroup = new fabric.Group([background, label, typeLabel], {
+  const groupItems = [background, label, typeLabel];
+  if (componentLabel) groupItems.push(componentLabel);
+  
+  const sectionGroup = new fabric.Group(groupItems, {
     data: {
       id: section.id || uuidv4(),
       type: 'section',
       sectionType: section.sectionType,
-      name: section.name
+      name: section.name,
+      originalSection: section
     },
     selectable: !readOnly,
     hasControls: !readOnly,
     hasBorders: !readOnly,
     lockRotation: true,
   });
-  
-  // Add section components if any
-  if (section.components && Array.isArray(section.components) && section.components.length > 0) {
-    section.components.forEach(component => {
-      // This would be implemented to render each component within the section
-      // based on component type, position, etc.
-      // This is where you'd extend the functionality to render actual components
-    });
-  }
   
   // Add the section to the canvas
   canvas.add(sectionGroup);
