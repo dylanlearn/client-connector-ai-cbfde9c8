@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import WireframeVisualizer from './WireframeVisualizer';
 import { DeviceType, ViewMode } from './types';
 import { Input } from '@/components/ui/input';
-import { createColorScheme } from './renderers/utilities';
+import { createColorScheme } from '@/utils/copy-suggestions-helper';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;

@@ -153,3 +153,72 @@ export function createStyleObject(styles: Record<string, any> = {}): React.CSSPr
   
   return result as React.CSSProperties;
 }
+
+/**
+ * Create a color scheme object based on input
+ */
+export function createColorScheme(colorScheme: string | Record<string, string> | undefined): Record<string, string> {
+  // If it's already an object, return it
+  if (colorScheme && typeof colorScheme === 'object') {
+    return colorScheme;
+  }
+  
+  // Default color scheme
+  const defaultColorScheme = {
+    primary: '#3182ce',
+    secondary: '#805ad5',
+    accent: '#ed8936',
+    background: '#ffffff',
+    text: '#1a202c'
+  };
+  
+  // Handle string input (basic color scheme names)
+  if (typeof colorScheme === 'string') {
+    switch (colorScheme.toLowerCase()) {
+      case 'blue':
+        return {
+          primary: '#3182ce',
+          secondary: '#4299e1',
+          accent: '#63b3ed',
+          background: '#f7fafc',
+          text: '#2d3748'
+        };
+      case 'green':
+        return {
+          primary: '#38a169',
+          secondary: '#48bb78',
+          accent: '#68d391',
+          background: '#f0fff4',
+          text: '#2d3748'
+        };
+      case 'purple':
+        return {
+          primary: '#6b46c1',
+          secondary: '#805ad5',
+          accent: '#9f7aea',
+          background: '#faf5ff',
+          text: '#2d3748'
+        };
+      case 'red':
+        return {
+          primary: '#e53e3e',
+          secondary: '#f56565',
+          accent: '#fc8181',
+          background: '#fff5f5',
+          text: '#2d3748'
+        };
+      case 'dark':
+        return {
+          primary: '#3182ce',
+          secondary: '#4299e1',
+          accent: '#63b3ed',
+          background: '#1a202c',
+          text: '#f7fafc'
+        };
+      default:
+        return defaultColorScheme;
+    }
+  }
+  
+  return defaultColorScheme;
+}

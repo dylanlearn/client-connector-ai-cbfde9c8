@@ -18,6 +18,11 @@ export interface WireframeComponent {
   states?: Record<string, any>;
   events?: Record<string, any>;
   variants?: string[];
+  responsive?: any;
+  className?: string;
+  src?: string;
+  alt?: string;
+  components?: WireframeComponent[];
 }
 
 /**
@@ -77,6 +82,9 @@ export interface WireframeSection {
   dynamicElements?: Record<string, any>;
   styleVariants?: Record<string, any>;
   type?: string; // For backward compatibility
+  layoutScore?: number; // Added missing property
+  optimizationSuggestions?: any[]; // Added missing property
+  patternMatch?: string; // Added missing property
 }
 
 /**
@@ -109,7 +117,12 @@ export interface WireframeData {
   imageUrl?: string;
   styleToken?: string;
   darkMode?: boolean;
+  metadata?: Record<string, any>; // Added missing property
+  mobileConsiderations?: string; // Added missing property
 }
+
+// Re-export CopySuggestions interface to ensure it's available
+export { CopySuggestions };
 
 /**
  * Interface for AI-generated wireframe
@@ -162,6 +175,7 @@ export interface WireframeGenerationResult {
   warnings?: string[];
   blueprint?: any;
   intentData?: any;
+  error?: Error; // Added for backward compatibility
 }
 
 /**

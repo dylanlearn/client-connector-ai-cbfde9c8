@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useWireframeFeedback } from '@/hooks/wireframe/use-wireframe-feedback';
 import { useToast } from '@/hooks/use-toast';
 import { Rating } from '@/components/ui/rating';
+import { getSuggestion } from '@/utils/copy-suggestions-helper';
 
 interface WireframeFeedbackControlsProps {
   wireframeId: string;

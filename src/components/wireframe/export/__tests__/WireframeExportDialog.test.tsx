@@ -3,12 +3,14 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import WireframeExportDialog from '../WireframeExportDialog';
 import { renderWithProviders } from '@/test/helpers/component-test-helpers';
+import { vi } from 'vitest';
 
 describe('WireframeExportDialog', () => {
   it('renders export dialog correctly', () => {
     const mockWireframe = {
       id: 'test-id',
       title: 'Test Wireframe',
+      description: 'A test wireframe for unit testing',
       sections: [],
       colorScheme: {
         primary: '#3b82f6',
@@ -41,6 +43,7 @@ describe('WireframeExportDialog', () => {
     const mockWireframe = {
       id: 'test-id',
       title: 'Test Wireframe',
+      description: 'A test wireframe for unit testing',
       sections: [],
       colorScheme: {
         primary: '#3b82f6',

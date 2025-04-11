@@ -1,6 +1,6 @@
 
 import { describe, it, expect } from 'vitest';
-// Importing the correct named exports
+// Importing the correct function
 import { generateWireframe, generateWireframeFromTemplate } from '@/services/ai/wireframe/api/wireframe-generator';
 import { optimizeWireframeForDevice } from '@/services/ai/wireframe/api/wireframe-optimization-service';
 import { generateImagePreview } from '@/services/ai/wireframe/api/wireframe-preview-service';
