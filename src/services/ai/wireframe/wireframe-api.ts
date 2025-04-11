@@ -1,12 +1,18 @@
 
 // Export wireframe API service
 import wireframeApiService from './api/wireframe-api-service';
-import { wireframeGenerator, generateWireframe, generateWireframeFromPrompt, generateWireframeVariation } from './api';
+import { 
+  wireframeGenerator, 
+  generateWireframe as baseGenerateWireframe,
+  generateWireframeFromPrompt, 
+  generateWireframeVariation 
+} from './api';
 
 export {
   wireframeApiService,
   wireframeGenerator,
-  generateWireframe,
+  // Export the base generator function with a clear name
+  baseGenerateWireframe,
   generateWireframeFromPrompt,
   generateWireframeVariation
 };

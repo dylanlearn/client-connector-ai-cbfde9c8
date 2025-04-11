@@ -1,6 +1,10 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { generateWireframe, generateWireframeFromPrompt, generateWireframeVariation } from './api/wireframe-generator';
+import { 
+  generateWireframe as baseGenerateWireframe, 
+  generateWireframeFromPrompt, 
+  generateWireframeVariation 
+} from './api/wireframe-generator';
 import { getSuggestedCopy } from './content/copy-suggestions';
 import { getCombinedAIMemory } from './wireframe-memory-service';
 import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
@@ -33,7 +37,7 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
     // Get previous context if available
     const memory = await getCombinedAIMemory();
     
-    // Generate the wireframe
+    // Generate the wireframe using the renamed imported function
     const wireframeResult = await generateWireframeFromPrompt({
       ...params,
       style: processedStyle

@@ -19,7 +19,7 @@ export interface CopySuggestions {
  */
 export function createStyleObject(style: Record<string, any> = {}, textAlign?: string): React.CSSProperties {
   return {
-    textAlign: textAlign || 'center',
+    textAlign: textAlign as React.CSSProperties['textAlign'] || 'center',
     ...style
   };
 }
@@ -66,4 +66,26 @@ export function getStyleOrFallback(
   fallback: Record<string, any> = {}
 ): Record<string, any> {
   return style || fallback;
+}
+
+/**
+ * Get a suggestion from copy suggestions or return fallback
+ */
+export function getSuggestion(
+  suggestions?: CopySuggestions | null,
+  key?: string,
+  fallback: string = ''
+): string {
+  if (!suggestions || !key) return fallback;
+  return (suggestions[key] as string) || fallback;
+}
+
+/**
+ * Process copy suggestions object to ensure all needed fields
+ */
+export function processCopySuggestions(
+  suggestions?: CopySuggestions | null
+): CopySuggestions {
+  if (!suggestions) return {};
+  return { ...suggestions };
 }
