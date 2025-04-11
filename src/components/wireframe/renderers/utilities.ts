@@ -1,5 +1,5 @@
 
-import { getSuggestion as getSuggestionHelper, createStyleObject as createStyleObjectHelper } from '@/utils/copy-suggestions-helper';
+import { getSuggestion as getSuggestionHelper, createStyleObject as createStyleObjectHelper, createColorScheme as createColorSchemeHelper } from '@/utils/copy-suggestions-helper';
 import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
 
 /**
@@ -8,6 +8,7 @@ import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
  */
 export const getSuggestion = getSuggestionHelper;
 export const createStyleObject = createStyleObjectHelper;
+export const createColorScheme = createColorSchemeHelper;
 
 /**
  * Helper function to safely access nested properties
