@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { WireframeVisualizer } from './WireframeVisualizer';
+import WireframeVisualizer from './WireframeVisualizer';
 import { DeviceType, ViewMode } from './types';
 import { Input } from '@/components/ui/input';
 import { createColorScheme } from './renderers/utilities';
