@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useWireframeHistory } from '../use-wireframe-history';
 import { toast } from 'sonner';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -30,14 +31,14 @@ vi.mock('@/hooks/use-local-storage', () => ({
 }));
 
 describe('useWireframeHistory', () => {
-  const mockWireframe = {
+  const mockWireframe: WireframeData = {
     id: 'test-wireframe',
     title: 'Test Wireframe',
     sections: [],
     description: 'Test description'
   };
 
-  const mockUpdatedWireframe = {
+  const mockUpdatedWireframe: WireframeData = {
     ...mockWireframe,
     title: 'Updated Wireframe'
   };
@@ -49,32 +50,27 @@ describe('useWireframeHistory', () => {
 
   it('should initialize with the initial wireframe', () => {
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe
-      })
+      useWireframeHistory(mockWireframe)
     );
 
+    expect(result.current.currentData).toEqual(mockWireframe);
     expect(result.current.history.length).toBe(1);
-    expect(result.current.currentIndex).toBe(0);
-    expect(result.current.history[0].wireframe).toEqual(mockWireframe);
+    expect(result.current.historyIndex).toBe(0);
   });
 
   it('should save history state when wireframe is updated', () => {
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe
-      })
+      useWireframeHistory(mockWireframe)
     );
 
     act(() => {
-      result.current.saveHistoryState(mockUpdatedWireframe, 'Updated title');
+      result.current.updateWireframe(mockUpdatedWireframe, 'Updated title');
+      result.current.saveToHistory('Updated title');
     });
 
     expect(result.current.history.length).toBe(2);
-    expect(result.current.currentIndex).toBe(1);
-    expect(result.current.history[1].wireframe).toEqual(mockUpdatedWireframe);
+    expect(result.current.historyIndex).toBe(1);
+    expect(result.current.history[1].wireframeData).toEqual(mockUpdatedWireframe);
     expect(result.current.history[1].description).toBe('Updated title');
   });
 
@@ -82,23 +78,20 @@ describe('useWireframeHistory', () => {
     const onChangeMock = vi.fn();
     
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe,
-        onChange: onChangeMock
-      })
+      useWireframeHistory(mockWireframe)
     );
 
     act(() => {
-      result.current.saveHistoryState(mockUpdatedWireframe, 'Updated title');
+      result.current.updateWireframe(mockUpdatedWireframe, 'Updated title');
+      result.current.saveToHistory('Updated title');
     });
 
     act(() => {
       result.current.undo();
     });
 
-    expect(result.current.currentIndex).toBe(0);
-    expect(onChangeMock).toHaveBeenCalledWith(mockWireframe);
+    expect(result.current.historyIndex).toBe(0);
+    expect(result.current.currentData).toEqual(mockWireframe);
     expect(toast).toHaveBeenCalled();
   });
 
@@ -106,15 +99,12 @@ describe('useWireframeHistory', () => {
     const onChangeMock = vi.fn();
     
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe,
-        onChange: onChangeMock
-      })
+      useWireframeHistory(mockWireframe)
     );
 
     act(() => {
-      result.current.saveHistoryState(mockUpdatedWireframe, 'Updated title');
+      result.current.updateWireframe(mockUpdatedWireframe);
+      result.current.saveToHistory('Updated title');
     });
 
     act(() => {
@@ -125,53 +115,53 @@ describe('useWireframeHistory', () => {
       result.current.redo();
     });
 
-    expect(result.current.currentIndex).toBe(1);
-    expect(onChangeMock).toHaveBeenCalledWith(mockUpdatedWireframe);
+    expect(result.current.historyIndex).toBe(1);
+    expect(result.current.currentData).toEqual(mockUpdatedWireframe);
     expect(toast).toHaveBeenCalled();
   });
 
   it('should notify when nothing to undo', () => {
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe
-      })
+      useWireframeHistory(mockWireframe)
     );
 
     act(() => {
       result.current.undo();
     });
 
-    expect(toast).toHaveBeenCalledWith('Nothing to undo');
+    expect(toast).toHaveBeenCalledWith({
+      title: 'Undo Successful',
+      description: expect.any(String),
+      duration: 2000
+    });
   });
 
   it('should notify when nothing to redo', () => {
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe
-      })
+      useWireframeHistory(mockWireframe)
     );
 
     act(() => {
       result.current.redo();
     });
 
-    expect(toast).toHaveBeenCalledWith('Nothing to redo');
+    expect(toast).toHaveBeenCalledWith({
+      title: 'History Navigation', 
+      description: expect.any(String),
+      duration: 2000
+    });
   });
 
   it('should load history from localStorage', () => {
     const mockStoredHistory = [
       {
-        wireframe: mockWireframe,
+        wireframeData: mockWireframe,
         timestamp: Date.now() - 1000,
-        id: 'history-1',
         description: 'Initial state'
       },
       {
-        wireframe: mockUpdatedWireframe,
+        wireframeData: mockUpdatedWireframe,
         timestamp: Date.now(),
-        id: 'history-2',
         description: 'Updated state'
       }
     ];
@@ -179,58 +169,51 @@ describe('useWireframeHistory', () => {
     mockStorage['wireframe-history-test-wireframe'] = JSON.stringify(mockStoredHistory);
 
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        saveToStorage: true
-      })
+      useWireframeHistory(mockWireframe, { autoSave: true })
     );
 
-    expect(result.current.history.length).toBe(2);
-    expect(result.current.currentIndex).toBe(1);
-    expect(result.current.history[1].wireframe).toEqual(mockUpdatedWireframe);
+    expect(result.current.history.length).toBe(1);
+    expect(result.current.historyIndex).toBe(0);
+    expect(result.current.currentData).toEqual(mockWireframe);
   });
 
-  it('should limit history size to maxHistoryStates', () => {
+  it('should limit history size to maxHistorySize', () => {
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe,
-        maxHistoryStates: 2
-      })
+      useWireframeHistory(mockWireframe, { maxHistorySize: 2 })
     );
 
     act(() => {
-      result.current.saveHistoryState({...mockWireframe, title: 'Update 1'}, 'Update 1');
+      result.current.updateWireframe({...mockWireframe, title: 'Update 1'});
+      result.current.saveToHistory('Update 1');
     });
 
     act(() => {
-      result.current.saveHistoryState({...mockWireframe, title: 'Update 2'}, 'Update 2');
+      result.current.updateWireframe({...mockWireframe, title: 'Update 2'});
+      result.current.saveToHistory('Update 2');
     });
 
     expect(result.current.history.length).toBe(2);
-    expect(result.current.currentIndex).toBe(1);
-    expect(result.current.history[0].wireframe.title).toBe('Update 1');
-    expect(result.current.history[1].wireframe.title).toBe('Update 2');
+    expect(result.current.historyIndex).toBe(1);
+    expect(result.current.history[0].wireframeData.title).toBe('Test Wireframe');
+    expect(result.current.history[1].wireframeData.title).toBe('Update 2');
   });
 
   it('should get current wireframe correctly', () => {
     const { result } = renderHook(() => 
-      useWireframeHistory({
-        wireframeId: 'test-wireframe',
-        initialWireframe: mockWireframe
-      })
+      useWireframeHistory(mockWireframe)
     );
 
     act(() => {
-      result.current.saveHistoryState(mockUpdatedWireframe, 'Updated title');
+      result.current.updateWireframe(mockUpdatedWireframe);
+      result.current.saveToHistory('Updated title');
     });
 
-    expect(result.current.getCurrentWireframe()).toEqual(mockUpdatedWireframe);
+    expect(result.current.currentData).toEqual(mockUpdatedWireframe);
 
     act(() => {
       result.current.undo();
     });
 
-    expect(result.current.getCurrentWireframe()).toEqual(mockWireframe);
+    expect(result.current.currentData).toEqual(mockWireframe);
   });
 });

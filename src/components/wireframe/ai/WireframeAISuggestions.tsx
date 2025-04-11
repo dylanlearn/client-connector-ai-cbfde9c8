@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,11 +7,15 @@ import { Sparkles, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface WireframeAISuggestionsProps {
+  wireframeId?: string;
+  focusedSectionId?: string;
   onApplySuggestion?: (suggestion: any) => void;
   onClose?: () => void;
 }
 
 const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
+  wireframeId,
+  focusedSectionId,
   onApplySuggestion,
   onClose
 }) => {
@@ -22,7 +25,6 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const { toast } = useToast();
   
-  // Simulate generating AI suggestions
   const generateSuggestions = async () => {
     if (!prompt.trim()) {
       toast({
@@ -36,10 +38,9 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
     setIsLoading(true);
     
     try {
-      // This would be replaced with an actual AI API call
+      console.log(`Generating suggestions for wireframe: ${wireframeId}, section: ${focusedSectionId}`);
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Mock suggestions based on the tab
       const mockSuggestions = {
         content: [
           { id: '1', text: 'Add a compelling heading that highlights the main value proposition.' },
@@ -77,7 +78,6 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
     }
   };
   
-  // Apply a selected suggestion
   const applySuggestion = (suggestion: any) => {
     if (onApplySuggestion) {
       onApplySuggestion(suggestion);
@@ -95,6 +95,7 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
         <h3 className="text-lg font-medium">AI-Powered Suggestions</h3>
         <p className="text-sm text-muted-foreground">
           Get AI suggestions to improve your wireframe's content, style, and layout.
+          {focusedSectionId && <span> Currently focused on section: {focusedSectionId}</span>}
         </p>
       </div>
       
@@ -137,47 +138,33 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
               <div className="space-y-4">
                 {suggestions.map((suggestion) => (
                   <Card key={suggestion.id}>
-                    <CardHeader className="py-4">
-                      <CardTitle className="text-sm font-medium">Suggestion {suggestion.id}</CardTitle>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm">Suggestion {suggestion.id}</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <p>{suggestion.text}</p>
+                      <p className="text-sm">{suggestion.text}</p>
                     </CardContent>
-                    <CardFooter className="flex justify-end py-2">
+                    <CardFooter className="py-2">
                       <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="gap-1"
+                        variant="secondary" 
+                        size="sm" 
+                        className="w-full"
                         onClick={() => applySuggestion(suggestion)}
                       >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Apply
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Apply Suggestion
                       </Button>
                     </CardFooter>
                   </Card>
                 ))}
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="gap-1 w-full" 
-                  onClick={generateSuggestions}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Regenerate Suggestions
-                </Button>
               </div>
             ) : (
-              <div className="text-center py-8">
-                {prompt ? (
-                  <p className="text-muted-foreground">
-                    Click "Generate" to get AI-powered suggestions.
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground">
-                    Enter a prompt to generate AI-powered suggestions.
-                  </p>
-                )}
+              <div className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  {isLoading ? 
+                    "Generating suggestions..." : 
+                    "Generate suggestions to see them here"}
+                </p>
               </div>
             )}
           </TabsContent>

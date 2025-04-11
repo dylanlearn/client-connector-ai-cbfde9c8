@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { exportWireframeAsHTML, exportWireframeAsPDF, exportWireframeAsImage } from '@/utils/wireframe/export-utils';
-import { Download, FileCode, FileImage, FilePdf, Loader2 } from 'lucide-react';
+import { Download, FileCode, FileImage, FileText, Loader2 } from 'lucide-react';
 
 export interface WireframeExportDialogProps {
   wireframe: WireframeData;
@@ -14,6 +14,7 @@ export interface WireframeExportDialogProps {
   onClose?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  containerRef?: React.RefObject<HTMLDivElement>;
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
@@ -21,7 +22,8 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   isOpen,
   onClose,
   open,
-  onOpenChange
+  onOpenChange,
+  containerRef
 }) => {
   const [activeTab, setActiveTab] = useState('html');
   const [isExporting, setIsExporting] = useState(false);
@@ -62,16 +64,38 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   
   // Export as PDF handler - requires a DOM element to render
   const handleExportPDF = async () => {
-    // Implementation would need a DOM element reference
-    // This is a placeholder that would be connected to a real element
-    alert('PDF export needs to be connected to a DOM element rendering the wireframe');
+    setIsExporting(true);
+    try {
+      if (containerRef?.current) {
+        await exportWireframeAsPDF(wireframe, containerRef.current);
+      } else {
+        // Implementation would need a DOM element reference
+        // This is a placeholder that would be connected to a real element
+        alert('PDF export needs to be connected to a DOM element rendering the wireframe');
+      }
+    } catch (error) {
+      console.error('Error exporting as PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   // Export as Image handler - requires a DOM element to render
   const handleExportImage = async () => {
-    // Implementation would need a DOM element reference
-    // This is a placeholder that would be connected to a real element
-    alert('Image export needs to be connected to a DOM element rendering the wireframe');
+    setIsExporting(true);
+    try {
+      if (containerRef?.current) {
+        await exportWireframeAsImage(wireframe, containerRef.current);
+      } else {
+        // Implementation would need a DOM element reference
+        // This is a placeholder that would be connected to a real element
+        alert('Image export needs to be connected to a DOM element rendering the wireframe');
+      }
+    } catch (error) {
+      console.error('Error exporting as image:', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   return (
@@ -88,7 +112,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
               HTML
             </TabsTrigger>
             <TabsTrigger value="pdf" className="flex gap-2 items-center">
-              <FilePdf className="h-4 w-4" />
+              <FileText className="h-4 w-4" />
               PDF
             </TabsTrigger>
             <TabsTrigger value="image" className="flex gap-2 items-center">
@@ -129,8 +153,17 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
               className="w-full"
               disabled={isExporting}
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export as PDF
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </>
+              )}
             </Button>
           </TabsContent>
           
@@ -143,8 +176,17 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
               className="w-full"
               disabled={isExporting}
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export as Image
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as Image
+                </>
+              )}
             </Button>
           </TabsContent>
         </Tabs>

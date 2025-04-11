@@ -4,7 +4,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Monitor, Smartphone, Tablet, Moon, Sun, Download, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { saveAs } from 'file-saver';
 import WireframePreviewSection from './WireframePreviewSection';
 import WireframeExportDialog from '../export/WireframeExportDialog';
 
@@ -173,7 +172,6 @@ const EnhancedWireframePreview: React.FC<EnhancedWireframePreviewProps> = ({
         isOpen={showExportDialog}
         onClose={() => setShowExportDialog(false)}
         wireframe={wireframe}
-        containerRef={containerRef}
       />
     </div>
   );
