@@ -32,6 +32,11 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
 };
 
 /**
+ * Create alias for generateWireframe as generateWireframeFromPrompt for backward compatibility
+ */
+export const generateWireframeFromPrompt = generateWireframe;
+
+/**
  * Generate a wireframe from a template
  */
 export const generateWireframeFromTemplate = async (templateId: string, params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
@@ -57,6 +62,7 @@ export const generateWireframeVariation = async (params: WireframeGenerationPara
  */
 export default {
   generateWireframe,
+  generateWireframeFromPrompt,
   generateWireframeFromTemplate,
   generateWireframeVariation
 };

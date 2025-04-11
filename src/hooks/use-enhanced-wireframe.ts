@@ -50,7 +50,7 @@ export function useAdvancedWireframe() {
       return {
         wireframe: null,
         success: false,
-        error: errorMessage
+        message: errorMessage
       };
     } finally {
       setIsGenerating(false);
@@ -91,7 +91,7 @@ export function useAdvancedWireframe() {
       const result = await EnhancedWireframeGenerator.applyFeedback(wireframeData, feedback);
       
       if (!result.success || !result.wireframe) {
-        throw new Error(result.error || 'Failed to apply feedback');
+        throw new Error(result.message || 'Failed to apply feedback');
       }
       
       setCurrentWireframe(result.wireframe);
@@ -115,7 +115,7 @@ export function useAdvancedWireframe() {
       
       return {
         success: false,
-        error: errorMessage,
+        message: errorMessage,
         wireframe: wireframeData
       };
     } finally {

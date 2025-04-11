@@ -1,6 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { generateWireframeFromPrompt, generateWireframeVariation } from './api/wireframe-generator';
+import { generateWireframe, generateWireframeFromPrompt, generateWireframeVariation } from './api/wireframe-generator';
 import { getSuggestedCopy } from './content/copy-suggestions';
 import { getCombinedAIMemory } from './wireframe-memory-service';
 import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
@@ -34,10 +34,16 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
     const memory = await getCombinedAIMemory();
     
     // Generate the wireframe
-    const wireframe = await generateWireframeFromPrompt({
+    const wireframeResult = await generateWireframeFromPrompt({
       ...params,
       style: processedStyle
     });
+    
+    if (!wireframeResult.success || !wireframeResult.wireframe) {
+      throw new Error(wireframeResult.message || 'Failed to generate wireframe');
+    }
+    
+    const wireframe = wireframeResult.wireframe;
     
     // Add copy suggestions to the sections
     const wireframeWithCopy: WireframeData = {
@@ -73,7 +79,13 @@ export const generateWireframeVariationWithStyle = async (params: WireframeGener
     console.log('Wireframe variation request:', params);
     
     // Generate the variation
-    const wireframeVariation = await generateWireframeVariation(params);
+    const result = await generateWireframeVariation(params);
+    
+    if (!result.success || !result.wireframe) {
+      throw new Error(result.message || 'Failed to generate wireframe variation');
+    }
+    
+    const wireframeVariation = result.wireframe;
     
     // Add copy suggestions to the sections
     const wireframeWithCopy: WireframeData = {

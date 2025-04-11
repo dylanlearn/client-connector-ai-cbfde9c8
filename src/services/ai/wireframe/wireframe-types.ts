@@ -122,7 +122,7 @@ export interface WireframeData {
 }
 
 // Re-export CopySuggestions interface to ensure it's available
-export { CopySuggestions };
+export type { CopySuggestions };
 
 /**
  * Interface for AI-generated wireframe

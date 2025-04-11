@@ -1,63 +1,44 @@
 
-import { WireframeComponent } from './wireframe-types';
-
 /**
- * Interface for AI memory related to wireframe generation
+ * Get combined AI memory for wireframe generation
  */
-export interface AICombinedMemory {
-  projectContext: any;
-  userPreferences: any;
-  previousWireframes: any[];
-  designDecisions: any[];
-  userFeedback: any[];
-}
-
-/**
- * Interface for user feedback on AI-generated content
- */
-export interface AIUserFeedback {
-  userId: string;
-  projectId: string;
-  feedbackType: 'positive' | 'negative' | 'suggestion';
-  content: string;
-  context: any;
-  timestamp: string;
-}
-
-/**
- * Get the combined AI memory for wireframe generation
- */
-export async function getCombinedAIMemory(): Promise<AICombinedMemory> {
-  // This would normally fetch from a database or API
-  // For now, return an empty memory structure
+export async function getCombinedAIMemory(): Promise<Record<string, any>> {
+  // This would normally fetch from a database or memory service
+  // For now, return a mock memory object
   return {
-    projectContext: {},
-    userPreferences: {},
-    previousWireframes: [],
-    designDecisions: [],
-    userFeedback: []
+    projectContext: {
+      recentWireframes: [],
+      userPreferences: {
+        colorScheme: 'blue',
+        layoutPreference: 'clean'
+      },
+      designHistory: []
+    }
   };
 }
 
 /**
- * Save user feedback about an AI-generated wireframe
+ * Save wireframe to AI memory
  */
-export async function saveUserFeedback(feedback: AIUserFeedback): Promise<boolean> {
-  // This would normally save to a database or API
-  console.log('Saving user feedback:', feedback);
+export async function saveWireframeToMemory(wireframeId: string, data: any): Promise<boolean> {
+  // This would normally store in a database or memory service
+  console.log('Saving wireframe to memory:', wireframeId, data);
   return true;
 }
 
 /**
- * Get wireframe suggestions based on current project context
+ * Retrieve wireframe from AI memory
  */
-export async function getWireframeSuggestions(): Promise<any[]> {
-  // This would normally generate suggestions based on AI analysis
-  return [];
+export async function getWireframeFromMemory(wireframeId: string): Promise<any | null> {
+  // This would normally fetch from a database or memory service
+  console.log('Fetching wireframe from memory:', wireframeId);
+  return null;
 }
 
-export default {
+const wireframeMemoryService = {
   getCombinedAIMemory,
-  saveUserFeedback,
-  getWireframeSuggestions
+  saveWireframeToMemory,
+  getWireframeFromMemory
 };
+
+export default wireframeMemoryService;

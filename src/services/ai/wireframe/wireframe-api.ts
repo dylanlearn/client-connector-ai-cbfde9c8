@@ -1,14 +1,15 @@
+
 // Export wireframe API service
 import wireframeApiService from './api/wireframe-api-service';
-import { wireframeGenerator } from './api';
+import { wireframeGenerator, generateWireframe, generateWireframeFromPrompt, generateWireframeVariation } from './api';
 
 export {
   wireframeApiService,
   wireframeGenerator,
+  generateWireframe,
+  generateWireframeFromPrompt,
+  generateWireframeVariation
 };
-
-// Expose the generateWireframe function directly for convenience
-export const generateWireframe = wireframeGenerator?.generateWireframe;
 
 // Re-export types from wireframe-types.ts with 'export type'
 export type {
