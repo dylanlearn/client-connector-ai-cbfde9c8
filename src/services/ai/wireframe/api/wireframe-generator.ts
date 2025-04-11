@@ -157,3 +157,21 @@ export const generateWireframeVariation = async (
     };
   }
 };
+
+// Fix the default wireframe in any wireframe generator
+const createDefaultWireframe = () => ({
+  id: uuidv4(),
+  title: 'New Wireframe',
+  sections: [],
+  colorScheme: {
+    primary: '#3b82f6',
+    secondary: '#10b981',
+    accent: '#f59e0b',
+    background: '#ffffff',
+    text: '#000000'
+  },
+  typography: {
+    headings: 'Inter',
+    body: 'Inter'
+  }
+});

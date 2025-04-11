@@ -135,13 +135,14 @@ export interface WireframeData {
   animations?: Record<string, any>;
   imageUrl?: string;
   metadata?: Record<string, any>;
+  layoutType?: string;
 }
 
 // Parameters for wireframe generation
 export interface WireframeGenerationParams {
   description?: string;
   industry?: string;
-  style?: string;
+  style?: string | Record<string, any>;
   optimizeForDevices?: boolean;
   generatePreview?: boolean;
   colorScheme?: {
@@ -158,6 +159,10 @@ export interface WireframeGenerationParams {
   designRequirements?: string;
   baseWireframe?: WireframeData;
   stylePreferences?: string | Record<string, any>;
+  styleToken?: string;
+  feedbackMode?: boolean;
+  isVariation?: boolean;
+  customParams?: Record<string, any>;
 }
 
 // Result of wireframe generation
@@ -176,6 +181,7 @@ export interface WireframeGenerationResult {
 export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
   enhancedData?: Record<string, any>;
   optimizationScore?: number;
+  designTokens?: Record<string, any>;
 }
 
 // Database representation of a wireframe, may include additional fields
@@ -196,4 +202,5 @@ export interface AIWireframe {
   version_count?: number;
   current_version_id?: string;
   image_url?: string;
+  design_tokens?: Record<string, any>;
 }

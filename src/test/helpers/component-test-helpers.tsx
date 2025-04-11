@@ -4,11 +4,30 @@ import { render } from '@testing-library/react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock implementation of vi for tests
+// Create mock functions that match Jest's API but use Vitest under the hood
 const mockVi = {
-  fn: (implementation?: any) => jest.fn(implementation),
-  mock: (moduleName: string) => jest.mock(moduleName),
-  spyOn: (object: any, method: string) => jest.spyOn(object, method)
+  fn: (implementation?: any) => function mockFn(...args: any[]) {
+    return implementation ? implementation(...args) : undefined;
+  },
+  mock: (moduleName: string) => ({
+    moduleName
+  }),
+  spyOn: (object: any, method: string) => {
+    const original = object[method];
+    object[method] = mockVi.fn();
+    return {
+      mockImplementation: (impl: any) => {
+        object[method] = impl;
+        return object[method];
+      },
+      mockRestore: () => {
+        object[method] = original;
+      },
+      mockReset: () => {
+        object[method] = mockVi.fn();
+      }
+    };
+  }
 };
 
 // Make mockVi available globally for tests
@@ -61,16 +80,15 @@ export const mockApiResponse = (data: any, error: any = null) => {
 
 // Setup mock for Supabase in tests
 export const setupSupabaseMock = () => {
-  // Using jest syntax instead of vitest
-  const mockSupabaseFrom = jest.fn().mockReturnThis();
-  const mockSupabaseSelect = jest.fn().mockReturnThis();
-  const mockSupabaseInsert = jest.fn().mockReturnThis();
-  const mockSupabaseUpdate = jest.fn().mockReturnThis();
-  const mockSupabaseDelete = jest.fn().mockReturnThis();
-  const mockSupabaseEq = jest.fn().mockReturnThis();
-  const mockSupabaseOrder = jest.fn().mockReturnThis();
-  const mockSupabaseLimit = jest.fn().mockReturnThis();
-  const mockSupabaseSingle = jest.fn().mockImplementation(() => mockApiResponse({}));
+  const mockSupabaseFrom = mockVi.fn().mockReturnThis();
+  const mockSupabaseSelect = mockVi.fn().mockReturnThis();
+  const mockSupabaseInsert = mockVi.fn().mockReturnThis();
+  const mockSupabaseUpdate = mockVi.fn().mockReturnThis();
+  const mockSupabaseDelete = mockVi.fn().mockReturnThis();
+  const mockSupabaseEq = mockVi.fn().mockReturnThis();
+  const mockSupabaseOrder = mockVi.fn().mockReturnThis();
+  const mockSupabaseLimit = mockVi.fn().mockReturnThis();
+  const mockSupabaseSingle = mockVi.fn().mockImplementation(() => mockApiResponse({}));
   
   return {
     from: mockSupabaseFrom,

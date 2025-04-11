@@ -1,5 +1,42 @@
+import { supabase } from '@/integrations/supabase/client';
+import { AIWireframe, WireframeGenerationParams } from './wireframe-types';
 
-import { WireframeData, AIWireframe } from './wireframe-types';
+export const getWireframe = async (id: string): Promise<AIWireframe | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('wireframes')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) throw error;
+    return data as AIWireframe;
+  } catch (error) {
+    console.error("Error fetching wireframe:", error);
+    return null;
+  }
+};
+
+export const saveWireframeStyle = async (wireframeId: string, style: string | Record<string, any>): Promise<boolean> => {
+  try {
+    // Convert object to string if necessary
+    const styleValue = typeof style === 'object' ? JSON.stringify(style) : style;
+    
+    const { error } = await supabase
+      .from('wireframes')
+      .update({ 
+        style: styleValue,
+        design_tokens: typeof style === 'object' ? style : {} 
+      })
+      .eq('id', wireframeId);
+      
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Error saving wireframe style:", error);
+    return false;
+  }
+};
 
 export const wireframeService = {
   // Convert AIWireframe to WireframeData

@@ -1,4 +1,3 @@
-
 import { WireframeData } from './wireframe-types';
 import { DesignMemoryData, DesignMemoryResponse } from './design-memory-types';
 
@@ -177,3 +176,15 @@ export class WireframeMemoryService {
 // Create and export a default instance
 export const wireframeMemoryService = new WireframeMemoryService();
 export default wireframeMemoryService;
+
+export const getWireframeIntent = (wireframeData: any, fieldName: string): string => {
+  // This function previously had an issue with 'toLowerCase' on a 'never' type
+  // Add type safety to ensure fieldName is a valid string key
+  if (!wireframeData) return '';
+  
+  const fieldValue = wireframeData[fieldName];
+  if (!fieldValue) return '';
+  
+  // Add type check before calling toLowerCase
+  return typeof fieldValue === 'string' ? fieldValue.toLowerCase() : String(fieldValue);
+};

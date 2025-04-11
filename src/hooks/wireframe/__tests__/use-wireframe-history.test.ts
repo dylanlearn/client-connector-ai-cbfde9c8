@@ -1,219 +1,180 @@
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useWireframeHistory } from '../use-wireframe-history';
-import { toast } from 'sonner';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-// Mock dependencies
-vi.mock('sonner', () => ({
-  toast: vi.fn()
-}));
+// Mock localStorage for testing purposes
+const localStorageMock = (() => {
+  let store: { [key: string]: string } = {};
 
-vi.mock('uuid', () => ({
-  v4: () => 'mock-uuid'
-}));
+  return {
+    getItem(key: string) {
+      return store[key] || null;
+    },
+    setItem(key: string, value: string) {
+      store[key] = String(value);
+    },
+    removeItem(key: string) {
+      delete store[key];
+    },
+    clear() {
+      store = {};
+    },
+  };
+})();
 
-// Mock localStorage
-const mockStorage: Record<string, string> = {};
-const mockLocalStorage = {
-  getItem: vi.fn((key: string) => mockStorage[key] || null),
-  setItem: vi.fn((key: string, value: string) => {
-    mockStorage[key] = value;
-  })
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+});
+
+// Replace any wireframe object creation with the proper structure
+const testWireframe = {
+  id: "test-id",
+  title: "Test Wireframe",
+  description: "Test Description",
+  sections: [],
+  colorScheme: {
+    primary: "#3b82f6",
+    secondary: "#10b981",
+    accent: "#f59e0b",
+    background: "#ffffff",
+    text: "#000000"
+  },
+  typography: {
+    headings: "Inter",
+    body: "Inter"
+  }
 };
 
-vi.mock('@/hooks/use-local-storage', () => ({
-  useLocalStorage: () => ({
-    getItem: mockLocalStorage.getItem,
-    setItem: mockLocalStorage.setItem
-  })
-}));
-
 describe('useWireframeHistory', () => {
-  const mockWireframe: WireframeData = {
-    id: 'test-wireframe',
-    title: 'Test Wireframe',
-    sections: [],
-    description: 'Test description'
-  };
-
-  const mockUpdatedWireframe: WireframeData = {
-    ...mockWireframe,
-    title: 'Updated Wireframe'
-  };
-
   beforeEach(() => {
-    vi.clearAllMocks();
-    Object.keys(mockStorage).forEach(key => delete mockStorage[key]);
+    localStorage.clear();
   });
 
-  it('should initialize with the initial wireframe', () => {
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
-
-    expect(result.current.currentData).toEqual(mockWireframe);
-    expect(result.current.history.length).toBe(1);
-    expect(result.current.historyIndex).toBe(0);
+  it('should initialize with an empty history if no history exists in localStorage', () => {
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
+    expect(result.current.history).toEqual([]);
+    expect(result.current.currentIndex).toBe(-1);
   });
 
-  it('should save history state when wireframe is updated', () => {
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
+  it('should initialize with history from localStorage if it exists', () => {
+    const initialHistory = [testWireframe];
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify(initialHistory));
+    localStorage.setItem('wireframe-history-index-test-project', '0');
 
-    act(() => {
-      result.current.updateWireframe(mockUpdatedWireframe, 'Updated title');
-      result.current.saveToHistory('Updated title');
-    });
-
-    expect(result.current.history.length).toBe(2);
-    expect(result.current.historyIndex).toBe(1);
-    expect(result.current.history[1].wireframeData).toEqual(mockUpdatedWireframe);
-    expect(result.current.history[1].description).toBe('Updated title');
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
+    expect(result.current.history).toEqual(initialHistory);
+    expect(result.current.currentIndex).toBe(0);
   });
 
-  it('should undo to previous state', () => {
-    const onChangeMock = vi.fn();
-    
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
+  it('should add a wireframe to history', () => {
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
     act(() => {
-      result.current.updateWireframe(mockUpdatedWireframe, 'Updated title');
-      result.current.saveToHistory('Updated title');
+      result.current.addToHistory(testWireframe);
     });
 
-    act(() => {
-      result.current.undo();
-    });
-
-    expect(result.current.historyIndex).toBe(0);
-    expect(result.current.currentData).toEqual(mockWireframe);
-    expect(toast).toHaveBeenCalled();
+    expect(result.current.history).toEqual([testWireframe]);
+    expect(result.current.currentIndex).toBe(0);
+    expect(localStorage.getItem('wireframe-history-test-project')).toBe(JSON.stringify([testWireframe]));
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe('0');
   });
 
-  it('should redo to next state', () => {
-    const onChangeMock = vi.fn();
-    
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
+  it('should go back in history', () => {
+    const initialHistory = [testWireframe, { ...testWireframe, title: 'Updated Wireframe' }];
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify(initialHistory));
+    localStorage.setItem('wireframe-history-index-test-project', '1');
+
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
     act(() => {
-      result.current.updateWireframe(mockUpdatedWireframe);
-      result.current.saveToHistory('Updated title');
+      result.current.goBack();
     });
 
-    act(() => {
-      result.current.undo();
-    });
-
-    act(() => {
-      result.current.redo();
-    });
-
-    expect(result.current.historyIndex).toBe(1);
-    expect(result.current.currentData).toEqual(mockUpdatedWireframe);
-    expect(toast).toHaveBeenCalled();
+    expect(result.current.currentIndex).toBe(0);
+    expect(result.current.current).toEqual(initialHistory[0]);
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe('0');
   });
 
-  it('should notify when nothing to undo', () => {
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
+  it('should go forward in history', () => {
+    const initialHistory = [testWireframe, { ...testWireframe, title: 'Updated Wireframe' }];
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify(initialHistory));
+    localStorage.setItem('wireframe-history-index-test-project', '0');
+
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
     act(() => {
-      result.current.undo();
+      result.current.goForward();
     });
 
-    expect(toast).toHaveBeenCalledWith({
-      title: 'Undo Successful',
-      description: expect.any(String),
-      duration: 2000
-    });
+    expect(result.current.currentIndex).toBe(1);
+    expect(result.current.current).toEqual(initialHistory[1]);
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe('1');
   });
 
-  it('should notify when nothing to redo', () => {
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
+  it('should not go back beyond the start of history', () => {
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify([testWireframe]));
+    localStorage.setItem('wireframe-history-index-test-project', '0');
+
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
     act(() => {
-      result.current.redo();
+      result.current.goBack();
     });
 
-    expect(toast).toHaveBeenCalledWith({
-      title: 'History Navigation', 
-      description: expect.any(String),
-      duration: 2000
-    });
+    expect(result.current.currentIndex).toBe(0);
+    expect(result.current.current).toEqual(testWireframe);
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe('0');
   });
 
-  it('should load history from localStorage', () => {
-    const mockStoredHistory = [
-      {
-        wireframeData: mockWireframe,
-        timestamp: Date.now() - 1000,
-        description: 'Initial state'
-      },
-      {
-        wireframeData: mockUpdatedWireframe,
-        timestamp: Date.now(),
-        description: 'Updated state'
-      }
-    ];
+  it('should not go forward beyond the end of history', () => {
+    const initialHistory = [testWireframe, { ...testWireframe, title: 'Updated Wireframe' }];
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify(initialHistory));
+    localStorage.setItem('wireframe-history-index-test-project', '1');
 
-    mockStorage['wireframe-history-test-wireframe'] = JSON.stringify(mockStoredHistory);
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe, { autoSave: true })
-    );
+    act(() => {
+      result.current.goForward();
+    });
 
-    expect(result.current.history.length).toBe(1);
-    expect(result.current.historyIndex).toBe(0);
-    expect(result.current.currentData).toEqual(mockWireframe);
+    expect(result.current.currentIndex).toBe(1);
+    expect(result.current.current).toEqual(initialHistory[1]);
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe('1');
   });
 
-  it('should limit history size to maxHistorySize', () => {
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe, { maxHistorySize: 2 })
-    );
+  it('should update history when adding a new wireframe after going back', () => {
+    const initialHistory = [testWireframe, { ...testWireframe, title: 'Updated Wireframe' }];
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify(initialHistory));
+    localStorage.setItem('wireframe-history-index-test-project', '1');
+
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
     act(() => {
-      result.current.updateWireframe({...mockWireframe, title: 'Update 1'});
-      result.current.saveToHistory('Update 1');
+      result.current.goBack();
+      result.current.addToHistory({ ...testWireframe, title: 'New Wireframe' });
     });
 
-    act(() => {
-      result.current.updateWireframe({...mockWireframe, title: 'Update 2'});
-      result.current.saveToHistory('Update 2');
-    });
-
-    expect(result.current.history.length).toBe(2);
-    expect(result.current.historyIndex).toBe(1);
-    expect(result.current.history[0].wireframeData.title).toBe('Test Wireframe');
-    expect(result.current.history[1].wireframeData.title).toBe('Update 2');
+    expect(result.current.history).toEqual([testWireframe, { ...testWireframe, title: 'New Wireframe' }]);
+    expect(result.current.currentIndex).toBe(1);
+    expect(localStorage.getItem('wireframe-history-test-project')).toBe(JSON.stringify([testWireframe, { ...testWireframe, title: 'New Wireframe' }]));
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe('1');
   });
 
-  it('should get current wireframe correctly', () => {
-    const { result } = renderHook(() => 
-      useWireframeHistory(mockWireframe)
-    );
+  it('should clear history', () => {
+    const initialHistory = [testWireframe, { ...testWireframe, title: 'Updated Wireframe' }];
+    localStorage.setItem('wireframe-history-test-project', JSON.stringify(initialHistory));
+    localStorage.setItem('wireframe-history-index-test-project', '1');
+
+    const { result } = renderHook(() => useWireframeHistory('test-project'));
 
     act(() => {
-      result.current.updateWireframe(mockUpdatedWireframe);
-      result.current.saveToHistory('Updated title');
+      result.current.clearHistory();
     });
 
-    expect(result.current.currentData).toEqual(mockUpdatedWireframe);
-
-    act(() => {
-      result.current.undo();
-    });
-
-    expect(result.current.currentData).toEqual(mockWireframe);
+    expect(result.current.history).toEqual([]);
+    expect(result.current.currentIndex).toBe(-1);
+    expect(localStorage.getItem('wireframe-history-test-project')).toBe(null);
+    expect(localStorage.getItem('wireframe-history-index-test-project')).toBe(null);
   });
 });
