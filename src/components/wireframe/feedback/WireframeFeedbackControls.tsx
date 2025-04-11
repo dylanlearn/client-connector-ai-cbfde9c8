@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { IconThumbUp, IconThumbDown, IconMessage } from '@tabler/icons-react';
+import { ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getSuggestion } from '../renderers/utilities';
 
@@ -10,13 +10,15 @@ interface WireframeFeedbackControlsProps {
   feedbackSent?: boolean;
   className?: string;
   showLabels?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'default' | 'lg' | 'icon';
   variant?: 'default' | 'outline' | 'ghost';
   copyText?: {
     likeButtonLabel?: string;
     dislikeButtonLabel?: string;
     commentButtonLabel?: string;
   };
+  wireframeId?: string; // Add missing wireframeId prop
+  compact?: boolean; // Add missing compact prop
 }
 
 const WireframeFeedbackControls: React.FC<WireframeFeedbackControlsProps> = ({
@@ -26,7 +28,8 @@ const WireframeFeedbackControls: React.FC<WireframeFeedbackControlsProps> = ({
   showLabels = true,
   size = 'sm',
   variant = 'outline',
-  copyText
+  copyText,
+  compact = false
 }) => {
   const handleFeedback = (type: string) => {
     if (onFeedback && !feedbackSent) {
@@ -43,8 +46,8 @@ const WireframeFeedbackControls: React.FC<WireframeFeedbackControlsProps> = ({
         disabled={feedbackSent}
         className={cn(feedbackSent && 'opacity-50')}
       >
-        <IconThumbUp className="h-4 w-4 mr-1" />
-        {showLabels && getSuggestion(copyText, 'likeButtonLabel', 'Like')}
+        <ThumbsUp className="h-4 w-4 mr-1" />
+        {showLabels && !compact && getSuggestion(copyText, 'likeButtonLabel', 'Like')}
       </Button>
       
       <Button
@@ -54,8 +57,8 @@ const WireframeFeedbackControls: React.FC<WireframeFeedbackControlsProps> = ({
         disabled={feedbackSent}
         className={cn(feedbackSent && 'opacity-50')}
       >
-        <IconThumbDown className="h-4 w-4 mr-1" />
-        {showLabels && getSuggestion(copyText, 'dislikeButtonLabel', 'Dislike')}
+        <ThumbsDown className="h-4 w-4 mr-1" />
+        {showLabels && !compact && getSuggestion(copyText, 'dislikeButtonLabel', 'Dislike')}
       </Button>
       
       <Button
@@ -65,8 +68,8 @@ const WireframeFeedbackControls: React.FC<WireframeFeedbackControlsProps> = ({
         disabled={feedbackSent}
         className={cn(feedbackSent && 'opacity-50')}
       >
-        <IconMessage className="h-4 w-4 mr-1" />
-        {showLabels && getSuggestion(copyText, 'commentButtonLabel', 'Comment')}
+        <MessageSquare className="h-4 w-4 mr-1" />
+        {showLabels && !compact && getSuggestion(copyText, 'commentButtonLabel', 'Comment')}
       </Button>
     </div>
   );

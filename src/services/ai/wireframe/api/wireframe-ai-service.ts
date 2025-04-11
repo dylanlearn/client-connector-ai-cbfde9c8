@@ -1,5 +1,6 @@
+
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeSection } from '../../wireframe-types';
+import { WireframeData, WireframeSection } from '../wireframe-types';
 import { generateSections } from './wireframe-sections';
 import { generateColorScheme } from './wireframe-colors';
 import { generateTypography } from './wireframe-typography';
@@ -42,16 +43,16 @@ export const generateWireframeFromAI = async (
       styleVariants
     } = await analyzeAndGenerateWireframeComponents(description, options);
 
-    // Process typography to ensure fontPairings is a string if it exists
-    const processTypography = (typography: any) => {
-      // If fontPairings is an array, convert it to a comma-separated string
-      if (typography && typography.fontPairings && Array.isArray(typography.fontPairings)) {
-        return {
-          ...typography,
-          fontPairings: typography.fontPairings.join(',')
-        };
-      }
-      return typography;
+    // Process typography to ensure fontPairings is handled correctly
+    const processedTypography = {
+      headings: typography.headings,
+      body: typography.body,
+      // Convert fontPairings to string if it's an array
+      ...(typography.fontPairings && {
+        fontPairings: Array.isArray(typography.fontPairings)
+          ? typography.fontPairings.join(',')
+          : typography.fontPairings
+      })
     };
 
     // Create the wireframe data
@@ -61,13 +62,13 @@ export const generateWireframeFromAI = async (
       description: description || 'Generated based on AI analysis',
       sections: sections,
       colorScheme: colorScheme,
-      typography: processTypography(typography),
+      typography: processedTypography,
       layoutType: layoutType,
       designTokens: designTokens,
       mobileConsiderations: mobileConsiderations,
       accessibilityNotes: accessibilityNotes,
       designReasoning: designReasoning,
-      animations: animations,
+      animations: animations ? JSON.parse(JSON.stringify(animations)) : undefined,
       styleVariants: styleVariants
     };
 

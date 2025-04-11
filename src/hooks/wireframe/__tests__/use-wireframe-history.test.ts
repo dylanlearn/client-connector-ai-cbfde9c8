@@ -1,7 +1,26 @@
 import { renderHook, act } from '@testing-library/react-hooks';
-import { describe, it, expect, beforeEach } from 'vitest';
-import useWireframeHistory from '../use-wireframe-history';
+import { vi } from 'vitest';
+import { useWireframeHistory } from "../use-wireframe-history";
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+
+// Mock wireframe data
+const mockWireframeData: WireframeData = {
+  id: 'test-id',
+  title: 'Test Wireframe',
+  description: 'Test description',
+  sections: [],
+  colorScheme: {
+    primary: '#3b82f6',
+    secondary: '#10b981',
+    accent: '#f59e0b',
+    background: '#ffffff',
+    text: '#000000'
+  },
+  typography: {
+    headings: 'sans-serif',
+    body: 'sans-serif'
+  }
+};
 
 describe('useWireframeHistory hook', () => {
   const createMockWireframe = (id: string): WireframeData => ({

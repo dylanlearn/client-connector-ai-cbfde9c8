@@ -58,13 +58,24 @@ export class WireframeFeedbackController {
           id: retrievedWireframe.id,
           title: retrievedWireframe.title || '',
           description: retrievedWireframe.description || '',
-          sections: retrievedWireframe.sections || []
+          sections: retrievedWireframe.sections || [],
+          colorScheme: retrievedWireframe.colorScheme || {
+            primary: '#3182CE',
+            secondary: '#805AD5',
+            accent: '#ED8936',
+            background: '#FFFFFF',
+            text: '#1A202C'
+          },
+          typography: retrievedWireframe.typography || {
+            headings: 'Inter',
+            body: 'Inter'
+          }
         };
       } catch (err) {
         console.error('Error retrieving wireframe:', err);
         return {
           success: false,
-          wireframe: { id: wireframeId, title: '', description: '', sections: [] },
+          wireframe: createEmptyWireframe({ id: wireframeId }),
           changes: { description: '', modifiedSections: [], addedSections: [], removedSections: [] },
           error: `Failed to retrieve wireframe: ${err instanceof Error ? err.message : String(err)}`
         };
@@ -126,22 +137,19 @@ export class WireframeFeedbackController {
         try {
           // If creating a new version
           if (options.createNewVersion) {
-            const versionResult = await wireframeApiService.createWireframeVersion(
-              wireframeId,
-              modificationResult.wireframe
-            );
+            const versionResult = await wireframeApiService.saveWireframe({
+              ...modificationResult.wireframe,
+              id: uuidv4(), // Generate new ID for version
+              originalWireframeId: wireframeId // Store reference to original
+            });
             
-            // Assuming the API returns the version ID in a known property
-            if (versionResult && versionResult.wireframe && versionResult.wireframe.id) {
-              newVersionId = versionResult.wireframe.id;
+            if (versionResult && versionResult.id) {
+              newVersionId = versionResult.id;
               console.log('Created new wireframe version:', newVersionId);
             }
           } else {
-            // Direct update
-            await wireframeApiService.updateWireframeData(
-              wireframeId,
-              modificationResult.wireframe
-            );
+            // Direct update using saveWireframe instead
+            await wireframeApiService.saveWireframe(modificationResult.wireframe);
             console.log('Updated wireframe directly');
           }
         } catch (err) {
@@ -167,7 +175,7 @@ export class WireframeFeedbackController {
       
       return {
         success: false,
-        wireframe: { id: wireframeId, title: '', description: '', sections: [] },
+        wireframe: createEmptyWireframe({ id: wireframeId }),
         changes: { description: '', modifiedSections: [], addedSections: [], removedSections: [] },
         error: `Failed to process feedback: ${error instanceof Error ? error.message : String(error)}`
       };
@@ -178,7 +186,7 @@ export class WireframeFeedbackController {
 // Add colorScheme and typography to wireframe objects
 const createEmptyWireframe = (partialData: any = {}) => {
   return {
-    id: 'new-wireframe-id',
+    id: partialData.id || 'new-wireframe-id',
     title: partialData.title || 'New Wireframe',
     description: partialData.description || 'Created from feedback controller',
     sections: partialData.sections || [],

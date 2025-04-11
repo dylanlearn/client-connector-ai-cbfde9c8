@@ -13,7 +13,19 @@ export class WireframeFeedbackService {
    */
   async submitFeedback(wireframeId: string, feedback: any) {
     try {
-      return await wireframeApiService.updateWireframeFeedback(wireframeId, feedback);
+      // Use saveWireframe with an updated feedback property
+      const wireframe = await wireframeApiService.getWireframe(wireframeId);
+      if (wireframe) {
+        return await wireframeApiService.saveWireframe({
+          ...wireframe,
+          feedback: {
+            ...(wireframe.feedback || {}),
+            ...feedback,
+            updatedAt: new Date().toISOString()
+          }
+        });
+      }
+      throw new Error(`Wireframe with ID ${wireframeId} not found`);
     } catch (error) {
       console.error('Failed to submit wireframe feedback:', error);
       throw error;

@@ -1,167 +1,140 @@
+
+import { WireframeGenerationParams, WireframeGenerationResult, WireframeData } from './wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
-import { wireframeService } from './wireframe-service';
-import { generateWireframe as baseGenerateWireframe } from './api/wireframe-generator';
-import { optimizeWireframeForDevice } from './api/wireframe-optimization-service';
-import { generateImagePreview } from './api/wireframe-preview-service';
-
-// Import createMinimalWireframeData (adding it as an export to wireframeService)
-import wireframeService from './wireframe-service';
-
-// Add createMinimalWireframeData to the wireframeService export
-export const createMinimalWireframeData = (partialData: Partial<any> = {}): any => {
-  const defaultWireframe = wireframeService.createDefaultWireframe();
-  return {
-    ...defaultWireframe,
-    ...partialData,
-    id: partialData.id || defaultWireframe.id,
-    title: partialData.title || defaultWireframe.title,
-    description: partialData.description || defaultWireframe.description,
-    sections: partialData.sections || defaultWireframe.sections
-  };
-};
+import { wireframeService as baseWireframeService } from './wireframe-service';
 
 /**
- * Advanced wireframe generation with additional features
+ * Extended wireframe service with advanced capabilities
  */
-export const generateAdvancedWireframe = async (
-  params: WireframeGenerationParams
-): Promise<WireframeGenerationResult> => {
-  try {
-    // Generate base wireframe
-    const result = await wireframeService.generateWireframe(params);
-    
-    if (!result.success || !result.wireframe) {
-      throw new Error(result.message || 'Failed to generate wireframe');
+class AdvancedWireframeService {
+  /**
+   * Generate a wireframe with advanced parameters and options
+   */
+  async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
+    try {
+      console.log('Advanced wireframe generation requested:', params);
+      
+      // Enhance the generation params with additional options
+      const enhancedParams: WireframeGenerationParams = {
+        ...params,
+        enhancedCreativity: params.enhancedCreativity !== false,
+        styleChanges: params.styleChanges || ''
+      };
+      
+      // Use the base wireframe service for generation
+      const result = await baseWireframeService.generateWireframe(enhancedParams);
+      
+      if (!result.success || !result.wireframe) {
+        throw new Error(result.message || 'Failed to generate wireframe');
+      }
+      
+      // Add enhanced functionality to the wireframe
+      const enhancedWireframe: WireframeData = {
+        ...result.wireframe,
+        designReasoning: this.generateDesignReasoning(result.wireframe, params),
+        animations: params.enhancedCreativity ? this.generateAnimationSuggestions() : undefined,
+        styleVariants: params.enhancedCreativity ? this.generateStyleVariants() : undefined
+      };
+      
+      return {
+        wireframe: enhancedWireframe,
+        success: true,
+        message: 'Enhanced wireframe generated successfully'
+      };
+    } catch (error) {
+      console.error('Error in advanced wireframe generation:', error);
+      return {
+        wireframe: null,
+        success: false,
+        message: `Error generating enhanced wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
     }
-    
-    // Add additional metadata
-    const enhancedWireframe: WireframeData = {
-      ...result.wireframe,
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        generationParams: params,
-        version: '2.0'
+  }
+  
+  /**
+   * Apply feedback to update a wireframe
+   */
+  async applyFeedback(wireframeData: WireframeData, feedback: string): Promise<WireframeGenerationResult> {
+    try {
+      console.log('Applying feedback to wireframe:', feedback);
+      
+      // Simple implementation for now
+      // In a real app, this would use AI to analyze the feedback and make changes
+      const updatedWireframe = {
+        ...wireframeData,
+        updatedAt: new Date().toISOString(),
+        feedback: [
+          ...(wireframeData.feedback || []),
+          { text: feedback, timestamp: new Date().toISOString() }
+        ]
+      };
+      
+      return {
+        wireframe: updatedWireframe,
+        success: true,
+        message: 'Feedback applied successfully'
+      };
+    } catch (error) {
+      console.error('Error applying feedback:', error);
+      return {
+        wireframe: null,
+        success: false,
+        message: `Error applying feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+  
+  /**
+   * Generate design reasoning for a wireframe
+   */
+  private generateDesignReasoning(wireframe: WireframeData, params: WireframeGenerationParams): string {
+    // Sample implementation
+    return `This design was created based on the prompt: "${params.description}". 
+    It features ${wireframe.sections.length} sections with a color scheme using ${wireframe.colorScheme.primary} as the primary color.`;
+  }
+  
+  /**
+   * Generate animation suggestions
+   */
+  private generateAnimationSuggestions(): Record<string, any> {
+    return {
+      entrance: {
+        type: 'fade-in',
+        duration: 500
+      },
+      scroll: {
+        type: 'reveal',
+        threshold: 0.2
       }
     };
-    
+  }
+  
+  /**
+   * Generate style variants
+   */
+  private generateStyleVariants(): Record<string, any> {
     return {
-      wireframe: enhancedWireframe,
-      success: true,
-      message: 'Advanced wireframe generated successfully'
-    };
-  } catch (error) {
-    console.error('Error in advanced wireframe generation:', error);
-    return {
-      wireframe: null,
-      success: false,
-      message: `Error generating advanced wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+      light: {
+        background: '#ffffff',
+        text: '#1a1a1a'
+      },
+      dark: {
+        background: '#1a1a1a',
+        text: '#ffffff'
+      }
     };
   }
-};
+}
 
-/**
- * Generate a wireframe optimized for a specific device
- */
-export const generateDeviceOptimizedWireframe = async (
-  params: WireframeGenerationParams,
-  deviceType: 'desktop' | 'tablet' | 'mobile'
-): Promise<WireframeGenerationResult> => {
-  try {
-    // First generate a standard wireframe
-    const result = await wireframeService.generateWireframe(params);
-    
-    if (!result.success || !result.wireframe) {
-      throw new Error(result.message || 'Failed to generate wireframe');
-    }
-    
-    // Then optimize it for the target device
-    const optimizedWireframe = await optimizeWireframeForDevice(result.wireframe, deviceType);
-    
-    return {
-      wireframe: optimizedWireframe,
-      success: true,
-      message: `Wireframe optimized for ${deviceType} generated successfully`
-    };
-  } catch (error) {
-    console.error('Error in device-optimized wireframe generation:', error);
-    return {
-      wireframe: null,
-      success: false,
-      message: `Error generating device-optimized wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+export const advancedWireframeService = new AdvancedWireframeService();
+
+// Modified EnhancedWireframeGenerator class to use the advancedWireframeService
+export class EnhancedWireframeGenerator {
+  static async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
+    return advancedWireframeService.generateWireframe(params);
   }
-};
-
-/**
- * Generate a wireframe with image preview
- */
-export const generateWireframeWithPreview = async (
-  params: WireframeGenerationParams
-): Promise<WireframeGenerationResult & { previewUrl?: string }> => {
-  try {
-    // First generate a standard wireframe
-    const result = await wireframeService.generateWireframe(params);
-    
-    if (!result.success || !result.wireframe) {
-      throw new Error(result.message || 'Failed to generate wireframe');
-    }
-    
-    // Then generate an image preview
-    const previewUrl = await generateImagePreview(result.wireframe);
-    
-    // Add the preview URL to the wireframe
-    const enhancedWireframe: WireframeData = {
-      ...result.wireframe,
-      imageUrl: previewUrl
-    };
-    
-    return {
-      wireframe: enhancedWireframe,
-      success: true,
-      message: 'Wireframe with preview generated successfully',
-      previewUrl
-    };
-  } catch (error) {
-    console.error('Error in wireframe with preview generation:', error);
-    return {
-      wireframe: null,
-      success: false,
-      message: `Error generating wireframe with preview: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+  
+  static async applyFeedback(wireframeData: WireframeData, feedback: string): Promise<WireframeGenerationResult> {
+    return advancedWireframeService.applyFeedback(wireframeData, feedback);
   }
-};
-
-/**
- * Create a new wireframe from scratch with minimal data
- */
-export const createEmptyWireframe = (title: string = 'New Wireframe'): WireframeData => {
-  return {
-    id: uuidv4(),
-    title,
-    description: 'A blank wireframe',
-    sections: [],
-    colorScheme: {
-      primary: '#3182CE',
-      secondary: '#805AD5',
-      accent: '#ED8936',
-      background: '#FFFFFF',
-      text: '#1A202C'
-    },
-    typography: {
-      headings: 'Inter',
-      body: 'Inter'
-    }
-  };
-};
-
-// Export as a named advancedWireframeService object
-export const advancedWireframeService = {
-  generateAdvancedWireframe,
-  generateDeviceOptimizedWireframe,
-  generateWireframeWithPreview,
-  createEmptyWireframe,
-  createMinimalWireframeData
-};
-
-export default advancedWireframeService;
+}
