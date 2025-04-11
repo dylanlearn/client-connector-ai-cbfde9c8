@@ -129,3 +129,27 @@ export function getSuggestion(sectionType: string, elementType: string): string 
   const suggestions = getSuggestedCopy(sectionType);
   return suggestions[elementType] || `${elementType} for ${sectionType}`;
 }
+
+/**
+ * Create a style object that handles text-align correctly for React CSS Properties
+ */
+export function createStyleObject(styles: Record<string, any> = {}): React.CSSProperties {
+  const result: Record<string, any> = { ...styles };
+  
+  // Handle textAlign specifically - cast it to a valid CSS text-align value
+  if (styles?.textAlign) {
+    switch (styles.textAlign) {
+      case 'left':
+      case 'center':
+      case 'right':
+      case 'justify':
+        result.textAlign = styles.textAlign as 'left' | 'center' | 'right' | 'justify';
+        break;
+      default:
+        // Use a safe default if the value isn't recognized
+        result.textAlign = 'left';
+    }
+  }
+  
+  return result as React.CSSProperties;
+}
