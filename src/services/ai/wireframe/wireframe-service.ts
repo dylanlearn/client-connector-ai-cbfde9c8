@@ -1,112 +1,135 @@
-import { supabase } from '@/integrations/supabase/client';
-import { AIWireframe, WireframeGenerationParams } from './wireframe-types';
 
-export const getWireframe = async (id: string): Promise<AIWireframe | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('wireframes')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    if (error) throw error;
-    return data as AIWireframe;
-  } catch (error) {
-    console.error("Error fetching wireframe:", error);
-    return null;
-  }
-};
+import { v4 as uuidv4 } from 'uuid';
+import { AIWireframe, WireframeData, WireframeGenerationParams, WireframeGenerationResult, WireframeSection } from './wireframe-types';
+import { generateWireframeFromPrompt, generateWireframeVariation } from './api/wireframe-generator';
+import { getSuggestedCopy } from './content/copy-suggestions';
+import { getCombinedAIMemory } from './wireframe-memory-service';
 
-export const saveWireframeStyle = async (wireframeId: string, style: string | Record<string, any>): Promise<boolean> => {
+/**
+ * Generate a new wireframe based on a description
+ */
+export const generateWireframe = async (
+  params: WireframeGenerationParams
+): Promise<WireframeGenerationResult> => {
   try {
-    // Convert object to string if necessary
-    const styleValue = typeof style === 'object' ? JSON.stringify(style) : style;
+    console.log('Wireframe generation request:', params);
     
-    const { error } = await supabase
-      .from('wireframes')
-      .update({ 
-        style: styleValue,
-        design_tokens: typeof style === 'object' ? style : {} 
-      })
-      .eq('id', wireframeId);
-      
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error("Error saving wireframe style:", error);
-    return false;
-  }
-};
-
-export const wireframeService = {
-  // Convert AIWireframe to WireframeData
-  aiWireframeToWireframeData(aiWireframe: AIWireframe): WireframeData {
-    return {
-      id: aiWireframe.id || '',
-      title: aiWireframe.title || 'Untitled Wireframe',
-      description: aiWireframe.description || '',
-      sections: aiWireframe.sections || [],
-      colorScheme: {
-        primary: '#3b82f6',
-        secondary: '#10b981',
-        accent: '#f59e0b',
-        background: '#ffffff',
-        text: '#111827'
-      },
-      typography: {
-        headings: 'sans-serif',
-        body: 'sans-serif'
-      },
-      style: '',
-      designTokens: aiWireframe.design_tokens || {},
-      imageUrl: aiWireframe.image_url || '',
-      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at).toISOString() : new Date().toISOString()
-    };
-  },
-  
-  // Convert AIWireframe to WireframeData list
-  aiWireframesToWireframeDataList(aiWireframes: AIWireframe[]): WireframeData[] {
-    return aiWireframes.map(this.aiWireframeToWireframeData);
-  },
-  
-  // Create a minimal wireframe data object
-  createMinimalWireframeData(): WireframeData {
-    return {
-      id: 'new-wireframe',
-      title: 'New Wireframe',
-      description: 'This is a new wireframe',
-      sections: [],
-      colorScheme: {
-        primary: '#3b82f6',
-        secondary: '#10b981',
-        accent: '#f59e0b',
-        background: '#ffffff',
-        text: '#111827'
-      },
-      typography: {
-        headings: 'sans-serif',
-        body: 'sans-serif'
+    // Process style if it's a string
+    let processedStyle: Record<string, any> = {};
+    
+    if (params.style) {
+      if (typeof params.style === 'object') {
+        processedStyle = params.style;
+      } else if (typeof params.style === 'string') {
+        try {
+          // Try to parse as JSON if it's a string
+          processedStyle = JSON.parse(params.style);
+        } catch (e) {
+          // If not valid JSON, use it as a style description
+          processedStyle = { description: params.style };
+        }
       }
+    }
+
+    // Get previous context if available
+    const memory = await getCombinedAIMemory();
+    
+    // Generate the wireframe
+    const wireframe = await generateWireframeFromPrompt({
+      ...params,
+      style: processedStyle
+    });
+
+    // Add copy suggestions to the sections
+    const wireframeWithCopy = {
+      ...wireframe,
+      sections: wireframe.sections.map((section: WireframeSection) => {
+        return {
+          ...section,
+          copySuggestions: getSuggestedCopy(section.sectionType)
+        };
+      })
     };
-  },
-  
-  // Format a wireframe for display in a list
-  formatWireframeForDisplay(aiWireframe: AIWireframe): any {
+    
     return {
-      id: aiWireframe.id,
-      title: aiWireframe.title || 'Untitled Wireframe',
-      description: aiWireframe.description || 'No description',
-      sections: aiWireframe.sections || [],
-      sectionCount: (aiWireframe.sections || []).length,
-      imageUrl: aiWireframe.image_url || '',
-      lastUpdated: aiWireframe.updated_at ? new Date(aiWireframe.updated_at).toISOString() : new Date().toISOString()
+      wireframe: wireframeWithCopy,
+      success: true,
+      message: 'Wireframe generated successfully'
     };
-  },
-  
-  // Format wireframes for display in a list
-  formatWireframesForDisplay(aiWireframes: AIWireframe[]): any[] {
-    return aiWireframes.map(this.formatWireframeForDisplay);
+  } catch (error) {
+    console.error('Error in wireframe generation:', error);
+    return {
+      wireframe: null,
+      success: false,
+      message: `Error generating wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
   }
 };
 
-export default wireframeService;
+/**
+ * Generate a variation of an existing wireframe
+ */
+export const generateWireframeVariationWithStyle = async (
+  params: WireframeGenerationParams
+): Promise<WireframeGenerationResult> => {
+  try {
+    console.log('Wireframe variation request:', params);
+    
+    // Generate the variation
+    const wireframeVariation = await generateWireframeVariation(params);
+
+    // Add copy suggestions to the sections
+    const wireframeWithCopy = {
+      ...wireframeVariation,
+      sections: wireframeVariation.sections.map((section: WireframeSection) => {
+        return {
+          ...section,
+          copySuggestions: getSuggestedCopy(section.sectionType)
+        };
+      })
+    };
+    
+    return {
+      wireframe: wireframeWithCopy,
+      success: true,
+      message: 'Wireframe variation generated successfully'
+    };
+  } catch (error) {
+    console.error('Error in wireframe variation generation:', error);
+    return {
+      wireframe: null,
+      success: false,
+      message: `Error generating wireframe variation: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+};
+
+/**
+ * Quick method to create an empty wireframe for testing/development
+ */
+export const createDefaultWireframe = (): WireframeData => {
+  return {
+    id: uuidv4(),
+    title: 'Default Wireframe',
+    description: 'A default wireframe for testing',
+    sections: [
+      {
+        id: uuidv4(),
+        name: 'Hero Section',
+        sectionType: 'hero',
+        components: []
+      }
+    ],
+    colorScheme: {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#000000'
+    },
+    typography: {
+      headings: 'Inter',
+      body: 'Inter'
+    }
+  };
+};

@@ -1,177 +1,132 @@
-import { WireframeGenerationParams, WireframeGenerationResult } from '../wireframe-types';
-import { generateWireframeWithAI } from './wireframe-ai-service';
-import { createWireframeFromTemplate } from './wireframe-template-service';
-import { optimizeWireframeForDevice } from './wireframe-optimization-service';
-import { generateImagePreview } from './wireframe-preview-service';
+
 import { v4 as uuidv4 } from 'uuid';
+import { WireframeData, WireframeGenerationParams } from '../wireframe-types';
+import { createEmptyWireframe } from '../templates/wireframe-template-service';
 
 /**
- * Generate a wireframe based on the provided parameters
+ * Generate a wireframe from a prompt using an external AI service
+ * @param params Generation parameters
  */
-export const generateWireframe = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
-  const startTime = Date.now();
-  
+export async function generateWireframeFromPrompt(
+  params: WireframeGenerationParams
+): Promise<WireframeData> {
   try {
-    // Generate the wireframe using AI
-    const result = await generateWireframeWithAI(params);
+    console.log('Generating wireframe from prompt:', params.description);
     
-    // Ensure the wireframe has an ID
-    if (!result.wireframe.id) {
-      result.wireframe.id = uuidv4();
-    }
+    // This would connect to an AI service in a real implementation
+    // For now, we'll create a placeholder wireframe with sections
     
-    // Optimize the wireframe for different devices if needed
-    if (params.optimizeForDevices) {
-      result.wireframe = await optimizeWireframeForDevice(result.wireframe);
-    }
+    // Simulate a delay for the AI generation
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Generate an image preview if requested
-    if (params.generatePreview) {
-      const imageUrl = await generateImagePreview(result.wireframe);
-      result.imageUrl = imageUrl;
-    }
-    
-    const endTime = Date.now();
-    const generationTime = (endTime - startTime) / 1000; // Convert to seconds
-    
-    return {
-      ...result,
-      generationTime,
-      model: 'gpt-4-turbo', // Add model property
-      success: true
+    // Create a wireframe with sections based on the prompt
+    const wireframe: WireframeData = {
+      id: uuidv4(),
+      title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
+      description: params.description || 'Generated wireframe',
+      sections: [
+        {
+          id: uuidv4(),
+          name: 'Navigation',
+          sectionType: 'navigation',
+          description: 'Main navigation bar',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Hero',
+          sectionType: 'hero',
+          description: 'Hero section with headline and call to action',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Features',
+          sectionType: 'features',
+          description: 'Key features section',
+          components: []
+        }
+      ],
+      colorScheme: {
+        primary: '#3b82f6',
+        secondary: '#10b981',
+        accent: '#f59e0b',
+        background: '#ffffff',
+        text: '#000000'
+      },
+      typography: {
+        headings: 'Inter',
+        body: 'Inter'
+      }
     };
+    
+    return wireframe;
   } catch (error) {
     console.error('Error generating wireframe:', error);
-    
-    const endTime = Date.now();
-    const generationTime = (endTime - startTime) / 1000;
-    
-    return {
-      wireframe: {
-        id: uuidv4(),
-        title: params.description || 'Error Wireframe',
-        sections: [],
-      },
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      success: false,
-      generationTime,
-      model: 'gpt-4-turbo'
-    };
+    return createEmptyWireframe();
   }
-};
-
-/**
- * Generate a wireframe from a template
- */
-export const generateWireframeFromTemplate = async (
-  templateId: string,
-  params: WireframeGenerationParams
-): Promise<WireframeGenerationResult> => {
-  const startTime = Date.now();
-  
-  try {
-    // Create wireframe from template
-    const wireframe = await createWireframeFromTemplate(templateId, params);
-    
-    const endTime = Date.now();
-    const generationTime = (endTime - startTime) / 1000;
-    
-    return {
-      wireframe,
-      success: true,
-      generationTime,
-      model: 'template-based'
-    };
-  } catch (error) {
-    console.error('Error generating wireframe from template:', error);
-    
-    const endTime = Date.now();
-    const generationTime = (endTime - startTime) / 1000;
-    
-    return {
-      wireframe: {
-        id: uuidv4(),
-        title: params.description || 'Error Wireframe',
-        sections: [],
-      },
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      success: false,
-      generationTime,
-      model: 'template-based'
-    };
-  }
-};
+}
 
 /**
  * Generate a creative variation of an existing wireframe
+ * @param params Generation parameters
  */
-export const generateWireframeVariation = async (
-  baseWireframe: any,
-  variationParams: {
-    creativityLevel?: number;
-    preserveSections?: string[];
-    focusAreas?: string[];
-    styleChanges?: Record<string, any>;
-  }
-): Promise<WireframeGenerationResult> => {
-  const startTime = Date.now();
-  
+export async function generateWireframeVariation(
+  params: WireframeGenerationParams
+): Promise<WireframeData> {
   try {
-    // Implementation would go here in a real service
-    // This is a placeholder implementation
-    const wireframeCopy = JSON.parse(JSON.stringify(baseWireframe));
+    console.log('Generating wireframe variation:', params);
     
-    // Add some variation to the copy
-    wireframeCopy.id = uuidv4();
-    wireframeCopy.title = `${baseWireframe.title} (Variation)`;
+    // This would connect to an AI service in a real implementation
+    // For now, we'll create a placeholder variation
     
-    // Apply style changes if provided
-    if (variationParams.styleChanges) {
-      wireframeCopy.colorScheme = {
-        ...wireframeCopy.colorScheme,
-        ...variationParams.styleChanges
-      };
-    }
+    // Simulate a delay for the AI generation
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const endTime = Date.now();
-    const generationTime = (endTime - startTime) / 1000;
-    
-    return {
-      wireframe: wireframeCopy,
-      success: true,
-      generationTime,
-      model: 'variation-generator'
+    // Create a wireframe with sections based on the prompt
+    const wireframe: WireframeData = {
+      id: uuidv4(),
+      title: params.description ? `Variation: ${params.description.substring(0, 30)}...` : 'New Variation',
+      description: `Creative variation based on ${params.description || 'original wireframe'}`,
+      sections: [
+        {
+          id: uuidv4(),
+          name: 'Navigation (Variation)',
+          sectionType: 'navigation',
+          description: 'Alternative navigation design',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Hero (Variation)',
+          sectionType: 'hero',
+          description: 'Alternative hero section design',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Content (Variation)',
+          sectionType: 'content',
+          description: 'Alternative content section design',
+          components: []
+        }
+      ],
+      colorScheme: {
+        primary: '#6366f1',
+        secondary: '#8b5cf6',
+        accent: '#ec4899',
+        background: '#ffffff',
+        text: '#111827'
+      },
+      typography: {
+        headings: 'Montserrat',
+        body: 'Roboto'
+      }
     };
+    
+    return wireframe;
   } catch (error) {
     console.error('Error generating wireframe variation:', error);
-    
-    const endTime = Date.now();
-    const generationTime = (endTime - startTime) / 1000;
-    
-    return {
-      wireframe: baseWireframe,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-      success: false,
-      generationTime,
-      model: 'variation-generator'
-    };
+    return createEmptyWireframe();
   }
-};
-
-// Fix the default wireframe in any wireframe generator
-const createDefaultWireframe = () => ({
-  id: uuidv4(),
-  title: 'New Wireframe',
-  sections: [],
-  colorScheme: {
-    primary: '#3b82f6',
-    secondary: '#10b981',
-    accent: '#f59e0b',
-    background: '#ffffff',
-    text: '#000000'
-  },
-  typography: {
-    headings: 'Inter',
-    body: 'Inter'
-  }
-});
+}

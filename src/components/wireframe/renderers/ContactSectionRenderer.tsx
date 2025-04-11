@@ -2,7 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { createStyleObject, getSuggestion } from './utilities';
 
 const ContactSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -19,7 +19,7 @@ const ContactSectionRenderer: React.FC<SectionComponentProps> = ({
   };
   
   // Use createStyleObject utility to ensure type safety
-  const styles = createStyleObject(section.style);
+  const styles = createStyleObject(section.style || {});
   
   return (
     <div 

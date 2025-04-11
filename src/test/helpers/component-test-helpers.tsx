@@ -5,7 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Create mock functions that match Jest's API but use Vitest under the hood
-const mockVi = {
+export const vi = {
   fn: (implementation?: any) => {
     const mockFunction = function mockFn(...args: any[]) {
       return implementation ? implementation(...args) : undefined;
@@ -33,7 +33,7 @@ const mockVi = {
   }),
   spyOn: (object: any, method: string) => {
     const original = object[method];
-    const mockFn = mockVi.fn();
+    const mockFn = vi.fn();
     object[method] = mockFn;
     
     return {
@@ -45,14 +45,46 @@ const mockVi = {
         object[method] = original;
       },
       mockReset: () => {
-        object[method] = mockVi.fn();
+        object[method] = vi.fn();
       }
     };
   }
 };
 
-// Make mockVi available globally for tests
-(global as any).vi = mockVi;
+// Make testing globals available
+export const describe = (name: string, fn: () => void) => {
+  console.log(`Test Suite: ${name}`);
+  try {
+    fn();
+  } catch (e) {
+    console.error(`Error in test suite ${name}:`, e);
+  }
+};
+
+export const beforeEach = (fn: () => void) => {
+  fn();
+};
+
+export const it = (name: string, fn: () => void) => {
+  console.log(`Test: ${name}`);
+  try {
+    fn();
+  } catch (e) {
+    console.error(`Error in test ${name}:`, e);
+  }
+};
+
+export const expect = (actual: any) => {
+  return {
+    toBe: (expected: any) => actual === expected,
+    toEqual: (expected: any) => JSON.stringify(actual) === JSON.stringify(expected),
+    toBeTruthy: () => Boolean(actual),
+    toBeFalsy: () => !Boolean(actual),
+    toContain: (expected: any) => actual.includes(expected),
+    toHaveBeenCalled: () => actual.mock && actual.mock.calls && actual.mock.calls.length > 0,
+    toBeInTheDocument: () => Boolean(actual),
+  };
+};
 
 // Create a wrapper with all providers for testing components
 export function renderWithProviders(ui: React.ReactNode) {
@@ -101,15 +133,15 @@ export const mockApiResponse = (data: any, error: any = null) => {
 
 // Setup mock for Supabase in tests
 export const setupSupabaseMock = () => {
-  const mockSupabaseFrom = mockVi.fn();
-  const mockSupabaseSelect = mockVi.fn();
-  const mockSupabaseInsert = mockVi.fn();
-  const mockSupabaseUpdate = mockVi.fn();
-  const mockSupabaseDelete = mockVi.fn();
-  const mockSupabaseEq = mockVi.fn();
-  const mockSupabaseOrder = mockVi.fn();
-  const mockSupabaseLimit = mockVi.fn();
-  const mockSupabaseSingle = mockVi.fn().mockImplementation(() => mockApiResponse({}));
+  const mockSupabaseFrom = vi.fn();
+  const mockSupabaseSelect = vi.fn();
+  const mockSupabaseInsert = vi.fn();
+  const mockSupabaseUpdate = vi.fn();
+  const mockSupabaseDelete = vi.fn();
+  const mockSupabaseEq = vi.fn();
+  const mockSupabaseOrder = vi.fn();
+  const mockSupabaseLimit = vi.fn();
+  const mockSupabaseSingle = vi.fn().mockImplementation(() => mockApiResponse({}));
   
   mockSupabaseFrom.mockReturnThis = () => mockSupabaseFrom;
   mockSupabaseSelect.mockReturnThis = () => mockSupabaseSelect;

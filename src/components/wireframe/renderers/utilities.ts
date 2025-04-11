@@ -1,10 +1,18 @@
 
-import { WireframeSection, WireframeComponent, CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeSection, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
+
+// Define CopySuggestions type here since it's missing from wireframe-types
+export interface CopySuggestions {
+  [key: string]: string;
+}
 
 // Helper function to create a style object from a WireframeComponent or WireframeSection
-export const createStyleObject = (component: WireframeComponent | WireframeSection): React.CSSProperties => {
+export const createStyleObject = (component: WireframeComponent | WireframeSection | Record<string, any>): React.CSSProperties => {
   const styles: React.CSSProperties = {};
   
+  // If the input is null or undefined, return empty styles
+  if (!component) return styles;
+
   // Add base styles from the style property if it exists
   if (component.style && typeof component.style === 'object') {
     Object.assign(styles, component.style);
@@ -74,6 +82,59 @@ export const getCopySuggestions = (section: WireframeSection): CopySuggestions =
   return section.copySuggestions || {};
 };
 
+// Export the getSuggestion function to handle both object and array formats
+export const getSuggestion = (
+  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined, 
+  key: string, 
+  defaultValue: string = ''
+): string => {
+  if (!copySuggestions) return defaultValue;
+  
+  // Handle array of suggestions
+  if (Array.isArray(copySuggestions)) {
+    // Convert the first item if available
+    if (copySuggestions.length > 0) {
+      return copySuggestions[0][key] || defaultValue;
+    }
+    return defaultValue;
+  }
+  
+  // Handle object format
+  return String(copySuggestions[key] || defaultValue);
+};
+
+// Add the processCopySuggestions utility that's needed by some components
+export const processCopySuggestions = (
+  copySuggestions: CopySuggestions | CopySuggestions[] | Record<string, string> | undefined
+): Record<string, string> => {
+  if (!copySuggestions) return {};
+  
+  // Handle array of suggestions
+  if (Array.isArray(copySuggestions)) {
+    // Convert the first item if available
+    if (copySuggestions.length > 0) {
+      return { ...copySuggestions[0] };
+    }
+    return {};
+  }
+  
+  // Handle object format (already in Record<string, string> format)
+  return { ...copySuggestions };
+};
+
+// Helper to create color scheme
+export const createColorScheme = (wireframe: any): Record<string, string> => {
+  const colorScheme = wireframe?.colorScheme || {
+    primary: '#3182ce',
+    secondary: '#805ad5',
+    accent: '#ed8936',
+    background: '#ffffff',
+    text: '#1a202c'
+  };
+  
+  return colorScheme;
+};
+
 // Helper to format class names
 export const formatClassNames = (...classes: (string | undefined | null | false)[]): string => {
   return classes.filter(Boolean).join(' ');
@@ -132,10 +193,13 @@ export const createSafeId = (id: string): string => {
   return `wf-${id.replace(/[^a-zA-Z0-9]/g, '-')}`;
 };
 
-// Export all utilities
+// Export all utilities as a default export as well
 export default {
   createStyleObject,
   getCopySuggestions,
+  getSuggestion,
+  processCopySuggestions,
+  createColorScheme,
   formatClassNames,
   isGridLayout,
   isFlexLayout,
