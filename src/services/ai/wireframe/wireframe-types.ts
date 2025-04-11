@@ -32,6 +32,8 @@ export interface WireframeSection {
     columns?: number;
     gap?: number;
     wrap?: boolean;
+    alignItems?: string;
+    minHeight?: string | number;
     [key: string]: any;
   } | string;
   components?: Array<any>;
@@ -49,6 +51,21 @@ export interface WireframeSection {
     value: string;
     label: string;
   }>;
+  [key: string]: any;
+}
+
+/**
+ * Wireframe component interface
+ */
+export interface WireframeComponent {
+  id: string;
+  type: string;
+  content?: string;
+  style?: Record<string, any>;
+  props?: Record<string, any>;
+  children?: WireframeComponent[];
+  src?: string;
+  alt?: string;
   [key: string]: any;
 }
 
@@ -106,6 +123,7 @@ export interface WireframeGenerationParams {
   styleToken?: string;
   industry?: string;
   intakeData?: any;
+  stylePreferences?: string;
   [key: string]: any;
 }
 
@@ -123,6 +141,18 @@ export interface WireframeGenerationResult {
     total: number;
   };
   message?: string;
+  success?: boolean;
+  error?: string;
+  generationTime?: number;
+  imageUrl?: string;
+}
+
+/**
+ * Enhanced wireframe generation result
+ */
+export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
+  blueprint: Record<string, any>;
+  intentData: Record<string, any>;
 }
 
 /**
@@ -141,4 +171,10 @@ export interface AIWireframe {
   tags?: string[];
   version?: number;
   feedback?: string[];
+  title?: string;
+  sections?: any[];
+  wireframe_data?: any;
+  design_tokens?: any;
+  image_url?: string;
+  updated_at?: string;
 }

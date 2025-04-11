@@ -61,3 +61,18 @@ export const parseDimension = (value: string | number | undefined, defaultValue:
   const parsed = parseFloat(value);
   return isNaN(parsed) ? defaultValue : parsed;
 };
+
+/**
+ * Create a color scheme object from a wireframe
+ */
+export const createColorScheme = (wireframe: any): Record<string, string> => {
+  const colorScheme = wireframe?.colorScheme || {
+    primary: '#3182ce',
+    secondary: '#805ad5',
+    accent: '#ed8936',
+    background: '#ffffff',
+    text: '#1a202c'
+  };
+  
+  return colorScheme;
+};
