@@ -5,8 +5,6 @@ import WireframeExportDialog from '../WireframeExportDialog';
 
 describe('WireframeExportDialog', () => {
   it('renders the dialog with export options', () => {
-    const mockOnOpenChange = vi.fn();
-    
     render(
       <WireframeExportDialog 
         wireframe={{ 
@@ -41,8 +39,6 @@ describe('WireframeExportDialog', () => {
         }}
         open={true}
         onOpenChange={mockOnOpenChange}
-        isOpen={false} // This should be ignored as open is provided
-        onClose={() => {}}
       />
     );
     

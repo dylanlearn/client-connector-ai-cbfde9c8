@@ -8,27 +8,33 @@ import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Loader2 } from 'lucide-react';
 
 export interface WireframeExportDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   wireframe: WireframeData;
   containerRef?: React.RefObject<HTMLElement>;
-  // Add compatibility props for other components using this dialog
+  
+  // Support both naming conventions for props
+  // First convention
+  isOpen?: boolean;
+  onClose?: () => void;
+  
+  // Second convention (for compatibility)
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
-  isOpen,
-  onClose,
   wireframe,
   containerRef,
+  
+  // Handle both naming conventions
+  isOpen,
+  onClose,
   open,
   onOpenChange
 }) => {
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const dialogContainerRef = useRef<HTMLDivElement>(null);
   
-  // For compatibility with components that use open/onOpenChange instead of isOpen/onClose
+  // For compatibility with components that use different prop naming
   const isDialogOpen = open !== undefined ? open : isOpen;
   const handleDialogChange = (value: boolean) => {
     if (onOpenChange) {

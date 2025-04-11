@@ -32,24 +32,11 @@ export const getSuggestion = (
   key: string, 
   defaultValue: string = ''
 ): string => {
-  if (!copySuggestions) return defaultValue;
+  // First normalize the copySuggestions to a Record<string, string>
+  const normalizedSuggestions = normalizeCopySuggestions(copySuggestions);
   
-  // Handle array of suggestions
-  if (Array.isArray(copySuggestions)) {
-    for (const suggestion of copySuggestions) {
-      if (suggestion && typeof suggestion === 'object' && key in suggestion) {
-        return String(suggestion[key] || defaultValue);
-      }
-    }
-    return defaultValue;
-  }
-  
-  // Handle object format
-  if (typeof copySuggestions === 'object' && key in copySuggestions) {
-    return String(copySuggestions[key] || defaultValue);
-  }
-  
-  return defaultValue;
+  // Then retrieve the value or return the default
+  return String(normalizedSuggestions[key] || defaultValue);
 };
 
 /**
