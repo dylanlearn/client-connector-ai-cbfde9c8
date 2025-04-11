@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { exportWireframeAsHTML, exportWireframeAsPDF, exportWireframeAsImage } from '@/utils/wireframe/export-utils';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { Download, FileText, Image, FilePdf } from 'lucide-react';
+import { Download, FileText, Image, FileIcon } from 'lucide-react';
 
 export interface WireframeExportDialogProps {
   wireframe: WireframeData;
@@ -67,7 +67,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
                 HTML
               </TabsTrigger>
               <TabsTrigger value="pdf" className="flex items-center gap-2">
-                <FilePdf className="h-4 w-4" />
+                <FileIcon className="h-4 w-4" />
                 PDF
               </TabsTrigger>
               <TabsTrigger value="image" className="flex items-center gap-2">
