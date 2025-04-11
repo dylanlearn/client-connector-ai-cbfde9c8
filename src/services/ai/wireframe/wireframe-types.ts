@@ -124,6 +124,11 @@ export interface WireframeGenerationParams {
   industry?: string;
   intakeData?: any;
   stylePreferences?: string;
+  optimizeForDevices?: boolean;
+  generatePreview?: boolean;
+  baseWireframe?: WireframeData;
+  isVariation?: boolean;
+  feedbackMode?: boolean;
   [key: string]: any;
 }
 
@@ -162,7 +167,7 @@ export interface EnhancedWireframeGenerationResult extends WireframeGenerationRe
 export interface AIWireframe {
   id: string;
   projectId: string;
-  name: string;
+  name?: string;
   description?: string;
   data: WireframeData;
   createdAt: Date;
@@ -173,7 +178,7 @@ export interface AIWireframe {
   version?: number;
   feedback?: string | string[];
   title?: string;
-  sections?: any[];
+  sections?: WireframeSection[];
   wireframe_data?: any;
   design_tokens?: any;
   image_url?: string;

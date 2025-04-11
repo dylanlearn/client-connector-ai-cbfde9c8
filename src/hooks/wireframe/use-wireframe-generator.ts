@@ -1,7 +1,6 @@
-
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { wireframeGenerator } from '@/services/ai/wireframe/api/wireframe-generator';
+import { wireframeGenerator } from '@/services/ai/wireframe/api';
 import { wireframeMemoryService } from '@/services/ai/wireframe/wireframe-memory-service';
 import { Toast } from '@/hooks/use-toast';
 import { 

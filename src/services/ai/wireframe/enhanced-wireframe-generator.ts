@@ -1,6 +1,5 @@
-
 import { v4 as uuidv4 } from 'uuid';
-import { wireframeGenerator } from './api/wireframe-generator';
+import { wireframeGenerator } from '@/services/ai/wireframe/api';
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult,

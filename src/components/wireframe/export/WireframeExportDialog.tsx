@@ -7,7 +7,7 @@ import { saveAs } from 'file-saver';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Loader2 } from 'lucide-react';
 
-interface WireframeExportDialogProps {
+export interface WireframeExportDialogProps {
   isOpen: boolean;
   onClose: () => void;
   wireframe: WireframeData;

@@ -1,3 +1,17 @@
 
-// Export main API service
-export { wireframeApiService, default as wireframeApi } from './wireframe-api-service';
+import { generateWireframe, generateWireframeFromTemplate } from './wireframe-generator';
+import wireframeApiService from './wireframe-api-service';
+
+export { 
+  generateWireframe,
+  generateWireframeFromTemplate,
+  wireframeApiService 
+};
+
+export default wireframeApiService;
+
+// Export a named wireframeGenerator object for compatibility with existing code
+export const wireframeGenerator = {
+  generateWireframe,
+  generateWireframeFromTemplate
+};

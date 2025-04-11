@@ -1,7 +1,6 @@
-
 // Export wireframe API service
 import wireframeApiService from './api/wireframe-api-service';
-import { wireframeGenerator } from './api/wireframe-generator';
+import { wireframeGenerator } from './api';
 
 export {
   wireframeApiService,
