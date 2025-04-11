@@ -36,7 +36,7 @@ export interface WireframeSection {
     minHeight?: string | number;
     [key: string]: any;
   } | string;
-  components?: Array<any>;
+  components?: WireframeComponent[];
   dimensions?: {
     width: string | number;
     height: string | number;

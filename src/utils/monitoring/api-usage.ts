@@ -1,138 +1,131 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import type { ClientError, ApiUsageRecord } from "./types";
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ClientErrorPayload {
+  message: string;
+  stack?: string | null;
+  componentName: string;
+  userId?: string;
+  metadata?: Record<string, any>;
+  timestamp?: string;
+  url?: string;
+  userAgent?: string;
+}
 
 /**
- * Record client-side errors to the database
+ * Records a client-side error for monitoring and analysis
+ * 
+ * @param message - Error message
+ * @param stack - Error stack trace (optional)
+ * @param componentName - The component where the error occurred
+ * @param userId - Optional user ID for attribution
+ * @param metadata - Additional error context data
+ * @returns Promise that resolves when the error has been recorded
  */
 export async function recordClientError(
-  errorMessage: string,
-  errorStack?: string | null,
-  componentName?: string,
+  message: string,
+  stack: string | undefined | null,
+  componentName: string,
   userId?: string,
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
-    const clientError: ClientError = {
-      error_message: errorMessage,
-      error_stack: errorStack || undefined,
-      component_name: componentName,
-      user_id: userId,
-      url: window.location.href,
-      browser_info: navigator.userAgent,
+    if (!message) {
+      console.error('Cannot record client error: No message provided');
+      return;
+    }
+
+    const errorPayload: ClientErrorPayload = {
+      message: message.substring(0, 500), // Limit message length
+      stack: stack ? stack.substring(0, 2000) : null, // Limit stack trace length
+      componentName: componentName || 'Unknown',
+      userId,
+      metadata,
+      timestamp: new Date().toISOString(),
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
+    };
+
+    // Log to console for development debugging
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[Error Monitoring]', errorPayload);
+    }
+
+    // Store in Supabase if available
+    if (supabase) {
+      await supabase.from('client_errors').insert([errorPayload]);
+    }
+  } catch (recordError) {
+    // Fail silently but log to console - we don't want error recording to cause more errors
+    console.error('Failed to record client error:', recordError);
+  }
+}
+
+/**
+ * Records API usage metrics
+ * 
+ * @param endpoint - The API endpoint that was called
+ * @param requestData - Request data (will be sanitized)
+ * @param responseData - Response data (will be sanitized)
+ * @param userId - User ID for attribution
+ * @param metadata - Additional context
+ */
+export async function recordApiUsage(
+  endpoint: string,
+  requestData: unknown,
+  responseData: unknown,
+  userId?: string,
+  metadata?: Record<string, any>
+): Promise<void> {
+  try {
+    // Sanitize request and response data by removing sensitive fields
+    const sanitizedRequest = sanitizeData(requestData);
+    const sanitizedResponse = sanitizeData(responseData);
+
+    const apiUsagePayload = {
+      endpoint,
+      requestData: sanitizedRequest,
+      responseData: sanitizedResponse,
+      userId,
+      metadata,
       timestamp: new Date().toISOString()
     };
 
-    if (metadata) {
-      clientError.metadata = metadata;
+    if (supabase) {
+      await supabase.from('api_usage').insert([apiUsagePayload]);
     }
-
-    const { error } = await supabase
-      .from('client_errors')
-      .insert(clientError);
-
-    if (error) {
-      console.error('Error recording client error:', error);
-    }
-  } catch (err) {
-    console.error('Failed to record client error:', err);
+  } catch (error) {
+    console.error('Failed to record API usage:', error);
   }
 }
 
 /**
- * Record API usage metrics
+ * Helper function to sanitize data before storing
+ * Removes sensitive fields like passwords, tokens, etc.
  */
-export async function recordApiUsage(record: Omit<ApiUsageRecord, 'id' | 'request_timestamp'>): Promise<void> {
-  try {
-    const apiRecord: Omit<ApiUsageRecord, 'id'> = {
-      ...record,
-      request_timestamp: new Date().toISOString()
-    };
-
-    const { error } = await supabase
-      .from('api_usage')
-      .insert(apiRecord);
-
-    if (error) {
-      console.error('Error recording API usage:', error);
-    }
-  } catch (err) {
-    console.error('Failed to record API usage:', err);
+function sanitizeData(data: unknown): unknown {
+  if (!data || typeof data !== 'object') {
+    return data;
   }
-}
 
-/**
- * Fetch API usage metrics for a specified time period
- */
-export async function getApiUsageMetrics(days: number = 7): Promise<ApiUsageRecord[]> {
-  try {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+  // Clone the data to avoid modifying the original
+  const sanitized = Array.isArray(data) ? [...data] : { ...data };
+  
+  // List of sensitive fields to remove
+  const sensitiveFields = [
+    'password', 'token', 'secret', 'key', 'auth',
+    'apiKey', 'api_key', 'credential', 'jwt'
+  ];
 
-    const { data, error } = await supabase
-      .from('api_usage')
-      .select('*')
-      .gte('request_timestamp', startDate.toISOString())
-      .order('request_timestamp', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching API usage metrics:', error);
-      return [];
+  // Remove sensitive fields
+  if (!Array.isArray(sanitized)) {
+    for (const field of sensitiveFields) {
+      if (field in sanitized) {
+        sanitized[field] = '[REDACTED]';
+      }
     }
-
-    return data as ApiUsageRecord[];
-  } catch (err) {
-    console.error('Failed to get API usage metrics:', err);
-    return [];
   }
-}
 
-/**
- * Calculate aggregate API metrics for dashboards
- */
-export async function calculateApiMetrics(days: number = 7): Promise<{
-  totalRequests: number;
-  averageResponseTime: number;
-  errorRate: number;
-  requestsByEndpoint: Record<string, number>;
-}> {
-  try {
-    const apiData = await getApiUsageMetrics(days);
-    
-    if (!apiData.length) {
-      return {
-        totalRequests: 0,
-        averageResponseTime: 0,
-        errorRate: 0,
-        requestsByEndpoint: {}
-      };
-    }
-
-    const totalRequests = apiData.length;
-    const totalResponseTime = apiData.reduce((sum, record) => sum + record.response_time_ms, 0);
-    const averageResponseTime = totalResponseTime / totalRequests;
-    const errorRequests = apiData.filter(record => record.status_code >= 400).length;
-    const errorRate = (errorRequests / totalRequests) * 100;
-
-    const requestsByEndpoint: Record<string, number> = {};
-    apiData.forEach(record => {
-      const endpoint = record.endpoint;
-      requestsByEndpoint[endpoint] = (requestsByEndpoint[endpoint] || 0) + 1;
-    });
-
-    return {
-      totalRequests,
-      averageResponseTime,
-      errorRate,
-      requestsByEndpoint
-    };
-  } catch (err) {
-    console.error('Error calculating API metrics:', err);
-    return {
-      totalRequests: 0,
-      averageResponseTime: 0,
-      errorRate: 0,
-      requestsByEndpoint: {}
-    };
-  }
+  return sanitized;
 }

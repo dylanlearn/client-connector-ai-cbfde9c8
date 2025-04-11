@@ -1,73 +1,52 @@
-# Welcome to your Lovable project
 
-## Project info
+# Wireframe Studio
 
-**URL**: https://lovable.dev/projects/2432bb99-03ee-4754-b2ab-586993b1bc52
+A professional wireframe design application with advanced enterprise features for creating, testing, and exporting responsive web designs.
 
-## How can I edit this code?
+## Documentation
 
-There are several ways of editing your application.
+This project includes comprehensive documentation to help developers understand and extend the codebase:
 
-**Use Lovable**
+- [Developer Documentation](DEVELOPER.md) - Complete guide for developers
+- [Type System Documentation](docs/TYPE_SYSTEM.md) - Details on TypeScript types and patterns
+- [Architecture Documentation](docs/ARCHITECTURE.md) - System architecture overview
+- [Testing Guide](TESTING.md) - Guide for writing and running tests
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2432bb99-03ee-4754-b2ab-586993b1bc52) and start prompting.
+## Key Features
 
-Changes made via Lovable will be committed automatically to this repo.
+- Interactive wireframe editor with responsive design capabilities
+- Component library with customizable sections
+- Multi-device preview and testing
+- Enterprise-grade error handling and monitoring
+- Comprehensive type safety throughout the application
+- Extensive testing infrastructure
 
-**Use your preferred IDE**
+## Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Setup
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Start development server: `npm run dev`
 
-Follow these steps:
+### Testing
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Run the test suite with:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm run test
 ```
 
-**Edit a file directly in GitHub**
+For coverage reports:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run test:coverage
+```
 
-**Use GitHub Codespaces**
+## Type Safety
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+This project employs strict TypeScript configuration and comprehensive type definitions to ensure type safety throughout the application. See the [Type System Documentation](docs/TYPE_SYSTEM.md) for details on our type system approach.
 
-## What technologies are used for this project?
+## Contributing
 
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/2432bb99-03ee-4754-b2ab-586993b1bc52) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Please refer to the [Developer Documentation](DEVELOPER.md) for contribution guidelines and coding standards.

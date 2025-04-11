@@ -79,4 +79,3 @@ export interface LayerInfo {
   depth: number;
   fabricObject?: fabric.Object;
 }
-
