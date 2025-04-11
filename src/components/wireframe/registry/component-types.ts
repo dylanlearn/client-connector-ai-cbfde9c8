@@ -25,7 +25,7 @@ export const deviceBreakpoints = {
 export interface ComponentField {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'color' | 'select' | 'text' | 'image' | 'range' | 'textarea' | 'array';
-  label: string;
+  label: string;  // This was missing and causing errors
   description?: string;
   defaultValue?: any;
   options?: string[] | { label: string; value: string | number }[];
@@ -66,7 +66,7 @@ export interface ComponentVariant {
   preview?: string;
   defaultData?: Partial<WireframeComponent>;
   styles?: StyleConfig;
-  thumbnail?: string;
+  thumbnail?: string; // Added this to support thumbnails
   defaultContent?: any; // Added for default content in variants
 }
 

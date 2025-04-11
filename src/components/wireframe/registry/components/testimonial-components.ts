@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const testimonialComponents: ComponentDefinition = {
@@ -89,21 +90,24 @@ export const testimonialComponents: ComponentDefinition = {
   fields: [
     {
       id: 'title',
-      name: 'Section Title',
+      name: 'title',
+      label: 'Section Title',
       type: 'text',
       description: 'Main heading for the testimonial section',
       defaultValue: 'What Our Customers Say'
     },
     {
       id: 'subtitle',
-      name: 'Section Subtitle',
+      name: 'subtitle',
+      label: 'Section Subtitle',
       type: 'textarea',
       description: 'Supporting text beneath the title',
       defaultValue: 'Hear from the people who use our product every day.'
     },
     {
       id: 'testimonials',
-      name: 'Testimonials',
+      name: 'testimonials',
+      label: 'Testimonials',
       type: 'array',
       description: 'The testimonials to display',
       defaultValue: [
@@ -123,7 +127,8 @@ export const testimonialComponents: ComponentDefinition = {
     },
     {
       id: 'mediaType',
-      name: 'Media Type',
+      name: 'mediaType',
+      label: 'Media Type',
       type: 'select',
       description: 'Type of media to display with testimonials',
       options: [
@@ -135,7 +140,8 @@ export const testimonialComponents: ComponentDefinition = {
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the section',
       options: [
@@ -148,7 +154,8 @@ export const testimonialComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -160,6 +167,11 @@ export const testimonialComponents: ComponentDefinition = {
     }
   ],
   defaultData: {
+    id: '',
+    type: 'testimonial',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 500 },
+    zIndex: 1,
     sectionType: 'testimonial',
     componentVariant: 'testimonial-startup-001',
     name: 'Testimonial Section',

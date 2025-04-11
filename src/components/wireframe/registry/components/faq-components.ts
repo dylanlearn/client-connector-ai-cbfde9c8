@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const faqComponents: ComponentDefinition = {
@@ -89,21 +90,24 @@ export const faqComponents: ComponentDefinition = {
   fields: [
     {
       id: 'title',
-      name: 'Section Title',
+      name: 'title',
+      label: 'Section Title',
       type: 'text',
       description: 'Main heading for the FAQ section',
       defaultValue: 'Frequently Asked Questions'
     },
     {
       id: 'subtitle',
-      name: 'Section Subtitle',
+      name: 'subtitle',
+      label: 'Section Subtitle',
       type: 'textarea',
       description: 'Supporting text beneath the title',
       defaultValue: 'Find answers to common questions about our platform.'
     },
     {
       id: 'faqType',
-      name: 'FAQ Layout Type',
+      name: 'faqType',
+      label: 'FAQ Layout Type',
       type: 'select',
       description: 'The layout style of the FAQ items',
       options: [
@@ -115,7 +119,8 @@ export const faqComponents: ComponentDefinition = {
     },
     {
       id: 'animationStyle',
-      name: 'Animation Style',
+      name: 'animationStyle',
+      label: 'Animation Style',
       type: 'select',
       description: 'The animation style for revealing answers',
       options: [
@@ -127,7 +132,8 @@ export const faqComponents: ComponentDefinition = {
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the section',
       options: [
@@ -140,7 +146,8 @@ export const faqComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -152,6 +159,11 @@ export const faqComponents: ComponentDefinition = {
     }
   ],
   defaultData: {
+    id: '',
+    type: 'faq',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
     sectionType: 'faq',
     componentVariant: 'faq-startup-001',
     name: 'FAQ Section',

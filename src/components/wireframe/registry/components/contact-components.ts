@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const contactComponents: ComponentDefinition = {
@@ -95,28 +96,32 @@ export const contactComponents: ComponentDefinition = {
   fields: [
     {
       id: 'headline',
-      name: 'Headline',
+      name: 'headline',
+      label: 'Headline',
       type: 'text',
       description: 'Main heading for the contact section',
       defaultValue: 'Get in Touch'
     },
     {
       id: 'subheadline',
-      name: 'Subheadline',
+      name: 'subheadline',
+      label: 'Subheadline',
       type: 'textarea',
       description: 'Supporting text beneath the headline',
       defaultValue: "We'd love to hear from you. Fill out the form and we'll get back to you soon."
     },
     {
       id: 'ctaLabel',
-      name: 'Button Label',
+      name: 'ctaLabel',
+      label: 'Button Label',
       type: 'text',
       description: 'Text for the form submit button',
       defaultValue: 'Send Message'
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the section',
       options: [
@@ -129,7 +134,8 @@ export const contactComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -141,13 +147,19 @@ export const contactComponents: ComponentDefinition = {
     },
     {
       id: 'showMap',
-      name: 'Show Map',
+      name: 'showMap',
+      label: 'Show Map',
       type: 'boolean',
       description: 'Whether to display a map',
       defaultValue: false
     }
   ],
   defaultData: {
+    id: '',
+    type: 'contact',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
     sectionType: 'contact',
     componentVariant: 'contact-startup-001',
     name: 'Contact Section',

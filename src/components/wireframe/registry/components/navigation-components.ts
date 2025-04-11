@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const navigationComponents: ComponentDefinition = {
@@ -89,14 +90,16 @@ export const navigationComponents: ComponentDefinition = {
   fields: [
     {
       id: 'logo',
-      name: 'Logo',
+      name: 'logo',
+      label: 'Logo',
       type: 'image',
       description: 'Logo image for the navigation',
       defaultValue: ''
     },
     {
       id: 'links',
-      name: 'Navigation Links',
+      name: 'links',
+      label: 'Navigation Links',
       type: 'array',
       description: 'Links to display in the navigation',
       defaultValue: [
@@ -107,21 +110,24 @@ export const navigationComponents: ComponentDefinition = {
     },
     {
       id: 'ctaLabel',
-      name: 'CTA Button Label',
+      name: 'ctaLabel',
+      label: 'CTA Button Label',
       type: 'text',
       description: 'Text for the call to action button',
       defaultValue: 'Get Started'
     },
     {
       id: 'ctaUrl',
-      name: 'CTA Button URL',
+      name: 'ctaUrl',
+      label: 'CTA Button URL',
       type: 'text',
       description: 'URL for the call to action button',
       defaultValue: '/signup'
     },
     {
       id: 'mobileMenuStyle',
-      name: 'Mobile Menu Style',
+      name: 'mobileMenuStyle',
+      label: 'Mobile Menu Style',
       type: 'select',
       description: 'The style of menu on mobile devices',
       options: [
@@ -133,7 +139,8 @@ export const navigationComponents: ComponentDefinition = {
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the navigation',
       options: [
@@ -147,7 +154,8 @@ export const navigationComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the navigation content should be aligned',
       options: [
@@ -159,20 +167,27 @@ export const navigationComponents: ComponentDefinition = {
     },
     {
       id: 'sticky',
-      name: 'Sticky Navigation',
+      name: 'sticky',
+      label: 'Sticky Navigation',
       type: 'boolean',
       description: 'Whether the navigation sticks to the top when scrolling',
       defaultValue: true
     },
     {
       id: 'hasSearch',
-      name: 'Include Search',
+      name: 'hasSearch',
+      label: 'Include Search',
       type: 'boolean',
       description: 'Whether to include a search input in the navigation',
       defaultValue: false
     }
   ],
   defaultData: {
+    id: '',
+    type: 'navigation',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 80 },
+    zIndex: 10,
     sectionType: 'navigation',
     componentVariant: 'nav-startup-001',
     name: 'Navigation Bar',

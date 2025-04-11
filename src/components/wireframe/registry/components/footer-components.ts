@@ -90,14 +90,16 @@ export const footerComponents: ComponentDefinition = {
   fields: [
     {
       id: 'logo',
-      name: 'Logo',
+      name: 'logo',
+      label: 'Logo',
       type: 'image',
       description: 'Footer logo image',
       defaultValue: ''
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the footer',
       options: [
@@ -110,7 +112,8 @@ export const footerComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -122,20 +125,27 @@ export const footerComponents: ComponentDefinition = {
     },
     {
       id: 'showSocialIcons',
-      name: 'Show Social Icons',
+      name: 'showSocialIcons',
+      label: 'Show Social Icons',
       type: 'boolean',
       description: 'Whether to display social media icons',
       defaultValue: true
     },
     {
       id: 'showLegalLinks',
-      name: 'Show Legal Links',
+      name: 'showLegalLinks',
+      label: 'Show Legal Links',
       type: 'boolean',
       description: 'Whether to display legal/copyright links',
       defaultValue: true
     }
   ],
   defaultData: {
+    id: '',
+    type: 'footer',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 300 },
+    zIndex: 1,
     sectionType: 'footer',
     componentVariant: 'footer-startup-001',
     name: 'Footer Section',

@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const ctaComponents: ComponentDefinition = {
@@ -89,49 +90,56 @@ export const ctaComponents: ComponentDefinition = {
   fields: [
     {
       id: 'headline',
-      name: 'Headline',
+      name: 'headline',
+      label: 'Headline',
       type: 'text',
       description: 'Main heading for the CTA',
       defaultValue: 'Ready to Get Started?'
     },
     {
       id: 'subheadline',
-      name: 'Subheadline',
+      name: 'subheadline', 
+      label: 'Subheadline',
       type: 'textarea',
       description: 'Supporting text beneath the headline',
       defaultValue: 'Join thousands of satisfied customers using our platform.'
     },
     {
       id: 'ctaLabel',
-      name: 'CTA Button Label',
+      name: 'ctaLabel',
+      label: 'CTA Button Label',
       type: 'text',
       description: 'Text for the primary call to action button',
       defaultValue: 'Get Started'
     },
     {
       id: 'ctaUrl',
-      name: 'CTA Button URL',
+      name: 'ctaUrl',
+      label: 'CTA Button URL',
       type: 'text',
       description: 'URL for the primary call to action button',
       defaultValue: '/signup'
     },
     {
       id: 'secondaryCtaLabel',
-      name: 'Secondary CTA Label',
+      name: 'secondaryCtaLabel',
+      label: 'Secondary CTA Label',
       type: 'text',
       description: 'Text for the secondary call to action (optional)',
       defaultValue: ''
     },
     {
       id: 'secondaryCtaUrl',
-      name: 'Secondary CTA URL',
+      name: 'secondaryCtaUrl',
+      label: 'Secondary CTA URL',
       type: 'text',
       description: 'URL for the secondary call to action',
       defaultValue: ''
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the CTA',
       options: [
@@ -144,7 +152,8 @@ export const ctaComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -156,6 +165,11 @@ export const ctaComponents: ComponentDefinition = {
     }
   ],
   defaultData: {
+    id: '',
+    type: 'cta',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 400 },
+    zIndex: 1,
     sectionType: 'cta',
     componentVariant: 'cta-startup-001',
     name: 'Call to Action Section',

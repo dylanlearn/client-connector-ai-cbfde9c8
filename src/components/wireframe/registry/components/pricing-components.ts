@@ -1,3 +1,4 @@
+
 import { ComponentDefinition } from '../component-types';
 
 export const pricingComponents: ComponentDefinition = {
@@ -89,21 +90,24 @@ export const pricingComponents: ComponentDefinition = {
   fields: [
     {
       id: 'title',
-      name: 'Section Title',
+      name: 'title',
+      label: 'Section Title',
       type: 'text',
       description: 'Main heading for the pricing section',
       defaultValue: 'Simple, Transparent Pricing'
     },
     {
       id: 'description',
-      name: 'Section Description',
+      name: 'description',
+      label: 'Section Description',
       type: 'textarea',
       description: 'Supporting text beneath the title',
       defaultValue: 'No hidden fees. No surprises. Just straightforward pricing.'
     },
     {
       id: 'plans',
-      name: 'Pricing Plans',
+      name: 'plans',
+      label: 'Pricing Plans',
       type: 'array',
       description: 'The pricing plans to display',
       defaultValue: [
@@ -124,7 +128,8 @@ export const pricingComponents: ComponentDefinition = {
     },
     {
       id: 'mediaType',
-      name: 'Media Type',
+      name: 'mediaType',
+      label: 'Media Type',
       type: 'select',
       description: 'Type of media to display with pricing plans',
       options: [
@@ -136,7 +141,8 @@ export const pricingComponents: ComponentDefinition = {
     },
     {
       id: 'backgroundStyle',
-      name: 'Background Style',
+      name: 'backgroundStyle',
+      label: 'Background Style',
       type: 'select',
       description: 'The background style of the section',
       options: [
@@ -149,7 +155,8 @@ export const pricingComponents: ComponentDefinition = {
     },
     {
       id: 'alignment',
-      name: 'Content Alignment',
+      name: 'alignment',
+      label: 'Content Alignment',
       type: 'select',
       description: 'How the content should be aligned',
       options: [
@@ -161,6 +168,11 @@ export const pricingComponents: ComponentDefinition = {
     }
   ],
   defaultData: {
+    id: '',
+    type: 'pricing',
+    position: { x: 0, y: 0 },
+    size: { width: 1200, height: 600 },
+    zIndex: 1,
     sectionType: 'pricing',
     componentVariant: 'pricing-startup-001',
     name: 'Pricing Section',
