@@ -107,7 +107,7 @@ export const useWireframeEditor = (
     removeSection,
     moveSectionUp,
     moveSectionDown,
-  } = useWireframeSections(historyManager.currentData, historyManager.updateWireframe);
+  } = useWireframeSections(historyManager.currentData);  // Fix: Remove the second argument here
 
   // Load wireframe on mount
   useEffect(() => {

@@ -59,8 +59,8 @@ export function useWireframeFeedbackProcessor(options: UseWireframeFeedbackProce
         }
       }
       
-      // Call the update callback if provided and successful
-      if (result.success && options.onWireframeUpdate) {
+      // Call the update callback if provided, successful and has wireframe
+      if (result.success && options.onWireframeUpdate && result.wireframe) {
         options.onWireframeUpdate(result.wireframe);
       }
       

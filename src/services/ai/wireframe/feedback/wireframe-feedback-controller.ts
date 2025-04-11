@@ -79,6 +79,7 @@ export class WireframeFeedbackController {
     message: string;
     wireframeId: string;
     newVersionId?: string;
+    wireframe?: WireframeData; // Add wireframe to the return type
   }> {
     try {
       // Get the original wireframe
@@ -136,8 +137,8 @@ export class WireframeFeedbackController {
           
           const versionResult = await wireframeApiService.saveWireframe(newVersionWireframe);
           
-          // Safely check for versionResult before accessing properties
-          if (versionResult && typeof versionResult === 'object' && versionResult.id) {
+          // Fix null checks: Use optional chaining and nullish coalescing
+          if (versionResult?.id) {
             newVersionId = versionResult.id;
             console.log('Created new wireframe version:', newVersionId);
           }
@@ -148,7 +149,8 @@ export class WireframeFeedbackController {
         success: true,
         message: 'Feedback processed successfully',
         wireframeId,
-        newVersionId
+        newVersionId,
+        wireframe: modificationResult.wireframe // Return the modified wireframe
       };
     } catch (error) {
       console.error('Failed to process wireframe feedback:', error);
