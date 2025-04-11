@@ -56,7 +56,7 @@ export function getSuggestedCopy(sectionType: string): CopySuggestions {
     case 'contact':
       return {
         heading: 'Get in Touch',
-        subheading: 'We'd love to hear from you',
+        subheading: "We'd love to hear from you",
         supportText: 'Our team is ready to answer your questions'
       };
     
