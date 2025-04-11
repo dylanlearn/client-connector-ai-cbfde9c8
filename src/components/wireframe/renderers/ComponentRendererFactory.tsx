@@ -12,6 +12,8 @@ import IconComponentRenderer from './specialized/IconComponentRenderer';
 import VideoComponentRenderer from './specialized/VideoComponentRenderer';
 import ChartComponentRenderer from './specialized/ChartComponentRenderer';
 import FormComponentRenderer from './specialized/FormComponentRenderer';
+import { ErrorBoundary, useErrorHandler } from '@/components/ui/error-boundary';
+import { ErrorMessage } from '@/components/admin/monitoring/controls/ErrorMessage';
 
 /**
  * Factory component that renders the appropriate component renderer based on component type
@@ -25,31 +27,63 @@ export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = ({
   isSelected = false,
   deviceType = 'desktop',
 }) => {
+  const handleError = useErrorHandler('ComponentRendererFactory');
+
   if (!component) {
-    console.warn('ComponentRendererFactory received null or undefined component');
-    return null;
+    const error = new Error('ComponentRendererFactory received null or undefined component');
+    handleError(error);
+    return (
+      <div className="p-4 border border-red-300 bg-red-50 rounded">
+        <ErrorMessage 
+          title="Rendering Error" 
+          message="Invalid component data provided"
+        />
+      </div>
+    );
   }
   
   const componentType = component.type?.toLowerCase();
   if (!componentType) {
-    console.warn('Component without type detected:', component.id);
-    return null;
+    const error = new Error(`Component without type detected: ${component.id}`);
+    handleError(error);
+    return (
+      <div className="p-4 border border-red-300 bg-red-50 rounded">
+        <ErrorMessage 
+          title="Invalid Component" 
+          message={`Component ID ${component.id || 'unknown'} has no type`}
+        />
+      </div>
+    );
   }
   
   // Select the appropriate renderer based on component type
   try {
+    // Define a shared error boundary to wrap all component renderers
+    const renderWithErrorBoundary = (RendererComponent: React.FC<BaseComponentRendererProps>) => (
+      <ErrorBoundary 
+        fallback={
+          <div className="p-4 border border-red-300 bg-red-50 rounded">
+            <ErrorMessage 
+              title={`Failed to render ${componentType}`} 
+              message={`Component ID: ${component.id}`}
+            />
+          </div>
+        }
+      >
+        <RendererComponent 
+          component={component}
+          darkMode={darkMode}
+          interactive={interactive}
+          onClick={onClick}
+          isSelected={isSelected}
+          deviceType={deviceType}
+        />
+      </ErrorBoundary>
+    );
+
     switch(componentType) {
       case 'button':
-        return (
-          <ButtonComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(ButtonComponentRenderer);
         
       case 'text':
       case 'paragraph':
@@ -62,30 +96,12 @@ export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = ({
       case 'h6':
       case 'label':
       case 'span':
-        return (
-          <TextComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(TextComponentRenderer);
         
       case 'image':
       case 'img':
       case 'picture':
-        return (
-          <ImageComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(ImageComponentRenderer);
         
       case 'input':
       case 'textfield':
@@ -94,97 +110,34 @@ export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = ({
       case 'checkbox':
       case 'radio':
       case 'switch':
-        return (
-          <InputComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(InputComponentRenderer);
         
       case 'card':
       case 'panel':
       case 'tile':
-        return (
-          <CardComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(CardComponentRenderer);
         
       case 'list':
       case 'menu':
       case 'ul':
       case 'ol':
-        return (
-          <ListComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(ListComponentRenderer);
         
       case 'icon':
       case 'svg':
-        return (
-          <IconComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(IconComponentRenderer);
         
       case 'video':
       case 'player':
-        return (
-          <VideoComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(VideoComponentRenderer);
         
       case 'chart':
       case 'graph':
       case 'diagram':
-        return (
-          <ChartComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(ChartComponentRenderer);
         
       case 'form':
-        return (
-          <FormComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(FormComponentRenderer);
         
       case 'container':
       case 'group':
@@ -193,22 +146,16 @@ export const ComponentRendererFactory: React.FC<BaseComponentRendererProps> = ({
       case 'div':
       default:
         // Use container renderer for container types and as fallback
-        return (
-          <ContainerComponentRenderer
-            component={component}
-            darkMode={darkMode}
-            interactive={interactive}
-            onClick={onClick}
-            isSelected={isSelected}
-            deviceType={deviceType}
-          />
-        );
+        return renderWithErrorBoundary(ContainerComponentRenderer);
     }
   } catch (error) {
-    console.error(`Error rendering component of type ${componentType}:`, error);
+    handleError(error instanceof Error ? error : new Error(`Error rendering component of type ${componentType}`));
     return (
-      <div className="p-4 border border-red-300 bg-red-50 text-red-800 rounded">
-        <p>Error rendering component: {component.type}</p>
+      <div className="p-4 border border-red-300 bg-red-50 rounded">
+        <ErrorMessage 
+          title={`Error rendering ${componentType}`} 
+          message={error instanceof Error ? error.message : String(error)}
+        />
       </div>
     );
   }
