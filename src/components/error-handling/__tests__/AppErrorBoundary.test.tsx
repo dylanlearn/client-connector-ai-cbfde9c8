@@ -5,6 +5,17 @@ import { AppErrorBoundary } from '../../error-handling/AppErrorBoundary';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
 
+// Mock dependencies
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn()
+  }
+}));
+
+vi.mock('@/utils/monitoring/api-usage', () => ({
+  recordClientError: vi.fn().mockResolvedValue(undefined)
+}));
+
 // Mock error-causing component
 const ErrorThrowingComponent = ({ shouldThrow = false }) => {
   if (shouldThrow) {
@@ -50,7 +61,7 @@ describe('AppErrorBoundary', () => {
     expect(screen.getByText(/The application encountered an error/i)).toBeInTheDocument();
     
     // Verify error handler was called
-    expect(mockOnError).toHaveBeenCalled();
+    expect(mockOnError).toHaveBeenCalledWith(expect.any(Error));
     expect(toast.error).toHaveBeenCalledWith("An error occurred", expect.any(Object));
     expect(console.error).toHaveBeenCalled();
     expect(recordClientError).toHaveBeenCalled();
@@ -67,7 +78,8 @@ describe('AppErrorBoundary', () => {
     expect(recordClientError).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(String),
-      expect.any(String)
+      "AppErrorBoundary",
+      { userId: "test-user-123" }
     );
   });
 });

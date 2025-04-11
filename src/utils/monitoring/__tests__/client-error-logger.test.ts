@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ClientErrorLogger, logClientError } from '../../monitoring/client-error-logger';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +22,12 @@ describe('ClientErrorLogger', () => {
   let originalClearInterval: typeof window.clearInterval;
   let originalAddEventListener: typeof window.addEventListener;
   
-  const mockSetInterval = vi.fn().mockReturnValue(123);
+  // Create proper mock that matches setInterval's type
+  const mockSetIntervalFn = vi.fn().mockReturnValue(123);
+  const mockSetInterval = Object.assign(mockSetIntervalFn, { 
+    __promisify__: vi.fn() 
+  });
+  
   const mockClearInterval = vi.fn();
   const mockAddEventListener = vi.fn();
   
@@ -38,7 +42,7 @@ describe('ClientErrorLogger', () => {
     
     // Mock functions
     console.error = vi.fn();
-    window.setInterval = mockSetInterval;
+    window.setInterval = mockSetInterval as unknown as typeof window.setInterval;
     window.clearInterval = mockClearInterval;
     window.addEventListener = mockAddEventListener;
     
@@ -62,7 +66,7 @@ describe('ClientErrorLogger', () => {
   it('initializes with setInterval and beforeunload event listener', () => {
     ClientErrorLogger.initialize();
     
-    expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 30000);
+    expect(mockSetIntervalFn).toHaveBeenCalledWith(expect.any(Function), 30000);
     expect(mockAddEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function));
   });
   
