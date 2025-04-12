@@ -183,15 +183,18 @@ export function componentToFabricObject(component: Record<string, any>): fabric.
 export function renderSectionToFabric(
   canvas: fabric.Canvas, 
   section: any,
-  options: SectionRenderingOptions = {}
+  options: SectionRenderingOptions
 ) {
   if (!canvas || !section) return null;
   
+  // Use default options or provided values
   const {
-    responsive = false,
+    width = 200,
+    height = 100,
     darkMode = false,
     showGrid = false,
     gridSize = 10,
+    responsive = false,
     deviceType = 'desktop',
     interactive = true,
     showBorders = true
@@ -201,8 +204,8 @@ export function renderSectionToFabric(
   const rect = new fabric.Rect({
     left: section.position?.x || 50,
     top: section.position?.y || 50,
-    width: section.dimensions?.width || 200,
-    height: section.dimensions?.height || 100,
+    width: section.dimensions?.width || width,
+    height: section.dimensions?.height || height,
     fill: section.backgroundColor || (darkMode ? '#333' : '#eee'),
     stroke: darkMode ? '#555' : '#ccc',
     strokeWidth: 1,

@@ -1,346 +1,326 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { AlignmentGuide, DropZoneIndicator } from '@/components/wireframe/utils/types';
+import { snapToGuide, findNearestGuide } from '@/components/wireframe/utils/alignment-guides';
 
 interface DragEnhancementHandlerProps {
-  canvas: fabric.Canvas;
-  snapToGrid?: boolean;
+  canvas: fabric.Canvas | null;
+  enabled?: boolean;
   gridSize?: number;
-  snapToObjects?: boolean;
-  snapTolerance?: number;
+  snapToGrid?: boolean;
   showSmartGuides?: boolean;
+  onObjectMove?: (obj: fabric.Object, position: { x: number, y: number }) => void;
 }
 
-const DragEnhancementHandler: React.FC<DragEnhancementHandlerProps> = ({
+export const DragEnhancementHandler: React.FC<DragEnhancementHandlerProps> = ({
   canvas,
-  snapToGrid = true,
+  enabled = true,
   gridSize = 10,
-  snapToObjects = true,
-  snapTolerance = 5,
-  showSmartGuides = true
+  snapToGrid = true,
+  showSmartGuides = true,
+  onObjectMove
 }) => {
   const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
   const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
+  const [activeGuide, setActiveGuide] = useState<AlignmentGuide | null>(null);
   const [dropZones, setDropZones] = useState<DropZoneIndicator[]>([]);
-  
-  // Setup event listeners for the canvas
+
+  // Generate alignment guides when canvas or active object changes
   useEffect(() => {
-    if (!canvas) return;
-    
-    const handleObjectMoving = (e: any) => {
-      const obj = e.target;
-      if (!obj) return;
-      
-      // Handle grid snapping
-      if (snapToGrid) {
-        const x = Math.round(obj.left! / gridSize) * gridSize;
-        const y = Math.round(obj.top! / gridSize) * gridSize;
-        
-        obj.set({
-          left: x,
-          top: y
-        });
-      }
-      
-      // Handle object alignment guides
-      if (snapToObjects && showSmartGuides) {
-        const guides = generateAlignmentGuides(canvas, obj);
-        setAlignmentGuides(guides);
-        
-        // Apply snapping based on guides
-        applySnapping(obj, guides);
+    if (!canvas || !enabled || !showSmartGuides) return;
+
+    const handleSelectionCreated = (e: fabric.IEvent) => {
+      if (e.selected && e.selected.length > 0) {
+        setActiveObject(e.selected[0]);
+        generateAlignmentGuides(e.selected[0]);
       }
     };
-    
+
     const handleSelectionCleared = () => {
       setActiveObject(null);
       setAlignmentGuides([]);
-      setDropZones([]);
+      setActiveGuide(null);
     };
-    
-    const handleObjectSelected = (e: any) => {
-      setActiveObject(e.target);
-    };
-    
-    const handleObjectModified = () => {
-      // Clear guides after modification
-      setAlignmentGuides([]);
-    };
-    
-    canvas.on('object:moving', handleObjectMoving);
+
+    canvas.on('selection:created', handleSelectionCreated);
+    canvas.on('selection:updated', handleSelectionCreated);
     canvas.on('selection:cleared', handleSelectionCleared);
-    canvas.on('object:selected', handleObjectSelected);
-    canvas.on('object:modified', handleObjectModified);
-    
+
+    return () => {
+      canvas.off('selection:created', handleSelectionCreated);
+      canvas.off('selection:updated', handleSelectionCreated);
+      canvas.off('selection:cleared', handleSelectionCleared);
+    };
+  }, [canvas, enabled, showSmartGuides]);
+
+  // Object moving handler
+  useEffect(() => {
+    if (!canvas || !enabled) return;
+
+    const handleObjectMoving = (e: fabric.IEvent) => {
+      const obj = e.target;
+      if (!obj) return;
+
+      // Apply grid snapping
+      if (snapToGrid && gridSize) {
+        const newLeft = Math.round(obj.left! / gridSize) * gridSize;
+        const newTop = Math.round(obj.top! / gridSize) * gridSize;
+        obj.set({ left: newLeft, top: newTop });
+      }
+
+      // Apply alignment guide snapping
+      if (showSmartGuides && alignmentGuides.length) {
+        const objectBounds = {
+          x: obj.left!,
+          y: obj.top!,
+          width: obj.width! * (obj.scaleX || 1),
+          height: obj.height! * (obj.scaleY || 1)
+        };
+
+        // Find the nearest guide
+        const result = findNearestGuide(
+          { x: objectBounds.x, y: objectBounds.y },
+          { width: objectBounds.width, height: objectBounds.height },
+          alignmentGuides,
+          10
+        );
+
+        if (result && result.guide) {
+          setActiveGuide(result.guide);
+
+          // Apply snapping
+          if (result.guide.orientation === 'vertical') {
+            obj.set({ left: obj.left! + result.offset });
+          } else {
+            obj.set({ top: obj.top! + result.offset });
+          }
+        } else {
+          setActiveGuide(null);
+        }
+      }
+
+      // Notify parent component
+      if (onObjectMove) {
+        onObjectMove(obj, { x: obj.left!, y: obj.top! });
+      }
+    };
+
+    canvas.on('object:moving', handleObjectMoving);
+
     return () => {
       canvas.off('object:moving', handleObjectMoving);
-      canvas.off('selection:cleared', handleSelectionCleared);
-      canvas.off('object:selected', handleObjectSelected);
-      canvas.off('object:modified', handleObjectModified);
     };
-  }, [canvas, snapToGrid, gridSize, snapToObjects, snapTolerance, showSmartGuides]);
-  
-  // Render the alignment guides
-  useEffect(() => {
-    if (!canvas || !showSmartGuides) return;
-    
-    // Remove any existing guide lines
-    const existingGuides = canvas.getObjects().filter(obj => obj.data?.type === 'alignmentGuide');
-    existingGuides.forEach(guide => canvas.remove(guide));
-    
-    // Draw new guide lines
-    alignmentGuides.forEach(guide => {
-      let line: fabric.Line;
-      
-      if (guide.orientation === 'horizontal') {
-        line = new fabric.Line(
-          [0, guide.position, canvas.width!, guide.position], 
-          {
-            stroke: '#ff5722',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false,
-            data: { type: 'alignmentGuide', guideData: guide }
-          }
-        );
-      } else {
-        line = new fabric.Line(
-          [guide.position, 0, guide.position, canvas.height!], 
-          {
-            stroke: '#ff5722',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false,
-            data: { type: 'alignmentGuide', guideData: guide }
-          }
-        );
-      }
-      
-      canvas.add(line);
-      canvas.bringToFront(line);
-    });
-    
-    canvas.renderAll();
-    
-    // Cleanup on unmount or when guides change
-    return () => {
-      const guides = canvas.getObjects().filter(obj => obj.data?.type === 'alignmentGuide');
-      guides.forEach(guide => canvas.remove(guide));
-      canvas.renderAll();
-    };
-  }, [canvas, alignmentGuides, showSmartGuides]);
-  
-  // Helper function to generate alignment guides
-  const generateAlignmentGuides = (canvas: fabric.Canvas, activeObj: fabric.Object): AlignmentGuide[] => {
-    if (!activeObj) return [];
-    
+  }, [canvas, enabled, snapToGrid, gridSize, showSmartGuides, alignmentGuides, onObjectMove]);
+
+  // Generate alignment guides for an object
+  const generateAlignmentGuides = useCallback((activeObj: fabric.Object) => {
+    if (!canvas) return;
+
     const guides: AlignmentGuide[] = [];
-    const activeObjCenter = activeObj.getCenterPoint();
-    const activeObjBounds = activeObj.getBoundingRect();
-    
-    // Grid guides (if enabled)
-    if (snapToGrid) {
-      for (let i = 0; i <= canvas.width!; i += gridSize) {
-        guides.push({
-          position: i,
-          orientation: 'vertical',
-          type: 'grid',
-          label: `Grid ${i}px`,
-          strength: 1
-        });
-      }
-      
-      for (let i = 0; i <= canvas.height!; i += gridSize) {
-        guides.push({
-          position: i,
-          orientation: 'horizontal',
-          type: 'grid',
-          label: `Grid ${i}px`,
-          strength: 1
-        });
-      }
-    }
-    
-    // Object alignment guides
-    canvas.getObjects().forEach(obj => {
-      if (obj === activeObj || obj.data?.type === 'alignmentGuide') return;
-      
-      const objCenter = obj.getCenterPoint();
-      const objBounds = obj.getBoundingRect();
-      
-      // Horizontal center alignment
-      if (Math.abs(activeObjCenter.y - objCenter.y) < snapTolerance) {
-        guides.push({
-          position: objCenter.y,
-          orientation: 'horizontal',
-          type: 'center',
-          label: 'Center Align',
-          strength: 2
-        });
-      }
-      
-      // Vertical center alignment
-      if (Math.abs(activeObjCenter.x - objCenter.x) < snapTolerance) {
-        guides.push({
-          position: objCenter.x,
-          orientation: 'vertical',
-          type: 'center',
-          label: 'Center Align',
-          strength: 2
-        });
-      }
-      
-      // Top edge alignment
-      if (Math.abs(activeObjBounds.top - objBounds.top) < snapTolerance) {
-        guides.push({
-          position: objBounds.top,
-          orientation: 'horizontal',
-          type: 'edge',
-          label: 'Top Align',
-          strength: 3
-        });
-      }
-      
-      // Bottom edge alignment
-      if (Math.abs(activeObjBounds.top + activeObjBounds.height - (objBounds.top + objBounds.height)) < snapTolerance) {
-        guides.push({
-          position: objBounds.top + objBounds.height,
-          orientation: 'horizontal',
-          type: 'edge',
-          label: 'Bottom Align',
-          strength: 3
-        });
-      }
-      
-      // Left edge alignment
-      if (Math.abs(activeObjBounds.left - objBounds.left) < snapTolerance) {
-        guides.push({
-          position: objBounds.left,
-          orientation: 'vertical',
-          type: 'edge',
-          label: 'Left Align',
-          strength: 3
-        });
-      }
-      
-      // Right edge alignment
-      if (Math.abs(activeObjBounds.left + activeObjBounds.width - (objBounds.left + objBounds.width)) < snapTolerance) {
-        guides.push({
-          position: objBounds.left + objBounds.width,
-          orientation: 'vertical',
-          type: 'edge',
-          label: 'Right Align',
-          strength: 3
-        });
-      }
-    });
-    
-    // Sort guides by strength
-    return guides.sort((a, b) => (b.strength || 0) - (a.strength || 0));
-  };
-  
-  // Apply snapping based on guides
-  const applySnapping = (obj: fabric.Object, guides: AlignmentGuide[]) => {
-    if (!obj || !guides.length) return;
-    
-    const objBounds = obj.getBoundingRect();
-    const objCenter = obj.getCenterPoint();
-    
-    // Find the strongest horizontal and vertical guides
-    const horizontalGuides = guides.filter(g => g.orientation === 'horizontal');
-    const verticalGuides = guides.filter(g => g.orientation === 'vertical');
-    
-    // Apply horizontal snapping
-    if (horizontalGuides.length > 0) {
-      const guide = horizontalGuides[0];
-      let newTop = obj.top!;
-      
-      if (guide.type === 'center') {
-        // Snap center to guide
-        const centerOffset = objCenter.y - obj.top!;
-        newTop = guide.position - centerOffset;
-      } else if (guide.type === 'edge') {
-        // Snap edge to guide
-        if (Math.abs(objBounds.top - guide.position) < snapTolerance) {
-          newTop = guide.position;
-        } else {
-          // Assume it's bottom alignment
-          newTop = guide.position - objBounds.height;
-        }
-      }
-      
-      obj.set({ top: newTop });
-    }
-    
-    // Apply vertical snapping
-    if (verticalGuides.length > 0) {
-      const guide = verticalGuides[0];
-      let newLeft = obj.left!;
-      
-      if (guide.type === 'center') {
-        // Snap center to guide
-        const centerOffset = objCenter.x - obj.left!;
-        newLeft = guide.position - centerOffset;
-      } else if (guide.type === 'edge') {
-        // Snap edge to guide
-        if (Math.abs(objBounds.left - guide.position) < snapTolerance) {
-          newLeft = guide.position;
-        } else {
-          // Assume it's right alignment
-          newLeft = guide.position - objBounds.width;
-        }
-      }
-      
-      obj.set({ left: newLeft });
-    }
-    
-    canvas.renderAll();
-  };
-  
-  // Render tooltips for guides
-  useEffect(() => {
-    if (!canvas || !showSmartGuides) return;
-    
-    // Remove existing tooltips
-    document.querySelectorAll('.alignment-tooltip').forEach(el => el.remove());
-    
-    // Create tooltips for each guide
-    alignmentGuides.forEach(guide => {
-      if (!guide.label) return;
-      
-      const tooltip = document.createElement('div');
-      tooltip.className = 'alignment-tooltip';
-      tooltip.textContent = guide.label;
-      tooltip.style.position = 'absolute';
-      tooltip.style.backgroundColor = 'rgba(0,0,0,0.7)';
-      tooltip.style.color = 'white';
-      tooltip.style.padding = '2px 6px';
-      tooltip.style.borderRadius = '3px';
-      tooltip.style.fontSize = '12px';
-      tooltip.style.pointerEvents = 'none';
-      
-      // Position the tooltip
-      if (guide.orientation === 'horizontal') {
-        tooltip.style.top = `${guide.position - 20}px`;
-        tooltip.style.left = '10px';
-      } else {
-        tooltip.style.left = `${guide.position + 5}px`;
-        tooltip.style.top = '10px';
-      }
-      
-      document.body.appendChild(tooltip);
-    });
-    
-    // Clean up on unmount or when guides change
-    return () => {
-      document.querySelectorAll('.alignment-tooltip').forEach(el => el.remove());
+    const allObjects = canvas.getObjects().filter(obj => obj !== activeObj && !obj.data?.isGuide);
+
+    // Get active object bounds
+    const activeBounds = {
+      left: activeObj.left!,
+      top: activeObj.top!,
+      right: activeObj.left! + (activeObj.width! * (activeObj.scaleX || 1)),
+      bottom: activeObj.top! + (activeObj.height! * (activeObj.scaleY || 1)),
+      centerX: activeObj.left! + (activeObj.width! * (activeObj.scaleX || 1) / 2),
+      centerY: activeObj.top! + (activeObj.height! * (activeObj.scaleY || 1) / 2),
+      width: activeObj.width! * (activeObj.scaleX || 1),
+      height: activeObj.height! * (activeObj.scaleY || 1)
     };
-  }, [canvas, alignmentGuides, showSmartGuides]);
-  
-  return null;
+
+    // Canvas center guides
+    const canvasCenter = {
+      x: canvas.width! / 2,
+      y: canvas.height! / 2
+    };
+
+    guides.push({
+      position: canvasCenter.x,
+      orientation: 'vertical',
+      type: 'center',
+      strength: 3,
+      label: 'Canvas center X'
+    });
+
+    guides.push({
+      position: canvasCenter.y,
+      orientation: 'horizontal',
+      type: 'center',
+      strength: 3,
+      label: 'Canvas center Y'
+    });
+
+    // Process each object to create alignment guides
+    allObjects.forEach(obj => {
+      // Get object bounds
+      const bounds = {
+        left: obj.left!,
+        top: obj.top!,
+        right: obj.left! + (obj.width! * (obj.scaleX || 1)),
+        bottom: obj.top! + (obj.height! * (obj.scaleY || 1)),
+        centerX: obj.left! + (obj.width! * (obj.scaleX || 1) / 2),
+        centerY: obj.top! + (obj.height! * (obj.scaleY || 1) / 2)
+      };
+
+      // Vertical guides - left edges
+      guides.push({
+        position: bounds.left,
+        orientation: 'vertical',
+        type: 'edge',
+        strength: 2,
+        label: `Left edge (${obj.data?.name || 'Object'})`
+      });
+
+      // Vertical guides - right edges
+      guides.push({
+        position: bounds.right,
+        orientation: 'vertical',
+        type: 'edge',
+        strength: 2,
+        label: `Right edge (${obj.data?.name || 'Object'})`
+      });
+
+      // Vertical guides - center
+      guides.push({
+        position: bounds.centerX,
+        orientation: 'vertical',
+        type: 'center',
+        strength: 3,
+        label: `Center X (${obj.data?.name || 'Object'})`
+      });
+
+      // Horizontal guides - top edges
+      guides.push({
+        position: bounds.top,
+        orientation: 'horizontal',
+        type: 'edge',
+        strength: 2,
+        label: `Top edge (${obj.data?.name || 'Object'})`
+      });
+
+      // Horizontal guides - bottom edges
+      guides.push({
+        position: bounds.bottom,
+        orientation: 'horizontal',
+        type: 'edge',
+        strength: 2,
+        label: `Bottom edge (${obj.data?.name || 'Object'})`
+      });
+
+      // Horizontal guides - center
+      guides.push({
+        position: bounds.centerY,
+        orientation: 'horizontal',
+        type: 'center',
+        strength: 3,
+        label: `Center Y (${obj.data?.name || 'Object'})`
+      });
+
+      // Additional distribution guides
+      guides.push({
+        position: bounds.top - activeBounds.height,
+        orientation: 'horizontal',
+        type: 'distribution',
+        strength: 1,
+        label: `Equal spacing above (${obj.data?.name || 'Object'})`
+      });
+
+      guides.push({
+        position: bounds.bottom + activeBounds.height,
+        orientation: 'horizontal',
+        type: 'distribution',
+        strength: 1,
+        label: `Equal spacing below (${obj.data?.name || 'Object'})`
+      });
+    });
+
+    // Grid guides
+    if (gridSize) {
+      const canvasWidth = canvas.width || 1000;
+      const canvasHeight = canvas.height || 800;
+
+      for (let x = 0; x < canvasWidth; x += gridSize) {
+        guides.push({
+          position: x,
+          orientation: 'vertical',
+          type: 'grid',
+          strength: 1,
+          label: `Grid ${x}px`
+        });
+      }
+
+      for (let y = 0; y < canvasHeight; y += gridSize) {
+        guides.push({
+          position: y,
+          orientation: 'horizontal',
+          type: 'grid',
+          strength: 1,
+          label: `Grid ${y}px`
+        });
+      }
+    }
+
+    setAlignmentGuides(guides);
+  }, [canvas, gridSize]);
+
+  // Render guide lines on canvas
+  useEffect(() => {
+    if (!canvas || !showSmartGuides || !activeGuide) return;
+
+    // Remove existing guide lines
+    const existingGuides = canvas.getObjects().filter(obj => obj.data?.isGuide);
+    existingGuides.forEach(guide => canvas.remove(guide));
+
+    // Create guide line
+    const guideLine = new fabric.Line(
+      activeGuide.orientation === 'vertical'
+        ? [activeGuide.position, 0, activeGuide.position, canvas.height!]
+        : [0, activeGuide.position, canvas.width!, activeGuide.position],
+      {
+        stroke: 'rgba(0, 120, 255, 0.8)',
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        data: { isGuide: true }
+      }
+    );
+
+    // Add guide label if available
+    if (activeGuide.label) {
+      const labelText = new fabric.Text(activeGuide.label, {
+        left: activeGuide.orientation === 'vertical' ? activeGuide.position + 5 : 10,
+        top: activeGuide.orientation === 'vertical' ? 10 : activeGuide.position + 5,
+        fontSize: 12,
+        fill: 'rgba(0, 120, 255, 1)',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        padding: 3,
+        selectable: false,
+        evented: false,
+        data: { isGuide: true }
+      });
+
+      canvas.add(labelText);
+    }
+
+    canvas.add(guideLine);
+    canvas.renderAll();
+
+    return () => {
+      // Cleanup function to remove guide line when component unmounts or guide changes
+      if (canvas) {
+        const guides = canvas.getObjects().filter(obj => obj.data?.isGuide);
+        guides.forEach(guide => canvas.remove(guide));
+        canvas.renderAll();
+      }
+    };
+  }, [canvas, showSmartGuides, activeGuide]);
+
+  return null; // This is a behavior-only component with no UI
 };
 
 export default DragEnhancementHandler;

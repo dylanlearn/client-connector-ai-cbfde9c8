@@ -24,13 +24,18 @@ export interface SectionRenderingOptions {
   highlightSection?: string;
   showGrid?: boolean;
   gridSize?: number;
+  responsive?: boolean;
+  deviceType?: string;
+  interactive?: boolean;
+  showBorders?: boolean;
 }
 
 export interface AlignmentGuide {
   position: number;
   orientation: 'horizontal' | 'vertical';
-  type: 'edge' | 'center' | 'grid';
+  type: 'edge' | 'center' | 'grid' | 'distribution';
   strength?: number;
+  label?: string;
 }
 
 export interface LayerInfo {
@@ -52,4 +57,19 @@ export interface GridSettings {
   columns?: number;
   gutterWidth?: number;
   marginWidth?: number;
+}
+
+export interface DropZoneIndicator {
+  id: string;
+  type: 'dropzone';
+  position: { x: number, y: number };
+  size: { width: number, height: number };
+}
+
+export interface GuideVisualization {
+  id: string;
+  guide: AlignmentGuide;
+  color: string;
+  thickness: number;
+  opacity: number;
 }

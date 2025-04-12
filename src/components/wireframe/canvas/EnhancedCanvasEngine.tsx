@@ -1,50 +1,31 @@
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import { 
-  renderSectionToFabric,
-  objectToFabric,
-  fabricToObject,
-  componentToFabricObject
-} from '../utils/fabric-converters';
-import DragEnhancementHandler from './DragEnhancementHandler';
-import useCanvasHistory from '@/hooks/wireframe/use-canvas-history';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { WireframeCanvasConfig, SectionRenderingOptions } from '@/components/wireframe/utils/types';
+import { createCanvasGrid } from '@/components/wireframe/utils/grid-utils';
+import { renderSectionToFabric } from '@/components/wireframe/utils/fabric-converters';
 
 interface EnhancedCanvasEngineProps {
   width?: number;
   height?: number;
   canvasConfig?: Partial<WireframeCanvasConfig>;
   sections?: any[];
-  components?: any[];
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
-  onObjectSelected?: (obj: fabric.Object | null) => void;
-  onCanvasChanged?: (canvas: fabric.Canvas) => void;
   className?: string;
 }
 
 const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
   width = 1200,
   height = 800,
-  canvasConfig,
+  canvasConfig = {},
   sections = [],
-  components = [],
-  onCanvasReady,
-  onObjectSelected,
-  onCanvasChanged,
   className
 }) => {
-  const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isPanning, setIsPanning] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Merge default config with provided config
-  const defaultConfig: WireframeCanvasConfig = useMemo(() => ({
+  // Default configuration
+  const defaultConfig: WireframeCanvasConfig = {
     width,
     height,
     zoom: 1,
@@ -56,267 +37,109 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
     snapTolerance: 5,
     backgroundColor: '#ffffff',
     showSmartGuides: true,
-    showRulers: true,
-    rulerSize: 20,
-    rulerColor: '#888888',
-    rulerMarkings: true,
-    historyEnabled: true,
-    maxHistorySteps: 50,
     gridColor: '#e0e0e0'
-  }), [width, height]);
+  };
   
-  const [config, setConfig] = useState<WireframeCanvasConfig>({
-    ...defaultConfig,
-    ...canvasConfig
-  });
-  
-  // Initialize canvas history
-  const { 
-    undo, 
-    redo, 
-    canUndo, 
-    canRedo, 
-    saveHistoryState 
-  } = useCanvasHistory({ 
-    canvas, 
-    maxHistorySteps: config.maxHistorySteps || 50,
-    saveInitialState: true
-  });
+  // Merged configuration
+  const config = { ...defaultConfig, ...canvasConfig };
   
   // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current) return;
     
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-      width: config.width,
-      height: config.height,
-      backgroundColor: config.backgroundColor,
-      selection: true,
-      preserveObjectStacking: true
-    });
-    
-    setCanvas(fabricCanvas);
-    
-    // Set up event listeners
-    fabricCanvas.on('selection:created', (e) => {
-      const selectedObj = e.selected?.[0] || null;
-      setSelectedObject(selectedObj);
-      
-      if (onObjectSelected) {
-        onObjectSelected(selectedObj);
-      }
-    });
-    
-    fabricCanvas.on('selection:updated', (e) => {
-      const selectedObj = e.selected?.[0] || null;
-      setSelectedObject(selectedObj);
-      
-      if (onObjectSelected) {
-        onObjectSelected(selectedObj);
-      }
-    });
-    
-    fabricCanvas.on('selection:cleared', () => {
-      setSelectedObject(null);
-      
-      if (onObjectSelected) {
-        onObjectSelected(null);
-      }
-    });
-    
-    fabricCanvas.on('object:modified', () => {
-      saveHistoryState('Object modified');
-      if (onCanvasChanged) {
-        onCanvasChanged(fabricCanvas);
-      }
-    });
-    
-    // Add mouse event handlers for panning
-    fabricCanvas.on('mouse:down', (e) => {
-      if (e.e.altKey) {
-        setIsPanning(true);
-        fabricCanvas.defaultCursor = 'grabbing';
-        fabricCanvas.selection = false;
-        fabricCanvas.discardActiveObject();
-        fabricCanvas.requestRenderAll();
-      }
-    });
-    
-    fabricCanvas.on('mouse:move', (e) => {
-      if (isPanning && e.e.buttons === 1) {
-        const delta = new fabric.Point(e.e.movementX, e.e.movementY);
-        fabricCanvas.relativePan(delta);
-        
-        setConfig(prev => ({
-          ...prev,
-          panOffset: {
-            x: (prev.panOffset.x || 0) + e.e.movementX,
-            y: (prev.panOffset.y || 0) + e.e.movementY
-          }
-        }));
-      }
-    });
-    
-    fabricCanvas.on('mouse:up', () => {
-      if (isPanning) {
-        setIsPanning(false);
-        fabricCanvas.defaultCursor = 'default';
-        fabricCanvas.selection = true;
-      }
-    });
-    
-    // Mouse wheel for zoom
-    fabricCanvas.on('mouse:wheel', (e) => {
-      if (!e.e.ctrlKey) return;
-      
-      e.e.preventDefault();
-      e.e.stopPropagation();
-      
-      const delta = e.e.deltaY;
-      let zoom = fabricCanvas.getZoom();
-      zoom = delta > 0 ? Math.max(0.1, zoom - 0.1) : Math.min(3, zoom + 0.1);
-      
-      fabricCanvas.zoomToPoint(
-        new fabric.Point(e.e.offsetX, e.e.offsetY),
-        zoom
-      );
-      
-      setConfig(prev => ({
-        ...prev,
-        zoom
-      }));
-    });
-    
-    if (onCanvasReady) {
-      onCanvasReady(fabricCanvas);
-    }
-    
-    // Save initial state for history
-    saveHistoryState('Initial canvas state');
-    
-    return () => {
-      fabricCanvas.dispose();
-    };
-  }, [config.width, config.height, config.backgroundColor, onObjectSelected, onCanvasReady, saveHistoryState, onCanvasChanged]);
-  
-  // Render sections to canvas
-  useEffect(() => {
-    if (!canvas || !sections.length) return;
-    
     try {
-      // Clear existing sections
-      const existingSections = canvas.getObjects().filter(obj => 
-        (obj as any).data?.type === 'section'
-      );
-      
-      existingSections.forEach(obj => canvas.remove(obj));
-      
-      // Add new sections
-      sections.forEach((section) => {
-        renderSectionToFabric(canvas, section, {
-          darkMode: config.backgroundColor === '#333333',
-          showGrid: config.showGrid,
-          gridSize: config.gridSize,
-          showBorders: true
-        });
-      });
-      
-      canvas.renderAll();
-      saveHistoryState('Sections rendered');
-    } catch (error) {
-      console.error('Error rendering sections:', error);
-      toast({
-        title: "Error",
-        description: "Failed to render sections",
-        variant: "destructive"
-      });
-    }
-  }, [canvas, sections, config.backgroundColor, config.showGrid, config.gridSize, saveHistoryState, toast]);
-  
-  // Render components to canvas
-  useEffect(() => {
-    if (!canvas || !components.length) return;
-    
-    try {
-      // Clear existing components
-      const existingComponents = canvas.getObjects().filter(obj => 
-        (obj as any).data?.componentType
-      );
-      
-      existingComponents.forEach(obj => canvas.remove(obj));
-      
-      // Add new components
-      components.forEach((component) => {
-        if (!component) return;
-        const fabricObj = componentToFabricObject(component);
-        canvas.add(fabricObj);
-      });
-      
-      canvas.renderAll();
-      saveHistoryState('Components rendered');
-    } catch (error) {
-      console.error('Error rendering components:', error);
-      toast({
-        title: "Error",
-        description: "Failed to render components",
-        variant: "destructive"
-      });
-    }
-  }, [canvas, components, saveHistoryState, toast]);
-  
-  // Update canvas when config changes
-  useEffect(() => {
-    if (!canvas) return;
-    
-    // Update canvas background
-    canvas.setBackgroundColor(config.backgroundColor, () => {
-      canvas.renderAll();
-    });
-    
-    // Update canvas dimensions if they changed
-    if (canvas.getWidth() !== config.width || canvas.getHeight() !== config.height) {
-      canvas.setDimensions({
+      // Create fabric canvas
+      const canvas = new fabric.Canvas(canvasRef.current, {
         width: config.width,
-        height: config.height
+        height: config.height,
+        backgroundColor: config.backgroundColor,
+        selection: true,
+        preserveObjectStacking: true
       });
+      
+      // Set canvas zoom and pan from config
+      if (config.zoom !== 1) {
+        canvas.setZoom(config.zoom);
+      }
+      
+      if (config.panOffset.x !== 0 || config.panOffset.y !== 0) {
+        canvas.absolutePan(new fabric.Point(
+          config.panOffset.x,
+          config.panOffset.y
+        ));
+      }
+      
+      // Add grid if enabled
+      if (config.showGrid) {
+        const gridLines = createCanvasGrid(canvas, config.gridSize, config.gridType);
+        if (gridLines && gridLines.length) {
+          gridLines.forEach(line => canvas.add(line));
+        }
+      }
+      
+      // Set up snap to grid if enabled
+      if (config.snapToGrid) {
+        canvas.on('object:moving', (options) => {
+          if (options.target) {
+            const target = options.target;
+            const gridSize = config.gridSize;
+            
+            target.set({
+              left: Math.round(target.left! / gridSize) * gridSize,
+              top: Math.round(target.top! / gridSize) * gridSize
+            });
+          }
+        });
+      }
+      
+      setFabricCanvas(canvas);
+      setIsLoading(false);
+      
+      return () => {
+        canvas.dispose();
+        setFabricCanvas(null);
+      };
+    } catch (error) {
+      console.error('Error initializing canvas:', error);
+      setIsLoading(false);
     }
-    
-    // Update zoom level
-    if (canvas.getZoom() !== config.zoom) {
-      canvas.setZoom(config.zoom);
-      canvas.renderAll();
-    }
-  }, [canvas, config.backgroundColor, config.width, config.height, config.zoom]);
+  }, [config.width, config.height, config.backgroundColor, config.zoom, 
+      config.panOffset.x, config.panOffset.y, config.showGrid, config.snapToGrid, 
+      config.gridSize, config.gridType]);
   
-  // Expose undo/redo methods to parent
+  // Render sections when available
   useEffect(() => {
-    if (!canvas) return;
+    if (!fabricCanvas || !sections || sections.length === 0) return;
     
-    (canvas as any).undo = undo;
-    (canvas as any).redo = redo;
-    (canvas as any).canUndo = canUndo;
-    (canvas as any).canRedo = canRedo;
-  }, [canvas, undo, redo, canUndo, canRedo]);
+    // Clear existing sections
+    const existingSections = fabricCanvas.getObjects().filter(
+      obj => obj.data?.type === 'section'
+    );
+    existingSections.forEach(section => fabricCanvas.remove(section));
+    
+    // Render new sections
+    sections.forEach(section => {
+      const renderingOptions: SectionRenderingOptions = {
+        width: section.dimensions?.width || 400,
+        height: section.dimensions?.height || 300,
+        darkMode: false,
+        showGrid: config.showGrid,
+        gridSize: config.gridSize
+      };
+      
+      renderSectionToFabric(fabricCanvas, section, renderingOptions);
+    });
+    
+    fabricCanvas.renderAll();
+  }, [fabricCanvas, sections, config.showGrid, config.gridSize]);
   
   return (
-    <div className={cn("enhanced-canvas-engine relative", className)}>
-      <canvas 
-        ref={canvasRef} 
-        className={cn(
-          "border shadow-sm", 
-          isPanning && "cursor-grabbing"
-        )} 
-      />
-      
-      {canvas && config.showSmartGuides && (
-        <DragEnhancementHandler
-          canvas={canvas}
-          snapToGrid={config.snapToGrid}
-          gridSize={config.gridSize}
-          snapToObjects={true}
-          snapTolerance={config.snapTolerance}
-          showSmartGuides={config.showSmartGuides}
-        />
+    <div className={className}>
+      <canvas ref={canvasRef} />
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+          <p>Loading canvas...</p>
+        </div>
       )}
     </div>
   );
