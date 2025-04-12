@@ -1,7 +1,5 @@
 
 import React, { useState } from "react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { ComponentRegistration } from "@/components/wireframe/registry/ComponentRegistration";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
@@ -10,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { WireframeGenerationResult } from "@/services/ai/wireframe/wireframe-types";
+import { ComponentRegistration } from "@/components/wireframe/registry/ComponentRegistration";
 
 const WireframeGenerator = () => {
   // Use a real UUID for the project ID rather than a demo ID

@@ -28,7 +28,6 @@ import DesignCanvasPage from "./pages/design-canvas/DesignCanvasPage";
 import { Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import Header from "./components/layout/Header";
 import Home from "./pages/Home";
 import WireframeGenerator from "./pages/wireframe-generator";
 

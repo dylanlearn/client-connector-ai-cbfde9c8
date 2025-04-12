@@ -53,7 +53,7 @@ export function useWireframeGenerator(
         intakeData: params.intakeData
       };
 
-      // Call the service to generate the wireframe - using renamed import to avoid recursion
+      // Call the service to generate the wireframe
       const result = await apiGenerateWireframeService(generationParams);
 
       if (result.success && result.wireframe) {

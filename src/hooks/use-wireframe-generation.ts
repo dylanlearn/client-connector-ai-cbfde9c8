@@ -74,25 +74,6 @@ export function useWireframeGeneration() {
     return generateWireframeBase(generationParams);
   }, [generateWireframeBase, creativityLevel]);
 
-  // Replace the default wireframe with a properly typed version
-  const defaultWireframe = {
-    id: uuidv4(),
-    title: 'New Wireframe',
-    description: 'Generated wireframe from prompt',
-    sections: [],
-    colorScheme: {
-      primary: '#3b82f6',
-      secondary: '#10b981',
-      accent: '#f59e0b',
-      background: '#ffffff',
-      text: '#000000'
-    },
-    typography: {
-      headings: 'Inter',
-      body: 'Inter'
-    }
-  };
-
   return {
     isGenerating,
     wireframes,
