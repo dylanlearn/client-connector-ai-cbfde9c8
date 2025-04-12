@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowUp, ArrowDown, ToFront, ToBack } from 'lucide-react';
+import { ArrowUp, ArrowDown, MoveToTop, MoveToBottom } from 'lucide-react';
 import { LayerInfo } from '@/components/wireframe/utils/types';
 
 interface ZIndexControlsProps {
@@ -31,7 +31,7 @@ const ZIndexControls: React.FC<ZIndexControlsProps> = ({
         disabled={disabled}
         onClick={() => onBringToFront(layer.id)}
       >
-        <ToFront className="h-3 w-3" />
+        <MoveToTop className="h-3 w-3" />
       </Button>
       <Button
         size="icon"
@@ -61,7 +61,7 @@ const ZIndexControls: React.FC<ZIndexControlsProps> = ({
         disabled={disabled}
         onClick={() => onSendToBack(layer.id)}
       >
-        <ToBack className="h-3 w-3" />
+        <MoveToBottom className="h-3 w-3" />
       </Button>
     </div>
   );
