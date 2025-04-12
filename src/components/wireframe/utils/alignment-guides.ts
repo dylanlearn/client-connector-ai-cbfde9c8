@@ -1,3 +1,4 @@
+
 import { fabric } from 'fabric';
 import { AlignmentGuide } from './grid-system';
 
@@ -180,8 +181,51 @@ export function findNearestGuide(
   return nearestGuide ? { guide: nearestGuide, offset } : null;
 }
 
+/**
+ * Find guides that match object edges
+ */
+function findMatchingGuides(object: fabric.Object, guides: AlignmentGuide[], threshold: number = 5): AlignmentGuide[] {
+  // Implementation would go here
+  return [];
+}
+
+/**
+ * Visualize guides on canvas
+ */
+function visualizeGuides(guides: AlignmentGuide[], canvas: fabric.Canvas, color: string = 'rgba(0, 120, 255, 0.75)'): fabric.Line[] {
+  // Implementation would go here
+  return [];
+}
+
+/**
+ * Remove guide visualizations from canvas
+ */
+function removeGuideVisualizations(canvas: fabric.Canvas): void {
+  // Implementation would go here
+}
+
+/**
+ * Snap object to guides
+ */
+function snapObjectToGuides(object: fabric.Object, guides: AlignmentGuide[], threshold: number = 8): void {
+  // Implementation would go here
+}
+
+/**
+ * Guide handler class
+ */
+class GuideHandler {
+  // Implementation would go here
+  constructor() {}
+}
+
 export default {
   generateAlignmentGuides,
   findNearestGuide,
-  DEFAULT_GUIDE_OPTIONS
+  DEFAULT_GUIDE_OPTIONS,
+  findMatchingGuides,
+  visualizeGuides,
+  removeGuideVisualizations,
+  snapObjectToGuides,
+  GuideHandler
 };

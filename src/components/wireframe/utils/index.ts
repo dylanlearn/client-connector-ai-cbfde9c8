@@ -11,8 +11,7 @@ export type {
   LayerInfo,
   GridSettings,
   DropZoneIndicator,
-  GuideVisualization,
-  GridVisualSettings
+  GuideVisualization
 } from './types';
 
 // Export responsive layout utilities
@@ -77,15 +76,22 @@ export {
 // Export grid system types explicitly
 export type { GridConfiguration, AlignmentGuide, GridVisualSettings } from './grid-system';
 
-// Export alignment guides utilities
-export {
+// Import alignment guides utilities 
+import alignmentGuidesUtil from './alignment-guides';
+
+// Re-export the named exports from the default export
+export const {
   generateAlignmentGuides,
-  findMatchingGuides,
-  visualizeGuides,
-  removeGuideVisualizations,
-  snapObjectToGuides,
-  GuideHandler
-} from './alignment-guides';
+  findNearestGuide,
+  DEFAULT_GUIDE_OPTIONS
+} = alignmentGuidesUtil;
+
+// Export the other members that were previously trying to be exported
+export const findMatchingGuides = alignmentGuidesUtil.findMatchingGuides;
+export const visualizeGuides = alignmentGuidesUtil.visualizeGuides;
+export const removeGuideVisualizations = alignmentGuidesUtil.removeGuideVisualizations;
+export const snapObjectToGuides = alignmentGuidesUtil.snapObjectToGuides;
+export const GuideHandler = alignmentGuidesUtil.GuideHandler;
 
 // Export layer utilities
 export {
