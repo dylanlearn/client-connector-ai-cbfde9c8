@@ -30,6 +30,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Header from "./components/layout/Header";
 import Home from "./pages/Home";
+import WireframeGenerator from "./pages/wireframe-generator";
 
 // Admin routes check function
 interface WindowWithAdminRoutes extends Window {
@@ -130,7 +131,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/wireframe-generator',
-    element: <ProtectedRoute><Layout><WireframeStudioPage /></Layout></ProtectedRoute>,
+    element: <ProtectedRoute><Layout><WireframeGenerator /></Layout></ProtectedRoute>,
   },
   {
     path: '/design-picker',

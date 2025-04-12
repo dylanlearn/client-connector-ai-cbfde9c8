@@ -53,7 +53,7 @@ export function useWireframeGeneration() {
     if (typeof params === 'string') {
       return generateWireframeBase({
         description: params,
-        projectId,
+        projectId: projectId || uuidv4(),
         creativityLevel
       });
     }
@@ -62,6 +62,7 @@ export function useWireframeGeneration() {
     const generationParams: WireframeGenerationParams = {
       ...params,
       description: params.description || "New wireframe generation",
+      projectId: params.projectId || projectId || uuidv4()
     };
     
     // Ensure style is a string if it's an object
