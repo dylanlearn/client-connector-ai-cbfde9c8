@@ -96,14 +96,14 @@ const LayerPanel: React.FC<LayerPanelProps> = ({
               key={layer.id}
               layer={layer}
               isSelected={layer.id === selectedLayerId}
-              onSelect={onSelectLayer}
-              onToggleVisibility={onToggleLayerVisibility}
-              onToggleLock={onToggleLayerLock}
-              onDelete={onDeleteLayer}
-              onDuplicate={onDuplicateLayer}
-              onMoveUp={onMoveLayerUp}
-              onMoveDown={onMoveLayerDown}
-              onRename={onRenameLayer}
+              onSelect={() => onSelectLayer(layer.id)}
+              onToggleVisibility={() => onToggleLayerVisibility(layer.id)}
+              onToggleLock={() => onToggleLayerLock(layer.id)}
+              onDelete={() => onDeleteLayer(layer.id)}
+              onDuplicate={() => onDuplicateLayer(layer.id)}
+              onMoveUp={onMoveLayerUp ? () => onMoveLayerUp(layer.id) : undefined}
+              onMoveDown={onMoveLayerDown ? () => onMoveLayerDown(layer.id) : undefined}
+              onRename={onRenameLayer ? (name: string) => onRenameLayer(layer.id, name) : undefined}
             />
           ))}
           

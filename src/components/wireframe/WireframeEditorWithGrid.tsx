@@ -4,10 +4,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import EnhancedCanvasEngine from './canvas/EnhancedCanvasEngine';
 import GridControl from './grid/GridControl';
 import LayerManager from './layers/LayerManager';
-import { useWireframeEditor } from '@/hooks/wireframe/use-wireframe-editor';
+import { GridConfiguration } from './utils/grid-system';
 import { fabric } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
-import { GridConfiguration } from './utils/grid-system';
 import { cn } from '@/lib/utils';
 
 interface WireframeEditorWithGridProps {
@@ -25,49 +24,69 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
   onSave,
   initialData
 }) => {
-  // Use the wireframe editor hook
-  const {
-    canvasRef,
-    canvas,
-    initializeCanvas,
-    isInitializing,
-    selectedObjects,
-    layers,
-    gridConfig,
-    toggleGridVisibility,
-    toggleSnapToGrid,
-    setGridSize,
-    setGridType,
-    updateColumnSettings,
-    updateGridConfig
-  } = useWireframeEditor({
-    width,
-    height,
-    initialGridConfig: {
-      visible: true,
-      size: 20,
-      snapToGrid: true,
-      type: 'lines',
-      columns: 12,
-      gutterWidth: 20,
-      marginWidth: 40,
-      snapThreshold: 8,
-      showGuides: true,
-      guideColor: 'rgba(0, 120, 255, 0.75)',
-      showRulers: false,
-      rulerSize: 20
-    }
+  // State for canvas and fabric instance
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [selectedObjects, setSelectedObjects] = useState<fabric.Object[]>([]);
+  const [layers, setLayers] = useState<any[]>([]);
+  
+  // Grid configuration state
+  const [gridConfig, setGridConfig] = useState<GridConfiguration>({
+    visible: true,
+    size: 20,
+    snapToGrid: true,
+    type: 'lines',
+    columns: 12,
+    gutterWidth: 20,
+    marginWidth: 40,
+    snapThreshold: 8,
+    showGuides: true,
+    guideColor: 'rgba(0, 120, 255, 0.75)',
+    showRulers: false,
+    rulerSize: 20
   });
   
   // State for sections
   const [sections, setSections] = useState<any[]>([]);
   
   // Initialize canvas when component mounts
-  useEffect(() => {
+  const initializeCanvas = () => {
     if (canvasRef.current && !canvas) {
-      initializeCanvas();
+      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+        width,
+        height,
+        backgroundColor: '#ffffff'
+      });
+      
+      setCanvas(fabricCanvas);
+      setIsInitializing(false);
+      
+      // Set up event listeners for object selection
+      fabricCanvas.on('selection:created', (e) => {
+        if (e.selected) {
+          setSelectedObjects(e.selected);
+        }
+      });
+      
+      fabricCanvas.on('selection:updated', (e) => {
+        if (e.selected) {
+          setSelectedObjects(e.selected);
+        }
+      });
+      
+      fabricCanvas.on('selection:cleared', () => {
+        setSelectedObjects([]);
+      });
+      
+      return fabricCanvas;
     }
-  }, [canvasRef, canvas, initializeCanvas]);
+    return null;
+  };
+  
+  useEffect(() => {
+    initializeCanvas();
+  }, []);
   
   // Add a section to the canvas
   const addSection = (sectionType: string) => {
@@ -86,9 +105,59 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
     setSections(prev => [...prev, section]);
   };
   
+  // Handle grid visibility toggle
+  const toggleGridVisibility = () => {
+    setGridConfig(prev => ({
+      ...prev,
+      visible: !prev.visible
+    }));
+  };
+  
+  // Handle snap to grid toggle
+  const toggleSnapToGrid = () => {
+    setGridConfig(prev => ({
+      ...prev,
+      snapToGrid: !prev.snapToGrid
+    }));
+  };
+  
+  // Handle grid size change
+  const setGridSize = (size: number) => {
+    setGridConfig(prev => ({
+      ...prev,
+      size
+    }));
+  };
+  
+  // Handle grid type change
+  const setGridType = (type: 'lines' | 'dots' | 'columns') => {
+    setGridConfig(prev => ({
+      ...prev,
+      type
+    }));
+  };
+  
+  // Handle column settings update
+  const updateColumnSettings = (columns: number, gutterWidth: number, marginWidth: number) => {
+    setGridConfig(prev => ({
+      ...prev,
+      columns,
+      gutterWidth,
+      marginWidth
+    }));
+  };
+  
+  // Update grid config
+  const updateGridConfig = (updates: Partial<GridConfiguration>) => {
+    setGridConfig(prev => ({
+      ...prev,
+      ...updates
+    }));
+  };
+  
   // Handle object selection
   const handleObjectsSelected = (objects: fabric.Object[]) => {
-    console.log('Selected objects:', objects);
+    setSelectedObjects(objects);
   };
   
   // Handle object modification
