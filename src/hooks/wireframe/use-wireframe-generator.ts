@@ -119,11 +119,8 @@ export function useWireframeGenerator(
     setError(null);
 
     try {
-      // Call the service to generate the variation
-      const result = await generateWireframeVariationWithStyle({
-        ...params,
-        creativityLevel: params.creativityLevel || defaultCreativityLevel
-      });
+      // Call the service to generate the variation with all required arguments
+      const result = await generateWireframeVariationWithStyle(params, params.creativityLevel || defaultCreativityLevel);
 
       if (result.success && result.wireframe) {
         // Set the current wireframe
