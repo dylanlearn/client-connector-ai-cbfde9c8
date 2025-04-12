@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData, WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
 import { AdvancedWireframeGenerator } from '@/components/wireframe';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -75,11 +75,13 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   }, [intakeData]);
 
   // Handler for when a wireframe is generated
-  const handleWireframeGenerated = (generatedWireframe: WireframeData) => {
-    setWireframeData(generatedWireframe);
-    
-    if (onWireframeGenerated) {
-      onWireframeGenerated(generatedWireframe);
+  const handleWireframeGenerated = (result: WireframeGenerationResult) => {
+    if (result.wireframe) {
+      setWireframeData(result.wireframe);
+      
+      if (onWireframeGenerated) {
+        onWireframeGenerated(result.wireframe);
+      }
     }
     
     setIsGenerating(false);
