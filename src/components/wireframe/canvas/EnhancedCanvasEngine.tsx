@@ -2,8 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig, SectionRenderingOptions } from '@/components/wireframe/utils/types';
-import { createCanvasGrid } from '@/components/wireframe/utils/grid-utils';
+import { updateGridOnCanvas } from '@/components/wireframe/utils/grid-system';
 import { renderSectionToFabric } from '@/components/wireframe/utils/fabric-converters';
+import DragEnhancementHandler from './DragEnhancementHandler';
 
 interface EnhancedCanvasEngineProps {
   width?: number;
@@ -11,6 +12,10 @@ interface EnhancedCanvasEngineProps {
   canvasConfig?: Partial<WireframeCanvasConfig>;
   sections?: any[];
   className?: string;
+  onSectionClick?: (id: string, section: any) => void;
+  onObjectsSelected?: (objects: fabric.Object[]) => void;
+  onObjectModified?: (object: fabric.Object) => void;
+  onCanvasReady?: (canvas: fabric.Canvas) => void;
 }
 
 const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
@@ -18,7 +23,11 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
   height = 800,
   canvasConfig = {},
   sections = [],
-  className
+  className,
+  onSectionClick,
+  onObjectsSelected,
+  onObjectModified,
+  onCanvasReady
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
@@ -71,29 +80,59 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
       
       // Add grid if enabled
       if (config.showGrid) {
-        const gridLines = createCanvasGrid(canvas, config.gridSize, config.gridType);
-        if (gridLines && gridLines.length) {
-          gridLines.forEach(line => canvas.add(line));
-        }
+        updateGridOnCanvas(
+          canvas, 
+          {
+            visible: config.showGrid,
+            size: config.gridSize,
+            snapToGrid: config.snapToGrid,
+            type: config.gridType,
+            columns: 12,
+            gutterWidth: 20,
+            marginWidth: 40,
+            snapThreshold: config.snapTolerance,
+            showGuides: config.showSmartGuides,
+            guideColor: 'rgba(0, 120, 255, 0.75)',
+            showRulers: true,
+            rulerSize: 20
+          }, 
+          config.width, 
+          config.height
+        );
       }
       
-      // Set up snap to grid if enabled
-      if (config.snapToGrid) {
-        canvas.on('object:moving', (options) => {
-          if (options.target) {
-            const target = options.target;
-            const gridSize = config.gridSize;
-            
-            target.set({
-              left: Math.round(target.left! / gridSize) * gridSize,
-              top: Math.round(target.top! / gridSize) * gridSize
-            });
-          }
-        });
-      }
+      // Set up event handlers
+      canvas.on('selection:created', (e) => {
+        if (onObjectsSelected && e.selected) {
+          onObjectsSelected(e.selected);
+        }
+      });
+      
+      canvas.on('selection:updated', (e) => {
+        if (onObjectsSelected && e.selected) {
+          onObjectsSelected(e.selected);
+        }
+      });
+      
+      canvas.on('selection:cleared', () => {
+        if (onObjectsSelected) {
+          onObjectsSelected([]);
+        }
+      });
+      
+      canvas.on('object:modified', (e) => {
+        if (onObjectModified && e.target) {
+          onObjectModified(e.target);
+        }
+      });
       
       setFabricCanvas(canvas);
       setIsLoading(false);
+      
+      // Notify parent component that canvas is ready
+      if (onCanvasReady) {
+        onCanvasReady(canvas);
+      }
       
       return () => {
         canvas.dispose();
@@ -105,7 +144,8 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
     }
   }, [config.width, config.height, config.backgroundColor, config.zoom, 
       config.panOffset.x, config.panOffset.y, config.showGrid, config.snapToGrid, 
-      config.gridSize, config.gridType]);
+      config.gridSize, config.gridType, config.showSmartGuides, onCanvasReady,
+      onObjectsSelected, onObjectModified]);
   
   // Render sections when available
   useEffect(() => {
@@ -124,14 +164,25 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
         height: section.dimensions?.height || 300,
         darkMode: false,
         showGrid: config.showGrid,
-        gridSize: config.gridSize
+        gridSize: config.gridSize,
+        responsive: false,
+        deviceType: 'desktop',
+        interactive: true,
+        showBorders: true
       };
       
-      renderSectionToFabric(fabricCanvas, section, renderingOptions);
+      const sectionObject = renderSectionToFabric(fabricCanvas, section, renderingOptions);
+      
+      // Set up section click handler if provided
+      if (onSectionClick && sectionObject) {
+        sectionObject.on('mousedown', () => {
+          onSectionClick(section.id, section);
+        });
+      }
     });
     
     fabricCanvas.renderAll();
-  }, [fabricCanvas, sections, config.showGrid, config.gridSize]);
+  }, [fabricCanvas, sections, config.showGrid, config.gridSize, onSectionClick]);
   
   return (
     <div className={className}>
@@ -140,6 +191,31 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
         <div className="absolute inset-0 flex items-center justify-center bg-background/50">
           <p>Loading canvas...</p>
         </div>
+      )}
+      
+      {/* Drag Enhancement Handler */}
+      {fabricCanvas && (
+        <DragEnhancementHandler
+          canvas={fabricCanvas}
+          enabled={config.snapToGrid || config.showSmartGuides}
+          gridConfig={{
+            visible: config.showGrid,
+            size: config.gridSize,
+            snapToGrid: config.snapToGrid,
+            type: config.gridType,
+            columns: 12,
+            gutterWidth: 20,
+            marginWidth: 40,
+            snapThreshold: config.snapTolerance,
+            showGuides: config.showSmartGuides,
+            guideColor: 'rgba(0, 120, 255, 0.75)',
+            showRulers: true,
+            rulerSize: 20
+          }}
+          width={config.width}
+          height={config.height}
+          showDropIndicators={true}
+        />
       )}
     </div>
   );

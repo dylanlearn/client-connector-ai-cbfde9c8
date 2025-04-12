@@ -8,7 +8,13 @@ export type { ResponsiveLayoutSettings, AdaptiveWireframeSection } from './secti
 export type { 
   WireframeCanvasConfig, 
   SectionRenderingOptions,
-  AlignmentGuide
+  AlignmentGuide,
+  LayerInfo,
+  GridSettings,
+  DropZoneIndicator,
+  GuideVisualization,
+  GridConfiguration,
+  GridVisualSettings
 } from './types';
 
 // Export responsive layout utilities
@@ -38,7 +44,7 @@ export {
 // Export from responsive-utils
 export * from './responsive-utils';
 
-// Export grid utilities - explicitly re-export from grid-utils
+// Export grid utilities
 export { 
   createCanvasGrid,
   removeGridFromCanvas,
@@ -57,5 +63,34 @@ export {
 // Re-export types from grid-utils
 export type { GridConfig, GridBreakpoint } from './grid-utils';
 
-// Export new alignment guides utilities
-export * from './alignment-guides';
+// Export grid system utilities
+export {
+  updateGridOnCanvas,
+  sendGridToBack,
+  removeGridFromCanvas as removeGridSystem,
+  calculateSnapPositions,
+  findClosestSnapPosition,
+  showAlignmentGuides,
+  removeAlignmentGuides,
+  DEFAULT_GRID_CONFIG as DEFAULT_GRID_SYSTEM_CONFIG,
+  DEFAULT_VISUAL_SETTINGS
+} from './grid-system';
+
+// Export alignment guides utilities
+export {
+  generateAlignmentGuides,
+  findMatchingGuides,
+  visualizeGuides,
+  removeGuideVisualizations,
+  snapObjectToGuides,
+  GuideHandler
+} from './alignment-guides';
+
+// Export layer utilities
+export {
+  convertCanvasObjectsToLayers,
+  applyLayerSettingsToObject,
+  groupSelectedLayers,
+  ungroupLayer,
+  getFlatLayerList
+} from './layer-utils';

@@ -1,44 +1,58 @@
 
-import React, { useEffect, useRef } from 'react';
-import { useWireframeEditor } from '@/hooks/wireframe/use-wireframe-editor.tsx';
-import { Card } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Loader2, Square, Circle, Image, Type, MousePointer } from 'lucide-react';
-import GridControl from '@/components/wireframe/grid/GridControl';
-import LayerManager from '@/components/wireframe/layers/LayerManager';
-import { cn } from '@/lib/utils';
-import { createAlignmentGuides, removeAlignmentGuides, snapObjectToGrid } from './utils/grid-system';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import EnhancedCanvasEngine from './canvas/EnhancedCanvasEngine';
+import GridControl from './grid/GridControl';
+import LayerManager from './layers/LayerManager';
+import { useWireframeEditor } from '@/hooks/wireframe/use-wireframe-editor';
 import { fabric } from 'fabric';
+import { v4 as uuidv4 } from 'uuid';
+import { GridConfiguration } from './utils/grid-system';
+import { cn } from '@/lib/utils';
 
 interface WireframeEditorWithGridProps {
   width?: number;
   height?: number;
   className?: string;
+  onSave?: (data: any) => void;
+  initialData?: any;
 }
 
 const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
   width = 1200,
   height = 800,
-  className
+  className,
+  onSave,
+  initialData
 }) => {
+  // Use the wireframe editor hook
   const {
     canvasRef,
     canvas,
     initializeCanvas,
     isInitializing,
+    selectedObjects,
+    layers,
     gridConfig,
     toggleGridVisibility,
     toggleSnapToGrid,
     setGridSize,
     setGridType,
     updateColumnSettings,
+    updateGridConfig
   } = useWireframeEditor({
     width,
-    height
+    height,
+    initialGridConfig: {
+      visible: true,
+      size: 20,
+      snapToGrid: true,
+      type: 'lines'
+    }
   });
   
-  const containerRef = useRef<HTMLDivElement>(null);
+  // State for sections
+  const [sections, setSections] = useState<any[]>([]);
   
   // Initialize canvas when component mounts
   useEffect(() => {
@@ -47,219 +61,114 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
     }
   }, [canvasRef, canvas, initializeCanvas]);
   
-  // Set up snapping and guides when canvas is ready
-  useEffect(() => {
+  // Add a section to the canvas
+  const addSection = (sectionType: string) => {
     if (!canvas) return;
     
-    const handleObjectMoving = (e: fabric.IEvent) => {
-      const target = e.target;
-      if (!target) return;
-      
-      // Show alignment guides
-      createAlignmentGuides(canvas, target);
-      
-      // Snap to grid if enabled
-      if (gridConfig.snapToGrid) {
-        snapObjectToGrid(target, gridConfig);
-      }
+    const section = {
+      id: uuidv4(),
+      name: `${sectionType} Section`,
+      sectionType,
+      position: { x: 50, y: 50 },
+      dimensions: { width: 400, height: 300 },
+      backgroundColor: '#f5f5f5',
+      components: []
     };
     
-    const handleObjectModified = () => {
-      // Remove alignment guides when done moving
-      removeAlignmentGuides(canvas);
-    };
-    
-    const handleSelectionCleared = () => {
-      // Remove alignment guides when selection cleared
-      removeAlignmentGuides(canvas);
-    };
-    
-    // Add event listeners
-    canvas.on('object:moving', handleObjectMoving);
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('selection:cleared', handleSelectionCleared);
-    
-    return () => {
-      // Remove event listeners
-      canvas.off('object:moving', handleObjectMoving);
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('selection:cleared', handleSelectionCleared);
-    };
-  }, [canvas, gridConfig]);
+    setSections(prev => [...prev, section]);
+  };
   
-  // Add element to canvas
-  const addElement = (type: 'rectangle' | 'circle' | 'text' | 'image') => {
-    if (!canvas) return;
+  // Handle object selection
+  const handleObjectsSelected = (objects: fabric.Object[]) => {
+    console.log('Selected objects:', objects);
+  };
+  
+  // Handle object modification
+  const handleObjectModified = (object: fabric.Object) => {
+    console.log('Modified object:', object);
     
-    let object: fabric.Object;
-    
-    switch (type) {
-      case 'rectangle':
-        object = new fabric.Rect({
-          left: 100,
-          top: 100,
-          width: 100,
-          height: 100,
-          fill: '#e0e0e0',
-          stroke: '#cccccc',
-          strokeWidth: 1
-        });
-        break;
-        
-      case 'circle':
-        object = new fabric.Circle({
-          left: 100,
-          top: 100,
-          radius: 50,
-          fill: '#e0e0e0',
-          stroke: '#cccccc',
-          strokeWidth: 1
-        });
-        break;
-        
-      case 'text':
-        object = new fabric.IText('Text', {
-          left: 100,
-          top: 100,
-          fontFamily: 'Arial',
-          fontSize: 20,
-          fill: '#333333'
-        });
-        break;
-        
-      case 'image':
-        // Just create a placeholder rect for now
-        object = new fabric.Rect({
-          left: 100,
-          top: 100,
-          width: 200,
-          height: 150,
-          fill: '#f0f0f0',
-          stroke: '#cccccc',
-          strokeWidth: 1
-        });
-        
-        // Add image icon to differentiate it
-        const imgIcon = new fabric.Text('🖼️', {
-          fontSize: 30,
-          left: 85,
-          top: 60,
-          selectable: false
-        });
-        
-        const group = new fabric.Group([object, imgIcon], {
-          left: 100,
-          top: 100
-        });
-        
-        canvas.add(group);
-        canvas.setActiveObject(group);
-        canvas.renderAll();
-        return;
-        
-      default:
-        return;
+    // Update section data if the modified object is a section
+    if (object.data?.type === 'section') {
+      const sectionId = object.data.id;
+      
+      setSections(prev => prev.map(section => {
+        if (section.id === sectionId) {
+          return {
+            ...section,
+            position: { x: object.left || 0, y: object.top || 0 },
+            dimensions: { 
+              width: (object.width || 0) * (object.scaleX || 1), 
+              height: (object.height || 0) * (object.scaleY || 1)
+            }
+          };
+        }
+        return section;
+      }));
     }
-    
-    // Add element data for layer management
-    object.data = {
-      id: `${type}-${Date.now()}`,
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} Element`,
-      type: type
-    };
-    
-    canvas.add(object);
-    canvas.setActiveObject(object);
-    canvas.renderAll();
   };
   
   return (
-    <div className={cn("wireframe-editor-container flex flex-col lg:flex-row gap-4", className)}>
-      {/* Main canvas area */}
-      <div className="wireframe-canvas-wrapper flex-1 h-full min-h-[600px]">
-        <Card className="w-full h-full overflow-hidden">
-          <div className="p-2 border-b flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => addElement('rectangle')}
-              disabled={!canvas}
-              className="flex-1 sm:flex-none"
-            >
-              <Square className="h-4 w-4 mr-1" />
-              Rectangle
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => addElement('circle')}
-              disabled={!canvas}
-              className="flex-1 sm:flex-none"
-            >
-              <Circle className="h-4 w-4 mr-1" />
-              Circle
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => addElement('text')}
-              disabled={!canvas}
-              className="flex-1 sm:flex-none"
-            >
-              <Type className="h-4 w-4 mr-1" />
-              Text
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => addElement('image')}
-              disabled={!canvas}
-              className="flex-1 sm:flex-none"
-            >
-              <Image className="h-4 w-4 mr-1" />
-              Image
-            </Button>
-            
-            <div className="ml-auto">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  if (canvas) {
-                    canvas.discardActiveObject();
-                    canvas.renderAll();
-                  }
-                }}
-                disabled={!canvas}
-              >
-                <MousePointer className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+    <div className={cn("wireframe-editor-with-grid", className)}>
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="lg:w-3/4 space-y-4">
+          <Card>
+            <CardContent className="p-2">
+              {canvas ? (
+                <EnhancedCanvasEngine
+                  width={width}
+                  height={height}
+                  canvasConfig={{
+                    width,
+                    height,
+                    showGrid: gridConfig.visible,
+                    snapToGrid: gridConfig.snapToGrid,
+                    gridSize: gridConfig.size,
+                    gridType: gridConfig.type as 'lines' | 'dots' | 'columns'
+                  }}
+                  sections={sections}
+                  className="border rounded-md overflow-hidden"
+                  onObjectsSelected={handleObjectsSelected}
+                  onObjectModified={handleObjectModified}
+                />
+              ) : (
+                <div className="flex items-center justify-center border rounded-md min-h-[600px] bg-muted/20">
+                  {isInitializing ? 'Initializing canvas...' : 'Canvas not available'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
           
-          {isInitializing ? (
-            <div className="w-full h-full min-h-[600px] flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <span className="ml-2">Initializing canvas...</span>
-            </div>
-          ) : (
-            <div className="relative w-full h-full" ref={containerRef}>
-              <canvas
-                ref={canvasRef}
-                id="wireframe-canvas"
-                className="wireframe-canvas"
-              />
-            </div>
-          )}
-        </Card>
-      </div>
-      
-      {/* Controls panel */}
-      <div className="wireframe-controls-panel w-full lg:w-80">
-        <div className="space-y-4">
-          {/* Grid control */}
-          <GridControl
-            gridConfig={gridConfig}
+          <div className="flex flex-wrap gap-2">
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={() => addSection('header')}
+            >
+              Add Header
+            </button>
+            <button 
+              className="px-4 py-2 bg-green-500 text-white rounded"
+              onClick={() => addSection('content')}
+            >
+              Add Content
+            </button>
+            <button 
+              className="px-4 py-2 bg-amber-500 text-white rounded"
+              onClick={() => addSection('gallery')}
+            >
+              Add Gallery
+            </button>
+            <button 
+              className="px-4 py-2 bg-purple-500 text-white rounded"
+              onClick={() => addSection('footer')}
+            >
+              Add Footer
+            </button>
+          </div>
+        </div>
+        
+        <div className="lg:w-1/4 space-y-4">
+          <GridControl 
+            gridConfig={gridConfig as GridConfiguration}
             onToggleVisibility={toggleGridVisibility}
             onToggleSnapToGrid={toggleSnapToGrid}
             onSizeChange={setGridSize}
@@ -267,10 +176,10 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
             onColumnSettingsChange={updateColumnSettings}
           />
           
-          <Separator className="my-4" />
-          
-          {/* Layer manager */}
-          <LayerManager canvas={canvas} />
+          <LayerManager 
+            canvas={canvas}
+            selectedObjects={selectedObjects}
+          />
         </div>
       </div>
     </div>

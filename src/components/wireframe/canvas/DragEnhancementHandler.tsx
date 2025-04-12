@@ -1,326 +1,338 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { fabric } from 'fabric';
-import { AlignmentGuide, DropZoneIndicator } from '@/components/wireframe/utils/types';
-import { snapToGuide, findNearestGuide } from '@/components/wireframe/utils/alignment-guides';
+import { 
+  AlignmentGuide, 
+  DropZoneIndicator, 
+  GridConfiguration 
+} from '@/components/wireframe/utils/types';
+import {
+  generateAlignmentGuides,
+  visualizeGuides,
+  removeGuideVisualizations,
+  snapObjectToGuides,
+  findMatchingGuides
+} from '@/components/wireframe/utils/alignment-guides';
 
 interface DragEnhancementHandlerProps {
+  /**
+   * The fabric canvas instance
+   */
   canvas: fabric.Canvas | null;
+  /**
+   * Whether the drag enhancements are enabled
+   */
   enabled?: boolean;
-  gridSize?: number;
-  snapToGrid?: boolean;
-  showSmartGuides?: boolean;
-  onObjectMove?: (obj: fabric.Object, position: { x: number, y: number }) => void;
+  /**
+   * Grid configuration
+   */
+  gridConfig: GridConfiguration;
+  /**
+   * Canvas width
+   */
+  width?: number;
+  /**
+   * Canvas height
+   */
+  height?: number;
+  /**
+   * Whether to show drop indicators for drag and drop
+   */
+  showDropIndicators?: boolean;
+  /**
+   * Additional options for the drag enhancements
+   */
+  options?: {
+    snapThreshold?: number;
+    showEdgeGuides?: boolean;
+    showCenterGuides?: boolean;
+    showDistributionGuides?: boolean;
+    guideColor?: string;
+    dropZoneColor?: string;
+  };
 }
 
-export const DragEnhancementHandler: React.FC<DragEnhancementHandlerProps> = ({
+const DragEnhancementHandler: React.FC<DragEnhancementHandlerProps> = ({
   canvas,
   enabled = true,
-  gridSize = 10,
-  snapToGrid = true,
-  showSmartGuides = true,
-  onObjectMove
+  gridConfig,
+  width = 1200,
+  height = 800,
+  showDropIndicators = true,
+  options = {}
 }) => {
-  const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
-  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
-  const [activeGuide, setActiveGuide] = useState<AlignmentGuide | null>(null);
-  const [dropZones, setDropZones] = useState<DropZoneIndicator[]>([]);
-
-  // Generate alignment guides when canvas or active object changes
-  useEffect(() => {
-    if (!canvas || !enabled || !showSmartGuides) return;
-
-    const handleSelectionCreated = (e: fabric.IEvent) => {
-      if (e.selected && e.selected.length > 0) {
-        setActiveObject(e.selected[0]);
-        generateAlignmentGuides(e.selected[0]);
-      }
-    };
-
-    const handleSelectionCleared = () => {
-      setActiveObject(null);
-      setAlignmentGuides([]);
-      setActiveGuide(null);
-    };
-
-    canvas.on('selection:created', handleSelectionCreated);
-    canvas.on('selection:updated', handleSelectionCreated);
-    canvas.on('selection:cleared', handleSelectionCleared);
-
-    return () => {
-      canvas.off('selection:created', handleSelectionCreated);
-      canvas.off('selection:updated', handleSelectionCreated);
-      canvas.off('selection:cleared', handleSelectionCleared);
-    };
-  }, [canvas, enabled, showSmartGuides]);
-
-  // Object moving handler
+  const isMovingRef = useRef(false);
+  const activeObjectRef = useRef<fabric.Object | null>(null);
+  const dropZonesRef = useRef<DropZoneIndicator[]>([]);
+  
+  // Default options
+  const {
+    snapThreshold = gridConfig.snapThreshold || 10,
+    showEdgeGuides = true,
+    showCenterGuides = true,
+    showDistributionGuides = false,
+    guideColor = gridConfig.guideColor || 'rgba(0, 120, 255, 0.75)',
+    dropZoneColor = 'rgba(100, 230, 100, 0.3)'
+  } = options;
+  
+  // Handle object moving
   useEffect(() => {
     if (!canvas || !enabled) return;
-
+    
+    // Object moving handler
     const handleObjectMoving = (e: fabric.IEvent) => {
-      const obj = e.target;
-      if (!obj) return;
-
-      // Apply grid snapping
-      if (snapToGrid && gridSize) {
-        const newLeft = Math.round(obj.left! / gridSize) * gridSize;
-        const newTop = Math.round(obj.top! / gridSize) * gridSize;
-        obj.set({ left: newLeft, top: newTop });
-      }
-
-      // Apply alignment guide snapping
-      if (showSmartGuides && alignmentGuides.length) {
-        const objectBounds = {
-          x: obj.left!,
-          y: obj.top!,
-          width: obj.width! * (obj.scaleX || 1),
-          height: obj.height! * (obj.scaleY || 1)
-        };
-
-        // Find the nearest guide
-        const result = findNearestGuide(
-          { x: objectBounds.x, y: objectBounds.y },
-          { width: objectBounds.width, height: objectBounds.height },
-          alignmentGuides,
-          10
-        );
-
-        if (result && result.guide) {
-          setActiveGuide(result.guide);
-
-          // Apply snapping
-          if (result.guide.orientation === 'vertical') {
-            obj.set({ left: obj.left! + result.offset });
-          } else {
-            obj.set({ top: obj.top! + result.offset });
-          }
-        } else {
-          setActiveGuide(null);
+      if (!e.target) return;
+      activeObjectRef.current = e.target;
+      isMovingRef.current = true;
+      
+      // Skip if the object is a grid or guide
+      if (e.target.data?.type === 'grid' || e.target.data?.type === 'alignmentGuide') return;
+      
+      // Generate guides for the moving object
+      const guides = generateAlignmentGuides(
+        canvas,
+        e.target,
+        showEdgeGuides,
+        showCenterGuides,
+        showDistributionGuides
+      );
+      
+      // Find matching guides
+      const matchingGuides = findMatchingGuides(e.target, guides, snapThreshold);
+      
+      // Visualize matching guides
+      if (matchingGuides.length > 0) {
+        visualizeGuides(canvas, matchingGuides, guideColor);
+        
+        // Snap to guides
+        snapObjectToGuides(e.target, matchingGuides, snapThreshold);
+      } else {
+        removeGuideVisualizations(canvas);
+        
+        // Regular grid snapping if no smart guides
+        if (gridConfig.snapToGrid) {
+          snapToGrid(e.target);
         }
       }
-
-      // Notify parent component
-      if (onObjectMove) {
-        onObjectMove(obj, { x: obj.left!, y: obj.top! });
+    };
+    
+    // Grid snapping function
+    const snapToGrid = (obj: fabric.Object) => {
+      if (!obj) return;
+      
+      const gridSize = gridConfig.size;
+      const left = obj.left || 0;
+      const top = obj.top || 0;
+      
+      // Snap to grid points
+      obj.set({
+        left: Math.round(left / gridSize) * gridSize,
+        top: Math.round(top / gridSize) * gridSize
+      });
+    };
+    
+    // Object modified handler
+    const handleObjectModified = () => {
+      isMovingRef.current = false;
+      removeGuideVisualizations(canvas);
+      
+      // Clean up drop zones if used
+      if (showDropIndicators) {
+        removeDropZones();
       }
     };
-
+    
+    // Selection cleared handler
+    const handleSelectionCleared = () => {
+      activeObjectRef.current = null;
+      removeGuideVisualizations(canvas);
+      
+      // Clean up drop zones if used
+      if (showDropIndicators) {
+        removeDropZones();
+      }
+    };
+    
+    // Helper to remove drop zones
+    const removeDropZones = () => {
+      canvas.getObjects().filter(obj => 
+        obj.data?.type === 'dropZone'
+      ).forEach(obj => canvas.remove(obj));
+      dropZonesRef.current = [];
+    };
+    
+    // Add event listeners
     canvas.on('object:moving', handleObjectMoving);
-
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('selection:cleared', handleSelectionCleared);
+    
+    // Cleanup function
     return () => {
       canvas.off('object:moving', handleObjectMoving);
-    };
-  }, [canvas, enabled, snapToGrid, gridSize, showSmartGuides, alignmentGuides, onObjectMove]);
-
-  // Generate alignment guides for an object
-  const generateAlignmentGuides = useCallback((activeObj: fabric.Object) => {
-    if (!canvas) return;
-
-    const guides: AlignmentGuide[] = [];
-    const allObjects = canvas.getObjects().filter(obj => obj !== activeObj && !obj.data?.isGuide);
-
-    // Get active object bounds
-    const activeBounds = {
-      left: activeObj.left!,
-      top: activeObj.top!,
-      right: activeObj.left! + (activeObj.width! * (activeObj.scaleX || 1)),
-      bottom: activeObj.top! + (activeObj.height! * (activeObj.scaleY || 1)),
-      centerX: activeObj.left! + (activeObj.width! * (activeObj.scaleX || 1) / 2),
-      centerY: activeObj.top! + (activeObj.height! * (activeObj.scaleY || 1) / 2),
-      width: activeObj.width! * (activeObj.scaleX || 1),
-      height: activeObj.height! * (activeObj.scaleY || 1)
-    };
-
-    // Canvas center guides
-    const canvasCenter = {
-      x: canvas.width! / 2,
-      y: canvas.height! / 2
-    };
-
-    guides.push({
-      position: canvasCenter.x,
-      orientation: 'vertical',
-      type: 'center',
-      strength: 3,
-      label: 'Canvas center X'
-    });
-
-    guides.push({
-      position: canvasCenter.y,
-      orientation: 'horizontal',
-      type: 'center',
-      strength: 3,
-      label: 'Canvas center Y'
-    });
-
-    // Process each object to create alignment guides
-    allObjects.forEach(obj => {
-      // Get object bounds
-      const bounds = {
-        left: obj.left!,
-        top: obj.top!,
-        right: obj.left! + (obj.width! * (obj.scaleX || 1)),
-        bottom: obj.top! + (obj.height! * (obj.scaleY || 1)),
-        centerX: obj.left! + (obj.width! * (obj.scaleX || 1) / 2),
-        centerY: obj.top! + (obj.height! * (obj.scaleY || 1) / 2)
-      };
-
-      // Vertical guides - left edges
-      guides.push({
-        position: bounds.left,
-        orientation: 'vertical',
-        type: 'edge',
-        strength: 2,
-        label: `Left edge (${obj.data?.name || 'Object'})`
-      });
-
-      // Vertical guides - right edges
-      guides.push({
-        position: bounds.right,
-        orientation: 'vertical',
-        type: 'edge',
-        strength: 2,
-        label: `Right edge (${obj.data?.name || 'Object'})`
-      });
-
-      // Vertical guides - center
-      guides.push({
-        position: bounds.centerX,
-        orientation: 'vertical',
-        type: 'center',
-        strength: 3,
-        label: `Center X (${obj.data?.name || 'Object'})`
-      });
-
-      // Horizontal guides - top edges
-      guides.push({
-        position: bounds.top,
-        orientation: 'horizontal',
-        type: 'edge',
-        strength: 2,
-        label: `Top edge (${obj.data?.name || 'Object'})`
-      });
-
-      // Horizontal guides - bottom edges
-      guides.push({
-        position: bounds.bottom,
-        orientation: 'horizontal',
-        type: 'edge',
-        strength: 2,
-        label: `Bottom edge (${obj.data?.name || 'Object'})`
-      });
-
-      // Horizontal guides - center
-      guides.push({
-        position: bounds.centerY,
-        orientation: 'horizontal',
-        type: 'center',
-        strength: 3,
-        label: `Center Y (${obj.data?.name || 'Object'})`
-      });
-
-      // Additional distribution guides
-      guides.push({
-        position: bounds.top - activeBounds.height,
-        orientation: 'horizontal',
-        type: 'distribution',
-        strength: 1,
-        label: `Equal spacing above (${obj.data?.name || 'Object'})`
-      });
-
-      guides.push({
-        position: bounds.bottom + activeBounds.height,
-        orientation: 'horizontal',
-        type: 'distribution',
-        strength: 1,
-        label: `Equal spacing below (${obj.data?.name || 'Object'})`
-      });
-    });
-
-    // Grid guides
-    if (gridSize) {
-      const canvasWidth = canvas.width || 1000;
-      const canvasHeight = canvas.height || 800;
-
-      for (let x = 0; x < canvasWidth; x += gridSize) {
-        guides.push({
-          position: x,
-          orientation: 'vertical',
-          type: 'grid',
-          strength: 1,
-          label: `Grid ${x}px`
-        });
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('selection:cleared', handleSelectionCleared);
+      removeGuideVisualizations(canvas);
+      
+      if (showDropIndicators) {
+        removeDropZones();
       }
-
-      for (let y = 0; y < canvasHeight; y += gridSize) {
-        guides.push({
-          position: y,
-          orientation: 'horizontal',
-          type: 'grid',
-          strength: 1,
-          label: `Grid ${y}px`
-        });
-      }
-    }
-
-    setAlignmentGuides(guides);
-  }, [canvas, gridSize]);
-
-  // Render guide lines on canvas
+    };
+  }, [
+    canvas, 
+    enabled, 
+    gridConfig.snapToGrid, 
+    gridConfig.size, 
+    snapThreshold,
+    showEdgeGuides,
+    showCenterGuides,
+    showDistributionGuides,
+    showDropIndicators,
+    guideColor,
+    dropZoneColor
+  ]);
+  
+  // Generate drop zone indicators
   useEffect(() => {
-    if (!canvas || !showSmartGuides || !activeGuide) return;
-
-    // Remove existing guide lines
-    const existingGuides = canvas.getObjects().filter(obj => obj.data?.isGuide);
-    existingGuides.forEach(guide => canvas.remove(guide));
-
-    // Create guide line
-    const guideLine = new fabric.Line(
-      activeGuide.orientation === 'vertical'
-        ? [activeGuide.position, 0, activeGuide.position, canvas.height!]
-        : [0, activeGuide.position, canvas.width!, activeGuide.position],
-      {
-        stroke: 'rgba(0, 120, 255, 0.8)',
-        strokeWidth: 1,
-        strokeDashArray: [5, 5],
-        selectable: false,
-        evented: false,
-        data: { isGuide: true }
-      }
-    );
-
-    // Add guide label if available
-    if (activeGuide.label) {
-      const labelText = new fabric.Text(activeGuide.label, {
-        left: activeGuide.orientation === 'vertical' ? activeGuide.position + 5 : 10,
-        top: activeGuide.orientation === 'vertical' ? 10 : activeGuide.position + 5,
-        fontSize: 12,
-        fill: 'rgba(0, 120, 255, 1)',
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        padding: 3,
-        selectable: false,
-        evented: false,
-        data: { isGuide: true }
+    if (!canvas || !enabled || !showDropIndicators) return;
+    
+    // Generate drop zones based on other objects
+    const generateDropZones = () => {
+      // Skip if no active object
+      const activeObj = activeObjectRef.current;
+      if (!activeObj || !isMovingRef.current) return;
+      
+      // Get all objects except the active one and grid/guides
+      const otherObjects = canvas.getObjects().filter(obj => {
+        // Skip the active object itself
+        if (obj === activeObj) return false;
+        
+        // Skip grid lines and guides
+        if (obj.data?.type === 'grid' || obj.data?.type === 'alignmentGuide' || obj.data?.type === 'dropZone') return false;
+        
+        // Include only visible objects
+        return obj.visible !== false;
       });
-
-      canvas.add(labelText);
-    }
-
-    canvas.add(guideLine);
-    canvas.renderAll();
-
-    return () => {
-      // Cleanup function to remove guide line when component unmounts or guide changes
-      if (canvas) {
-        const guides = canvas.getObjects().filter(obj => obj.data?.isGuide);
-        guides.forEach(guide => canvas.remove(guide));
-        canvas.renderAll();
-      }
+      
+      // Remove existing drop zones
+      removeDropZones();
+      
+      // Create new drop zones
+      const dropZones: DropZoneIndicator[] = [];
+      
+      // Top drop zones
+      otherObjects.forEach(obj => {
+        const objLeft = obj.left || 0;
+        const objTop = obj.top || 0;
+        const objWidth = (obj.width || 0) * (obj.scaleX || 1);
+        const objHeight = (obj.height || 0) * (obj.scaleY || 1);
+        
+        // Top drop zone
+        const topZone: DropZoneIndicator = {
+          id: `dropzone-${obj.data?.id || ''}-top`,
+          type: 'dropzone',
+          position: { x: objLeft, y: objTop - (activeObj.height || 0) * (activeObj.scaleY || 1) },
+          size: { width: objWidth, height: (activeObj.height || 0) * (activeObj.scaleY || 1) }
+        };
+        
+        dropZones.push(topZone);
+        
+        // Right drop zone
+        const rightZone: DropZoneIndicator = {
+          id: `dropzone-${obj.data?.id || ''}-right`,
+          type: 'dropzone',
+          position: { x: objLeft + objWidth, y: objTop },
+          size: { width: (activeObj.width || 0) * (activeObj.scaleX || 1), height: objHeight }
+        };
+        
+        dropZones.push(rightZone);
+        
+        // Bottom drop zone
+        const bottomZone: DropZoneIndicator = {
+          id: `dropzone-${obj.data?.id || ''}-bottom`,
+          type: 'dropzone',
+          position: { x: objLeft, y: objTop + objHeight },
+          size: { width: objWidth, height: (activeObj.height || 0) * (activeObj.scaleY || 1) }
+        };
+        
+        dropZones.push(bottomZone);
+        
+        // Left drop zone
+        const leftZone: DropZoneIndicator = {
+          id: `dropzone-${obj.data?.id || ''}-left`,
+          type: 'dropzone',
+          position: { x: objLeft - (activeObj.width || 0) * (activeObj.scaleX || 1), y: objTop },
+          size: { width: (activeObj.width || 0) * (activeObj.scaleX || 1), height: objHeight }
+        };
+        
+        dropZones.push(leftZone);
+        
+        // Inside zone for container objects
+        if (obj.data?.isContainer) {
+          const insideZone: DropZoneIndicator = {
+            id: `dropzone-${obj.data?.id || ''}-inside`,
+            type: 'dropzone',
+            position: { x: objLeft, y: objTop },
+            size: { width: objWidth, height: objHeight }
+          };
+          
+          dropZones.push(insideZone);
+        }
+      });
+      
+      // Visualize drop zones
+      dropZones.forEach(zone => {
+        const rect = new fabric.Rect({
+          left: zone.position.x,
+          top: zone.position.y,
+          width: zone.size.width,
+          height: zone.size.height,
+          fill: dropZoneColor,
+          stroke: 'rgba(100, 200, 100, 0.5)',
+          strokeWidth: 1,
+          strokeDashArray: [5, 5],
+          selectable: false,
+          evented: false,
+          data: { 
+            type: 'dropZone',
+            id: zone.id
+          }
+        });
+        
+        canvas.add(rect);
+        rect.sendToBack();
+      });
+      
+      dropZonesRef.current = dropZones;
     };
-  }, [canvas, showSmartGuides, activeGuide]);
-
-  return null; // This is a behavior-only component with no UI
+    
+    // Helper to remove drop zones
+    const removeDropZones = () => {
+      canvas.getObjects().filter(obj => 
+        obj.data?.type === 'dropZone'
+      ).forEach(obj => canvas.remove(obj));
+      dropZonesRef.current = [];
+    };
+    
+    // Refresh drop zones periodically during drag
+    const intervalId = setInterval(() => {
+      if (isMovingRef.current && activeObjectRef.current) {
+        generateDropZones();
+      }
+    }, 100);
+    
+    return () => {
+      clearInterval(intervalId);
+      removeDropZones();
+    };
+  }, [
+    canvas, 
+    enabled, 
+    showDropIndicators, 
+    dropZoneColor
+  ]);
+  
+  // Component doesn't render anything
+  return null;
 };
 
 export default DragEnhancementHandler;

@@ -13,6 +13,13 @@ export interface WireframeCanvasConfig {
   gridType: 'lines' | 'dots' | 'columns';
   snapTolerance: number;
   showSmartGuides: boolean;
+  gridColor?: string;
+  showRulers?: boolean;
+  rulerSize?: number;
+  rulerColor?: string;
+  rulerMarkings?: boolean;
+  historyEnabled?: boolean;
+  maxHistorySteps?: number;
   [key: string]: any;
 }
 
@@ -72,4 +79,29 @@ export interface GuideVisualization {
   color: string;
   thickness: number;
   opacity: number;
+}
+
+export interface GridConfiguration {
+  visible: boolean;
+  size: number;
+  snapToGrid: boolean;
+  type: 'lines' | 'dots' | 'columns';
+  columns: number;
+  gutterWidth: number;
+  marginWidth: number;
+  snapThreshold: number;
+  showGuides: boolean;
+  guideColor: string;
+  showRulers: boolean;
+  rulerSize: number;
+}
+
+export interface GridVisualSettings {
+  color: string;
+  opacity: number;
+  lineWidth: number;
+  showNumbers: boolean;
+  fontFamily: string;
+  fontSize: number;
+  fontColor: string;
 }

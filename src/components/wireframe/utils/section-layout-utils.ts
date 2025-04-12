@@ -2,195 +2,244 @@
 import { AlignmentGuide } from './types';
 
 /**
- * Calculate bounds for all sections to help with alignment
+ * Calculate the bounding box for multiple sections
  */
 export function calculateSectionsBounds(sections: any[]): {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
   width: number;
   height: number;
-  center: { x: number; y: number };
 } {
-  if (!sections || !sections.length) {
+  if (!sections || sections.length === 0) {
     return {
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
+      minX: 0,
+      minY: 0,
+      maxX: 0,
+      maxY: 0,
       width: 0,
-      height: 0,
-      center: { x: 0, y: 0 }
+      height: 0
     };
   }
   
-  // Initialize bounds with first section
-  let left = sections[0].position?.x || 0;
-  let right = (sections[0].position?.x || 0) + (sections[0].dimensions?.width || 0);
-  let top = sections[0].position?.y || 0;
-  let bottom = (sections[0].position?.y || 0) + (sections[0].dimensions?.height || 0);
+  // Initialize with first section
+  let minX = sections[0].position?.x || 0;
+  let minY = sections[0].position?.y || 0;
+  let maxX = minX + (sections[0].dimensions?.width || 0);
+  let maxY = minY + (sections[0].dimensions?.height || 0);
   
-  // Find min and max boundaries
-  sections.forEach((section) => {
-    const sectionLeft = section.position?.x || 0;
-    const sectionRight = (section.position?.x || 0) + (section.dimensions?.width || 0);
-    const sectionTop = section.position?.y || 0;
-    const sectionBottom = (section.position?.y || 0) + (section.dimensions?.height || 0);
+  // Calculate min and max for all sections
+  sections.forEach(section => {
+    const x = section.position?.x || 0;
+    const y = section.position?.y || 0;
+    const width = section.dimensions?.width || 0;
+    const height = section.dimensions?.height || 0;
     
-    left = Math.min(left, sectionLeft);
-    right = Math.max(right, sectionRight);
-    top = Math.min(top, sectionTop);
-    bottom = Math.max(bottom, sectionBottom);
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + width);
+    maxY = Math.max(maxY, y + height);
   });
   
-  // Calculate width, height, and center
-  const width = right - left;
-  const height = bottom - top;
-  const center = {
-    x: left + width / 2,
-    y: top + height / 2
-  };
-  
   return {
-    left,
-    right,
-    top,
-    bottom,
-    width,
-    height,
-    center
+    minX,
+    minY,
+    maxX,
+    maxY,
+    width: maxX - minX,
+    height: maxY - minY
   };
 }
 
 /**
- * Find alignment guides for a section being moved
+ * Find alignment guides between sections
  */
 export function findAlignmentGuides(
+  sections: any[],
   activeSection: any,
-  allSections: any[],
   threshold: number = 10
 ): AlignmentGuide[] {
-  if (!activeSection || !allSections || !allSections.length) {
-    return [];
-  }
+  if (!sections || sections.length < 2 || !activeSection) return [];
   
   const guides: AlignmentGuide[] = [];
-  const otherSections = allSections.filter(section => section.id !== activeSection.id);
+  const activeId = activeSection.id;
   
-  const activeLeft = activeSection.position?.x || 0;
-  const activeRight = activeLeft + (activeSection.dimensions?.width || 0);
-  const activeTop = activeSection.position?.y || 0;
-  const activeBottom = activeTop + (activeSection.dimensions?.height || 0);
+  // Get active section bounds
+  const activeX = activeSection.position?.x || 0;
+  const activeY = activeSection.position?.y || 0;
   const activeWidth = activeSection.dimensions?.width || 0;
   const activeHeight = activeSection.dimensions?.height || 0;
-  const activeCenterX = activeLeft + activeWidth / 2;
-  const activeCenterY = activeTop + activeHeight / 2;
-  
-  // Global page center and edges
-  const globalBounds = calculateSectionsBounds(allSections);
-  
-  // Add guides for centering within the page
-  const pageCenterX = globalBounds.center.x;
-  if (Math.abs(activeCenterX - pageCenterX) < threshold) {
-    guides.push({
-      position: pageCenterX,
-      orientation: 'vertical',
-      type: 'center',
-      label: 'Page Center',
-      strength: 3 // High priority
-    });
-  }
+  const activeRight = activeX + activeWidth;
+  const activeBottom = activeY + activeHeight;
+  const activeCenterX = activeX + activeWidth / 2;
+  const activeCenterY = activeY + activeHeight / 2;
   
   // Check alignment with other sections
-  otherSections.forEach(section => {
-    const sectionLeft = section.position?.x || 0;
-    const sectionRight = sectionLeft + (section.dimensions?.width || 0);
-    const sectionTop = section.position?.y || 0;
-    const sectionBottom = sectionTop + (section.dimensions?.height || 0);
-    const sectionWidth = section.dimensions?.width || 0;
-    const sectionHeight = section.dimensions?.height || 0;
-    const sectionCenterX = sectionLeft + sectionWidth / 2;
-    const sectionCenterY = sectionTop + sectionHeight / 2;
+  sections.forEach(section => {
+    // Skip the active section itself
+    if (section.id === activeId) return;
+    
+    const x = section.position?.x || 0;
+    const y = section.position?.y || 0;
+    const width = section.dimensions?.width || 0;
+    const height = section.dimensions?.height || 0;
+    const right = x + width;
+    const bottom = y + height;
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    
+    // Check horizontal alignments (vertical guides)
     
     // Left edge alignment
-    if (Math.abs(activeLeft - sectionLeft) < threshold) {
+    if (Math.abs(activeX - x) <= threshold) {
       guides.push({
-        position: sectionLeft,
         orientation: 'vertical',
+        position: x,
         type: 'edge',
-        label: `Left edge (${section.name})`,
-        strength: 2
+        strength: 10,
+        label: 'Left Edge'
       });
     }
     
     // Right edge alignment
-    if (Math.abs(activeRight - sectionRight) < threshold) {
+    if (Math.abs(activeRight - right) <= threshold) {
       guides.push({
-        position: sectionRight,
         orientation: 'vertical',
+        position: right,
         type: 'edge',
-        label: `Right edge (${section.name})`,
-        strength: 2
+        strength: 10,
+        label: 'Right Edge'
       });
     }
     
-    // Center X alignment
-    if (Math.abs(activeCenterX - sectionCenterX) < threshold) {
+    // Center alignment
+    if (Math.abs(activeCenterX - centerX) <= threshold) {
       guides.push({
-        position: sectionCenterX,
         orientation: 'vertical',
+        position: centerX,
         type: 'center',
-        label: `Center (${section.name})`,
-        strength: 3
+        strength: 15,
+        label: 'Center'
       });
     }
+    
+    // Left to right alignment
+    if (Math.abs(activeX - right) <= threshold) {
+      guides.push({
+        orientation: 'vertical',
+        position: right,
+        type: 'edge',
+        strength: 8,
+        label: 'Left to Right'
+      });
+    }
+    
+    // Right to left alignment
+    if (Math.abs(activeRight - x) <= threshold) {
+      guides.push({
+        orientation: 'vertical',
+        position: x,
+        type: 'edge',
+        strength: 8,
+        label: 'Right to Left'
+      });
+    }
+    
+    // Check vertical alignments (horizontal guides)
     
     // Top edge alignment
-    if (Math.abs(activeTop - sectionTop) < threshold) {
+    if (Math.abs(activeY - y) <= threshold) {
       guides.push({
-        position: sectionTop,
         orientation: 'horizontal',
+        position: y,
         type: 'edge',
-        label: `Top edge (${section.name})`,
-        strength: 2
+        strength: 10,
+        label: 'Top Edge'
       });
     }
     
     // Bottom edge alignment
-    if (Math.abs(activeBottom - sectionBottom) < threshold) {
+    if (Math.abs(activeBottom - bottom) <= threshold) {
       guides.push({
-        position: sectionBottom,
         orientation: 'horizontal',
+        position: bottom,
         type: 'edge',
-        label: `Bottom edge (${section.name})`,
-        strength: 2
+        strength: 10,
+        label: 'Bottom Edge'
       });
     }
     
-    // Center Y alignment
-    if (Math.abs(activeCenterY - sectionCenterY) < threshold) {
+    // Middle alignment
+    if (Math.abs(activeCenterY - centerY) <= threshold) {
       guides.push({
-        position: sectionCenterY,
         orientation: 'horizontal',
+        position: centerY,
         type: 'center',
-        label: `Middle (${section.name})`,
-        strength: 3
+        strength: 15,
+        label: 'Middle'
       });
     }
     
-    // Equal spacing (more advanced - vertical)
-    if (Math.abs(activeTop - sectionBottom) < threshold) {
+    // Top to bottom alignment
+    if (Math.abs(activeY - bottom) <= threshold) {
       guides.push({
-        position: sectionBottom,
         orientation: 'horizontal',
-        type: 'distribution',
-        label: `Snap to (${section.name}) bottom`,
-        strength: 1
+        position: bottom,
+        type: 'edge',
+        strength: 8,
+        label: 'Top to Bottom'
+      });
+    }
+    
+    // Bottom to top alignment
+    if (Math.abs(activeBottom - y) <= threshold) {
+      guides.push({
+        orientation: 'horizontal',
+        position: y,
+        type: 'edge',
+        strength: 8,
+        label: 'Bottom to Top'
       });
     }
   });
   
-  // Sort by strength
-  return guides.sort((a, b) => (b.strength || 0) - (a.strength || 0));
+  // Add equal spacing guides if there are more than 3 sections
+  if (sections.length >= 3) {
+    // Calculate distribution guides for equal spacing
+    const horizontalSections = [...sections].sort((a, b) => {
+      return (a.position?.y || 0) - (b.position?.y || 0);
+    });
+    
+    const verticalSections = [...sections].sort((a, b) => {
+      return (a.position?.x || 0) - (b.position?.x || 0);
+    });
+    
+    // Generate horizontal distribution guides
+    for (let i = 1; i < horizontalSections.length; i++) {
+      const prev = horizontalSections[i - 1];
+      const current = horizontalSections[i];
+      
+      // Calculate spacing between sections
+      const prevBottom = (prev.position?.y || 0) + (prev.dimensions?.height || 0);
+      const currentTop = current.position?.y || 0;
+      const spacing = currentTop - prevBottom;
+      
+      if (spacing > 0) {
+        // Check if active section's bottom edge would create equal spacing
+        const potentialSpacing = activeY - prevBottom;
+        if (Math.abs(potentialSpacing - spacing) <= threshold) {
+          guides.push({
+            orientation: 'horizontal',
+            position: prevBottom + spacing,
+            type: 'distribution', // This is now valid in the updated AlignmentGuide type
+            strength: 5,
+            label: 'Equal Spacing'
+          });
+        }
+      }
+    }
+  }
+  
+  return guides;
 }

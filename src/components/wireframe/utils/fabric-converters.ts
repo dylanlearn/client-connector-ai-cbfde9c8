@@ -184,7 +184,7 @@ export function renderSectionToFabric(
   canvas: fabric.Canvas, 
   section: any,
   options: SectionRenderingOptions
-) {
+): fabric.Object | null {
   if (!canvas || !section) return null;
   
   // Use default options or provided values
@@ -207,8 +207,9 @@ export function renderSectionToFabric(
     width: section.dimensions?.width || width,
     height: section.dimensions?.height || height,
     fill: section.backgroundColor || (darkMode ? '#333' : '#eee'),
-    stroke: darkMode ? '#555' : '#ccc',
-    strokeWidth: 1,
+    stroke: showBorders ? (darkMode ? '#555' : '#ccc') : 'transparent',
+    strokeWidth: showBorders ? 1 : 0,
+    strokeDashArray: [5, 5],
     selectable: interactive,
     evented: interactive,
     hasControls: interactive,
@@ -216,11 +217,49 @@ export function renderSectionToFabric(
     data: {
       id: section.id,
       type: 'section',
-      sectionType: section.sectionType
+      sectionType: section.sectionType,
+      name: section.name || 'Section'
     }
   });
   
   canvas.add(rect);
+  
+  // Add a label for the section
+  if (section.name) {
+    const label = new fabric.Text(section.name, {
+      left: (section.position?.x || 50) + 10,
+      top: (section.position?.y || 50) + 10,
+      fontSize: 14,
+      fontFamily: 'Arial',
+      fill: darkMode ? '#ddd' : '#333',
+      selectable: false,
+      evented: interactive,
+    });
+    
+    canvas.add(label);
+    
+    // Group the label with the section (optional)
+    const group = new fabric.Group([rect, label], {
+      left: section.position?.x || 50,
+      top: section.position?.y || 50,
+      selectable: interactive,
+      evented: interactive,
+      hasControls: interactive,
+      hasBorders: interactive,
+      data: {
+        id: section.id,
+        type: 'section',
+        sectionType: section.sectionType,
+        name: section.name || 'Section'
+      }
+    });
+    
+    canvas.remove(rect);
+    canvas.remove(label);
+    canvas.add(group);
+    
+    return group;
+  }
   
   return rect;
 }
@@ -233,4 +272,119 @@ export function canvasToDataURI(canvas: fabric.Canvas, format: string = 'png', q
     format: format as 'png' | 'jpeg' | 'svg',
     quality: quality
   });
+}
+
+/**
+ * Creates a grid visual overlay on a section
+ */
+export function addGridToSection(
+  canvas: fabric.Canvas,
+  section: fabric.Object,
+  gridSize: number = 10,
+  gridType: 'lines' | 'dots' | 'columns' = 'lines'
+): void {
+  if (!canvas || !section) return;
+  
+  // Get section bounds
+  const left = section.left || 0;
+  const top = section.top || 0;
+  const width = (section.width || 0) * (section.scaleX || 1);
+  const height = (section.height || 0) * (section.scaleY || 1);
+  
+  // Create grid lines
+  const gridLines: fabric.Object[] = [];
+  
+  // Using a group to contain all grid elements
+  const gridGroup = new fabric.Group([], {
+    left,
+    top,
+    width,
+    height,
+    selectable: false,
+    evented: false,
+    data: {
+      type: 'sectionGrid',
+      sectionId: section.data?.id
+    }
+  });
+  
+  if (gridType === 'lines' || gridType === 'dots') {
+    // Horizontal lines
+    for (let y = 0; y <= height; y += gridSize) {
+      if (gridType === 'lines') {
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: 'rgba(200, 200, 200, 0.5)',
+          selectable: false,
+          evented: false,
+          strokeWidth: 0.5,
+          left: 0,
+          top: 0
+        });
+        gridLines.push(line);
+      } else {
+        // Dots at intersections
+        for (let x = 0; x <= width; x += gridSize) {
+          const dot = new fabric.Circle({
+            left: x,
+            top: y,
+            radius: 1,
+            fill: 'rgba(200, 200, 200, 0.8)',
+            selectable: false,
+            evented: false,
+            originX: 'center',
+            originY: 'center'
+          });
+          gridLines.push(dot);
+        }
+      }
+    }
+    
+    // Vertical lines (only for line grid)
+    if (gridType === 'lines') {
+      for (let x = 0; x <= width; x += gridSize) {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: 'rgba(200, 200, 200, 0.5)',
+          selectable: false,
+          evented: false,
+          strokeWidth: 0.5,
+          left: 0,
+          top: 0
+        });
+        gridLines.push(line);
+      }
+    }
+  } else if (gridType === 'columns') {
+    // Column grid
+    const columns = 12;
+    const gutterWidth = 10;
+    const contentWidth = width - (gutterWidth * (columns - 1));
+    const columnWidth = contentWidth / columns;
+    
+    let currentX = 0;
+    for (let i = 0; i < columns; i++) {
+      // Column
+      const column = new fabric.Rect({
+        left: currentX,
+        top: 0,
+        width: columnWidth,
+        height,
+        fill: 'rgba(200, 200, 255, 0.1)',
+        selectable: false,
+        evented: false,
+        stroke: 'rgba(180, 180, 200, 0.5)',
+        strokeWidth: 0.5,
+        strokeDashArray: [2, 2]
+      });
+      gridLines.push(column);
+      
+      currentX += columnWidth + gutterWidth;
+    }
+  }
+  
+  // Add lines to group
+  gridGroup.addWithUpdate(gridLines);
+  
+  // Add to canvas
+  canvas.add(gridGroup);
+  gridGroup.moveToFront();
 }

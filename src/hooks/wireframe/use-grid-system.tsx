@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  GridConfiguration, 
+  GridConfiguration,
   DEFAULT_GRID_CONFIG, 
   updateGridOnCanvas,
   removeGridFromCanvas,
@@ -12,6 +12,7 @@ import {
   showAlignmentGuides,
   removeAlignmentGuides
 } from '@/components/wireframe/utils/grid-system';
+import { GuideHandler } from '@/components/wireframe/utils/alignment-guides';
 
 interface UseGridSystemProps {
   canvas: fabric.Canvas | null;
@@ -31,6 +32,27 @@ export function useGridSystem({
     ...DEFAULT_GRID_CONFIG,
     ...initialConfig
   });
+  const [guideHandler, setGuideHandler] = useState<GuideHandler | null>(null);
+
+  // Initialize guide handler when canvas is available
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const handler = new GuideHandler(canvas, {
+      enabled: true,
+      threshold: gridConfig.snapThreshold,
+      showEdgeGuides: true,
+      showCenterGuides: true,
+      showDistributionGuides: false,
+      guideColor: gridConfig.guideColor
+    });
+    
+    setGuideHandler(handler);
+    
+    return () => {
+      handler.dispose();
+    };
+  }, [canvas, gridConfig.snapThreshold, gridConfig.guideColor]);
 
   // Toggle grid visibility
   const toggleGridVisibility = useCallback(() => {
@@ -57,6 +79,11 @@ export function useGridSystem({
     setGridConfig(prev => {
       const updated = { ...prev, snapToGrid: !prev.snapToGrid };
       
+      // Update guide handler if available
+      if (guideHandler) {
+        guideHandler.setEnabled(updated.snapToGrid);
+      }
+      
       toast({
         title: updated.snapToGrid ? 'Snap to Grid Enabled' : 'Snap to Grid Disabled',
         description: updated.snapToGrid 
@@ -66,7 +93,7 @@ export function useGridSystem({
       
       return updated;
     });
-  }, [toast]);
+  }, [guideHandler, toast]);
   
   // Update grid size
   const setGridSize = useCallback((size: number) => {
@@ -122,99 +149,81 @@ export function useGridSystem({
     });
   }, [canvas, canvasWidth, canvasHeight, toast]);
   
-  // Setup object moving event listeners for snapping
-  useEffect(() => {
-    if (!canvas || !gridConfig.snapToGrid) return;
-    
-    const handleObjectMoving = (e: fabric.IEvent) => {
-      const obj = e.target;
-      if (!obj) return;
+  // Update snap threshold
+  const setSnapThreshold = useCallback((threshold: number) => {
+    setGridConfig(prev => {
+      const updated = { ...prev, snapThreshold: threshold };
       
-      // Don't snap grid or guide objects
-      if (obj.data?.type === 'grid' || obj.data?.type === 'alignmentGuide') return;
-      
-      const allObjects = canvas.getObjects().filter(o => o !== obj && !o.data?.type?.includes('grid'));
-      
-      // Calculate snap positions
-      const snapPositions = calculateSnapPositions(obj, allObjects, gridConfig, canvasWidth, canvasHeight);
-      
-      // Get object bounds
-      const objBounds = {
-        left: obj.left || 0,
-        top: obj.top || 0,
-        right: (obj.left || 0) + (obj.width || 0) * (obj.scaleX || 1),
-        bottom: (obj.top || 0) + (obj.height || 0) * (obj.scaleY || 1),
-        centerX: (obj.left || 0) + (obj.width || 0) * (obj.scaleX || 1) / 2,
-        centerY: (obj.top || 0) + (obj.height || 0) * (obj.scaleY || 1) / 2
-      };
-      
-      // Track which snap positions were used (to show guides)
-      const activeSnaps = {
-        horizontal: [] as number[],
-        vertical: [] as number[]
-      };
-      
-      // Check horizontal snapping (top, center, bottom)
-      const snapTop = findClosestSnapPosition(objBounds.top, snapPositions.horizontal, gridConfig.snapThreshold);
-      const snapCenterY = findClosestSnapPosition(objBounds.centerY, snapPositions.horizontal, gridConfig.snapThreshold);
-      const snapBottom = findClosestSnapPosition(objBounds.bottom, snapPositions.horizontal, gridConfig.snapThreshold);
-      
-      // Check vertical snapping (left, center, right)
-      const snapLeft = findClosestSnapPosition(objBounds.left, snapPositions.vertical, gridConfig.snapThreshold);
-      const snapCenterX = findClosestSnapPosition(objBounds.centerX, snapPositions.vertical, gridConfig.snapThreshold);
-      const snapRight = findClosestSnapPosition(objBounds.right, snapPositions.vertical, gridConfig.snapThreshold);
-      
-      // Apply horizontal snapping
-      if (snapTop !== null) {
-        obj.set('top', snapTop);
-        activeSnaps.horizontal.push(snapTop);
-      } else if (snapCenterY !== null) {
-        obj.set('top', snapCenterY - (obj.height || 0) * (obj.scaleY || 1) / 2);
-        activeSnaps.horizontal.push(snapCenterY);
-      } else if (snapBottom !== null) {
-        obj.set('top', snapBottom - (obj.height || 0) * (obj.scaleY || 1));
-        activeSnaps.horizontal.push(snapBottom);
+      // Update guide handler if available
+      if (guideHandler) {
+        guideHandler.setThreshold(threshold);
       }
       
-      // Apply vertical snapping
-      if (snapLeft !== null) {
-        obj.set('left', snapLeft);
-        activeSnaps.vertical.push(snapLeft);
-      } else if (snapCenterX !== null) {
-        obj.set('left', snapCenterX - (obj.width || 0) * (obj.scaleX || 1) / 2);
-        activeSnaps.vertical.push(snapCenterX);
-      } else if (snapRight !== null) {
-        obj.set('left', snapRight - (obj.width || 0) * (obj.scaleX || 1));
-        activeSnaps.vertical.push(snapRight);
+      toast({
+        title: 'Snap Threshold Updated',
+        description: `Snap threshold set to ${threshold}px.`
+      });
+      
+      return updated;
+    });
+  }, [guideHandler, toast]);
+  
+  // Toggle smart guides
+  const toggleSmartGuides = useCallback(() => {
+    setGridConfig(prev => {
+      const updated = { ...prev, showGuides: !prev.showGuides };
+      
+      // Update guide handler if available
+      if (guideHandler) {
+        guideHandler.setOptions({
+          enabled: updated.showGuides && updated.snapToGrid
+        });
       }
       
-      // Show alignment guides if enabled
-      if (gridConfig.showGuides && (activeSnaps.horizontal.length > 0 || activeSnaps.vertical.length > 0)) {
-        showAlignmentGuides(canvas, activeSnaps, gridConfig.guideColor);
-      } else {
-        removeAlignmentGuides(canvas);
+      toast({
+        title: updated.showGuides ? 'Smart Guides Enabled' : 'Smart Guides Disabled',
+        description: updated.showGuides 
+          ? 'Alignment guides will appear when moving elements.' 
+          : 'Alignment guides are now hidden.'
+      });
+      
+      return updated;
+    });
+  }, [guideHandler, toast]);
+  
+  // Toggle rulers
+  const toggleRulers = useCallback(() => {
+    setGridConfig(prev => {
+      const updated = { ...prev, showRulers: !prev.showRulers };
+      
+      if (canvas) {
+        updateGridOnCanvas(canvas, updated, canvasWidth, canvasHeight);
       }
       
-      // Force update
-      canvas.requestRenderAll();
-    };
-    
-    const handleObjectMovingEnd = () => {
-      if (gridConfig.showGuides) {
-        removeAlignmentGuides(canvas);
+      toast({
+        title: updated.showRulers ? 'Rulers Enabled' : 'Rulers Disabled',
+        description: updated.showRulers 
+          ? 'Rulers are now visible.' 
+          : 'Rulers are now hidden.'
+      });
+      
+      return updated;
+    });
+  }, [canvas, canvasWidth, canvasHeight, toast]);
+  
+  // Update guide color
+  const setGuideColor = useCallback((color: string) => {
+    setGridConfig(prev => {
+      const updated = { ...prev, guideColor: color };
+      
+      // Update guide handler if available
+      if (guideHandler) {
+        guideHandler.setOptions({ guideColor: color });
       }
-    };
-    
-    // Add event listeners
-    canvas.on('object:moving', handleObjectMoving);
-    canvas.on('object:modified', handleObjectMovingEnd);
-    
-    // Cleanup
-    return () => {
-      canvas.off('object:moving', handleObjectMoving);
-      canvas.off('object:modified', handleObjectMovingEnd);
-    };
-  }, [canvas, gridConfig, canvasWidth, canvasHeight]);
+      
+      return updated;
+    });
+  }, [guideHandler]);
   
   // Initialize grid
   useEffect(() => {
@@ -234,6 +243,10 @@ export function useGridSystem({
     setGridSize,
     setGridType,
     updateColumnSettings,
+    setSnapThreshold,
+    toggleSmartGuides,
+    toggleRulers,
+    setGuideColor,
     updateConfig: setGridConfig
   };
 }
