@@ -47,7 +47,15 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
       visible: true,
       size: 20,
       snapToGrid: true,
-      type: 'lines'
+      type: 'lines',
+      columns: 12,
+      gutterWidth: 20,
+      marginWidth: 40,
+      snapThreshold: 8,
+      showGuides: true,
+      guideColor: 'rgba(0, 120, 255, 0.75)',
+      showRulers: false,
+      rulerSize: 20
     }
   });
   
@@ -168,7 +176,7 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
         
         <div className="lg:w-1/4 space-y-4">
           <GridControl 
-            gridConfig={gridConfig as GridConfiguration}
+            gridConfig={gridConfig}
             onToggleVisibility={toggleGridVisibility}
             onToggleSnapToGrid={toggleSnapToGrid}
             onSizeChange={setGridSize}

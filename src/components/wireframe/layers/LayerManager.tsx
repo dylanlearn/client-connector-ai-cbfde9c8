@@ -1,282 +1,301 @@
 
 import React, { useState, useEffect } from 'react';
-import { fabric } from 'fabric';
-import { LayerInfo } from '@/components/wireframe/utils/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { List, Layers, Eye, EyeOff, Lock, Unlock, ArrowUp, ArrowDown, Trash2, Group } from 'lucide-react';
-import LayerItem from './LayerItem';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { LayersIcon, PlusIcon, GroupIcon, Eye, EyeOff, Lock, Unlock, Trash2, Copy } from 'lucide-react';
+import { LayerItem } from '@/components/wireframe/layers/LayerItem';
+import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { LayerInfo } from '@/components/wireframe/utils/types';
+import { getFlatLayerList, groupSelectedLayers } from '@/components/wireframe/utils/layer-utils';
+import { fabric } from 'fabric';
 
 interface LayerManagerProps {
   canvas: fabric.Canvas | null;
   selectedObjects: fabric.Object[];
   className?: string;
-  onLayerSelect?: (objectIds: string[]) => void;
 }
 
-const LayerManager: React.FC<LayerManagerProps> = ({
+export const LayerManager: React.FC<LayerManagerProps> = ({
   canvas,
-  selectedObjects,
-  className,
-  onLayerSelect
+  selectedObjects = [],
+  className
 }) => {
+  const { toast } = useToast();
   const [layers, setLayers] = useState<LayerInfo[]>([]);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   
   // Update layers when canvas or selected objects change
   useEffect(() => {
     if (!canvas) return;
     
-    // Convert canvas objects to layer info structure
-    const updateLayers = () => {
-      const objects = canvas.getObjects().filter(obj => {
-        // Ignore grid lines and guide objects
-        return !obj.data?.type?.includes('grid') && 
-               !obj.data?.type?.includes('guide') &&
-               !obj.data?.type?.includes('dropZone');
-      });
-      
-      // Get selected object IDs
-      const selectedIds = selectedObjects.map(o => o.data?.id || '');
-      
-      // Convert to layer info
-      const layerInfos: LayerInfo[] = objects.map(obj => {
-        const id = obj.data?.id || String(obj.zIndex);
-        const isSelected = selectedIds.includes(id);
-        
-        return {
-          id,
-          name: obj.data?.name || obj.data?.type || 'Object',
-          type: obj.data?.type || obj.type || 'shape',
-          zIndex: obj.zIndex || 0,
-          visible: obj.visible !== false,
-          locked: obj.lockMovementX && obj.lockMovementY,
-          selected: isSelected,
-          children: obj.data?.children?.map((child: any) => ({
-            id: child.data?.id || String(child.zIndex),
-            name: child.data?.name || child.data?.type || 'Child Object',
-            type: child.data?.type || child.type || 'shape',
-            zIndex: child.zIndex || 0,
-            visible: child.visible !== false,
-            locked: child.lockMovementX && child.lockMovementY,
-            selected: false
-          })) || []
-        };
-      }).sort((a, b) => b.zIndex - a.zIndex);
-      
-      setLayers(layerInfos);
-    };
-    
-    // Initial update
-    updateLayers();
+    updateLayersList();
     
     // Set up event listeners for canvas changes
-    const handleObjectAdded = () => updateLayers();
-    const handleObjectRemoved = () => updateLayers();
-    const handleObjectModified = () => updateLayers();
-    const handleSelectionCreated = () => updateLayers();
-    const handleSelectionUpdated = () => updateLayers();
-    const handleSelectionCleared = () => updateLayers();
-    
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
-    canvas.on('object:modified', handleObjectModified);
-    canvas.on('selection:created', handleSelectionCreated);
-    canvas.on('selection:updated', handleSelectionUpdated);
-    canvas.on('selection:cleared', handleSelectionCleared);
+    canvas.on('object:added', updateLayersList);
+    canvas.on('object:removed', updateLayersList);
+    canvas.on('object:modified', updateLayersList);
+    canvas.on('selection:created', updateSelectionFromCanvas);
+    canvas.on('selection:updated', updateSelectionFromCanvas);
+    canvas.on('selection:cleared', clearLayerSelection);
     
     return () => {
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
-      canvas.off('object:modified', handleObjectModified);
-      canvas.off('selection:created', handleSelectionCreated);
-      canvas.off('selection:updated', handleSelectionUpdated);
-      canvas.off('selection:cleared', handleSelectionCleared);
+      // Clean up event listeners
+      canvas.off('object:added', updateLayersList);
+      canvas.off('object:removed', updateLayersList);
+      canvas.off('object:modified', updateLayersList);
+      canvas.off('selection:created', updateSelectionFromCanvas);
+      canvas.off('selection:updated', updateSelectionFromCanvas);
+      canvas.off('selection:cleared', clearLayerSelection);
     };
-  }, [canvas, selectedObjects]);
+  }, [canvas]);
   
-  // Handle layer selection
-  const handleLayerSelect = (id: string) => {
+  // Update selected layer IDs when selected objects change
+  useEffect(() => {
+    if (selectedObjects.length > 0) {
+      const ids = selectedObjects
+        .map(obj => obj.data?.id || String(obj.zIndex))
+        .filter(Boolean);
+      setSelectedLayerIds(ids);
+    } else {
+      setSelectedLayerIds([]);
+    }
+  }, [selectedObjects]);
+  
+  // Update the layers list from canvas
+  const updateLayersList = () => {
     if (!canvas) return;
     
-    // Find the object by ID
-    const object = canvas.getObjects().find(obj => obj.data?.id === id);
-    if (!object) return;
+    const allLayers = getFlatLayerList(canvas, selectedLayerIds);
+    setLayers(allLayers);
+  };
+  
+  // Update selection from canvas selection
+  const updateSelectionFromCanvas = () => {
+    if (!canvas) return;
     
-    // Select the object in canvas
-    canvas.discardActiveObject();
-    canvas.setActiveObject(object);
-    canvas.requestRenderAll();
+    const activeObjects = canvas.getActiveObjects();
+    const ids = activeObjects
+      .map(obj => obj.data?.id || String(obj.zIndex))
+      .filter(Boolean);
     
-    // Notify parent component if callback provided
-    if (onLayerSelect) {
-      onLayerSelect([id]);
+    setSelectedLayerIds(ids);
+  };
+  
+  // Clear layer selection
+  const clearLayerSelection = () => {
+    setSelectedLayerIds([]);
+  };
+  
+  // Handle layer selection
+  const handleSelectLayer = (layerId: string) => {
+    if (!canvas) return;
+    
+    const objects = canvas.getObjects();
+    const targetObject = objects.find(obj => obj.data?.id === layerId);
+    
+    if (targetObject) {
+      canvas.discardActiveObject();
+      canvas.setActiveObject(targetObject);
+      canvas.requestRenderAll();
+    }
+    
+    setSelectedLayerIds([layerId]);
+  };
+  
+  // Toggle layer visibility
+  const handleToggleVisibility = (layerId: string) => {
+    if (!canvas) return;
+    
+    const objects = canvas.getObjects();
+    const targetObject = objects.find(obj => obj.data?.id === layerId);
+    
+    if (targetObject) {
+      targetObject.visible = !targetObject.visible;
+      canvas.requestRenderAll();
+      
+      toast({
+        title: targetObject.visible ? 'Layer Shown' : 'Layer Hidden',
+        description: `Layer ${targetObject.data?.name || 'Unknown'} is now ${targetObject.visible ? 'visible' : 'hidden'}.`
+      });
+      
+      updateLayersList();
     }
   };
   
-  // Handle layer visibility toggle
-  const handleVisibilityToggle = (id: string) => {
+  // Toggle layer lock
+  const handleToggleLock = (layerId: string) => {
     if (!canvas) return;
     
-    // Find the object by ID
-    const object = canvas.getObjects().find(obj => obj.data?.id === id);
-    if (!object) return;
+    const objects = canvas.getObjects();
+    const targetObject = objects.find(obj => obj.data?.id === layerId);
     
-    // Toggle visibility
-    object.visible = !object.visible;
-    canvas.requestRenderAll();
-  };
-  
-  // Handle layer lock toggle
-  const handleLockToggle = (id: string) => {
-    if (!canvas) return;
-    
-    // Find the object by ID
-    const object = canvas.getObjects().find(obj => obj.data?.id === id);
-    if (!object) return;
-    
-    // Toggle lock
-    const isLocked = object.lockMovementX && object.lockMovementY;
-    object.lockMovementX = !isLocked;
-    object.lockMovementY = !isLocked;
-    object.selectable = isLocked;
-    canvas.requestRenderAll();
-  };
-  
-  // Move layer up in z-index
-  const handleMoveUp = (id: string) => {
-    if (!canvas) return;
-    
-    // Find the object by ID
-    const object = canvas.getObjects().find(obj => obj.data?.id === id);
-    if (!object) return;
-    
-    // Bring forward
-    object.bringForward();
-    canvas.requestRenderAll();
-  };
-  
-  // Move layer down in z-index
-  const handleMoveDown = (id: string) => {
-    if (!canvas) return;
-    
-    // Find the object by ID
-    const object = canvas.getObjects().find(obj => obj.data?.id === id);
-    if (!object) return;
-    
-    // Send backward
-    object.sendBackwards();
-    canvas.requestRenderAll();
+    if (targetObject) {
+      const isLocked = targetObject.lockMovementX && targetObject.lockMovementY;
+      
+      targetObject.lockMovementX = !isLocked;
+      targetObject.lockMovementY = !isLocked;
+      targetObject.selectable = isLocked;
+      
+      canvas.requestRenderAll();
+      
+      toast({
+        title: isLocked ? 'Layer Unlocked' : 'Layer Locked',
+        description: `Layer ${targetObject.data?.name || 'Unknown'} is now ${isLocked ? 'unlocked' : 'locked'}.`
+      });
+      
+      updateLayersList();
+    }
   };
   
   // Delete layer
-  const handleDelete = (id: string) => {
+  const handleDeleteLayer = (layerId: string) => {
     if (!canvas) return;
     
-    // Find the object by ID
-    const object = canvas.getObjects().find(obj => obj.data?.id === id);
-    if (!object) return;
+    const objects = canvas.getObjects();
+    const targetObject = objects.find(obj => obj.data?.id === layerId);
     
-    // Remove object
-    canvas.remove(object);
-    canvas.requestRenderAll();
+    if (targetObject) {
+      canvas.remove(targetObject);
+      
+      toast({
+        title: 'Layer Deleted',
+        description: `Layer ${targetObject.data?.name || 'Unknown'} has been deleted.`
+      });
+      
+      updateLayersList();
+    }
   };
   
-  // Group selected layers
-  const handleGroupSelected = () => {
+  // Duplicate layer
+  const handleDuplicateLayer = (layerId: string) => {
     if (!canvas) return;
     
-    // Get active selection or selected objects
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject || !fabric.util.object.isType(activeObject, 'activeSelection')) return;
+    const objects = canvas.getObjects();
+    const targetObject = objects.find(obj => obj.data?.id === layerId);
     
-    // Group the objects
-    const group = (activeObject as fabric.ActiveSelection).toGroup();
-    
-    // Add custom data to the group
-    group.data = {
-      id: `group-${Date.now()}`,
-      type: 'group',
-      name: 'Group'
-    };
-    
-    canvas.requestRenderAll();
+    if (targetObject) {
+      targetObject.clone((cloned: fabric.Object) => {
+        cloned.set({
+          left: (targetObject.left || 0) + 20,
+          top: (targetObject.top || 0) + 20,
+          data: {
+            ...targetObject.data,
+            id: uuidv4(),
+            name: `${targetObject.data?.name || 'Layer'} (Copy)`
+          }
+        });
+        
+        canvas.add(cloned);
+        canvas.setActiveObject(cloned);
+        canvas.requestRenderAll();
+        
+        toast({
+          title: 'Layer Duplicated',
+          description: `Layer ${targetObject.data?.name || 'Unknown'} has been duplicated.`
+        });
+        
+        updateLayersList();
+      });
+    }
   };
   
-  // Ungroup selected group
-  const handleUngroup = (id: string) => {
-    if (!canvas) return;
+  // Create layer group
+  const handleCreateGroup = () => {
+    if (!canvas || selectedLayerIds.length < 2) {
+      toast({
+        title: 'Cannot Create Group',
+        description: 'Select at least two layers to create a group.',
+        variant: 'destructive'
+      });
+      return;
+    }
     
-    // Find the group by ID
-    const group = canvas.getObjects().find(obj => obj.data?.id === id && fabric.util.object.isType(obj, 'group'));
-    if (!group || !fabric.util.object.isType(group, 'group')) return;
+    const groupId = groupSelectedLayers(canvas, `Group ${layers.filter(l => l.type === 'group').length + 1}`);
     
-    // Ungroup
-    const items = (group as fabric.Group).getObjects();
-    (group as fabric.Group).destroy();
-    canvas.remove(group);
-    
-    // Add the individual objects back to canvas
-    canvas.add(...items);
-    canvas.requestRenderAll();
+    if (groupId) {
+      toast({
+        title: 'Group Created',
+        description: 'Selected layers have been grouped together.'
+      });
+      
+      updateLayersList();
+    } else {
+      toast({
+        title: 'Failed to Create Group',
+        description: 'Could not create group from selected layers.',
+        variant: 'destructive'
+      });
+    }
   };
   
-  // Toggle expanded state for a group
-  const toggleGroupExpanded = (id: string) => {
-    setExpandedGroups(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  // Filter layers by search term
+  const filteredLayers = searchTerm 
+    ? layers.filter(layer => layer.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : layers;
   
   return (
     <Card className={cn("layer-manager", className)}>
-      <CardHeader className="py-3">
+      <CardHeader className="pb-3">
         <CardTitle className="text-lg font-medium flex items-center">
-          <Layers className="mr-2 h-5 w-5" />
+          <LayersIcon className="mr-2 h-5 w-5" />
           Layers
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-0 pb-2">
-        <div className="flex justify-between px-4 mb-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleGroupSelected}
-            disabled={!selectedObjects || selectedObjects.length < 2}
-          >
-            <Group className="h-4 w-4 mr-1" />
-            Group
-          </Button>
+      
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search layers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+            />
+            
+            <Button 
+              size="sm" 
+              variant="outline" 
+              title="Create Group" 
+              disabled={selectedLayerIds.length < 2}
+              onClick={handleCreateGroup}
+            >
+              <GroupIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="layer-list max-h-[300px] overflow-y-auto border rounded-md">
+            {filteredLayers.length > 0 ? (
+              <div className="py-1">
+                {filteredLayers.map((layer) => (
+                  <LayerItem
+                    key={layer.id}
+                    layer={layer}
+                    isSelected={selectedLayerIds.includes(layer.id)}
+                    depth={layer.depth || 0}
+                    onSelect={handleSelectLayer}
+                    onToggleVisibility={handleToggleVisibility}
+                    onToggleLock={handleToggleLock}
+                    onDelete={handleDeleteLayer}
+                    onDuplicate={handleDuplicateLayer}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted-foreground">
+                {searchTerm ? 'No matching layers found' : 'No layers available'}
+              </div>
+            )}
+          </div>
+          
+          <div className="layer-info text-xs text-muted-foreground">
+            Total: {layers.length} layers
+            {selectedLayerIds.length > 0 && ` (${selectedLayerIds.length} selected)`}
+          </div>
         </div>
-        
-        <Separator className="my-2" />
-        
-        {layers.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground">
-            No layers available
-          </div>
-        ) : (
-          <div className="max-h-[400px] overflow-y-auto">
-            {layers.map(layer => (
-              <LayerItem 
-                key={layer.id}
-                layer={layer}
-                isExpanded={expandedGroups[layer.id] || false}
-                onSelect={() => handleLayerSelect(layer.id)}
-                onVisibilityToggle={() => handleVisibilityToggle(layer.id)}
-                onLockToggle={() => handleLockToggle(layer.id)}
-                onMoveUp={() => handleMoveUp(layer.id)}
-                onMoveDown={() => handleMoveDown(layer.id)}
-                onDelete={() => handleDelete(layer.id)}
-                onToggleExpand={() => toggleGroupExpanded(layer.id)}
-                onUngroup={layer.type === 'group' ? () => handleUngroup(layer.id) : undefined}
-              />
-            ))}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

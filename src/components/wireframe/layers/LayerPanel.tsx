@@ -44,6 +44,20 @@ const LayerPanel: React.FC<LayerPanelProps> = ({
         layer.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : layers;
   
+  // Handle adding a new layer
+  const handleAddLayer = () => {
+    // You would implement this based on your application needs
+    console.log('Add layer clicked');
+  };
+
+  // Handle creating a group
+  const handleCreateGroup = () => {
+    if (onCreateGroup) {
+      // You would implement this based on your application needs
+      onCreateGroup([]);
+    }
+  };
+  
   return (
     <Card className={className}>
       <CardHeader>
@@ -64,12 +78,12 @@ const LayerPanel: React.FC<LayerPanelProps> = ({
         </div>
         
         <div className="flex gap-2 mb-4">
-          <Button size="sm" variant="outline" className="flex-1">
+          <Button size="sm" variant="outline" className="flex-1" onClick={handleAddLayer}>
             <Plus className="h-4 w-4 mr-1" />
             Add Layer
           </Button>
           {onCreateGroup && (
-            <Button size="sm" variant="outline" className="flex-1">
+            <Button size="sm" variant="outline" className="flex-1" onClick={handleCreateGroup}>
               <Group className="h-4 w-4 mr-1" />
               Create Group
             </Button>

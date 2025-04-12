@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { WireframeCanvasConfig, SectionRenderingOptions } from '@/components/wireframe/utils/types';
-import { updateGridOnCanvas } from '@/components/wireframe/utils/grid-system';
-import { renderSectionToFabric } from '@/components/wireframe/utils/fabric-converters';
+import { WireframeCanvasConfig, SectionRenderingOptions } from '../utils/types';
+import { updateGridOnCanvas } from '../utils/grid-system';
+import { renderSectionToFabric } from '../utils/fabric-converters';
 import DragEnhancementHandler from './DragEnhancementHandler';
 
 interface EnhancedCanvasEngineProps {
@@ -165,7 +165,7 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
         darkMode: false,
         showGrid: config.showGrid,
         gridSize: config.gridSize,
-        responsive: false,
+        responsive: true,
         deviceType: 'desktop',
         interactive: true,
         showBorders: true
