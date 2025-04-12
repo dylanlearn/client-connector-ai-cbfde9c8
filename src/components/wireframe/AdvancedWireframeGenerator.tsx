@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,8 @@ interface AdvancedWireframeGeneratorProps {
   viewMode?: 'edit' | 'preview' | 'code';
   onWireframeGenerated?: (wireframe: WireframeGenerationResult) => void;
   onError?: (error: Error) => void;
+  enhancedCreativity?: boolean;
+  intakeData?: any;
 }
 
 export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
@@ -21,6 +23,8 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
   viewMode = 'edit',
   onWireframeGenerated,
   onError,
+  enhancedCreativity = true,
+  intakeData,
 }) => {
   const [prompt, setPrompt] = useState<string>('');
   const {
@@ -30,6 +34,56 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
     generateWireframe,
   } = useWireframeGeneration();
 
+  // If intakeData is provided, use it to get a better prompt
+  useEffect(() => {
+    if (intakeData && Object.keys(intakeData).length > 0) {
+      // Build a prompt from the intake data if we have it
+      try {
+        const { 
+          businessName, 
+          businessType,
+          mission,
+          vision,
+          targetAudience,
+          industryType,
+          brandPersonality,
+          designPreferences = {},
+        } = intakeData;
+        
+        // Create a descriptive prompt based on intake data
+        let generatedPrompt = `Create a ${businessType || 'business'} website`;
+        
+        if (businessName) {
+          generatedPrompt += ` for ${businessName}`;
+        }
+        
+        if (industryType) {
+          generatedPrompt += ` in the ${industryType} industry`;
+        }
+        
+        if (targetAudience) {
+          generatedPrompt += ` targeting ${targetAudience}`;
+        }
+        
+        if (mission || vision) {
+          generatedPrompt += `. The brand ${mission ? `has a mission to ${mission}` : ''}${mission && vision ? ' and' : ''}${vision ? ` envisions ${vision}` : ''}`;
+        }
+        
+        if (brandPersonality) {
+          generatedPrompt += `. The brand personality is ${brandPersonality}`;
+        }
+        
+        if (designPreferences.visualStyle) {
+          generatedPrompt += `. Use a ${designPreferences.visualStyle} design style`;
+        }
+        
+        setPrompt(generatedPrompt);
+      } catch (err) {
+        console.error("Error generating prompt from intake data in AdvancedWireframeGenerator:", err);
+      }
+    }
+  }, [intakeData]);
+
   const handleGenerateWireframe = async () => {
     if (!prompt.trim()) return;
     
@@ -38,7 +92,8 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
       const params: WireframeGenerationParams = {
         description: prompt,
         projectId: projectId,
-        enhancedCreativity: true
+        enhancedCreativity: enhancedCreativity,
+        intakeData: intakeData
       };
       
       const result = await generateWireframe(params);

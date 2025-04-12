@@ -116,10 +116,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
         <div className="space-y-4">
           <AdvancedWireframeGenerator
             projectId={bridgeProjectId}
-            initialPrompt={generatedPrompt}
             onWireframeGenerated={handleWireframeGenerated}
-            enhancedCreativity={true}
-            intakeData={intakeData}
             viewMode="preview"
           />
         </div>
