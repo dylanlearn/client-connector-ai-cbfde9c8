@@ -101,8 +101,10 @@ const LayerPanel: React.FC<LayerPanelProps> = ({
               onToggleLock={() => onToggleLayerLock(layer.id)}
               onDelete={() => onDeleteLayer(layer.id)}
               onDuplicate={() => onDuplicateLayer(layer.id)}
-              onMoveUp={onMoveLayerUp ? () => onMoveLayerUp(layer.id) : undefined}
-              onMoveDown={onMoveLayerDown ? () => onMoveLayerDown(layer.id) : undefined}
+              onBringForward={onMoveLayerUp ? () => onMoveLayerUp(layer.id) : undefined}
+              onSendBackward={onMoveLayerDown ? () => onMoveLayerDown(layer.id) : undefined}
+              onBringToFront={undefined}  // Add these for z-index support
+              onSendToBack={undefined}    // Add these for z-index support
               onRename={onRenameLayer ? (name: string) => onRenameLayer(layer.id, name) : undefined}
             />
           ))}
