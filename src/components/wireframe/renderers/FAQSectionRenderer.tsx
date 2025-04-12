@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { SectionComponentProps } from '../types';
-import { getSuggestion, createStyleObject } from './utilities';
+import { cn } from '@/lib/utils';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const FAQSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -12,104 +12,94 @@ const FAQSectionRenderer: React.FC<SectionComponentProps> = ({
   isSelected = false,
   onClick
 }) => {
+  // Get accordion items or use defaults
+  const accordionItems = section.components?.[0]?.props?.items || [
+    { 
+      question: "How does the free trial work?", 
+      answer: "Our 14-day free trial gives you full access to all features with no credit card required." 
+    },
+    { 
+      question: "Can I upgrade or downgrade my plan?", 
+      answer: "Yes, you can change your plan at any time. Changes take effect at the next billing cycle." 
+    },
+    { 
+      question: "Do you offer refunds?", 
+      answer: "We offer a 30-day money-back guarantee if you're not satisfied with our service." 
+    },
+    { 
+      question: "How secure is your platform?", 
+      answer: "We use industry-leading security measures including encryption and regular security audits." 
+    }
+  ];
+  
   const handleClick = () => {
     if (onClick && section.id) {
       onClick(section.id);
     }
   };
-  
-  // FAQ items using getSuggestion utility
-  const faqs = [
-    {
-      question: getSuggestion(section.copySuggestions, 'question1', 'What is your product/service?'),
-      answer: getSuggestion(section.copySuggestions, 'answer1', 'Our product is designed to help businesses streamline their workflow and increase productivity. It provides powerful tools for task management, team collaboration, and performance tracking.')
-    },
-    {
-      question: getSuggestion(section.copySuggestions, 'question2', 'How does the pricing work?'),
-      answer: getSuggestion(section.copySuggestions, 'answer2', 'We offer different pricing tiers based on your needs. Our plans start at $9/month for individuals and go up to custom enterprise solutions. All plans come with a 14-day free trial, no credit card required.')
-    },
-    {
-      question: getSuggestion(section.copySuggestions, 'question3', 'Do you offer support?'),
-      answer: getSuggestion(section.copySuggestions, 'answer3', 'Yes, we provide 24/7 customer support via chat and email for all paid plans. Our enterprise customers also get dedicated account management and priority phone support.')
-    },
-    {
-      question: getSuggestion(section.copySuggestions, 'question4', 'Can I cancel my subscription?'),
-      answer: getSuggestion(section.copySuggestions, 'answer4', 'Yes, you can cancel your subscription at any time. There are no long-term contracts or cancellation fees. You\'ll continue to have access until the end of your billing period.')
-    },
-    {
-      question: getSuggestion(section.copySuggestions, 'question5', 'Is my data secure?'),
-      answer: getSuggestion(section.copySuggestions, 'answer5', 'We take security very seriously. All data is encrypted both in transit and at rest. We use industry-standard security practices and regularly conduct security audits.')
-    }
-  ];
-  
-  // Create properly typed style object
-  const styles = createStyleObject(section.style);
-  
+
   return (
     <div 
       className={cn(
-        'px-6 py-16 w-full',
-        darkMode ? 'bg-gray-900' : 'bg-gray-50',
-        isSelected && 'ring-2 ring-inset ring-primary',
-        viewMode === 'flowchart' && 'border-2 border-dashed'
+        'faq-section w-full py-16 px-4',
+        darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900',
+        isSelected ? 'ring-2 ring-primary ring-offset-1' : '',
+        viewMode === 'edit' ? 'cursor-pointer' : ''
       )}
       onClick={handleClick}
-      style={styles}
     >
-      <div className="max-w-3xl mx-auto">
+      <div className="container mx-auto max-w-4xl">
+        {/* Section Header */}
         <div className="text-center mb-12">
-          <h2 className={cn(
-            'text-3xl font-bold mb-4',
-            darkMode ? 'text-white' : 'text-gray-900'
-          )}>
-            {getSuggestion(section.copySuggestions, 'heading', 'Frequently Asked Questions')}
-          </h2>
-          
+          <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
           <p className={cn(
-            'max-w-2xl mx-auto',
+            'text-lg max-w-3xl mx-auto',
             darkMode ? 'text-gray-300' : 'text-gray-600'
           )}>
-            {getSuggestion(section.copySuggestions, 'subheading', 'Find answers to common questions about our product and services.')}
+            Find answers to common questions about our platform and services.
           </p>
         </div>
         
-        <div className="space-y-6">
-          {faqs.map((faq, i) => (
+        {/* Accordion */}
+        <div className="space-y-4">
+          {accordionItems.map((item, index) => (
             <div 
-              key={i} 
+              key={index} 
               className={cn(
-                'p-6 rounded-lg',
-                darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'
+                'border rounded-lg overflow-hidden',
+                darkMode ? 'border-gray-700' : 'border-gray-200'
               )}
             >
-              <h3 className={cn(
-                'text-lg font-semibold mb-3',
-                darkMode ? 'text-white' : 'text-gray-900'
+              {/* Question (Always visible) */}
+              <div className={cn(
+                'p-5 flex justify-between items-center cursor-pointer',
+                darkMode ? 'bg-gray-800 hover:bg-gray-750' : 'bg-gray-50 hover:bg-gray-100',
+                viewMode === 'preview' && index === 0 ? 'border-b' : ''
               )}>
-                {faq.question}
-              </h3>
-              <p className={cn(
-                darkMode ? 'text-gray-300' : 'text-gray-600'
-              )}>
-                {faq.answer}
-              </p>
+                <h3 className="font-medium text-lg">{item.question}</h3>
+                <div>
+                  {viewMode === 'preview' && index === 0 ? 
+                    <ChevronUp className="h-5 w-5" /> : 
+                    <ChevronDown className="h-5 w-5" />
+                  }
+                </div>
+              </div>
+              
+              {/* Answer (Only visible for first item in preview mode) */}
+              {(viewMode === 'preview' && index === 0) && (
+                <div className={cn(
+                  'p-5',
+                  darkMode ? 'bg-gray-900' : 'bg-white'
+                )}>
+                  <p className={cn(
+                    darkMode ? 'text-gray-300' : 'text-gray-600'
+                  )}>
+                    {item.answer}
+                  </p>
+                </div>
+              )}
             </div>
           ))}
-        </div>
-        
-        <div className="mt-10 text-center">
-          <p className={cn(
-            darkMode ? 'text-gray-300' : 'text-gray-600',
-            'mb-4'
-          )}>
-            {getSuggestion(section.copySuggestions, 'supportText', 'Still have questions?')}
-          </p>
-          <button className={cn(
-            'px-6 py-2 rounded-md font-medium',
-            darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
-          )}>
-            {getSuggestion(section.copySuggestions, 'supportCta', 'Contact Support')}
-          </button>
         </div>
       </div>
     </div>

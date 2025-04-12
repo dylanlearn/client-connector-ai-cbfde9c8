@@ -117,6 +117,8 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
           <AdvancedWireframeGenerator
             projectId={bridgeProjectId}
             onWireframeGenerated={handleWireframeGenerated}
+            enhancedCreativity={true}
+            intakeData={intakeData}
             viewMode="preview"
           />
         </div>
