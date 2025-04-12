@@ -1,356 +1,358 @@
 
 import React, { useState, useEffect } from 'react';
-import { fabric } from 'fabric';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Layers, Eye, EyeOff, Lock, Unlock, ChevronsUp, ChevronsDown, Copy, Trash, Group } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import LayerPanel from './LayerPanel';
-import { LayerInfo } from '../utils/types';
+import { Layers, Search, Plus, Group, Ungroup } from 'lucide-react';
+import { fabric } from 'fabric';
+import LayerItem from './LayerItem';
+import { convertCanvasObjectsToLayers, applyLayerSettingsToObject, groupSelectedLayers, ungroupLayer, getFlatLayerList } from '../utils/layer-utils';
 
 interface LayerManagerProps {
   canvas: fabric.Canvas | null;
   selectedObjects: fabric.Object[];
-  className?: string;
 }
 
-const LayerManager: React.FC<LayerManagerProps> = ({ canvas, selectedObjects, className }) => {
-  const { toast } = useToast();
-  const [layers, setLayers] = useState<LayerInfo[]>([]);
-  const [selectedLayerId, setSelectedLayerId] = useState<string | undefined>(undefined);
+const LayerManager: React.FC<LayerManagerProps> = ({ canvas, selectedObjects }) => {
+  const [layers, setLayers] = useState<any[]>([]);
+  const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   
-  // Update layers when canvas or selected objects change
+  // Update layers list when canvas or selected objects change
   useEffect(() => {
     if (!canvas) return;
     
-    // Convert fabric objects to layer items
-    const updateLayerList = () => {
-      const fabricObjects = canvas.getObjects();
-      const layerItems: LayerInfo[] = fabricObjects.map(obj => ({
-        id: obj.data?.id || obj.id || `obj-${fabricObjects.indexOf(obj)}`,
-        name: obj.data?.name || obj.type || 'Untitled',
-        type: obj.type || 'object',
-        visible: obj.visible !== false,
-        locked: obj.locked || false,
-        selected: selectedObjects.includes(obj),
-        zIndex: obj.zIndex || fabricObjects.indexOf(obj),
-        isGroup: obj.type === 'group',
-        children: obj.type === 'group' ? getGroupChildren(obj as fabric.Group) : [],
-        data: obj.data || {}
-      }));
+    const updateLayers = () => {
+      // Convert selected objects to IDs for easy lookup
+      const selectedIds = selectedObjects.map(obj => {
+        return obj.data?.id || String(obj.zIndex);
+      });
       
-      // Sort by zIndex
-      layerItems.sort((a, b) => b.zIndex - a.zIndex);
-      
-      setLayers(layerItems);
-      
-      // Update selected layer ID
-      if (selectedObjects.length === 1) {
-        const selectedObj = selectedObjects[0];
-        setSelectedLayerId(selectedObj.data?.id || selectedObj.id || undefined);
-      } else if (selectedObjects.length === 0) {
-        setSelectedLayerId(undefined);
-      }
-    };
-    
-    // Get children of a group
-    const getGroupChildren = (group: fabric.Group): LayerInfo[] => {
-      if (!group._objects) return [];
-      
-      return group._objects.map((obj, index) => ({
-        id: obj.data?.id || obj.id || `group-child-${index}`,
-        name: obj.data?.name || obj.type || `Item ${index + 1}`,
-        type: obj.type || 'object',
-        visible: obj.visible !== false,
-        locked: obj.locked || false,
-        selected: false,
-        zIndex: index,
-        isGroup: obj.type === 'group',
-        children: obj.type === 'group' ? getGroupChildren(obj as fabric.Group) : [],
-        data: obj.data || {}
-      }));
+      // Get all layers from canvas
+      const allLayers = getFlatLayerList(canvas, selectedIds);
+      setLayers(allLayers);
+      setSelectedLayerIds(selectedIds);
     };
     
     // Initial update
-    updateLayerList();
+    updateLayers();
     
-    // Set up event listeners
-    const handleObjectAdded = () => updateLayerList();
-    const handleObjectRemoved = () => updateLayerList();
-    const handleObjectModified = () => updateLayerList();
-    const handleSelectionCreated = () => updateLayerList();
-    const handleSelectionUpdated = () => updateLayerList();
-    const handleSelectionCleared = () => updateLayerList();
+    // Set up event listeners for changes
+    const handleObjectModified = () => updateLayers();
+    const handleSelectionCleared = () => {
+      setSelectedLayerIds([]);
+      updateLayers();
+    };
+    const handleSelectionCreated = () => updateLayers();
+    const handleSelectionUpdated = () => updateLayers();
+    const handleObjectAdded = () => updateLayers();
+    const handleObjectRemoved = () => updateLayers();
     
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
     canvas.on('object:modified', handleObjectModified);
+    canvas.on('selection:cleared', handleSelectionCleared);
     canvas.on('selection:created', handleSelectionCreated);
     canvas.on('selection:updated', handleSelectionUpdated);
-    canvas.on('selection:cleared', handleSelectionCleared);
+    canvas.on('object:added', handleObjectAdded);
+    canvas.on('object:removed', handleObjectRemoved);
     
+    // Cleanup event listeners
     return () => {
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
       canvas.off('object:modified', handleObjectModified);
+      canvas.off('selection:cleared', handleSelectionCleared);
       canvas.off('selection:created', handleSelectionCreated);
       canvas.off('selection:updated', handleSelectionUpdated);
-      canvas.off('selection:cleared', handleSelectionCleared);
+      canvas.off('object:added', handleObjectAdded);
+      canvas.off('object:removed', handleObjectRemoved);
     };
   }, [canvas, selectedObjects]);
   
-  // Handle selecting a layer
-  const handleSelectLayer = (layerId: string) => {
+  // Filter layers based on search term
+  const filteredLayers = searchTerm
+    ? layers.filter(layer => layer.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : layers;
+  
+  // Handler for selecting a layer
+  const handleLayerSelect = (layerId: string) => {
     if (!canvas) return;
     
-    setSelectedLayerId(layerId);
+    // Clear current selection
+    canvas.discardActiveObject();
     
-    // Find the corresponding canvas object
-    const obj = findObjectById(canvas, layerId);
+    // Find object by ID
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
     
-    if (obj) {
-      // Deselect all objects first
-      canvas.discardActiveObject();
-      
-      // Select the object
-      canvas.setActiveObject(obj);
-      canvas.requestRenderAll();
-    }
+    // Select this object
+    canvas.setActiveObject(object);
+    canvas.requestRenderAll();
   };
   
-  // Find an object by ID
-  const findObjectById = (canvas: fabric.Canvas, id: string): fabric.Object | null => {
-    const objects = canvas.getObjects();
-    
-    for (const obj of objects) {
-      if ((obj.data?.id || obj.id) === id) {
-        return obj;
-      }
-      
-      // Check group children if it's a group
-      if (obj.type === 'group' && (obj as fabric.Group)._objects) {
-        const groupObj = obj as fabric.Group;
-        for (const child of groupObj._objects) {
-          if ((child.data?.id || child.id) === id) {
-            return child;
-          }
-        }
-      }
-    }
-    
-    return null;
-  };
-  
-  // Toggle layer visibility
-  const handleToggleLayerVisibility = (layerId: string) => {
+  // Handler for toggling layer visibility
+  const handleToggleVisibility = (layerId: string) => {
     if (!canvas) return;
     
-    const obj = findObjectById(canvas, layerId);
-    
-    if (obj) {
-      obj.visible = !obj.visible;
-      canvas.requestRenderAll();
-      
-      toast({
-        title: obj.visible ? 'Layer Visible' : 'Layer Hidden',
-        description: `Layer "${obj.data?.name || obj.type || 'Untitled'}" ${obj.visible ? 'is now visible' : 'is now hidden'}.`
-      });
-    }
+    applyLayerSettingsToObject(canvas, layerId, {
+      visible: !layers.find(layer => layer.id === layerId)?.visible
+    });
   };
   
-  // Toggle layer lock
-  const handleToggleLayerLock = (layerId: string) => {
+  // Handler for toggling layer lock
+  const handleToggleLock = (layerId: string) => {
     if (!canvas) return;
     
-    const obj = findObjectById(canvas, layerId);
-    
-    if (obj) {
-      obj.locked = !obj.locked;
-      obj.selectable = !obj.locked;
-      obj.evented = !obj.locked;
-      
-      canvas.requestRenderAll();
-      
-      toast({
-        title: obj.locked ? 'Layer Locked' : 'Layer Unlocked',
-        description: `Layer "${obj.data?.name || obj.type || 'Untitled'}" ${obj.locked ? 'is now locked' : 'is now editable'}.`
-      });
-      
-      // Update layers list
-      setLayers(prev => prev.map(layer => 
-        layer.id === layerId ? { ...layer, locked: obj.locked } : layer
-      ));
-    }
+    applyLayerSettingsToObject(canvas, layerId, {
+      locked: !layers.find(layer => layer.id === layerId)?.locked
+    });
   };
   
-  // Delete a layer
+  // Handler for deleting a layer
   const handleDeleteLayer = (layerId: string) => {
     if (!canvas) return;
     
-    const obj = findObjectById(canvas, layerId);
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
     
-    if (obj) {
-      canvas.remove(obj);
-      
-      toast({
-        title: 'Layer Deleted',
-        description: `Layer "${obj.data?.name || obj.type || 'Untitled'}" has been removed.`
-      });
-    }
+    canvas.remove(object);
+    canvas.requestRenderAll();
   };
   
-  // Duplicate a layer
+  // Handler for duplicating a layer
   const handleDuplicateLayer = (layerId: string) => {
     if (!canvas) return;
     
-    const obj = findObjectById(canvas, layerId);
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
     
-    if (obj) {
-      obj.clone((cloned: fabric.Object) => {
-        if (cloned) {
-          // Offset the clone slightly
-          if (cloned.left !== undefined) cloned.left += 20;
-          if (cloned.top !== undefined) cloned.top += 20;
-          
-          // Add new id and data
-          cloned.id = `${obj.type}-${Date.now()}`;
-          cloned.data = { ...obj.data, id: cloned.id, name: `Copy of ${obj.data?.name || obj.type || 'Untitled'}` };
-          
-          canvas.add(cloned);
-          canvas.setActiveObject(cloned);
-          canvas.requestRenderAll();
-          
-          toast({
-            title: 'Layer Duplicated',
-            description: `Created a copy of "${obj.data?.name || obj.type || 'Untitled'}" layer.`
-          });
+    object.clone((clone: fabric.Object) => {
+      // Offset the clone slightly
+      clone.set({
+        left: (clone.left || 0) + 10,
+        top: (clone.top || 0) + 10,
+        data: {
+          ...object.data,
+          id: `${object.data?.id || 'layer'}-copy-${Date.now()}`
         }
       });
-    }
+      
+      canvas.add(clone);
+      canvas.setActiveObject(clone);
+      canvas.requestRenderAll();
+    });
   };
   
-  // Move layer up
+  // Handler for moving a layer up in the stack (increase z-index)
   const handleMoveLayerUp = (layerId: string) => {
     if (!canvas) return;
     
-    const obj = findObjectById(canvas, layerId);
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
     
-    if (obj) {
-      canvas.bringForward(obj);
-      canvas.requestRenderAll();
-    }
+    // Get all objects except grid and guidelines
+    const regularObjects = canvas.getObjects().filter(obj => 
+      !obj.data?.isGridLine && 
+      !obj.data?.isGuideline
+    );
+    
+    // Find the current index of the object
+    const currentIndex = regularObjects.indexOf(object);
+    
+    // If object is already at the top, do nothing
+    if (currentIndex === regularObjects.length - 1) return;
+    
+    // Bring object forward one level
+    canvas.bringForward(object);
+    
+    // Update z-index values for all objects
+    updateZIndicesAfterReorder(canvas);
+    
+    canvas.requestRenderAll();
   };
   
-  // Move layer down
+  // Handler for moving a layer down in the stack (decrease z-index)
   const handleMoveLayerDown = (layerId: string) => {
     if (!canvas) return;
     
-    const obj = findObjectById(canvas, layerId);
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
     
-    if (obj) {
-      canvas.sendBackwards(obj);
-      canvas.requestRenderAll();
-    }
-  };
-  
-  // Rename a layer
-  const handleRenameLayer = (layerId: string, newName: string) => {
-    if (!canvas) return;
+    // Get all objects except grid and guidelines
+    const regularObjects = canvas.getObjects().filter(obj => 
+      !obj.data?.isGridLine && 
+      !obj.data?.isGuideline
+    );
     
-    const obj = findObjectById(canvas, layerId);
+    // Find the current index of the object
+    const currentIndex = regularObjects.indexOf(object);
     
-    if (obj) {
-      if (!obj.data) obj.data = {};
-      obj.data.name = newName;
-      
-      canvas.requestRenderAll();
-      
-      toast({
-        title: 'Layer Renamed',
-        description: `Layer has been renamed to "${newName}".`
-      });
-      
-      // Update layers list
-      setLayers(prev => prev.map(layer => 
-        layer.id === layerId ? { ...layer, name: newName } : layer
-      ));
-    }
-  };
-  
-  // Create a group from selected objects
-  const handleCreateGroup = (layerIds: string[]) => {
-    if (!canvas) return;
+    // If object is already at the bottom, do nothing
+    if (currentIndex === 0) return;
     
-    // If no layer IDs provided, use selected objects
-    const idsToGroup = layerIds.length > 0 ? layerIds : selectedObjects.map(obj => obj.data?.id || obj.id);
+    // Send object backward one level
+    canvas.sendBackwards(object);
     
-    if (idsToGroup.length < 2) {
-      toast({
-        title: 'Group Creation Failed',
-        description: 'Select at least 2 objects to create a group.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Update z-index values for all objects
+    updateZIndicesAfterReorder(canvas);
     
-    // Find all objects to group
-    const objectsToGroup: fabric.Object[] = [];
-    
-    for (const id of idsToGroup) {
-      const obj = findObjectById(canvas, id);
-      if (obj) objectsToGroup.push(obj);
-    }
-    
-    if (objectsToGroup.length < 2) return;
-    
-    // Create group
-    canvas.discardActiveObject();
-    const group = new fabric.Group(objectsToGroup, {
-      id: `group-${Date.now()}`,
-      data: {
-        id: `group-${Date.now()}`,
-        name: 'Group',
-        type: 'group'
-      }
-    });
-    
-    // Remove original objects and add group
-    objectsToGroup.forEach(obj => canvas.remove(obj));
-    canvas.add(group);
-    canvas.setActiveObject(group);
     canvas.requestRenderAll();
+  };
+  
+  // Handler for bringing a layer to the front of the stack
+  const handleBringToFront = (layerId: string) => {
+    if (!canvas) return;
     
-    toast({
-      title: 'Group Created',
-      description: `Created a group with ${objectsToGroup.length} objects.`
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
+    
+    // Bring object to front
+    canvas.bringToFront(object);
+    
+    // Update z-index values for all objects
+    updateZIndicesAfterReorder(canvas);
+    
+    canvas.requestRenderAll();
+  };
+  
+  // Handler for sending a layer to the back of the stack
+  const handleSendToBack = (layerId: string) => {
+    if (!canvas) return;
+    
+    const object = canvas.getObjects().find(obj => obj.data?.id === layerId);
+    if (!object) return;
+    
+    // Send object to back
+    canvas.sendToBack(object);
+    
+    // Update z-index values for all objects
+    updateZIndicesAfterReorder(canvas);
+    
+    canvas.requestRenderAll();
+  };
+  
+  // Utility function to update z-index values after reordering
+  const updateZIndicesAfterReorder = (canvas: fabric.Canvas) => {
+    // Get all objects except grid and guidelines
+    const regularObjects = canvas.getObjects().filter(obj => 
+      !obj.data?.isGridLine && 
+      !obj.data?.isGuideline
+    );
+    
+    // Update z-index values based on current stack order
+    regularObjects.forEach((obj, idx) => {
+      obj.zIndex = idx;
     });
   };
+  
+  // Handler for renaming a layer
+  const handleRenameLayer = (layerId: string, name: string) => {
+    if (!canvas) return;
+    
+    applyLayerSettingsToObject(canvas, layerId, { name });
+  };
+  
+  // Handler for creating a group
+  const handleCreateGroup = () => {
+    if (!canvas || selectedObjects.length < 2) return;
+    
+    // Group the selected objects
+    const groupId = groupSelectedLayers(canvas, 'New Group');
+    canvas.requestRenderAll();
+  };
+  
+  // Handler for ungrouping a layer
+  const handleUngroupLayer = (layerId: string) => {
+    if (!canvas) return;
+    
+    const wasUngrouped = ungroupLayer(canvas, layerId);
+    if (wasUngrouped) {
+      canvas.requestRenderAll();
+    }
+  };
+  
+  // Detect if current selection can be grouped
+  const canGroup = selectedObjects.length > 1;
+  
+  // Detect if current selection is a group that can be ungrouped
+  const canUngroup = selectedObjects.length === 1 && 
+    selectedObjects[0].type === 'group';
   
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className="layer-manager">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <Layers className="mr-2 h-5 w-5" />
+        <CardTitle className="flex items-center text-base font-medium">
+          <Layers className="h-4 w-4 mr-2" />
           Layers
         </CardTitle>
       </CardHeader>
-      
-      <CardContent className="p-0">
-        <LayerPanel
-          layers={layers}
-          selectedLayerId={selectedLayerId}
-          onSelectLayer={handleSelectLayer}
-          onToggleLayerVisibility={handleToggleLayerVisibility}
-          onToggleLayerLock={handleToggleLayerLock}
-          onDeleteLayer={handleDeleteLayer}
-          onDuplicateLayer={handleDuplicateLayer}
-          onMoveLayerUp={handleMoveLayerUp}
-          onMoveLayerDown={handleMoveLayerDown}
-          onRenameLayer={handleRenameLayer}
-          onCreateGroup={handleCreateGroup}
-          className="border-0 shadow-none"
-        />
+      <CardContent className="px-2">
+        <div className="space-y-3">
+          {/* Search and actions row */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search layers..."
+                className="pl-8 h-8 text-sm"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <Button 
+              size="icon" 
+              variant="outline" 
+              className="h-8 w-8"
+              title="Create group"
+              disabled={!canGroup}
+              onClick={handleCreateGroup}
+            >
+              <Group className="h-4 w-4" />
+            </Button>
+            
+            <Button 
+              size="icon" 
+              variant="outline" 
+              className="h-8 w-8"
+              title="Ungroup selection"
+              disabled={!canUngroup}
+              onClick={() => {
+                const groupObj = selectedObjects[0];
+                if (groupObj && groupObj.data?.id) {
+                  handleUngroupLayer(groupObj.data.id);
+                }
+              }}
+            >
+              <Ungroup className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Layers list */}
+          <div className="space-y-0.5 max-h-[300px] overflow-y-auto p-1 -mx-1">
+            {filteredLayers.length > 0 ? (
+              filteredLayers.map(layer => (
+                <LayerItem
+                  key={layer.id}
+                  layer={layer}
+                  isSelected={selectedLayerIds.includes(layer.id)}
+                  onSelect={() => handleLayerSelect(layer.id)}
+                  onToggleVisibility={() => handleToggleVisibility(layer.id)}
+                  onToggleLock={() => handleToggleLock(layer.id)}
+                  onDelete={() => handleDeleteLayer(layer.id)}
+                  onDuplicate={() => handleDuplicateLayer(layer.id)}
+                  onMoveUp={() => handleMoveLayerUp(layer.id)}
+                  onMoveDown={() => handleMoveLayerDown(layer.id)}
+                  onRename={(name) => handleRenameLayer(layer.id, name)}
+                  onBringToFront={() => handleBringToFront(layer.id)}
+                  onSendToBack={() => handleSendToBack(layer.id)}
+                  depth={layer.depth}
+                />
+              ))
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                {searchTerm ? 'No matching layers found' : 'No layers available'}
+              </div>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,6 +1,6 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
+import { v4 as uuidv4 } from 'uuid';
 
 interface GroupSelectionOptions {
   canvas: fabric.Canvas | null;
@@ -56,37 +56,51 @@ export function useGroupSelection({
       // First, deselect all objects
       canvas.discardActiveObject();
       
-      // Create a new group from the previously selected objects
+      // Find the maximum zIndex from the selected objects
+      const maxZIndex = Math.max(...selectedObjects.map(obj => obj.zIndex || 0));
+      
+      // Keep track of the original objects' positions and sizes for proper placement
+      let minX = Math.min(...selectedObjects.map(obj => obj.left || 0));
+      let minY = Math.min(...selectedObjects.map(obj => obj.top || 0));
+      let maxX = Math.max(...selectedObjects.map(obj => (obj.left || 0) + (obj.width || 0) * (obj.scaleX || 1)));
+      let maxY = Math.max(...selectedObjects.map(obj => (obj.top || 0) + (obj.height || 0) * (obj.scaleY || 1)));
+      
+      // Create a selection of all objects to group
+      const selection = new fabric.ActiveSelection(selectedObjects, { canvas });
+      
+      // Create a new group from the selection
       const groupOptions = {
-        originX: 'center',
-        originY: 'center',
+        originX: 'left',
+        originY: 'top',
+        left: minX,
+        top: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+        zIndex: maxZIndex + 1, // Place the group above its children
         data: {
           type: 'group',
-          id: `group-${Date.now()}`
+          id: `group-${uuidv4()}`,
+          name: 'Group'
         }
       };
       
-      const group = new fabric.Group(selectedObjects, groupOptions);
-      
-      // Remove the original objects
-      selectedObjects.forEach(obj => {
-        canvas.remove(obj);
-      });
-      
-      // Add the group
-      canvas.add(group);
-      canvas.setActiveObject(group);
+      // Convert the selection to a group
+      const group = selection.toGroup(groupOptions);
       
       // Update state
       setActiveGroup(group);
       setSelectedObjects([]);
+      
+      // Update z-indices of all objects
+      updateZIndicesAfterGrouping(canvas);
       
       // Notify
       if (onGroupCreate) {
         onGroupCreate(group);
       }
       
-      canvas.renderAll();
+      canvas.setActiveObject(group);
+      canvas.requestRenderAll();
     } catch (error) {
       console.error('Error creating group:', error);
     }
@@ -97,43 +111,42 @@ export function useGroupSelection({
     if (!canvas || !activeGroup) return;
     
     try {
-      // Get the group's position
+      // Store the group's z-index and position
+      const groupZIndex = activeGroup.zIndex || 0;
       const groupLeft = activeGroup.left || 0;
       const groupTop = activeGroup.top || 0;
       const groupAngle = activeGroup.angle || 0;
+      const groupScaleX = activeGroup.scaleX || 1;
+      const groupScaleY = activeGroup.scaleY || 1;
       
       // Get all objects in the group
       const items = activeGroup.getObjects();
       
+      // Ungroup the items
+      activeGroup.toActiveSelection();
+      
       // Remove the group
       canvas.remove(activeGroup);
       
-      // Restore the original objects
+      // Process each released object
       const newObjects: fabric.Object[] = [];
       
-      items.forEach(item => {
-        // Apply the group's transformations to the item
-        const newLeft = groupLeft + (item.left || 0);
-        const newTop = groupTop + (item.top || 0);
+      items.forEach((item, index) => {
+        // Preserve the group's z-order for the items
+        item.zIndex = groupZIndex + index;
         
-        item.set({
-          left: newLeft,
-          top: newTop,
-          angle: (item.angle || 0) + groupAngle,
-        });
+        // Make sure each item has a unique ID
+        if (!item.data) {
+          item.data = { id: `object-${uuidv4()}` };
+        } else if (!item.data.id) {
+          item.data.id = `object-${uuidv4()}`;
+        }
         
-        // Make the item selectable again
-        item.setCoords();
-        canvas.add(item);
         newObjects.push(item);
       });
       
-      // Select all the objects
-      canvas.discardActiveObject();
-      const selection = new fabric.ActiveSelection(newObjects, {
-        canvas: canvas
-      });
-      canvas.setActiveObject(selection);
+      // Update z-indices of all objects
+      updateZIndicesAfterUngrouping(canvas);
       
       // Update state
       setActiveGroup(null);
@@ -144,25 +157,53 @@ export function useGroupSelection({
         onGroupRelease(newObjects);
       }
       
-      canvas.renderAll();
+      canvas.requestRenderAll();
     } catch (error) {
       console.error('Error ungrouping objects:', error);
     }
   }, [canvas, activeGroup, onGroupRelease]);
   
-  // Keyboard shortcut listeners
+  // Utility function to update z-index values after grouping
+  const updateZIndicesAfterGrouping = (canvas: fabric.Canvas) => {
+    // Get all regular objects
+    const regularObjects = canvas.getObjects().filter(obj => 
+      !obj.data?.isGridLine && 
+      !obj.data?.isGuideline
+    );
+    
+    // Update z-index based on canvas stack order
+    regularObjects.forEach((obj, index) => {
+      obj.zIndex = index;
+    });
+  };
+  
+  // Utility function to update z-index values after ungrouping
+  const updateZIndicesAfterUngrouping = (canvas: fabric.Canvas) => {
+    // Get all regular objects
+    const regularObjects = canvas.getObjects().filter(obj => 
+      !obj.data?.isGridLine && 
+      !obj.data?.isGuideline
+    );
+    
+    // Update z-index based on canvas stack order
+    regularObjects.forEach((obj, index) => {
+      obj.zIndex = index;
+    });
+  };
+  
+  // Keyboard shortcut listeners for grouping operations
   useEffect(() => {
     if (!canvas) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
       // Group: Ctrl/Cmd + G
-      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g' && !e.shiftKey) {
         e.preventDefault();
         createGroup();
       }
       
       // Ungroup: Ctrl/Cmd + Shift + G
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'g') {
         e.preventDefault();
         ungroup();
       }
