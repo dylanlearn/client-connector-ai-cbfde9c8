@@ -1,32 +1,25 @@
 
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Unlock, Trash, Copy, MoreHorizontal, ChevronRight, ChevronDown, Pencil } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock, Trash2, Copy, ChevronRight, ChevronDown, PenLine, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from '@/lib/utils';
 import { LayerInfo } from '@/components/wireframe/utils/types';
 import ZIndexControls from './ZIndexControls';
 
 interface LayerItemProps {
   layer: LayerInfo;
   isSelected: boolean;
-  onSelect: () => void;
-  onToggleVisibility: () => void;
-  onToggleLock: () => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  onRename?: (name: string) => void;
-  onBringToFront?: (id: string) => void;
-  onSendToBack?: (id: string) => void;
-  showZIndexControls?: boolean;
-  depth?: number;
+  onSelect: (layerId: string) => void;
+  onToggleVisibility: (layerId: string) => void;
+  onToggleLock: (layerId: string) => void;
+  onDelete: (layerId: string) => void;
+  onDuplicate: (layerId: string) => void;
+  onBringForward: (layerId: string) => void;
+  onSendBackward: (layerId: string) => void;
+  onBringToFront: (layerId: string) => void;
+  onSendToBack: (layerId: string) => void;
+  onRename?: (layerId: string, name: string) => void;
 }
 
 const LayerItem: React.FC<LayerItemProps> = ({
@@ -37,245 +30,215 @@ const LayerItem: React.FC<LayerItemProps> = ({
   onToggleLock,
   onDelete,
   onDuplicate,
-  onMoveUp,
-  onMoveDown,
-  onRename,
+  onBringForward,
+  onSendBackward,
   onBringToFront,
   onSendToBack,
-  showZIndexControls = true,
-  depth = 0
+  onRename
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [nameValue, setNameValue] = useState(layer.name);
   const [isExpanded, setIsExpanded] = useState(false);
-  
-  const handleRename = () => {
-    if (onRename) {
-      onRename(nameValue);
-    }
-    setIsEditing(false);
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleRename();
-    } else if (e.key === 'Escape') {
-      setIsEditing(false);
-      setNameValue(layer.name);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [nameInput, setNameInput] = useState(layer.name);
+  const [showControls, setShowControls] = useState(false);
+
+  const handleToggleExpand = () => {
+    if (layer.isGroup && layer.children.length > 0) {
+      setIsExpanded(!isExpanded);
     }
   };
 
-  // Calculate padding based on depth
-  const paddingLeft = `${(depth || 0) * 12 + 8}px`;
-  
-  // Check if layer has children
-  const hasChildren = layer.children && layer.children.length > 0;
-  
+  const handleRename = () => {
+    if (onRename && nameInput.trim() !== '') {
+      onRename(layer.id, nameInput);
+    }
+    setIsRenaming(false);
+  };
+
+  const handleCancelRename = () => {
+    setNameInput(layer.name);
+    setIsRenaming(false);
+  };
+
   return (
     <div className="layer-item">
-      <div
-        className={`flex items-center px-2 py-1.5 gap-1 ${
-          isSelected ? 'bg-accent' : 'hover:bg-muted/50'
-        } rounded-md transition-colors group`}
-        style={{ paddingLeft }}
-        onClick={onSelect}
+      <div 
+        className={cn(
+          "flex items-center gap-1 p-1 rounded text-xs border border-transparent",
+          isSelected && "bg-accent border-accent-foreground/20",
+          !isSelected && "hover:bg-muted/50"
+        )}
+        onMouseEnter={() => setShowControls(true)}
+        onMouseLeave={() => setShowControls(false)}
       >
         {/* Expand/Collapse button for groups */}
-        {hasChildren && (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-5 w-5 p-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-          >
-            {isExpanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
-          </Button>
-        )}
-        
-        {/* Layer type icon (could be enhanced based on layer type) */}
-        <div className="w-5 h-5 flex items-center justify-center text-xs bg-muted rounded">
-          {layer.type.charAt(0).toUpperCase()}
-        </div>
-        
-        {/* Layer name */}
-        {isEditing ? (
-          <Input
-            value={nameValue}
-            onChange={(e) => setNameValue(e.target.value)}
-            onBlur={handleRename}
-            onKeyDown={handleKeyDown}
-            className="h-6 py-0 px-1 text-xs"
-            autoFocus
-          />
-        ) : (
-          <span 
-            className="text-sm flex-1 truncate cursor-default"
-            onDoubleClick={() => onRename && setIsEditing(true)}
-          >
-            {layer.name}
-          </span>
-        )}
-        
-        {/* Z-index indicator */}
-        <span className="text-xs text-muted-foreground mr-1">
-          z:{layer.zIndex}
-        </span>
-        
-        {/* Layer actions */}
-        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleVisibility();
-                  }}
-                >
-                  {layer.visible ? (
-                    <Eye className="h-3 w-3" />
-                  ) : (
-                    <EyeOff className="h-3 w-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {layer.visible ? 'Hide layer' : 'Show layer'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleLock();
-                  }}
-                >
-                  {layer.locked ? (
-                    <Lock className="h-3 w-3" />
-                  ) : (
-                    <Unlock className="h-3 w-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {layer.locked ? 'Unlock layer' : 'Lock layer'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          {onRename && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditing(true);
-                    }}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Rename layer
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        <div className="w-4 flex-shrink-0">
+          {layer.isGroup && layer.children.length > 0 ? (
+            <Button 
+              variant="ghost"
+              size="icon" 
+              className="h-4 w-4 p-0"
+              onClick={handleToggleExpand}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </Button>
+          ) : (
+            <span className="h-4 w-4" />
           )}
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicate();
-                  }}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Duplicate layer
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                >
-                  <Trash className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                Delete layer
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
+
+        {/* Layer visibility toggle */}
+        <Button 
+          variant="ghost"
+          size="icon" 
+          className="h-5 w-5 p-0"
+          onClick={() => onToggleVisibility(layer.id)}
+          title={layer.visible ? "Hide layer" : "Show layer"}
+        >
+          {layer.visible ? (
+            <Eye className="h-3 w-3" />
+          ) : (
+            <EyeOff className="h-3 w-3" />
+          )}
+        </Button>
+
+        {/* Layer lock toggle */}
+        <Button 
+          variant="ghost"
+          size="icon" 
+          className="h-5 w-5 p-0"
+          onClick={() => onToggleLock(layer.id)}
+          title={layer.locked ? "Unlock layer" : "Lock layer"}
+        >
+          {layer.locked ? (
+            <Lock className="h-3 w-3" />
+          ) : (
+            <Unlock className="h-3 w-3" />
+          )}
+        </Button>
+
+        {/* Layer name */}
+        <div 
+          className="flex-grow cursor-pointer min-w-0"
+          onClick={() => onSelect(layer.id)}
+        >
+          {isRenaming ? (
+            <div className="flex items-center gap-1">
+              <Input
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                className="h-5 text-xs py-0 px-1"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename();
+                  if (e.key === 'Escape') handleCancelRename();
+                }}
+              />
+              <Button 
+                variant="ghost"
+                size="icon" 
+                className="h-4 w-4 p-0"
+                onClick={handleRename}
+              >
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant="ghost"
+                size="icon" 
+                className="h-4 w-4 p-0"
+                onClick={handleCancelRename}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <div 
+              className="truncate text-xs py-1" 
+              title={`${layer.name} (z-index: ${layer.zIndex})`}
+            >
+              {layer.name}
+              <span className="text-muted-foreground ml-2">({layer.type})</span>
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        {showControls && (
+          <div className="flex items-center">
+            {onRename && (
+              <Button 
+                variant="ghost"
+                size="icon" 
+                className="h-5 w-5 p-0"
+                onClick={() => setIsRenaming(true)}
+                title="Rename layer"
+              >
+                <PenLine className="h-3 w-3" />
+              </Button>
+            )}
+
+            <Button 
+              variant="ghost"
+              size="icon" 
+              className="h-5 w-5 p-0"
+              onClick={() => onDuplicate(layer.id)}
+              title="Duplicate layer"
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+
+            <Button 
+              variant="ghost"
+              size="icon" 
+              className="h-5 w-5 p-0"
+              onClick={() => onDelete(layer.id)}
+              title="Delete layer"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
       </div>
-      
-      {/* Z-index controls - visible when selected */}
-      {isSelected && showZIndexControls && onMoveUp && onMoveDown && onBringToFront && onSendToBack && (
-        <div className="flex justify-center mt-1 mb-1">
+
+      {/* Z-index controls appear on hover */}
+      {showControls && (
+        <div className="ml-6 mt-1">
           <ZIndexControls
             layer={layer}
-            onBringForward={onMoveUp}
-            onSendBackward={onMoveDown}
+            onBringForward={onBringForward}
+            onSendBackward={onSendBackward}
             onBringToFront={onBringToFront}
             onSendToBack={onSendToBack}
             disabled={layer.locked}
           />
         </div>
       )}
-      
-      {/* Render children if expanded */}
-      {isExpanded && layer.children && layer.children.map(child => (
-        <LayerItem
-          key={child.id}
-          layer={child}
-          isSelected={child.selected}
-          onSelect={() => {/* Handle child selection */}}
-          onToggleVisibility={() => {/* Handle child visibility */}}
-          onToggleLock={() => {/* Handle child locking */}}
-          onDelete={() => {/* Handle child deletion */}}
-          onDuplicate={() => {/* Handle child duplication */}}
-          depth={(depth || 0) + 1}
-          showZIndexControls={false}
-        />
-      ))}
+
+      {/* Render children for groups */}
+      {layer.isGroup && isExpanded && layer.children.length > 0 && (
+        <div className="ml-4 mt-1 space-y-1 border-l-2 border-muted pl-2">
+          {layer.children.map(childLayer => (
+            <LayerItem
+              key={childLayer.id}
+              layer={childLayer}
+              isSelected={isSelected}
+              onSelect={onSelect}
+              onToggleVisibility={onToggleVisibility}
+              onToggleLock={onToggleLock}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
+              onBringForward={onBringForward}
+              onSendBackward={onSendBackward}
+              onBringToFront={onBringToFront}
+              onSendToBack={onSendToBack}
+              onRename={onRename}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
