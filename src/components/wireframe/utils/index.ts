@@ -1,3 +1,4 @@
+
 // Export all utility functions
 export * from './fabric-converters';
 export * from './canvas-serialization';
@@ -7,12 +8,10 @@ export type { ResponsiveLayoutSettings, AdaptiveWireframeSection } from './secti
 export type { 
   WireframeCanvasConfig, 
   SectionRenderingOptions,
-  AlignmentGuide,
   LayerInfo,
   GridSettings,
   DropZoneIndicator,
   GuideVisualization,
-  GridConfiguration,
   GridVisualSettings
 } from './types';
 
@@ -75,8 +74,8 @@ export {
   DEFAULT_VISUAL_SETTINGS
 } from './grid-system';
 
-// Add explicit export for GridConfiguration
-export type { GridConfiguration } from './grid-system';
+// Export grid system types explicitly
+export type { GridConfiguration, AlignmentGuide, GridVisualSettings } from './grid-system';
 
 // Export alignment guides utilities
 export {

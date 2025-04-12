@@ -1,5 +1,5 @@
 
-import { AlignmentGuide } from './types';
+import { AlignmentGuide } from './grid-system';
 
 /**
  * Calculate the bounding box for multiple sections
