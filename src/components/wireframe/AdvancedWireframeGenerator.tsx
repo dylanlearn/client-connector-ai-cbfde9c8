@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import WireframeVisualizer from './WireframeVisualizer';
 import { DeviceType, ViewMode } from './types';
 import { Input } from '@/components/ui/input';
 import { createColorScheme } from '@/utils/copy-suggestions-helper';
+import { Loader2 } from 'lucide-react';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;
@@ -115,6 +117,9 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
                 onChange={(e) => setPrompt(e.target.value)}
                 className="min-h-20"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Try to include specific sections like "navigation", "hero", "features", "testimonials", "pricing", etc.
+              </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -164,7 +169,11 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
             disabled={isGenerating || !prompt.trim()}
             className="w-full"
           >
-            {isGenerating ? 'Generating...' : 'Generate Wireframe'}
+            {isGenerating ? 
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </> : 'Generate Wireframe'}
           </Button>
         </CardFooter>
       </Card>
@@ -179,6 +188,7 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
                 variant="outline" 
                 size="sm" 
                 onClick={() => setDisplayDevice('mobile')}
+                className={displayDevice === 'mobile' ? 'bg-primary/10' : ''}
               >
                 Mobile
               </Button>
@@ -186,6 +196,7 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
                 variant="outline" 
                 size="sm" 
                 onClick={() => setDisplayDevice('tablet')}
+                className={displayDevice === 'tablet' ? 'bg-primary/10' : ''}
               >
                 Tablet
               </Button>
@@ -193,6 +204,7 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
                 variant="outline" 
                 size="sm" 
                 onClick={() => setDisplayDevice('desktop')}
+                className={displayDevice === 'desktop' ? 'bg-primary/10' : ''}
               >
                 Desktop
               </Button>
@@ -215,6 +227,14 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
         <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
           <h4 className="text-red-800 font-medium">Error generating wireframe</h4>
           <p className="text-red-600">{error.message}</p>
+        </div>
+      )}
+      
+      {/* Loading state when no wireframe yet */}
+      {isGenerating && !currentWireframe && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Generating your wireframe...</p>
         </div>
       )}
     </div>

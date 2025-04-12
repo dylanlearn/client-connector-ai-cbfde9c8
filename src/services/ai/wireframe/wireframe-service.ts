@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { 
   generateWireframeFromPrompt, 
@@ -5,7 +6,7 @@ import {
 } from './api/wireframe-generator';
 import { getSuggestedCopy } from './content/copy-suggestions';
 import { getCombinedAIMemory } from './wireframe-memory-service';
-import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
+import { WireframeData, WireframeGenerationParams, WireframeGenerationResult, WireframeSection } from './wireframe-types';
 
 /**
  * Generate a new wireframe based on a description
@@ -35,37 +36,15 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
     // Get previous context if available
     const memory = await getCombinedAIMemory();
     
-    // Simulate wireframe generation for now to avoid API calls
+    // Extract sections from description
+    const sections = extractSectionsFromDescription(params.description);
+    
+    // Create wireframe data
     const wireframe: WireframeData = {
       id: uuidv4(),
       title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
       description: params.description || 'Generated wireframe',
-      sections: [
-        {
-          id: uuidv4(),
-          name: 'Navigation',
-          sectionType: 'navigation',
-          description: 'Main navigation bar',
-          componentVariant: 'horizontal',
-          components: []
-        },
-        {
-          id: uuidv4(),
-          name: 'Hero',
-          sectionType: 'hero',
-          description: 'Hero section with headline and call to action',
-          componentVariant: 'centered',
-          components: []
-        },
-        {
-          id: uuidv4(),
-          name: 'Features',
-          sectionType: 'features',
-          description: 'Key product features',
-          componentVariant: 'grid',
-          components: []
-        }
-      ],
+      sections: sections,
       colorScheme: {
         primary: '#3b82f6',
         secondary: '#10b981',
@@ -102,6 +81,113 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
       success: false,
       message: `Error generating wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
+  }
+};
+
+/**
+ * Extract sections from the description
+ */
+const extractSectionsFromDescription = (description: string): WireframeSection[] => {
+  // If description is empty, return default sections
+  if (!description) {
+    return getDefaultSections();
+  }
+  
+  // Try to identify sections based on common keywords
+  const sectionTypes = [
+    { keyword: /navigation|nav\s+bar|navbar|header/i, type: 'navigation', name: 'Navigation' },
+    { keyword: /hero|banner|intro|introduction/i, type: 'hero', name: 'Hero' },
+    { keyword: /feature|features/i, type: 'features', name: 'Features' },
+    { keyword: /testimonial|review|testimonials/i, type: 'testimonials', name: 'Testimonials' },
+    { keyword: /pricing|plans|subscription|package/i, type: 'pricing', name: 'Pricing Plans' },
+    { keyword: /faq|questions|accordion/i, type: 'faq', name: 'FAQ' },
+    { keyword: /contact|form|get in touch/i, type: 'contact', name: 'Contact' },
+    { keyword: /footer/i, type: 'footer', name: 'Footer' },
+    { keyword: /cta|call to action/i, type: 'cta', name: 'Call To Action' }
+  ];
+  
+  // Start with an empty array for extracted sections
+  const extractedSections: WireframeSection[] = [];
+  
+  // Look for each section type in the description
+  sectionTypes.forEach(({ keyword, type, name }) => {
+    if (keyword.test(description)) {
+      extractedSections.push({
+        id: uuidv4(),
+        name: name,
+        sectionType: type,
+        description: `${name} section`,
+        componentVariant: getVariantForType(type),
+        components: []
+      });
+    }
+  });
+  
+  // If no sections were found, return default sections
+  if (extractedSections.length === 0) {
+    return getDefaultSections();
+  }
+  
+  return extractedSections;
+};
+
+/**
+ * Get default sections for a wireframe
+ */
+const getDefaultSections = (): WireframeSection[] => {
+  return [
+    {
+      id: uuidv4(),
+      name: 'Navigation',
+      sectionType: 'navigation',
+      description: 'Main navigation bar',
+      componentVariant: 'horizontal',
+      components: []
+    },
+    {
+      id: uuidv4(),
+      name: 'Hero',
+      sectionType: 'hero',
+      description: 'Hero section with headline and call to action',
+      componentVariant: 'centered',
+      components: []
+    },
+    {
+      id: uuidv4(),
+      name: 'Features',
+      sectionType: 'features',
+      description: 'Key product features',
+      componentVariant: 'grid',
+      components: []
+    }
+  ];
+};
+
+/**
+ * Get the default variant for a section type
+ */
+const getVariantForType = (sectionType: string): string => {
+  switch (sectionType) {
+    case 'navigation':
+      return 'horizontal';
+    case 'hero':
+      return 'split';
+    case 'features':
+      return 'grid';
+    case 'testimonials':
+      return 'cards';
+    case 'pricing':
+      return 'columns';
+    case 'faq':
+      return 'accordion';
+    case 'contact':
+      return 'simple';
+    case 'footer':
+      return 'columns';
+    case 'cta':
+      return 'centered';
+    default:
+      return 'standard';
   }
 };
 
