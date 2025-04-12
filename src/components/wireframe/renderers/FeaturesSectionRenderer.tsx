@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
 import { LightbulbIcon, Boxes, BarChart3, RefreshCcw } from 'lucide-react';
+import { getSuggestion } from './utilities';
 
 const FeaturesSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -12,9 +12,9 @@ const FeaturesSectionRenderer: React.FC<SectionComponentProps> = ({
   isSelected = false,
   onClick
 }) => {
-  // Get copy suggestions or defaults
-  const heading = section.copySuggestions?.heading || 'Powerful Features';
-  const subheading = section.copySuggestions?.subheading || 'Everything you need to streamline your workflow and boost productivity.';
+  // Get copy suggestions or defaults using our safe utility
+  const heading = getSuggestion(section.copySuggestions, 'heading', 'Powerful Features');
+  const subheading = getSuggestion(section.copySuggestions, 'subheading', 'Everything you need to streamline your workflow and boost productivity.');
   
   // Get stats or create defaults
   const stats = section.stats || [

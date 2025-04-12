@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
 import { CheckIcon } from 'lucide-react';
+import { getSuggestion } from './utilities';
 
 const PricingSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -12,9 +12,9 @@ const PricingSectionRenderer: React.FC<SectionComponentProps> = ({
   isSelected = false,
   onClick
 }) => {
-  // Get copy suggestions or defaults
-  const heading = section.copySuggestions?.heading || 'Simple, Transparent Pricing';
-  const subheading = section.copySuggestions?.subheading || 'Choose the plan that best fits your needs. All plans include a 14-day free trial.';
+  // Get copy suggestions or defaults using our safe utility
+  const heading = getSuggestion(section.copySuggestions, 'heading', 'Simple, Transparent Pricing');
+  const subheading = getSuggestion(section.copySuggestions, 'subheading', 'Choose the plan that best fits your needs. All plans include a 14-day free trial.');
   
   // Get components or create defaults
   const pricingCards = section.components?.filter(c => c.type === 'pricing-card') || [

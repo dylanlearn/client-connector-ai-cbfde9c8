@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
 import { StarIcon } from 'lucide-react';
+import { getSuggestion } from './utilities';
 
 const TestimonialsSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -12,9 +12,9 @@ const TestimonialsSectionRenderer: React.FC<SectionComponentProps> = ({
   isSelected = false,
   onClick
 }) => {
-  // Get copy suggestions or defaults
-  const heading = section.copySuggestions?.heading || 'What Our Customers Say';
-  const subheading = section.copySuggestions?.subheading || 'Read testimonials from our satisfied clients and discover how we\'ve helped businesses like yours.';
+  // Get copy suggestions or defaults using our safe utility
+  const heading = getSuggestion(section.copySuggestions, 'heading', 'What Our Customers Say');
+  const subheading = getSuggestion(section.copySuggestions, 'subheading', 'Read testimonials from our satisfied clients and discover how we\'ve helped businesses like yours.');
   
   // Get components or create defaults
   const testimonials = section.components?.filter(c => c.type === 'testimonial-card') || [

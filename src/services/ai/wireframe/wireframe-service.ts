@@ -1,42 +1,93 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  WireframeGenerationParams,
-  WireframeGenerationResult,
-  WireframeData,
-  WireframeSection
-} from './wireframe-types';
-import { wireframeApiService } from './api/wireframe-api-service';
+import { WireframeData, WireframeSection, WireframeComponent, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
 
 /**
- * Generate a wireframe from input parameters
+ * Creates a WireframeComponent with a guaranteed ID
  */
-export const generateWireframe = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
+const createComponent = (componentData: Partial<WireframeComponent>): WireframeComponent => {
+  return {
+    id: uuidv4(),
+    type: componentData.type || 'box',
+    position: componentData.position || { x: 0, y: 0 },
+    ...componentData
+  } as WireframeComponent;
+};
+
+/**
+ * Generate a wireframe based on the provided parameters
+ */
+export const generateWireframe = (params: WireframeGenerationParams): WireframeGenerationResult => {
   try {
-    console.log('Generating wireframe with params:', params);
+    // Parse the description to determine sections to include
+    const description = params.description || '';
+    const sections: WireframeSection[] = [];
     
-    // Extract sections from the description
-    const sections = extractSectionsFromPrompt(params.description);
+    // Generate a unique ID for the wireframe
+    const wireframeId = uuidv4();
     
-    // Create a wireframe with the extracted sections
+    // Generate navigation section (typically first)
+    if (description.toLowerCase().includes('navigation') || description.toLowerCase().includes('navbar') || description.toLowerCase().includes('header')) {
+      sections.push(generateNavigationSection());
+    }
+    
+    // Generate hero section
+    if (description.toLowerCase().includes('hero')) {
+      sections.push(generateHeroSection());
+    }
+    
+    // Generate features section
+    if (description.toLowerCase().includes('features') || description.toLowerCase().includes('feature grid')) {
+      sections.push(generateFeaturesSection());
+    }
+    
+    // Generate testimonials section
+    if (description.toLowerCase().includes('testimonials')) {
+      sections.push(generateTestimonialsSection());
+    }
+    
+    // Generate pricing section
+    if (description.toLowerCase().includes('pricing')) {
+      sections.push(generatePricingSection());
+    }
+    
+    // Generate FAQ section
+    if (description.toLowerCase().includes('faq') || description.toLowerCase().includes('accordion')) {
+      sections.push(generateFAQSection());
+    }
+    
+    // Generate footer section
+    if (description.toLowerCase().includes('footer')) {
+      sections.push(generateFooterSection());
+    }
+    
+    // If no sections were determined, create a basic layout with common sections
+    if (sections.length === 0) {
+      sections.push(generateNavigationSection());
+      sections.push(generateHeroSection());
+      sections.push(generateFeaturesSection());
+      sections.push(generateFooterSection());
+    }
+    
+    // Create the wireframe data object
     const wireframe: WireframeData = {
-      id: uuidv4(),
-      title: `Wireframe: ${params.description.substring(0, 30)}...`,
-      description: params.description || 'Generated wireframe',
+      id: wireframeId,
+      title: params.description ? `Wireframe for ${params.description.substring(0, 50)}` : 'New Wireframe',
+      description: params.description || '',
       sections: sections,
-      colorScheme: params.colorScheme || {
+      colorScheme: {
         primary: '#3b82f6',
         secondary: '#10b981',
         accent: '#f59e0b',
         background: '#ffffff',
-        text: '#1a202c'
+        text: '#111827'
       },
       typography: {
-        headings: 'Inter',
-        body: 'Inter'
+        headings: 'sans-serif',
+        body: 'sans-serif'
       }
     };
-
+    
     return {
       wireframe,
       success: true,
@@ -47,411 +98,339 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
     return {
       wireframe: null,
       success: false,
-      message: `Failed to generate wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
 };
 
 /**
- * Generate a variation of a wireframe with style changes
+ * Generate a navigation section
  */
-export const generateWireframeVariationWithStyle = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
-  try {
-    console.log('Generating wireframe variation with params:', params);
-    
-    // For variations, we'll use the same approach but modify some aspects
-    return generateWireframe({
-      ...params,
-      description: `Variation of: ${params.description}`
-    });
-  } catch (error) {
-    console.error('Error generating wireframe variation:', error);
-    return {
-      wireframe: null,
-      success: false,
-      message: `Failed to generate variation: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
-  }
-};
-
-/**
- * Extract sections from a prompt description
- */
-function extractSectionsFromPrompt(prompt: string): WireframeSection[] {
-  const sections: WireframeSection[] = [];
+function generateNavigationSection(): WireframeSection {
+  const navigationId = uuidv4();
   
-  // Parse the prompt to identify sections
-  // This is a more sophisticated section extractor that looks for explicit section descriptions
-  
-  // First, identify if we have a SaaS landing page structure
-  const isSaasLandingPage = prompt.toLowerCase().includes('saas') && 
-                           prompt.toLowerCase().includes('landing');
-  
-  const isEcommercePage = prompt.toLowerCase().includes('ecommerce') || 
-                          prompt.toLowerCase().includes('shop') || 
-                          prompt.toLowerCase().includes('store');
-                          
-  const isBlogPage = prompt.toLowerCase().includes('blog') && 
-                    !prompt.toLowerCase().includes('landing');
-                    
-  // Look for section descriptions
-  const navBarMatch = prompt.match(/nav(igation)?\s*(bar|header)?[^.]*\./i);
-  const heroMatch = prompt.match(/hero\s*(section)?[^.]*\./i);
-  const featuresMatch = prompt.match(/feature(s)?\s*(grid|section)?[^.]*\./i);
-  const testimonialMatch = prompt.match(/testimonial(s)?[^.]*\./i);
-  const pricingMatch = prompt.match(/pricing[^.]*\./i);
-  const faqMatch = prompt.match(/faq[^.]*\./i);
-  const footerMatch = prompt.match(/footer[^.]*\./i);
-  
-  // Add navigation section
-  if (navBarMatch || isSaasLandingPage || isEcommercePage || isBlogPage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'Navigation',
-      sectionType: 'navigation',
-      description: navBarMatch ? navBarMatch[0] : 'Main navigation bar with logo, links, and CTA',
-      componentVariant: 'sticky',
-      components: [
-        {
-          type: 'logo',
-          position: { x: 0, y: 0 },
-          props: { align: 'left' }
-        },
-        {
-          type: 'nav-links',
-          position: { x: 0, y: 0 },
-          props: { align: 'center', items: ['Features', 'Pricing', 'About', 'Contact'] }
-        },
-        {
-          type: 'button',
-          position: { x: 0, y: 0 },
-          props: { text: 'Get Started', align: 'right', variant: 'primary' }
-        }
-      ],
-      style: {
-        padding: '1rem',
-        backgroundColor: 'transparent',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10
-      }
-    });
-  }
-  
-  // Add hero section
-  if (heroMatch || isSaasLandingPage || isEcommercePage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'Hero',
-      sectionType: 'hero',
-      description: heroMatch ? heroMatch[0] : 'Full-width hero section with headline, subheading and CTA',
-      componentVariant: 'split',
-      layout: {
-        type: 'grid',
-        columns: 2,
-        gap: 16
-      },
-      components: [
-        {
-          type: 'heading',
-          position: { x: 0, y: 0 },
-          props: { text: 'Powerful SaaS Solution for Your Business', level: 1 }
-        },
-        {
-          type: 'text',
-          position: { x: 0, y: 0 },
-          props: { text: 'Streamline your workflow and boost productivity with our platform' }
-        },
-        {
-          type: 'button-group',
-          position: { x: 0, y: 0 },
-          props: { 
-            buttons: [
-              { text: 'Get Started', variant: 'primary' },
-              { text: 'Learn More', variant: 'outline' }
-            ]
-          }
-        },
-        {
-          type: 'image',
-          position: { x: 0, y: 0 },
-          props: { src: 'hero-image', alt: 'Platform Dashboard' }
-        }
-      ],
-      style: {
-        padding: '4rem 2rem',
-        minHeight: '90vh',
-        display: 'flex',
-        alignItems: 'center'
-      }
-    });
-  }
-  
-  // Add features section
-  if (featuresMatch || isSaasLandingPage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'Features',
-      sectionType: 'features',
-      description: featuresMatch ? featuresMatch[0] : '3-column feature grid with icons and descriptions',
-      componentVariant: 'grid',
-      layout: {
-        type: 'grid',
-        columns: 3,
-        gap: 24
-      },
-      stats: [
-        { id: uuidv4(), value: "Feature 1", label: "Short description of this amazing feature" },
-        { id: uuidv4(), value: "Feature 2", label: "Short description of this amazing feature" },
-        { id: uuidv4(), value: "Feature 3", label: "Short description of this amazing feature" },
-      ],
-      style: {
-        padding: '4rem 2rem',
-        backgroundColor: 'var(--background-alt)'
-      },
-      copySuggestions: {
-        heading: "Powerful Features",
-        subheading: "Everything you need to streamline your workflow and boost productivity."
-      },
-    });
-  }
-  
-  // Add testimonials section
-  if (testimonialMatch || isSaasLandingPage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'Testimonials',
-      sectionType: 'testimonials',
-      description: testimonialMatch ? testimonialMatch[0] : 'Testimonial slider with customer quotes',
-      componentVariant: 'slider',
-      layout: {
-        type: 'grid',
-        columns: 3,
-        gap: 16
-      },
-      components: [
-        {
-          type: 'testimonial-card',
-          position: { x: 0, y: 0 },
-          props: { 
-            quote: "This platform has transformed our workflow. Highly recommended!",
-            author: "Jane Smith",
-            role: "CEO, Acme Inc.",
-            rating: 5
-          }
-        },
-        {
-          type: 'testimonial-card',
-          position: { x: 0, y: 0 },
-          props: { 
-            quote: "The best SaaS platform we've used. Intuitive and powerful.",
-            author: "John Doe",
-            role: "CTO, XYZ Corp",
-            rating: 5
-          }
-        },
-        {
-          type: 'testimonial-card',
-          position: { x: 0, y: 0 },
-          props: { 
-            quote: "Excellent support and feature-rich platform.",
-            author: "Sarah Johnson",
-            role: "Director, ABC Solutions",
-            rating: 4
-          }
-        }
-      ],
-      style: {
-        padding: '4rem 2rem'
-      },
-      copySuggestions: {
-        heading: "What Our Customers Say",
-        subheading: "Read testimonials from our satisfied clients and discover how we've helped businesses like yours."
-      },
-    });
-  }
-  
-  // Add pricing section
-  if (pricingMatch || isSaasLandingPage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'Pricing',
-      sectionType: 'pricing',
-      description: pricingMatch ? pricingMatch[0] : '3 pricing tiers with features and CTAs',
-      componentVariant: 'cards',
-      layout: {
-        type: 'grid',
-        columns: 3,
-        gap: 24
-      },
-      components: [
-        {
-          type: 'pricing-card',
-          position: { x: 0, y: 0 },
-          props: { 
-            planName: "Basic",
-            price: "$19",
-            period: "per month",
-            features: ["Feature 1", "Feature 2", "Feature 3"],
-            cta: "Get Started"
-          }
-        },
-        {
-          type: 'pricing-card',
-          position: { x: 0, y: 0 },
-          props: { 
-            planName: "Pro",
-            price: "$49",
-            period: "per month",
-            features: ["All Basic features", "Feature 4", "Feature 5", "Feature 6"],
-            cta: "Get Started",
-            highlighted: true
-          }
-        },
-        {
-          type: 'pricing-card',
-          position: { x: 0, y: 0 },
-          props: { 
-            planName: "Enterprise",
-            price: "$99",
-            period: "per month",
-            features: ["All Pro features", "Feature 7", "Feature 8", "Feature 9"],
-            cta: "Contact Sales"
-          }
-        }
-      ],
-      style: {
-        padding: '4rem 2rem',
-        backgroundColor: 'var(--background-alt)'
-      },
-      copySuggestions: {
-        heading: "Simple, Transparent Pricing",
-        subheading: "Choose the plan that best fits your needs. All plans include a 14-day free trial."
-      },
-    });
-  }
-  
-  // Add FAQ section
-  if (faqMatch || isSaasLandingPage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'FAQ',
-      sectionType: 'faq',
-      description: faqMatch ? faqMatch[0] : 'Frequently asked questions in accordion format',
-      componentVariant: 'accordion',
-      components: [
-        {
-          type: 'accordion',
-          position: { x: 0, y: 0 },
-          props: { 
-            items: [
-              { question: "How does the free trial work?", answer: "Our 14-day free trial gives you full access to all features with no credit card required." },
-              { question: "Can I upgrade or downgrade my plan?", answer: "Yes, you can change your plan at any time. Changes take effect at the next billing cycle." },
-              { question: "Do you offer refunds?", answer: "We offer a 30-day money-back guarantee if you're not satisfied with our service." },
-              { question: "How secure is your platform?", answer: "We use industry-leading security measures including encryption and regular security audits." }
-            ]
-          }
-        }
-      ],
-      style: {
-        padding: '4rem 2rem'
-      }
-    });
-  }
-  
-  // Add footer section
-  if (footerMatch || isSaasLandingPage || isEcommercePage || isBlogPage) {
-    sections.push({
-      id: uuidv4(),
-      name: 'Footer',
-      sectionType: 'footer',
-      description: footerMatch ? footerMatch[0] : 'Site footer with links, newsletter signup and social icons',
-      componentVariant: 'columns',
-      layout: {
-        type: 'grid',
-        columns: 4,
-        gap: 16
-      },
-      components: [
-        {
-          type: 'logo',
-          position: { x: 0, y: 0 },
-          props: {}
-        },
-        {
-          type: 'nav-links',
-          position: { x: 0, y: 0 },
-          props: { 
-            title: "Product",
-            links: ["Features", "Pricing", "Roadmap", "Support"]
-          }
-        },
-        {
-          type: 'nav-links',
-          position: { x: 0, y: 0 },
-          props: { 
-            title: "Company",
-            links: ["About Us", "Blog", "Careers", "Contact"]
-          }
-        },
-        {
-          type: 'newsletter',
-          position: { x: 0, y: 0 },
-          props: { 
-            title: "Stay Updated",
-            placeholder: "Your email address",
-            buttonText: "Subscribe"
-          }
-        },
-        {
-          type: 'social-icons',
-          position: { x: 0, y: 0 },
-          props: { 
-            icons: ["twitter", "facebook", "linkedin", "instagram"]
-          }
-        }
-      ],
-      style: {
-        padding: '4rem 2rem',
-        backgroundColor: 'var(--footer-bg)'
-      }
-    });
-  }
-  
-  // If no sections were detected, create some default ones
-  if (sections.length === 0) {
-    sections.push(
-      {
-        id: uuidv4(),
-        name: 'Navigation',
-        sectionType: 'navigation',
-        description: 'Main navigation bar',
-        componentVariant: 'standard'
-      },
-      {
-        id: uuidv4(),
-        name: 'Hero',
-        sectionType: 'hero',
-        description: 'Hero section with headline and call to action',
-        componentVariant: 'standard'
-      },
-      {
-        id: uuidv4(),
-        name: 'Content',
-        sectionType: 'content',
-        description: 'Main content area',
-        componentVariant: 'standard'
-      }
-    );
-  }
-  
-  return sections;
+  return {
+    id: navigationId,
+    name: 'Navigation',
+    sectionType: 'navigation',
+    description: 'Main navigation bar',
+    componentVariant: 'sticky',
+    components: [
+      createComponent({
+        type: 'logo',
+        position: { x: 0, y: 0 },
+        props: { align: 'left' }
+      }),
+      createComponent({
+        type: 'nav-links',
+        position: { x: 0, y: 0 },
+        props: { align: 'center', items: ['Features', 'Pricing', 'About', 'Contact'] }
+      }),
+      createComponent({
+        type: 'button',
+        position: { x: 0, y: 0 },
+        props: { text: 'Get Started', align: 'right', variant: 'primary' }
+      })
+    ],
+    copySuggestions: {
+      heading: 'Your Brand',
+      primaryCta: 'Get Started'
+    }
+  };
 }
 
-// Export for use in other files
-export const wireframeService = {
+/**
+ * Generate a hero section
+ */
+function generateHeroSection(): WireframeSection {
+  const heroId = uuidv4();
+  
+  return {
+    id: heroId,
+    name: 'Hero',
+    sectionType: 'hero',
+    description: 'Main hero section',
+    componentVariant: 'split',
+    components: [
+      createComponent({
+        type: 'heading',
+        position: { x: 0, y: 0 },
+        props: { text: 'Powerful Solution for Your Business', level: 1 }
+      }),
+      createComponent({
+        type: 'paragraph',
+        position: { x: 0, y: 0 },
+        props: { text: 'Streamline your workflow and boost productivity with our intuitive platform.' }
+      }),
+      createComponent({
+        type: 'button-group',
+        position: { x: 0, y: 0 },
+        props: { buttons: [
+          { text: 'Get Started', variant: 'primary' },
+          { text: 'Learn More', variant: 'secondary' }
+        ]}
+      }),
+      createComponent({
+        type: 'image',
+        position: { x: 0, y: 0 },
+        props: { src: '/placeholder-hero.jpg', alt: 'Hero Image' }
+      })
+    ],
+    copySuggestions: {
+      heading: 'Powerful Solution for Your Business',
+      subheading: 'Streamline your workflow and boost productivity with our intuitive platform.',
+      primaryCta: 'Get Started',
+      secondaryCta: 'Learn More'
+    }
+  };
+}
+
+/**
+ * Generate a features section
+ */
+function generateFeaturesSection(): WireframeSection {
+  const featuresId = uuidv4();
+  
+  return {
+    id: featuresId,
+    name: 'Features',
+    sectionType: 'features',
+    description: 'Key features section',
+    stats: [
+      { id: uuidv4(), value: 'Feature 1', label: 'Description of this amazing feature.' },
+      { id: uuidv4(), value: 'Feature 2', label: 'Description of this amazing feature.' },
+      { id: uuidv4(), value: 'Feature 3', label: 'Description of this amazing feature.' },
+      { id: uuidv4(), value: 'Feature 4', label: 'Description of this amazing feature.' },
+      { id: uuidv4(), value: 'Feature 5', label: 'Description of this amazing feature.' },
+      { id: uuidv4(), value: 'Feature 6', label: 'Description of this amazing feature.' }
+    ],
+    copySuggestions: {
+      heading: 'Powerful Features',
+      subheading: 'Everything you need to streamline your workflow and boost productivity.'
+    }
+  };
+}
+
+/**
+ * Generate a testimonials section
+ */
+function generateTestimonialsSection(): WireframeSection {
+  const testimonialsId = uuidv4();
+  
+  return {
+    id: testimonialsId,
+    name: 'Testimonials',
+    sectionType: 'testimonials',
+    description: 'Customer testimonials',
+    components: [
+      createComponent({
+        type: 'testimonial-card',
+        position: { x: 0, y: 0 },
+        props: {
+          quote: "This platform has transformed our workflow. Highly recommended!",
+          author: "Jane Smith",
+          role: "CEO, Acme Inc.",
+          rating: 5
+        }
+      }),
+      createComponent({
+        type: 'testimonial-card',
+        position: { x: 0, y: 0 },
+        props: {
+          quote: "The best SaaS platform we've used. Intuitive and powerful.",
+          author: "John Doe",
+          role: "CTO, XYZ Corp",
+          rating: 5
+        }
+      }),
+      createComponent({
+        type: 'testimonial-card',
+        position: { x: 0, y: 0 },
+        props: {
+          quote: "Excellent support and feature-rich platform.",
+          author: "Sarah Johnson",
+          role: "Director, ABC Solutions",
+          rating: 4
+        }
+      })
+    ],
+    copySuggestions: {
+      heading: 'What Our Customers Say',
+      subheading: 'Read testimonials from our satisfied clients and discover how we\'ve helped businesses like yours.'
+    }
+  };
+}
+
+/**
+ * Generate a pricing section
+ */
+function generatePricingSection(): WireframeSection {
+  const pricingId = uuidv4();
+  
+  return {
+    id: pricingId,
+    name: 'Pricing',
+    sectionType: 'pricing',
+    description: 'Pricing plans',
+    components: [
+      createComponent({
+        type: 'pricing-card',
+        position: { x: 0, y: 0 },
+        props: {
+          planName: "Basic",
+          price: "$19",
+          period: "per month",
+          features: ["Feature 1", "Feature 2", "Feature 3"],
+          cta: "Get Started"
+        }
+      }),
+      createComponent({
+        type: 'pricing-card',
+        position: { x: 0, y: 0 },
+        props: {
+          planName: "Pro",
+          price: "$49",
+          period: "per month",
+          features: ["All Basic features", "Feature 4", "Feature 5", "Feature 6"],
+          cta: "Get Started",
+          highlighted: true
+        }
+      }),
+      createComponent({
+        type: 'pricing-card',
+        position: { x: 0, y: 0 },
+        props: {
+          planName: "Enterprise",
+          price: "$99",
+          period: "per month",
+          features: ["All Pro features", "Feature 7", "Feature 8", "Feature 9"],
+          cta: "Contact Sales"
+        }
+      })
+    ],
+    copySuggestions: {
+      heading: 'Simple, Transparent Pricing',
+      subheading: 'Choose the plan that best fits your needs. All plans include a 14-day free trial.'
+    }
+  };
+}
+
+/**
+ * Generate a FAQ section
+ */
+function generateFAQSection(): WireframeSection {
+  const faqId = uuidv4();
+  
+  return {
+    id: faqId,
+    name: 'FAQ',
+    sectionType: 'faq',
+    description: 'Frequently Asked Questions',
+    components: [
+      createComponent({
+        type: 'faq-accordion',
+        position: { x: 0, y: 0 },
+        props: {
+          items: [
+            {
+              question: "How does the platform work?",
+              answer: "Our platform works by integrating with your existing systems to streamline workflows and automate repetitive tasks."
+            },
+            {
+              question: "What kind of support do you offer?",
+              answer: "We offer 24/7 email support for all plans, with phone and prioritized support for higher-tier plans."
+            },
+            {
+              question: "Can I cancel my subscription?",
+              answer: "Yes, you can cancel your subscription at any time. We offer a 14-day money-back guarantee for all plans."
+            },
+            {
+              question: "Do you offer custom solutions?",
+              answer: "Yes, we offer custom solutions for enterprise clients. Contact our sales team to learn more."
+            }
+          ]
+        }
+      })
+    ],
+    copySuggestions: {
+      heading: 'Frequently Asked Questions',
+      subheading: 'Find answers to common questions about our platform and services.'
+    }
+  };
+}
+
+/**
+ * Generate a footer section
+ */
+function generateFooterSection(): WireframeSection {
+  const footerId = uuidv4();
+  
+  return {
+    id: footerId,
+    name: 'Footer',
+    sectionType: 'footer',
+    description: 'Page footer',
+    components: [
+      createComponent({
+        type: 'logo',
+        position: { x: 0, y: 0 },
+        props: {}
+      }),
+      createComponent({
+        type: 'footer-links',
+        position: { x: 0, y: 0 },
+        props: {
+          title: "Company",
+          links: ["About", "Careers", "Contact Us", "Blog"]
+        }
+      }),
+      createComponent({
+        type: 'footer-links',
+        position: { x: 0, y: 0 },
+        props: {
+          title: "Resources",
+          links: ["Documentation", "FAQs", "Support", "Privacy Policy"]
+        }
+      }),
+      createComponent({
+        type: 'newsletter',
+        position: { x: 0, y: 0 },
+        props: {
+          title: "Subscribe to our newsletter",
+          placeholder: "Enter your email",
+          buttonText: "Subscribe"
+        }
+      }),
+      createComponent({
+        type: 'social-icons',
+        position: { x: 0, y: 0 },
+        props: {
+          icons: ["twitter", "facebook", "linkedin"]
+        }
+      })
+    ],
+    copySuggestions: {
+      supportText: '© 2025 Your Company. All rights reserved.'
+    }
+  };
+}
+
+/**
+ * Generate a wireframe variation with a specific style
+ */
+export const generateWireframeVariationWithStyle = (
+  baseWireframe: WireframeData,
+  styleChanges: string
+): WireframeGenerationResult => {
+  // This would apply style changes based on the specified style
+  return {
+    wireframe: baseWireframe,
+    success: true,
+    message: 'Wireframe style updated'
+  };
+};
+
+export default {
   generateWireframe,
   generateWireframeVariationWithStyle
 };
-
-export default wireframeService;

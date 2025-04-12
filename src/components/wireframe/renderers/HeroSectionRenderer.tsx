@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { SectionComponentProps } from '../types';
 import { cn } from '@/lib/utils';
+import { getSuggestion } from './utilities';
 
 const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
   section,
@@ -11,11 +11,11 @@ const HeroSectionRenderer: React.FC<SectionComponentProps> = ({
   isSelected = false,
   onClick
 }) => {
-  // Get copy suggestions from section or use defaults
-  const title = section.copySuggestions?.heading || 'Powerful SaaS Solution';
-  const subtitle = section.copySuggestions?.subheading || 'Streamline your workflow and boost productivity';
-  const primaryCta = section.copySuggestions?.primaryCta || 'Get Started';
-  const secondaryCta = section.copySuggestions?.secondaryCta || 'Learn More';
+  // Get copy suggestions from section or use defaults with our safe utility
+  const title = getSuggestion(section.copySuggestions, 'heading', 'Powerful SaaS Solution');
+  const subtitle = getSuggestion(section.copySuggestions, 'subheading', 'Streamline your workflow and boost productivity');
+  const primaryCta = getSuggestion(section.copySuggestions, 'primaryCta', 'Get Started');
+  const secondaryCta = getSuggestion(section.copySuggestions, 'secondaryCta', 'Learn More');
 
   // Determine layout style based on variant or device
   const isSplit = section.componentVariant === 'split';
