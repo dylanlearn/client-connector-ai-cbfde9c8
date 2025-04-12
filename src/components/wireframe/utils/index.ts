@@ -1,4 +1,3 @@
-
 // Export all utility functions
 export * from './fabric-converters';
 export * from './canvas-serialization';
@@ -68,13 +67,16 @@ export {
   updateGridOnCanvas,
   sendGridToBack,
   removeGridFromCanvas as removeGridSystem,
-  calculateColumnPositions as calculateSnapPositions, // Using the proper function name
+  calculateColumnPositions as calculateSnapPositions,
   findClosestSnapPosition,
   showAlignmentGuides,
   removeAlignmentGuides,
   DEFAULT_GRID_CONFIG as DEFAULT_GRID_SYSTEM_CONFIG,
   DEFAULT_VISUAL_SETTINGS
 } from './grid-system';
+
+// Add explicit export for GridConfiguration
+export type { GridConfiguration } from './grid-system';
 
 // Export alignment guides utilities
 export {

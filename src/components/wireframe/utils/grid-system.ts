@@ -1,5 +1,19 @@
 import { fabric } from 'fabric';
-import { GridConfiguration, AlignmentGuide, GridVisualSettings } from './types';
+
+export interface GridConfiguration {
+  visible: boolean;
+  size: number;
+  snapToGrid: boolean;
+  type: 'lines' | 'dots' | 'columns';
+  columns: number;
+  gutterWidth: number;
+  marginWidth: number;
+  snapThreshold: number;
+  showGuides: boolean;
+  guideColor: string;
+  showRulers: boolean;
+  rulerSize: number;
+}
 
 /**
  * Default grid configuration - only define this once
