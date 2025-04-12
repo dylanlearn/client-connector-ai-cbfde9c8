@@ -53,6 +53,9 @@ export function useWireframeGenerator(
         intakeData: params.intakeData
       };
 
+      console.log('Enhanced wireframe generation initiated with params:', generationParams);
+      console.log('Generating wireframe with params:', generationParams);
+
       // Call the service to generate the wireframe
       const result = await apiGenerateWireframeService(generationParams);
 

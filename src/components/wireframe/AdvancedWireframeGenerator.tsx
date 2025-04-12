@@ -1,241 +1,108 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { useAdvancedWireframe } from '@/hooks/use-advanced-wireframe';
+import React, { useState } from 'react';
+import { useWireframeGeneration } from '@/hooks/use-wireframe-generation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import WireframeVisualizer from './WireframeVisualizer';
-import { DeviceType, ViewMode } from './types';
-import { Input } from '@/components/ui/input';
-import { createColorScheme } from '@/utils/copy-suggestions-helper';
+import { Card, CardContent } from '@/components/ui/card';
+import { WireframeGenerationParams, WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
+import Wireframe from './Wireframe';
 import { Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;
-  initialPrompt?: string;
-  enhancedCreativity?: boolean;
-  intakeData?: any;
-  viewMode?: ViewMode;
-  onWireframeGenerated?: (wireframe: any) => void;
+  viewMode?: 'edit' | 'preview' | 'code';
+  onWireframeGenerated?: (wireframe: WireframeGenerationResult) => void;
   onError?: (error: Error) => void;
 }
 
 export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProps> = ({
   projectId,
-  initialPrompt = '',
-  enhancedCreativity = true,
-  intakeData,
   viewMode = 'edit',
   onWireframeGenerated,
-  onError
+  onError,
 }) => {
-  // State for the generator
-  const [prompt, setPrompt] = useState<string>(initialPrompt);
-  const [creativityLevel, setCreativityLevel] = useState<number>(8);
-  const [selectedStyles, setSelectedStyles] = useState<string>('modern');
-  const [colorScheme, setColorScheme] = useState<string>('default');
-  const [displayDevice, setDisplayDevice] = useState<DeviceType>('desktop');
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [showGrid, setShowGrid] = useState<boolean>(true);
-  const [showDetails, setShowDetails] = useState<boolean>(false);
-  const [industry, setIndustry] = useState<string>('');
-  
-  // Use the advanced wireframe hook
+  const [prompt, setPrompt] = useState<string>('');
   const {
     isGenerating,
     currentWireframe,
-    generateWireframe,
     error,
-    intentData,
-    blueprint
-  } = useAdvancedWireframe();
-  
-  // Handle form submission
-  const handleGenerate = useCallback(async () => {
-    if (!prompt.trim()) {
-      // Show a validation error
-      return;
-    }
+    generateWireframe,
+  } = useWireframeGeneration();
+
+  const handleGenerateWireframe = async () => {
+    if (!prompt.trim()) return;
     
     try {
-      // Use our createColorScheme utility to ensure the color scheme has the right format
-      const formattedColorScheme = createColorScheme(colorScheme);
-      
-      // Generate the wireframe
-      const result = await generateWireframe({
-        projectId,
+      console.log('Submitting wireframe generation with prompt:', prompt);
+      const params: WireframeGenerationParams = {
         description: prompt,
-        enhancedCreativity,
-        creativityLevel,
-        styleToken: selectedStyles,
-        colorScheme: formattedColorScheme,
-        industry,
-        intakeData
-      });
+        projectId: projectId,
+        enhancedCreativity: true
+      };
       
-      // Call the callback if provided
-      if (result.wireframe && onWireframeGenerated) {
-        onWireframeGenerated(result.wireframe);
+      const result = await generateWireframe(params);
+      
+      if (result && result.wireframe) {
+        if (onWireframeGenerated) {
+          onWireframeGenerated(result);
+        }
+      } else if (onError) {
+        onError(new Error('No wireframe was generated'));
       }
-      
-      // Show success feedback
     } catch (err) {
-      console.error('Error generating wireframe:', err);
+      console.error('Error in wireframe generation:', err);
       if (onError && err instanceof Error) {
         onError(err);
       }
     }
-  }, [prompt, projectId, enhancedCreativity, creativityLevel, selectedStyles, colorScheme, industry, intakeData, generateWireframe, onWireframeGenerated, onError]);
-  
-  // Auto-generate wireframe when initialPrompt is provided
-  useEffect(() => {
-    if (initialPrompt && !currentWireframe && !isGenerating) {
-      handleGenerate();
-    }
-  }, [initialPrompt, currentWireframe, isGenerating, handleGenerate]);
-  
-  
+  };
+
   return (
-    <div className="wireframe-generator">
-      {/* Form and controls */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Generate Wireframe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="prompt" className="block text-sm font-medium mb-1">
-                Describe your wireframe
-              </label>
-              <Textarea
-                id="prompt"
-                placeholder="E.g., A website for a coffee shop with a hero section, about us, menu, and contact form..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-20"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Try to include specific sections like "navigation", "hero", "features", "testimonials", "pricing", etc.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="style" className="block text-sm font-medium mb-1">
-                  Style
-                </label>
-                <Input
-                  id="style"
-                  placeholder="E.g., modern, minimal, corporate..."
-                  value={selectedStyles}
-                  onChange={(e) => setSelectedStyles(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="industry" className="block text-sm font-medium mb-1">
-                  Industry
-                </label>
-                <Input
-                  id="industry"
-                  placeholder="E.g., tech, healthcare, education..."
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label htmlFor="creativity" className="block text-sm font-medium mb-1">
-                Creativity Level: {creativityLevel}
-              </label>
-              <Slider
-                id="creativity"
-                defaultValue={[creativityLevel]}
-                min={1}
-                max={10}
-                step={1}
-                onValueChange={(value) => setCreativityLevel(value[0])}
-              />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating || !prompt.trim()}
-            className="w-full"
-          >
-            {isGenerating ? 
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </> : 'Generate Wireframe'}
-          </Button>
-        </CardFooter>
-      </Card>
-      
-      {/* Preview area */}
-      {currentWireframe && (
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">{currentWireframe.title}</h3>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setDisplayDevice('mobile')}
-                className={displayDevice === 'mobile' ? 'bg-primary/10' : ''}
-              >
-                Mobile
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setDisplayDevice('tablet')}
-                className={displayDevice === 'tablet' ? 'bg-primary/10' : ''}
-              >
-                Tablet
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setDisplayDevice('desktop')}
-                className={displayDevice === 'desktop' ? 'bg-primary/10' : ''}
-              >
-                Desktop
-              </Button>
-            </div>
-          </div>
-          
-          <div className={`wireframe-preview-container ${displayDevice}`}>
-            <WireframeVisualizer 
-              wireframe={currentWireframe}
-              deviceType={displayDevice}
-              darkMode={isDarkMode}
-              viewMode={viewMode}
-            />
-          </div>
-        </div>
-      )}
-      
-      {/* Error display */}
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4">
+        <Textarea
+          placeholder="Describe your wireframe in detail. Include sections, layout structure, and responsive behavior..."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={6}
+          className="w-full resize-y"
+        />
+        <Button 
+          onClick={handleGenerateWireframe} 
+          disabled={isGenerating || !prompt.trim()}
+          className="w-full"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating Wireframe...
+            </>
+          ) : (
+            'Generate Wireframe'
+          )}
+        </Button>
+      </div>
+
       {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <h4 className="text-red-800 font-medium">Error generating wireframe</h4>
-          <p className="text-red-600">{error.message}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
-      
-      {/* Loading state when no wireframe yet */}
-      {isGenerating && !currentWireframe && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Generating your wireframe...</p>
-        </div>
+
+      {currentWireframe && currentWireframe.wireframe && (
+        <Card className="mt-6">
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-bold mb-2">{currentWireframe.wireframe.title}</h3>
+            <div className="border rounded-md overflow-hidden">
+              <Wireframe
+                wireframe={currentWireframe.wireframe}
+                viewMode="preview"
+                deviceType="desktop"
+              />
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

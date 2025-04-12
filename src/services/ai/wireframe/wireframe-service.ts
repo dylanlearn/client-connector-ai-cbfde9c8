@@ -1,289 +1,180 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  generateWireframeFromPrompt, 
-  generateWireframeVariation 
-} from './api/wireframe-generator';
-import { getSuggestedCopy } from './content/copy-suggestions';
-import { getCombinedAIMemory } from './wireframe-memory-service';
-import { WireframeData, WireframeGenerationParams, WireframeGenerationResult, WireframeSection } from './wireframe-types';
+  WireframeGenerationParams,
+  WireframeGenerationResult,
+  WireframeData,
+  WireframeSection
+} from './wireframe-types';
+import { wireframeApiService } from './api/wireframe-api-service';
 
 /**
- * Generate a new wireframe based on a description
+ * Generate a wireframe from input parameters
  */
 export const generateWireframe = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
   try {
-    console.log('Wireframe generation request:', params);
+    console.log('Generating wireframe with params:', params);
     
-    // Process style if it's a string
-    let processedStyle: Record<string, any> = {};
-    if (params.style) {
-      if (typeof params.style === 'object') {
-        processedStyle = params.style;
-      } else if (typeof params.style === 'string') {
-        try {
-          // Try to parse as JSON if it's a string
-          processedStyle = JSON.parse(params.style);
-        } catch (e) {
-          // If not valid JSON, use it as a style description
-          processedStyle = {
-            description: params.style
-          };
-        }
-      }
-    }
+    // Extract sections from the description
+    const sections = extractSectionsFromPrompt(params.description);
     
-    // Get previous context if available
-    const memory = await getCombinedAIMemory();
-    
-    // Extract sections from description
-    const sections = extractSectionsFromDescription(params.description);
-    
-    // Create wireframe data
+    // Create a wireframe with the extracted sections
     const wireframe: WireframeData = {
       id: uuidv4(),
-      title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
+      title: `Wireframe: ${params.description.substring(0, 30)}...`,
       description: params.description || 'Generated wireframe',
       sections: sections,
-      colorScheme: {
+      colorScheme: params.colorScheme || {
         primary: '#3b82f6',
         secondary: '#10b981',
         accent: '#f59e0b',
         background: '#ffffff',
-        text: '#111827'
+        text: '#1a202c'
       },
       typography: {
         headings: 'Inter',
         body: 'Inter'
       }
     };
-    
-    // Add copy suggestions to the sections
-    const wireframeWithCopy: WireframeData = {
-      ...wireframe,
-      sections: wireframe.sections.map((section) => {
-        return {
-          ...section,
-          copySuggestions: getSuggestedCopy(section.sectionType)
-        };
-      })
-    };
-    
+
     return {
-      wireframe: wireframeWithCopy,
+      wireframe,
       success: true,
       message: 'Wireframe generated successfully'
     };
   } catch (error) {
-    console.error('Error in wireframe generation:', error);
+    console.error('Error generating wireframe:', error);
     return {
       wireframe: null,
       success: false,
-      message: `Error generating wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: `Failed to generate wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 };
 
 /**
- * Extract sections from the description
- */
-const extractSectionsFromDescription = (description: string): WireframeSection[] => {
-  // If description is empty, return default sections
-  if (!description) {
-    return getDefaultSections();
-  }
-  
-  // Try to identify sections based on common keywords
-  const sectionTypes = [
-    { keyword: /navigation|nav\s+bar|navbar|header/i, type: 'navigation', name: 'Navigation' },
-    { keyword: /hero|banner|intro|introduction/i, type: 'hero', name: 'Hero' },
-    { keyword: /feature|features/i, type: 'features', name: 'Features' },
-    { keyword: /testimonial|review|testimonials/i, type: 'testimonials', name: 'Testimonials' },
-    { keyword: /pricing|plans|subscription|package/i, type: 'pricing', name: 'Pricing Plans' },
-    { keyword: /faq|questions|accordion/i, type: 'faq', name: 'FAQ' },
-    { keyword: /contact|form|get in touch/i, type: 'contact', name: 'Contact' },
-    { keyword: /footer/i, type: 'footer', name: 'Footer' },
-    { keyword: /cta|call to action/i, type: 'cta', name: 'Call To Action' }
-  ];
-  
-  // Start with an empty array for extracted sections
-  const extractedSections: WireframeSection[] = [];
-  
-  // Look for each section type in the description
-  sectionTypes.forEach(({ keyword, type, name }) => {
-    if (keyword.test(description)) {
-      extractedSections.push({
-        id: uuidv4(),
-        name: name,
-        sectionType: type,
-        description: `${name} section`,
-        componentVariant: getVariantForType(type),
-        components: []
-      });
-    }
-  });
-  
-  // If no sections were found, return default sections
-  if (extractedSections.length === 0) {
-    return getDefaultSections();
-  }
-  
-  return extractedSections;
-};
-
-/**
- * Get default sections for a wireframe
- */
-const getDefaultSections = (): WireframeSection[] => {
-  return [
-    {
-      id: uuidv4(),
-      name: 'Navigation',
-      sectionType: 'navigation',
-      description: 'Main navigation bar',
-      componentVariant: 'horizontal',
-      components: []
-    },
-    {
-      id: uuidv4(),
-      name: 'Hero',
-      sectionType: 'hero',
-      description: 'Hero section with headline and call to action',
-      componentVariant: 'centered',
-      components: []
-    },
-    {
-      id: uuidv4(),
-      name: 'Features',
-      sectionType: 'features',
-      description: 'Key product features',
-      componentVariant: 'grid',
-      components: []
-    }
-  ];
-};
-
-/**
- * Get the default variant for a section type
- */
-const getVariantForType = (sectionType: string): string => {
-  switch (sectionType) {
-    case 'navigation':
-      return 'horizontal';
-    case 'hero':
-      return 'split';
-    case 'features':
-      return 'grid';
-    case 'testimonials':
-      return 'cards';
-    case 'pricing':
-      return 'columns';
-    case 'faq':
-      return 'accordion';
-    case 'contact':
-      return 'simple';
-    case 'footer':
-      return 'columns';
-    case 'cta':
-      return 'centered';
-    default:
-      return 'standard';
-  }
-};
-
-/**
- * Generate a variation of an existing wireframe
+ * Generate a variation of a wireframe with style changes
  */
 export const generateWireframeVariationWithStyle = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
   try {
-    console.log('Wireframe variation request:', params);
+    console.log('Generating wireframe variation with params:', params);
     
-    // Generate the variation
-    const result = await generateWireframeVariation(params);
-    
-    if (!result.success || !result.wireframe) {
-      throw new Error(result.message || 'Failed to generate wireframe variation');
-    }
-    
-    const wireframeVariation = result.wireframe;
-    
-    // Add copy suggestions to the sections
-    const wireframeWithCopy: WireframeData = {
-      ...wireframeVariation,
-      sections: wireframeVariation.sections.map((section) => {
-        return {
-          ...section,
-          copySuggestions: getSuggestedCopy(section.sectionType)
-        };
-      })
-    };
-    
-    return {
-      wireframe: wireframeWithCopy,
-      success: true,
-      message: 'Wireframe variation generated successfully'
-    };
+    // For variations, we'll use the same approach but modify some aspects
+    return generateWireframe({
+      ...params,
+      description: `Variation of: ${params.description}`
+    });
   } catch (error) {
-    console.error('Error in wireframe variation generation:', error);
+    console.error('Error generating wireframe variation:', error);
     return {
       wireframe: null,
       success: false,
-      message: `Error generating wireframe variation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: `Failed to generate variation: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   }
 };
 
 /**
- * Quick method to create an empty wireframe for testing/development
+ * Extract sections from a prompt description
  */
-export const createDefaultWireframe = (): WireframeData => {
-  return {
-    id: uuidv4(),
-    title: 'Default Wireframe',
-    description: 'A default wireframe for testing',
-    sections: [
+function extractSectionsFromPrompt(prompt: string): WireframeSection[] {
+  const sections: WireframeSection[] = [];
+  
+  // Common section types to look for in prompts
+  const sectionTypes = [
+    { 
+      name: 'Navigation', 
+      type: 'navigation',
+      keywords: ['navigation', 'navbar', 'nav', 'header', 'menu']
+    },
+    { 
+      name: 'Hero', 
+      type: 'hero',
+      keywords: ['hero', 'header section', 'main banner', 'banner']
+    },
+    { 
+      name: 'Features', 
+      type: 'features',
+      keywords: ['feature', 'features', 'key points', 'highlights']
+    },
+    { 
+      name: 'Testimonials', 
+      type: 'testimonials',
+      keywords: ['testimonial', 'review', 'quote', 'customer story']
+    },
+    { 
+      name: 'Pricing', 
+      type: 'pricing',
+      keywords: ['pricing', 'plans', 'packages', 'subscription']
+    },
+    { 
+      name: 'FAQ', 
+      type: 'faq',
+      keywords: ['faq', 'accordion', 'questions', 'answers']
+    },
+    { 
+      name: 'CTA', 
+      type: 'cta',
+      keywords: ['cta', 'call to action', 'action']
+    },
+    { 
+      name: 'Footer', 
+      type: 'footer',
+      keywords: ['footer', 'bottom']
+    }
+  ];
+  
+  // If we detect specific sections in the prompt, add them
+  for (const sectionDef of sectionTypes) {
+    for (const keyword of sectionDef.keywords) {
+      if (prompt.toLowerCase().includes(keyword.toLowerCase())) {
+        sections.push({
+          id: uuidv4(),
+          name: sectionDef.name,
+          sectionType: sectionDef.type,
+          description: `${sectionDef.name} section`,
+          componentVariant: 'standard'
+        });
+        // Break after finding the first keyword match for this section type
+        break;
+      }
+    }
+  }
+  
+  // If no sections were detected, create some default ones
+  if (sections.length === 0) {
+    sections.push(
       {
         id: uuidv4(),
-        name: 'Hero Section',
+        name: 'Navigation',
+        sectionType: 'navigation',
+        description: 'Main navigation bar',
+        componentVariant: 'standard'
+      },
+      {
+        id: uuidv4(),
+        name: 'Hero',
         sectionType: 'hero',
-        components: []
+        description: 'Hero section with headline and call to action',
+        componentVariant: 'standard'
+      },
+      {
+        id: uuidv4(),
+        name: 'Content',
+        sectionType: 'content',
+        description: 'Main content area',
+        componentVariant: 'standard'
       }
-    ],
-    colorScheme: {
-      primary: '#3b82f6',
-      secondary: '#10b981',
-      accent: '#f59e0b',
-      background: '#ffffff',
-      text: '#000000'
-    },
-    typography: {
-      headings: 'Inter',
-      body: 'Inter'
-    }
-  };
-};
+    );
+  }
+  
+  return sections;
+}
 
-/**
- * Create a minimal wireframe data object from partial data
- */
-export const createMinimalWireframeData = (partialData: Partial<WireframeData> = {}): WireframeData => {
-  const defaultWireframe = createDefaultWireframe();
-  return {
-    ...defaultWireframe,
-    ...partialData,
-    id: partialData.id || defaultWireframe.id,
-    title: partialData.title || defaultWireframe.title,
-    description: partialData.description || defaultWireframe.description,
-    sections: partialData.sections || defaultWireframe.sections
-  };
-};
-
-// Export as a named wireframeService object
+// Export for use in other files
 export const wireframeService = {
   generateWireframe,
-  generateWireframeVariationWithStyle,
-  createDefaultWireframe,
-  createMinimalWireframeData
+  generateWireframeVariationWithStyle
 };
 
 export default wireframeService;

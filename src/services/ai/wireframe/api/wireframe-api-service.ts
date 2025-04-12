@@ -1,4 +1,8 @@
 
+import { 
+  generateWireframe as serviceGenerateWireframe,
+  generateWireframeVariationWithStyle
+} from '../wireframe-service';
 import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from '../wireframe-types';
 
 /**
@@ -11,62 +15,8 @@ export const wireframeApiService = {
   generateWireframe: async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
     try {
       // This would normally call an API endpoint
-      // For now, simulate an API response
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('API: Generate wireframe request', params);
-      
-      // Create a mock wireframe response
-      const wireframe: WireframeData = {
-        id: crypto.randomUUID(),
-        title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
-        description: params.description || 'Generated wireframe',
-        sections: [
-          {
-            id: crypto.randomUUID(),
-            name: 'Navigation',
-            sectionType: 'navigation',
-            description: 'Main navigation bar',
-            componentVariant: 'horizontal',
-            components: []
-          },
-          {
-            id: crypto.randomUUID(),
-            name: 'Hero',
-            sectionType: 'hero',
-            description: 'Hero section with headline and call to action',
-            componentVariant: 'centered',
-            components: []
-          },
-          {
-            id: crypto.randomUUID(),
-            name: 'Features',
-            sectionType: 'features',
-            description: 'Key product features',
-            componentVariant: 'grid',
-            components: []
-          }
-        ],
-        colorScheme: {
-          primary: '#3b82f6',
-          secondary: '#10b981',
-          accent: '#f59e0b',
-          background: '#ffffff',
-          text: '#111827'
-        },
-        typography: {
-          headings: 'Inter',
-          body: 'Inter'
-        }
-      };
-      
-      return {
-        wireframe,
-        success: true,
-        message: 'Wireframe generated successfully'
-      };
+      // For now, we'll use our local service
+      return serviceGenerateWireframe(params);
     } catch (error) {
       console.error('API error generating wireframe:', error);
       return {
