@@ -1,5 +1,15 @@
 
-import { CopySuggestions } from '@/services/ai/wireframe/wireframe-types';
+/**
+ * Interface for copy suggestions that can be used in sections
+ */
+export interface CopySuggestions {
+  [key: string]: string | undefined;
+  heading?: string;
+  subheading?: string;
+  primaryCta?: string;
+  secondaryCta?: string;
+  supportText?: string;
+}
 
 /**
  * Safely processes CopySuggestions that could be an object or array

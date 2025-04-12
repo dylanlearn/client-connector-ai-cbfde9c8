@@ -1,7 +1,7 @@
 
 import { WireframeGenerationParams, WireframeGenerationResult, WireframeData } from './wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
-import { wireframeService } from './wireframe-service';
+import { generateWireframe } from './wireframe-service';
 
 /**
  * Extended wireframe service with advanced capabilities
@@ -21,8 +21,8 @@ class AdvancedWireframeService {
         styleChanges: params.styleChanges || ''
       };
       
-      // Use the base wireframe service for generation
-      const result = await wireframeService.generateWireframe(enhancedParams);
+      // Use the wireframe generator directly
+      const result = await generateWireframe(enhancedParams);
       
       if (!result.success || !result.wireframe) {
         throw new Error(result.message || 'Failed to generate wireframe');

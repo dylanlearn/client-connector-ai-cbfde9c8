@@ -1,5 +1,5 @@
 
-import { CopySuggestions } from '../components/wireframe/renderers/utilities';
+import { CopySuggestions } from '@/components/wireframe/renderers/utilities';
 
 /**
  * Safely converts a CopySuggestions object or array into a Record<string, string> 
