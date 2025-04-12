@@ -7,7 +7,7 @@ import {
   WireframeData
 } from '@/services/ai/wireframe/wireframe-types';
 import { 
-  generateWireframe,
+  generateWireframe as apiGenerateWireframe,
   generateWireframeVariationWithStyle 
 } from '@/services/ai/wireframe/wireframe-service';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,11 +46,15 @@ export function useWireframeGenerator(
         description: params.description,
         industry: params.industry,
         style: processedStyle,
-        colorScheme: params.colorScheme
+        colorScheme: params.colorScheme,
+        projectId: projectId,
+        creativityLevel: creativityLevel,
+        enhancedCreativity: enhancedCreativity,
+        intakeData: params.intakeData
       };
 
-      // Call the service to generate the wireframe
-      const result = await generateWireframe(generationParams);
+      // Call the service to generate the wireframe - using renamed import to avoid recursion
+      const result = await apiGenerateWireframe(generationParams);
 
       if (result.success && result.wireframe) {
         // Set the current wireframe

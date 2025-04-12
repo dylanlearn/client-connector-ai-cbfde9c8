@@ -1,7 +1,5 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { 
-  generateWireframe as baseGenerateWireframe, 
   generateWireframeFromPrompt, 
   generateWireframeVariation 
 } from './api/wireframe-generator';
@@ -37,17 +35,49 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
     // Get previous context if available
     const memory = await getCombinedAIMemory();
     
-    // Generate the wireframe using the renamed imported function
-    const wireframeResult = await generateWireframeFromPrompt({
-      ...params,
-      style: processedStyle
-    });
-    
-    if (!wireframeResult.success || !wireframeResult.wireframe) {
-      throw new Error(wireframeResult.message || 'Failed to generate wireframe');
-    }
-    
-    const wireframe = wireframeResult.wireframe;
+    // Simulate wireframe generation for now to avoid API calls
+    const wireframe: WireframeData = {
+      id: uuidv4(),
+      title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
+      description: params.description || 'Generated wireframe',
+      sections: [
+        {
+          id: uuidv4(),
+          name: 'Navigation',
+          sectionType: 'navigation',
+          description: 'Main navigation bar',
+          componentVariant: 'horizontal',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Hero',
+          sectionType: 'hero',
+          description: 'Hero section with headline and call to action',
+          componentVariant: 'centered',
+          components: []
+        },
+        {
+          id: uuidv4(),
+          name: 'Features',
+          sectionType: 'features',
+          description: 'Key product features',
+          componentVariant: 'grid',
+          components: []
+        }
+      ],
+      colorScheme: {
+        primary: '#3b82f6',
+        secondary: '#10b981',
+        accent: '#f59e0b',
+        background: '#ffffff',
+        text: '#111827'
+      },
+      typography: {
+        headings: 'Inter',
+        body: 'Inter'
+      }
+    };
     
     // Add copy suggestions to the sections
     const wireframeWithCopy: WireframeData = {
