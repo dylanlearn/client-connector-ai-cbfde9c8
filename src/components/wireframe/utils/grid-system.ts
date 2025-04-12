@@ -4,351 +4,414 @@ import { fabric } from 'fabric';
 export interface GridConfiguration {
   visible: boolean;
   snapToGrid: boolean;
+  showGuides: boolean;
   size: number;
   type: 'lines' | 'dots' | 'columns';
   columns: number;
   gutterWidth: number;
   marginWidth: number;
-  color?: string;
+  guideColor: string;
+  snapThreshold: number;
 }
 
 export const DEFAULT_GRID_CONFIG: GridConfiguration = {
   visible: true,
   snapToGrid: true,
+  showGuides: true,
   size: 20,
   type: 'lines',
   columns: 12,
   gutterWidth: 20,
   marginWidth: 40,
-  color: '#e0e0e0',
+  guideColor: 'rgba(0, 120, 255, 0.5)',
+  snapThreshold: 10,
 };
 
 /**
- * Creates and adds grid lines to the canvas
+ * Draw grid on canvas
  */
 export function updateGridOnCanvas(
   canvas: fabric.Canvas,
   config: GridConfiguration,
-  canvasWidth: number,
-  canvasHeight: number
+  width: number,
+  height: number
 ): void {
-  // Remove any existing grid
+  // Clear existing grid
   removeGridFromCanvas(canvas);
   
   if (!config.visible) return;
   
-  const gridObjects: fabric.Line[] = [];
+  const gridObjects: fabric.Object[] = [];
   
-  // Create grid based on type
   if (config.type === 'columns') {
-    // Calculate column width
-    const usableWidth = canvasWidth - 2 * config.marginWidth;
-    const totalGutterWidth = (config.columns - 1) * config.gutterWidth;
-    const totalColumnWidth = usableWidth - totalGutterWidth;
-    const columnWidth = totalColumnWidth / config.columns;
+    // Create column grid
+    const { columns, gutterWidth, marginWidth } = config;
+    const totalMargin = marginWidth * 2;
+    const availableWidth = width - totalMargin;
+    const columnWidth = (availableWidth - (gutterWidth * (columns - 1))) / columns;
     
-    // Create margin lines
-    const leftMarginLine = createGridLine(config.marginWidth, 0, config.marginWidth, canvasHeight, '#0066ff');
-    const rightMarginLine = createGridLine(canvasWidth - config.marginWidth, 0, canvasWidth - config.marginWidth, canvasHeight, '#0066ff');
+    // Draw margin lines
+    const leftMarginLine = new fabric.Line([marginWidth, 0, marginWidth, height], {
+      stroke: config.guideColor,
+      selectable: false,
+      evented: false,
+      strokeWidth: 1
+    });
+    
+    const rightMarginLine = new fabric.Line([width - marginWidth, 0, width - marginWidth, height], {
+      stroke: config.guideColor,
+      selectable: false,
+      evented: false,
+      strokeWidth: 1
+    });
+    
     gridObjects.push(leftMarginLine, rightMarginLine);
     
-    // Create column lines
-    for (let i = 0; i <= config.columns; i++) {
-      const x = config.marginWidth + i * (columnWidth + config.gutterWidth);
-      const lineColor = i === 0 || i === config.columns ? '#0066ff' : config.color || '#e0e0e0';
-      const line = createGridLine(x, 0, x, canvasHeight, lineColor);
+    // Draw column lines
+    for (let i = 0; i <= columns; i++) {
+      const x = marginWidth + (i * (columnWidth + gutterWidth));
       
-      // Add column data
-      line.data = { type: 'grid', gridType: 'column', columnIndex: i };
-      
-      gridObjects.push(line);
+      if (i < columns) {
+        // Column start
+        const columnLine = new fabric.Line([x, 0, x, height], {
+          stroke: config.guideColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 1
+        });
+        gridObjects.push(columnLine);
+        
+        // Gutter end
+        if (i > 0) {
+          const gutterLine = new fabric.Line([x - gutterWidth, 0, x - gutterWidth, height], {
+            stroke: config.guideColor,
+            selectable: false,
+            evented: false,
+            strokeWidth: 0.5,
+            strokeDashArray: [5, 5]
+          });
+          gridObjects.push(gutterLine);
+        }
+      }
     }
   } else {
-    // Create standard grid
-    const gridSize = config.size;
-    const strokeColor = config.color || '#e0e0e0';
+    // Create regular grid
+    const size = config.size;
+    const isDots = config.type === 'dots';
     
-    // Create vertical lines
-    for (let i = 0; i <= canvasWidth; i += gridSize) {
-      const line = createGridLine(i, 0, i, canvasHeight, strokeColor);
-      line.data = { type: 'grid' };
-      gridObjects.push(line);
+    // Create horizontal and vertical lines
+    for (let i = 0; i < (width / size); i++) {
+      const x = i * size;
+      
+      if (isDots) {
+        for (let j = 0; j < (height / size); j++) {
+          const y = j * size;
+          
+          const dot = new fabric.Circle({
+            left: x,
+            top: y,
+            radius: 1,
+            fill: config.guideColor,
+            selectable: false,
+            evented: false,
+            originX: 'center',
+            originY: 'center'
+          });
+          gridObjects.push(dot);
+        }
+      } else {
+        const line = new fabric.Line([x, 0, x, height], {
+          stroke: config.guideColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 0.5
+        });
+        gridObjects.push(line);
+      }
     }
     
-    // Create horizontal lines
-    for (let i = 0; i <= canvasHeight; i += gridSize) {
-      const line = createGridLine(0, i, canvasWidth, i, strokeColor);
-      line.data = { type: 'grid' };
-      gridObjects.push(line);
+    if (!isDots) {
+      for (let j = 0; j < (height / size); j++) {
+        const y = j * size;
+        
+        const line = new fabric.Line([0, y, width, y], {
+          stroke: config.guideColor,
+          selectable: false,
+          evented: false,
+          strokeWidth: 0.5
+        });
+        gridObjects.push(line);
+      }
     }
   }
   
-  // Add all grid lines to canvas
-  gridObjects.forEach(line => {
-    // Ensure grid lines are always at the bottom
-    line.selectable = false;
-    line.evented = false;
-    line.hoverCursor = 'default';
-    
-    canvas.add(line);
-    canvas.sendToBack(line);
+  // Add all grid objects to canvas
+  gridObjects.forEach(obj => {
+    obj.data = { type: 'grid' };
+    canvas.add(obj);
+  });
+  
+  // Send grid to back
+  gridObjects.forEach(obj => {
+    canvas.sendToBack(obj);
   });
   
   canvas.renderAll();
 }
 
 /**
- * Create a grid line on the canvas
- */
-function createGridLine(x1: number, y1: number, x2: number, y2: number, stroke = '#e0e0e0'): fabric.Line {
-  return new fabric.Line([x1, y1, x2, y2], {
-    stroke,
-    strokeWidth: 1,
-    strokeDashArray: [1, 1],
-    selectable: false,
-    evented: false,
-    data: { type: 'grid' },
-  });
-}
-
-/**
- * Removes all grid lines from the canvas
+ * Remove grid from canvas
  */
 export function removeGridFromCanvas(canvas: fabric.Canvas): void {
   const gridObjects = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
   gridObjects.forEach(obj => canvas.remove(obj));
-}
-
-/**
- * Snaps a coordinate to the nearest grid point
- */
-export function snapToGrid(value: number, gridSize: number): number {
-  return Math.round(value / gridSize) * gridSize;
-}
-
-/**
- * Snaps fabric object coordinates to the grid
- */
-export function snapObjectToGrid(obj: fabric.Object, gridConfig: GridConfiguration): void {
-  if (!gridConfig.snapToGrid) return;
-  
-  if (gridConfig.type === 'columns') {
-    // Snap to column grid
-    const marginWidth = gridConfig.marginWidth;
-    const usableWidth = obj.canvas?.getWidth() ? obj.canvas.getWidth() - 2 * marginWidth : 1000;
-    const totalGutterWidth = (gridConfig.columns - 1) * gridConfig.gutterWidth;
-    const totalColumnWidth = usableWidth - totalGutterWidth;
-    const columnWidth = totalColumnWidth / gridConfig.columns;
-    
-    // Calculate column positions
-    const columnPositions = [];
-    for (let i = 0; i <= gridConfig.columns; i++) {
-      columnPositions.push(marginWidth + i * (columnWidth + gridConfig.gutterWidth));
-    }
-    
-    // Find closest column position for left edge
-    const left = obj.left || 0;
-    let closestColumnPosition = columnPositions[0];
-    let minDistance = Math.abs(left - columnPositions[0]);
-    
-    columnPositions.forEach(position => {
-      const distance = Math.abs(left - position);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestColumnPosition = position;
-      }
-    });
-    
-    // Only snap if within threshold distance
-    if (minDistance <= 10) {
-      obj.set({ left: closestColumnPosition });
-    }
-    
-    // Snap vertical position to grid
-    if (obj.top) {
-      obj.set({ top: snapToGrid(obj.top, gridConfig.size) });
-    }
-  } else {
-    // Standard grid snapping
-    const gridSize = gridConfig.size;
-    
-    if (obj.left) {
-      obj.set({ left: snapToGrid(obj.left, gridSize) });
-    }
-    
-    if (obj.top) {
-      obj.set({ top: snapToGrid(obj.top, gridSize) });
-    }
-  }
-}
-
-/**
- * Creates visual guides during object movement
- */
-export function createAlignmentGuides(
-  canvas: fabric.Canvas,
-  activeObject: fabric.Object,
-  threshold = 10
-): void {
-  // Remove any existing guides
-  removeAlignmentGuides(canvas);
-  
-  if (!activeObject || !canvas) return;
-  
-  const alignmentGuides: fabric.Line[] = [];
-  const activeObjectCenter = activeObject.getCenterPoint();
-  const activeObjectBounds = getObjectBounds(activeObject);
-  
-  // Check all other objects for alignment
-  canvas.getObjects().forEach(obj => {
-    if (obj === activeObject || obj.data?.type === 'grid' || obj.data?.type === 'guide') return;
-    
-    const objCenter = obj.getCenterPoint();
-    const objBounds = getObjectBounds(obj);
-    
-    // Horizontal center alignment
-    if (Math.abs(activeObjectCenter.x - objCenter.x) < threshold) {
-      const guide = new fabric.Line(
-        [objCenter.x, 0, objCenter.x, canvas.getHeight() as number],
-        {
-          stroke: '#ff4081',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'guide' }
-        }
-      );
-      alignmentGuides.push(guide);
-      
-      // Snap to center alignment
-      activeObject.set({
-        left: activeObjectCenter.x - activeObject.getScaledWidth() / 2
-      });
-    }
-    
-    // Vertical center alignment
-    if (Math.abs(activeObjectCenter.y - objCenter.y) < threshold) {
-      const guide = new fabric.Line(
-        [0, objCenter.y, canvas.getWidth() as number, objCenter.y],
-        {
-          stroke: '#ff4081',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'guide' }
-        }
-      );
-      alignmentGuides.push(guide);
-      
-      // Snap to center alignment
-      activeObject.set({
-        top: objCenter.y - activeObject.getScaledHeight() / 2
-      });
-    }
-    
-    // Left edge alignment
-    if (Math.abs(activeObjectBounds.left - objBounds.left) < threshold) {
-      const guide = new fabric.Line(
-        [objBounds.left, 0, objBounds.left, canvas.getHeight() as number],
-        {
-          stroke: '#ff4081',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'guide' }
-        }
-      );
-      alignmentGuides.push(guide);
-      
-      // Snap to edge alignment
-      activeObject.set({ left: objBounds.left });
-    }
-    
-    // Right edge alignment
-    if (Math.abs(activeObjectBounds.right - objBounds.right) < threshold) {
-      const guide = new fabric.Line(
-        [objBounds.right, 0, objBounds.right, canvas.getHeight() as number],
-        {
-          stroke: '#ff4081',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'guide' }
-        }
-      );
-      alignmentGuides.push(guide);
-      
-      // Snap to edge alignment
-      activeObject.set({
-        left: objBounds.right - activeObject.getScaledWidth()
-      });
-    }
-    
-    // Top edge alignment
-    if (Math.abs(activeObjectBounds.top - objBounds.top) < threshold) {
-      const guide = new fabric.Line(
-        [0, objBounds.top, canvas.getWidth() as number, objBounds.top],
-        {
-          stroke: '#ff4081',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'guide' }
-        }
-      );
-      alignmentGuides.push(guide);
-      
-      // Snap to edge alignment
-      activeObject.set({ top: objBounds.top });
-    }
-    
-    // Bottom edge alignment
-    if (Math.abs(activeObjectBounds.bottom - objBounds.bottom) < threshold) {
-      const guide = new fabric.Line(
-        [0, objBounds.bottom, canvas.getWidth() as number, objBounds.bottom],
-        {
-          stroke: '#ff4081',
-          strokeWidth: 1,
-          selectable: false,
-          evented: false,
-          data: { type: 'guide' }
-        }
-      );
-      alignmentGuides.push(guide);
-      
-      // Snap to edge alignment
-      activeObject.set({
-        top: objBounds.bottom - activeObject.getScaledHeight()
-      });
-    }
-  });
-  
-  // Add guides to canvas
-  alignmentGuides.forEach(guide => canvas.add(guide));
   canvas.renderAll();
 }
 
 /**
- * Removes all alignment guides from the canvas
+ * Snap object to grid
  */
-export function removeAlignmentGuides(canvas: fabric.Canvas): void {
-  const guideObjects = canvas.getObjects().filter(obj => obj.data?.type === 'guide');
-  guideObjects.forEach(obj => canvas.remove(obj));
+export function snapObjectToGrid(obj: fabric.Object, config: GridConfiguration): void {
+  if (!config.snapToGrid) return;
+  
+  const size = config.size;
+  
+  // Get object position
+  let left = obj.left || 0;
+  let top = obj.top || 0;
+  
+  // Snap to grid
+  const newLeft = Math.round(left / size) * size;
+  const newTop = Math.round(top / size) * size;
+  
+  // Apply snapped position
+  obj.set({
+    left: newLeft,
+    top: newTop
+  });
 }
 
 /**
- * Gets the bounds of an object
+ * Create alignment guides for object
  */
-function getObjectBounds(obj: fabric.Object) {
-  const left = obj.left || 0;
-  const top = obj.top || 0;
-  const width = obj.getScaledWidth();
-  const height = obj.getScaledHeight();
+export function createAlignmentGuides(canvas: fabric.Canvas, targetObject: fabric.Object): void {
+  // Remove existing guides
+  removeAlignmentGuides(canvas);
   
-  return {
-    left,
-    top,
-    right: left + width,
-    bottom: top + height
+  if (!targetObject) return;
+  
+  const allObjects = canvas.getObjects().filter(obj => {
+    return obj !== targetObject && !obj.data?.type?.includes('guide') && !obj.data?.type?.includes('grid');
+  });
+  
+  if (allObjects.length === 0) return;
+  
+  const guides: fabric.Line[] = [];
+  const guideOptions = {
+    stroke: 'rgba(0, 120, 255, 0.8)',
+    strokeWidth: 1,
+    selectable: false,
+    evented: false,
+    strokeDashArray: [5, 5]
   };
+  
+  const targetLeft = targetObject.left || 0;
+  const targetTop = targetObject.top || 0;
+  const targetRight = targetLeft + (targetObject.width || 0) * (targetObject.scaleX || 1);
+  const targetBottom = targetTop + (targetObject.height || 0) * (targetObject.scaleY || 1);
+  const targetCenterX = targetLeft + (targetObject.width || 0) * (targetObject.scaleX || 1) / 2;
+  const targetCenterY = targetTop + (targetObject.height || 0) * (targetObject.scaleY || 1) / 2;
+  
+  // Check each object for alignment
+  allObjects.forEach(obj => {
+    const objLeft = obj.left || 0;
+    const objTop = obj.top || 0;
+    const objRight = objLeft + (obj.width || 0) * (obj.scaleX || 1);
+    const objBottom = objTop + (obj.height || 0) * (obj.scaleY || 1);
+    const objCenterX = objLeft + (obj.width || 0) * (obj.scaleX || 1) / 2;
+    const objCenterY = objTop + (obj.height || 0) * (obj.scaleY || 1) / 2;
+    
+    // Horizontal alignments
+    if (Math.abs(targetLeft - objLeft) < 10) {
+      // Left edges align
+      const line = new fabric.Line([objLeft, 0, objLeft, canvas.height || 1000], guideOptions);
+      line.data = { type: 'alignmentGuide' };
+      guides.push(line);
+    }
+    
+    if (Math.abs(targetRight - objRight) < 10) {
+      // Right edges align
+      const line = new fabric.Line([objRight, 0, objRight, canvas.height || 1000], guideOptions);
+      line.data = { type: 'alignmentGuide' };
+      guides.push(line);
+    }
+    
+    if (Math.abs(targetCenterX - objCenterX) < 10) {
+      // Centers align horizontally
+      const line = new fabric.Line([objCenterX, 0, objCenterX, canvas.height || 1000], guideOptions);
+      line.data = { type: 'alignmentGuide' };
+      guides.push(line);
+    }
+    
+    // Vertical alignments
+    if (Math.abs(targetTop - objTop) < 10) {
+      // Top edges align
+      const line = new fabric.Line([0, objTop, canvas.width || 1000, objTop], guideOptions);
+      line.data = { type: 'alignmentGuide' };
+      guides.push(line);
+    }
+    
+    if (Math.abs(targetBottom - objBottom) < 10) {
+      // Bottom edges align
+      const line = new fabric.Line([0, objBottom, canvas.width || 1000, objBottom], guideOptions);
+      line.data = { type: 'alignmentGuide' };
+      guides.push(line);
+    }
+    
+    if (Math.abs(targetCenterY - objCenterY) < 10) {
+      // Centers align vertically
+      const line = new fabric.Line([0, objCenterY, canvas.width || 1000, objCenterY], guideOptions);
+      line.data = { type: 'alignmentGuide' };
+      guides.push(line);
+    }
+  });
+  
+  // Add guides to canvas
+  guides.forEach(guide => canvas.add(guide));
+}
+
+/**
+ * Remove alignment guides
+ */
+export function removeAlignmentGuides(canvas: fabric.Canvas): void {
+  const guides = canvas.getObjects().filter(obj => obj.data?.type === 'alignmentGuide');
+  guides.forEach(obj => canvas.remove(obj));
+}
+
+/**
+ * Calculate snap positions for an object
+ */
+export function calculateSnapPositions(
+  obj: fabric.Object,
+  otherObjects: fabric.Object[],
+  config: GridConfiguration,
+  canvasWidth: number,
+  canvasHeight: number
+): { horizontal: number[], vertical: number[] } {
+  const snapPositions = {
+    horizontal: [] as number[],
+    vertical: [] as number[]
+  };
+  
+  // Add grid snap positions
+  if (config.type === 'columns') {
+    // Calculate column positions
+    const { columns, gutterWidth, marginWidth } = config;
+    const totalMargin = marginWidth * 2;
+    const availableWidth = canvasWidth - totalMargin;
+    const columnWidth = (availableWidth - (gutterWidth * (columns - 1))) / columns;
+    
+    // Add margin lines
+    snapPositions.vertical.push(marginWidth);
+    snapPositions.vertical.push(canvasWidth - marginWidth);
+    
+    // Add column lines
+    for (let i = 0; i <= columns; i++) {
+      const x = marginWidth + (i * (columnWidth + gutterWidth));
+      snapPositions.vertical.push(x);
+      
+      if (i > 0) {
+        snapPositions.vertical.push(x - gutterWidth);
+      }
+    }
+  } else {
+    // Add regular grid lines
+    for (let i = 0; i <= canvasWidth; i += config.size) {
+      snapPositions.vertical.push(i);
+    }
+    
+    for (let i = 0; i <= canvasHeight; i += config.size) {
+      snapPositions.horizontal.push(i);
+    }
+  }
+  
+  // Add other objects' positions for alignment
+  otherObjects.forEach(otherObj => {
+    const left = otherObj.left || 0;
+    const top = otherObj.top || 0;
+    const width = (otherObj.width || 0) * (otherObj.scaleX || 1);
+    const height = (otherObj.height || 0) * (otherObj.scaleY || 1);
+    
+    // Add positions for vertical alignment
+    snapPositions.vertical.push(left); // Left edge
+    snapPositions.vertical.push(left + width); // Right edge
+    snapPositions.vertical.push(left + width / 2); // Center
+    
+    // Add positions for horizontal alignment
+    snapPositions.horizontal.push(top); // Top edge
+    snapPositions.horizontal.push(top + height); // Bottom edge
+    snapPositions.horizontal.push(top + height / 2); // Center
+  });
+  
+  return snapPositions;
+}
+
+/**
+ * Find the closest snap position within threshold
+ */
+export function findClosestSnapPosition(
+  value: number,
+  positions: number[],
+  threshold: number
+): number | null {
+  let closestPosition = null;
+  let minDistance = threshold;
+  
+  positions.forEach(position => {
+    const distance = Math.abs(position - value);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestPosition = position;
+    }
+  });
+  
+  return closestPosition;
+}
+
+/**
+ * Show alignment guides based on snap positions
+ */
+export function showAlignmentGuides(
+  canvas: fabric.Canvas,
+  positions: { horizontal: number[], vertical: number[] },
+  guideColor: string
+): void {
+  // Remove existing guides
+  removeAlignmentGuides(canvas);
+  
+  const guides: fabric.Line[] = [];
+  const guideOptions = {
+    stroke: guideColor,
+    strokeWidth: 1,
+    selectable: false,
+    evented: false
+  };
+  
+  // Create horizontal guides
+  positions.horizontal.forEach(y => {
+    const line = new fabric.Line([0, y, canvas.width || 1000, y], guideOptions);
+    line.data = { type: 'alignmentGuide' };
+    guides.push(line);
+  });
+  
+  // Create vertical guides
+  positions.vertical.forEach(x => {
+    const line = new fabric.Line([x, 0, x, canvas.height || 1000], guideOptions);
+    line.data = { type: 'alignmentGuide' };
+    guides.push(line);
+  });
+  
+  // Add guides to canvas
+  guides.forEach(guide => canvas.add(guide));
+  canvas.renderAll();
 }

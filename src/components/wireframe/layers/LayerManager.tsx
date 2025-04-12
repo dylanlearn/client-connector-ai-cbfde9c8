@@ -1,212 +1,63 @@
 
-import React, { useEffect, useState } from 'react';
-import { fabric } from 'fabric';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Layers, Group, Ungroup, Plus, ArrowUp, ArrowDown, ArrowUpToLine, ArrowDownToLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { LayerItem, convertCanvasObjectsToLayers } from '../utils/layer-utils';
-import {
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
-  Layers,
-  ArrowUp,
-  ArrowDown,
-  Trash,
-  Edit,
-  Copy,
-  Group,
-  FolderPlus,
-  Search,
-  AlertTriangle,
-  Plus,
-  ArrowUpToLine,
-  ArrowDownToLine
-} from 'lucide-react';
-
-interface LayerItemProps {
-  layer: LayerItem;
-  onToggleVisibility: (id: string) => void;
-  onToggleLock: (id: string) => void;
-  onSelect: (id: string) => void;
-  onMoveUp: (id: string) => void;
-  onMoveDown: (id: string) => void;
-  onMoveToTop: (id: string) => void;
-  onMoveToBottom: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onRename: (id: string, name: string) => void;
-}
-
-const LayerItemComponent: React.FC<LayerItemProps> = ({
-  layer,
-  onToggleVisibility,
-  onToggleLock,
-  onSelect,
-  onMoveUp,
-  onMoveDown,
-  onMoveToTop,
-  onMoveToBottom,
-  onDelete,
-  onDuplicate,
-  onRename
-}) => {
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [nameValue, setNameValue] = useState(layer.name);
-  
-  const handleRename = () => {
-    onRename(layer.id, nameValue);
-    setIsRenaming(false);
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleRename();
-    } else if (e.key === 'Escape') {
-      setIsRenaming(false);
-      setNameValue(layer.name);
-    }
-  };
-  
-  return (
-    <div 
-      className={`layer-item p-2 my-1 border rounded-md flex items-center ${
-        layer.selected ? 'bg-primary/10 border-primary' : 'hover:bg-accent/10'
-      }`}
-      onClick={() => onSelect(layer.id)}
-    >
-      {/* Layer visibility toggle */}
-      <Button 
-        variant="ghost" 
-        size="icon"
-        className="h-6 w-6"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleVisibility(layer.id);
-        }}
-      >
-        {layer.visible ? 
-          <Eye className="h-4 w-4" /> : 
-          <EyeOff className="h-4 w-4 text-muted-foreground" />
-        }
-      </Button>
-      
-      {/* Layer lock toggle */}
-      <Button 
-        variant="ghost" 
-        size="icon"
-        className="h-6 w-6"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleLock(layer.id);
-        }}
-      >
-        {layer.locked ? 
-          <Lock className="h-4 w-4" /> : 
-          <Unlock className="h-4 w-4 text-muted-foreground" />
-        }
-      </Button>
-      
-      {/* Layer name */}
-      <div className="flex-1 ml-1">
-        {isRenaming ? (
-          <div className="flex" onClick={(e) => e.stopPropagation()}>
-            <Input
-              value={nameValue}
-              onChange={(e) => setNameValue(e.target.value)}
-              onBlur={handleRename}
-              onKeyDown={handleKeyDown}
-              autoFocus
-              className="h-6 py-0 text-xs"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center">
-            <span className="text-sm truncate max-w-[120px]">{layer.name}</span>
-            <span className="text-xs text-muted-foreground ml-2">({layer.type})</span>
-          </div>
-        )}
-      </div>
-      
-      {/* Actions */}
-      <div className="flex space-x-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsRenaming(true);
-          }}
-        >
-          <Edit className="h-3 w-3" />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDuplicate(layer.id);
-          }}
-        >
-          <Copy className="h-3 w-3" />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(layer.id);
-          }}
-        >
-          <Trash className="h-3 w-3" />
-        </Button>
-      </div>
-    </div>
-  );
-};
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import LayerItem from './LayerItem';
+import { 
+  convertCanvasObjectsToLayers, 
+  LayerItem as LayerItemType,
+  toggleLayerVisibility,
+  toggleLayerLock,
+  moveLayerUp,
+  moveLayerDown,
+  moveLayerToTop,
+  moveLayerToBottom,
+  renameLayer,
+  createLayerGroup,
+  ungroupLayers
+} from '../utils/layer-utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface LayerManagerProps {
   canvas: fabric.Canvas | null;
+  className?: string;
 }
 
-const LayerManager: React.FC<LayerManagerProps> = ({ canvas }) => {
-  const [layers, setLayers] = useState<LayerItem[]>([]);
-  const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
+const LayerManager: React.FC<LayerManagerProps> = ({ canvas, className }) => {
+  const [layers, setLayers] = useState<LayerItemType[]>([]);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [multiSelectEnabled, setMultiSelectEnabled] = useState(false);
-  
-  // Filter layers based on search query
-  const filteredLayers = searchQuery
-    ? layers.filter(layer => 
-        layer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        layer.type.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : layers;
+  const { toast } = useToast();
   
   // Update layers when canvas changes
   useEffect(() => {
     if (!canvas) return;
     
     const updateLayers = () => {
-      const fabricObjects = canvas.getActiveObjects();
-      const activeIds = fabricObjects.map(obj => obj.data?.id || String(obj.id));
-      const layerItems = convertCanvasObjectsToLayers(canvas, activeIds);
+      // Get selected objects IDs
+      const selectedObjects = canvas.getActiveObjects();
+      const selectedIds = selectedObjects.map(obj => obj.data?.id || String(obj.id));
+      
+      // Convert canvas objects to layer items
+      const layerItems = convertCanvasObjectsToLayers(canvas, selectedIds);
       setLayers(layerItems);
-      setSelectedLayerIds(activeIds);
+      
+      // Update selected layer ID
+      if (selectedIds.length === 1 && selectedIds[0]) {
+        setSelectedLayerId(selectedIds[0]);
+      } else if (selectedIds.length === 0) {
+        setSelectedLayerId(null);
+      }
     };
     
     // Initial update
     updateLayers();
     
-    // Listen for canvas changes
+    // Listen for canvas events
     canvas.on('object:added', updateLayers);
     canvas.on('object:removed', updateLayers);
     canvas.on('object:modified', updateLayers);
@@ -224,384 +75,290 @@ const LayerManager: React.FC<LayerManagerProps> = ({ canvas }) => {
     };
   }, [canvas]);
   
-  // Toggle layer visibility
-  const handleToggleVisibility = (id: string) => {
-    if (!canvas) return;
-    
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      object.visible = !object.visible;
-      canvas.renderAll();
-    }
-  };
+  // Filter layers by search query
+  const filteredLayers = searchQuery 
+    ? layers.filter(layer => layer.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : layers;
   
-  // Toggle layer lock
-  const handleToggleLock = (id: string) => {
+  // Handle layer selection
+  const handleLayerSelect = (layerId: string) => {
     if (!canvas) return;
     
+    // Find object by ID
     const object = canvas.getObjects().find(obj => {
       const objId = obj.data?.id || String(obj.id);
-      return objId === id;
+      return objId === layerId;
     });
     
     if (object) {
-      const isLocked = object.lockMovementX && object.lockMovementY;
-      object.lockMovementX = !isLocked;
-      object.lockMovementY = !isLocked;
-      object.lockRotation = !isLocked;
-      object.lockScalingX = !isLocked;
-      object.lockScalingY = !isLocked;
+      canvas.discardActiveObject();
+      canvas.setActiveObject(object);
       canvas.renderAll();
-    }
-  };
-  
-  // Select layer
-  const handleSelectLayer = (id: string) => {
-    if (!canvas) return;
-    
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      if (multiSelectEnabled) {
-        // Add to selection if multi-select is enabled
-        if (canvas.getActiveObjects().includes(object)) {
-          canvas.discardActiveObject();
-        } else {
-          const activeObjects = canvas.getActiveObjects().concat([object]);
-          const selection = new fabric.ActiveSelection(activeObjects, { canvas });
-          canvas.setActiveObject(selection);
-        }
-      } else {
-        canvas.discardActiveObject();
-        canvas.setActiveObject(object);
-      }
       
-      canvas.renderAll();
+      setSelectedLayerId(layerId);
     }
   };
   
-  // Move layer up
-  const handleMoveUp = (id: string) => {
+  // Handle layer visibility toggle
+  const handleToggleVisibility = (layerId: string) => {
     if (!canvas) return;
     
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      canvas.bringForward(object);
-      canvas.renderAll();
+    const success = toggleLayerVisibility(canvas, layerId);
+    if (success) {
+      // Update layers
+      setLayers(prevLayers => 
+        prevLayers.map(layer => 
+          layer.id === layerId 
+            ? { ...layer, visible: !layer.visible } 
+            : layer
+        )
+      );
     }
   };
   
-  // Move layer down
-  const handleMoveDown = (id: string) => {
+  // Handle layer lock toggle
+  const handleToggleLock = (layerId: string) => {
     if (!canvas) return;
     
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      canvas.sendBackwards(object);
-      canvas.renderAll();
+    const success = toggleLayerLock(canvas, layerId);
+    if (success) {
+      // Update layers
+      setLayers(prevLayers => 
+        prevLayers.map(layer => 
+          layer.id === layerId 
+            ? { ...layer, locked: !layer.locked } 
+            : layer
+        )
+      );
     }
   };
   
-  // Move layer to top
-  const handleMoveToTop = (id: string) => {
+  // Handle layer deletion
+  const handleDeleteLayer = (layerId: string) => {
     if (!canvas) return;
     
+    // Find object by ID
     const object = canvas.getObjects().find(obj => {
       const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      canvas.bringToFront(object);
-      canvas.renderAll();
-    }
-  };
-  
-  // Move layer to bottom
-  const handleMoveToBottom = (id: string) => {
-    if (!canvas) return;
-    
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      canvas.sendToBack(object);
-      
-      // Make sure grid stays at the very back
-      const gridObjects = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
-      gridObjects.forEach(gridObj => canvas.sendToBack(gridObj));
-      
-      canvas.renderAll();
-    }
-  };
-  
-  // Delete layer
-  const handleDeleteLayer = (id: string) => {
-    if (!canvas) return;
-    
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
+      return objId === layerId;
     });
     
     if (object) {
       canvas.remove(object);
       canvas.renderAll();
-    }
-  };
-  
-  // Duplicate layer
-  const handleDuplicateLayer = (id: string) => {
-    if (!canvas) return;
-    
-    const object = canvas.getObjects().find(obj => {
-      const objId = obj.data?.id || String(obj.id);
-      return objId === id;
-    });
-    
-    if (object) {
-      object.clone((cloned: fabric.Object) => {
-        cloned.set({
-          left: (cloned.left || 0) + 20,
-          top: (cloned.top || 0) + 20,
-          evented: true,
-        });
-        
-        if (!cloned.data) cloned.data = {};
-        cloned.data.id = `${id}-copy-${Date.now()}`;
-        cloned.data.name = `${object.data?.name || 'Layer'} (Copy)`;
-        
-        canvas.add(cloned);
-        canvas.setActiveObject(cloned);
-        canvas.renderAll();
+      
+      toast({
+        title: "Layer deleted",
+        description: "The layer has been removed from the canvas"
       });
     }
   };
   
-  // Rename layer
-  const handleRenameLayer = (id: string, newName: string) => {
+  // Handle layer duplication
+  const handleDuplicateLayer = (layerId: string) => {
     if (!canvas) return;
     
+    // Find object by ID
     const object = canvas.getObjects().find(obj => {
       const objId = obj.data?.id || String(obj.id);
-      return objId === id;
+      return objId === layerId;
     });
     
     if (object) {
-      if (!object.data) object.data = {};
-      object.data.name = newName;
-      canvas.renderAll();
+      // Clone the object
+      object.clone((clone: fabric.Object) => {
+        clone.set({
+          left: (object.left || 0) + 20,
+          top: (object.top || 0) + 20,
+          data: {
+            ...object.data,
+            id: `${object.data?.type || 'layer'}-${Date.now()}`,
+            name: `${object.data?.name || 'Layer'} (copy)`
+          }
+        });
+        
+        canvas.add(clone);
+        canvas.setActiveObject(clone);
+        canvas.renderAll();
+        
+        toast({
+          title: "Layer duplicated",
+          description: "A copy of the layer has been created"
+        });
+      });
     }
   };
   
-  // Create group
-  const handleCreateGroup = () => {
-    if (!canvas || selectedLayerIds.length < 2) return;
-    
-    const objectsToGroup = canvas.getActiveObjects();
-    if (objectsToGroup.length < 2) return;
-    
-    // Create group
-    const group = new fabric.Group(objectsToGroup, {
-      data: {
-        id: `group-${Date.now()}`,
-        name: `Group (${objectsToGroup.length})`,
-        type: 'group'
-      }
-    });
-    
-    // Remove individual objects
-    canvas.discardActiveObject();
-    objectsToGroup.forEach(obj => canvas.remove(obj));
-    
-    // Add group
-    canvas.add(group);
-    canvas.setActiveObject(group);
-    canvas.renderAll();
-  };
-  
-  // Add new shape
-  const handleAddShape = () => {
+  // Handle layer move up
+  const handleMoveLayerUp = (layerId: string) => {
     if (!canvas) return;
     
-    const rect = new fabric.Rect({
-      left: 100,
-      top: 100,
-      width: 100,
-      height: 100,
-      fill: 'rgba(0, 123, 255, 0.5)',
-      stroke: '#007bff',
-      strokeWidth: 1,
-      data: {
-        id: `shape-${Date.now()}`,
-        name: `Shape ${layers.length + 1}`,
-        type: 'rectangle'
-      }
-    });
+    const success = moveLayerUp(canvas, layerId);
+    if (success) {
+      toast({
+        title: "Layer moved up",
+        description: "Layer z-index has been updated"
+      });
+    }
+  };
+  
+  // Handle layer move down
+  const handleMoveLayerDown = (layerId: string) => {
+    if (!canvas) return;
     
-    canvas.add(rect);
-    canvas.setActiveObject(rect);
-    canvas.renderAll();
+    const success = moveLayerDown(canvas, layerId);
+    if (success) {
+      toast({
+        title: "Layer moved down",
+        description: "Layer z-index has been updated"
+      });
+    }
+  };
+  
+  // Create layer group
+  const handleCreateGroup = () => {
+    if (!canvas) return;
+    
+    const selectedObjects = canvas.getActiveObjects();
+    if (selectedObjects.length < 2) {
+      toast({
+        title: "Cannot create group",
+        description: "Select at least two layers to create a group",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const layerIds = selectedObjects.map(obj => obj.data?.id || String(obj.id));
+    const group = createLayerGroup(canvas, layerIds);
+    
+    if (group) {
+      toast({
+        title: "Group created",
+        description: `Created group with ${selectedObjects.length} layers`
+      });
+    }
+  };
+  
+  // Ungroup layers
+  const handleUngroup = (layerId: string) => {
+    if (!canvas) return;
+    
+    const success = ungroupLayers(canvas, layerId);
+    if (success) {
+      toast({
+        title: "Group ungrouped",
+        description: "The group has been split into individual layers"
+      });
+    }
+  };
+  
+  // Handle layer rename
+  const handleRenameLayer = (layerId: string, newName: string) => {
+    if (!canvas) return;
+    
+    const success = renameLayer(canvas, layerId, newName);
+    if (success) {
+      toast({
+        title: "Layer renamed",
+        description: `Layer name changed to "${newName}"`
+      });
+    }
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="text-lg flex items-center">
-          <Layers className="mr-2 h-5 w-5" />
-          Layers
+    <Card className={cn("w-full", className)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-medium flex items-center justify-between">
+          <div className="flex items-center">
+            <Layers className="mr-2 h-5 w-5" />
+            Layers
+          </div>
+          <Badge variant="outline" className="text-xs font-normal">
+            {layers.length} {layers.length === 1 ? 'layer' : 'layers'}
+          </Badge>
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-3">
-        {/* Search and actions */}
-        <div className="mb-3">
-          <div className="relative mb-2">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex flex-row gap-2">
             <Input
               placeholder="Search layers..."
-              className="pl-8 h-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button 
+          <div className="flex flex-row gap-2">
+            <Button
               variant="outline" 
-              size="sm" 
-              className="h-8"
-              onClick={handleAddShape}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Add Shape
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className={`h-8 ${selectedLayerIds.length < 2 ? 'opacity-50' : ''}`}
+              size="sm"
               onClick={handleCreateGroup}
-              disabled={selectedLayerIds.length < 2}
+              disabled={!canvas || canvas.getActiveObjects().length < 2}
+              className="flex-1"
             >
-              <Group className="h-3.5 w-3.5 mr-1" />
+              <Group className="h-4 w-4 mr-1" />
               Group
             </Button>
-          </div>
-        </div>
-        
-        {/* Z-index controls for selected layers */}
-        {selectedLayerIds.length > 0 && (
-          <div className="mb-3 flex justify-between bg-accent/20 p-2 rounded-md">
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  selectedLayerIds.forEach(id => handleMoveToTop(id));
-                }}
-              >
-                <ArrowUpToLine className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  selectedLayerIds.forEach(id => handleMoveUp(id));
-                }}
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  selectedLayerIds.forEach(id => handleMoveDown(id));
-                }}
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => {
-                  selectedLayerIds.forEach(id => handleMoveToBottom(id));
-                }}
-              >
-                <ArrowDownToLine className="h-4 w-4" />
-              </Button>
-            </div>
             
-            <div className="text-xs flex items-center">
-              {selectedLayerIds.length} selected
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!selectedLayerId || !canvas}
+              onClick={() => {
+                if (selectedLayerId) {
+                  moveLayerToTop(canvas!, selectedLayerId);
+                }
+              }}
+              className="flex-none"
+              title="Move to top"
+            >
+              <ArrowUpToLine className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!selectedLayerId || !canvas}
+              onClick={() => {
+                if (selectedLayerId) {
+                  moveLayerToBottom(canvas!, selectedLayerId);
+                }
+              }}
+              className="flex-none"
+              title="Move to bottom"
+            >
+              <ArrowDownToLine className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-        
-        {/* Layer list */}
-        {filteredLayers.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            {layers.length === 0 ? (
-              <div className="flex flex-col items-center">
-                <AlertTriangle className="h-8 w-8 mb-2 opacity-20" />
-                <p>No layers found</p>
-                <Button 
-                  variant="link" 
-                  size="sm" 
-                  className="mt-1"
-                  onClick={handleAddShape}
-                >
-                  Add your first shape
-                </Button>
+          
+          <div className="space-y-1 max-h-[400px] overflow-y-auto">
+            {filteredLayers.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8">
+                {searchQuery ? 'No layers match your search' : 'No layers available'}
               </div>
             ) : (
-              <p>No layers match your search</p>
+              filteredLayers.map(layer => (
+                <LayerItem
+                  key={layer.id}
+                  layer={layer}
+                  isSelected={layer.id === selectedLayerId}
+                  onSelect={handleLayerSelect}
+                  onToggleVisibility={handleToggleVisibility}
+                  onToggleLock={handleToggleLock}
+                  onDelete={handleDeleteLayer}
+                  onDuplicate={handleDuplicateLayer}
+                  onMoveUp={handleMoveLayerUp}
+                  onMoveDown={handleMoveLayerDown}
+                  onRename={handleRenameLayer}
+                  onUngroup={layer.type === 'group' ? handleUngroup : undefined}
+                />
+              ))
             )}
           </div>
-        ) : (
-          <ScrollArea className="h-[320px] pr-3">
-            {filteredLayers.map(layer => (
-              <LayerItemComponent
-                key={layer.id}
-                layer={layer}
-                onToggleVisibility={handleToggleVisibility}
-                onToggleLock={handleToggleLock}
-                onSelect={handleSelectLayer}
-                onMoveUp={handleMoveUp}
-                onMoveDown={handleMoveDown}
-                onMoveToTop={handleMoveToTop}
-                onMoveToBottom={handleMoveToBottom}
-                onDelete={handleDeleteLayer}
-                onDuplicate={handleDuplicateLayer}
-                onRename={handleRenameLayer}
-              />
-            ))}
-          </ScrollArea>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

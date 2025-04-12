@@ -9,73 +9,47 @@ export interface WireframeCanvasConfig {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
+  backgroundColor: string;
   gridType: 'lines' | 'dots' | 'columns';
   snapTolerance: number;
-  backgroundColor: string;
   showSmartGuides: boolean;
-  gridColor: string;
-  showRulers?: boolean;
-  rulerSize?: number;
-  rulerColor?: string;
-  rulerMarkings?: boolean;
-  historyEnabled?: boolean;
-  maxHistorySteps?: number;
+  [key: string]: any;
 }
 
 export interface SectionRenderingOptions {
-  responsive?: boolean;
+  width: number;
+  height: number;
   darkMode?: boolean;
+  responsiveMode?: 'desktop' | 'tablet' | 'mobile';
+  highlightSection?: string;
   showGrid?: boolean;
   gridSize?: number;
-  deviceType?: 'desktop' | 'tablet' | 'mobile';
-  interactive?: boolean;
-  showBorders?: boolean;
 }
 
 export interface AlignmentGuide {
   position: number;
   orientation: 'horizontal' | 'vertical';
-  type: 'edge' | 'center' | 'grid' | 'distribution';
-  label?: string;
+  type: 'edge' | 'center' | 'grid';
   strength?: number;
-}
-
-export interface GuideVisualization {
-  guide: AlignmentGuide;
-  color: string | {
-    edge: string;
-    center: string;
-    distribution: string;
-    [key: string]: string;
-  };
-  dashArray?: number[];
-  width?: number;
-  strokeWidth?: number;
-  showLabels?: boolean;
-}
-
-export interface BoundaryStyles {
-  stroke: string;
-  strokeWidth: number;
-  strokeDashArray?: number[];
-  fill?: string;
-  opacity?: number;
-}
-
-export interface DropZoneIndicator {
-  position: { x: number, y: number };
-  size: { width: number, height: number };
-  type: 'valid' | 'invalid' | 'current';
-  label?: string;
 }
 
 export interface LayerInfo {
   id: string;
   name: string;
   type: string;
+  zIndex: number;
   visible: boolean;
   locked: boolean;
+  selected: boolean;
   children?: LayerInfo[];
-  depth: number;
-  fabricObject?: fabric.Object;
+}
+
+export interface GridSettings {
+  visible: boolean;
+  size: number;
+  snapToGrid: boolean;
+  type: 'lines' | 'dots' | 'columns';
+  columns?: number;
+  gutterWidth?: number;
+  marginWidth?: number;
 }

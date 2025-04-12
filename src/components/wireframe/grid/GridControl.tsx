@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -122,17 +122,14 @@ const GridControl: React.FC<GridControlProps> = ({
           
           {gridConfig.type === 'columns' && (
             <div className="space-y-4 pt-2">
-              <Separator />
-              <h4 className="text-sm font-medium flex items-center">
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                Column Settings
-              </h4>
+              <Separator className="my-2" />
+              <Label>Column Settings</Label>
               
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="columns" className="text-xs">Columns</Label>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="column-count" className="text-xs">Columns</Label>
                   <Input
-                    id="columns"
+                    id="column-count"
                     type="number"
                     min={1}
                     max={24}
@@ -142,10 +139,10 @@ const GridControl: React.FC<GridControlProps> = ({
                   />
                 </div>
                 
-                <div className="space-y-1">
-                  <Label htmlFor="gutter" className="text-xs">Gutter (px)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="gutter-width" className="text-xs">Gutter (px)</Label>
                   <Input
-                    id="gutter"
+                    id="gutter-width"
                     type="number"
                     min={0}
                     max={100}
@@ -155,10 +152,10 @@ const GridControl: React.FC<GridControlProps> = ({
                   />
                 </div>
                 
-                <div className="space-y-1">
-                  <Label htmlFor="margin" className="text-xs">Margin (px)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="margin-width" className="text-xs">Margin (px)</Label>
                   <Input
-                    id="margin"
+                    id="margin-width"
                     type="number"
                     min={0}
                     max={200}
@@ -167,6 +164,10 @@ const GridControl: React.FC<GridControlProps> = ({
                     className="h-8"
                   />
                 </div>
+              </div>
+              
+              <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground">
+                {gridConfig.columns} columns with {gridConfig.gutterWidth}px gutters and {gridConfig.marginWidth}px margins
               </div>
             </div>
           )}
