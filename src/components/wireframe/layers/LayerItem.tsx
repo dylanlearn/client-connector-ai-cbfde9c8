@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { LayerInfo } from '@/components/wireframe/utils/types';
@@ -19,32 +18,38 @@ const layerTypeIcons: Record<string, React.ReactNode> = {
 
 interface LayerItemProps {
   layer: LayerInfo;
+  isSelected: boolean; // Added the isSelected prop that was missing
   isExpanded?: boolean;
   depth?: number;
   onSelect: () => void;
-  onVisibilityToggle: () => void;
-  onLockToggle: () => void;
+  onToggleVisibility: () => void;
+  onToggleLock: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   onToggleExpand?: () => void;
   onUngroup?: () => void;
+  onRename?: (name: string) => void;
 }
 
 const LayerItem: React.FC<LayerItemProps> = ({
   layer,
+  isSelected,
   isExpanded = false,
   depth = 0,
   onSelect,
-  onVisibilityToggle,
-  onLockToggle,
+  onToggleVisibility,
+  onToggleLock,
   onMoveUp,
   onMoveDown,
   onDelete,
+  onDuplicate,
   onToggleExpand,
-  onUngroup
+  onUngroup,
+  onRename
 }) => {
-  const { id, name, type, visible, locked, selected, children } = layer;
+  const { id, name, type, visible, locked, selected: isLayerSelected, children } = layer;
   const hasChildren = children && children.length > 0;
   const isGroup = type === 'group';
   
@@ -65,7 +70,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
       <div 
         className={cn(
           "flex items-center px-2 py-1 hover:bg-accent/50 border-l-2 transition-all",
-          selected ? "border-primary bg-accent/40" : "border-transparent",
+          isSelected ? "border-primary bg-accent/40" : "border-transparent",
           depth > 0 && "pl-4"
         )}
         style={{ paddingLeft: `${(depth * 12) + 8}px` }}
@@ -109,7 +114,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={(e) => { e.stopPropagation(); onVisibilityToggle(); }}
+            onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
             title={visible ? "Hide" : "Show"}
           >
             {visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -120,7 +125,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            onClick={(e) => { e.stopPropagation(); onLockToggle(); }}
+            onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
             title={locked ? "Unlock" : "Lock"}
           >
             {locked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
@@ -168,13 +173,14 @@ const LayerItem: React.FC<LayerItemProps> = ({
             <LayerItem
               key={child.id}
               layer={child}
-              depth={depth + 1}
+              isSelected={false}
               onSelect={onSelect}
-              onVisibilityToggle={onVisibilityToggle}
-              onLockToggle={onLockToggle}
+              onToggleVisibility={onToggleVisibility}
+              onToggleLock={onToggleLock}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
               onDelete={onDelete}
+              onDuplicate={onDuplicate}
             />
           ))}
         </div>

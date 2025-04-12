@@ -77,3 +77,73 @@ export interface DragResult {
   position?: { x: number; y: number };
 }
 
+/**
+ * Alignment guides for layout
+ */
+export interface AlignmentGuide {
+  orientation: 'horizontal' | 'vertical';
+  position: number;
+  type: 'edge' | 'center' | 'distribution' | 'grid';
+  strength?: number;
+  label?: string;
+}
+
+/**
+ * Grid settings configuration
+ */
+export interface GridSettings {
+  size: number;
+  visible: boolean;
+  snapToGrid: boolean;
+  color: string;
+  type: 'lines' | 'dots' | 'columns';
+}
+
+/**
+ * Drop zone indicator for drag-and-drop 
+ */
+export interface DropZoneIndicator {
+  active: boolean;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  type: 'valid' | 'invalid' | 'neutral';
+}
+
+/**
+ * Visualization of guides
+ */
+export interface GuideVisualization {
+  id: string;
+  element: HTMLElement | null;
+  guide: AlignmentGuide;
+}
+
+/**
+ * Grid configuration type
+ */
+export interface GridConfiguration {
+  visible: boolean;
+  size: number;
+  snapToGrid: boolean;
+  type: 'lines' | 'dots' | 'columns';
+  columns: number;
+  gutterWidth: number;
+  marginWidth: number;
+  snapThreshold: number;
+  showGuides: boolean;
+  guideColor: string;
+  showRulers: boolean;
+  rulerSize: number;
+}
+
+/**
+ * Visual settings for grid display
+ */
+export interface GridVisualSettings {
+  lineColor: string;
+  lineThickness: number;
+  dotSize: number;
+  opacity: number;
+  showLabels: boolean;
+  labelColor: string;
+}

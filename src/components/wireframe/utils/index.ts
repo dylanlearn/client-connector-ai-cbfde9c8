@@ -68,7 +68,7 @@ export {
   updateGridOnCanvas,
   sendGridToBack,
   removeGridFromCanvas as removeGridSystem,
-  calculateSnapPositions,
+  calculateColumnPositions as calculateSnapPositions, // Using the proper function name
   findClosestSnapPosition,
   showAlignmentGuides,
   removeAlignmentGuides,

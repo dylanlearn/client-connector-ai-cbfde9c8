@@ -1,24 +1,9 @@
 import { fabric } from 'fabric';
+import { GridConfiguration, AlignmentGuide, GridVisualSettings } from './types';
 
 /**
- * Configuration for the grid system
+ * Default grid configuration - only define this once
  */
-export interface GridConfiguration {
-  visible: boolean;
-  size: number;
-  snapToGrid: boolean;
-  type: 'lines' | 'dots' | 'columns';
-  columns: number;
-  gutterWidth: number;
-  marginWidth: number;
-  snapThreshold: number;
-  showGuides: boolean;
-  guideColor: string;
-  showRulers: boolean;
-  rulerSize: number;
-}
-
-// Default grid configuration - only define this once
 export const DEFAULT_GRID_CONFIG: GridConfiguration = {
   visible: true,
   size: 20,
@@ -32,6 +17,18 @@ export const DEFAULT_GRID_CONFIG: GridConfiguration = {
   guideColor: 'rgba(0, 120, 255, 0.75)',
   showRulers: false,
   rulerSize: 20
+};
+
+/**
+ * Default visual settings for the grid
+ */
+export const DEFAULT_VISUAL_SETTINGS: GridVisualSettings = {
+  lineColor: 'rgba(224, 224, 224, 0.75)',
+  lineThickness: 1,
+  dotSize: 2,
+  opacity: 0.75,
+  showLabels: false,
+  labelColor: 'rgba(120, 120, 120, 0.6)'
 };
 
 /**
@@ -73,6 +70,107 @@ export function updateGridOnCanvas(
 export function removeGridFromCanvas(canvas: fabric.Canvas) {
   const gridLines = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
   gridLines.forEach(line => canvas.remove(line));
+}
+
+/**
+ * Send grid elements to the back of the canvas stack
+ */
+export function sendGridToBack(canvas: fabric.Canvas) {
+  const gridLines = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
+  gridLines.forEach(line => canvas.sendToBack(line));
+}
+
+/**
+ * Calculate snap positions based on grid configuration
+ */
+export function calculateSnapPositions(
+  width: number,
+  height: number,
+  gridConfig: GridConfiguration
+): { horizontal: number[], vertical: number[] } {
+  if (gridConfig.type === 'columns') {
+    const columns = calculateColumnPositions(
+      width,
+      gridConfig.columns,
+      gridConfig.gutterWidth,
+      gridConfig.marginWidth
+    );
+    
+    // Create horizontal lines at regular intervals
+    const horizontal: number[] = [];
+    for (let i = gridConfig.size; i < height; i += gridConfig.size) {
+      horizontal.push(i);
+    }
+    
+    return { horizontal, vertical: columns };
+  } else {
+    return calculateGridPositions(width, height, gridConfig.size);
+  }
+}
+
+/**
+ * Find closest snap position for a point
+ */
+export function findClosestSnapPosition(
+  point: number,
+  positions: number[],
+  threshold: number
+): number | null {
+  let closestPosition = null;
+  let minDistance = threshold;
+  
+  for (const position of positions) {
+    const distance = Math.abs(point - position);
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestPosition = position;
+    }
+  }
+  
+  return closestPosition;
+}
+
+/**
+ * Show alignment guides on the canvas
+ */
+export function showAlignmentGuides(
+  canvas: fabric.Canvas,
+  guides: AlignmentGuide[]
+): void {
+  removeAlignmentGuides(canvas);
+  
+  guides.forEach(guide => {
+    const isHorizontal = guide.orientation === 'horizontal';
+    const color = guide.type === 'center' ? 'rgba(255, 0, 0, 0.75)' : 'rgba(0, 120, 255, 0.75)';
+    
+    const line = new fabric.Line(
+      isHorizontal 
+        ? [0, guide.position, canvas.width || 1000, guide.position]
+        : [guide.position, 0, guide.position, canvas.height || 1000],
+      {
+        stroke: color,
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        data: { type: 'alignment-guide', guideType: guide.type }
+      }
+    );
+    
+    canvas.add(line);
+    canvas.bringToFront(line);
+  });
+  
+  canvas.renderAll();
+}
+
+/**
+ * Remove alignment guides from the canvas
+ */
+export function removeAlignmentGuides(canvas: fabric.Canvas): void {
+  const guides = canvas.getObjects().filter(obj => obj.data?.type === 'alignment-guide');
+  guides.forEach(guide => canvas.remove(guide));
+  canvas.renderAll();
 }
 
 /**
