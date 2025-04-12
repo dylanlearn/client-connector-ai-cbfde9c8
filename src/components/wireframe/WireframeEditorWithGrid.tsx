@@ -9,6 +9,7 @@ import GridControl from '@/components/wireframe/grid/GridControl';
 import LayerManager from '@/components/wireframe/layers/LayerManager';
 import { cn } from '@/lib/utils';
 import { createAlignmentGuides, removeAlignmentGuides, snapObjectToGrid } from './utils/grid-system';
+import { fabric } from 'fabric';
 
 interface WireframeEditorWithGridProps {
   width?: number;
