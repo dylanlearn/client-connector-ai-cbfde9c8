@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import GridControl from '@/components/wireframe/grid/GridControl';
 import LayerManager from '@/components/wireframe/layers/LayerManager';
 import { cn } from '@/lib/utils';
+import { createAlignmentGuides, removeAlignmentGuides, snapObjectToGrid } from './utils/grid-system';
 
 interface WireframeEditorWithGridProps {
   width?: number;
@@ -44,6 +45,46 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
       initializeCanvas();
     }
   }, [canvasRef, canvas, initializeCanvas]);
+  
+  // Set up snapping and guides when canvas is ready
+  useEffect(() => {
+    if (!canvas) return;
+    
+    const handleObjectMoving = (e: fabric.IEvent) => {
+      const target = e.target;
+      if (!target) return;
+      
+      // Show alignment guides
+      createAlignmentGuides(canvas, target);
+      
+      // Snap to grid if enabled
+      if (gridConfig.snapToGrid) {
+        snapObjectToGrid(target, gridConfig);
+      }
+    };
+    
+    const handleObjectModified = () => {
+      // Remove alignment guides when done moving
+      removeAlignmentGuides(canvas);
+    };
+    
+    const handleSelectionCleared = () => {
+      // Remove alignment guides when selection cleared
+      removeAlignmentGuides(canvas);
+    };
+    
+    // Add event listeners
+    canvas.on('object:moving', handleObjectMoving);
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('selection:cleared', handleSelectionCleared);
+    
+    return () => {
+      // Remove event listeners
+      canvas.off('object:moving', handleObjectMoving);
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('selection:cleared', handleSelectionCleared);
+    };
+  }, [canvas, gridConfig]);
   
   return (
     <div className={cn("wireframe-editor-container flex flex-col lg:flex-row gap-4", className)}>

@@ -1,362 +1,277 @@
-
 import { fabric } from 'fabric';
 
 export interface LayerItem {
   id: string;
   name: string;
   type: string;
+  zIndex: number;
   visible: boolean;
   locked: boolean;
   selected: boolean;
-  zIndex: number;
-  children?: LayerItem[]; // For grouped items
-  fabricObject?: fabric.Object;
-}
-
-export interface LayerGroup {
-  id: string;
-  name: string;
-  expanded: boolean;
-  items: LayerItem[];
+  childLayers?: LayerItem[];
+  parentId?: string;
 }
 
 /**
- * Converts canvas objects to layer items
+ * Convert fabric canvas objects to layer items
  */
 export function convertCanvasObjectsToLayers(
   canvas: fabric.Canvas,
-  selectedObjectIds: string[] = []
+  selectedIds: string[] = []
 ): LayerItem[] {
-  if (!canvas) return [];
+  const layers: LayerItem[] = [];
+  const objectsArray = canvas.getObjects();
   
-  return canvas.getObjects()
-    .filter(obj => !obj.data?.type?.includes('grid')) // Filter out grid and guide elements
-    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
-    .map(obj => ({
-      id: obj.data?.id || obj.id || String(obj.zIndex),
-      name: obj.data?.name || obj.type || 'Layer',
-      type: obj.type || 'unknown',
-      visible: obj.visible !== false,
-      locked: obj.lockMovementX === true && obj.lockMovementY === true,
-      selected: selectedObjectIds.includes(obj.data?.id || obj.id || String(obj.zIndex)),
-      zIndex: obj.zIndex || 0,
-      fabricObject: obj,
-      children: obj.type === 'group' ? convertGroupToLayerItems(obj as fabric.Group) : undefined
-    }));
+  // Filter out grid and guide objects
+  const validObjects = objectsArray.filter(
+    obj => !(obj.data?.type === 'grid' || obj.data?.type === 'guide')
+  );
+  
+  // Process each object
+  validObjects.forEach((obj, index) => {
+    const id = obj.data?.id || String(obj.id) || `layer-${index}`;
+    const name = obj.data?.name || `Layer ${index + 1}`;
+    const type = obj.get('type') || 'unknown';
+    
+    const layer: LayerItem = {
+      id,
+      name,
+      type,
+      zIndex: obj.zIndex || index,
+      visible: !obj.hidden,
+      locked: obj.lockMovementX && obj.lockMovementY,
+      selected: selectedIds.includes(id)
+    };
+    
+    layers.push(layer);
+  });
+  
+  // Sort layers by z-index
+  return layers.sort((a, b) => b.zIndex - a.zIndex);
 }
 
 /**
- * Converts a fabric group to layer items
+ * Create a group from multiple layers
  */
-function convertGroupToLayerItems(group: fabric.Group): LayerItem[] {
-  if (!group || !group._objects) return [];
-  
-  return group._objects.map((obj, index) => ({
-    id: obj.data?.id || obj.id || `${group.id}-child-${index}`,
-    name: obj.data?.name || obj.type || `Item ${index + 1}`,
-    type: obj.type || 'unknown',
-    visible: obj.visible !== false,
-    locked: obj.lockMovementX === true && obj.lockMovementY === true,
-    selected: false, // Group items cannot be individually selected when in a group
-    zIndex: obj.zIndex || index,
-    fabricObject: obj,
-    children: obj.type === 'group' ? convertGroupToLayerItems(obj as fabric.Group) : undefined
-  }));
-}
-
-/**
- * Groups selected objects
- */
-export function groupObjects(
+export function createLayerGroup(
   canvas: fabric.Canvas,
-  layerIds: string[],
-  groupName: string = 'Group'
-): boolean {
-  if (!canvas || layerIds.length < 2) return false;
+  layerIds: string[]
+): fabric.Group | null {
+  if (!canvas || layerIds.length === 0) return null;
   
-  // Find the objects to group
-  const objects = canvas.getObjects().filter(obj => {
-    const objId = obj.data?.id || obj.id || String(obj.zIndex);
+  // Find objects to group
+  const objectsToGroup = canvas.getObjects().filter(obj => {
+    const objId = obj.data?.id || String(obj.id);
     return layerIds.includes(objId);
   });
   
-  if (objects.length < 2) return false;
+  if (objectsToGroup.length === 0) return null;
   
   // Create group
-  const group = new fabric.Group(objects, {
-    data: { id: `group-${Date.now()}`, name: groupName, type: 'wireframe-group' }
-  });
-  
-  // Add group to canvas
-  canvas.add(group);
-  
-  // Remove original objects
-  objects.forEach(obj => canvas.remove(obj));
-  
-  canvas.requestRenderAll();
-  return true;
-}
-
-/**
- * Ungroups a group
- */
-export function ungroupObjects(canvas: fabric.Canvas, groupId: string): boolean {
-  if (!canvas) return false;
-  
-  const group = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === groupId && obj.type === 'group');
-  if (!group || group.type !== 'group') return false;
-  
-  // Get the group's position
-  const groupLeft = group.left || 0;
-  const groupTop = group.top || 0;
-  
-  // Extract objects from group
-  const items = (group as fabric.Group).getObjects();
-  
-  // Clone items and adjust positions
-  const ungroupedItems = items.map(item => {
-    // Clone object to prevent reference issues
-    const clonedObj = fabric.util.object.clone(item);
-    
-    // Adjust position to maintain world position
-    if (clonedObj.left !== undefined && clonedObj.top !== undefined) {
-      clonedObj.left += groupLeft;
-      clonedObj.top += groupTop;
+  const group = new fabric.Group(objectsToGroup, {
+    data: {
+      id: `group-${Date.now()}`,
+      name: `Group (${objectsToGroup.length})`,
+      type: 'group'
     }
-    
-    // Ensure it has data
-    clonedObj.data = { ...(item.data || {}), id: item.data?.id || `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` };
-    
-    return clonedObj;
   });
   
-  // Add individual objects
-  ungroupedItems.forEach(obj => {
-    canvas.add(obj);
+  // Remove individual objects and add group
+  objectsToGroup.forEach(obj => canvas.remove(obj));
+  canvas.add(group);
+  canvas.setActiveObject(group);
+  canvas.renderAll();
+  
+  return group;
+}
+
+/**
+ * Ungroup a layer group
+ */
+export function ungroupLayers(
+  canvas: fabric.Canvas,
+  groupId: string
+): boolean {
+  if (!canvas) return false;
+  
+  // Find group object
+  const groupObj = canvas.getObjects().find(obj => {
+    const objId = obj.data?.id || String(obj.id);
+    return objId === groupId && obj.type === 'group';
+  }) as fabric.Group;
+  
+  if (!groupObj) return false;
+  
+  // Ungroup the object
+  const items = groupObj.getObjects();
+  groupObj.removeWithUpdate();
+  
+  // Add individual objects back to canvas
+  items.forEach(item => {
+    canvas.add(item);
   });
   
-  // Remove group
-  canvas.remove(group);
-  
-  canvas.requestRenderAll();
+  canvas.renderAll();
   return true;
 }
 
 /**
- * Changes layer visibility
+ * Change layer visibility
  */
-export function toggleLayerVisibility(canvas: fabric.Canvas, layerId: string): boolean {
+export function toggleLayerVisibility(
+  canvas: fabric.Canvas,
+  layerId: string
+): boolean {
   if (!canvas) return false;
   
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return false;
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
-  object.visible = !object.visible;
-  canvas.requestRenderAll();
+  // Toggle visibility
+  obj.visible = !obj.visible;
   
+  canvas.renderAll();
   return true;
 }
 
 /**
- * Toggles layer lock status
+ * Lock/unlock layer movement
  */
-export function toggleLayerLock(canvas: fabric.Canvas, layerId: string): boolean {
+export function toggleLayerLock(
+  canvas: fabric.Canvas,
+  layerId: string
+): boolean {
   if (!canvas) return false;
   
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return false;
-  
-  const isLocked = object.lockMovementX === true && object.lockMovementY === true;
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
   // Toggle lock state
-  object.lockMovementX = !isLocked;
-  object.lockMovementY = !isLocked;
-  object.lockRotation = !isLocked;
-  object.lockScalingX = !isLocked;
-  object.lockScalingY = !isLocked;
+  const isLocked = obj.lockMovementX && obj.lockMovementY;
+  obj.lockMovementX = !isLocked;
+  obj.lockMovementY = !isLocked;
+  obj.lockRotation = !isLocked;
+  obj.lockScalingX = !isLocked;
+  obj.lockScalingY = !isLocked;
   
-  canvas.requestRenderAll();
+  canvas.renderAll();
   return true;
 }
 
 /**
- * Duplicates a layer
+ * Move layer up in z-order
  */
-export function duplicateLayer(canvas: fabric.Canvas, layerId: string): string | null {
-  if (!canvas) return null;
-  
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return null;
-  
-  // Clone the object
-  object.clone((clonedObj: fabric.Object) => {
-    // Generate new ID
-    const newId = `${layerId}-copy-${Date.now()}`;
-    
-    // Update data
-    clonedObj.data = { ...(object.data || {}), id: newId };
-    
-    // Offset position slightly
-    clonedObj.set({
-      left: (clonedObj.left || 0) + 10,
-      top: (clonedObj.top || 0) + 10
-    });
-    
-    // Add to canvas
-    canvas.add(clonedObj);
-    canvas.setActiveObject(clonedObj);
-    canvas.requestRenderAll();
-  });
-  
-  return layerId; // Will return newId in real implementation, but need to wait for async clone
-}
-
-/**
- * Changes layer z-index
- */
-export function changeLayerZindex(canvas: fabric.Canvas, layerId: string, newIndex: number): boolean {
+export function moveLayerUp(
+  canvas: fabric.Canvas,
+  layerId: string
+): boolean {
   if (!canvas) return false;
   
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return false;
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
-  // Set new z-index
-  object.zIndex = newIndex;
-  
-  // Re-order canvas objects
-  canvas.discardActiveObject();
-  canvas.sendToBack(object); // First move to back
-  
-  // Then move forward to the correct position
-  const sortedObjects = canvas.getObjects()
-    .filter(obj => !obj.data?.type?.includes('grid')) // Ignore grid objects
-    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-  
-  for (const obj of sortedObjects) {
-    if (obj !== object) {
-      canvas.bringForward(obj);
-    }
-  }
-  
-  canvas.requestRenderAll();
-  return true;
-}
-
-/**
- * Moves layer one step up in z-index
- */
-export function moveLayerUp(canvas: fabric.Canvas, layerId: string): boolean {
-  if (!canvas) return false;
-  
-  const sortedObjects = canvas.getObjects()
-    .filter(obj => !obj.data?.type?.includes('grid'))
-    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-  
-  const index = sortedObjects.findIndex(obj => (obj.data?.id || obj.id) === layerId);
-  if (index === -1 || index === sortedObjects.length - 1) return false;
-  
-  // Swap z-index with next object
-  const currentObject = sortedObjects[index];
-  const nextObject = sortedObjects[index + 1];
-  
-  const tempZIndex = nextObject.zIndex;
-  nextObject.zIndex = currentObject.zIndex;
-  currentObject.zIndex = tempZIndex;
-  
-  // Re-render canvas with updated z-index
-  canvas.bringForward(currentObject);
-  canvas.requestRenderAll();
+  // Bring forward
+  canvas.bringForward(obj);
+  canvas.renderAll();
   
   return true;
 }
 
 /**
- * Moves layer one step down in z-index
+ * Move layer down in z-order
  */
-export function moveLayerDown(canvas: fabric.Canvas, layerId: string): boolean {
+export function moveLayerDown(
+  canvas: fabric.Canvas,
+  layerId: string
+): boolean {
   if (!canvas) return false;
   
-  const sortedObjects = canvas.getObjects()
-    .filter(obj => !obj.data?.type?.includes('grid'))
-    .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
-  const index = sortedObjects.findIndex(obj => (obj.data?.id || obj.id) === layerId);
-  if (index === -1 || index === 0) return false;
-  
-  // Swap z-index with previous object
-  const currentObject = sortedObjects[index];
-  const prevObject = sortedObjects[index - 1];
-  
-  const tempZIndex = prevObject.zIndex;
-  prevObject.zIndex = currentObject.zIndex;
-  currentObject.zIndex = tempZIndex;
-  
-  // Re-render canvas with updated z-index
-  canvas.sendBackwards(currentObject);
-  canvas.requestRenderAll();
+  // Send backward
+  canvas.sendBackwards(obj);
+  canvas.renderAll();
   
   return true;
 }
 
 /**
- * Brings layer to front
+ * Move layer to top of z-order
  */
-export function bringLayerToFront(canvas: fabric.Canvas, layerId: string): boolean {
+export function moveLayerToTop(
+  canvas: fabric.Canvas,
+  layerId: string
+): boolean {
   if (!canvas) return false;
   
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return false;
-  
-  // Get highest z-index
-  const highestZIndex = Math.max(...canvas.getObjects()
-    .filter(obj => !obj.data?.type?.includes('grid'))
-    .map(obj => obj.zIndex || 0));
-  
-  // Set new z-index
-  object.zIndex = highestZIndex + 1;
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
   // Bring to front
-  canvas.bringToFront(object);
-  canvas.requestRenderAll();
+  canvas.bringToFront(obj);
+  canvas.renderAll();
   
   return true;
 }
 
 /**
- * Sends layer to back
+ * Move layer to bottom of z-order
  */
-export function sendLayerToBack(canvas: fabric.Canvas, layerId: string): boolean {
+export function moveLayerToBottom(
+  canvas: fabric.Canvas,
+  layerId: string
+): boolean {
   if (!canvas) return false;
   
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return false;
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
-  // Get lowest z-index
-  const lowestZIndex = Math.min(...canvas.getObjects()
-    .filter(obj => !obj.data?.type?.includes('grid'))
-    .map(obj => obj.zIndex || 0));
+  // Send to back (but keep above grid lines)
+  canvas.sendToBack(obj);
   
-  // Set new z-index
-  object.zIndex = lowestZIndex - 1;
+  // Make sure grid stays at the very back
+  const gridObjects = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
+  gridObjects.forEach(gridObj => canvas.sendToBack(gridObj));
   
-  // Send to back
-  canvas.sendToBack(object);
-  canvas.requestRenderAll();
-  
+  canvas.renderAll();
   return true;
 }
 
 /**
- * Renames a layer
+ * Rename a layer
  */
-export function renameLayer(canvas: fabric.Canvas, layerId: string, newName: string): boolean {
-  if (!canvas || !newName) return false;
+export function renameLayer(
+  canvas: fabric.Canvas,
+  layerId: string,
+  newName: string
+): boolean {
+  if (!canvas) return false;
   
-  const object = canvas.getObjects().find(obj => (obj.data?.id || obj.id) === layerId);
-  if (!object) return false;
+  // Find the object
+  const obj = findObjectById(canvas, layerId);
+  if (!obj) return false;
   
-  // Update data
-  object.data = { ...(object.data || {}), name: newName };
+  // Update name in data
+  if (!obj.data) obj.data = {};
+  obj.data.name = newName;
   
+  canvas.renderAll();
   return true;
+}
+
+/**
+ * Helper function to find an object by ID
+ */
+function findObjectById(canvas: fabric.Canvas, id: string): fabric.Object | undefined {
+  return canvas.getObjects().find(obj => {
+    const objId = obj.data?.id || String(obj.id);
+    return objId === id;
+  });
 }
