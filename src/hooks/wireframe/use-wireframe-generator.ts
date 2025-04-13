@@ -4,7 +4,8 @@ import { Toast } from "@/hooks/use-toast";
 import { 
   WireframeGenerationParams,
   WireframeGenerationResult,
-  WireframeData
+  WireframeData,
+  normalizeWireframeGenerationParams
 } from '@/services/ai/wireframe/wireframe-types';
 import { 
   generateWireframe as apiGenerateWireframeService,
@@ -26,40 +27,24 @@ export function useWireframeGenerator(
     setError(null);
 
     try {
+      console.log("Starting wireframe generation with params:", params);
+      
+      // Normalize parameters for consistency
+      const normalizedParams = normalizeWireframeGenerationParams(params);
+      
       // Extract params that need special processing
-      const projectId = params.projectId;
-      const creativityLevel = params.creativityLevel || defaultCreativityLevel;
-      const enhancedCreativity = params.enhancedCreativity || false;
+      const projectId = normalizedParams.projectId;
+      const creativityLevel = normalizedParams.creativityLevel || defaultCreativityLevel;
+      const enhancedCreativity = normalizedParams.enhancedCreativity || false;
       
-      // Process style params if it's a string or object
-      let processedStyle: string | Record<string, any> = {}; 
-      if (params.style) {
-        if (typeof params.style === 'string') {
-          processedStyle = params.style;
-        } else {
-          processedStyle = { ...params.style };
-        }
-      }
-      
-      // Create the generation params with proper typing
-      const generationParams: WireframeGenerationParams = {
-        description: params.description,
-        industry: params.industry,
-        style: processedStyle,
-        colorScheme: params.colorScheme,
-        projectId: projectId,
-        creativityLevel: creativityLevel,
-        enhancedCreativity: enhancedCreativity,
-        intakeData: params.intakeData
-      };
-
-      console.log('Enhanced wireframe generation initiated with params:', generationParams);
-      console.log('Generating wireframe with params:', generationParams);
+      console.log(`Enhanced wireframe generation initiated with creativityLevel: ${creativityLevel}`);
 
       // Call the service to generate the wireframe
-      const result = await apiGenerateWireframeService(generationParams);
+      const result = await apiGenerateWireframeService(normalizedParams);
 
       if (result.success && result.wireframe) {
+        console.log("Wireframe generated successfully:", result.wireframe.id);
+        
         // Set the current wireframe
         setCurrentWireframe(result);
 
@@ -88,23 +73,7 @@ export function useWireframeGenerator(
       
       // Return a default error result
       return {
-        wireframe: {
-          id: uuidv4(),
-          title: 'Error Wireframe',
-          description: 'An error occurred during generation',
-          sections: [],
-          colorScheme: {
-            primary: '#3b82f6',
-            secondary: '#10b981',
-            accent: '#f59e0b',
-            background: '#ffffff',
-            text: '#000000'
-          },
-          typography: {
-            headings: 'Inter',
-            body: 'Inter'
-          }
-        },
+        wireframe: null,
         success: false,
         message: errorMessage
       };
@@ -119,13 +88,25 @@ export function useWireframeGenerator(
     setError(null);
 
     try {
+      console.log("Starting wireframe variation generation with params:", params);
+      
+      // Validate required parameters
+      if (!params.baseWireframe && !params.description) {
+        throw new Error("Either baseWireframe or description is required for variation generation");
+      }
+      
+      // Apply creativity level
+      const creativityLevel = params.creativityLevel || defaultCreativityLevel;
+      
       // Call the service to generate the variation with all required arguments
       const result = await generateWireframeVariationWithStyle(
         params,
-        params.creativityLevel || defaultCreativityLevel
+        creativityLevel 
       );
 
       if (result.success && result.wireframe) {
+        console.log("Wireframe variation generated successfully:", result.wireframe.id);
+        
         // Set the current wireframe
         setCurrentWireframe(result);
 
@@ -154,23 +135,7 @@ export function useWireframeGenerator(
       
       // Return a default error result
       return {
-        wireframe: {
-          id: uuidv4(),
-          title: 'Error in Variation',
-          description: 'An error occurred during variation generation',
-          sections: [],
-          colorScheme: {
-            primary: '#3b82f6',
-            secondary: '#10b981',
-            accent: '#f59e0b',
-            background: '#ffffff',
-            text: '#000000'
-          },
-          typography: {
-            headings: 'Inter',
-            body: 'Inter'
-          }
-        },
+        wireframe: null,
         success: false,
         message: errorMessage
       };

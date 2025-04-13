@@ -4,7 +4,8 @@ import {
   WireframeGenerationParams, 
   WireframeGenerationResult, 
   WireframeData, 
-  EnhancedWireframeGenerationResult 
+  EnhancedWireframeGenerationResult,
+  normalizeWireframeGenerationParams
 } from './wireframe-types';
 import {
   generateWireframe as apiGenerateWireframe,
@@ -24,11 +25,11 @@ export class EnhancedWireframeGenerator {
     try {
       console.log('Enhanced wireframe generation initiated with params:', params);
       
+      // Normalize parameters for consistency
+      const normalizedParams = normalizeWireframeGenerationParams(params);
+      
       // Use the API function to generate the base wireframe
-      const result = await generateWireframeFromPrompt({
-        ...params,
-        enhancedCreativity: params.enhancedCreativity || true
-      });
+      const result = await generateWireframeFromPrompt(normalizedParams);
       
       if (!result.wireframe) {
         throw new Error(result.message || 'Failed to generate enhanced wireframe');
@@ -64,6 +65,13 @@ export class EnhancedWireframeGenerator {
         }
       };
       
+      // Log successful generation with metadata
+      console.log('Enhanced wireframe generated successfully:', {
+        id: enhancedResult.wireframe.id,
+        title: enhancedResult.wireframe.title,
+        sectionsCount: enhancedResult.wireframe.sections.length
+      });
+      
       return enhancedResult;
     } catch (error) {
       console.error('Enhanced wireframe generation error:', error);
@@ -87,6 +95,10 @@ export class EnhancedWireframeGenerator {
     try {
       console.log('Applying feedback to wireframe:', feedback);
       
+      if (!wireframe || !wireframe.id) {
+        throw new Error('Invalid wireframe data provided');
+      }
+      
       // Generate a variation based on the feedback
       const result = await generateWireframeVariation({
         description: feedback,
@@ -94,6 +106,13 @@ export class EnhancedWireframeGenerator {
         isVariation: true,
         feedbackMode: true
       });
+      
+      // Log success or failure
+      if (result.success && result.wireframe) {
+        console.log('Feedback applied successfully to wireframe:', result.wireframe.id);
+      } else {
+        console.warn('Feedback application completed with warnings:', result.message);
+      }
       
       return result;
     } catch (error) {
@@ -106,4 +125,41 @@ export class EnhancedWireframeGenerator {
       };
     }
   }
+  
+  /**
+   * Validate a wireframe structure
+   */
+  static validateWireframe(wireframe: WireframeData): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    // Check for required fields
+    if (!wireframe.id) errors.push('Wireframe must have an ID');
+    if (!wireframe.title) errors.push('Wireframe must have a title');
+    if (!Array.isArray(wireframe.sections)) errors.push('Wireframe must have a sections array');
+    
+    // Check color scheme
+    if (!wireframe.colorScheme) {
+      errors.push('Wireframe must have a colorScheme');
+    } else {
+      ['primary', 'secondary', 'accent', 'background', 'text'].forEach(color => {
+        if (!wireframe.colorScheme[color]) errors.push(`ColorScheme must include ${color} color`);
+      });
+    }
+    
+    // Check typography
+    if (!wireframe.typography) {
+      errors.push('Wireframe must have typography');
+    } else {
+      ['headings', 'body'].forEach(font => {
+        if (!wireframe.typography[font]) errors.push(`Typography must include ${font} font`);
+      });
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
 }
+
+export default EnhancedWireframeGenerator;

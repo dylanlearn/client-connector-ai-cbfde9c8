@@ -12,6 +12,12 @@ ADD COLUMN IF NOT EXISTS layout_score FLOAT DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS optimization_suggestions JSONB DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS pattern_match TEXT DEFAULT NULL;
 
+-- Add new columns that were missing in our TypeScript definitions
+ALTER TABLE IF EXISTS public.wireframe_sections
+ADD COLUMN IF NOT EXISTS animation_suggestions JSONB DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS mobile_layout JSONB DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS copy_suggestions JSONB DEFAULT NULL;
+
 -- Create an RPC function to update wireframe sections efficiently
 CREATE OR REPLACE FUNCTION public.update_wireframe_sections(
   p_wireframe_id UUID,
@@ -56,7 +62,10 @@ BEGIN
     (s->>'positionOrder')::int,
     s->>'description',
     s->>'componentVariant',
-    s->'style',
+    CASE 
+      WHEN s ? 'style' THEN s->'style'
+      ELSE NULL::jsonb
+    END,
     s->>'designReasoning',
     s->'copySuggestions',
     s->'mobileLayout',
@@ -68,5 +77,51 @@ BEGIN
     s->>'patternMatch'
   FROM jsonb_array_elements(p_sections) s
   RETURNING *;
+END;
+$$;
+
+-- Create a validation function to validate wireframe sections
+CREATE OR REPLACE FUNCTION public.validate_wireframe_sections(
+  p_sections JSONB
+) RETURNS TABLE (
+  is_valid BOOLEAN,
+  error_message TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  section JSONB;
+  validation_errors TEXT[] := '{}';
+BEGIN
+  -- Check if sections is an array
+  IF jsonb_typeof(p_sections) != 'array' THEN
+    RETURN QUERY SELECT false, 'Sections must be an array';
+    RETURN;
+  END IF;
+  
+  -- Iterate through each section
+  FOR section IN SELECT * FROM jsonb_array_elements(p_sections)
+  LOOP
+    -- Check required fields
+    IF NOT (section ? 'id') THEN 
+      validation_errors := array_append(validation_errors, 'Section missing id');
+    END IF;
+    
+    IF NOT (section ? 'name') THEN 
+      validation_errors := array_append(validation_errors, 'Section missing name');
+    END IF;
+    
+    IF NOT (section ? 'sectionType') THEN 
+      validation_errors := array_append(validation_errors, 'Section missing sectionType');
+    END IF;
+  END LOOP;
+  
+  -- Return validation result
+  IF array_length(validation_errors, 1) > 0 THEN
+    RETURN QUERY SELECT false, array_to_string(validation_errors, ', ');
+  ELSE
+    RETURN QUERY SELECT true, 'Validation successful';
+  END IF;
 END;
 $$;

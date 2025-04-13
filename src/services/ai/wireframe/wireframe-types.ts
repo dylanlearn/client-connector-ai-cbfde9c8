@@ -82,9 +82,10 @@ export interface WireframeSection {
   dynamicElements?: Record<string, any>;
   styleVariants?: Record<string, any>;
   type?: string; // For backward compatibility
-  layoutScore?: number; // Added missing property
-  optimizationSuggestions?: any[]; // Added missing property
-  patternMatch?: string; // Added missing property
+  layoutScore?: number;
+  optimizationSuggestions?: any[];
+  patternMatch?: string;
+  positionOrder?: number;
 }
 
 /**
@@ -108,7 +109,7 @@ export interface WireframeData {
     body: string;
     [key: string]: string;
   };
-  style?: Record<string, any>;
+  style?: Record<string, any> | string;
   designTokens?: Record<string, any>;
   mobileLayouts?: Record<string, any>;
   styleVariants?: Record<string, any>;
@@ -117,8 +118,9 @@ export interface WireframeData {
   imageUrl?: string;
   styleToken?: string;
   darkMode?: boolean;
-  metadata?: Record<string, any>; // Added missing property
-  mobileConsiderations?: string; // Added missing property
+  metadata?: Record<string, any>;
+  mobileConsiderations?: string;
+  projectId?: string; // Added for API compatibility
 }
 
 // Re-export CopySuggestions interface to ensure it's available
@@ -161,6 +163,14 @@ export interface WireframeGenerationParams {
   feedbackMode?: boolean;
   intakeData?: any;
   styleChanges?: string;
+  colorScheme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    background?: string;
+    text?: string;
+    [key: string]: string | undefined;
+  };
   [key: string]: any;
 }
 
@@ -175,7 +185,7 @@ export interface WireframeGenerationResult {
   warnings?: string[];
   blueprint?: any;
   intentData?: any;
-  error?: Error; // Added for backward compatibility
+  error?: Error; // For backward compatibility
 }
 
 /**
@@ -185,4 +195,56 @@ export interface EnhancedWireframeGenerationResult extends WireframeGenerationRe
   intentData: Record<string, any>;
   blueprint: Record<string, any>;
   designTokens: Record<string, any>;
+}
+
+/**
+ * Type guard to check if an object is a valid WireframeData
+ */
+export function isWireframeData(obj: any): obj is WireframeData {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.title === 'string' &&
+    Array.isArray(obj.sections) &&
+    typeof obj.colorScheme === 'object' &&
+    typeof obj.typography === 'object'
+  );
+}
+
+/**
+ * Type guard to check if an object is a valid WireframeSection
+ */
+export function isWireframeSection(obj: any): obj is WireframeSection {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.name === 'string' &&
+    typeof obj.sectionType === 'string'
+  );
+}
+
+/**
+ * Convert WireframeGenerationParams to a consistent format for API calls
+ */
+export function normalizeWireframeGenerationParams(params: WireframeGenerationParams): WireframeGenerationParams {
+  return {
+    description: params.description,
+    projectId: params.projectId,
+    creativityLevel: params.creativityLevel || 5,
+    style: params.style || '',
+    industry: params.industry || '',
+    targetAudience: params.targetAudience || '',
+    colorPreferences: params.colorPreferences || [],
+    sections: params.sections || [],
+    baseWireframe: params.baseWireframe,
+    isVariation: !!params.isVariation,
+    enhancedCreativity: !!params.enhancedCreativity,
+    feedbackMode: !!params.feedbackMode,
+    intakeData: params.intakeData || null,
+    styleChanges: params.styleChanges || '',
+    colorScheme: params.colorScheme || null,
+    // Strip any additional properties not defined in the interface
+  };
 }
