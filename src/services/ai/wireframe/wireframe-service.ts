@@ -1,90 +1,62 @@
+
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeGenerationParams, WireframeGenerationResult, WireframeSection, WireframeComponent } from './wireframe-types';
-import { generateWireframe as generateWireframeAPI } from './api/wireframe-generator';
+import {
+  WireframeData,
+  WireframeSection,
+  WireframeGenerationParams,
+  WireframeGenerationResult,
+  normalizeWireframeGenerationParams,
+  isWireframeData
+} from './wireframe-types';
 
 /**
- * Creates a WireframeComponent with a guaranteed ID
+ * Generate a wireframe based on the provided parameters
  */
-function createComponent(componentData: Partial<WireframeComponent>): WireframeComponent {
-  return {
-    id: uuidv4(),
-    ...componentData,
-  } as WireframeComponent;
-}
-
-/**
- * Generate a wireframe based on provided parameters
- */
-export const generateWireframe = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
+export async function generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
   try {
-    // Parse the description to determine sections to include
-    const description = params.description || '';
-    const sections: WireframeSection[] = [];
+    console.log('Generating wireframe with params:', JSON.stringify(params, null, 2));
     
-    // Generate a unique ID for the wireframe
-    const wireframeId = uuidv4();
+    // Normalize parameters to ensure consistent format
+    const normalizedParams = normalizeWireframeGenerationParams(params);
     
-    // Generate navigation section (typically first)
-    if (description.toLowerCase().includes('navigation') || description.toLowerCase().includes('navbar') || description.toLowerCase().includes('header')) {
-      sections.push(generateNavigationSection());
+    // Validate required parameters
+    if (!normalizedParams.description || normalizedParams.description.trim().length === 0) {
+      throw new Error('Description is required for wireframe generation');
     }
     
-    // Generate hero section
-    if (description.toLowerCase().includes('hero')) {
-      sections.push(generateHeroSection());
-    }
-    
-    // Generate features section
-    if (description.toLowerCase().includes('features') || description.toLowerCase().includes('feature grid')) {
-      sections.push(generateFeaturesSection());
-    }
-    
-    // Generate testimonials section
-    if (description.toLowerCase().includes('testimonials')) {
-      sections.push(generateTestimonialsSection());
-    }
-    
-    // Generate pricing section
-    if (description.toLowerCase().includes('pricing')) {
-      sections.push(generatePricingSection());
-    }
-    
-    // Generate FAQ section
-    if (description.toLowerCase().includes('faq') || description.toLowerCase().includes('accordion')) {
-      sections.push(generateFAQSection());
-    }
-    
-    // Generate footer section
-    if (description.toLowerCase().includes('footer')) {
-      sections.push(generateFooterSection());
-    }
-    
-    // If no sections were determined, create a basic layout with common sections
-    if (sections.length === 0) {
-      sections.push(generateNavigationSection());
-      sections.push(generateHeroSection());
-      sections.push(generateFeaturesSection());
-      sections.push(generateFooterSection());
-    }
-    
-    // Create the wireframe data object
+    // In a real implementation, this would call the API or edge function
+    // For now, we create a mock wireframe
     const wireframe: WireframeData = {
-      id: wireframeId,
-      title: params.description ? `Wireframe for ${params.description.substring(0, 50)}` : 'New Wireframe',
-      description: params.description || '',
-      sections: sections,
-      colorScheme: {
-        primary: '#3b82f6',
-        secondary: '#10b981',
-        accent: '#f59e0b',
+      id: normalizedParams.projectId ? `${normalizedParams.projectId}-${uuidv4()}` : uuidv4(),
+      title: `Wireframe: ${normalizedParams.description.substring(0, 30)}...`,
+      description: normalizedParams.description,
+      sections: generateMockSections(normalizedParams.description),
+      colorScheme: normalizedParams.colorScheme || {
+        primary: '#3182ce',
+        secondary: '#805ad5',
+        accent: '#ed8936',
         background: '#ffffff',
-        text: '#111827'
+        text: '#1a202c'
       },
       typography: {
-        headings: 'sans-serif',
-        body: 'sans-serif'
-      }
+        headings: 'Inter',
+        body: 'Inter'
+      },
+      designReasoning: 'Auto-generated wireframe based on user description'
     };
+    
+    // Validate the generated wireframe
+    const validationResult = await validateWireframe(wireframe);
+    
+    if (!validationResult.isValid) {
+      console.error('Generated wireframe validation failed:', validationResult.errors);
+      return {
+        wireframe: null,
+        success: false,
+        message: `Generated wireframe is invalid: ${validationResult.errors.join(', ')}`,
+        errors: validationResult.errors
+      };
+    }
     
     return {
       wireframe,
@@ -92,354 +64,156 @@ export const generateWireframe = async (params: WireframeGenerationParams): Prom
       message: 'Wireframe generated successfully'
     };
   } catch (error) {
-    console.error("Error generating wireframe:", error);
+    console.error('Error generating wireframe:', error);
     return {
       wireframe: null,
       success: false,
-      message: error instanceof Error ? error.message : "Unknown error occurred"
+      message: error instanceof Error ? error.message : 'Unknown error generating wireframe',
+      errors: [error instanceof Error ? error.message : 'Unknown error']
     };
   }
-};
+}
 
 /**
- * Generate a variation of a wireframe with a different style
- * @param params The wireframe generation parameters, including baseWireframe if available
- * @param creativityLevel The creativity level to use (1-10)
+ * Generate a variation of an existing wireframe with style changes
  */
-export const generateWireframeVariationWithStyle = async (
-  params: WireframeGenerationParams,
-  creativityLevel: number = 5
-): Promise<WireframeGenerationResult> => {
+export async function generateWireframeVariationWithStyle(
+  baseWireframe: WireframeData,
+  styleChanges: string,
+  enhancedCreativity: boolean = false
+): Promise<WireframeGenerationResult> {
   try {
-    // For now, we'll use the mock or API call
-    return generateWireframeAPI({
-      ...params,
-      creativityLevel,
-      isVariation: true
-    });
+    console.log('Generating wireframe variation with style changes:', styleChanges);
+    
+    if (!isWireframeData(baseWireframe)) {
+      throw new Error('Invalid base wireframe data');
+    }
+    
+    // In a real implementation, this would call the API or edge function
+    // For now, we create a simple variation of the existing wireframe
+    const variation: WireframeData = {
+      ...baseWireframe,
+      id: `variation-${uuidv4()}`,
+      title: `${baseWireframe.title} (Variation)`,
+      colorScheme: {
+        ...baseWireframe.colorScheme,
+        // Modify a color to simulate style change
+        primary: enhancedCreativity ? '#4f46e5' : '#3182ce'
+      },
+      description: `${baseWireframe.description} (with style: ${styleChanges})`,
+      // Mark as a variation
+      metadata: {
+        ...(baseWireframe.metadata || {}),
+        isVariation: true,
+        originalWireframeId: baseWireframe.id,
+        styleChanges
+      }
+    };
+    
+    return {
+      wireframe: variation,
+      success: true,
+      message: 'Wireframe variation generated successfully'
+    };
   } catch (error) {
-    console.error("Error generating wireframe variation:", error);
+    console.error('Error generating wireframe variation:', error);
     return {
       wireframe: null,
       success: false,
-      message: error instanceof Error ? error.message : "Unknown error occurred"
+      message: error instanceof Error ? error.message : 'Unknown error generating wireframe variation',
+      errors: [error instanceof Error ? error.message : 'Unknown error']
     };
   }
-};
-
-/**
- * Generate a navigation section
- */
-function generateNavigationSection(): WireframeSection {
-  const navigationId = uuidv4();
-  
-  return {
-    id: navigationId,
-    name: 'Navigation',
-    sectionType: 'navigation',
-    description: 'Main navigation bar',
-    componentVariant: 'sticky',
-    components: [
-      createComponent({
-        type: 'logo',
-        position: { x: 0, y: 0 },
-        props: { align: 'left' }
-      }),
-      createComponent({
-        type: 'nav-links',
-        position: { x: 0, y: 0 },
-        props: { align: 'center', items: ['Features', 'Pricing', 'About', 'Contact'] }
-      }),
-      createComponent({
-        type: 'button',
-        position: { x: 0, y: 0 },
-        props: { text: 'Get Started', align: 'right', variant: 'primary' }
-      })
-    ],
-    copySuggestions: {
-      heading: 'Your Brand',
-      primaryCta: 'Get Started'
-    }
-  };
 }
 
 /**
- * Generate a hero section
+ * Generate mock sections for a wireframe based on the description
  */
-function generateHeroSection(): WireframeSection {
-  const heroId = uuidv4();
-  
-  return {
-    id: heroId,
-    name: 'Hero',
-    sectionType: 'hero',
-    description: 'Main hero section',
-    componentVariant: 'split',
-    components: [
-      createComponent({
-        type: 'heading',
-        position: { x: 0, y: 0 },
-        props: { text: 'Powerful Solution for Your Business', level: 1 }
-      }),
-      createComponent({
-        type: 'paragraph',
-        position: { x: 0, y: 0 },
-        props: { text: 'Streamline your workflow and boost productivity with our intuitive platform.' }
-      }),
-      createComponent({
-        type: 'button-group',
-        position: { x: 0, y: 0 },
-        props: { buttons: [
-          { text: 'Get Started', variant: 'primary' },
-          { text: 'Learn More', variant: 'secondary' }
-        ]}
-      }),
-      createComponent({
-        type: 'image',
-        position: { x: 0, y: 0 },
-        props: { src: '/placeholder-hero.jpg', alt: 'Hero Image' }
-      })
-    ],
-    copySuggestions: {
-      heading: 'Powerful Solution for Your Business',
-      subheading: 'Streamline your workflow and boost productivity with our intuitive platform.',
-      primaryCta: 'Get Started',
-      secondaryCta: 'Learn More'
+function generateMockSections(description: string): WireframeSection[] {
+  const sections: WireframeSection[] = [
+    {
+      id: uuidv4(),
+      name: 'Header',
+      sectionType: 'header',
+      description: 'Main header section with navigation',
+      position: { x: 0, y: 0 },
+      dimensions: { width: '100%', height: 80 }
+    },
+    {
+      id: uuidv4(),
+      name: 'Hero',
+      sectionType: 'hero',
+      description: 'Hero section with main message',
+      position: { x: 0, y: 80 },
+      dimensions: { width: '100%', height: 500 }
+    },
+    {
+      id: uuidv4(),
+      name: 'Features',
+      sectionType: 'features',
+      description: 'Features showcase',
+      position: { x: 0, y: 580 },
+      dimensions: { width: '100%', height: 400 }
+    },
+    {
+      id: uuidv4(),
+      name: 'Footer',
+      sectionType: 'footer',
+      description: 'Footer with links and info',
+      position: { x: 0, y: 980 },
+      dimensions: { width: '100%', height: 200 }
     }
-  };
+  ];
+  
+  return sections;
 }
 
 /**
- * Generate a features section
+ * Validate a wireframe structure
  */
-function generateFeaturesSection(): WireframeSection {
-  const featuresId = uuidv4();
-  
-  return {
-    id: featuresId,
-    name: 'Features',
-    sectionType: 'features',
-    description: 'Key features section',
-    stats: [
-      { id: uuidv4(), value: 'Feature 1', label: 'Description of this amazing feature.' },
-      { id: uuidv4(), value: 'Feature 2', label: 'Description of this amazing feature.' },
-      { id: uuidv4(), value: 'Feature 3', label: 'Description of this amazing feature.' },
-      { id: uuidv4(), value: 'Feature 4', label: 'Description of this amazing feature.' },
-      { id: uuidv4(), value: 'Feature 5', label: 'Description of this amazing feature.' },
-      { id: uuidv4(), value: 'Feature 6', label: 'Description of this amazing feature.' }
-    ],
-    copySuggestions: {
-      heading: 'Powerful Features',
-      subheading: 'Everything you need to streamline your workflow and boost productivity.'
+async function validateWireframe(wireframe: WireframeData): Promise<{ isValid: boolean; errors: string[] }> {
+  try {
+    // In a real implementation, this would call the validate-wireframe edge function
+    // For now, perform a basic validation
+    const errors: string[] = [];
+    
+    if (!wireframe.id) errors.push('Wireframe must have an ID');
+    if (!wireframe.title) errors.push('Wireframe must have a title');
+    if (!Array.isArray(wireframe.sections)) errors.push('Wireframe must have a sections array');
+    
+    // Validate color scheme
+    if (!wireframe.colorScheme) {
+      errors.push('Wireframe must have a colorScheme');
+    } else {
+      ['primary', 'secondary', 'accent', 'background', 'text'].forEach(color => {
+        if (!wireframe.colorScheme[color]) errors.push(`ColorScheme must include ${color} color`);
+      });
     }
-  };
+    
+    // Validate typography
+    if (!wireframe.typography) {
+      errors.push('Wireframe must have typography');
+    } else {
+      ['headings', 'body'].forEach(font => {
+        if (!wireframe.typography[font]) errors.push(`Typography must include ${font} font`);
+      });
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  } catch (error) {
+    console.error('Error validating wireframe:', error);
+    return {
+      isValid: false,
+      errors: [error instanceof Error ? error.message : 'Unknown validation error']
+    };
+  }
 }
 
 /**
- * Generate a testimonials section
+ * Create aliases for backward compatibility
  */
-function generateTestimonialsSection(): WireframeSection {
-  const testimonialsId = uuidv4();
-  
-  return {
-    id: testimonialsId,
-    name: 'Testimonials',
-    sectionType: 'testimonials',
-    description: 'Customer testimonials',
-    components: [
-      createComponent({
-        type: 'testimonial-card',
-        position: { x: 0, y: 0 },
-        props: {
-          quote: "This platform has transformed our workflow. Highly recommended!",
-          author: "Jane Smith",
-          role: "CEO, Acme Inc.",
-          rating: 5
-        }
-      }),
-      createComponent({
-        type: 'testimonial-card',
-        position: { x: 0, y: 0 },
-        props: {
-          quote: "The best SaaS platform we've used. Intuitive and powerful.",
-          author: "John Doe",
-          role: "CTO, XYZ Corp",
-          rating: 5
-        }
-      }),
-      createComponent({
-        type: 'testimonial-card',
-        position: { x: 0, y: 0 },
-        props: {
-          quote: "Excellent support and feature-rich platform.",
-          author: "Sarah Johnson",
-          role: "Director, ABC Solutions",
-          rating: 4
-        }
-      })
-    ],
-    copySuggestions: {
-      heading: 'What Our Customers Say',
-      subheading: 'Read testimonials from our satisfied clients and discover how we\'ve helped businesses like yours.'
-    }
-  };
-}
-
-/**
- * Generate a pricing section
- */
-function generatePricingSection(): WireframeSection {
-  const pricingId = uuidv4();
-  
-  return {
-    id: pricingId,
-    name: 'Pricing',
-    sectionType: 'pricing',
-    description: 'Pricing plans',
-    components: [
-      createComponent({
-        type: 'pricing-card',
-        position: { x: 0, y: 0 },
-        props: {
-          planName: "Basic",
-          price: "$19",
-          period: "per month",
-          features: ["Feature 1", "Feature 2", "Feature 3"],
-          cta: "Get Started"
-        }
-      }),
-      createComponent({
-        type: 'pricing-card',
-        position: { x: 0, y: 0 },
-        props: {
-          planName: "Pro",
-          price: "$49",
-          period: "per month",
-          features: ["All Basic features", "Feature 4", "Feature 5", "Feature 6"],
-          cta: "Get Started",
-          highlighted: true
-        }
-      }),
-      createComponent({
-        type: 'pricing-card',
-        position: { x: 0, y: 0 },
-        props: {
-          planName: "Enterprise",
-          price: "$99",
-          period: "per month",
-          features: ["All Pro features", "Feature 7", "Feature 8", "Feature 9"],
-          cta: "Contact Sales"
-        }
-      })
-    ],
-    copySuggestions: {
-      heading: 'Simple, Transparent Pricing',
-      subheading: 'Choose the plan that best fits your needs. All plans include a 14-day free trial.'
-    }
-  };
-}
-
-/**
- * Generate a FAQ section
- */
-function generateFAQSection(): WireframeSection {
-  const faqId = uuidv4();
-  
-  return {
-    id: faqId,
-    name: 'FAQ',
-    sectionType: 'faq',
-    description: 'Frequently Asked Questions',
-    components: [
-      createComponent({
-        type: 'faq-accordion',
-        position: { x: 0, y: 0 },
-        props: {
-          items: [
-            {
-              question: "How does the platform work?",
-              answer: "Our platform works by integrating with your existing systems to streamline workflows and automate repetitive tasks."
-            },
-            {
-              question: "What kind of support do you offer?",
-              answer: "We offer 24/7 email support for all plans, with phone and prioritized support for higher-tier plans."
-            },
-            {
-              question: "Can I cancel my subscription?",
-              answer: "Yes, you can cancel your subscription at any time. We offer a 14-day money-back guarantee for all plans."
-            },
-            {
-              question: "Do you offer custom solutions?",
-              answer: "Yes, we offer custom solutions for enterprise clients. Contact our sales team to learn more."
-            }
-          ]
-        }
-      })
-    ],
-    copySuggestions: {
-      heading: 'Frequently Asked Questions',
-      subheading: 'Find answers to common questions about our platform and services.'
-    }
-  };
-}
-
-/**
- * Generate a footer section
- */
-function generateFooterSection(): WireframeSection {
-  const footerId = uuidv4();
-  
-  return {
-    id: footerId,
-    name: 'Footer',
-    sectionType: 'footer',
-    description: 'Page footer',
-    components: [
-      createComponent({
-        type: 'logo',
-        position: { x: 0, y: 0 },
-        props: {}
-      }),
-      createComponent({
-        type: 'footer-links',
-        position: { x: 0, y: 0 },
-        props: {
-          title: "Company",
-          links: ["About", "Careers", "Contact Us", "Blog"]
-        }
-      }),
-      createComponent({
-        type: 'footer-links',
-        position: { x: 0, y: 0 },
-        props: {
-          title: "Resources",
-          links: ["Documentation", "FAQs", "Support", "Privacy Policy"]
-        }
-      }),
-      createComponent({
-        type: 'newsletter',
-        position: { x: 0, y: 0 },
-        props: {
-          title: "Subscribe to our newsletter",
-          placeholder: "Enter your email",
-          buttonText: "Subscribe"
-        }
-      }),
-      createComponent({
-        type: 'social-icons',
-        position: { x: 0, y: 0 },
-        props: {
-          icons: ["twitter", "facebook", "linkedin"]
-        }
-      })
-    ],
-    copySuggestions: {
-      supportText: '© 2025 Your Company. All rights reserved.'
-    }
-  };
-}
-
-export default {
-  generateWireframe,
-  generateWireframeVariationWithStyle
-};
+export const generateWireframeFromPrompt = generateWireframe;
+export const createWireframe = generateWireframe;

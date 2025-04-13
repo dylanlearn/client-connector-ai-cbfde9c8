@@ -18,3 +18,16 @@ export interface WireframeAISuggestionsProps {
   onClose?: () => void;
   onApplySuggestion?: (suggestion: any) => void;
 }
+
+export interface WireframeCanvasFabricProps {
+  projectId: string;
+  wireframeData: any;
+  onUpdate?: (updatedWireframe: any) => void;
+  readOnly?: boolean;
+}
+
+export interface ErrorWithDetails {
+  message: string;
+  details?: Record<string, any>;
+  originalError?: unknown;
+}

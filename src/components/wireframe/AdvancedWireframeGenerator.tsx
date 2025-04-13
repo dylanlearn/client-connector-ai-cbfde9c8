@@ -8,6 +8,7 @@ import { WireframeGenerationParams, WireframeGenerationResult } from '@/services
 import Wireframe from './Wireframe';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import WireframeErrorState from './WireframeErrorState';
 
 interface AdvancedWireframeGeneratorProps {
   projectId: string;
@@ -27,6 +28,7 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
   intakeData,
 }) => {
   const [prompt, setPrompt] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const {
     isGenerating,
     currentWireframe,
@@ -84,8 +86,23 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
     }
   }, [intakeData]);
 
+  // Validate the prompt before submission
+  const validatePrompt = (input: string): string[] => {
+    const errors: string[] = [];
+    if (!input.trim()) {
+      errors.push("Please enter a prompt before generating a wireframe");
+    } else if (input.trim().length < 10) {
+      errors.push("Please provide a more detailed description for better results");
+    }
+    return errors;
+  };
+
   const handleGenerateWireframe = async () => {
-    if (!prompt.trim()) return;
+    // Validate prompt first
+    const errors = validatePrompt(prompt);
+    setValidationErrors(errors);
+    
+    if (errors.length > 0) return;
     
     try {
       console.log('Submitting wireframe generation with prompt:', prompt);
@@ -119,10 +136,25 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
         <Textarea
           placeholder="Describe your wireframe in detail. Include sections, layout structure, and responsive behavior..."
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={(e) => {
+            setPrompt(e.target.value);
+            // Clear validation errors when user starts typing
+            if (validationErrors.length > 0) {
+              setValidationErrors([]);
+            }
+          }}
           rows={6}
-          className="w-full resize-y"
+          className={`w-full resize-y ${validationErrors.length > 0 ? 'border-red-500' : ''}`}
         />
+        {validationErrors.length > 0 && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertDescription>
+              {validationErrors.map((err, i) => (
+                <p key={i}>{err}</p>
+              ))}
+            </AlertDescription>
+          </Alert>
+        )}
         <Button 
           onClick={handleGenerateWireframe} 
           disabled={isGenerating || !prompt.trim()}
@@ -140,9 +172,10 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error.message || String(error)}</AlertDescription>
-        </Alert>
+        <WireframeErrorState 
+          error={error} 
+          onRetry={handleGenerateWireframe}
+        />
       )}
 
       {currentWireframe && currentWireframe.wireframe && (

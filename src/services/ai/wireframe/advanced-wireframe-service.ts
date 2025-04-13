@@ -12,7 +12,17 @@ class AdvancedWireframeService {
    */
   async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
     try {
-      console.log('Advanced wireframe generation requested:', params);
+      console.log('Advanced wireframe generation requested:', JSON.stringify(params, null, 2));
+      
+      // Validate required parameters
+      if (!params.description || params.description.trim().length === 0) {
+        return {
+          wireframe: null,
+          success: false,
+          message: 'Description is required for wireframe generation',
+          errors: ['Missing required parameter: description']
+        };
+      }
       
       // Enhance the generation params with additional options
       const enhancedParams: WireframeGenerationParams = {
@@ -25,7 +35,8 @@ class AdvancedWireframeService {
       const result = await generateWireframe(enhancedParams);
       
       if (!result.success || !result.wireframe) {
-        throw new Error(result.message || 'Failed to generate wireframe');
+        console.error('Failed to generate wireframe:', result.message);
+        return result;
       }
       
       // Add enhanced functionality to the wireframe
@@ -36,17 +47,25 @@ class AdvancedWireframeService {
         styleVariants: params.enhancedCreativity ? this.generateStyleVariants() : undefined
       };
       
+      // Validate the enhanced wireframe
+      const validationResult = await this.validateEnhancedWireframe(enhancedWireframe);
+      if (!validationResult.isValid) {
+        console.warn('Enhanced wireframe has validation warnings:', validationResult.warnings);
+      }
+      
       return {
         wireframe: enhancedWireframe,
         success: true,
-        message: 'Enhanced wireframe generated successfully'
+        message: 'Enhanced wireframe generated successfully',
+        warnings: validationResult.warnings
       };
     } catch (error) {
       console.error('Error in advanced wireframe generation:', error);
       return {
         wireframe: null,
         success: false,
-        message: `Error generating enhanced wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `Error generating enhanced wireframe: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        errors: [error instanceof Error ? error.message : 'Unknown error occurred']
       };
     }
   }
@@ -56,7 +75,28 @@ class AdvancedWireframeService {
    */
   async applyFeedback(wireframeData: WireframeData, feedback: string): Promise<WireframeGenerationResult> {
     try {
-      console.log('Applying feedback to wireframe:', feedback);
+      if (!feedback || feedback.trim().length === 0) {
+        return {
+          wireframe: wireframeData,
+          success: false,
+          message: 'Feedback text is required',
+          errors: ['Missing feedback text']
+        };
+      }
+      
+      if (!wireframeData || !wireframeData.id) {
+        return {
+          wireframe: null,
+          success: false,
+          message: 'Invalid wireframe data',
+          errors: ['Invalid wireframe data']
+        };
+      }
+      
+      console.log('Applying feedback to wireframe:', {
+        wireframeId: wireframeData.id,
+        feedback
+      });
       
       // Simple implementation for now
       // In a real app, this would use AI to analyze the feedback and make changes
@@ -67,7 +107,7 @@ class AdvancedWireframeService {
           ...(wireframeData.metadata || {}),
           feedbackHistory: [
             ...((wireframeData.metadata?.feedbackHistory as any[]) || []),
-            { text: feedback, timestamp: new Date().toISOString() }
+            { text: feedback, timestamp: new Date().toISOString(), id: uuidv4() }
           ]
         }
       };
@@ -82,9 +122,34 @@ class AdvancedWireframeService {
       return {
         wireframe: null,
         success: false,
-        message: `Error applying feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `Error applying feedback: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        errors: [error instanceof Error ? error.message : 'Unknown error occurred']
       };
     }
+  }
+  
+  /**
+   * Validate an enhanced wireframe
+   */
+  private async validateEnhancedWireframe(wireframe: WireframeData): Promise<{
+    isValid: boolean;
+    warnings?: string[];
+  }> {
+    // Simplified validation for enhanced wireframe specific properties
+    const warnings: string[] = [];
+    
+    if (wireframe.animations && Object.keys(wireframe.animations).length === 0) {
+      warnings.push('Animations property is empty');
+    }
+    
+    if (wireframe.styleVariants && Object.keys(wireframe.styleVariants).length === 0) {
+      warnings.push('StyleVariants property is empty');
+    }
+    
+    return {
+      isValid: true, // We consider these as warnings, not errors
+      warnings: warnings.length > 0 ? warnings : undefined
+    };
   }
   
   /**

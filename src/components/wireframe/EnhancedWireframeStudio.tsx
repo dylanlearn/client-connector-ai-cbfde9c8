@@ -186,6 +186,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
               <WireframeAISuggestions
                 wireframeId={wireframeData.id}
                 wireframe={wireframeData}
+                focusedSectionId={selectedSection}
                 onApplySuggestion={handleWireframeUpdate}
                 onClose={handleAISuggestionsToggle}
               />
