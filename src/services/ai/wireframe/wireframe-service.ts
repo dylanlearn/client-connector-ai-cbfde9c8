@@ -1,23 +1,21 @@
-
 import { v4 as uuidv4 } from 'uuid';
-import { WireframeData, WireframeSection, WireframeComponent, WireframeGenerationParams, WireframeGenerationResult } from './wireframe-types';
+import { WireframeData, WireframeGenerationParams, WireframeGenerationResult, WireframeSection, WireframeComponent } from './wireframe-types';
+import { generateWireframe as generateWireframeAPI } from './api/wireframe-generator';
 
 /**
  * Creates a WireframeComponent with a guaranteed ID
  */
-const createComponent = (componentData: Partial<WireframeComponent>): WireframeComponent => {
+function createComponent(componentData: Partial<WireframeComponent>): WireframeComponent {
   return {
     id: uuidv4(),
-    type: componentData.type || 'box',
-    position: componentData.position || { x: 0, y: 0 },
-    ...componentData
+    ...componentData,
   } as WireframeComponent;
-};
+}
 
 /**
- * Generate a wireframe based on the provided parameters
+ * Generate a wireframe based on provided parameters
  */
-export const generateWireframe = (params: WireframeGenerationParams): WireframeGenerationResult => {
+export const generateWireframe = async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
   try {
     // Parse the description to determine sections to include
     const description = params.description || '';
@@ -94,11 +92,37 @@ export const generateWireframe = (params: WireframeGenerationParams): WireframeG
       message: 'Wireframe generated successfully'
     };
   } catch (error) {
-    console.error('Error generating wireframe:', error);
+    console.error("Error generating wireframe:", error);
     return {
       wireframe: null,
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    };
+  }
+};
+
+/**
+ * Generate a variation of a wireframe with a different style
+ * @param params The wireframe generation parameters, including baseWireframe if available
+ * @param creativityLevel The creativity level to use (1-10)
+ */
+export const generateWireframeVariationWithStyle = async (
+  params: WireframeGenerationParams,
+  creativityLevel: number = 5
+): Promise<WireframeGenerationResult> => {
+  try {
+    // For now, we'll use the mock or API call
+    return generateWireframeAPI({
+      ...params,
+      creativityLevel,
+      isVariation: true
+    });
+  } catch (error) {
+    console.error("Error generating wireframe variation:", error);
+    return {
+      wireframe: null,
+      success: false,
+      message: error instanceof Error ? error.message : "Unknown error occurred"
     };
   }
 };
@@ -414,21 +438,6 @@ function generateFooterSection(): WireframeSection {
     }
   };
 }
-
-/**
- * Generate a wireframe variation with a specific style
- */
-export const generateWireframeVariationWithStyle = (
-  baseWireframe: WireframeData,
-  styleChanges: string
-): WireframeGenerationResult => {
-  // This would apply style changes based on the specified style
-  return {
-    wireframe: baseWireframe,
-    success: true,
-    message: 'Wireframe style updated'
-  };
-};
 
 export default {
   generateWireframe,
