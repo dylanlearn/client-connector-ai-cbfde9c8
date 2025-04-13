@@ -226,25 +226,73 @@ export function isWireframeSection(obj: any): obj is WireframeSection {
 }
 
 /**
+ * Type guard to check if an object is a valid WireframeComponent
+ */
+export function isWireframeComponent(obj: any): obj is WireframeComponent {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'string' &&
+    typeof obj.type === 'string'
+  );
+}
+
+/**
  * Convert WireframeGenerationParams to a consistent format for API calls
  */
 export function normalizeWireframeGenerationParams(params: WireframeGenerationParams): WireframeGenerationParams {
-  return {
-    description: params.description,
-    projectId: params.projectId,
+  // Create a normalized copy of params
+  const normalized: WireframeGenerationParams = {
+    description: params.description || '',
+    projectId: params.projectId || '',
     creativityLevel: params.creativityLevel || 5,
     style: params.style || '',
     industry: params.industry || '',
     targetAudience: params.targetAudience || '',
     colorPreferences: params.colorPreferences || [],
     sections: params.sections || [],
-    baseWireframe: params.baseWireframe,
     isVariation: !!params.isVariation,
     enhancedCreativity: !!params.enhancedCreativity,
     feedbackMode: !!params.feedbackMode,
     intakeData: params.intakeData || null,
     styleChanges: params.styleChanges || '',
-    colorScheme: params.colorScheme || null,
-    // Strip any additional properties not defined in the interface
+  };
+  
+  // Handle baseWireframe specially to avoid deep copying
+  if (params.baseWireframe) {
+    normalized.baseWireframe = params.baseWireframe;
+  }
+  
+  // Handle colorScheme specially to avoid losing undefined values
+  if (params.colorScheme) {
+    normalized.colorScheme = { ...params.colorScheme };
+  }
+  
+  return normalized;
+}
+
+/**
+ * Create a base wireframe structure with required fields
+ */
+export function createBaseWireframe(title: string = 'New Wireframe'): WireframeData {
+  return {
+    id: uuidv4(),
+    title: title,
+    description: '',
+    sections: [],
+    colorScheme: {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    },
+    typography: {
+      headings: 'sans-serif',
+      body: 'sans-serif'
+    }
   };
 }
+
+// Add missing uuidv4 import
+import { v4 as uuidv4 } from 'uuid';
