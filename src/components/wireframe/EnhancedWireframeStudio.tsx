@@ -1,7 +1,4 @@
 
-// Fix for missing onExport and projectId prop in WireframeCanvasFabric
-// This assumes the component has an export function that needs to be updated
-
 import React, { useState, useCallback } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,6 +45,14 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     setSelectedSection(sectionId);
   };
 
+  const handleExport = useCallback((format: string) => {
+    if (onExport) {
+      onExport(format);
+    } else {
+      console.log(`Export requested in ${format} format but no handler provided`);
+    }
+  }, [onExport]);
+
   return (
     <div className="enhanced-wireframe-studio">
       <div className="flex justify-between mb-4">
@@ -71,11 +76,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (onExport) {
-                onExport('pdf');
-              }
-            }}
+            onClick={() => handleExport('pdf')}
           >
             Export PDF
           </Button>
@@ -83,11 +84,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              if (onExport) {
-                onExport('html');
-              }
-            }}
+            onClick={() => handleExport('html')}
           >
             Export HTML
           </Button>
