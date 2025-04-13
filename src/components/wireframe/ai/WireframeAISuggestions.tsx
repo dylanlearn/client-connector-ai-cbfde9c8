@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface WireframeAISuggestionsProps {
   wireframeId?: string;
+  wireframe?: any; // Add wireframe prop
   focusedSectionId?: string;
   onApplySuggestion?: (suggestion: any) => void;
   onClose?: () => void;
@@ -15,6 +17,7 @@ interface WireframeAISuggestionsProps {
 
 const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
   wireframeId,
+  wireframe, // Include wireframe in props
   focusedSectionId,
   onApplySuggestion,
   onClose
@@ -38,7 +41,9 @@ const WireframeAISuggestions: React.FC<WireframeAISuggestionsProps> = ({
     setIsLoading(true);
     
     try {
-      console.log(`Generating suggestions for wireframe: ${wireframeId}, section: ${focusedSectionId}`);
+      // Use wireframe or wireframeId for identification
+      const targetId = wireframeId || (wireframe?.id ? wireframe.id : 'unknown');
+      console.log(`Generating suggestions for wireframe: ${targetId}, section: ${focusedSectionId}`);
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const mockSuggestions = {

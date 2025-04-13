@@ -12,7 +12,9 @@ export interface WireframeVisualizerProps {
 }
 
 export interface WireframeAISuggestionsProps {
+  wireframeId?: string;
   wireframe?: any;
+  focusedSectionId?: string;
   onClose?: () => void;
   onApplySuggestion?: (suggestion: any) => void;
 }

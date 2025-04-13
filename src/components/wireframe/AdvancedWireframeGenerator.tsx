@@ -141,7 +141,7 @@ export const AdvancedWireframeGenerator: React.FC<AdvancedWireframeGeneratorProp
 
       {error && (
         <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{error.message || String(error)}</AlertDescription>
         </Alert>
       )}
 

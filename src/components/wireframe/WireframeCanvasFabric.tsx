@@ -6,28 +6,37 @@ import { DeviceType } from './types';
 
 interface WireframeCanvasFabricProps {
   wireframeData?: WireframeData;
+  initialData?: WireframeData; // Add initialData prop
   editable?: boolean;
+  readOnly?: boolean; // Add readOnly prop
   width?: number;
   height?: number;
   onSectionClick?: (sectionId: string) => void;
   onSectionUpdate?: (section: WireframeSection) => void;
+  onUpdate?: (wireframe: WireframeData) => void; // Add onUpdate prop
   deviceType?: DeviceType;
-  projectId?: string; // Added projectId prop
+  projectId?: string;
 }
 
 const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = ({
   wireframeData,
+  initialData, // Include initialData in props
   editable = false,
+  readOnly = false, // Include readOnly prop with default
   width = 1200,
   height = 800,
   onSectionClick,
   onSectionUpdate,
+  onUpdate, // Include onUpdate in props
   deviceType = 'desktop',
-  projectId // Add projectId to component props
+  projectId
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Use initialData if provided, otherwise use wireframeData
+  const dataToRender = initialData || wireframeData;
 
   // Initialize fabric canvas
   useEffect(() => {
@@ -36,7 +45,7 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = ({
     const canvas = new fabric.Canvas(canvasRef.current, {
       width,
       height,
-      selection: editable,
+      selection: editable && !readOnly,
       preserveObjectStacking: true
     });
 
@@ -47,26 +56,34 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = ({
       canvas.dispose();
       fabricRef.current = null;
     };
-  }, [width, height, editable]);
+  }, [width, height, editable, readOnly]);
 
   // Render wireframe sections to canvas
   useEffect(() => {
     const canvas = fabricRef.current;
-    if (!canvas || !wireframeData || !wireframeData.sections) return;
+    if (!canvas || !dataToRender || !dataToRender.sections) return;
 
     // Clear canvas
     canvas.clear();
 
     // Render sections
-    wireframeData.sections.forEach(section => {
+    dataToRender.sections.forEach(section => {
       renderSection(canvas, section, {
-        editable,
+        editable: editable && !readOnly,
         onSectionClick
       });
     });
 
     canvas.renderAll();
-  }, [wireframeData, editable, onSectionClick]);
+    
+    // Callback when canvas is updated
+    if (onUpdate && canvas) {
+      canvas.on('object:modified', () => {
+        const updatedData = extractWireframeDataFromCanvas(canvas, dataToRender);
+        onUpdate(updatedData);
+      });
+    }
+  }, [dataToRender, editable, readOnly, onSectionClick, onUpdate]);
 
   return (
     <div className="wireframe-canvas-fabric relative">
@@ -78,6 +95,30 @@ const WireframeCanvasFabric: React.FC<WireframeCanvasFabricProps> = ({
       <canvas ref={canvasRef} />
     </div>
   );
+};
+
+// Helper function to extract wireframe data from canvas
+const extractWireframeDataFromCanvas = (
+  canvas: fabric.Canvas, 
+  baseData: WireframeData
+): WireframeData => {
+  // Extract sections from canvas objects
+  const sections = canvas.getObjects()
+    .filter(obj => obj.data?.type === 'section')
+    .map(obj => ({
+      id: obj.data?.id || '',
+      name: obj.data?.name || 'Section',
+      sectionType: obj.data?.sectionType || 'generic',
+      x: obj.left || 0,
+      y: obj.top || 0,
+      width: obj.width || 400,
+      height: obj.height || 300
+    }));
+  
+  return {
+    ...baseData,
+    sections: sections
+  };
 };
 
 // Helper function to render a section

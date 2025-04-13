@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DeviceType, ViewMode } from './types';
 import WireframeVisualizer from './WireframeVisualizer';
-import WireframeAISuggestions from './WireframeAISuggestions';
+import WireframeAISuggestions from './ai/WireframeAISuggestions';
 import WireframeCanvasFabric from './WireframeCanvasFabric';
 
 interface EnhancedWireframeStudioProps {
@@ -13,7 +13,7 @@ interface EnhancedWireframeStudioProps {
   initialData?: any;
   standalone?: boolean;
   onUpdate?: (wireframe: any) => void;
-  onExport?: (format: string) => void; // Added onExport prop
+  onExport?: (format: string) => void;
 }
 
 const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
@@ -21,7 +21,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   initialData,
   standalone = false,
   onUpdate,
-  onExport, // Add onExport to props
+  onExport,
 }) => {
   const [wireframeData, setWireframeData] = useState(initialData || {
     id: 'new-wireframe',
@@ -56,7 +56,6 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     }
   };
 
-  // Handle exports when the onExport prop is provided
   const handleExport = useCallback((format: string) => {
     if (onExport) {
       onExport(format);
@@ -157,7 +156,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
             <CardContent className="p-0">
               <WireframeCanvasFabric
                 projectId={projectId}
-                initialData={wireframeData}
+                wireframeData={wireframeData}
                 onUpdate={handleWireframeUpdate}
                 readOnly={false}
               />
@@ -185,6 +184,7 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
           <Card>
             <CardContent className="p-4">
               <WireframeAISuggestions
+                wireframeId={wireframeData.id}
                 wireframe={wireframeData}
                 onApplySuggestion={handleWireframeUpdate}
                 onClose={handleAISuggestionsToggle}
