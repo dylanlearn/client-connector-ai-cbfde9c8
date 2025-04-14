@@ -33,6 +33,7 @@ export interface UseWireframeOptions {
   projectId?: string;
   autoSave?: boolean;
   toastNotifications?: boolean;
+  useSonnerToasts?: boolean;
   validationLevel?: 'basic' | 'standard' | 'advanced';
   enhancedValidation?: boolean;
   onWireframeGenerated?: (result: WireframeGenerationResult) => void;

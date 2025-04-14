@@ -11,7 +11,12 @@ describe('WireframeValidator', () => {
         description: 'A landing page for a SaaS product',
         projectId: '123',
         creativityLevel: 8,
-        colorScheme: { primary: '#3182ce' }
+        colorScheme: { 
+          primary: '#3182ce',
+          secondary: '#805ad5',
+          accent: '#ed8936',
+          background: '#ffffff'
+        }
       };
       
       // Act & Assert
@@ -121,4 +126,3 @@ describe('WireframeValidator', () => {
     });
   });
 });
-
