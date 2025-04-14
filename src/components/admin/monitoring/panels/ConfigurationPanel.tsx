@@ -68,7 +68,7 @@ export function ConfigurationPanel({ config, updateConfig }: ConfigurationPanelP
           {error && (
             <ErrorMessage 
               message={error.message} 
-              title="Configuration Error" 
+              title="Configuration Error"
               className="mb-4"
             />
           )}

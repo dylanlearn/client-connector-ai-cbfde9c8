@@ -1,233 +1,181 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+
+interface ErrorLogData {
+  error_message: string;
+  component_name?: string;
+  error_stack?: string;
+  browser_info?: string;
+  url?: string;
+  user_id?: string;
+  session_id?: string;
+  timestamp?: string;
+  metadata?: Record<string, any>;
+}
 
 /**
- * Client Error Logger class for tracking and reporting client-side errors
+ * Utility for logging client-side errors to the database
  */
 export class ClientErrorLogger {
-  private static isInitialized = false;
-  private static errorQueue: Array<{
-    message: string;
-    stack?: string;
-    componentName?: string;
-    userId?: string;
-    metadata?: Record<string, any>;
-    timestamp: string;
-  }> = [];
-  private static isProcessing = false;
+  private static initialized: boolean = false;
+  private static errorQueue: ErrorLogData[] = [];
   private static flushInterval: number | null = null;
-  private static readonly batchSize = 10;
-  private static readonly flushIntervalMs = 30000; // 30 seconds
   
   /**
-   * Initialize the error logger with global handlers
+   * Initialize the error logger
    */
-  public static initialize() {
-    if (this.isInitialized) {
-      return;
-    }
+  static initialize(): void {
+    if (this.initialized) return;
     
-    // Set up window error handler
+    console.info("ClientErrorLogger initialized");
+    
+    // Setup error event listeners
     if (typeof window !== 'undefined') {
-      window.onerror = (message, source, lineno, colno, error) => {
-        this.logClientError({
-          error_message: message as string,
-          error_stack: error?.stack,
-          url: source,
-          browser_info: navigator.userAgent,
-          timestamp: new Date().toISOString()
-        });
-        
-        // Don't prevent default handling
-        return false;
-      };
+      window.addEventListener('error', this.handleWindowError);
+      window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
       
-      // Set up unhandled promise rejection handler
-      window.addEventListener('unhandledrejection', (event) => {
-        this.logClientError({
-          error_message: `Unhandled Promise Rejection: ${event.reason}`,
-          error_stack: event.reason?.stack,
-          browser_info: navigator.userAgent,
-          timestamp: new Date().toISOString()
-        });
-      });
+      // Set up interval to flush errors
+      this.flushInterval = window.setInterval(this.flushErrorQueue, 30000);
     }
-
-    // Set up flush interval
-    this.flushInterval = window.setInterval(() => {
-      this.flushErrorQueue();
-    }, this.flushIntervalMs);
     
-    // Ensure errors are flushed before page unload
-    window.addEventListener('beforeunload', () => {
-      this.flushErrorQueue(true);
-    });
-    
-    this.isInitialized = true;
-    console.log('ClientErrorLogger initialized');
+    this.initialized = true;
   }
   
   /**
-   * Cleanup resources used by the error logger
+   * Clean up event listeners
    */
-  public static cleanup() {
-    if (this.flushInterval !== null) {
-      window.clearInterval(this.flushInterval);
-      this.flushInterval = null;
-    }
-    
-    // Flush any remaining errors
-    this.flushErrorQueue(true);
-    
-    this.isInitialized = false;
-  }
-  
-  /**
-   * Log a client error to the backend
-   */
-  public static async logClientError(errorData: {
-    error_message: string;
-    component_name?: string;
-    error_stack?: string;
-    url?: string;
-    user_id?: string;
-    browser_info?: string;
-    metadata?: Record<string, any>;
-    timestamp?: string;
-  }) {
-    try {
-      // Log to console first
-      console.error('[Client Error]:', errorData.error_message, errorData);
-
-      // Send to backend
-      const { error } = await supabase
-        .from('client_errors')
-        .insert({
-          ...errorData,
-          timestamp: errorData.timestamp || new Date().toISOString()
-        });
-        
-      if (error) {
-        console.error('Failed to log client error to backend:', error);
+  static cleanup(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('error', this.handleWindowError);
+      window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
+      
+      if (this.flushInterval !== null) {
+        window.clearInterval(this.flushInterval);
+        this.flushInterval = null;
       }
-    } catch (err) {
-      // Fallback logging
-      console.error('Error in error logging:', err);
     }
+    
+    this.initialized = false;
+    console.info("ClientErrorLogger cleanup complete");
   }
   
   /**
-   * Log authentication-related errors
+   * Handle window error events
    */
-  public static async logAuthError(errorData: {
-    error_message: string;
-    auth_action: string;
-    error_code?: string;
-    user_email?: string;
-    metadata?: Record<string, any>;
-  }) {
-    return this.logClientError({
-      error_message: `Auth error (${errorData.auth_action}): ${errorData.error_message}`,
-      component_name: 'Authentication',
-      metadata: {
-        auth_action: errorData.auth_action,
-        error_code: errorData.error_code,
-        user_email: errorData.user_email,
-        ...errorData.metadata
-      }
-    });
+  private static handleWindowError = (event: ErrorEvent): void => {
+    if (!event.error) return;
+    
+    this.logError(
+      event.error.message || 'Unknown Error',
+      event.error.stack,
+      'Window',
+      undefined,
+      { type: 'window', filename: event.filename, lineno: event.lineno, colno: event.colno }
+    );
   }
-
+  
   /**
-   * Log errors with standardized formatting
+   * Handle unhandled promise rejections
    */
-  public static logError(
-    error: unknown, 
+  private static handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
+    const error = event.reason;
+    
+    this.logError(
+      error instanceof Error ? error.message : String(error),
+      error instanceof Error ? error.stack : undefined,
+      'Promise',
+      undefined,
+      { type: 'unhandledRejection' }
+    );
+  }
+  
+  /**
+   * Log an error to the database
+   */
+  static async logError(
+    errorMessage: string,
+    errorStack?: string,
     componentName?: string,
     userId?: string,
     metadata?: Record<string, any>
-  ) {
-    // Normalize the error
-    const errorObj = error instanceof Error 
-      ? error 
-      : new Error(typeof error === 'string' ? error : 'Unknown error');
-    
-    // Log to console
-    console.error(`[${componentName || 'Unknown component'}]`, errorObj);
-
-    // Add to queue for batch processing
-    this.errorQueue.push({
-      message: errorObj.message,
-      stack: errorObj.stack,
-      componentName,
-      userId,
-      metadata,
-      timestamp: new Date().toISOString()
-    });
-
-    // If we've hit the batch size, flush the queue
-    if (this.errorQueue.length >= this.batchSize) {
-      this.flushErrorQueue();
-    }
-
-    // Show toast for critical errors
-    if (metadata?.showToast) {
-      toast.error("An error occurred", {
-        description: "Our team has been notified",
-        duration: 5000,
-      });
-    }
-
-    return errorObj;
-  }
-
-  /**
-   * Flush the error queue to the backend
-   */
-  private static async flushErrorQueue(immediate = false) {
-    // Don't do anything if the queue is empty
-    if (this.errorQueue.length === 0) {
-      return;
-    }
-
-    // If already processing and not immediate, wait for next cycle
-    if (this.isProcessing && !immediate) {
-      return;
-    }
-
-    this.isProcessing = true;
-
+  ): Promise<void> {
     try {
-      const errors = [...this.errorQueue];
-      this.errorQueue = [];
-
-      // Send batch to backend
-      await supabase.rpc('batch_insert_client_errors', {
-        errors: errors.map(err => ({
-          error_message: err.message,
-          component_name: err.componentName,
-          error_stack: err.stack,
-          user_id: err.userId,
-          metadata: err.metadata,
-          timestamp: err.timestamp
-        }))
-      });
-    } catch (err) {
-      console.error('Failed to flush error queue:', err);
+      const errorData: ErrorLogData = {
+        error_message: errorMessage,
+        component_name: componentName,
+        error_stack: errorStack,
+        browser_info: this.getBrowserInfo(),
+        url: typeof window !== 'undefined' ? window.location.href : undefined,
+        user_id: userId,
+        session_id: this.getSessionId(),
+        timestamp: new Date().toISOString(),
+        metadata
+      };
       
-      // If there was an error, put the errors back in the queue
-      // but only if not flushing due to page unload
-      if (!immediate) {
-        // TODO: Better retry logic
+      // Add to queue for batch processing
+      this.errorQueue.push(errorData);
+      
+      // If queue is getting large, flush immediately
+      if (this.errorQueue.length >= 10) {
+        this.flushErrorQueue();
       }
-    } finally {
-      this.isProcessing = false;
+    } catch (err) {
+      console.error('Error in ClientErrorLogger.logError:', err);
     }
+  }
+  
+  /**
+   * Flush the error queue to the database
+   */
+  private static flushErrorQueue = async (): Promise<void> => {
+    if (this.errorQueue.length === 0) return;
+    
+    const errors = [...this.errorQueue];
+    this.errorQueue = [];
+    
+    try {
+      // Insert errors in batches
+      const { error } = await supabase
+        .from('client_errors')
+        .insert(errors);
+        
+      if (error) {
+        console.error('Error logging client errors to database:', error);
+        
+        // Re-queue errors on failure
+        this.errorQueue = [...errors, ...this.errorQueue];
+      }
+    } catch (err) {
+      console.error('Error in ClientErrorLogger.flushErrorQueue:', err);
+      
+      // Re-queue errors on failure
+      this.errorQueue = [...errors, ...this.errorQueue];
+    }
+  }
+  
+  /**
+   * Get browser information
+   */
+  private static getBrowserInfo(): string {
+    if (typeof window === 'undefined') return 'Server';
+    
+    const { userAgent } = window.navigator;
+    return userAgent;
+  }
+  
+  /**
+   * Get or create a session ID
+   */
+  private static getSessionId(): string {
+    if (typeof window === 'undefined') return '';
+    
+    let sessionId = sessionStorage.getItem('error_session_id');
+    
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      sessionStorage.setItem('error_session_id', sessionId);
+    }
+    
+    return sessionId;
   }
 }
-
-// Export convenience functions
-export const logClientError = ClientErrorLogger.logClientError.bind(ClientErrorLogger);
-export const logAuthError = ClientErrorLogger.logAuthError.bind(ClientErrorLogger);
-export const logError = ClientErrorLogger.logError.bind(ClientErrorLogger);

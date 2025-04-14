@@ -12,7 +12,7 @@ interface ConfigurationItemProps {
   type: 'toggle' | 'select' | 'number' | 'text';
   options?: { label: string; value: string }[];
   value: any;
-  configKey: keyof MonitoringConfiguration | string;
+  configKey: string;
   onChange: (key: string, value: any) => void;
   min?: number;
   max?: number;
