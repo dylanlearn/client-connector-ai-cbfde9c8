@@ -3,7 +3,6 @@ import React, { useState, useContext, ReactNode } from 'react';
 import { AIContext } from './AIContext';
 import { AIMessage, AIAnalysis, DesignRecommendation, AIMemoryContext } from '@/types/ai';
 import { v4 as uuidv4 } from 'uuid';
-import { parseFallbackAnalysis } from './utils';
 
 // Basic AI context provider implementation
 interface AIProviderProps {
@@ -17,7 +16,14 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [designRecommendations, setDesignRecommendations] = useState<DesignRecommendation[] | null>(null);
-  const [memoryContext, setMemoryContext] = useState<AIMemoryContext | null>(null);
+  const [memoryContext, setMemoryContext] = useState<AIMemoryContext | null>({
+    userMemories: [],
+    projectMemories: [],
+    globalInsights: [],
+    recentInteractions: [],
+    userPreferences: [],
+    projectDetails: []
+  });
   const [isRealtime, setIsRealtime] = useState(false);
   
   // Method to simulate AI response
@@ -72,7 +78,16 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       await new Promise(resolve => setTimeout(resolve, 1200));
       
       // Generate fake analysis
-      const analysisResult = parseFallbackAnalysis();
+      const analysisResult: AIAnalysis = {
+        sentiment: "positive",
+        entities: ["brand", "user experience", "design"],
+        summary: "The responses indicate a preference for clean design with emphasis on usability.",
+        keyInsights: ["User values simplicity", "Mobile experience is important"],
+        clarity: 0.8,
+        toneAnalysis: { formal: 0.7, casual: 0.3 },
+        suggestionCount: 3
+      };
+      
       setAnalysis(analysisResult);
     } catch (error) {
       console.error("Error analyzing responses:", error);
@@ -123,6 +138,22 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     }
   };
   
+  // Generate content method that matches the interface - fixed signature
+  const generateContent = async (prompt: string): Promise<string> => {
+    setIsGenerating(true);
+    try {
+      // Mock implementation for now
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = `AI response to: ${prompt}`;
+      setIsGenerating(false);
+      return response;
+    } catch (error) {
+      setIsGenerating(false);
+      console.error('Error generating content:', error);
+      throw error;
+    }
+  };
+  
   const contextValue = {
     isGenerating,
     setIsGenerating,
@@ -138,20 +169,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     analyzeResponses,
     generateDesignRecommendations,
     // Add generateContent that matches the interface
-    generateContent: async (prompt: string) => {
-      setIsGenerating(true);
-      try {
-        // Mock implementation for now
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const response = `AI response to: ${prompt}`;
-        setIsGenerating(false);
-        return response;
-      } catch (error) {
-        setIsGenerating(false);
-        console.error('Error generating content:', error);
-        throw error;
-      }
-    }
+    generateContent
   };
   
   return (

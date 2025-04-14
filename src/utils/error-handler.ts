@@ -1,4 +1,3 @@
-
 import { AppError, ErrorType, WireframeError, WireframeErrorType, ErrorResponse } from '@/types/error-types';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
@@ -144,6 +143,7 @@ export class ErrorHandler {
       throw this.validationError(
         `${objName} is missing required fields: ${missingFields.join(', ')}`,
         Object.fromEntries(missingFields.map(field => 
+          // Fix: wrap Symbol in String() to prevent runtime error
           [String(field), `${String(field)} is required`]
         ))
       );

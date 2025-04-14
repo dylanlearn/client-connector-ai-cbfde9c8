@@ -26,6 +26,7 @@ export function AdvancedWireframeGenerator({
   const handleError = (errorResponse: ErrorResponse) => {
     // Convert ErrorResponse to Error
     const error = new Error(errorResponse.message);
+    // Add missing properties from ErrorResponse to make it compatible with Error
     if (errorResponse.context?.stack) {
       error.stack = errorResponse.context.stack as string;
     }
