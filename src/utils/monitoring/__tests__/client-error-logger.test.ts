@@ -26,10 +26,8 @@ describe('ClientErrorLogger', () => {
       window.removeEventListener = vi.fn();
       
       // Mock setInterval to return a number (similar to real implementation)
-      const mockSetInterval = vi.fn().mockReturnValue(123);
-      vi.spyOn(window, 'setInterval').mockImplementation(mockSetInterval);
-      
-      vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
+      vi.spyOn(global, 'setInterval').mockImplementation(() => 123);
+      vi.spyOn(global, 'clearInterval').mockImplementation(() => {});
     }
     
     // Mock console methods
@@ -54,7 +52,7 @@ describe('ClientErrorLogger', () => {
       expect(window.addEventListener).toHaveBeenCalledTimes(2);
       expect(window.addEventListener).toHaveBeenCalledWith('error', expect.any(Function));
       expect(window.addEventListener).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
-      expect(window.setInterval).toHaveBeenCalled();
+      expect(setInterval).toHaveBeenCalled();
     }
   });
   
@@ -68,7 +66,7 @@ describe('ClientErrorLogger', () => {
       expect(window.removeEventListener).toHaveBeenCalledTimes(2);
       expect(window.removeEventListener).toHaveBeenCalledWith('error', expect.any(Function));
       expect(window.removeEventListener).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
-      expect(window.clearInterval).toHaveBeenCalled();
+      expect(clearInterval).toHaveBeenCalled();
     }
   });
   

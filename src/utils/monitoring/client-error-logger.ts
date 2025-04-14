@@ -8,9 +8,17 @@ import { toast } from "sonner";
  */
 export const ClientErrorLogger = {
   /**
+   * Initialize the error logger
+   */
+  initialize: function() {
+    console.info('ClientErrorLogger initialized');
+    return true;
+  },
+
+  /**
    * Log an error to the server and optionally display a toast
    */
-  logError: async (
+  logError: async function(
     error: Error | string,
     componentName?: string,
     showToast: boolean = false,
@@ -77,7 +85,7 @@ export const ClientErrorLogger = {
   /**
    * Clear stored errors (primarily for testing)
    */
-  cleanup: async (): Promise<void> => {
+  cleanup: async function(): Promise<void> {
     try {
       // In a real system, you'd want to limit this to test environments
       if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
@@ -88,6 +96,20 @@ export const ClientErrorLogger = {
     }
   }
 };
+
+/**
+ * Utility function for recording client errors from API/components
+ * @deprecated Use ClientErrorLogger.logError instead
+ */
+export function logError(
+  error: Error | string,
+  componentName?: string,
+  userId?: string,
+  showToast: boolean = false,
+  metadata?: Record<string, any>
+): Promise<boolean> {
+  return ClientErrorLogger.logError(error, componentName, showToast, metadata);
+}
 
 /**
  * Utility function for recording client errors from API/components

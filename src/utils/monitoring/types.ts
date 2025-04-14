@@ -53,6 +53,10 @@ export interface ClientError {
   resolved?: boolean;
   resolution_notes?: string;
   metadata?: Record<string, any>;
+  error_message?: string;
+  error_stack?: string;
+  component_name?: string;
+  url?: string;
 }
 
 // Add SystemMonitoringRecord type that was missing
