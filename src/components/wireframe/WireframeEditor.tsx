@@ -53,38 +53,32 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
 
   // Handle generating a wireframe
   const handleGenerateWireframe = async (prompt: string) => {
-    const result = await generateWireframe(prompt);
-    
-    // Result handling is now done via the onWireframeGenerated callback
-    console.log('Generated wireframe result:', result);
+    await generateWireframe(prompt);
+    // Result handling is done via the onWireframeGenerated callback
   };
 
   // Handle applying feedback to the wireframe
   const handleFeedback = async () => {
-    if (!feedback.trim()) return;
+    if (!feedback.trim() || !localWireframe) return;
     
     // Since applyFeedback is not available in the current hook,
     // we'll implement a basic version here
-    if (localWireframe) {
-      const updatedWireframe = {
-        ...localWireframe,
-        lastUpdated: new Date().toISOString()
-      };
-      setLocalWireframe(updatedWireframe);
-      if (onUpdate) {
-        onUpdate(updatedWireframe);
-      }
-      setFeedback('');
+    const updatedWireframe = {
+      ...localWireframe,
+      lastUpdated: new Date().toISOString()
+    };
+    setLocalWireframe(updatedWireframe);
+    if (onUpdate) {
+      onUpdate(updatedWireframe);
     }
+    setFeedback('');
   };
 
   // Handle saving the wireframe
   const handleSaveWireframe = async () => {
-    if (localWireframe) {
-      const savedWireframe = await saveWireframe();
-      if (savedWireframe && onUpdate) {
-        onUpdate(savedWireframe);
-      }
+    const savedWireframe = await saveWireframe();
+    if (savedWireframe && onUpdate) {
+      onUpdate(savedWireframe);
     }
   };
 

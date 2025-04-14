@@ -23,6 +23,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   const {
     isGenerating,
     currentWireframe,
+    generationResult,
     generateWireframe,
     error: wireframeError
   } = useWireframe({

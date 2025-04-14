@@ -1,14 +1,34 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useReducer } from 'react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { 
   WireframeData, 
   WireframeGenerationParams, 
-  WireframeGenerationResult 
+  WireframeGenerationResult,
+  isWireframeData
 } from '@/services/ai/wireframe/wireframe-types';
 import { parseError } from '@/utils/error-handling';
 
+// Define state types for better predictability
+type Status = 'idle' | 'generating' | 'saving' | 'error';
+
+interface WireframeState {
+  status: Status;
+  wireframe: WireframeData | null;
+  generationResult: WireframeGenerationResult | null;
+  error: Error | null;
+}
+
+type WireframeAction = 
+  | { type: 'START_GENERATION' }
+  | { type: 'START_SAVING' }
+  | { type: 'GENERATION_SUCCESS', payload: WireframeGenerationResult }
+  | { type: 'SAVE_SUCCESS', payload: WireframeData }
+  | { type: 'ERROR', payload: Error }
+  | { type: 'RESET' };
+
+// Simplified options interface
 export interface UseWireframeOptions {
   projectId?: string;
   autoSave?: boolean;
@@ -18,6 +38,53 @@ export interface UseWireframeOptions {
   onWireframeGenerated?: (result: WireframeGenerationResult) => void;
 }
 
+// Create reducer for more predictable state management
+function wireframeReducer(state: WireframeState, action: WireframeAction): WireframeState {
+  switch (action.type) {
+    case 'START_GENERATION':
+      return { ...state, status: 'generating', error: null };
+    
+    case 'START_SAVING':
+      return { ...state, status: 'saving', error: null };
+    
+    case 'GENERATION_SUCCESS':
+      return { 
+        ...state, 
+        status: 'idle', 
+        wireframe: action.payload.wireframe, 
+        generationResult: action.payload,
+        error: null 
+      };
+    
+    case 'SAVE_SUCCESS':
+      return { 
+        ...state, 
+        status: 'idle', 
+        wireframe: action.payload, 
+        error: null 
+      };
+    
+    case 'ERROR':
+      return { 
+        ...state, 
+        status: 'error', 
+        error: action.payload 
+      };
+    
+    case 'RESET':
+      return { 
+        status: 'idle', 
+        wireframe: null, 
+        generationResult: null, 
+        error: null 
+      };
+    
+    default:
+      return state;
+  }
+}
+
+// Main hook
 export function useWireframe(options: UseWireframeOptions = {}) {
   const {
     projectId = uuidv4(),
@@ -28,10 +95,13 @@ export function useWireframe(options: UseWireframeOptions = {}) {
     onWireframeGenerated
   } = options;
 
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(null);
-  const [generationResult, setGenerationResult] = useState<WireframeGenerationResult | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+  // Use reducer for state management
+  const [state, dispatch] = useReducer(wireframeReducer, {
+    status: 'idle',
+    wireframe: null,
+    generationResult: null,
+    error: null
+  });
 
   const showNotification = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     if (toastNotifications) {
@@ -41,13 +111,14 @@ export function useWireframe(options: UseWireframeOptions = {}) {
     }
   }, [toastNotifications]);
 
+  // Generate wireframe from description or parameters
   const generateWireframe = useCallback(async (
     params: WireframeGenerationParams | string
   ): Promise<WireframeGenerationResult> => {
-    setIsGenerating(true);
-    setError(null);
-
+    dispatch({ type: 'START_GENERATION' });
+    
     try {
+      // Normalize parameters
       const generationParams: WireframeGenerationParams = typeof params === 'string'
         ? { 
             description: params, 
@@ -91,13 +162,17 @@ export function useWireframe(options: UseWireframeOptions = {}) {
         }
       };
 
-      setCurrentWireframe(result.wireframe);
-      setGenerationResult(result);
+      dispatch({ type: 'GENERATION_SUCCESS', payload: result });
       showNotification(result.message);
       
       // Call the callback if provided
-      if (onWireframeGenerated) {
+      if (onWireframeGenerated && result.success) {
         onWireframeGenerated(result);
+      }
+
+      // Auto-save if enabled
+      if (autoSave && result.wireframe) {
+        await saveWireframe();
       }
 
       return result;
@@ -105,7 +180,7 @@ export function useWireframe(options: UseWireframeOptions = {}) {
       const parsedError = parseError(err);
       const errorObj = new Error(parsedError.message);
       
-      setError(errorObj);
+      dispatch({ type: 'ERROR', payload: errorObj });
       showNotification(parsedError.message, 'error');
       
       return {
@@ -114,39 +189,57 @@ export function useWireframe(options: UseWireframeOptions = {}) {
         message: parsedError.message,
         errors: [parsedError.message]
       };
-    } finally {
-      setIsGenerating(false);
     }
-  }, [projectId, validationLevel, showNotification, onWireframeGenerated]);
+  }, [projectId, validationLevel, showNotification, onWireframeGenerated, autoSave]);
 
-  const saveWireframe = useCallback(async () => {
-    if (!currentWireframe) {
+  // Save wireframe
+  const saveWireframe = useCallback(async (): Promise<WireframeData | null> => {
+    if (!state.wireframe) {
       showNotification('No wireframe to save', 'error');
       return null;
     }
 
+    dispatch({ type: 'START_SAVING' });
+    
     try {
-      // Simulated save logic
+      // Simulate saving
+      const savedWireframe = {
+        ...state.wireframe,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      dispatch({ type: 'SAVE_SUCCESS', payload: savedWireframe });
       showNotification('Wireframe saved successfully');
-      return currentWireframe;
+      
+      return savedWireframe;
     } catch (err) {
       const parsedError = parseError(err);
+      const errorObj = new Error(parsedError.message);
+      
+      dispatch({ type: 'ERROR', payload: errorObj });
       showNotification(parsedError.message, 'error');
+      
       return null;
     }
-  }, [currentWireframe, showNotification]);
+  }, [state.wireframe, showNotification]);
 
+  // Reset state
   const reset = useCallback(() => {
-    setCurrentWireframe(null);
-    setGenerationResult(null);
-    setError(null);
+    dispatch({ type: 'RESET' });
   }, []);
 
+  // Return a more focused, cleaner API
   return {
-    isGenerating,
-    currentWireframe,
-    generationResult,
-    error,
+    // State
+    isGenerating: state.status === 'generating',
+    isSaving: state.status === 'saving',
+    isIdle: state.status === 'idle',
+    hasError: state.status === 'error',
+    currentWireframe: state.wireframe,
+    generationResult: state.generationResult,
+    error: state.error,
+    
+    // Actions
     generateWireframe,
     saveWireframe,
     reset

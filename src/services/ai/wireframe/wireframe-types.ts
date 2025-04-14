@@ -8,10 +8,12 @@ export interface WireframeGenerationResult {
   intentData?: {
     primary: string;
     confidence: number;
+    primaryGoal?: string;
   };
   blueprint?: {
     layout: string;
     sections: string[];
+    layoutStrategy?: string;
   };
   warnings?: string[];
 }
@@ -38,6 +40,10 @@ export interface WireframeGenerationParams {
   style?: string | object;
   targetAudience?: string;
   baseWireframe?: WireframeData;
+  industry?: string;
+  isVariation?: boolean;
+  styleChanges?: string;
+  customParams?: Record<string, any>;
 }
 
 // Type for a wireframe component
@@ -202,6 +208,8 @@ export function normalizeWireframeGenerationParams(params: WireframeGenerationPa
     creativityLevel: params.creativityLevel || 5,
     style: params.style || 'modern',
     targetAudience: params.targetAudience || '',
-    baseWireframe: params.baseWireframe
+    baseWireframe: params.baseWireframe,
+    industry: params.industry || '',
+    customParams: params.customParams || {}
   };
 }

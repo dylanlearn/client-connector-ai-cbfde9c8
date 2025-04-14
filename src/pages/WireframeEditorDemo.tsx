@@ -21,8 +21,7 @@ const WireframeEditorDemo: React.FC = () => {
     currentWireframe,
     isGenerating,
     generateWireframe,
-    saveWireframe,
-    reset
+    saveWireframe
   } = useWireframe({
     projectId,
     toastNotifications: true

@@ -20,7 +20,7 @@ const WireframeGenerator = () => {
     error
   } = useWireframe({
     projectId,
-    useSonnerToasts: true,
+    toastNotifications: true,
     autoSave: true
   });
   
