@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { WireframeData, WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
 import { AdvancedWireframeGenerator } from '@/components/wireframe';
+import { useWireframe } from '@/hooks/useWireframe';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IntakeWireframeBridgeProps {
@@ -16,11 +17,23 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   onWireframeGenerated,
   projectId
 }) => {
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [wireframeData, setWireframeData] = useState<WireframeData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [generatedPrompt, setGeneratedPrompt] = useState<string>('');
   const [bridgeProjectId] = useState(() => projectId || uuidv4());
+  
+  const {
+    isGenerating,
+    currentWireframe,
+    generateWireframe,
+    error: wireframeError
+  } = useWireframe({
+    projectId: bridgeProjectId,
+    enhancedValidation: true,
+    onWireframeGenerated: result => {
+      if (result.wireframe && onWireframeGenerated) {
+        onWireframeGenerated(result.wireframe);
+      }
+    }
+  });
   
   // Generate a prompt based on intake data
   useEffect(() => {
@@ -70,34 +83,20 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       setGeneratedPrompt(prompt);
     } catch (err) {
       console.error("Error generating prompt from intake data:", err);
-      setError("Failed to process intake data");
     }
   }, [intakeData]);
 
-  // Handler for when a wireframe is generated
-  const handleWireframeGenerated = (result: WireframeGenerationResult) => {
-    if (result.wireframe) {
-      setWireframeData(result.wireframe);
-      
-      if (onWireframeGenerated) {
-        onWireframeGenerated(result.wireframe);
-      }
-    }
-    
-    setIsGenerating(false);
-  };
-  
   // Helper to render status message
   const renderStatus = () => {
     if (isGenerating) {
       return <p className="text-gray-500">Generating wireframe...</p>;
     }
     
-    if (error) {
-      return <p className="text-red-500">{error}</p>;
+    if (wireframeError) {
+      return <p className="text-red-500">{wireframeError.message}</p>;
     }
     
-    if (wireframeData) {
+    if (currentWireframe) {
       return <p className="text-green-500">Wireframe generated successfully!</p>;
     }
     
@@ -116,7 +115,11 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
         <div className="space-y-4">
           <AdvancedWireframeGenerator
             projectId={bridgeProjectId}
-            onWireframeGenerated={handleWireframeGenerated}
+            onWireframeGenerated={result => {
+              if (result.wireframe && onWireframeGenerated) {
+                onWireframeGenerated(result.wireframe);
+              }
+            }}
             enhancedCreativity={true}
             intakeData={intakeData}
             viewMode="preview"

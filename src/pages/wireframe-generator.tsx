@@ -6,15 +6,23 @@ import { Info } from "lucide-react";
 import { AdvancedWireframeGenerator } from "@/components/wireframe"; 
 import { v4 as uuidv4 } from "uuid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { WireframeGenerationResult } from "@/services/ai/wireframe/wireframe-types";
+import { useWireframe } from "@/hooks/useWireframe";
 import { ComponentRegistration } from "@/components/wireframe/registry/ComponentRegistration";
 
 const WireframeGenerator = () => {
   // Use a real UUID for the project ID rather than a demo ID
   const [projectId] = useState(() => uuidv4());
-  const { toast } = useToast();
-  const [currentWireframe, setCurrentWireframe] = useState<WireframeGenerationResult | null>(null);
+  
+  const {
+    isGenerating,
+    currentWireframe,
+    generateWireframe,
+    error
+  } = useWireframe({
+    projectId,
+    useSonnerToasts: true,
+    autoSave: true
+  });
   
   return (
     <div className="container mx-auto p-6">
@@ -60,18 +68,10 @@ const WireframeGenerator = () => {
               projectId={projectId}
               viewMode="edit"
               onWireframeGenerated={(wireframe) => {
-                setCurrentWireframe(wireframe);
-                toast({
-                  title: "Wireframe Generated",
-                  description: "Your wireframe has been created successfully",
-                });
+                console.log("Wireframe generated:", wireframe);
               }}
               onError={(err) => {
-                toast({
-                  title: "Generation Failed",
-                  description: err.message,
-                  variant: "destructive"
-                });
+                console.error("Generation error:", err);
               }}
             />
           </TooltipProvider>

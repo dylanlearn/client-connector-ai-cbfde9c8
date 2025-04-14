@@ -10,9 +10,23 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { useWireframe } from '@/hooks/useWireframe';
+import { v4 as uuidv4 } from 'uuid';
 
 const WireframeEditorDemo: React.FC = () => {
   const [activeTab, setActiveTab] = useState('editor');
+  const [projectId] = useState(() => uuidv4());
+  
+  const {
+    currentWireframe,
+    isGenerating,
+    generateWireframe,
+    saveWireframe,
+    reset
+  } = useWireframe({
+    projectId,
+    useSonnerToasts: true
+  });
   
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -29,7 +43,12 @@ const WireframeEditorDemo: React.FC = () => {
               <Redo2 className="h-4 w-4 mr-1" />
               Redo
             </Button>
-            <Button variant="default" size="sm">
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => currentWireframe && saveWireframe('Updated wireframe')}
+              disabled={!currentWireframe}
+            >
               <Save className="h-4 w-4 mr-1" />
               Save
             </Button>
