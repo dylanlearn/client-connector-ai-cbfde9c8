@@ -31,8 +31,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     // Add user message
     const userMessage: AIMessage = {
       id: `user-${uuidv4()}`,
-      content: userPrompt,
       role: "user",
+      content: userPrompt,
       timestamp: new Date().toISOString(),
     };
     
@@ -138,7 +138,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     }
   };
   
-  // Generate content method that matches the interface - fixed signature
+  // Generate content method that matches the interface
   const generateContent = async (prompt: string): Promise<string> => {
     setIsGenerating(true);
     try {

@@ -10,6 +10,7 @@ import { ClientErrorLogger } from '@/utils/monitoring/client-error-logger';
 import router from '@/routes';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/auth/AuthContext';
 import { AIProvider } from '@/contexts/ai/ai-provider';
 
 // Create a simple QueryClient for React Query
@@ -32,11 +33,13 @@ function App() {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <AIProvider>
-            <RouterProvider router={router} />
-            <Toaster />
-            <SonnerToaster position="top-right" closeButton richColors />
-          </AIProvider>
+          <AuthProvider>
+            <AIProvider>
+              <RouterProvider router={router} />
+              <Toaster />
+              <SonnerToaster position="top-right" closeButton richColors />
+            </AIProvider>
+          </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>
