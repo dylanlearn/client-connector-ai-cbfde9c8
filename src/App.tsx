@@ -1,33 +1,43 @@
-
 import React from 'react';
-import { RouterProvider } from "react-router-dom";
+import { GlobalErrorBoundary } from './components/error-handling/GlobalErrorBoundary';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import router from './routes';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { QueryProvider } from './providers/QueryProvider';
-import { ProfileProvider } from './contexts/ProfileContext';
+import { Toaster as SonnerToaster } from 'sonner';
+import { useEffect } from 'react';
+import { initializeErrorHandling } from '@/utils/monitoring/error-handling';
+import { ClientErrorLogger } from '@/utils/monitoring/client-error-logger';
+import { AppRoutes } from '@/routes';
+import { AuthProvider } from '@/contexts/auth/auth-provider';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/react-query';
+import { AIProvider } from '@/contexts/ai/ai-provider';
 
 function App() {
+  // Initialize error handling on mount
+  useEffect(() => {
+    initializeErrorHandling();
+    ClientErrorLogger.initialize();
+    
+    // Clean up on unmount
+    return () => {
+      ClientErrorLogger.cleanup();
+    };
+  }, []);
+
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      disableTransitionOnChange
-    >
-      <QueryProvider>
-        <AuthProvider>
-          <ProfileProvider>
-            <TooltipProvider>
-              <RouterProvider router={router} />
+    <GlobalErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+          <AuthProvider>
+            <AIProvider>
+              <AppRoutes />
               <Toaster />
-            </TooltipProvider>
-          </ProfileProvider>
-        </AuthProvider>
-      </QueryProvider>
-    </ThemeProvider>
+              <SonnerToaster position="top-right" closeButton richColors />
+            </AIProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GlobalErrorBoundary>
   );
 }
 

@@ -9,6 +9,9 @@ import {
 import { createWireframeDataFromParams } from '@/services/ai/wireframe/wireframe-service-types';
 import { advancedWireframeService } from '@/services/ai/wireframe/advanced-wireframe-service';
 import { v4 as uuidv4 } from 'uuid';
+import { WireframeValidator } from '@/services/ai/wireframe/enhanced-wireframe-validator';
+import { useErrorHandler } from '@/hooks/use-error-handler';
+import { WireframeError, WireframeErrorType } from '@/types/error-types';
 
 export function useWireframeGenerator(
   creativityLevel: number,
@@ -16,13 +19,22 @@ export function useWireframeGenerator(
   toast: (props: Toast) => string
 ) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  
+  // Use our centralized error handler
+  const { 
+    error, 
+    clearError, 
+    handleError, 
+    wrapAsync 
+  } = useErrorHandler({
+    componentName: 'WireframeGenerator'
+  });
 
   // Generate a wireframe from parameters
   const generateWireframe = useCallback(
     async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
       setIsGenerating(true);
-      setError(null);
+      clearError();
 
       try {
         // Enhance params with creativity level if not already set
@@ -32,6 +44,9 @@ export function useWireframeGenerator(
           projectId: params.projectId || uuidv4(),
         };
 
+        // Validate the parameters
+        WireframeValidator.validateGenerationParams(enhancedParams);
+
         // Log generation attempt
         console.log('Generating wireframe with params:', JSON.stringify(enhancedParams, null, 2));
 
@@ -39,94 +54,99 @@ export function useWireframeGenerator(
         const result = await advancedWireframeService.generateWireframe(enhancedParams);
 
         if (result.success && result.wireframe) {
+          // Validate the generated wireframe
+          WireframeValidator.validateWireframeData(result.wireframe);
+          
           setCurrentWireframe(result);
           toast({
             title: 'Success',
             description: 'Wireframe generated successfully',
           });
         } else {
-          throw new Error(result.message || 'Failed to generate wireframe');
+          throw new WireframeError(
+            result.message || 'Failed to generate wireframe',
+            WireframeErrorType.GENERATION_FAILED
+          );
         }
 
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        setError(err instanceof Error ? err : new Error(errorMessage));
-
+        const handledError = handleError(err, 'generating wireframe');
+        
         toast({
           title: 'Error',
-          description: errorMessage,
+          description: handledError.message,
           variant: 'destructive',
         });
 
         return {
           wireframe: null,
           success: false,
-          message: errorMessage,
-          errors: [errorMessage]
+          message: handledError.message,
+          errors: [handledError.message]
         };
       } finally {
         setIsGenerating(false);
       }
     },
-    [creativityLevel, setCurrentWireframe, toast]
+    [creativityLevel, setCurrentWireframe, toast, clearError, handleError]
   );
 
   // Generate a creative variation of an existing wireframe
   const generateCreativeVariation = useCallback(
     async (baseWireframe: WireframeData, styleChanges: string): Promise<WireframeGenerationResult> => {
-      setIsGenerating(true);
-      setError(null);
+      return await wrapAsync(async () => {
+        setIsGenerating(true);
+        
+        try {
+          // Validate inputs
+          WireframeValidator.validateWireframeData(baseWireframe);
+          
+          if (!styleChanges || styleChanges.trim().length === 0) {
+            throw new WireframeError(
+              'Style changes description is required',
+              WireframeErrorType.INVALID_PARAMS
+            );
+          }
 
-      try {
-        // Log variation attempt
-        console.log('Generating creative variation with style changes:', styleChanges);
+          // Log variation attempt
+          console.log('Generating creative variation with style changes:', styleChanges);
 
-        // Convert params to WireframeData if needed
-        const baseData = baseWireframe;
-
-        // Generate the variation
-        const result = await advancedWireframeService.generateWireframe({
-          description: `Variation of ${baseData.title}: ${styleChanges}`,
-          baseWireframe: baseData,
-          styleChanges,
-          isVariation: true,
-          enhancedCreativity: true,
-          creativityLevel: creativityLevel + 2, // Increase creativity for variations
-        });
-
-        if (result.success && result.wireframe) {
-          setCurrentWireframe(result);
-          toast({
-            title: 'Success',
-            description: 'Creative variation generated successfully',
+          // Generate the variation
+          const result = await advancedWireframeService.generateWireframe({
+            description: `Variation of ${baseWireframe.title}: ${styleChanges}`,
+            baseWireframe: baseWireframe,
+            styleChanges,
+            isVariation: true,
+            enhancedCreativity: true,
+            creativityLevel: creativityLevel + 2, // Increase creativity for variations
           });
-        } else {
-          throw new Error(result.message || 'Failed to generate variation');
+
+          if (result.success && result.wireframe) {
+            setCurrentWireframe(result);
+            toast({
+              title: 'Success',
+              description: 'Creative variation generated successfully',
+            });
+          } else {
+            throw new WireframeError(
+              result.message || 'Failed to generate variation',
+              WireframeErrorType.GENERATION_FAILED
+            );
+          }
+
+          return result;
+        } finally {
+          setIsGenerating(false);
         }
-
-        return result;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        setError(err instanceof Error ? err : new Error(errorMessage));
-
-        toast({
-          title: 'Error',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-
-        return {
-          wireframe: null,
-          success: false,
-          message: errorMessage,
-          errors: [errorMessage]
-        };
-      } finally {
-        setIsGenerating(false);
-      }
+      }, true, 'generating creative variation') || {
+        wireframe: null,
+        success: false,
+        message: 'Failed to generate creative variation',
+        errors: ['Operation failed']
+      };
     },
-    [creativityLevel, setCurrentWireframe, toast]
+    [creativityLevel, setCurrentWireframe, toast, wrapAsync]
   );
 
   return {
@@ -136,3 +156,4 @@ export function useWireframeGenerator(
     generateCreativeVariation,
   };
 }
+
