@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GlobalErrorBoundary } from './components/error-handling/GlobalErrorBoundary';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -6,11 +7,14 @@ import { Toaster as SonnerToaster } from 'sonner';
 import { useEffect } from 'react';
 import { initializeErrorHandling } from '@/utils/monitoring/error-handling';
 import { ClientErrorLogger } from '@/utils/monitoring/client-error-logger';
-import { AppRoutes } from '@/routes';
-import { AuthProvider } from '@/contexts/auth/auth-provider';
+import router from '@/routes';
+import { AuthContext } from '@/contexts/AuthContext';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/lib/react-query';
-import { AIProvider } from '@/contexts/ai/ai-provider';
+import { RouterProvider } from 'react-router-dom';
+
+// Create a simple QueryClient for React Query
+import { QueryClient } from '@tanstack/react-query';
+const queryClient = new QueryClient();
 
 function App() {
   // Initialize error handling on mount
@@ -28,13 +32,9 @@ function App() {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <AuthProvider>
-            <AIProvider>
-              <AppRoutes />
-              <Toaster />
-              <SonnerToaster position="top-right" closeButton richColors />
-            </AIProvider>
-          </AuthProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+          <SonnerToaster position="top-right" closeButton richColors />
         </ThemeProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>

@@ -102,7 +102,7 @@ export class ErrorHandler {
     
     // If we have a specific user message, use it
     if (error.context?.userMessage) {
-      return error.context.userMessage as string;
+      return String(error.context.userMessage);
     }
     
     // Otherwise, use the error message if it's suitable for end users
