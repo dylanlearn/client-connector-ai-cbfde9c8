@@ -1,7 +1,7 @@
 
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { FeedbackAnalysisService } from '@/services/ai/content/feedback-analysis-service';
+import { FeedbackAnalysisAPI } from '@/services/ai/content/feedback-analysis-api';
 
 /**
  * Hook for summarizing client feedback with AI assistance
@@ -33,10 +33,12 @@ export function useFeedbackSummary() {
       // For now, this combines the items and calls the analyze function
       // This could be enhanced in the future with a dedicated summarization endpoint
       const combinedFeedback = feedbackItems.join('\n\n');
-      const result = await FeedbackAnalysisService.analyzeFeedback(combinedFeedback);
+      const result = await FeedbackAnalysisAPI.analyzeFeedback(combinedFeedback);
       
-      setSummary(result.summary);
-      return result.summary;
+      // Use summary from result, ensuring it exists
+      const resultSummary = result.summary || 'No summary available';
+      setSummary(resultSummary);
+      return resultSummary;
     } catch (err: any) {
       const errorMessage = err?.message || 'An error occurred during feedback summarization';
       console.error('Feedback summarization error:', err);

@@ -1,198 +1,92 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Bell, BellOff, CheckCircle } from 'lucide-react';
-import { MonitoringAlertConfig } from '@/utils/monitoring/types';
-
-interface Alert {
-  id: string;
-  component: string;
-  metric: string;
-  value: number;
-  threshold: number;
-  severity: 'warning' | 'critical';
-  timestamp: string;
-  acknowledged: boolean;
-}
+import { Switch } from '@/components/ui/switch';
 
 export function AlertsPanel() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [alertConfigs, setAlertConfigs] = useState<MonitoringAlertConfig[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch active alerts
-        const { data: alertsData } = await supabase
-          .from('system_alerts')
-          .select('*')
-          .order('timestamp', { ascending: false })
-          .limit(10);
-          
-        // Fetch alert configurations
-        const { data: configsData } = await supabase
-          .from('monitoring_alert_config')
-          .select('*');
-          
-        setAlerts(alertsData || []);
-        setAlertConfigs(configsData || []);
-      } catch (error) {
-        console.error('Error fetching alerts data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
-
-  const acknowledgeAlert = async (id: string) => {
-    try {
-      await supabase
-        .from('system_alerts')
-        .update({ acknowledged: true })
-        .eq('id', id);
-        
-      // Update local state
-      setAlerts(alerts.map(alert => 
-        alert.id === id ? { ...alert, acknowledged: true } : alert
-      ));
-    } catch (error) {
-      console.error('Error acknowledging alert:', error);
-    }
-  };
-
-  const toggleAlertConfig = async (id: string, enabled: boolean) => {
-    try {
-      await supabase
-        .from('monitoring_alert_config')
-        .update({ enabled: !enabled })
-        .eq('id', id);
-        
-      // Update local state
-      setAlertConfigs(alertConfigs.map(config => 
-        config.id === id ? { ...config, enabled: !enabled } : config
-      ));
-    } catch (error) {
-      console.error('Error updating alert configuration:', error);
-    }
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="col-span-1">
+    <div className="space-y-6">
+      <Card>
         <CardHeader>
-          <CardTitle>Active Alerts</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            <span>System Alerts</span>
+            <Badge variant="outline" className="ml-2">
+              Configuration
+            </Badge>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="py-8 text-center">
-              <div className="animate-spin h-6 w-6 border-b-2 border-primary mx-auto mb-2 rounded-full"></div>
-              <p className="text-muted-foreground">Loading alerts...</p>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Alert Configuration</AlertTitle>
+            <AlertDescription>
+              Configure alerts to be notified when system events occur
+            </AlertDescription>
+          </Alert>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium">Error Rate Threshold</h3>
+                <p className="text-sm text-muted-foreground">
+                  Trigger an alert when error rate exceeds threshold
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="error-rate-alerts" />
+                <span className="text-sm">5%</span>
+              </div>
             </div>
-          ) : alerts.length === 0 ? (
-            <div className="py-8 text-center border rounded-lg">
-              <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-              <p className="font-medium">No active alerts</p>
-              <p className="text-muted-foreground text-sm">All systems are operating normally</p>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium">Response Time Threshold</h3>
+                <p className="text-sm text-muted-foreground">
+                  Trigger an alert when response time exceeds threshold
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="response-time-alerts" />
+                <span className="text-sm">500ms</span>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {alerts.map(alert => (
-                <div key={alert.id} className={`p-4 border rounded-lg ${
-                  alert.severity === 'critical' ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'
-                }`}>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <AlertCircle className={alert.severity === 'critical' ? 'text-red-500' : 'text-amber-500'} size={16} />
-                        <h4 className="font-medium">
-                          {alert.component} - {alert.metric}
-                        </h4>
-                        <Badge variant={alert.severity === 'critical' ? 'destructive' : 'outline'}>
-                          {alert.severity}
-                        </Badge>
-                      </div>
-                      <p className="text-sm">
-                        Value: <span className="font-medium">{alert.value}</span> 
-                        {' '}&gt;{' '}
-                        Threshold: <span className="font-medium">{alert.threshold}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(alert.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                    {!alert.acknowledged && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => acknowledgeAlert(alert.id)}
-                      >
-                        Acknowledge
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium">Security Events</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get alerts for suspicious security events
+                </p>
+              </div>
+              <Switch id="security-alerts" checked={true} />
             </div>
-          )}
+          </div>
+          
+          <div className="pt-4">
+            <Button size="sm">Save Alert Configuration</Button>
+          </div>
         </CardContent>
       </Card>
       
-      <Card className="col-span-1">
+      <Card>
         <CardHeader>
-          <CardTitle>Alert Configuration</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            <span>Alert History</span>
+            <Button variant="outline" size="sm">
+              <BellOff className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="py-8 text-center">
-              <div className="animate-spin h-6 w-6 border-b-2 border-primary mx-auto mb-2 rounded-full"></div>
-              <p className="text-muted-foreground">Loading configuration...</p>
-            </div>
-          ) : alertConfigs.length === 0 ? (
-            <div className="py-8 text-center border rounded-lg">
-              <p className="text-muted-foreground">No alert configurations found</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {alertConfigs.map(config => (
-                <div key={config.id} className="p-4 border rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium">{config.component}: {config.metric}</h4>
-                      <div className="grid grid-cols-2 gap-x-4 mt-1">
-                        <p className="text-sm">
-                          Warning: <span className="font-medium">{config.warning_threshold}</span>
-                        </p>
-                        <p className="text-sm">
-                          Critical: <span className="font-medium">{config.critical_threshold}</span>
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Notification: {config.notification_channel}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleAlertConfig(config.id, config.enabled)}
-                    >
-                      {config.enabled ? (
-                        <Bell className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <BellOff className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="text-center py-12 text-muted-foreground">
+            <Bell className="h-12 w-12 mx-auto mb-4 opacity-20" />
+            <p>No recent alerts</p>
+          </div>
         </CardContent>
       </Card>
     </div>

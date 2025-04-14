@@ -86,31 +86,19 @@ export function MonitoringControls() {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <ConfigurationItem
-            label="Log Level"
-            description="Minimum log level to collect"
-            type="select"
-            options={[
-              { label: 'Debug', value: 'debug' },
-              { label: 'Info', value: 'info' },
-              { label: 'Warning', value: 'warn' },
-              { label: 'Error', value: 'error' }
-            ]}
-            value={config.logLevel}
-            configKey="logLevel"
-            onChange={handleConfigChange}
-          />
-          
-          <ConfigurationItem
-            label="Sampling Rate"
-            description="Percentage of requests to monitor (0.1 = 10%)"
-            type="number"
-            value={config.samplingRate}
-            configKey="samplingRate"
-            onChange={handleConfigChange}
-            min={0}
-            max={1}
-          />
+          {Object.entries(config)
+            .filter(([key]) => key !== 'enabled')
+            .map(([key, value]) => (
+              <ConfigurationItem
+                key={key}
+                label={key}
+                value={value}
+                configKey={key}
+                onChange={handleConfigChange}
+                type={typeof value === 'number' ? 'number' : 
+                      typeof value === 'boolean' ? 'boolean' : 'text'}
+              />
+            ))}
           
           <div className="flex justify-end">
             <SaveButton 

@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShieldCheck, Activity, Database, Settings, LogOut, User, FileText } from "lucide-react";
-import { ClientErrorLogger, logError } from "@/utils/monitoring/client-error-logger";
+import { logError } from "@/utils/monitoring/client-error-logger";
 import { useAdminStatus } from "@/hooks/use-admin-status"; // Switch to useAdminStatus hook
 
 export const UserMenu = () => {
@@ -27,8 +27,7 @@ export const UserMenu = () => {
       logError(
         error instanceof Error ? error : new Error("Sign out error"), 
         "UserMenu", 
-        user?.id,
-        { errorDetails: error, showToast: true }
+        user?.id
       );
     }
   };

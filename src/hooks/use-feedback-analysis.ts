@@ -2,17 +2,17 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { 
-  FeedbackAnalysisService, 
-  FeedbackAnalysisResult 
-} from '@/services/ai/content/feedback-analysis-service';
+  FeedbackAnalysisAPI, 
+  FeedbackAnalysis
+} from '@/services/ai/content/feedback-analysis-api';
 
 export function useFeedbackAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<FeedbackAnalysisResult | null>(null);
+  const [result, setResult] = useState<FeedbackAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
-  const analyzeFeedback = async (feedbackText: string): Promise<FeedbackAnalysisResult | null> => {
+  const analyzeFeedback = async (feedbackText: string): Promise<FeedbackAnalysis | null> => {
     if (!feedbackText || feedbackText.trim().length < 5) {
       setError('Please provide valid feedback text (at least 5 characters)');
       return null;
@@ -23,14 +23,14 @@ export function useFeedbackAnalysis() {
     
     try {
       // Call the API to analyze the feedback
-      const analysisResult = await FeedbackAnalysisService.analyzeFeedback(feedbackText);
+      const analysisResult = await FeedbackAnalysisAPI.analyzeFeedback(feedbackText);
       
       setResult(analysisResult);
       
       // If user is authenticated, store the analysis
       if (user) {
         try {
-          await FeedbackAnalysisService.storeFeedbackAnalysis({
+          await FeedbackAnalysisAPI.storeFeedbackAnalysis({
             userId: user.id,
             originalFeedback: feedbackText,
             summary: analysisResult.summary,

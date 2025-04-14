@@ -15,10 +15,10 @@ import { logError } from './monitoring/client-error-logger';
  */
 export function createErrorHandler(componentName: string, userId?: string) {
   return (error: unknown) => {
-    const errorObject = error instanceof Error ? error : new Error(String(error));
+    const errorMessage = error instanceof Error ? error : String(error);
     
     // Log the error
-    logError(errorObject, componentName, userId);
+    logError(errorMessage, componentName, userId);
     
     // Show toast notification
     toast.error("An error occurred", {
@@ -27,7 +27,7 @@ export function createErrorHandler(componentName: string, userId?: string) {
     });
     
     // Return the error for optional chaining
-    return errorObject;
+    return error instanceof Error ? error : new Error(String(error));
   };
 }
 
@@ -137,29 +137,6 @@ export function parseError(error: unknown): {
   
   if (typeof error === 'string') {
     return { message: error };
-  }
-  
-  if (typeof error === 'object' && error !== null) {
-    // Try to extract a message
-    const unknownObj = error as Record<string, any>;
-    
-    if ('message' in unknownObj && typeof unknownObj.message === 'string') {
-      return {
-        message: unknownObj.message,
-        details: Object.fromEntries(
-          Object.entries(unknownObj).filter(([key]) => key !== 'message')
-        ),
-        originalError: error
-      };
-    }
-    
-    // No message property, use JSON representation
-    try {
-      const json = JSON.stringify(error);
-      return { message: `Error: ${json.substring(0, 100)}`, originalError: error };
-    } catch (jsonError) {
-      return { message: 'Unknown error (object cannot be stringified)', originalError: error };
-    }
   }
   
   // Fallback

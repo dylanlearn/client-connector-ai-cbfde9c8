@@ -37,7 +37,7 @@ export function ConfigurationPanel({ config, updateConfig }: ConfigurationPanelP
     if (!localConfig) return;
     
     setLocalConfig({
-      ...localConfig,
+      ...localConfig as any,
       [key]: !localConfig[key]
     });
   };
@@ -49,7 +49,7 @@ export function ConfigurationPanel({ config, updateConfig }: ConfigurationPanelP
     if (isNaN(rate) || rate < 0 || rate > 1) return;
     
     setLocalConfig({
-      ...localConfig,
+      ...localConfig as any,
       samplingRate: rate
     });
   };

@@ -25,7 +25,8 @@ function App() {
     
     // Clean up on unmount
     return () => {
-      if (typeof ClientErrorLogger.cleanup === 'function') {
+      // Check if cleanup method exists before calling it
+      if (ClientErrorLogger && typeof ClientErrorLogger.cleanup === 'function') {
         ClientErrorLogger.cleanup();
       }
     };

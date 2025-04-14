@@ -60,12 +60,37 @@ export class ClientErrorLogger {
   }
   
   /**
+   * Log an error
+   */
+  static logError(
+    error: Error | string,
+    componentName?: string,
+    userId?: string,
+    metadata?: Record<string, any>
+  ): void {
+    try {
+      const errorMessage = error instanceof Error ? error.message : error;
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
+      this.logErrorToQueue(
+        errorMessage,
+        errorStack,
+        componentName,
+        userId,
+        metadata
+      );
+    } catch (err) {
+      console.error('Error in ClientErrorLogger.logError:', err);
+    }
+  }
+  
+  /**
    * Handle window error events
    */
   private static handleWindowError = (event: ErrorEvent): void => {
     if (!event.error) return;
     
-    this.logError(
+    this.logErrorToQueue(
       event.error.message || 'Unknown Error',
       event.error.stack,
       'Window',
@@ -80,7 +105,7 @@ export class ClientErrorLogger {
   private static handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
     const error = event.reason;
     
-    this.logError(
+    this.logErrorToQueue(
       error instanceof Error ? error.message : String(error),
       error instanceof Error ? error.stack : undefined,
       'Promise',
@@ -92,13 +117,13 @@ export class ClientErrorLogger {
   /**
    * Log an error to the database
    */
-  static async logError(
+  private static logErrorToQueue(
     errorMessage: string,
     errorStack?: string,
     componentName?: string,
     userId?: string,
     metadata?: Record<string, any>
-  ): Promise<void> {
+  ): void {
     try {
       const errorData: ErrorLogData = {
         error_message: errorMessage,
@@ -120,8 +145,21 @@ export class ClientErrorLogger {
         this.flushErrorQueue();
       }
     } catch (err) {
-      console.error('Error in ClientErrorLogger.logError:', err);
+      console.error('Error in ClientErrorLogger.logErrorToQueue:', err);
     }
+  }
+  
+  /**
+   * Log error method to maintain backward compatibility
+   */
+  static async logError2(
+    errorMessage: string,
+    errorStack?: string,
+    componentName?: string,
+    userId?: string,
+    metadata?: Record<string, any>
+  ): Promise<void> {
+    this.logErrorToQueue(errorMessage, errorStack, componentName, userId, metadata);
   }
   
   /**
@@ -178,4 +216,14 @@ export class ClientErrorLogger {
     
     return sessionId;
   }
+}
+
+// Helper function to simplify logging errors
+export function logError(
+  error: Error | string,
+  componentName?: string,
+  userId?: string, 
+  metadata?: Record<string, any>
+): void {
+  ClientErrorLogger.logError(error, componentName, userId, metadata);
 }

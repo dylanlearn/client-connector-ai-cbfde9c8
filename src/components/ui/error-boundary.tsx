@@ -135,13 +135,8 @@ function useErrorHandler(componentName?: string) {
   return useCallback((error: Error, context?: string) => {
     console.error(`Error in ${componentName || 'component'}:`, error);
     
-    // Log to client error logger
-    logError(
-      error, 
-      componentName || 'UnknownComponent', 
-      undefined, 
-      context ? { context } : undefined
-    );
+    // Use the correctly exported logError function
+    logError(error, componentName || 'UnknownComponent');
     
     // Show a toast notification
     toast.error("An error occurred", {

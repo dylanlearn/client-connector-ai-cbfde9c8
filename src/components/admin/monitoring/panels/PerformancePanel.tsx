@@ -2,81 +2,120 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SystemMonitoringRecord } from '@/utils/monitoring/types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PerformancePanelProps {
-  metrics: SystemMonitoringRecord[] | null;
-  isLoading: boolean;
+  metrics?: SystemMonitoringRecord[] | null;
+  isLoading?: boolean;
 }
 
 export function PerformancePanel({ metrics, isLoading }: PerformancePanelProps) {
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-60" />
+        <Skeleton className="h-[300px] w-full" />
+      </div>
+    );
+  }
+
+  if (!metrics || metrics.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>System Performance</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center h-60">
+          <p className="text-muted-foreground">No performance data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>System Performance</CardTitle>
+          <CardTitle>Response Time (ms)</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="animate-spin h-8 w-8 border-b-2 border-primary rounded-full"></div>
-            </div>
-          ) : !metrics || metrics.length === 0 ? (
-            <div className="flex items-center justify-center h-64 text-center">
-              <div>
-                <p className="text-gray-400 mb-2">No performance data available</p>
-                <p className="text-sm text-gray-400">Check back later for system metrics</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <h3 className="font-medium text-lg mb-4">Resource Usage</h3>
-              <div className="h-64 mb-8">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={metrics.map(metric => ({
-                      ...metric,
-                      time: formatTimestamp(metric.timestamp)
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="cpu_usage" name="CPU (%)" fill="#8884d8" />
-                    <Bar dataKey="memory_usage" name="Memory (%)" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <h3 className="font-medium text-lg mb-4">Connection & Error Metrics</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={metrics.map(metric => ({
-                      ...metric,
-                      time: formatTimestamp(metric.timestamp)
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="active_connections" name="Connections" fill="#ff7300" />
-                    <Bar dataKey="error_count" name="Errors" fill="#ff0000" />
-                    <Bar dataKey="warning_count" name="Warnings" fill="#ffbb28" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={metrics}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="timestamp" 
+                  tickFormatter={formatTimestamp} 
+                  minTickGap={30}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: number) => [`${value} ms`, 'Response Time']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="response_time"
+                  stroke="#8884d8"
+                  activeDot={{ r: 8 }}
+                  name="Response Time"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>System Load</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={metrics}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="timestamp" 
+                  tickFormatter={formatTimestamp}
+                  minTickGap={30}
+                />
+                <YAxis />
+                <Tooltip 
+                  labelFormatter={(value) => new Date(value).toLocaleString()}
+                  formatter={(value: number) => [`${value}%`, 'CPU Usage']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cpu_usage"
+                  stroke="#82ca9d"
+                  name="CPU Usage"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>
