@@ -1,173 +1,123 @@
-import { toast } from 'sonner';
-import { recordClientError } from './api-usage';
-
-interface ErrorQueueItem {
-  message: string;
-  stack?: string | null;
-  componentName: string;
-  userId?: string;
-  metadata?: Record<string, any>;
-  timestamp: string;
-}
 
 /**
- * Client Error Logger
- * 
- * A utility class for logging and batching client errors
+ * Utility for logging and tracking client errors
  */
 export class ClientErrorLogger {
-  private static errorQueue: ErrorQueueItem[] = [];
-  private static isProcessing: boolean = false;
-  private static flushInterval: number | null = null;
-  private static batchSize: number = 5;
-  private static flushTimeoutMs: number = 30000; // 30 seconds
+  private static isInitialized = false;
+  private static errors: Array<{
+    message: string;
+    componentName: string;
+    timestamp: Date;
+    userId?: string;
+    stack?: string;
+    metadata?: Record<string, any>;
+  }> = [];
   
   /**
-   * Initialize the error logger
+   * Initialize error logging
    */
-  public static initialize(): void {
-    // Set up regular flushing of errors
-    this.flushInterval = window.setInterval(() => {
-      if (this.errorQueue.length > 0) {
-        this.flushErrors();
-      }
-    }, this.flushTimeoutMs);
+  static initialize(): void {
+    if (this.isInitialized) return;
     
-    // Ensure errors are flushed before page unload
-    window.addEventListener('beforeunload', () => {
-      if (this.errorQueue.length > 0) {
-        this.flushErrors();
-      }
-    });
+    // Set up global error handlers
+    window.addEventListener('error', this.handleGlobalError);
+    window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
     
-    console.log('ClientErrorLogger initialized');
+    console.log('Client error logger initialized');
+    this.isInitialized = true;
   }
   
   /**
-   * Clean up resources
+   * Clean up event listeners
    */
-  public static cleanup(): void {
-    if (this.flushInterval !== null) {
-      window.clearInterval(this.flushInterval);
-      this.flushInterval = null;
-    }
+  static cleanup(): void {
+    window.removeEventListener('error', this.handleGlobalError);
+    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
+    this.isInitialized = false;
   }
   
   /**
-   * Log an error
-   * 
-   * @param error Error object or message
-   * @param componentName Component where the error occurred
-   * @param userId Optional user ID
-   * @param metadata Optional metadata
+   * Handle global error events
    */
-  public static logError(
-    error: Error | string, 
+  private static handleGlobalError = (event: ErrorEvent): void => {
+    this.logError(
+      event.error || new Error(event.message),
+      'GlobalErrorHandler',
+      undefined,
+      { 
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+      }
+    );
+  };
+  
+  /**
+   * Handle unhandled promise rejections
+   */
+  private static handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
+    const error = event.reason instanceof Error 
+      ? event.reason 
+      : new Error(String(event.reason));
+      
+    this.logError(
+      error,
+      'UnhandledPromiseRejection'
+    );
+  };
+  
+  /**
+   * Log an error with additional context
+   */
+  static logError(
+    error: Error | string,
     componentName: string,
     userId?: string,
     metadata?: Record<string, any>
   ): void {
-    const isErrorObject = error instanceof Error;
+    const errorMessage = typeof error === 'string' ? error : error.message;
+    const errorStack = typeof error === 'string' ? undefined : error.stack;
     
-    const errorItem: ErrorQueueItem = {
-      message: isErrorObject ? error.message : String(error),
-      stack: isErrorObject ? error.stack || null : null,
+    // Add to local collection
+    this.errors.push({
+      message: errorMessage,
       componentName,
+      timestamp: new Date(),
       userId,
-      metadata,
-      timestamp: new Date().toISOString()
-    };
+      stack: errorStack,
+      metadata
+    });
     
     // Log to console
-    console.error(`[${componentName}] ${errorItem.message}`, errorItem.stack || '');
-    
-    // Add to queue
-    this.errorQueue.push(errorItem);
-    
-    // Flush immediately if we've reached the batch size
-    if (this.errorQueue.length >= this.batchSize) {
-      this.flushErrors();
+    console.error(`[${componentName}] ${errorMessage}`);
+    if (errorStack) {
+      console.error(errorStack);
     }
+    
+    // In a real implementation, this would send to an API endpoint
   }
   
   /**
-   * Log an authentication error
-   * 
-   * @param message Error message
-   * @param userId User ID
-   * @param context Additional context
+   * Get all logged errors
    */
-  public static logAuthError(
-    message: string,
-    userId: string,
-    context: Record<string, any>
-  ): void {
-    this.logError(message, 'AuthenticationSystem', userId, {
-      errorType: 'auth',
-      context
-    });
+  static getErrors(): Array<{
+    message: string;
+    componentName: string;
+    timestamp: Date;
+    userId?: string;
+  }> {
+    return this.errors.map(({ message, componentName, timestamp, userId }) => ({
+      message,
+      componentName,
+      timestamp,
+      userId
+    }));
   }
   
   /**
-   * Flush errors to the backend
+   * Clear all logged errors
    */
-  private static async flushErrors(): Promise<void> {
-    if (this.isProcessing || this.errorQueue.length === 0) {
-      return;
-    }
-    
-    this.isProcessing = true;
-    
-    try {
-      const errors = [...this.errorQueue];
-      this.errorQueue = [];
-      
-      // Process each error individually
-      for (const error of errors) {
-        await recordClientError(
-          error.message,
-          error.stack,
-          error.componentName,
-          error.userId,
-          error.metadata
-        );
-      }
-    } catch (error) {
-      console.error('Error flushing client errors:', error);
-      
-      // Re-add the errors to the queue
-      // this.errorQueue = [...this.errorQueue, ...errors];
-      
-      // To avoid potential circular references if the above line causes errors,
-      // we'll keep this commented but available for reference
-    } finally {
-      this.isProcessing = false;
-    }
-  }
-}
-
-/**
- * Log a client error and optionally show a toast
- * 
- * @param error Error object or message
- * @param componentName Component name
- * @param userId Optional user ID
- * @param showToast Whether to show a toast
- * @param metadata Optional metadata
- */
-export function logClientError(
-  error: Error | string,
-  componentName: string,
-  userId?: string,
-  showToast: boolean = true,
-  metadata?: Record<string, any>
-): void {
-  ClientErrorLogger.logError(error, componentName, userId, metadata);
-  
-  if (showToast) {
-    toast.error("An error occurred", {
-      description: "Our team has been notified",
-      duration: 5000,
-    });
+  static clearErrors(): void {
+    this.errors = [];
   }
 }

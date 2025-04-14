@@ -26,10 +26,12 @@ export function AdvancedWireframeGenerator({
   const handleError = (errorResponse: ErrorResponse) => {
     // Convert ErrorResponse to Error
     const error = new Error(errorResponse.message || "Unknown error");
+    
     // Add missing properties from ErrorResponse to make it compatible with Error
     if (errorResponse.context?.stack) {
       error.stack = String(errorResponse.context.stack);
     }
+    
     setError(error);
     
     if (onError) {

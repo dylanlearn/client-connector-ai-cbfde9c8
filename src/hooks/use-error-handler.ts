@@ -23,12 +23,30 @@ export function useErrorHandler(options: ErrorHandlerOptions) {
    * Handle an error with the standardized error handling logic
    */
   const handleError = useCallback((err: unknown, context?: string) => {
-    const errorWithContext = err instanceof AppError 
-      ? { ...err, context: { ...err.context, additionalContext: context } }
-      : err;
+    let errorToHandle = err;
+    
+    // Handle adding context to the error
+    if (context && err instanceof Error) {
+      // For Error objects, we can add context
+      const errorWithContext = err as Error & { context?: Record<string, any> };
+      if (!errorWithContext.context) {
+        errorWithContext.context = {};
+      }
+      errorWithContext.context.additionalContext = context;
+      errorToHandle = errorWithContext;
+    } else if (context && typeof err === 'object' && err !== null) {
+      // For objects that are not Error instances
+      errorToHandle = {
+        ...err,
+        context: {
+          ...(err as any).context,
+          additionalContext: context
+        }
+      };
+    }
     
     const normalizedError = ErrorHandler.handleError(
-      errorWithContext, 
+      errorToHandle, 
       componentName, 
       options.userId
     );
