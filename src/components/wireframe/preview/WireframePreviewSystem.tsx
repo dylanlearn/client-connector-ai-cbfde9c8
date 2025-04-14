@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Monitor, Smartphone, Tablet, Moon, Sun, Download } from 'lucide-react';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions } from './DeviceInfo';
 import PreviewDisplay from './PreviewDisplay';
 import WireframeExportDialog from '../export/WireframeExportDialog';
-import { exportWireframeAsPDF, exportWireframeAsImage, exportWireframeAsHTML } from '@/utils/wireframe/export-utils';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import DeviceSelector from './DeviceSelector';
+import ViewControls from './ViewControls';
 
 interface WireframePreviewSystemProps {
   wireframe: WireframeData;
@@ -59,51 +58,16 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
           className="w-full"
         >
           <div className="flex justify-between items-center">
-            <TabsList>
-              <TabsTrigger value="desktop" className="flex items-center gap-1">
-                <Monitor className="h-4 w-4" />
-                <span className="hidden sm:inline">Desktop</span>
-              </TabsTrigger>
-              <TabsTrigger value="tablet" className="flex items-center gap-1">
-                <Tablet className="h-4 w-4" />
-                <span className="hidden sm:inline">Tablet</span>
-              </TabsTrigger>
-              <TabsTrigger value="mobile" className="flex items-center gap-1">
-                <Smartphone className="h-4 w-4" />
-                <span className="hidden sm:inline">Mobile</span>
-              </TabsTrigger>
-            </TabsList>
+            <DeviceSelector 
+              deviceType={deviceType} 
+              onChange={handleDeviceChange}
+            />
             
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={toggleDarkMode}
-                className="flex items-center gap-1"
-              >
-                {darkMode ? (
-                  <>
-                    <Sun className="h-4 w-4" />
-                    <span className="hidden sm:inline">Light</span>
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4" />
-                    <span className="hidden sm:inline">Dark</span>
-                  </>
-                )}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleExportClick}
-                className="flex items-center gap-1"
-              >
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-            </div>
+            <ViewControls 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode} 
+              onExport={handleExportClick} 
+            />
           </div>
         </Tabs>
       </div>

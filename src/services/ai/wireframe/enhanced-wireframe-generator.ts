@@ -7,6 +7,53 @@ import {
   EnhancedWireframeGenerationResult
 } from './wireframe-types';
 
+/**
+ * Generates mock wireframe data for development purposes
+ */
+const generateMockWireframe = (params: WireframeGenerationParams): WireframeData => {
+  return {
+    id: params.projectId || uuidv4(),
+    title: `Wireframe: ${params.description?.substring(0, 30)}...`,
+    description: params.description,
+    sections: [],
+    colorScheme: params.colorScheme || {
+      primary: '#3182ce',
+      secondary: '#805ad5',
+      accent: '#ed8936',
+      background: '#ffffff',
+      text: '#1a202c'
+    },
+    typography: params.typography || {
+      headings: 'Inter',
+      body: 'Inter'
+    }
+  };
+};
+
+/**
+ * Creates intent data structure
+ */
+const createIntentData = (params: WireframeGenerationParams) => {
+  return {
+    primary: params.baseWireframe ? 'variation' : 'original',
+    confidence: 0.95,
+    primaryGoal: 'conversion'
+    // targetAudience is removed from here as it's now in the type definition
+  };
+};
+
+/**
+ * Creates blueprint data structure
+ */
+const createBlueprint = () => {
+  return {
+    layout: 'responsive',
+    sections: ['header', 'hero', 'features', 'testimonials', 'contact', 'footer'],
+    layoutStrategy: 'mobile-first'
+    // colorTheory is removed from here as it's now in the type definition
+  };
+};
+
 export class EnhancedWireframeGenerator {
   /**
    * Generate a wireframe with enhanced features and analytics
@@ -18,40 +65,13 @@ export class EnhancedWireframeGenerator {
     
     try {
       // Create a mock wireframe for development purposes
-      // In a real implementation, this would call an API
-      const generatedWireframe: WireframeData = {
-        id: params.projectId || uuidv4(),
-        title: `Wireframe: ${params.description?.substring(0, 30)}...`,
-        description: params.description,
-        sections: [],
-        colorScheme: params.colorScheme || {
-          primary: '#3182ce',
-          secondary: '#805ad5',
-          accent: '#ed8936',
-          background: '#ffffff',
-          text: '#1a202c'
-        },
-        typography: params.typography || {
-          headings: 'Inter',
-          body: 'Inter'
-        }
-      };
+      const generatedWireframe = generateMockWireframe(params);
       
       // Create intentData with correct structure
-      const intentData = {
-        primary: params.baseWireframe ? 'variation' : 'original',
-        confidence: 0.95,
-        primaryGoal: 'conversion'
-        // targetAudience is removed from here as it's now in the type definition
-      };
+      const intentData = createIntentData(params);
       
       // Create blueprint with correct structure
-      const blueprint = {
-        layout: 'responsive',
-        sections: ['header', 'hero', 'features', 'testimonials', 'contact', 'footer'],
-        layoutStrategy: 'mobile-first'
-        // colorTheory is removed from here as it's now in the type definition
-      };
+      const blueprint = createBlueprint();
       
       // Return the enhanced wireframe generation result
       return {
