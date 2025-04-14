@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { EnhancedWireframeGenerator } from '@/services/ai/wireframe/enhanced-wireframe-generator';
+import { EnhancedWireframeGenerator } from '@/services/ai/wireframe/unified-wireframe-service';
 import { 
   WireframeGenerationParams, 
   EnhancedWireframeGenerationResult, 

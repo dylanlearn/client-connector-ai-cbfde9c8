@@ -1,6 +1,6 @@
 
 // Main wireframe service
-export * from './wireframe-service';
+export * from './unified-wireframe-service';
 
 // Specialized wireframe services
 export { WireframeGeneratorService } from './generator/wireframe-generator-service';
