@@ -121,6 +121,7 @@ export interface WireframeData {
   metadata?: Record<string, any>;
   mobileConsiderations?: string;
   projectId?: string; // Added for API compatibility
+  lastUpdated?: string; // Added to track last update time
 }
 
 // Re-export CopySuggestions interface to ensure it's available
@@ -183,8 +184,9 @@ export interface WireframeGenerationResult {
   message: string;
   errors?: string[];
   warnings?: string[];
-  blueprint?: any;
+  // Added intentData and blueprint as they're being used in useWireframe
   intentData?: any;
+  blueprint?: any;
   error?: Error; // For backward compatibility
 }
 

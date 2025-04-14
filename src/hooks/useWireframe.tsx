@@ -137,15 +137,17 @@ export function useWireframe(options: UseWireframeOptions = {}) {
         },
         success: true,
         message: 'Wireframe generated successfully',
-        intentAnalysis: { primary: 'landing-page', confidence: 0.9 },
+        // Store the intent analysis and blueprint data in the result object
+        // These are now properly typed through the WireframeGenerationResult interface
+        intentData: { primary: 'landing-page', confidence: 0.9 },
         blueprint: { layout: 'standard', sections: ['hero', 'features', 'testimonials'] }
       };
 
       setCurrentWireframe(result.wireframe);
       setGenerationResults(result);
       
-      if (result.intentAnalysis) {
-        setIntentData(result.intentAnalysis);
+      if (result.intentData) {
+        setIntentData(result.intentData);
       }
       
       if (result.blueprint) {
