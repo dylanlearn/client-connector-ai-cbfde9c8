@@ -1,83 +1,59 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  FeedbackAnalysisRecord, 
-  FeedbackStatus,
-  PastAnalysisResult,
-  AnalysisFilters
-} from "../feedback-types";
-import { RpcClient } from "@/utils/supabase/rpc-client";
+import { supabase } from '@/integrations/supabase/client';
+import { RPCClient } from '@/utils/supabase/rpc-client';
 
-/**
- * Database operations for feedback analysis
- */
-export const FeedbackDatabase = {
-  /**
-   * Store feedback analysis in the database
-   */
-  storeFeedbackAnalysis: async (record: FeedbackAnalysisRecord): Promise<string | null> => {
-    try {
-      const data = {
-        userId: record.userId,
-        projectId: record.projectId,
-        originalFeedback: record.originalFeedback,
-        summary: record.summary,
-        actionItems: record.actionItems,
-        toneAnalysis: record.toneAnalysis,
-        priority: record.priority,
-        status: record.status || 'open',
-        category: record.category
-      };
-      
-      return await RpcClient.feedbackAnalysis.store(data);
-    } catch (error) {
-      console.error("Exception storing feedback analysis:", error);
-      return null;
+export interface FeedbackRecord {
+  id: string;
+  content_id: string;
+  rating: number;
+  feedback_text?: string;
+  user_id?: string;
+  created_at: string;
+}
+
+export async function submitFeedback(
+  contentId: string,
+  rating: number,
+  feedbackText?: string,
+  userId?: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const { error } = await supabase
+      .from('content_feedback')
+      .insert({
+        content_id: contentId,
+        rating,
+        feedback_text: feedbackText,
+        user_id: userId
+      });
+
+    if (error) {
+      throw new Error(error.message);
     }
-  },
 
-  /**
-   * Get past feedback analyses
-   */
-  getPastAnalyses: async (
-    limit: number = 10,
-    filters?: AnalysisFilters
-  ): Promise<PastAnalysisResult[]> => {
-    try {
-      const analysisFilters = {
-        status: filters?.status,
-        priority: filters?.priority,
-        userId: filters?.userId,
-        projectId: filters?.projectId,
-        category: filters?.category,
-        limit
-      };
-      
-      const results = await RpcClient.feedbackAnalysis.list(analysisFilters);
-      return results as PastAnalysisResult[];
-    } catch (error) {
-      console.error("Exception fetching feedback analyses:", error);
-      return [];
-    }
-  },
-
-  /**
-   * Update feedback status
-   */
-  updateFeedbackStatus: async (
-    id: string, 
-    status: FeedbackStatus
-  ): Promise<boolean> => {
-    return RpcClient.feedbackAnalysis.updateStatus(id, status);
-  },
-
-  /**
-   * Update feedback priority
-   */
-  updateFeedbackPriority: async (
-    id: string, 
-    priority: 'high' | 'medium' | 'low'
-  ): Promise<boolean> => {
-    return RpcClient.feedbackAnalysis.updatePriority(id, priority);
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to submit feedback';
+    return { 
+      success: false, 
+      message 
+    };
   }
-};
+}
+
+export async function getFeedbackStats(contentId: string): Promise<{
+  average_rating: number;
+  total_ratings: number;
+  rating_distribution: Record<string, number>;
+} | null> {
+  try {
+    const result = await RPCClient.call('get_content_feedback_stats', { 
+      content_id: contentId 
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('Error fetching feedback stats:', error);
+    return null;
+  }
+}

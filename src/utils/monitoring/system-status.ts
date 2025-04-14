@@ -1,122 +1,107 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import type { SystemMonitoringRecord, SystemStatus } from "./types";
+import { supabase } from '@/integrations/supabase/client'; 
+import { toast } from 'sonner';
+import { SystemMonitoringRecord, SystemStatus } from './types';
 
 /**
- * Records a system status update to the monitoring database
+ * Fetches the current system status from the API
+ * @returns A Promise that resolves to the current system status
  */
-export async function recordSystemStatus(
-  component: string,
-  status: SystemStatus,
-  value?: number,
-  threshold?: number,
-  message?: string,
-  metadata?: Record<string, any>
-): Promise<void> {
+export async function getSystemStatus(): Promise<SystemStatus | null> {
   try {
-    const record: SystemMonitoringRecord = {
-      component,
-      status,
-      value,
-      threshold,
-      message,
-      metadata,
-      event_type: 'status_update'
-    };
-
-    const { error } = await supabase
-      .from('system_monitoring')
-      .insert(record);
-
-    if (error) {
-      console.error('Error recording system status:', error);
-    }
-  } catch (err) {
-    console.error('Failed to record system status:', err);
-  }
-}
-
-/**
- * Fetches the latest system status for a specific component
- */
-export async function getLatestComponentStatus(
-  component: string
-): Promise<SystemMonitoringRecord | null> {
-  try {
-    const { data, error } = await supabase
-      .from('system_monitoring')
-      .select('*')
-      .eq('component', component)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error) {
-      console.error('Error fetching component status:', error);
-      return null;
-    }
-
-    return data as SystemMonitoringRecord;
-  } catch (err) {
-    console.error('Failed to get component status:', err);
+    const { data, error } = await supabase.functions.invoke('system-status', {
+      method: 'GET'
+    });
+    
+    if (error) throw error;
+    
+    return data as SystemStatus;
+  } catch (error) {
+    console.error('Failed to fetch system status:', error);
     return null;
   }
 }
 
 /**
- * Gets overall system health across all monitored components
+ * Fetches historical system monitoring records for the specified period
+ * @param period The time period to fetch records for ('day', 'week', 'month')
+ * @returns A Promise that resolves to an array of system monitoring records
  */
-export async function getSystemHealth(): Promise<Record<string, SystemStatus>> {
+export async function getSystemMetrics(
+  period: 'day' | 'week' | 'month' = 'day'
+): Promise<SystemMonitoringRecord[] | null> {
   try {
-    const { data, error } = await supabase
-      .rpc('get_latest_component_statuses');
-
-    if (error) {
-      console.error('Error fetching system health:', error);
-      return {};
-    }
-
-    const health: Record<string, SystemStatus> = {};
+    const { data, error } = await supabase.functions.invoke('system-metrics', {
+      body: { period }
+    });
     
-    if (Array.isArray(data)) {
-      data.forEach((item: any) => {
-        health[item.component] = item.status as SystemStatus;
-      });
-    }
-
-    return health;
-  } catch (err) {
-    console.error('Failed to get system health:', err);
-    return {};
+    if (error) throw error;
+    
+    return data as SystemMonitoringRecord[];
+  } catch (error) {
+    console.error(`Failed to fetch system metrics for period ${period}:`, error);
+    return null;
   }
 }
 
 /**
- * Triggers an alert for critical system status
+ * Reports a system issue to the monitoring system
+ * @param component The affected component
+ * @param description A description of the issue
+ * @param severity The severity of the issue ('low', 'medium', 'high')
+ * @returns A Promise that resolves to a boolean indicating success
  */
-export async function triggerSystemAlert(
+export async function reportSystemIssue(
   component: string,
-  status: SystemStatus,
-  message: string
+  description: string,
+  severity: 'low' | 'medium' | 'high'
 ): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('system_monitoring')
-      .insert({
+    const { error } = await supabase.functions.invoke('report-issue', {
+      body: {
         component,
-        status,
-        message,
-        event_type: 'alert'
-      });
-
-    if (error) {
-      console.error('Error triggering system alert:', error);
-      return false;
-    }
-
+        description,
+        severity,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+    if (error) throw error;
+    
+    toast.success('Issue reported', {
+      description: 'The system issue has been reported successfully'
+    });
+    
     return true;
-  } catch (err) {
-    console.error('Failed to trigger system alert:', err);
+  } catch (error) {
+    console.error('Failed to report system issue:', error);
+    
+    toast.error('Failed to report issue', {
+      description: error instanceof Error ? error.message : 'An unexpected error occurred'
+    });
+    
     return false;
   }
+}
+
+/**
+ * Subscribe to system status updates
+ * @param callback The callback to execute when status updates are received
+ * @returns A function to unsubscribe from status updates
+ */
+export function subscribeToSystemStatus(
+  callback: (status: SystemStatus) => void
+): () => void {
+  // This would typically use a WebSocket or real-time subscription
+  // For now, we'll just poll the API every 30 seconds
+  
+  const intervalId = setInterval(async () => {
+    const status = await getSystemStatus();
+    if (status) {
+      callback(status);
+    }
+  }, 30000);
+  
+  // Return unsubscribe function
+  return () => clearInterval(intervalId);
 }

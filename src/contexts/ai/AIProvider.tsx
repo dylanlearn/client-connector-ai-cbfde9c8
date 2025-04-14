@@ -86,7 +86,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         clarity: 0.8,
         toneAnalysis: { formal: 0.7, casual: 0.3 },
         suggestionCount: 3,
-        contradictions: [] // Adding the contradictions field that was missing
+        contradictions: [] 
       };
       
       setAnalysis(analysisResult);
@@ -139,19 +139,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     }
   };
   
-  // Properly update the memoryContext with all required fields
-  const updateMemoryContext = () => {
-    setMemoryContext({
-      userMemories: [],
-      projectMemories: [],
-      globalInsights: [],
-      recentInteractions: [],
-      userPreferences: [],
-      projectDetails: []
-    });
-  };
-  
-  // Generate content method that matches the interface - fix signature to only take one parameter
+  // Generate content method that matches the interface
   const generateContent = async (prompt: string): Promise<string> => {
     setIsGenerating(true);
     try {

@@ -66,6 +66,48 @@ export interface MonitoringAlertConfig {
 }
 
 /**
+ * Interface for monitoring configuration
+ */
+export interface MonitoringConfiguration {
+  enabled: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  samplingRate: number;
+  alertChannels: string[];
+  retentionPeriod: number;
+  components: Record<string, boolean>;
+}
+
+/**
+ * Interface for system monitoring record
+ */
+export interface SystemMonitoringRecord {
+  id?: string;
+  timestamp: string;
+  cpu_usage: number;
+  memory_usage: number;
+  active_connections: number;
+  response_times: Record<string, number>;
+  error_count: number;
+  warning_count: number;
+}
+
+/**
+ * Interface for system status
+ */
+export interface SystemStatus {
+  status: 'operational' | 'degraded' | 'outage';
+  components: Record<string, 'operational' | 'degraded' | 'outage'>;
+  lastUpdated: string;
+  incidents: Array<{
+    id: string;
+    title: string;
+    status: 'investigating' | 'identified' | 'monitoring' | 'resolved';
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}
+
+/**
  * Type for AI Analysis object
  */
 export interface AIAnalysis {

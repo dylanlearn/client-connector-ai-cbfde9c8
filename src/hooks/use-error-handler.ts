@@ -36,10 +36,11 @@ export function useErrorHandler(options: ErrorHandlerOptions) {
       errorToHandle = errorWithContext;
     } else if (context && typeof err === 'object' && err !== null) {
       // For objects that are not Error instances
+      const errObj = err as Record<string, any>;
       errorToHandle = {
-        ...err,
+        ...errObj,
         context: {
-          ...(err as any).context,
+          ...(errObj.context || {}),
           additionalContext: context
         }
       };

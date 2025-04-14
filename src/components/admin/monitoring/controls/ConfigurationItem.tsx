@@ -1,74 +1,93 @@
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { MonitoringConfiguration } from "@/utils/monitoring/types";
+import React from 'react';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { MonitoringConfiguration } from '@/utils/monitoring/types';
 
 interface ConfigurationItemProps {
-  config: MonitoringConfiguration;
-  onConfigChange: (field: keyof MonitoringConfiguration, value: any) => void;
+  label: string;
+  description?: string;
+  type: 'toggle' | 'select' | 'number' | 'text';
+  options?: { label: string; value: string }[];
+  value: any;
+  configKey: keyof MonitoringConfiguration | string;
+  onChange: (key: string, value: any) => void;
+  min?: number;
+  max?: number;
 }
 
-export function ConfigurationItem({ config, onConfigChange }: ConfigurationItemProps) {
+export function ConfigurationItem({
+  label,
+  description,
+  type,
+  options,
+  value,
+  configKey,
+  onChange,
+  min,
+  max
+}: ConfigurationItemProps) {
   return (
-    <div className="border rounded-md p-4">
-      <h3 className="text-lg font-medium capitalize mb-4">{config.component} Monitoring</h3>
+    <div className="flex items-center justify-between py-3">
+      <div className="space-y-0.5">
+        <Label className="text-base">{label}</Label>
+        {description && (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        )}
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="space-y-2">
-          <Label htmlFor={`warning-${config.id}`}>Warning Threshold (%)</Label>
-          <Input 
-            id={`warning-${config.id}`}
-            type="number" 
-            min="0" 
-            max="100"
-            value={config.warning_threshold} 
-            onChange={(e) => onConfigChange('warning_threshold', Number(e.target.value))}
+      <div>
+        {type === 'toggle' && (
+          <Switch
+            checked={!!value}
+            onCheckedChange={(checked) => onChange(configKey, checked)}
           />
-        </div>
+        )}
         
-        <div className="space-y-2">
-          <Label htmlFor={`critical-${config.id}`}>Critical Threshold (%)</Label>
-          <Input 
-            id={`critical-${config.id}`}
-            type="number" 
-            min="0" 
-            max="100"
-            value={config.critical_threshold} 
-            onChange={(e) => onConfigChange('critical_threshold', Number(e.target.value))}
+        {type === 'select' && options && (
+          <Select
+            value={String(value)}
+            onValueChange={(newValue) => onChange(configKey, newValue)}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        
+        {type === 'number' && (
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => {
+              let newValue = parseFloat(e.target.value);
+              if (min !== undefined) newValue = Math.max(min, newValue);
+              if (max !== undefined) newValue = Math.min(max, newValue);
+              onChange(configKey, newValue);
+            }}
+            className="w-24"
+            min={min}
+            max={max}
           />
-        </div>
+        )}
         
-        <div className="space-y-2">
-          <Label htmlFor={`interval-${config.id}`}>Check Interval (seconds)</Label>
-          <Input 
-            id={`interval-${config.id}`}
-            type="number" 
-            min="5"
-            value={config.check_interval} 
-            onChange={(e) => onConfigChange('check_interval', Number(e.target.value))}
+        {type === 'text' && (
+          <Input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(configKey, e.target.value)}
+            className="w-40"
           />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`enabled-${config.id}`}>Monitoring Enabled</Label>
-            <Switch 
-              id={`enabled-${config.id}`}
-              checked={config.enabled} 
-              onCheckedChange={(checked) => onConfigChange('enabled', checked)}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between mt-4">
-            <Label htmlFor={`notifications-${config.id}`}>Notifications Enabled</Label>
-            <Switch 
-              id={`notifications-${config.id}`}
-              checked={config.notification_enabled ?? true} 
-              onCheckedChange={(checked) => onConfigChange('notification_enabled', checked)}
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

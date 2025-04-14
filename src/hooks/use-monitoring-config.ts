@@ -1,117 +1,104 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { MonitoringConfiguration } from "@/utils/monitoring/types";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { MonitoringConfiguration } from '@/utils/monitoring/types';
 
-/**
- * Hook for managing monitoring configurations
- */
-export function useMonitoringConfig(onConfigUpdateCallback?: () => void) {
-  const [configurations, setConfigurations] = useState<MonitoringConfiguration[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const defaultConfig: MonitoringConfiguration = {
+  enabled: true,
+  logLevel: 'info',
+  samplingRate: 0.5,
+  alertChannels: ['email'],
+  retentionPeriod: 30,
+  components: {
+    api: true,
+    ui: true,
+    database: true,
+    auth: true,
+    storage: true
+  }
+};
+
+export function useMonitoringConfig(projectId?: string) {
+  const [config, setConfig] = useState<MonitoringConfiguration>(defaultConfig);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
-  
-  // Fetch monitoring configurations
-  const fetchConfigurations = async () => {
+
+  // Fetch configuration
+  const fetchConfig = useCallback(async () => {
+    if (!projectId) return;
+    
     setIsLoading(true);
     setError(null);
     
     try {
       const { data, error } = await supabase
-        .from('monitoring_configuration')
+        .from('monitoring_config')
         .select('*')
-        .order('component');
+        .eq('project_id', projectId)
+        .single();
         
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      setConfigurations(data || []);
-    } catch (error: any) {
-      console.error('Error fetching monitoring configurations:', error);
-      setError(error.message || 'Error loading configurations');
-      toast({
-        title: "Error loading configurations",
-        description: "There was a problem loading the monitoring configurations.",
-        variant: "destructive"
-      });
+      if (data) {
+        setConfig(data.config as MonitoringConfiguration);
+      }
+    } catch (err) {
+      console.error('Error fetching monitoring config:', err);
+      setError(err instanceof Error ? err : new Error('Failed to fetch monitoring configuration'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId]);
 
-  // Update a specific field in a configuration
-  const updateConfigField = (index: number, field: keyof MonitoringConfiguration, value: any) => {
-    const updatedConfigs = [...configurations];
-    updatedConfigs[index] = {
-      ...updatedConfigs[index],
-      [field]: value
-    };
-    setConfigurations(updatedConfigs);
-  };
-
-  // Save updated configurations to the database
-  const saveConfigurations = async () => {
-    setIsSaving(true);
-    setError(null);
+  // Update configuration
+  const updateConfig = useCallback(async (newConfig: Partial<MonitoringConfiguration>) => {
+    if (!projectId) return false;
     
     try {
-      // Update each configuration in sequence
-      for (const config of configurations) {
-        const updateData = {
-          warning_threshold: config.warning_threshold,
-          critical_threshold: config.critical_threshold,
-          check_interval: config.check_interval,
-          enabled: config.enabled,
-          notification_enabled: config.notification_enabled
-        };
-
-        const { error } = await supabase
-          .from('monitoring_configuration')
-          .update(updateData)
-          .eq('id', config.id);
-          
-        if (error) throw error;
-      }
+      const updatedConfig = { ...config, ...newConfig };
+      
+      const { error } = await supabase
+        .from('monitoring_config')
+        .upsert({
+          project_id: projectId,
+          config: updatedConfig
+        });
+        
+      if (error) throw error;
+      
+      setConfig(updatedConfig);
       
       toast({
-        title: "Configurations saved",
-        description: "Monitoring configurations have been updated successfully.",
-        variant: "default"
+        title: 'Configuration Updated',
+        description: 'Monitoring configuration has been saved successfully',
       });
       
-      // Notify parent component if callback provided
-      if (onConfigUpdateCallback) {
-        onConfigUpdateCallback();
-      }
-    } catch (error: any) {
-      console.error('Error saving monitoring configurations:', error);
-      setError(error.message || 'Error saving configurations');
+      return true;
+    } catch (err) {
+      console.error('Error updating monitoring config:', err);
+      
       toast({
-        title: "Error saving configurations",
-        description: "There was a problem saving the monitoring configurations.",
-        variant: "destructive"
+        title: 'Update Failed',
+        description: err instanceof Error ? err.message : 'Failed to update configuration',
+        variant: 'destructive',
       });
-    } finally {
-      setIsSaving(false);
+      
+      return false;
     }
-  };
+  }, [config, projectId, toast]);
 
-  // Fetch configurations on mount
+  // Load configuration on component mount
   useEffect(() => {
-    fetchConfigurations();
-  }, []);
+    fetchConfig();
+  }, [fetchConfig]);
 
   return {
-    configurations,
+    config,
     isLoading,
-    isSaving,
     error,
-    updateConfigField,
-    saveConfigurations,
-    refreshConfigurations: fetchConfigurations
+    updateConfig,
+    reloadConfig: fetchConfig
   };
 }
