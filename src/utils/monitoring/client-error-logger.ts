@@ -10,7 +10,7 @@ export const ClientErrorLogger = {
   /**
    * Initialize the error logger
    */
-  initialize: function() {
+  initialize: () => {
     console.info('ClientErrorLogger initialized');
     return true;
   },
@@ -18,12 +18,12 @@ export const ClientErrorLogger = {
   /**
    * Log an error to the server and optionally display a toast
    */
-  logError: async function(
-    error: Error | string,
-    componentName?: string,
-    showToast: boolean = false,
+  logError: async (
+    error: Error | string, 
+    componentName?: string, 
+    showToast: boolean = false, 
     metadata?: Record<string, any>
-  ): Promise<boolean> {
+  ): Promise<boolean> => {
     const errorMessage = error instanceof Error ? error.message : error;
     const stackTrace = error instanceof Error ? error.stack : undefined;
     
@@ -85,7 +85,7 @@ export const ClientErrorLogger = {
   /**
    * Clear stored errors (primarily for testing)
    */
-  cleanup: async function(): Promise<void> {
+  cleanup: async (): Promise<void> => {
     try {
       // In a real system, you'd want to limit this to test environments
       if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
@@ -109,40 +109,4 @@ export function logError(
   metadata?: Record<string, any>
 ): Promise<boolean> {
   return ClientErrorLogger.logError(error, componentName, showToast, metadata);
-}
-
-/**
- * Utility function for recording client errors from API/components
- */
-export async function recordClientError(
-  message: string,
-  stackTrace?: string,
-  componentName?: string,
-  userId?: string,
-  metadata?: Record<string, any>
-): Promise<boolean> {
-  try {
-    const clientError: Omit<ClientError, 'id'> = {
-      message,
-      stackTrace,
-      componentName,
-      userId,
-      timestamp: new Date().toISOString(),
-      browser: navigator.userAgent,
-      resolved: false,
-      metadata
-    };
-    
-    const { error } = await supabase.from('client_errors').insert(clientError);
-    
-    if (error) {
-      console.error('Error recording client error:', error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error in recordClientError:', error);
-    return false;
-  }
 }
