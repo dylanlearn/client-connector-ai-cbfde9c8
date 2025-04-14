@@ -15,7 +15,8 @@ describe('WireframeValidator', () => {
           primary: '#3182ce',
           secondary: '#805ad5',
           accent: '#ed8936',
-          background: '#ffffff'
+          background: '#ffffff',
+          text: '#1a202c'
         }
       };
       

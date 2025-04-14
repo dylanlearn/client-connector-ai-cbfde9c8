@@ -42,6 +42,7 @@ export class EnhancedWireframeGenerator {
         primary: params.baseWireframe ? 'variation' : 'original',
         confidence: 0.95,
         primaryGoal: 'conversion'
+        // targetAudience is removed from here as it's now in the type definition
       };
       
       // Create blueprint with correct structure
@@ -49,6 +50,7 @@ export class EnhancedWireframeGenerator {
         layout: 'responsive',
         sections: ['header', 'hero', 'features', 'testimonials', 'contact', 'footer'],
         layoutStrategy: 'mobile-first'
+        // colorTheory is removed from here as it's now in the type definition
       };
       
       // Return the enhanced wireframe generation result
@@ -101,6 +103,7 @@ export class EnhancedWireframeGenerator {
       enhancedCreativity: isCreative,
       creativityLevel: isCreative ? 9 : 5,
       styleChanges: feedbackOrStyleChanges
+      // feedbackMode is removed from here as it's now in the type definition
     });
   }
 }

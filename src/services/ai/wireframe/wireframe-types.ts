@@ -9,11 +9,13 @@ export interface WireframeGenerationResult {
     primary: string;
     confidence: number;
     primaryGoal?: string;
+    targetAudience?: string;
   };
   blueprint?: {
     layout: string;
     sections: string[];
     layoutStrategy?: string;
+    colorTheory?: string;
   };
   warnings?: string[];
 }
@@ -28,8 +30,8 @@ export interface WireframeGenerationParams {
     secondary: string;
     accent: string;
     background: string;
-    text?: string;
-    [key: string]: string | undefined;
+    text: string;
+    [key: string]: string;
   };
   typography?: {
     headings: string;
@@ -44,6 +46,7 @@ export interface WireframeGenerationParams {
   isVariation?: boolean;
   styleChanges?: string;
   customParams?: Record<string, any>;
+  feedbackMode?: boolean;
 }
 
 // Type for a wireframe component
