@@ -8,9 +8,9 @@ import { useEffect } from 'react';
 import { initializeErrorHandling } from '@/utils/monitoring/error-handling';
 import { ClientErrorLogger } from '@/utils/monitoring/client-error-logger';
 import router from '@/routes';
-import { AuthContext } from '@/contexts/AuthContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
+import { AIProvider } from '@/contexts/ai/ai-provider';
 
 // Create a simple QueryClient for React Query
 import { QueryClient } from '@tanstack/react-query';
@@ -32,9 +32,11 @@ function App() {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <RouterProvider router={router} />
-          <Toaster />
-          <SonnerToaster position="top-right" closeButton richColors />
+          <AIProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+            <SonnerToaster position="top-right" closeButton richColors />
+          </AIProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>

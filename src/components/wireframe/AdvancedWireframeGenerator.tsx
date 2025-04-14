@@ -1,8 +1,25 @@
+
 import React, { useState, useEffect } from 'react';
 import { ErrorResponse } from '@/types/error-types';
 
+interface AdvancedWireframeGeneratorProps {
+  projectId?: string;
+  viewMode?: string;
+  onWireframeGenerated?: (result: any) => void;
+  onError?: (error: any) => void;
+  enhancedCreativity?: boolean;
+  intakeData?: any;
+}
+
 // Assuming this is a simplified version of the component
-export function AdvancedWireframeGenerator() {
+export function AdvancedWireframeGenerator({
+  projectId,
+  viewMode,
+  onWireframeGenerated,
+  onError,
+  enhancedCreativity,
+  intakeData
+}: AdvancedWireframeGeneratorProps) {
   const [error, setError] = useState<Error | string | null>(null);
   
   // Fix for the error TS2322
@@ -13,6 +30,10 @@ export function AdvancedWireframeGenerator() {
       error.stack = errorResponse.context.stack as string;
     }
     setError(error);
+    
+    if (onError) {
+      onError(error);
+    }
   };
   
   return (

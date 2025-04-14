@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AIAnalysis } from "@/types/ai";
@@ -17,7 +16,7 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
   // Calculate emotional tone dominance
   const dominantTone = toneAnalysis
     ? Object.entries(toneAnalysis).reduce(
-        (max, [tone, value]) => (value > max.value ? { tone, value } : max),
+        (max, [tone, value]) => (Number(value) > max.value ? { tone, value: Number(value) } : max),
         { tone: "", value: 0 }
       ).tone
     : "";
@@ -38,10 +37,11 @@ const AIAnalysisSummary = ({ analysis, className = "" }: AIAnalysisSummaryProps)
   };
 
   const getClarityDescription = () => {
+    const clarityValue = Number(clarity);
     if (clarity === undefined) return "Not analyzed";
-    if (clarity > 0.8) return "Excellent";
-    if (clarity > 0.6) return "Good";
-    if (clarity > 0.4) return "Average";
+    if (clarityValue > 0.8) return "Excellent";
+    if (clarityValue > 0.6) return "Good";
+    if (clarityValue > 0.4) return "Average";
     return "Needs improvement";
   };
 

@@ -1,5 +1,5 @@
 
-import { AIMemory, GlobalMemory as GlobalMemoryFromTypes } from '@/types/ai';
+import { AIMemory, GlobalMemory } from '@/types/ai';
 
 /**
  * Memory categories for user, project, and global memories
@@ -49,11 +49,10 @@ export interface ProjectMemory extends AIMemory {
 /**
  * Global anonymous memory model 
  */
-export interface GlobalMemoryType extends GlobalMemoryFromTypes {
+export interface GlobalMemoryType extends GlobalMemory {
   id: string;
   timestamp: Date;
-  metadata?: Record<string, any>;  // Added metadata property
 }
 
 // Re-export GlobalMemoryType as GlobalMemory for backward compatibility
-export type GlobalMemory = GlobalMemoryType;
+export type { GlobalMemory };

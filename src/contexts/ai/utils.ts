@@ -1,8 +1,6 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { AIMessage, AIAnalysis } from "@/types/ai";
-import { supabase } from "@/integrations/supabase/client";
-import { AIFeatureType, selectModelForFeature } from "@/services/ai/ai-model-selector";
 
 export const createUserMessage = (content: string): AIMessage => ({
   id: `user-${uuidv4()}`,
@@ -33,27 +31,17 @@ export const generateAIResponse = async (
   systemPrompt: string
 ) => {
   try {
-    // Use GPT-4o-mini for regular conversation
-    const model = selectModelForFeature(AIFeatureType.TextGeneration);
+    // Mock implementation for demo purposes
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const { data, error } = await supabase.functions.invoke("generate-with-openai", {
-      body: {
-        messages: messages.map(m => ({
-          role: m.role,
-          content: m.content
-        })),
-        systemPrompt,
-        temperature: 0.7,
-        model
-      },
-    });
-
-    if (error) throw error;
-
     return {
-      content: data.response,
-      model: data.model,
-      usage: data.usage
+      content: `AI response to your message: ${messages[messages.length - 1]?.content || 'No message found'}`,
+      model: 'gpt-4o-mini',
+      usage: {
+        prompt_tokens: 120,
+        completion_tokens: 80,
+        total_tokens: 200
+      }
     };
   } catch (error) {
     console.error("Error generating AI response:", error);
