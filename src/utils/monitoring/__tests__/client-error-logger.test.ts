@@ -24,7 +24,11 @@ describe('ClientErrorLogger', () => {
     if (typeof window !== 'undefined') {
       window.addEventListener = vi.fn();
       window.removeEventListener = vi.fn();
-      vi.spyOn(window, 'setInterval').mockReturnValue(123);
+      
+      // Mock setInterval to return a number (similar to real implementation)
+      const mockSetInterval = vi.fn().mockReturnValue(123);
+      vi.spyOn(window, 'setInterval').mockImplementation(mockSetInterval);
+      
       vi.spyOn(window, 'clearInterval').mockImplementation(() => {});
     }
     
@@ -71,6 +75,7 @@ describe('ClientErrorLogger', () => {
   it('should log errors correctly', () => {
     const error = new Error('Test error');
     
+    // Test the exported logError function
     logError(error, 'TestComponent', 'user-123');
     
     // Since we're just adding to the queue, we can verify that console doesn't show errors

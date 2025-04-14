@@ -150,19 +150,6 @@ export class ClientErrorLogger {
   }
   
   /**
-   * Log error method to maintain backward compatibility
-   */
-  static async logError2(
-    errorMessage: string,
-    errorStack?: string,
-    componentName?: string,
-    userId?: string,
-    metadata?: Record<string, any>
-  ): Promise<void> {
-    this.logErrorToQueue(errorMessage, errorStack, componentName, userId, metadata);
-  }
-  
-  /**
    * Flush the error queue to the database
    */
   private static flushErrorQueue = async (): Promise<void> => {

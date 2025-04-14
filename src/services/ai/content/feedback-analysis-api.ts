@@ -8,13 +8,13 @@ export interface FeedbackAnalysis {
   key_themes: string[];
   improvement_areas?: string[];
   strengths?: string[];
-  summary: string; // Changed from optional to required
-  actionItems: { // Added this field with required type
+  summary: string; // Required field
+  actionItems: { // Required field
     task: string;
     priority: 'high' | 'medium' | 'low';
     urgency: number;
   }[];
-  toneAnalysis: { // Updated tone analysis structure
+  toneAnalysis: { // Updated tone analysis structure with all required fields
     formality: number;
     sentiment: number;
     confidence: number;
