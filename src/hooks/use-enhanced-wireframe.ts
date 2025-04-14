@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { EnhancedWireframeGenerator } from '@/services/ai/wireframe/unified-wireframe-service';
+import { unifiedWireframeService } from '@/services/ai/wireframe/unified-wireframe-service';
 import { 
   WireframeGenerationParams, 
   EnhancedWireframeGenerationResult, 
@@ -27,7 +27,7 @@ export function useAdvancedWireframe() {
       setIsGenerating(true);
       setError(null);
       
-      const result = await EnhancedWireframeGenerator.generateWireframe(params);
+      const result = await unifiedWireframeService.generateWireframe(params);
       
       if (result && result.wireframe) {
         setCurrentWireframe(result.wireframe);
@@ -88,7 +88,7 @@ export function useAdvancedWireframe() {
     setError(null);
     
     try {
-      const result = await EnhancedWireframeGenerator.applyFeedback(wireframeData, feedback);
+      const result = await unifiedWireframeService.applyFeedback(wireframeData, feedback);
       
       if (!result.success || !result.wireframe) {
         throw new Error(result.message || 'Failed to apply feedback');
