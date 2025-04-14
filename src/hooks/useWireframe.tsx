@@ -14,6 +14,8 @@ export interface UseWireframeOptions {
   autoSave?: boolean;
   toastNotifications?: boolean;
   validationLevel?: 'basic' | 'standard' | 'advanced';
+  enhancedValidation?: boolean;
+  onWireframeGenerated?: (result: WireframeGenerationResult) => void;
 }
 
 export function useWireframe(options: UseWireframeOptions = {}) {
@@ -21,7 +23,9 @@ export function useWireframe(options: UseWireframeOptions = {}) {
     projectId = uuidv4(),
     autoSave = false,
     toastNotifications = true,
-    validationLevel = 'standard'
+    validationLevel = 'standard',
+    enhancedValidation = false,
+    onWireframeGenerated
   } = options;
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -90,6 +94,11 @@ export function useWireframe(options: UseWireframeOptions = {}) {
       setCurrentWireframe(result.wireframe);
       setGenerationResult(result);
       showNotification(result.message);
+      
+      // Call the callback if provided
+      if (onWireframeGenerated) {
+        onWireframeGenerated(result);
+      }
 
       return result;
     } catch (err) {
@@ -108,7 +117,7 @@ export function useWireframe(options: UseWireframeOptions = {}) {
     } finally {
       setIsGenerating(false);
     }
-  }, [projectId, validationLevel, showNotification]);
+  }, [projectId, validationLevel, showNotification, onWireframeGenerated]);
 
   const saveWireframe = useCallback(async () => {
     if (!currentWireframe) {

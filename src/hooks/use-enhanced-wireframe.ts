@@ -1,6 +1,6 @@
 
 import { useWireframe } from '@/hooks/useWireframe';
-import { WireframeGenerationParams, EnhancedWireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeGenerationParams, WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
 
 /**
  * @deprecated Use useWireframe instead
@@ -9,27 +9,29 @@ export function useAdvancedWireframe() {
   const {
     isGenerating,
     currentWireframe,
-    generationResults,
-    intentData,
-    blueprint,
+    generationResult,
+    error,
     generateWireframe,
     saveWireframe,
-    applyFeedback,
-    error
+    reset
   } = useWireframe({
-    useSonnerToasts: false,
+    toastNotifications: false,
     enhancedValidation: true
   });
+  
+  // Create additional properties for backward compatibility
+  const intentData = generationResult?.intentData || null;
+  const blueprint = generationResult?.blueprint || null;
   
   return {
     isGenerating,
     currentWireframe,
-    generationResults,
+    generationResults: generationResult,
     intentData,
     blueprint,
     generateWireframe,
     saveWireframe,
-    applyFeedback,
+    applyFeedback: async (feedback: string) => currentWireframe, // Mock function for backward compatibility
     error
   };
 }

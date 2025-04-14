@@ -25,7 +25,7 @@ const WireframeEditorDemo: React.FC = () => {
     reset
   } = useWireframe({
     projectId,
-    useSonnerToasts: true
+    toastNotifications: true
   });
   
   return (
@@ -46,7 +46,7 @@ const WireframeEditorDemo: React.FC = () => {
             <Button 
               variant="default" 
               size="sm"
-              onClick={() => currentWireframe && saveWireframe('Updated wireframe')}
+              onClick={() => currentWireframe && saveWireframe()}
               disabled={!currentWireframe}
             >
               <Save className="h-4 w-4 mr-1" />
