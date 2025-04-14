@@ -7,6 +7,11 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn().mockReturnThis(),
     insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null })
+    },
+    delete: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockResolvedValue({ data: null, error: null }),
   }
 }));
 
@@ -26,7 +31,9 @@ describe('ClientErrorLogger', () => {
       window.removeEventListener = vi.fn();
       
       // Mock setInterval to return a number (similar to real implementation)
-      vi.spyOn(global, 'setInterval').mockImplementation(() => 123);
+      // Use "as any" to bypass the type checking since we know in the test environment
+      // this is acceptable for mocking purposes
+      vi.spyOn(global, 'setInterval').mockImplementation(() => 123 as any);
       vi.spyOn(global, 'clearInterval').mockImplementation(() => {});
     }
     
