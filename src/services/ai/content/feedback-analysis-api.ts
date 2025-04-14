@@ -1,94 +1,67 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  FeedbackAnalysisRecord, 
-  FeedbackAnalysisResult, 
-  FeedbackStatus,
-  FeedbackComment,
-  PastAnalysisResult,
-  AnalysisFilters
-} from "./feedback-types";
-import { FeedbackDatabase } from './api/feedback-database';
-import { FeedbackComments } from './api/feedback-comments';
-import { FeedbackApiClient } from './api/feedback-api-client';
+import { supabase } from '@/integrations/supabase/client';
+import { getFeedbackStats, submitFeedback } from './api/feedback-database';
 
-// Define interface for the FeedbackAnalysisAPI
-interface IFeedbackAnalysisAPI {
-  analyzeFeedback: (feedbackText: string) => Promise<FeedbackAnalysisResult>;
-  storeFeedbackAnalysis: (record: FeedbackAnalysisRecord) => Promise<string | null>;
-  getPastAnalyses: (limit?: number, filters?: AnalysisFilters) => Promise<PastAnalysisResult[]>;
-  updateFeedbackStatus: (id: string, status: FeedbackStatus) => Promise<boolean>;
-  updateFeedbackPriority: (id: string, priority: 'high' | 'medium' | 'low') => Promise<boolean>;
-  addComment: (feedbackId: string, comment: string) => Promise<string | null>;
-  getComments: (feedbackId: string) => Promise<FeedbackComment[]>;
+// Interface for feedback analysis results
+export interface FeedbackAnalysis {
+  sentiment: 'positive' | 'neutral' | 'negative';
+  score: number;
+  key_themes: string[];
+  improvement_areas?: string[];
+  strengths?: string[];
 }
 
-/**
- * API service for feedback analysis operations
- */
-export const FeedbackAnalysisAPI: IFeedbackAnalysisAPI = {
+export class FeedbackAnalysisAPI {
   /**
-   * Analyze feedback text and return insights
+   * Analyze feedback from a specific content piece
    */
-  analyzeFeedback: async (feedbackText: string): Promise<FeedbackAnalysisResult> => {
+  static async analyzeFeedback(contentId: string): Promise<FeedbackAnalysis | null> {
     try {
-      return await FeedbackApiClient.callAnalyzeFeedbackFunction(feedbackText);
-    } catch (error: any) {
-      throw new Error(`Feedback analysis failed: ${error.message}`);
+      const stats = await getFeedbackStats(contentId);
+      
+      if (!stats || stats.total_ratings === 0) {
+        return null;
+      }
+      
+      // Call RPC function for AI analysis if available
+      const { data, error } = await supabase.rpc('analyze_content_feedback', { 
+        p_content_id: contentId 
+      });
+      
+      if (error) {
+        console.error('Error analyzing feedback:', error);
+        // Provide fallback analysis based on simple statistics
+        return this.generateFallbackAnalysis(stats);
+      }
+      
+      return data as FeedbackAnalysis;
+    } catch (error) {
+      console.error('Error in feedback analysis:', error);
+      return null;
     }
-  },
-
-  /**
-   * Store feedback analysis in the database
-   */
-  storeFeedbackAnalysis: async (record: FeedbackAnalysisRecord): Promise<string | null> => {
-    return FeedbackDatabase.storeFeedbackAnalysis(record);
-  },
-
-  /**
-   * Get past feedback analyses
-   */
-  getPastAnalyses: async (
-    limit: number = 10,
-    filters?: AnalysisFilters
-  ): Promise<PastAnalysisResult[]> => {
-    return FeedbackDatabase.getPastAnalyses(limit, filters);
-  },
-
-  /**
-   * Update feedback status
-   */
-  updateFeedbackStatus: async (
-    id: string, 
-    status: FeedbackStatus
-  ): Promise<boolean> => {
-    return FeedbackDatabase.updateFeedbackStatus(id, status);
-  },
-
-  /**
-   * Update feedback priority
-   */
-  updateFeedbackPriority: async (
-    id: string, 
-    priority: 'high' | 'medium' | 'low'
-  ): Promise<boolean> => {
-    return FeedbackDatabase.updateFeedbackPriority(id, priority);
-  },
-
-  /**
-   * Add a comment to feedback
-   */
-  addComment: async (
-    feedbackId: string, 
-    comment: string
-  ): Promise<string | null> => {
-    return FeedbackComments.addComment(feedbackId, comment);
-  },
-
-  /**
-   * Get comments for feedback
-   */
-  getComments: async (feedbackId: string): Promise<FeedbackComment[]> => {
-    return FeedbackComments.getComments(feedbackId);
   }
-};
+  
+  /**
+   * Generate a basic analysis from stats when AI analysis fails
+   */
+  private static generateFallbackAnalysis(stats: any): FeedbackAnalysis {
+    const averageRating = stats.average_rating || 0;
+    let sentiment: 'positive' | 'neutral' | 'negative';
+    
+    if (averageRating >= 4) {
+      sentiment = 'positive';
+    } else if (averageRating >= 2.5) {
+      sentiment = 'neutral';
+    } else {
+      sentiment = 'negative';
+    }
+    
+    return {
+      sentiment,
+      score: averageRating,
+      key_themes: ['User Experience', 'Content Quality'],
+      improvement_areas: averageRating < 4 ? ['Consider reviewing content quality'] : undefined,
+      strengths: averageRating >= 4 ? ['Well-received by users'] : undefined
+    };
+  }
+}

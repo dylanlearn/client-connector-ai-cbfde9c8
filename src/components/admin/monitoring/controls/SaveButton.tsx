@@ -1,32 +1,22 @@
 
-import { Button } from "@/components/ui/button";
-import { Loader2, Save } from "lucide-react";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Save } from 'lucide-react';
 
 interface SaveButtonProps {
-  onSave: () => void;
   isSaving: boolean;
+  onSave: () => void;
 }
 
-export function SaveButton({ onSave, isSaving }: SaveButtonProps) {
+export function SaveButton({ isSaving, onSave }: SaveButtonProps) {
   return (
-    <div className="flex justify-end mt-6">
-      <Button 
-        onClick={onSave} 
-        disabled={isSaving}
-        className="flex items-center gap-2"
-      >
-        {isSaving ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Saving...
-          </>
-        ) : (
-          <>
-            <Save className="h-4 w-4" />
-            Save Configurations
-          </>
-        )}
-      </Button>
-    </div>
+    <Button 
+      disabled={isSaving}
+      onClick={onSave}
+      className="w-full sm:w-auto"
+    >
+      <Save className="h-4 w-4 mr-2" />
+      {isSaving ? 'Saving...' : 'Save Changes'}
+    </Button>
   );
 }

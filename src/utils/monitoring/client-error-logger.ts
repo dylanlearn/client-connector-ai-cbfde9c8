@@ -1,165 +1,106 @@
 
+import { supabase } from '@/integrations/supabase/client';
+
 /**
- * Utility for logging and tracking client errors
+ * Client Error Logger class for tracking and reporting client-side errors
  */
 export class ClientErrorLogger {
   private static isInitialized = false;
-  private static errors: Array<{
-    message: string;
-    componentName: string;
-    timestamp: Date;
-    userId?: string;
-    stack?: string;
-    metadata?: Record<string, any>;
-  }> = [];
   
   /**
-   * Initialize error logging
+   * Initialize the error logger with global handlers
    */
-  static initialize(): void {
-    if (this.isInitialized) return;
+  public static initialize() {
+    if (this.isInitialized) {
+      return;
+    }
     
-    // Set up global error handlers
-    window.addEventListener('error', this.handleGlobalError);
-    window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
-    
-    console.log('Client error logger initialized');
-    this.isInitialized = true;
-  }
-  
-  /**
-   * Clean up event listeners
-   */
-  static cleanup(): void {
-    window.removeEventListener('error', this.handleGlobalError);
-    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
-    this.isInitialized = false;
-  }
-  
-  /**
-   * Handle global error events
-   */
-  private static handleGlobalError = (event: ErrorEvent): void => {
-    this.logError(
-      event.error || new Error(event.message),
-      'GlobalErrorHandler',
-      undefined,
-      { 
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno
-      }
-    );
-  };
-  
-  /**
-   * Handle unhandled promise rejections
-   */
-  private static handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
-    const error = event.reason instanceof Error 
-      ? event.reason 
-      : new Error(String(event.reason));
+    // Set up window error handler
+    if (typeof window !== 'undefined') {
+      window.onerror = (message, source, lineno, colno, error) => {
+        this.logClientError({
+          error_message: message as string,
+          error_stack: error?.stack,
+          url: source,
+          browser_info: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        });
+        
+        // Don't prevent default handling
+        return false;
+      };
       
-    this.logError(
-      error,
-      'UnhandledPromiseRejection'
-    );
-  };
-  
-  /**
-   * Log an error with additional context
-   */
-  static logError(
-    error: Error | string,
-    componentName: string,
-    userId?: string,
-    metadata?: Record<string, any>
-  ): void {
-    const errorMessage = typeof error === 'string' ? error : error.message;
-    const errorStack = typeof error === 'string' ? undefined : error.stack;
-    
-    // Add to local collection
-    this.errors.push({
-      message: errorMessage,
-      componentName,
-      timestamp: new Date(),
-      userId,
-      stack: errorStack,
-      metadata
-    });
-    
-    // Log to console
-    console.error(`[${componentName}] ${errorMessage}`);
-    if (errorStack) {
-      console.error(errorStack);
-    }
-    
-    // In a real implementation, this would send to an API endpoint
-  }
-
-  /**
-   * Log authentication errors specifically
-   */
-  static logAuthError(
-    message: string,
-    userId?: string,
-    context?: Record<string, any>
-  ): void {
-    this.logError(
-      message,
-      'AuthenticationSystem',
-      userId,
-      { errorType: 'auth', context }
-    );
-  }
-  
-  /**
-   * Get all logged errors
-   */
-  static getErrors(): Array<{
-    message: string;
-    componentName: string;
-    timestamp: Date;
-    userId?: string;
-  }> {
-    return this.errors.map(({ message, componentName, timestamp, userId }) => ({
-      message,
-      componentName,
-      timestamp,
-      userId
-    }));
-  }
-  
-  /**
-   * Clear all logged errors
-   */
-  static clearErrors(): void {
-    this.errors = [];
-  }
-}
-
-/**
- * Helper function to log client errors with optional toast notification
- */
-export function logClientError(
-  error: Error | string,
-  componentName: string,
-  userId?: string,
-  showToast: boolean = false,
-  metadata?: Record<string, any>
-): void {
-  // Log the error using the ClientErrorLogger
-  ClientErrorLogger.logError(error, componentName, userId, metadata);
-  
-  // Show a toast notification if requested
-  if (showToast) {
-    try {
-      const toast = require('sonner').toast;
-      toast.error("An error occurred", {
-        description: "Our team has been notified"
+      // Set up unhandled promise rejection handler
+      window.addEventListener('unhandledrejection', (event) => {
+        this.logClientError({
+          error_message: `Unhandled Promise Rejection: ${event.reason}`,
+          error_stack: event.reason?.stack,
+          browser_info: navigator.userAgent,
+          timestamp: new Date().toISOString()
+        });
       });
-    } catch (e) {
-      console.error("Failed to show toast notification:", e);
+    }
+    
+    this.isInitialized = true;
+    console.log('ClientErrorLogger initialized');
+  }
+  
+  /**
+   * Log a client error to the backend
+   */
+  public static async logClientError(errorData: {
+    error_message: string;
+    component_name?: string;
+    error_stack?: string;
+    url?: string;
+    user_id?: string;
+    browser_info?: string;
+    metadata?: Record<string, any>;
+    timestamp?: string;
+  }) {
+    try {
+      // Log to console first
+      console.error('[Client Error]:', errorData.error_message, errorData);
+
+      // Send to backend
+      const { error } = await supabase
+        .from('client_errors')
+        .insert({
+          ...errorData,
+          timestamp: errorData.timestamp || new Date().toISOString()
+        });
+        
+      if (error) {
+        console.error('Failed to log client error to backend:', error);
+      }
+    } catch (err) {
+      // Fallback logging
+      console.error('Error in error logging:', err);
     }
   }
+  
+  /**
+   * Log authentication-related errors
+   */
+  public static async logAuthError(errorData: {
+    error_message: string;
+    auth_action: string;
+    error_code?: string;
+    user_email?: string;
+    metadata?: Record<string, any>;
+  }) {
+    return this.logClientError({
+      error_message: `Auth error (${errorData.auth_action}): ${errorData.error_message}`,
+      component_name: 'Authentication',
+      metadata: {
+        auth_action: errorData.auth_action,
+        error_code: errorData.error_code,
+        user_email: errorData.user_email,
+        ...errorData.metadata
+      }
+    });
+  }
 }
+
+export const logClientError = ClientErrorLogger.logClientError;
+export const logAuthError = ClientErrorLogger.logAuthError;
