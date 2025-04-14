@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { 
   createErrorHandler, 
@@ -8,7 +7,7 @@ import {
   withAsyncErrorHandling,
   parseError
 } from '../error-handling';
-import { ClientErrorLogger } from '../monitoring/client-error-logger';
+import { logError } from '../monitoring/client-error-logger';
 import { toast } from 'sonner';
 
 // Mock dependencies
@@ -19,9 +18,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('../monitoring/client-error-logger', () => ({
-  ClientErrorLogger: {
-    logError: vi.fn()
-  }
+  logError: vi.fn()
 }));
 
 describe('Error handling utilities', () => {
@@ -36,7 +33,7 @@ describe('Error handling utilities', () => {
       
       handler(error);
       
-      expect(ClientErrorLogger.logError).toHaveBeenCalledWith(
+      expect(logError).toHaveBeenCalledWith(
         error,
         'TestComponent',
         'user123'
@@ -55,13 +52,13 @@ describe('Error handling utilities', () => {
       
       handler('string error');
       
-      expect(ClientErrorLogger.logError).toHaveBeenCalledWith(
+      expect(logError).toHaveBeenCalledWith(
         expect.any(Error),
         'TestComponent',
         undefined
       );
       
-      const loggedError = (ClientErrorLogger.logError as any).mock.calls[0][0];
+      const loggedError = (logError as any).mock.calls[0][0];
       expect(loggedError.message).toBe('string error');
     });
   });
@@ -98,10 +95,10 @@ describe('Error handling utilities', () => {
       const wrapped = withErrorHandling(fn, 'TestComponent');
       
       expect(wrapped('world')).toBe('Hello, world');
-      expect(ClientErrorLogger.logError).not.toHaveBeenCalled();
+      expect(logError).not.toHaveBeenCalled();
       
       expect(wrapped('error')).toBeUndefined();
-      expect(ClientErrorLogger.logError).toHaveBeenCalledTimes(1);
+      expect(logError).toHaveBeenCalledTimes(1);
     });
   });
   
@@ -137,10 +134,10 @@ describe('Error handling utilities', () => {
       const wrapped = withAsyncErrorHandling(fn, 'TestComponent');
       
       expect(await wrapped('world')).toBe('Hello, world');
-      expect(ClientErrorLogger.logError).not.toHaveBeenCalled();
+      expect(logError).not.toHaveBeenCalled();
       
       expect(await wrapped('error')).toBeUndefined();
-      expect(ClientErrorLogger.logError).toHaveBeenCalledTimes(1);
+      expect(logError).toHaveBeenCalledTimes(1);
     });
   });
   

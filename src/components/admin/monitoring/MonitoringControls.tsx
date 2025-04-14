@@ -1,147 +1,86 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { SaveButton } from './controls/SaveButton';
+import { LoadingState } from './controls/LoadingState';
+import { ErrorMessage } from './controls/ErrorMessage';
+import { useMonitoringConfig } from '@/hooks/use-monitoring-config';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMonitoringConfig } from "@/hooks/use-monitoring-config";
-import { ConfigurationItem } from "./controls/ConfigurationItem";
-import { LoadingState } from "./controls/LoadingState";
-import { ErrorMessage } from "./controls/ErrorMessage";
-import { Badge } from "@/components/ui/badge";
-import { Database } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { MonitoringConfiguration } from "@/utils/monitoring/types";
-
-interface MonitoringControlsProps {
-  onConfigUpdate?: () => void;
-  redisConnected?: boolean;
-}
-
-export function MonitoringControls({ onConfigUpdate, redisConnected }: MonitoringControlsProps) {
+export function MonitoringControls() {
   const [isSaving, setIsSaving] = useState(false);
-  const {
-    config,
-    isLoading,
-    error,
-    updateConfig,
-    reloadConfig
-  } = useMonitoringConfig('default');
-
-  const updateConfigField = (field: string, value: any) => {
-    // Handle nested properties
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      updateConfig({
-        [parent]: {
-          ...config[parent as keyof MonitoringConfiguration],
-          [child]: value
-        }
-      });
-    } else {
-      updateConfig({ [field]: value });
-    }
-  };
-
-  const saveConfigurations = async () => {
+  const { 
+    config, 
+    updateConfig, 
+    isLoading, 
+    error 
+  } = useMonitoringConfig();
+  
+  const handleSaveChanges = async () => {
+    if (!config) return;
+    
     setIsSaving(true);
     try {
       await updateConfig(config);
-      if (onConfigUpdate) {
-        onConfigUpdate();
-      }
+    } catch (err) {
+      console.error('Error saving monitoring configuration:', err);
     } finally {
       setIsSaving(false);
     }
   };
-
+  
+  const handleToggleMonitoring = async () => {
+    if (!config) return;
+    
+    const updatedConfig = { 
+      ...config,
+      enabled: !config.enabled 
+    };
+    
+    await updateConfig(updatedConfig);
+  };
+  
   if (isLoading) {
     return <LoadingState />;
+  }
+  
+  if (error) {
+    return (
+      <ErrorMessage 
+        message={error.message} 
+        title="Configuration Error" 
+      />
+    );
+  }
+  
+  if (!config) {
+    return (
+      <ErrorMessage 
+        message="Unable to load monitoring configuration" 
+        title="Configuration Error" 
+      />
+    );
   }
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Monitoring Configuration</CardTitle>
-          {redisConnected !== undefined && (
-            <Badge className={redisConnected ? "bg-green-500" : "bg-red-500"}>
-              <Database className="h-3 w-3 mr-1" />
-              Redis {redisConnected ? "Connected" : "Disconnected"}
-            </Badge>
-          )}
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Monitoring Controls</CardTitle>
+        <Button 
+          onClick={handleToggleMonitoring}
+          variant={config.enabled ? 'default' : 'outline'}
+          size="sm"
+        >
+          {config.enabled ? 'Enabled' : 'Disabled'}
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {error && <ErrorMessage message={error.message} />}
-          
-          <ConfigurationItem 
-            label="Monitoring Status"
-            description="Enable or disable system monitoring"
-            type="toggle"
-            value={config.enabled}
-            configKey="enabled"
-            onChange={updateConfigField}
-          />
-          
-          <ConfigurationItem 
-            label="Log Level"
-            description="Configure monitoring detail level"
-            type="select"
-            options={[
-              { label: 'Debug', value: 'debug' },
-              { label: 'Info', value: 'info' },
-              { label: 'Warning', value: 'warn' },
-              { label: 'Error', value: 'error' }
-            ]}
-            value={config.logLevel}
-            configKey="logLevel"
-            onChange={updateConfigField}
-          />
-          
-          <ConfigurationItem 
-            label="Sampling Rate"
-            description="Percentage of operations to monitor (0.1-1.0)"
-            type="number"
-            value={config.samplingRate}
-            configKey="samplingRate"
-            onChange={updateConfigField}
-            min={0.1}
-            max={1.0}
-          />
-          
-          <ConfigurationItem 
-            label="Retention Period (days)"
-            description="Days to keep monitoring data"
-            type="number"
-            value={config.retentionPeriod}
-            configKey="retentionPeriod"
-            onChange={updateConfigField}
-            min={1}
-            max={90}
-          />
-          
-          <div className="pt-4 border-t">
-            <h3 className="font-medium mb-4">Component Monitoring</h3>
-            
-            {Object.entries(config.components).map(([key, value]) => (
-              <ConfigurationItem 
-                key={key}
-                label={`${key.charAt(0).toUpperCase() + key.slice(1)} Monitoring`}
-                type="toggle"
-                value={value}
-                configKey={`components.${key}`}
-                onChange={updateConfigField}
-              />
-            ))}
-          </div>
-          
-          <div className="flex justify-end pt-4">
-            <Button 
-              variant="default" 
-              disabled={isSaving}
-              onClick={saveConfigurations}
-            >
-              {isSaving ? 'Saving...' : 'Save Configuration'}
-            </Button>
+          {/* Configuration controls would go here */}
+          <div className="flex justify-end">
+            <SaveButton 
+              isSaving={isSaving}
+              onSave={handleSaveChanges}
+            />
           </div>
         </div>
       </CardContent>

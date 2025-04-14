@@ -1,98 +1,121 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ConfigurationItem } from '../controls/ConfigurationItem';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { SaveButton } from '../controls/SaveButton';
+import { LoadingState } from '../controls/LoadingState';
+import { ErrorMessage } from '../controls/ErrorMessage';
 import { MonitoringConfiguration } from '@/utils/monitoring/types';
 
 interface ConfigurationPanelProps {
-  config: MonitoringConfiguration;
-  updateConfig: (newConfig: Partial<MonitoringConfiguration>) => Promise<boolean>;
+  config?: MonitoringConfiguration;
+  updateConfig?: (config: Partial<MonitoringConfiguration>) => Promise<boolean>;
 }
 
 export function ConfigurationPanel({ config, updateConfig }: ConfigurationPanelProps) {
-  const handleConfigChange = (key: string, value: any) => {
-    // Handle nested properties like components.api
-    if (key.includes('.')) {
-      const [parent, child] = key.split('.');
-      updateConfig({
-        [parent]: {
-          ...config[parent as keyof MonitoringConfiguration],
-          [child]: value
-        }
-      });
-    } else {
-      updateConfig({ [key]: value });
+  const [localConfig, setLocalConfig] = useState<MonitoringConfiguration | null>(config || null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const handleSaveChanges = async () => {
+    if (!localConfig || !updateConfig) return;
+    
+    setIsSaving(true);
+    try {
+      await updateConfig(localConfig);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to save configuration'));
+    } finally {
+      setIsSaving(false);
     }
   };
+  
+  const handleToggleSetting = (key: keyof MonitoringConfiguration) => {
+    if (!localConfig) return;
+    
+    setLocalConfig({
+      ...localConfig,
+      [key]: !localConfig[key]
+    });
+  };
+  
+  const handleUpdateSamplingRate = (value: string) => {
+    if (!localConfig) return;
+    
+    const rate = parseFloat(value);
+    if (isNaN(rate) || rate < 0 || rate > 1) return;
+    
+    setLocalConfig({
+      ...localConfig,
+      samplingRate: rate
+    });
+  };
+
+  if (!localConfig) {
+    return <LoadingState />;
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>System Configuration</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <ConfigurationItem
-          label="Monitoring Status"
-          description="Enable or disable the monitoring system"
-          type="toggle"
-          value={config.enabled}
-          configKey="enabled"
-          onChange={handleConfigChange}
-        />
-        
-        <ConfigurationItem
-          label="Log Level"
-          description="Set the log verbosity level"
-          type="select"
-          options={[
-            { label: 'Debug', value: 'debug' },
-            { label: 'Info', value: 'info' },
-            { label: 'Warning', value: 'warn' },
-            { label: 'Error', value: 'error' }
-          ]}
-          value={config.logLevel}
-          configKey="logLevel"
-          onChange={handleConfigChange}
-        />
-        
-        <ConfigurationItem
-          label="Sampling Rate"
-          description="Percentage of operations to monitor (0.1-1.0)"
-          type="number"
-          value={config.samplingRate}
-          configKey="samplingRate"
-          onChange={handleConfigChange}
-          min={0.1}
-          max={1.0}
-        />
-        
-        <ConfigurationItem
-          label="Data Retention (days)"
-          description="Number of days to retain monitoring data"
-          type="number"
-          value={config.retentionPeriod}
-          configKey="retentionPeriod"
-          onChange={handleConfigChange}
-          min={1}
-          max={365}
-        />
-        
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-lg font-medium mb-4">Component Monitoring</h3>
-          
-          {Object.entries(config.components).map(([component, enabled]) => (
-            <ConfigurationItem
-              key={component}
-              label={`${component.charAt(0).toUpperCase() + component.slice(1)} Monitoring`}
-              description={`Enable monitoring for ${component} components`}
-              type="toggle"
-              value={enabled}
-              configKey={`components.${component}`}
-              onChange={handleConfigChange}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>System Monitoring Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <ErrorMessage 
+              message={error.message} 
+              title="Configuration Error" 
+              className="mb-4"
             />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          )}
+          
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="monitoring-enabled" className="font-medium">Enable Monitoring</Label>
+                <p className="text-sm text-muted-foreground">
+                  Collect and analyze system performance and error data
+                </p>
+              </div>
+              <Switch 
+                id="monitoring-enabled"
+                checked={localConfig.enabled}
+                onCheckedChange={() => handleToggleSetting('enabled')}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="sampling-rate" className="font-medium">Sampling Rate</Label>
+                <p className="text-sm text-muted-foreground">
+                  Percentage of requests to monitor (0.1 = 10%)
+                </p>
+              </div>
+              <Input
+                id="sampling-rate"
+                type="number"
+                value={localConfig.samplingRate}
+                onChange={(e) => handleUpdateSamplingRate(e.target.value)}
+                min="0"
+                max="1"
+                step="0.1"
+                className="w-24"
+              />
+            </div>
+            
+            <div className="pt-4 flex justify-end">
+              <SaveButton 
+                isSaving={isSaving}
+                onSave={handleSaveChanges}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

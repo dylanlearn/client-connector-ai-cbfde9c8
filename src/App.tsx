@@ -25,7 +25,9 @@ function App() {
     
     // Clean up on unmount
     return () => {
-      ClientErrorLogger.cleanup();
+      if (typeof ClientErrorLogger.cleanup === 'function') {
+        ClientErrorLogger.cleanup();
+      }
     };
   }, []);
 

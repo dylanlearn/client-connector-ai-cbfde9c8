@@ -1,6 +1,6 @@
 
 import { toast } from 'sonner';
-import { ClientErrorLogger } from './monitoring/client-error-logger';
+import { logError } from './monitoring/client-error-logger';
 
 /**
  * Error handling utility functions
@@ -18,7 +18,7 @@ export function createErrorHandler(componentName: string, userId?: string) {
     const errorObject = error instanceof Error ? error : new Error(String(error));
     
     // Log the error
-    ClientErrorLogger.logError(errorObject, componentName, userId);
+    logError(errorObject, componentName, userId);
     
     // Show toast notification
     toast.error("An error occurred", {

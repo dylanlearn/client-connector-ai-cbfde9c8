@@ -4,7 +4,7 @@ import { AlertMessage } from "@/components/ui/alert-message";
 import { Button } from "@/components/ui/button";
 import { recordClientError } from "@/utils/monitoring/api-usage";
 import { toast } from "sonner";
-import { ClientErrorLogger } from "@/utils/monitoring/client-error-logger";
+import { logError } from "@/utils/monitoring/client-error-logger";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -51,7 +51,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     ).catch(console.error);
     
     // Also log to our client error logger
-    ClientErrorLogger.logError(error, componentName);
+    logError(error, componentName);
     
     console.error("Uncaught error:", error, errorInfo);
     
@@ -136,7 +136,7 @@ function useErrorHandler(componentName?: string) {
     console.error(`Error in ${componentName || 'component'}:`, error);
     
     // Log to client error logger
-    ClientErrorLogger.logError(
+    logError(
       error, 
       componentName || 'UnknownComponent', 
       undefined, 

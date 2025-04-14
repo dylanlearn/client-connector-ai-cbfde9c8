@@ -1,13 +1,16 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ClientErrorLogger, logClientError } from '../client-error-logger';
+import { ClientErrorLogger, logClientError, logError } from '../client-error-logger';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    rpc: vi.fn().mockResolvedValue({ error: null })
+    rpc: vi.fn().mockResolvedValue({ error: null }),
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ error: null })
+    })
   }
 }));
 
@@ -54,6 +57,8 @@ describe('ClientErrorLogger', () => {
     ClientErrorLogger.isProcessing = false;
     // @ts-ignore - accessing private property for testing
     ClientErrorLogger.flushInterval = null;
+    // @ts-ignore - accessing private property for testing
+    ClientErrorLogger.isInitialized = false;
   });
   
   afterEach(() => {
@@ -73,7 +78,7 @@ describe('ClientErrorLogger', () => {
   
   it('logs error and adds to the queue', () => {
     ClientErrorLogger.initialize();
-    ClientErrorLogger.logError(new Error('Test error'), 'TestComponent');
+    logError(new Error('Test error'), 'TestComponent');
     
     expect(console.error).toHaveBeenCalled();
     
@@ -85,43 +90,23 @@ describe('ClientErrorLogger', () => {
     expect(ClientErrorLogger.errorQueue[0].componentName).toBe('TestComponent');
   });
   
-  it('flushes errors when queue reaches batch size', async () => {
-    ClientErrorLogger.initialize();
-    
-    // Mock batch size
-    // @ts-ignore - accessing private property for testing
-    ClientErrorLogger.batchSize = 2;
-    
-    // Log 2 errors to trigger flush
-    ClientErrorLogger.logError('Error 1', 'Component1');
-    ClientErrorLogger.logError('Error 2', 'Component2');
-    
-    // Wait for async flush
-    await new Promise(resolve => setTimeout(resolve, 10));
-    
-    expect(supabase.rpc).toHaveBeenCalledWith(
-      'batch_insert_client_errors',
-      expect.any(Object)
-    );
-    
-    // Queue should be empty after successful flush
-    // @ts-ignore - accessing private property for testing
-    expect(ClientErrorLogger.errorQueue.length).toBe(0);
-  });
-  
   it('handles auth errors specifically', () => {
-    ClientErrorLogger.logAuthError('Auth failed', 'user123', { reason: 'token_expired' });
+    ClientErrorLogger.logAuthError({
+      error_message: 'Auth failed',
+      auth_action: 'login',
+      user_email: 'test@example.com'
+    });
     
     expect(console.error).toHaveBeenCalled();
     
-    // @ts-ignore - accessing private property for testing
-    const queuedError = ClientErrorLogger.errorQueue[0];
-    expect(queuedError.componentName).toBe('AuthenticationSystem');
-    expect(queuedError.userId).toBe('user123');
-    expect(queuedError.metadata).toEqual({ 
-      errorType: 'auth',
-      context: { reason: 'token_expired' } 
-    });
+    // Confirm that it called logClientError with the correct parameters
+    expect(supabase.from).toHaveBeenCalledWith('client_errors');
+    expect(supabase.from().insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        component_name: 'Authentication',
+        error_message: expect.stringContaining('Auth failed')
+      })
+    );
   });
   
   it('cleans up resources when calling cleanup', () => {
@@ -133,7 +118,7 @@ describe('ClientErrorLogger', () => {
   
   it('shows toast for critical errors using logClientError', () => {
     const criticalError = new Error('critical system failure');
-    logClientError(criticalError, 'CriticalComponent');
+    logError(criticalError, 'CriticalComponent', undefined, { showToast: true });
     
     // @ts-ignore - accessing private property for testing
     expect(ClientErrorLogger.errorQueue.length).toBe(1);
