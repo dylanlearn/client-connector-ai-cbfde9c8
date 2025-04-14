@@ -24,7 +24,8 @@ const StudioContent = ({
     showAISuggestions,
     selectedSection,
     wireframeData,
-    updateWireframe
+    updateWireframe,
+    toggleAISuggestions
   } = useWireframeStudio();
 
   const handleWireframeUpdate = (updatedWireframe: any) => {
@@ -53,6 +54,7 @@ const StudioContent = ({
           wireframe={wireframeData}
           focusedSectionId={selectedSection}
           onApplySuggestion={handleWireframeUpdate}
+          onClose={toggleAISuggestions}
         />
       )}
     </div>
@@ -75,4 +77,3 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
 };
 
 export default EnhancedWireframeStudio;
-

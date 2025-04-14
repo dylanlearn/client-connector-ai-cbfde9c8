@@ -5,12 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import WireframeCanvasFabric from '../WireframeCanvasFabric';
 import WireframeVisualizer from '../WireframeVisualizer';
 import { useSectionInteractions } from '@/hooks/wireframe/use-section-interactions';
+import { DeviceType, ViewMode } from '@/components/wireframe/types';
 
 interface StudioCanvasProps {
   projectId: string;
   wireframeData: any;
-  deviceType: string;
-  viewMode: string;
+  deviceType: DeviceType;
+  viewMode: ViewMode;
   selectedSection: string | null;
   onUpdate: (wireframe: any) => void;
 }
@@ -62,4 +63,3 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
 };
 
 export default StudioCanvas;
-
