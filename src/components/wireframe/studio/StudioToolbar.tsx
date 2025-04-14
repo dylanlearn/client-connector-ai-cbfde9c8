@@ -3,39 +3,37 @@ import React from 'react';
 import DeviceControls from './DeviceControls';
 import ViewModeControls from './ViewModeControls';
 import ActionControls from './ActionControls';
-import { DeviceType, ViewMode } from '../types';
+import { useWireframeStudio } from '@/contexts/WireframeStudioContext';
 
 interface StudioToolbarProps {
-  deviceType: DeviceType;
-  viewMode: ViewMode;
-  onDeviceChange: (device: DeviceType) => void;
-  onViewModeChange: (mode: ViewMode) => void;
-  onAISuggestionsToggle: () => void;
   onExport: (format: string) => void;
 }
 
 const StudioToolbar: React.FC<StudioToolbarProps> = ({
-  deviceType,
-  viewMode,
-  onDeviceChange,
-  onViewModeChange,
-  onAISuggestionsToggle,
   onExport
 }) => {
+  const { 
+    deviceType, 
+    viewMode, 
+    setDeviceType, 
+    setViewMode, 
+    toggleAISuggestions 
+  } = useWireframeStudio();
+
   return (
     <div className="toolbar flex justify-between items-center mb-4">
       <DeviceControls 
         deviceType={deviceType} 
-        onDeviceChange={onDeviceChange} 
+        onDeviceChange={setDeviceType} 
       />
       
       <ViewModeControls 
         viewMode={viewMode} 
-        onViewModeChange={onViewModeChange} 
+        onViewModeChange={setViewMode} 
       />
       
       <ActionControls 
-        onAISuggestionsToggle={onAISuggestionsToggle} 
+        onAISuggestionsToggle={toggleAISuggestions} 
         onExport={onExport} 
       />
     </div>
@@ -43,3 +41,4 @@ const StudioToolbar: React.FC<StudioToolbarProps> = ({
 };
 
 export default StudioToolbar;
+

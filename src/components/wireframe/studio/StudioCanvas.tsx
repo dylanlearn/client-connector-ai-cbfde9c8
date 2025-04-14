@@ -4,16 +4,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import WireframeCanvasFabric from '../WireframeCanvasFabric';
 import WireframeVisualizer from '../WireframeVisualizer';
-import { DeviceType, ViewMode } from '../types';
+import { useSectionInteractions } from '@/hooks/wireframe/use-section-interactions';
 
 interface StudioCanvasProps {
   projectId: string;
   wireframeData: any;
-  deviceType: DeviceType;
-  viewMode: ViewMode;
+  deviceType: string;
+  viewMode: string;
   selectedSection: string | null;
   onUpdate: (wireframe: any) => void;
-  onSectionClick: (sectionId: string) => void;
 }
 
 const StudioCanvas: React.FC<StudioCanvasProps> = ({
@@ -21,10 +20,10 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
   wireframeData,
   deviceType,
   viewMode,
-  selectedSection,
-  onUpdate,
-  onSectionClick
+  onUpdate
 }) => {
+  const { selectedSection, handleSectionClick } = useSectionInteractions();
+
   return (
     <Tabs defaultValue="canvas" className="w-full">
       <TabsList className="mb-4">
@@ -52,7 +51,7 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
               wireframe={wireframeData}
               deviceType={deviceType}
               viewMode={viewMode}
-              onSectionClick={onSectionClick}
+              onSectionClick={handleSectionClick}
               selectedSectionId={selectedSection}
             />
           </CardContent>
@@ -63,3 +62,4 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
 };
 
 export default StudioCanvas;
+
