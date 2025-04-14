@@ -7,7 +7,7 @@ import {
   WireframeData
 } from '@/services/ai/wireframe/wireframe-types';
 import { createWireframeDataFromParams } from '@/services/ai/wireframe/wireframe-service-types';
-import { advancedWireframeService } from '@/services/ai/wireframe/advanced-wireframe-service';
+import { unifiedWireframeService } from '@/services/ai/wireframe/unified-wireframe-service';
 import { v4 as uuidv4 } from 'uuid';
 import { WireframeValidator } from '@/services/ai/wireframe/enhanced-wireframe-validator';
 import { useErrorHandler } from '@/hooks/use-error-handler';
@@ -51,7 +51,7 @@ export function useWireframeGenerator(
         console.log('Generating wireframe with params:', JSON.stringify(enhancedParams, null, 2));
 
         // Call the service to generate the wireframe
-        const result = await advancedWireframeService.generateWireframe(enhancedParams);
+        const result = await unifiedWireframeService.generateWireframe(enhancedParams);
 
         if (result.success && result.wireframe) {
           // Validate the generated wireframe
@@ -113,7 +113,7 @@ export function useWireframeGenerator(
           console.log('Generating creative variation with style changes:', styleChanges);
 
           // Generate the variation
-          const result = await advancedWireframeService.generateWireframe({
+          const result = await unifiedWireframeService.generateWireframe({
             description: `Variation of ${baseWireframe.title}: ${styleChanges}`,
             baseWireframe: baseWireframe,
             styleChanges,
@@ -156,4 +156,3 @@ export function useWireframeGenerator(
     generateCreativeVariation,
   };
 }
-

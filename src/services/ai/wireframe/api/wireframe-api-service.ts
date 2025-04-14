@@ -1,8 +1,7 @@
 
 import { 
-  generateWireframe as serviceGenerateWireframe,
-  generateWireframeVariationWithStyle
-} from '../wireframe-service';
+  unifiedWireframeService
+} from '../unified-wireframe-service';
 import { WireframeData, WireframeGenerationParams, WireframeGenerationResult } from '../wireframe-types';
 
 /**
@@ -16,7 +15,7 @@ export const wireframeApiService = {
     try {
       // This would normally call an API endpoint
       // For now, we'll use our local service
-      return serviceGenerateWireframe(params);
+      return unifiedWireframeService.generateWireframe(params);
     } catch (error) {
       console.error('API error generating wireframe:', error);
       return {
