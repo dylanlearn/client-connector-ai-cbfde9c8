@@ -8,7 +8,11 @@ export enum AIFeatureType {
   CodeGeneration = 'code_generation',
   DataAnalytics = 'data_analytics',
   WireframeGeneration = 'wireframe_generation',
-  Conversation = 'conversation'
+  Conversation = 'conversation',
+  // Add missing types required by other services
+  Summarization = 'summarization',
+  ContentGeneration = 'content_generation',
+  DesignRecommendation = 'design_recommendation'
 }
 
 /**
@@ -28,6 +32,12 @@ export function selectModelForFeature(featureType: AIFeatureType): string {
     case AIFeatureType.WireframeGeneration:
       return 'gpt-4o';
     case AIFeatureType.Conversation:
+      return 'gpt-4o';
+    case AIFeatureType.Summarization:
+      return 'gpt-4o';
+    case AIFeatureType.ContentGeneration:
+      return 'gpt-4o';
+    case AIFeatureType.DesignRecommendation:
       return 'gpt-4o';
     default:
       return 'gpt-4o'; // Default to GPT-4o for most tasks
@@ -63,7 +73,31 @@ export function getTemperatureForFeature(featureType: AIFeatureType): number {
       return 0.7; // Higher for creative outputs
     case AIFeatureType.Conversation:
       return 0.8; // Higher for conversational variety
+    case AIFeatureType.Summarization:
+      return 0.4; // Medium-low for consistent summaries
+    case AIFeatureType.ContentGeneration:
+      return 0.7; // Higher for creative content
+    case AIFeatureType.DesignRecommendation:
+      return 0.6; // Medium-high for design creativity with some consistency
     default:
       return 0.7; // Default temperature
   }
 }
+
+/**
+ * Options for pattern recognition in AI analysis
+ */
+export interface PatternRecognitionOptions {
+  sensitivity: number;
+  minSampleSize: number;
+  confidenceThreshold: number;
+  considerOutliers: boolean;
+}
+
+// Default pattern recognition settings
+export const defaultPatternRecognitionOptions: PatternRecognitionOptions = {
+  sensitivity: 0.7,
+  minSampleSize: 3,
+  confidenceThreshold: 0.65,
+  considerOutliers: false
+};

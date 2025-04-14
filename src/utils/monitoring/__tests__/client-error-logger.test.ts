@@ -1,5 +1,6 @@
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ClientErrorLogger, logClientError } from '../../monitoring/client-error-logger';
+import { ClientErrorLogger, logClientError } from '../client-error-logger';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 

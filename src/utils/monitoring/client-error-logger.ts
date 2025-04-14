@@ -96,6 +96,22 @@ export class ClientErrorLogger {
     
     // In a real implementation, this would send to an API endpoint
   }
+
+  /**
+   * Log authentication errors specifically
+   */
+  static logAuthError(
+    message: string,
+    userId?: string,
+    context?: Record<string, any>
+  ): void {
+    this.logError(
+      message,
+      'AuthenticationSystem',
+      userId,
+      { errorType: 'auth', context }
+    );
+  }
   
   /**
    * Get all logged errors
@@ -119,5 +135,31 @@ export class ClientErrorLogger {
    */
   static clearErrors(): void {
     this.errors = [];
+  }
+}
+
+/**
+ * Helper function to log client errors with optional toast notification
+ */
+export function logClientError(
+  error: Error | string,
+  componentName: string,
+  userId?: string,
+  showToast: boolean = false,
+  metadata?: Record<string, any>
+): void {
+  // Log the error using the ClientErrorLogger
+  ClientErrorLogger.logError(error, componentName, userId, metadata);
+  
+  // Show a toast notification if requested
+  if (showToast) {
+    try {
+      const toast = require('sonner').toast;
+      toast.error("An error occurred", {
+        description: "Our team has been notified"
+      });
+    } catch (e) {
+      console.error("Failed to show toast notification:", e);
+    }
   }
 }

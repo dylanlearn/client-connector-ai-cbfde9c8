@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShieldCheck, Activity, Database, Settings, LogOut, User, FileText } from "lucide-react";
-import { logClientError } from "@/utils/monitoring/client-error-logger";
+import { ClientErrorLogger } from "@/utils/monitoring/client-error-logger";
 import { useAdminStatus } from "@/hooks/use-admin-status"; // Switch to useAdminStatus hook
 
 export const UserMenu = () => {
@@ -23,13 +23,12 @@ export const UserMenu = () => {
       navigate("/login");
     } catch (error) {
       console.error("Error signing out:", error);
-      // Fix type error by passing the right parameters
-      logClientError(
+      // Use ClientErrorLogger directly since logClientError might not be properly imported
+      ClientErrorLogger.logError(
         error instanceof Error ? error : new Error("Sign out error"), 
         "UserMenu", 
         user?.id,
-        true, // showToast
-        { errorDetails: error }
+        { errorDetails: error, showToast: true }
       );
     }
   };
