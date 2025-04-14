@@ -7,8 +7,9 @@ import { LoadingState } from './controls/LoadingState';
 import { ErrorMessage } from './controls/ErrorMessage';
 import { useMonitoringConfig } from '@/hooks/use-monitoring-config';
 import { ConfigurationItem } from './controls/ConfigurationItem';
+import { MonitoringControlsProps } from './controls/MonitoringControls.props';
 
-export function MonitoringControls() {
+export function MonitoringControls(props: MonitoringControlsProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { 
     config, 
@@ -23,6 +24,9 @@ export function MonitoringControls() {
     setIsSaving(true);
     try {
       await updateConfig(config);
+      if (props.onConfigUpdate) {
+        await props.onConfigUpdate();
+      }
     } catch (err) {
       console.error('Error saving monitoring configuration:', err);
     } finally {
@@ -57,7 +61,7 @@ export function MonitoringControls() {
   if (error) {
     return (
       <ErrorMessage 
-        message={error.message} 
+        message={error.message || "Unknown error"} 
         title="Configuration Error" 
       />
     );

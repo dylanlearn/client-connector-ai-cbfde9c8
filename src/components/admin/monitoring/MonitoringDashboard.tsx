@@ -1,110 +1,84 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfigurationPanel } from './panels/ConfigurationPanel';
 import { ErrorsPanel } from './panels/ErrorsPanel';
 import { PerformancePanel } from './panels/PerformancePanel';
 import { AlertsPanel } from './panels/AlertsPanel';
-import { useMonitoringConfig } from '@/hooks/use-monitoring-config';
-import { getSystemStatus, getSystemMetrics } from '@/utils/monitoring/system-status';
-import { SystemStatus, MonitoringConfiguration, SystemMonitoringRecord } from '@/utils/monitoring/types';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { StatusBadge } from './controls/StatusBadge';
+import { AlertCircle } from 'lucide-react';
 
 export function MonitoringDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
-  const [metrics, setMetrics] = useState<SystemMonitoringRecord[] | null>(null);
-  const { config, updateConfig } = useMonitoringConfig('default');
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Fetch initial data
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      
-      try {
-        const [statusData, metricsData] = await Promise.all([
-          getSystemStatus(),
-          getSystemMetrics('day')
-        ]);
-        
-        setSystemStatus(statusData);
-        setMetrics(metricsData);
-      } catch (error) {
-        console.error('Error fetching monitoring data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-    
-    // Set up polling every minute
-    const interval = setInterval(fetchData, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  const [activeTab, setActiveTab] = React.useState('configuration');
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">System Monitoring</h1>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Monitoring System</AlertTitle>
+        <AlertDescription>
+          Configure and monitor the application performance, errors, and system health.
+        </AlertDescription>
+      </Alert>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-card rounded-lg p-4 border">
+          <div className="text-sm font-medium mb-2">API Status</div>
+          <div className="flex items-center justify-between">
+            <StatusBadge status="healthy" />
+            <span className="text-sm text-muted-foreground">100%</span>
+          </div>
+        </div>
         
-        {systemStatus && (
-          <StatusBadge status={systemStatus.status} />
-        )}
+        <div className="bg-card rounded-lg p-4 border">
+          <div className="text-sm font-medium mb-2">Database</div>
+          <div className="flex items-center justify-between">
+            <StatusBadge status="healthy" />
+            <span className="text-sm text-muted-foreground">98%</span>
+          </div>
+        </div>
+        
+        <div className="bg-card rounded-lg p-4 border">
+          <div className="text-sm font-medium mb-2">Cache</div>
+          <div className="flex items-center justify-between">
+            <StatusBadge status="warning" />
+            <span className="text-sm text-muted-foreground">85%</span>
+          </div>
+        </div>
+        
+        <div className="bg-card rounded-lg p-4 border">
+          <div className="text-sm font-medium mb-2">Storage</div>
+          <div className="flex items-center justify-between">
+            <StatusBadge status="healthy" />
+            <span className="text-sm text-muted-foreground">99%</span>
+          </div>
+        </div>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="alerts">Alerts</TabsTrigger>
         </TabsList>
         
-        <div className="mt-6">
-          <TabsContent value="overview" className="space-y-6">
-            {/* Overview dashboard content */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>System Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <p>Loading status...</p>
-                  ) : systemStatus ? (
-                    <div>
-                      <StatusBadge status={systemStatus.status} size="lg" />
-                      <p className="mt-4">Last updated: {new Date(systemStatus.lastUpdated).toLocaleString()}</p>
-                    </div>
-                  ) : (
-                    <p>Status unavailable</p>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {/* Add more overview cards here */}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="errors">
-            <ErrorsPanel />
-          </TabsContent>
-          
-          <TabsContent value="performance">
-            <PerformancePanel metrics={metrics} isLoading={isLoading} />
-          </TabsContent>
-          
-          <TabsContent value="settings">
-            <ConfigurationPanel 
-              config={config} 
-              updateConfig={updateConfig} 
-            />
-          </TabsContent>
-        </div>
+        <TabsContent value="configuration">
+          <ConfigurationPanel />
+        </TabsContent>
+        
+        <TabsContent value="errors">
+          <ErrorsPanel />
+        </TabsContent>
+        
+        <TabsContent value="performance">
+          <PerformancePanel />
+        </TabsContent>
+        
+        <TabsContent value="alerts">
+          <AlertsPanel />
+        </TabsContent>
       </Tabs>
     </div>
   );

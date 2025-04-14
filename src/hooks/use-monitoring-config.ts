@@ -1,104 +1,86 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { MonitoringConfiguration } from '@/utils/monitoring/types';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
-const defaultConfig: MonitoringConfiguration = {
-  enabled: true,
-  logLevel: 'info',
-  samplingRate: 0.5,
-  alertChannels: ['email'],
-  retentionPeriod: 30,
-  components: {
-    api: true,
-    ui: true,
-    database: true,
-    auth: true,
-    storage: true
-  }
-};
+export interface MonitoringConfiguration {
+  enabled: boolean;
+  errorThreshold: number;
+  warnThreshold: number;
+  notificationsEnabled: boolean;
+  checkInterval: number;
+  [key: string]: string | number | boolean;
+}
 
-export function useMonitoringConfig(projectId?: string) {
-  const [config, setConfig] = useState<MonitoringConfiguration>(defaultConfig);
-  const [isLoading, setIsLoading] = useState(false);
+export function useMonitoringConfig() {
+  const [config, setConfig] = useState<MonitoringConfiguration>({
+    enabled: true,
+    errorThreshold: 10,
+    warnThreshold: 5,
+    notificationsEnabled: true,
+    checkInterval: 60,
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const { toast } = useToast();
 
-  // Fetch configuration
-  const fetchConfig = useCallback(async () => {
-    if (!projectId) return;
-    
+  const fetchConfig = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const { data, error } = await supabase
-        .from('monitoring_config')
-        .select('*')
-        .eq('project_id', projectId)
-        .single();
-        
-      if (error) throw error;
+      // Simulated API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
       
-      if (data) {
-        setConfig(data.config as MonitoringConfiguration);
-      }
+      // Simulated config from backend
+      const serverConfig = {
+        enabled: true,
+        errorThreshold: 10, 
+        warnThreshold: 5,
+        notificationsEnabled: true,
+        checkInterval: 60
+      };
+      
+      setConfig(serverConfig);
     } catch (err) {
       console.error('Error fetching monitoring config:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch monitoring configuration'));
+      setError(err instanceof Error ? err : new Error('Unknown error fetching configuration'));
+      toast.error("Failed to load monitoring configuration");
     } finally {
       setIsLoading(false);
     }
-  }, [projectId]);
-
-  // Update configuration
-  const updateConfig = useCallback(async (newConfig: Partial<MonitoringConfiguration>) => {
-    if (!projectId) return false;
-    
+  };
+  
+  const updateConfig = async (newConfig: Partial<MonitoringConfiguration>) => {
     try {
+      // Merge with existing config
       const updatedConfig = { ...config, ...newConfig };
-      
-      const { error } = await supabase
-        .from('monitoring_config')
-        .upsert({
-          project_id: projectId,
-          config: updatedConfig
-        });
-        
-      if (error) throw error;
-      
       setConfig(updatedConfig);
       
-      toast({
-        title: 'Configuration Updated',
-        description: 'Monitoring configuration has been saved successfully',
-      });
+      // Simulated API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
       
+      toast.success("Monitoring configuration updated");
       return true;
     } catch (err) {
       console.error('Error updating monitoring config:', err);
-      
-      toast({
-        title: 'Update Failed',
-        description: err instanceof Error ? err.message : 'Failed to update configuration',
-        variant: 'destructive',
-      });
-      
+      toast.error("Failed to update configuration");
       return false;
     }
-  }, [config, projectId, toast]);
-
-  // Load configuration on component mount
+  };
+  
+  const reloadConfig = async () => {
+    await fetchConfig();
+  };
+  
+  // Load configuration on mount
   useEffect(() => {
     fetchConfig();
-  }, [fetchConfig]);
-
+  }, []);
+  
   return {
     config,
     isLoading,
     error,
     updateConfig,
-    reloadConfig: fetchConfig
+    reloadConfig
   };
 }

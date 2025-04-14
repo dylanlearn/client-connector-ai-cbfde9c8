@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,6 +172,7 @@ export default function AuditAndMonitoring() {
           <TabsContent value="config" className="mt-0">
             <MonitoringControls 
               redisConnected={redisStatus.connected} 
+              onConfigUpdate={runSupabaseAudit}
             />
           </TabsContent>
         </Tabs>

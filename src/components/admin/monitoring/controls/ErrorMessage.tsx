@@ -1,20 +1,22 @@
 
 import React from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { XCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface ErrorMessageProps {
-  message: string;
   title?: string;
+  message: string;
   className?: string;
 }
 
-export function ErrorMessage({ message, title = 'Error', className }: ErrorMessageProps) {
+export function ErrorMessage({ title = "Error", message, className }: ErrorMessageProps) {
   return (
     <Alert variant="destructive" className={className}>
-      <XCircle className="h-4 w-4" />
+      <AlertCircle className="h-4 w-4" />
       <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>{message}</AlertDescription>
+      <AlertDescription>
+        {message}
+      </AlertDescription>
     </Alert>
   );
 }

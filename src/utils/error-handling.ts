@@ -1,6 +1,6 @@
-
 import { toast } from 'sonner';
 import { logError } from './monitoring/client-error-logger';
+import { recordClientError } from './monitoring/api-usage';
 
 /**
  * Error handling utility functions
