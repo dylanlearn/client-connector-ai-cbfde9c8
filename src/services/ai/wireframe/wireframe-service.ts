@@ -31,7 +31,13 @@ export async function generateWireframe(params: WireframeGenerationParams): Prom
       title: `Wireframe: ${normalizedParams.description.substring(0, 30)}...`,
       description: normalizedParams.description,
       sections: generateMockSections(normalizedParams.description),
-      colorScheme: normalizedParams.colorScheme || {
+      colorScheme: normalizedParams.colorScheme ? {
+        primary: normalizedParams.colorScheme.primary || '#3182ce',
+        secondary: normalizedParams.colorScheme.secondary || '#805ad5',
+        accent: normalizedParams.colorScheme.accent || '#ed8936',
+        background: normalizedParams.colorScheme.background || '#ffffff',
+        text: normalizedParams.colorScheme.text || '#1a202c'
+      } : {
         primary: '#3182ce',
         secondary: '#805ad5',
         accent: '#ed8936',

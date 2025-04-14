@@ -22,6 +22,7 @@ export interface WireframeAISuggestionsProps {
 export interface WireframeCanvasFabricProps {
   projectId: string;
   wireframeData: any;
+  initialData?: any; // Added to match usage in EnhancedWireframeStudio
   onUpdate?: (updatedWireframe: any) => void;
   readOnly?: boolean;
 }
@@ -30,4 +31,6 @@ export interface ErrorWithDetails {
   message: string;
   details?: Record<string, any>;
   originalError?: unknown;
+  // Add toString method to allow ErrorWithDetails to be used as ReactNode
+  toString?: () => string;
 }

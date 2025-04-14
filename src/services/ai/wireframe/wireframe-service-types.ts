@@ -72,3 +72,26 @@ export interface ServiceResponse<T> {
   warnings?: string[];
   metadata?: Record<string, any>;
 }
+
+// Add a function to create wireframe data from params
+export function createWireframeDataFromParams(params: WireframeGenerationParams): WireframeData {
+  const { v4: uuidv4 } = require('uuid');
+  
+  return {
+    id: params.projectId ? `${params.projectId}-${uuidv4()}` : uuidv4(),
+    title: params.description ? `Wireframe: ${params.description.substring(0, 30)}...` : 'New Wireframe',
+    description: params.description || '',
+    sections: [],
+    colorScheme: {
+      primary: params.colorScheme?.primary || '#3182ce',
+      secondary: params.colorScheme?.secondary || '#805ad5',
+      accent: params.colorScheme?.accent || '#ed8936',
+      background: params.colorScheme?.background || '#ffffff',
+      text: params.colorScheme?.text || '#1a202c'
+    },
+    typography: {
+      headings: 'Inter',
+      body: 'Inter'
+    }
+  };
+}
