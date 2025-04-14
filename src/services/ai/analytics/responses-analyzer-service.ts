@@ -79,7 +79,7 @@ export const AIResponsesAnalyzerService = {
           clarity: parsedData.clarity,
           suggestionCount: parsedData.suggestionCount,
           keyInsights: parsedData.keyInsights || [],
-          contradictions: parsedData.contradictions
+          contradictions: parsedData.contradictions || [] // Adding optional chaining to handle missing contradictions
         };
       } catch (parseError) {
         console.error("Failed to parse AI response as JSON:", parseError);
@@ -87,13 +87,14 @@ export const AIResponsesAnalyzerService = {
         // Return a basic structure if parsing fails
         return {
           keyInsights: ["Error analyzing responses"],
-          contradictions: ["Could not identify contradictions"]
+          contradictions: [] // Return empty array for contradictions
         };
       }
     } catch (error) {
       console.error("Error in AIAnalyzerService:", error);
       return {
-        keyInsights: ["Error analyzing responses"]
+        keyInsights: ["Error analyzing responses"],
+        contradictions: [] // Return empty array for contradictions
       };
     }
   }

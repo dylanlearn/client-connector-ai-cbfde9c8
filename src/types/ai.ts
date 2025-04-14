@@ -34,6 +34,7 @@ export interface AIAnalysis {
   clarity?: number;
   keyInsights?: string[];
   suggestionCount?: number;
+  contradictions?: string[]; // Add the contradictions property
 }
 
 export interface DesignRecommendation {

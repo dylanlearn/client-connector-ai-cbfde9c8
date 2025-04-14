@@ -1,7 +1,7 @@
 
 import React, { useState, useContext, ReactNode } from 'react';
 import { AIContext } from './AIContext';
-import { AIMessage, AIAnalysis, DesignRecommendation, AIMemoryContext } from '@/types/ai';
+import { AIMessage, AIAnalysis, DesignRecommendation, AIMemoryContext, AIMemoryItem, AIGlobalInsight } from '@/types/ai';
 import { v4 as uuidv4 } from 'uuid';
 
 // Basic AI context provider implementation
