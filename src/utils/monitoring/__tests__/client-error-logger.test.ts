@@ -30,10 +30,10 @@ describe('ClientErrorLogger', () => {
       window.addEventListener = vi.fn();
       window.removeEventListener = vi.fn();
       
-      // Mock setInterval to return a number (similar to real implementation)
-      // Use "as any" to bypass the type checking since we know in the test environment
-      // this is acceptable for mocking purposes
-      vi.spyOn(global, 'setInterval').mockImplementation(() => 123 as any);
+      // Use NodeJS.Timeout type for proper type checking
+      vi.spyOn(global, 'setInterval').mockImplementation(() => {
+        return setTimeout(() => {}, 0) as NodeJS.Timeout;
+      });
       vi.spyOn(global, 'clearInterval').mockImplementation(() => {});
     }
     
