@@ -1,216 +1,126 @@
 
-import { supabase } from '@/integrations/supabase/client';
-
-interface ErrorLogData {
-  error_message: string;
-  component_name?: string;
-  error_stack?: string;
-  browser_info?: string;
-  url?: string;
-  user_id?: string;
-  session_id?: string;
-  timestamp?: string;
-  metadata?: Record<string, any>;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { ClientError } from "./types";
+import { toast } from "sonner";
 
 /**
- * Utility for logging client-side errors to the database
+ * Utility for logging client-side errors
  */
-export class ClientErrorLogger {
-  private static initialized: boolean = false;
-  private static errorQueue: ErrorLogData[] = [];
-  private static flushInterval: number | null = null;
-  
+export const ClientErrorLogger = {
   /**
-   * Initialize the error logger
+   * Log an error to the server and optionally display a toast
    */
-  static initialize(): void {
-    if (this.initialized) return;
-    
-    console.info("ClientErrorLogger initialized");
-    
-    // Setup error event listeners
-    if (typeof window !== 'undefined') {
-      window.addEventListener('error', this.handleWindowError);
-      window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
-      
-      // Set up interval to flush errors
-      this.flushInterval = window.setInterval(this.flushErrorQueue, 30000);
-    }
-    
-    this.initialized = true;
-  }
-  
-  /**
-   * Clean up event listeners
-   */
-  static cleanup(): void {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('error', this.handleWindowError);
-      window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
-      
-      if (this.flushInterval !== null) {
-        window.clearInterval(this.flushInterval);
-        this.flushInterval = null;
-      }
-    }
-    
-    this.initialized = false;
-    console.info("ClientErrorLogger cleanup complete");
-  }
-  
-  /**
-   * Log an error
-   */
-  static logError(
+  logError: async (
     error: Error | string,
     componentName?: string,
-    userId?: string,
+    showToast: boolean = false,
     metadata?: Record<string, any>
-  ): void {
+  ): Promise<boolean> {
+    const errorMessage = error instanceof Error ? error.message : error;
+    const stackTrace = error instanceof Error ? error.stack : undefined;
+    
     try {
-      const errorMessage = error instanceof Error ? error.message : error;
-      const errorStack = error instanceof Error ? error.stack : undefined;
+      // Get browser information
+      const browser = navigator.userAgent;
       
-      this.logErrorToQueue(
-        errorMessage,
-        errorStack,
+      // Create error object
+      const clientError: Omit<ClientError, 'id'> = {
+        message: errorMessage,
+        stackTrace,
         componentName,
-        userId,
-        metadata
-      );
-    } catch (err) {
-      console.error('Error in ClientErrorLogger.logError:', err);
-    }
-  }
-  
-  /**
-   * Handle window error events
-   */
-  private static handleWindowError = (event: ErrorEvent): void => {
-    if (!event.error) return;
-    
-    this.logErrorToQueue(
-      event.error.message || 'Unknown Error',
-      event.error.stack,
-      'Window',
-      undefined,
-      { type: 'window', filename: event.filename, lineno: event.lineno, colno: event.colno }
-    );
-  }
-  
-  /**
-   * Handle unhandled promise rejections
-   */
-  private static handleUnhandledRejection = (event: PromiseRejectionEvent): void => {
-    const error = event.reason;
-    
-    this.logErrorToQueue(
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined,
-      'Promise',
-      undefined,
-      { type: 'unhandledRejection' }
-    );
-  }
-  
-  /**
-   * Log an error to the database
-   */
-  private static logErrorToQueue(
-    errorMessage: string,
-    errorStack?: string,
-    componentName?: string,
-    userId?: string,
-    metadata?: Record<string, any>
-  ): void {
-    try {
-      const errorData: ErrorLogData = {
-        error_message: errorMessage,
-        component_name: componentName,
-        error_stack: errorStack,
-        browser_info: this.getBrowserInfo(),
-        url: typeof window !== 'undefined' ? window.location.href : undefined,
-        user_id: userId,
-        session_id: this.getSessionId(),
+        browser,
         timestamp: new Date().toISOString(),
+        resolved: false,
         metadata
       };
       
-      // Add to queue for batch processing
-      this.errorQueue.push(errorData);
-      
-      // If queue is getting large, flush immediately
-      if (this.errorQueue.length >= 10) {
-        this.flushErrorQueue();
+      // Try to get user ID if logged in
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          clientError.userId = data.user.id;
+        }
+      } catch (authError) {
+        console.error('Error getting user:', authError);
       }
-    } catch (err) {
-      console.error('Error in ClientErrorLogger.logErrorToQueue:', err);
-    }
-  }
-  
-  /**
-   * Flush the error queue to the database
-   */
-  private static flushErrorQueue = async (): Promise<void> => {
-    if (this.errorQueue.length === 0) return;
-    
-    const errors = [...this.errorQueue];
-    this.errorQueue = [];
-    
-    try {
-      // Insert errors in batches
-      const { error } = await supabase
+      
+      // Log to console
+      console.error('Client error:', {
+        message: errorMessage,
+        component: componentName,
+        stack: stackTrace
+      });
+      
+      // Send error to server
+      const { error: supabaseError } = await supabase
         .from('client_errors')
-        .insert(errors);
-        
-      if (error) {
-        console.error('Error logging client errors to database:', error);
-        
-        // Re-queue errors on failure
-        this.errorQueue = [...errors, ...this.errorQueue];
-      }
-    } catch (err) {
-      console.error('Error in ClientErrorLogger.flushErrorQueue:', err);
+        .insert(clientError);
       
-      // Re-queue errors on failure
-      this.errorQueue = [...errors, ...this.errorQueue];
+      if (supabaseError) {
+        console.error('Error logging client error to server:', supabaseError);
+        return false;
+      }
+      
+      if (showToast) {
+        toast.error('An error occurred', {
+          description: errorMessage.substring(0, 100) + (errorMessage.length > 100 ? '...' : '')
+        });
+      }
+      
+      return true;
+    } catch (loggingError) {
+      console.error('Error in logError:', loggingError);
+      return false;
     }
-  }
+  },
   
   /**
-   * Get browser information
+   * Clear stored errors (primarily for testing)
    */
-  private static getBrowserInfo(): string {
-    if (typeof window === 'undefined') return 'Server';
-    
-    const { userAgent } = window.navigator;
-    return userAgent;
-  }
-  
-  /**
-   * Get or create a session ID
-   */
-  private static getSessionId(): string {
-    if (typeof window === 'undefined') return '';
-    
-    let sessionId = sessionStorage.getItem('error_session_id');
-    
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      sessionStorage.setItem('error_session_id', sessionId);
+  cleanup: async (): Promise<void> => {
+    try {
+      // In a real system, you'd want to limit this to test environments
+      if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+        await supabase.from('client_errors').delete().neq('id', '0');
+      }
+    } catch (error) {
+      console.error('Error cleaning up error logs:', error);
     }
-    
-    return sessionId;
   }
-}
+};
 
-// Helper function to simplify logging errors
-export function logError(
-  error: Error | string,
+/**
+ * Utility function for recording client errors from API/components
+ */
+export async function recordClientError(
+  message: string,
+  stackTrace?: string,
   componentName?: string,
-  userId?: string, 
+  userId?: string,
   metadata?: Record<string, any>
-): void {
-  ClientErrorLogger.logError(error, componentName, userId, metadata);
+): Promise<boolean> {
+  try {
+    const clientError: Omit<ClientError, 'id'> = {
+      message,
+      stackTrace,
+      componentName,
+      userId,
+      timestamp: new Date().toISOString(),
+      browser: navigator.userAgent,
+      resolved: false,
+      metadata
+    };
+    
+    const { error } = await supabase.from('client_errors').insert(clientError);
+    
+    if (error) {
+      console.error('Error recording client error:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in recordClientError:', error);
+    return false;
+  }
 }

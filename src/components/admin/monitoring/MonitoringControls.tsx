@@ -9,7 +9,7 @@ import { useMonitoringConfig } from '@/hooks/use-monitoring-config';
 import { ConfigurationItem } from './controls/ConfigurationItem';
 import { MonitoringControlsProps } from './controls/MonitoringControls.props';
 
-export function MonitoringControls(props: MonitoringControlsProps) {
+export function MonitoringControls({ redisConnected, onConfigUpdate }: MonitoringControlsProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { 
     config, 
@@ -24,8 +24,8 @@ export function MonitoringControls(props: MonitoringControlsProps) {
     setIsSaving(true);
     try {
       await updateConfig(config);
-      if (props.onConfigUpdate) {
-        await props.onConfigUpdate();
+      if (onConfigUpdate) {
+        await onConfigUpdate();
       }
     } catch (err) {
       console.error('Error saving monitoring configuration:', err);
@@ -37,19 +37,15 @@ export function MonitoringControls(props: MonitoringControlsProps) {
   const handleToggleMonitoring = async () => {
     if (!config) return;
     
-    const updatedConfig = { 
-      ...config,
+    await updateConfig({
       enabled: !config.enabled 
-    };
-    
-    await updateConfig(updatedConfig);
+    });
   };
   
   const handleConfigChange = (field: string, value: any) => {
     if (!config) return;
     
     updateConfig({
-      ...config,
       [field]: value
     });
   };
@@ -91,12 +87,12 @@ export function MonitoringControls(props: MonitoringControlsProps) {
       <CardContent>
         <div className="space-y-6">
           {Object.entries(config)
-            .filter(([key]) => key !== 'enabled')
+            .filter(([key]) => key !== 'enabled' && typeof config[key] !== 'object')
             .map(([key, value]) => (
               <ConfigurationItem
                 key={key}
                 label={key}
-                value={value}
+                value={value as string | number | boolean}
                 configKey={key}
                 onChange={handleConfigChange}
                 type={typeof value === 'number' ? 'number' : 

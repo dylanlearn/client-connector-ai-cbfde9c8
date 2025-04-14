@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SystemStatus, SystemMonitoringRecord } from './types';
+import { SystemStatus, SystemMonitoringRecord, ComponentStatus } from './types';
 
 /**
  * Fetches the current system status
@@ -24,7 +24,7 @@ export async function getSystemStatus(): Promise<SystemStatus> {
     }
     
     return {
-      status: data.status || 'operational',
+      status: data.status || 'healthy',
       components: data.components || {},
       lastUpdated: data.updated_at || new Date().toISOString(),
       incidents: data.incidents || []
@@ -79,14 +79,29 @@ export async function getSystemMetrics(period: 'hour' | 'day' | 'week'): Promise
  */
 function getDefaultSystemStatus(): SystemStatus {
   return {
-    status: 'operational',
+    status: 'healthy',
     components: {
-      api: 'operational',
-      database: 'operational',
-      storage: 'operational',
-      auth: 'operational'
+      api: {
+        status: 'healthy',
+        metrics: { uptime: 99.9, responseTime: 250 },
+        lastUpdated: new Date().toISOString()
+      },
+      database: {
+        status: 'healthy',
+        metrics: { connections: 12, querySpeed: 45 },
+        lastUpdated: new Date().toISOString()
+      },
+      storage: {
+        status: 'healthy',
+        metrics: { usage: 45.2, availability: 99.99 },
+        lastUpdated: new Date().toISOString()
+      },
+      auth: {
+        status: 'healthy',
+        metrics: { activeUsers: 128, loginSuccess: 99.5 },
+        lastUpdated: new Date().toISOString()
+      }
     },
-    lastUpdated: new Date().toISOString(),
-    incidents: []
+    lastUpdated: new Date().toISOString()
   };
 }

@@ -1,12 +1,10 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { ClientError } from "./types";
+import { supabase } from '@/integrations/supabase/client';
+import { ClientError } from './types';
 
-/**
- * Fetch client errors with filtering
- */
+// Fetch client errors with filtering options
 export async function fetchClientErrors(
-  limit: number = 50, 
+  limit: number = 50,
   resolved?: boolean
 ): Promise<ClientError[]> {
   try {
@@ -15,7 +13,7 @@ export async function fetchClientErrors(
       .select('*')
       .order('timestamp', { ascending: false })
       .limit(limit);
-      
+    
     if (resolved !== undefined) {
       query = query.eq('resolved', resolved);
     }
@@ -27,16 +25,14 @@ export async function fetchClientErrors(
       return [];
     }
     
-    return data as ClientError[];
+    return data as ClientError[] || [];
   } catch (error) {
     console.error('Error in fetchClientErrors:', error);
     return [];
   }
 }
 
-/**
- * Mark a client error as resolved
- */
+// Resolve a client error
 export async function resolveClientError(
   errorId: string,
   resolutionNotes: string
@@ -49,7 +45,7 @@ export async function resolveClientError(
         resolution_notes: resolutionNotes
       })
       .eq('id', errorId);
-      
+    
     if (error) {
       console.error('Error resolving client error:', error);
       return false;
@@ -62,39 +58,58 @@ export async function resolveClientError(
   }
 }
 
-/**
- * Get error statistics
- */
-export async function getErrorStatistics() {
+// Get error statistics
+export async function getErrorStatistics(): Promise<{
+  total: number;
+  resolved: number;
+  unresolved: number;
+  byComponent: Record<string, number>;
+}> {
   try {
-    const { data: allErrors, error } = await supabase
+    // Get total errors count
+    const { count: totalCount, error: totalError } = await supabase
       .from('client_errors')
-      .select('id, resolved, component_name');
-      
-    if (error) {
-      throw error;
+      .select('*', { count: 'exact', head: true });
+    
+    // Get resolved errors count
+    const { count: resolvedCount, error: resolvedError } = await supabase
+      .from('client_errors')
+      .select('*', { count: 'exact', head: true })
+      .eq('resolved', true);
+    
+    // Get unique components
+    const { data: componentsData, error: componentsError } = await supabase
+      .from('client_errors')
+      .select('componentName')
+      .not('componentName', 'is', null);
+    
+    if (totalError || resolvedError || componentsError) {
+      console.error('Error getting error statistics');
+      return {
+        total: 0,
+        resolved: 0,
+        unresolved: 0,
+        byComponent: {}
+      };
     }
     
-    // Calculate basic statistics
-    const total = allErrors.length;
-    const resolved = allErrors.filter(e => e.resolved).length;
-    const unresolved = total - resolved;
-    
-    // Group by component
+    // Calculate component statistics
     const byComponent: Record<string, number> = {};
-    allErrors.forEach(error => {
-      const component = error.component_name || 'unknown';
-      byComponent[component] = (byComponent[component] || 0) + 1;
-    });
+    if (componentsData) {
+      componentsData.forEach(item => {
+        const component = item.componentName || 'unknown';
+        byComponent[component] = (byComponent[component] || 0) + 1;
+      });
+    }
     
     return {
-      total,
-      resolved,
-      unresolved,
+      total: totalCount || 0,
+      resolved: resolvedCount || 0,
+      unresolved: (totalCount || 0) - (resolvedCount || 0),
       byComponent
     };
   } catch (error) {
-    console.error('Error getting error statistics:', error);
+    console.error('Error in getErrorStatistics:', error);
     return {
       total: 0,
       resolved: 0,

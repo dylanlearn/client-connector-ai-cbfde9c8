@@ -8,7 +8,11 @@ export interface MonitoringConfiguration {
   warnThreshold: number;
   notificationsEnabled: boolean;
   checkInterval: number;
-  [key: string]: string | number | boolean;
+  // Add new fields with proper types
+  enabledComponents?: { [key: string]: boolean };
+  alertChannels?: string[];
+  // General catch-all for simple values
+  [key: string]: string | number | boolean | string[] | { [key: string]: boolean } | undefined;
 }
 
 export function useMonitoringConfig() {
@@ -18,6 +22,14 @@ export function useMonitoringConfig() {
     warnThreshold: 5,
     notificationsEnabled: true,
     checkInterval: 60,
+    alertChannels: ['email', 'slack', 'sms'],
+    enabledComponents: {
+      api: true,
+      ui: true,
+      database: true,
+      auth: true,
+      storage: true
+    }
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -36,7 +48,15 @@ export function useMonitoringConfig() {
         errorThreshold: 10, 
         warnThreshold: 5,
         notificationsEnabled: true,
-        checkInterval: 60
+        checkInterval: 60,
+        alertChannels: ['email', 'slack', 'sms'],
+        enabledComponents: {
+          api: true,
+          ui: true,
+          database: true,
+          auth: true,
+          storage: true
+        }
       };
       
       setConfig(serverConfig);

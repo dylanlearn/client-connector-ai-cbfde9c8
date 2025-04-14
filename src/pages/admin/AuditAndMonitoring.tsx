@@ -1,4 +1,5 @@
 
+// Fixing just the problematic part in AuditAndMonitoring.tsx
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
