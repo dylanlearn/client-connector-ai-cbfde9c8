@@ -1,218 +1,120 @@
 
-// Add more precise typing for generation results
-export interface WireframeGenerationResult {
-  wireframe: WireframeData | null;
-  success: boolean;
-  message: string;
-  errors?: string[];
-  intentData?: {
-    primary: string;
-    confidence: number;
-    primaryGoal?: string;
-    targetAudience?: string;
-  };
-  blueprint?: {
-    layout: string;
-    sections: string[];
-    layoutStrategy?: string;
-    colorTheory?: string;
-  };
-  warnings?: string[];
+import { v4 as uuidv4 } from 'uuid';
+
+export interface WireframeColorScheme {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
 }
 
-export interface WireframeGenerationParams {
-  description: string;
-  projectId?: string;
-  enhancedCreativity?: boolean;
-  validationLevel?: 'basic' | 'standard' | 'advanced';
-  colorScheme?: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    background: string;
-    text: string;
-    [key: string]: string;
-  };
-  typography?: {
-    headings: string;
-    body: string;
-    fontPairings?: string[];
-  };
-  creativityLevel?: number;
-  style?: string | object;
-  targetAudience?: string;
-  baseWireframe?: WireframeData;
-  industry?: string;
-  isVariation?: boolean;
-  styleChanges?: string;
-  customParams?: Record<string, any>;
-  feedbackMode?: boolean;
+export interface WireframeTypography {
+  headings: string;
+  body: string;
 }
 
-// Type for a wireframe component
 export interface WireframeComponent {
   id: string;
   type: string;
-  position?: { x: number; y: number };
-  size?: { width: number; height: number };
-  zIndex?: number;
-  rotation?: number;
-  opacity?: number;
-  locked?: boolean;
-  visible?: boolean;
+  name?: string;
   content?: string;
+  attributes?: Record<string, any>;
   children?: WireframeComponent[];
-  props?: Record<string, any>;
-  [key: string]: any;
 }
 
-// Type for a wireframe section
 export interface WireframeSection {
   id: string;
-  name?: string;
-  sectionType?: string;
-  description?: string;
-  components?: WireframeComponent[];
+  name: string;
+  sectionType: string;
+  description: string;
+  components: WireframeComponent[];
   layout?: {
-    type: string;
+    type?: string;
     direction?: string;
     alignment?: string;
-    justifyContent?: string;
-    columns?: number;
-    gap?: number;
-    wrap?: boolean;
-    [key: string]: any;
-  } | string;
-  position?: { x: number; y: number };
-  x?: number;
-  y?: number;
-  width?: number | string;
-  height?: number | string;
-  dimensions?: {
-    width: number | string;
-    height: number | string;
   };
-  backgroundColor?: string;
-  copySuggestions?: CopySuggestions;
-  gap?: number | string;
-  layoutScore?: number;
-  optimizationSuggestions?: any[];
-  patternMatch?: string | null;
-  [key: string]: any;
+  positionOrder?: number;
 }
 
-// Type for copy suggestions
-export interface CopySuggestions {
-  heading?: string;
-  subheading?: string;
-  ctaText?: string;
-  primaryCta?: string;
-  secondaryCta?: string;
-  supportText?: string;
-  supportCta?: string;
-  [key: string]: string | undefined;
-}
-
-// Type for wireframe data
 export interface WireframeData {
   id: string;
   title: string;
   description?: string;
   sections: WireframeSection[];
-  colorScheme: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    background: string;
-    text: string;
-    [key: string]: string;
-  };
-  typography: {
-    headings: string;
-    body: string;
-    fontPairings?: string[];
-  };
+  colorScheme: WireframeColorScheme;
+  typography: WireframeTypography;
+  projectId?: string;
+  lastUpdated?: string;
   layoutType?: string;
   designTokens?: Record<string, any>;
-  mobileConsiderations?: string;
-  accessibilityNotes?: string;
-  style?: string | object;
-  pages?: any[];
-  styleToken?: string;
-  darkMode?: boolean;
-  mobileLayouts?: any;
-  styleVariants?: any;
-  designReasoning?: any;
-  animations?: any;
-  imageUrl?: string;
-  metadata?: Record<string, any>;
-  _originalWireframeId?: string;
-  lastUpdated?: string;
-  projectId?: string;
-  [key: string]: any;
 }
 
-// Type for AIWireframe data
+export interface WireframeGenerationParams {
+  description?: string;
+  projectId?: string;
+  creativityLevel?: number;
+  colorScheme?: WireframeColorScheme;
+  typography?: WireframeTypography;
+  baseWireframe?: WireframeData;
+  styleChanges?: string;
+  isVariation?: boolean;
+  enhancedCreativity?: boolean;
+}
+
+export interface WireframeIntentData {
+  primary: string;
+  confidence: number;
+  primaryGoal: string;
+}
+
+export interface WireframeBlueprint {
+  layout: string;
+  sections: string[];
+  layoutStrategy: string;
+}
+
+export interface WireframeGenerationResult {
+  wireframe: WireframeData | null;
+  success: boolean;
+  message: string;
+  intentData?: WireframeIntentData | null;
+  blueprint?: WireframeBlueprint | null;
+  errors?: string[];
+}
+
+export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
+  intentData: WireframeIntentData;
+  blueprint: WireframeBlueprint;
+}
+
 export interface AIWireframe {
   id: string;
-  projectId: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
   wireframeData: WireframeData;
-  tags?: string[];
-  status?: 'draft' | 'published' | 'archived';
-  generationParams?: WireframeGenerationParams;
-  [key: string]: any;
+  generatedAt: string;
+  prompt: string;
 }
 
-// Type for EnhancedWireframeGenerationResult
-export interface EnhancedWireframeGenerationResult extends WireframeGenerationResult {
-  enhancedAnalytics?: {
-    sectionAnalysis: Record<string, any>;
-    conversionOptimizations: string[];
-    accessibilityScore: number;
-  };
-  designSystemIntegration?: Record<string, any>;
-}
-
-// Type guard for WireframeData
-export function isWireframeData(obj: unknown): obj is WireframeData {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'id' in obj &&
-    'title' in obj &&
-    'sections' in obj &&
-    Array.isArray((obj as WireframeData).sections) &&
-    'colorScheme' in obj &&
-    'typography' in obj
-  );
-}
-
-// Helper to normalize wireframe generation params
-export function normalizeWireframeGenerationParams(params: WireframeGenerationParams): WireframeGenerationParams {
+export function normalizeWireframeGenerationParams(
+  params: WireframeGenerationParams
+): WireframeGenerationParams {
   return {
-    description: params.description || '',
-    projectId: params.projectId || '',
-    enhancedCreativity: params.enhancedCreativity || false,
-    validationLevel: params.validationLevel || 'standard',
-    colorScheme: params.colorScheme || {
-      primary: '#3182ce',
-      secondary: '#805ad5',
-      accent: '#ed8936',
-      background: '#ffffff',
-      text: '#1a202c'
-    },
-    typography: params.typography || {
-      headings: 'Inter',
-      body: 'Inter'
-    },
+    ...params,
+    projectId: params.projectId || uuidv4(),
     creativityLevel: params.creativityLevel || 5,
-    style: params.style || 'modern',
-    targetAudience: params.targetAudience || '',
-    baseWireframe: params.baseWireframe,
-    industry: params.industry || '',
-    customParams: params.customParams || {}
+    description: params.description || ''
   };
+}
+
+export function isWireframeData(value: any): value is WireframeData {
+  return (
+    value &&
+    typeof value === 'object' &&
+    'id' in value &&
+    'title' in value &&
+    'sections' in value &&
+    Array.isArray(value.sections) &&
+    'colorScheme' in value &&
+    'typography' in value
+  );
 }
