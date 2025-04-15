@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import WireframeVisualizer from '../WireframeVisualizer';
 import { useSectionInteractions } from '@/hooks/wireframe/use-section-interactions';
 import { StudioCanvasProps } from '../types/studio-types';
 import { useErrorHandler } from '@/hooks/use-error-handler';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 const StudioCanvas: React.FC<StudioCanvasProps> = ({
   projectId,
@@ -21,7 +23,7 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
     try {
       onUpdate(updatedData);
     } catch (error) {
-      handleError(error, 'Error in canvas update');
+      handleError.handleError(error, 'Error in canvas update');
     }
   };
 

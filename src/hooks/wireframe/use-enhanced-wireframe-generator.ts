@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useErrorHandler } from '@/hooks/use-error-handler';
@@ -28,12 +29,7 @@ export function useEnhancedWireframeGenerator({
   const [creativityLevel, setCreativityLevel] = useState<number>(defaultCreativityLevel);
   const [currentWireframe, setCurrentWireframe] = useState<WireframeData | null>(null);
   
-  const { 
-    error, 
-    clearError, 
-    handleError,
-    wrapAsync
-  } = useErrorHandler({ 
+  const errorHandler = useErrorHandler({ 
     componentName: 'WireframeGenerator',
     showToast: true
   });
@@ -77,7 +73,7 @@ export function useEnhancedWireframeGenerator({
   const generateWireframe = useCallback(async (
     params: WireframeGenerationParams | string
   ): Promise<WireframeGenerationResult> => {
-    clearError();
+    errorHandler.clearError();
     setIsGenerating(true);
     
     try {
@@ -108,7 +104,7 @@ export function useEnhancedWireframeGenerator({
       
       return result;
     } catch (error) {
-      const handledError = handleError(error, 'generating wireframe');
+      const handledError = errorHandler.handleError(error, 'generating wireframe');
       
       return {
         wireframe: null,
@@ -119,7 +115,7 @@ export function useEnhancedWireframeGenerator({
     } finally {
       setIsGenerating(false);
     }
-  }, [clearError, creativityLevel, handleError, onWireframeGenerated]);
+  }, [errorHandler, creativityLevel, onWireframeGenerated]);
 
   /**
    * Generate a creative variation of an existing wireframe
@@ -128,7 +124,7 @@ export function useEnhancedWireframeGenerator({
     baseWireframe: WireframeData, 
     styleChanges: string
   ): Promise<WireframeGenerationResult> => {
-    return await wrapAsync(async () => {
+    return await errorHandler.wrapAsync(async () => {
       setIsGenerating(true);
       
       try {
@@ -178,16 +174,16 @@ export function useEnhancedWireframeGenerator({
       message: 'Failed to generate wireframe variation',
       errors: ['Operation failed']
     };
-  }, [creativityLevel, onWireframeGenerated, wrapAsync]);
+  }, [creativityLevel, onWireframeGenerated, errorHandler]);
 
   return {
     isGenerating,
     currentWireframe,
-    error,
+    error: errorHandler.error,
     creativityLevel,
     setCreativityLevel,
     generateWireframe,
     generateVariation,
-    clearError
+    clearError: errorHandler.clearError
   };
 }

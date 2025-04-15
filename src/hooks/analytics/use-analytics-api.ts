@@ -7,7 +7,7 @@ import { RPCClient } from '@/utils/supabase/rpc-client';
 export function useAnalyticsAPI() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { handleError } = useErrorHandler({ componentName: 'AnalyticsAPI' });
+  const errorHandler = useErrorHandler({ componentName: 'AnalyticsAPI' });
 
   const fetchAnalytics = useCallback(async (period: string) => {
     setIsLoading(true);
@@ -20,12 +20,12 @@ export function useAnalyticsAPI() {
       
       return result;
     } catch (error) {
-      handleError(error, 'fetching analytics');
+      errorHandler.handleError(error, 'fetching analytics');
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [handleError]);
+  }, [errorHandler]);
 
   return {
     isLoading,

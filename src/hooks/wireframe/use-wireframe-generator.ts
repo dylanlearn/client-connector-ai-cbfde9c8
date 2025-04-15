@@ -21,12 +21,7 @@ export function useWireframeGenerator(
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Use our centralized error handler
-  const { 
-    error, 
-    clearError, 
-    handleError, 
-    wrapAsync 
-  } = useErrorHandler({
+  const errorHandler = useErrorHandler({
     componentName: 'WireframeGenerator'
   });
 
@@ -34,7 +29,7 @@ export function useWireframeGenerator(
   const generateWireframe = useCallback(
     async (params: WireframeGenerationParams): Promise<WireframeGenerationResult> => {
       setIsGenerating(true);
-      clearError();
+      errorHandler.clearError();
 
       try {
         // Enhance params with creativity level if not already set
@@ -71,7 +66,7 @@ export function useWireframeGenerator(
 
         return result;
       } catch (err) {
-        const handledError = handleError(err, 'generating wireframe');
+        const handledError = errorHandler.handleError(err, 'generating wireframe');
         
         toast({
           title: 'Error',
@@ -89,13 +84,13 @@ export function useWireframeGenerator(
         setIsGenerating(false);
       }
     },
-    [creativityLevel, setCurrentWireframe, toast, clearError, handleError]
+    [creativityLevel, setCurrentWireframe, toast, errorHandler]
   );
 
   // Generate a creative variation of an existing wireframe
   const generateCreativeVariation = useCallback(
     async (baseWireframe: WireframeData, styleChanges: string): Promise<WireframeGenerationResult> => {
-      return await wrapAsync(async () => {
+      return await errorHandler.wrapAsync(async () => {
         setIsGenerating(true);
         
         try {
@@ -146,12 +141,12 @@ export function useWireframeGenerator(
         errors: ['Operation failed']
       };
     },
-    [creativityLevel, setCurrentWireframe, toast, wrapAsync]
+    [creativityLevel, setCurrentWireframe, toast, errorHandler]
   );
 
   return {
     isGenerating,
-    error,
+    error: errorHandler.error,
     generateWireframe,
     generateCreativeVariation,
   };
