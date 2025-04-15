@@ -1,117 +1,38 @@
 
-import { useState, useCallback } from 'react';
-import { ErrorHandler } from '@/utils/error-handler';
-import { AppError, ErrorType, ErrorResponse } from '@/types/error-types';
+import { useCallback } from 'react';
+import { toast } from 'sonner';
+import { recordClientError } from '@/utils/monitoring/api-usage';
 
 interface ErrorHandlerOptions {
-  componentName: string;
-  userId?: string;
+  componentName?: string;
   showToast?: boolean;
-  reportToMonitoring?: boolean;
 }
 
-/**
- * Hook for standardized error handling in components
- */
-export function useErrorHandler(options: ErrorHandlerOptions) {
-  const [error, setError] = useState<ErrorResponse | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  const componentName = options.componentName || 'UnknownComponent';
-  
-  /**
-   * Handle an error with the standardized error handling logic
-   */
-  const handleError = useCallback((err: unknown, context?: string) => {
-    let errorToHandle = err;
+export function useErrorHandler(options: ErrorHandlerOptions = {}) {
+  const { componentName = 'UnknownComponent', showToast = true } = options;
+
+  const handleError = useCallback((error: unknown, context?: string) => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     
-    // Handle adding context to the error
-    if (context && err instanceof Error) {
-      // For Error objects, we can add context
-      const errorWithContext = err as Error & { context?: Record<string, any> };
-      if (!errorWithContext.context) {
-        errorWithContext.context = {};
-      }
-      errorWithContext.context.additionalContext = context;
-      errorToHandle = errorWithContext;
-    } else if (context && typeof err === 'object' && err !== null) {
-      // For objects that are not Error instances
-      const errObj = err as Record<string, any>;
-      errorToHandle = {
-        ...errObj,
-        context: {
-          ...(errObj.context || {}),
-          additionalContext: context
-        }
-      };
+    // Log error to console with component context
+    console.error(`[${componentName}] ${context || 'Error'}:`, error);
+    
+    // Record error for monitoring
+    recordClientError(
+      errorMessage,
+      error instanceof Error ? error.stack : undefined,
+      componentName
+    ).catch(console.error);
+    
+    // Show toast notification if enabled
+    if (showToast) {
+      toast.error('An error occurred', {
+        description: errorMessage
+      });
     }
-    
-    const normalizedError = ErrorHandler.handleError(
-      errorToHandle, 
-      componentName, 
-      options.userId
-    );
-    
-    setError(normalizedError);
-    return normalizedError;
-  }, [componentName, options.userId]);
-  
-  /**
-   * Clear any stored errors
-   */
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
-  
-  /**
-   * Wrap an async function with standardized error handling and loading state
-   */
-  const wrapAsync = useCallback(async <T>(
-    asyncFn: () => Promise<T>, 
-    loadingState: boolean = true,
-    context?: string
-  ): Promise<T | null> => {
-    if (loadingState) {
-      setIsLoading(true);
-    }
-    setError(null);
-    
-    try {
-      return await asyncFn();
-    } catch (err) {
-      handleError(err, context);
-      return null;
-    } finally {
-      if (loadingState) {
-        setIsLoading(false);
-      }
-    }
-  }, [handleError]);
-  
-  /**
-   * Create a validation error
-   */
-  const createValidationError = useCallback((
-    message: string, 
-    fieldErrors?: Record<string, string>
-  ) => {
-    return AppError.validation(message, 
-      fieldErrors ? Object.entries(fieldErrors).map(([field, details]) => ({
-        code: 'INVALID_VALUE',
-        field,
-        details
-      })) : undefined
-    );
-  }, []);
-  
-  return {
-    error,
-    setError,
-    clearError,
-    isLoading,
-    setIsLoading,
-    handleError,
-    wrapAsync,
-    createValidationError
-  };
+
+    return error instanceof Error ? error : new Error(errorMessage);
+  }, [componentName, showToast]);
+
+  return handleError;
 }

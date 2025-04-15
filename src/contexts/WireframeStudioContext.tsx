@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, ReactNode, useState } from 'react';
 import { DeviceType, ViewMode } from '@/components/wireframe/types/studio-types';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 interface WireframeStudioContextProps {
   deviceType: DeviceType;
@@ -25,6 +25,8 @@ export function WireframeStudioProvider({
   children: ReactNode;
   initialData: WireframeData;
 }) {
+  const handleError = useErrorHandler({ componentName: 'WireframeStudio' });
+  
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
   const [showAISuggestions, setShowAISuggestions] = useState(false);
@@ -32,7 +34,13 @@ export function WireframeStudioProvider({
   const [wireframeData, setWireframeData] = useState<WireframeData>(initialData);
 
   const toggleAISuggestions = () => setShowAISuggestions(prev => !prev);
-  const updateWireframe = (wireframe: WireframeData) => setWireframeData(wireframe);
+  const updateWireframe = (wireframe: WireframeData) => {
+    try {
+      setWireframeData(wireframe);
+    } catch (error) {
+      handleError(error, 'Error updating wireframe');
+    }
+  };
 
   return (
     <WireframeStudioContext.Provider value={{

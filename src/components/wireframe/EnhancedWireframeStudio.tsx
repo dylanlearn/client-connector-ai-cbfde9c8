@@ -6,12 +6,14 @@ import AISuggestionsPanel from './studio/AISuggestionsPanel';
 import { WireframeStudioProvider, useWireframeStudio } from '@/contexts/WireframeStudioContext';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { StudioContentProps } from './types/studio-types';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 const StudioContent: React.FC<StudioContentProps> = ({ 
   projectId, 
   onUpdate, 
   onExport 
 }) => {
+  const handleError = useErrorHandler({ componentName: 'StudioContent' });
   const { 
     deviceType,
     viewMode,
@@ -23,9 +25,13 @@ const StudioContent: React.FC<StudioContentProps> = ({
   } = useWireframeStudio();
 
   const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
-    updateWireframe(updatedWireframe);
-    if (onUpdate) {
-      onUpdate(updatedWireframe);
+    try {
+      updateWireframe(updatedWireframe);
+      if (onUpdate) {
+        onUpdate(updatedWireframe);
+      }
+    } catch (error) {
+      handleError(error, 'Error updating wireframe');
     }
   };
 

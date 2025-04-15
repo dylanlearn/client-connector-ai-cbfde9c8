@@ -5,6 +5,7 @@ import WireframeCanvasFabric from '../WireframeCanvasFabric';
 import WireframeVisualizer from '../WireframeVisualizer';
 import { useSectionInteractions } from '@/hooks/wireframe/use-section-interactions';
 import { StudioCanvasProps } from '../types/studio-types';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 
 const StudioCanvas: React.FC<StudioCanvasProps> = ({
   projectId,
@@ -13,7 +14,16 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
   viewMode,
   onUpdate
 }) => {
+  const handleError = useErrorHandler({ componentName: 'StudioCanvas' });
   const { selectedSection, handleSectionClick } = useSectionInteractions();
+
+  const handleUpdate = (updatedData: WireframeData) => {
+    try {
+      onUpdate(updatedData);
+    } catch (error) {
+      handleError(error, 'Error in canvas update');
+    }
+  };
 
   return (
     <Tabs defaultValue="canvas" className="w-full">
@@ -28,7 +38,7 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
             <WireframeCanvasFabric
               projectId={projectId}
               wireframeData={wireframeData}
-              onUpdate={onUpdate}
+              onUpdate={handleUpdate}
               readOnly={false}
             />
           </CardContent>
