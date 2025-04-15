@@ -61,6 +61,8 @@ describe('WireframeValidator', () => {
             id: 'section1',
             name: 'Header',
             sectionType: 'header',
+            description: 'A header section',  // Add the required field
+            components: [],  // Add the required field
             position: { x: 0, y: 0 },
             dimensions: { width: '100%', height: 80 }
           }

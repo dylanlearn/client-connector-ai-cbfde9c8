@@ -35,6 +35,51 @@ export interface WireframeSection {
     alignment?: string;
   };
   positionOrder?: number;
+  
+  // Additional properties used across the application
+  x?: number;
+  y?: number;
+  width?: number | string;
+  height?: number | string;
+  backgroundColor?: string;
+  gap?: number | string;
+  padding?: string;
+  style?: Record<string, any>;
+  dimensions?: {
+    width: number | string;
+    height: number | string;
+  };
+  position?: {
+    x: number;
+    y: number;
+  };
+  layoutType?: string;
+  copySuggestions?: {
+    heading?: string;
+    subheading?: string;
+    ctaText?: string;
+    primaryCta?: string;
+    secondaryCta?: string;
+    supportText?: string;
+    supportCta?: string;
+    [key: string]: any;
+  };
+  animationSuggestions?: {
+    type?: string;
+    duration?: string;
+    delay?: string;
+    timing?: string;
+    direction?: string;
+    [key: string]: any;
+  };
+  mobileLayout?: any;
+  designReasoning?: any;
+  data?: any;
+  stats?: Array<{
+    id: string;
+    value: string;
+    label: string;
+  }>;
 }
 
 export interface WireframeData {
