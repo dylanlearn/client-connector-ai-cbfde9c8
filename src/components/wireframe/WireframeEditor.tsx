@@ -40,6 +40,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
     updateWireframe,
     saveWireframe,
     exportWireframe,
+    generateWireframe,
     error
   } = useConsolidatedWireframe({
     projectId,
@@ -141,6 +142,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
                 <WireframeControls 
                   projectId={projectId}
                   onWireframeCreated={updateWireframe}
+                  generateWireframe={generateWireframe}
                 />
               )}
             </Card>

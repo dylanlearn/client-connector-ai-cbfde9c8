@@ -4,34 +4,23 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { useConsolidatedWireframe } from '@/hooks/use-consolidated-wireframe';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData, WireframeGenerationParams } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeControlsProps {
   projectId?: string;
   onWireframeCreated?: (wireframe: WireframeData) => void;
+  generateWireframe: (params: WireframeGenerationParams) => Promise<any>;
 }
 
 const WireframeControlsForm: React.FC<WireframeControlsProps> = ({
   projectId,
-  onWireframeCreated
+  onWireframeCreated,
+  generateWireframe
 }) => {
   // State
   const [prompt, setPrompt] = useState('');
   const [creativityLevel, setCreativityLevel] = useState(8);
-  
-  // Use our consolidated wireframe hook
-  const {
-    isGenerating,
-    generateWireframe,
-  } = useConsolidatedWireframe({
-    projectId,
-    onWireframeGenerated: (result) => {
-      if (result.wireframe && onWireframeCreated) {
-        onWireframeCreated(result.wireframe);
-      }
-    }
-  });
+  const [isGenerating, setIsGenerating] = useState(false);
   
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,11 +30,23 @@ const WireframeControlsForm: React.FC<WireframeControlsProps> = ({
       return;
     }
     
-    await generateWireframe({
-      description: prompt,
-      projectId,
-      creativityLevel
-    });
+    setIsGenerating(true);
+    
+    try {
+      const result = await generateWireframe({
+        description: prompt,
+        projectId,
+        creativityLevel
+      });
+      
+      if (result.wireframe && onWireframeCreated) {
+        onWireframeCreated(result.wireframe);
+      }
+    } catch (error) {
+      console.error("Generation error:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
   
   return (

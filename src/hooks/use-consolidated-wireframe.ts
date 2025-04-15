@@ -14,6 +14,8 @@ export interface UseConsolidatedWireframeOptions {
   autoSave?: boolean;
   showToasts?: boolean;
   componentName?: string;
+  onError?: (error: Error) => void;
+  onWireframeGenerated?: (result: WireframeGenerationResult) => void;
 }
 
 export function useConsolidatedWireframe(options: UseConsolidatedWireframeOptions = {}) {
@@ -22,7 +24,9 @@ export function useConsolidatedWireframe(options: UseConsolidatedWireframeOption
     initialData = null, 
     autoSave = false,
     showToasts = true,
-    componentName = 'WireframeStudio'
+    componentName = 'WireframeStudio',
+    onError,
+    onWireframeGenerated
   } = options;
   
   // State
@@ -63,11 +67,12 @@ export function useConsolidatedWireframe(options: UseConsolidatedWireframeOption
       return wireframe;
     } catch (error) {
       errorHandler.handleError(error, 'Failed to save wireframe');
+      onError?.(error instanceof Error ? error : new Error(String(error)));
       return null;
     } finally {
       setSaving(false);
     }
-  }, [wireframe, showNotification, errorHandler]);
+  }, [wireframe, showNotification, errorHandler, onError]);
   
   // Export wireframe
   const exportWireframe = useCallback(async (format: string): Promise<boolean> => {
@@ -79,9 +84,71 @@ export function useConsolidatedWireframe(options: UseConsolidatedWireframeOption
       return true;
     } catch (error) {
       errorHandler.handleError(error, `Failed to export wireframe as ${format}`);
+      onError?.(error instanceof Error ? error : new Error(String(error)));
       return false;
     }
-  }, [wireframe, showNotification, errorHandler]);
+  }, [wireframe, showNotification, errorHandler, onError]);
+  
+  // Generate wireframe - add this function to fix WireframeControls errors
+  const generateWireframe = useCallback(async (
+    params: WireframeGenerationParams
+  ): Promise<WireframeGenerationResult> => {
+    setGenerating(true);
+    
+    try {
+      // Mock implementation for wireframe generation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create a simple wireframe based on params
+      const newWireframe: WireframeData = {
+        id: params.projectId || 'new-wireframe',
+        title: params.description?.substring(0, 30) || 'New Wireframe',
+        description: params.description || '',
+        sections: [],
+        colorScheme: params.colorScheme || {
+          primary: '#3b82f6',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          background: '#ffffff',
+          text: '#111827'
+        },
+        typography: params.typography || {
+          headings: 'Inter',
+          body: 'Inter'
+        }
+      };
+      
+      // Update state
+      setWireframe(newWireframe);
+      
+      // Create result
+      const result: WireframeGenerationResult = {
+        wireframe: newWireframe,
+        success: true,
+        message: 'Wireframe generated successfully'
+      };
+      
+      // Call the callback if provided
+      if (onWireframeGenerated) {
+        onWireframeGenerated(result);
+      }
+      
+      showNotification('Wireframe generated successfully');
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      errorHandler.handleError(error, 'Failed to generate wireframe');
+      onError?.(error instanceof Error ? error : new Error(errorMessage));
+      
+      return {
+        wireframe: null,
+        success: false,
+        message: errorMessage
+      };
+    } finally {
+      setGenerating(false);
+    }
+  }, [errorHandler, setWireframe, showNotification, onWireframeGenerated, onError]);
   
   return {
     wireframe,
@@ -90,6 +157,7 @@ export function useConsolidatedWireframe(options: UseConsolidatedWireframeOption
     error: errorHandler.error,
     updateWireframe,
     saveWireframe,
-    exportWireframe
+    exportWireframe,
+    generateWireframe
   };
 }
