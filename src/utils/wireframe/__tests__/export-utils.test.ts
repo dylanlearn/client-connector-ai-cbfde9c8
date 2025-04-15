@@ -6,6 +6,7 @@ import {
   generateHtmlFromWireframe,
   handleExportError
 } from '../export-utils';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 // Mock html2canvas and jsPDF
 vi.mock('html2canvas', () => ({
@@ -24,36 +25,37 @@ vi.mock('jspdf', () => ({
   }))
 }));
 
-describe('Export Utils', () => {
-  const testWireframe = {
-    id: 'test-id',
-    title: 'Test Wireframe',
-    description: 'Test wireframe description',
-    sections: [
-      {
-        id: 'section-1',
-        name: 'Test Section',
-        sectionType: 'hero',
-        description: 'A test section'
-      }
-    ],
-    colorScheme: {
-      primary: '#3182CE',
-      secondary: '#805AD5',
-      accent: '#ED8936',
-      background: '#FFFFFF',
-      text: '#1A202C'
-    },
-    typography: {
-      headings: 'Inter',
-      body: 'Inter'
+const testWireframeData = {
+  id: 'test-wireframe',
+  title: 'Test Wireframe',
+  description: 'A test wireframe',
+  sections: [
+    {
+      id: 'section-1',
+      name: 'Section 1',
+      sectionType: 'hero',
+      description: 'Test section',
+      components: [] // Add this required field to fix the error
     }
-  };
+  ],
+  colorScheme: {
+    primary: '#000000',
+    secondary: '#ffffff',
+    accent: '#ff0000',
+    background: '#f5f5f5',
+    text: '#333333'
+  },
+  typography: {
+    headings: 'Arial',
+    body: 'Helvetica'
+  }
+};
 
+describe('Export Utils', () => {
   it('should generate HTML from wireframe', async () => {
-    const html = await exportWireframeAsHTML(testWireframe);
+    const html = await exportWireframeAsHTML(testWireframeData);
     expect(html).toContain('Test Wireframe');
-    expect(html).toContain('Test Section');
+    expect(html).toContain('Section 1');
   });
 
   it('should generate PDF from element', async () => {
@@ -69,7 +71,7 @@ describe('Export Utils', () => {
   });
 
   it('should generate HTML code for web projects', () => {
-    const html = generateHtmlFromWireframe(testWireframe);
+    const html = generateHtmlFromWireframe(testWireframeData);
     expect(html).toContain('Test Wireframe');
     expect(html).toContain('wireframe-section-hero');
   });

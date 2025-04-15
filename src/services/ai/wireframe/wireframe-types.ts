@@ -30,6 +30,7 @@ export interface WireframeComponent {
   dimensions?: { width: number | string; height: number | string };
   src?: string;
   alt?: string;
+  position?: { x: number; y: number };
 }
 
 export interface WireframeSection {
@@ -98,6 +99,7 @@ export interface WireframeSection {
     value: string;
     label: string;
   }>;
+  
   // Added for wireframe-adapter.ts
   layoutScore?: number;
   optimizationSuggestions?: any[];
@@ -125,6 +127,7 @@ export interface WireframeData {
   animations?: any;
   imageUrl?: string;
   metadata?: Record<string, any>;
+  styleToken?: string;
 }
 
 export interface WireframeGenerationParams {
@@ -140,6 +143,7 @@ export interface WireframeGenerationParams {
   // Additional params for other services
   customParams?: any;
   style?: string | object;
+  industry?: string;
 }
 
 export interface WireframeIntentData {
@@ -203,4 +207,15 @@ export function isWireframeData(value: any): value is WireframeData {
     'colorScheme' in value &&
     'typography' in value
   );
+}
+
+export interface CopySuggestions {
+  heading?: string;
+  subheading?: string;
+  ctaText?: string;
+  primaryCta?: string;
+  secondaryCta?: string;
+  supportText?: string;
+  supportCta?: string;
+  [key: string]: any;
 }
