@@ -1,112 +1,98 @@
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { DesignMemoryResponse, DesignMemoryData } from '@/services/ai/wireframe/design-memory-types';
+import { WireframeColorScheme } from '@/services/ai/wireframe/wireframe-types';
 
 /**
- * Hook for managing design memory functionality
+ * Hook for managing design memory and preferences
  */
-export const useDesignMemory = (projectId?: string) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [designMemory, setDesignMemory] = useState<DesignMemoryData | null>(null);
-  const { toast } = useToast();
-  
-  // Store design memory
-  const storeDesignMemory = useCallback(async (
-    wireframeData: WireframeData,
-    options?: {
-      includeUserFeedback?: boolean;
-      includeStylePreferences?: boolean;
-    }
-  ): Promise<boolean> => {
-    setIsLoading(true);
-    
-    try {
-      // Implementation would connect to an API endpoint
-      console.log('Storing design memory', { projectId, wireframeId: wireframeData.id });
-      
-      // Success state
-      setDesignMemory({
-        projectId,
-        wireframeId: wireframeData.id,
-        colorScheme: wireframeData.colorScheme,
-        typography: wireframeData.typography,
-        // other properties would be populated here
-      });
-      
-      toast({
-        title: 'Design memory saved',
-        description: 'Your design preferences have been stored for future use'
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Error storing design memory:', error);
-      
-      toast({
-        title: 'Failed to store design memory',
-        description: 'An error occurred while saving your design preferences',
-        variant: 'destructive'
-      });
-      
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [projectId, toast]);
-  
-  // Load design memory
-  const loadDesignMemory = useCallback(async (
-    wireframeId?: string
-  ): Promise<DesignMemoryData | null> => {
-    setIsLoading(true);
-    
-    try {
-      // Implementation would fetch from an API endpoint
-      console.log('Loading design memory', { projectId, wireframeId });
-      
-      // Simulated response
-      const memoryResponse: DesignMemoryResponse = {
-        success: true,
-        data: {
-          projectId,
-          wireframeId,
-          colorScheme: {
-            primary: '#3b82f6',
-            secondary: '#10b981',
-            accent: '#f59e0b',
-            background: '#ffffff'
-          }
-        }
-      };
-      
-      if (memoryResponse.success && memoryResponse.data) {
-        setDesignMemory(memoryResponse.data);
-        return memoryResponse.data;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error loading design memory:', error);
-      
-      toast({
-        title: 'Failed to load design memory',
-        description: 'An error occurred while retrieving your design preferences',
-        variant: 'destructive'
-      });
-      
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [projectId, toast]);
-  
-  return {
-    designMemory,
-    isLoading,
-    storeDesignMemory,
-    loadDesignMemory
-  };
-};
+export function useDesignMemory() {
+  const [recentColorSchemes, setRecentColorSchemes] = useState<WireframeColorScheme[]>([]);
+  const [favoriteColorSchemes, setFavoriteColorSchemes] = useState<WireframeColorScheme[]>([]);
+  const [designPreferences, setDesignPreferences] = useState<Record<string, any>>({});
 
-export default useDesignMemory;
+  /**
+   * Convert WireframeColorScheme to Record<string, string>
+   */
+  const convertColorSchemeToRecord = (colorScheme: WireframeColorScheme): Record<string, string> => {
+    // Convert WireframeColorScheme to Record<string, string>
+    return {
+      primary: colorScheme.primary,
+      secondary: colorScheme.secondary,
+      accent: colorScheme.accent,
+      background: colorScheme.background,
+      text: colorScheme.text
+    };
+  };
+
+  /**
+   * Add a color scheme to recent history
+   */
+  const addRecentColorScheme = useCallback((colorScheme: WireframeColorScheme) => {
+    setRecentColorSchemes(prev => {
+      // Convert to record for comparison
+      const recordColorScheme = convertColorSchemeToRecord(colorScheme);
+      
+      // Remove duplicates
+      const filtered = prev.filter(scheme => 
+        JSON.stringify(convertColorSchemeToRecord(scheme)) !== JSON.stringify(recordColorScheme)
+      );
+      
+      // Add to beginning and limit to 10 items
+      return [colorScheme, ...filtered].slice(0, 10);
+    });
+  }, []);
+
+  /**
+   * Toggle a color scheme as favorite
+   */
+  const toggleFavoriteColorScheme = useCallback((colorScheme: WireframeColorScheme) => {
+    const recordColorScheme = convertColorSchemeToRecord(colorScheme);
+    
+    setFavoriteColorSchemes(prev => {
+      // Check if already in favorites
+      const exists = prev.some(scheme => 
+        JSON.stringify(convertColorSchemeToRecord(scheme)) === JSON.stringify(recordColorScheme)
+      );
+      
+      if (exists) {
+        // Remove from favorites
+        return prev.filter(scheme => 
+          JSON.stringify(convertColorSchemeToRecord(scheme)) !== JSON.stringify(recordColorScheme)
+        );
+      } else {
+        // Add to favorites
+        return [...prev, colorScheme];
+      }
+    });
+  }, []);
+
+  /**
+   * Update design preferences
+   */
+  const updateDesignPreferences = useCallback((preferences: Record<string, any>) => {
+    setDesignPreferences(prev => ({
+      ...prev,
+      ...preferences
+    }));
+  }, []);
+
+  /**
+   * Check if a color scheme is in favorites
+   */
+  const isFavoriteColorScheme = useCallback((colorScheme: WireframeColorScheme) => {
+    const recordColorScheme = convertColorSchemeToRecord(colorScheme);
+    
+    return favoriteColorSchemes.some(scheme => 
+      JSON.stringify(convertColorSchemeToRecord(scheme)) === JSON.stringify(recordColorScheme)
+    );
+  }, [favoriteColorSchemes]);
+
+  return {
+    recentColorSchemes,
+    favoriteColorSchemes,
+    designPreferences,
+    addRecentColorScheme,
+    toggleFavoriteColorScheme,
+    updateDesignPreferences,
+    isFavoriteColorScheme
+  };
+}

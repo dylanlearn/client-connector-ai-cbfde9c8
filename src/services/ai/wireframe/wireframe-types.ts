@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 
 export interface WireframeColorScheme {
@@ -28,6 +27,9 @@ export interface WireframeComponent {
   responsive?: Record<string, any>;
   components?: WireframeComponent[];
   layout?: any;
+  dimensions?: { width: number | string; height: number | string };
+  src?: string;
+  alt?: string;
 }
 
 export interface WireframeSection {
@@ -96,6 +98,10 @@ export interface WireframeSection {
     value: string;
     label: string;
   }>;
+  // Added for wireframe-adapter.ts
+  layoutScore?: number;
+  optimizationSuggestions?: any[];
+  patternMatch?: any;
 }
 
 export interface WireframeData {
@@ -109,6 +115,16 @@ export interface WireframeData {
   lastUpdated?: string;
   layoutType?: string;
   designTokens?: Record<string, any>;
+  // Additional properties for WireframeData
+  style?: string | object;
+  mobileConsiderations?: string;
+  accessibilityNotes?: string;
+  mobileLayouts?: any;
+  styleVariants?: any;
+  designReasoning?: any;
+  animations?: any;
+  imageUrl?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface WireframeGenerationParams {
@@ -121,6 +137,9 @@ export interface WireframeGenerationParams {
   styleChanges?: string;
   isVariation?: boolean;
   enhancedCreativity?: boolean;
+  // Additional params for other services
+  customParams?: any;
+  style?: string | object;
 }
 
 export interface WireframeIntentData {
@@ -154,6 +173,12 @@ export interface AIWireframe {
   wireframeData: WireframeData;
   generatedAt: string;
   prompt: string;
+  // Additional properties for backward compatibility
+  data?: WireframeData;
+  wireframe_data?: WireframeData;
+  title?: string;
+  description?: string;
+  sections?: WireframeSection[];
 }
 
 export function normalizeWireframeGenerationParams(

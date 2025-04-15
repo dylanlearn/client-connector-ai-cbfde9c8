@@ -1,4 +1,3 @@
-
 import { WireframeSection, AIWireframe, WireframeData } from './wireframe-types';
 import { supabase } from "@/integrations/supabase/client";
 import { AIFeatureType, selectModelForFeature, PatternRecognitionOptions } from "../ai-model-selector";
@@ -190,7 +189,10 @@ export class EnhancedLayoutIntelligenceService {
    */
   private static extractVisualElementsFromWireframe(wireframe: WireframeData): Record<string, any> {
     // Extract layout structure, component relationships, and visual hierarchy
-    const sections = wireframe.sections || [];
+    const wireframeSections = wireframe.sections || wireframe.wireframeData?.sections || [];
+    const existingMetadata = wireframe.metadata || {};
+    
+    const sections = wireframeSections || [];
     const sectionTypes = sections.map(s => s.sectionType);
     const componentTypes = sections.flatMap(s => 
       (s.components || []).map(c => c.type)

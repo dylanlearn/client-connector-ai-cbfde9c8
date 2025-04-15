@@ -15,13 +15,22 @@ export const WireframeDataService = {
       wireframe.data = wireframe.wireframe_data;
     }
     
+    // Handle data and wireframeData interchangeably
+    if (!wireframe.wireframeData && wireframe.data) {
+      wireframe.wireframeData = wireframe.data;
+    }
+    
     // Ensure sections are present
-    if (!wireframe.sections && wireframe.data?.sections) {
+    if (!wireframe.sections && wireframe.wireframeData?.sections) {
+      wireframe.sections = wireframe.wireframeData.sections;
+    } else if (!wireframe.sections && wireframe.data?.sections) {
       wireframe.sections = wireframe.data.sections;
     }
     
     // Ensure title is present
-    if (!wireframe.title && wireframe.data?.title) {
+    if (!wireframe.title && wireframe.wireframeData?.title) {
+      wireframe.title = wireframe.wireframeData.title;
+    } else if (!wireframe.title && wireframe.data?.title) {
       wireframe.title = wireframe.data.title;
     }
     
@@ -36,7 +45,9 @@ export const WireframeDataService = {
       return wireframe.title;
     }
     
-    if (wireframe.data?.title) {
+    if (wireframe.wireframeData?.title) {
+      return wireframe.wireframeData.title;
+    } else if (wireframe.data?.title) {
       return wireframe.data.title;
     }
     

@@ -25,7 +25,7 @@ export interface WireframeComponent {
   links?: any[];
   data?: Record<string, any>;
   name?: string;
-  // Added properties to fix type errors
+  // Additional properties to fix type errors
   style?: Record<string, any>;
   className?: string;
   content?: string;
@@ -33,6 +33,9 @@ export interface WireframeComponent {
   components?: WireframeComponent[];
   layout?: any;
   attributes?: Record<string, any>;
+  dimensions?: { width: number | string; height: number | string };
+  src?: string;
+  alt?: string;
 }
 
 /**
