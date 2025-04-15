@@ -2,289 +2,196 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  WireframeData, 
-  WireframeGenerationParams, 
-  WireframeGenerationResult,
-  WireframeTypography,
-  WireframeColorScheme,
-  WireframeSection
-} from '@/services/ai/wireframe/wireframe-types';
-import { CoreWireframeService } from '@/services/ai/wireframe/core-wireframe-service';
-import { colorSchemeToRecord, typographyToRecord } from '@/utils/type-compatibility-helpers';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { typographyToRecord, colorSchemeToRecord } from '@/utils/type-compatibility-helpers';
 
-interface WireframeState {
-  // Original properties
-  wireframe: WireframeData | null;
-  isGenerating: boolean;
-  error: Error | null;
-  generationParams: WireframeGenerationParams | null;
-  generationResult: WireframeGenerationResult | null;
+// Define the Wireframe state interface
+export interface WireframeState {
+  // Wireframe data
+  wireframeData: WireframeData | null;
+  sections: WireframeSection[];
   
-  // Added properties for UI components
+  // UI state properties
   darkMode: boolean;
   showGrid: boolean;
   highlightSections: boolean;
-  activeDevice: 'desktop' | 'tablet' | 'mobile';
   activeSection: string | null;
-  sections: WireframeSection[];
+  activeDevice: 'desktop' | 'tablet' | 'mobile';
   
-  // Original methods
-  setWireframe: (wireframe: WireframeData | null) => void;
-  setGenerating: (isGenerating: boolean) => void;
-  setError: (error: Error | null) => void;
-  setGenerationParams: (params: WireframeGenerationParams | null) => void;
-  setGenerationResult: (result: WireframeGenerationResult | null) => void;
-  generateWireframe: (params: WireframeGenerationParams) => Promise<void>;
-  reset: () => void;
+  // Actions
+  setWireframeData: (data: WireframeData | null) => void;
+  updateWireframeData: (updates: Partial<WireframeData>) => void;
   
-  // Added methods for UI components
-  toggleDarkMode: () => void;
-  toggleShowGrid: () => void;
-  toggleHighlightSections: () => void;
-  setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
-  setActiveSection: (sectionId: string | null) => void;
-  
-  // Added methods for section management
+  // Section management methods
   addSection: (section: Omit<WireframeSection, "id">) => void;
   updateSection: (id: string, updates: Partial<WireframeSection>) => void;
   removeSection: (id: string) => void;
   moveSectionUp: (id: string) => void;
   moveSectionDown: (id: string) => void;
+  setActiveSection: (sectionId: string | null) => void;
+  
+  // UI state methods
+  toggleDarkMode: () => void;
+  toggleShowGrid: () => void;
+  toggleHighlightSections: () => void;
+  setActiveDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
 }
 
+// Create the store with persistence
 export const useWireframeStore = create<WireframeState>()(
   persist(
     (set, get) => ({
-      // Original state
-      wireframe: null,
-      isGenerating: false,
-      error: null,
-      generationParams: null,
-      generationResult: null,
-      
-      // Added state
+      // Initial state
+      wireframeData: null,
+      sections: [],
       darkMode: false,
       showGrid: true,
       highlightSections: false,
-      activeDevice: 'desktop',
       activeSection: null,
-      sections: [],
-      
-      // Original methods
-      setWireframe: (wireframe) => set({ 
-        wireframe,
-        // Update sections whenever wireframe is updated
-        sections: wireframe?.sections || []
+      activeDevice: 'desktop',
+
+      // Wireframe data actions
+      setWireframeData: (data) => set({ 
+        wireframeData: data,
+        sections: data?.sections || []
       }),
-      setGenerating: (isGenerating) => set({ isGenerating }),
-      setError: (error) => set({ error }),
-      setGenerationParams: (params) => set({ generationParams: params }),
-      setGenerationResult: (result) => set({ generationResult: result }),
       
-      generateWireframe: async (params: WireframeGenerationParams) => {
-        set({ isGenerating: true, error: null, generationParams: params });
-        try {
-          const result = await CoreWireframeService.generateWireframe(params);
-          set({ 
-            wireframe: result.wireframe, 
-            generationResult: result,
-            sections: result.wireframe?.sections || [],
-            error: null 
-          });
-        } catch (error: any) {
-          set({ 
-            error: error instanceof Error ? error : new Error(error.message || 'Failed to generate wireframe'),
-            generationResult: {
-              wireframe: null,
-              success: false,
-              message: error.message || 'Failed to generate wireframe'
-            }
-          });
-        } finally {
-          set({ isGenerating: false });
-        }
-      },
-      
-      reset: () => {
-        set({
-          wireframe: null,
-          isGenerating: false,
-          error: null,
-          generationParams: null,
-          generationResult: null,
-          sections: [],
-          activeSection: null
-        });
-      },
-      
-      // Added methods
-      toggleDarkMode: () => set(state => ({ darkMode: !state.darkMode })),
-      toggleShowGrid: () => set(state => ({ showGrid: !state.showGrid })),
-      toggleHighlightSections: () => set(state => ({ highlightSections: !state.highlightSections })),
-      setActiveDevice: (device) => set({ activeDevice: device }),
-      setActiveSection: (sectionId) => set({ activeSection: sectionId }),
-      
-      // Section management methods
-      addSection: (sectionData) => set(state => {
-        const newSection = {
-          ...sectionData,
-          id: uuidv4()
+      updateWireframeData: (updates) => set((state) => {
+        if (!state.wireframeData) return state;
+        
+        return {
+          wireframeData: {
+            ...state.wireframeData,
+            ...updates,
+            // Special handling for fields that need type conversion
+            colorScheme: updates.colorScheme 
+              ? { ...state.wireframeData.colorScheme, ...updates.colorScheme }
+              : state.wireframeData.colorScheme,
+            typography: updates.typography
+              ? { ...state.wireframeData.typography, ...updates.typography }
+              : state.wireframeData.typography
+          }
+        };
+      }),
+
+      // Section management
+      addSection: (sectionData) => set((state) => {
+        const newSection: WireframeSection = {
+          id: uuidv4(),
+          ...sectionData
         };
         
-        const newSections = [...(state.sections || []), newSection];
+        const updatedSections = [...state.sections, newSection];
         
-        // Update both sections array and wireframe.sections
-        if (state.wireframe) {
-          return { 
-            sections: newSections,
-            wireframe: {
-              ...state.wireframe,
-              sections: newSections
-            }
-          };
-        }
-        
-        return { sections: newSections };
+        return {
+          sections: updatedSections,
+          wireframeData: state.wireframeData 
+            ? { ...state.wireframeData, sections: updatedSections } 
+            : null
+        };
       }),
       
-      updateSection: (id, updates) => set(state => {
-        const updatedSections = (state.sections || []).map(section => 
+      updateSection: (id, updates) => set((state) => {
+        const updatedSections = state.sections.map(section => 
           section.id === id ? { ...section, ...updates } : section
         );
         
-        // Update both sections array and wireframe.sections
-        if (state.wireframe) {
-          return { 
-            sections: updatedSections,
-            wireframe: {
-              ...state.wireframe,
-              sections: updatedSections
-            }
-          };
-        }
-        
-        return { sections: updatedSections };
-      }),
-      
-      removeSection: (id) => set(state => {
-        const filteredSections = (state.sections || []).filter(section => section.id !== id);
-        
-        // Update both sections array and wireframe.sections
-        if (state.wireframe) {
-          return { 
-            sections: filteredSections,
-            wireframe: {
-              ...state.wireframe,
-              sections: filteredSections
-            },
-            // Clear active section if it was the one removed
-            activeSection: state.activeSection === id ? null : state.activeSection
-          };
-        }
-        
-        return { 
-          sections: filteredSections,
-          activeSection: state.activeSection === id ? null : state.activeSection
+        return {
+          sections: updatedSections,
+          wireframeData: state.wireframeData 
+            ? { ...state.wireframeData, sections: updatedSections } 
+            : null
         };
       }),
       
-      moveSectionUp: (id) => set(state => {
-        const sections = [...(state.sections || [])];
-        const index = sections.findIndex(s => s.id === id);
-        if (index <= 0) return state; // Already at the top or not found
+      removeSection: (id) => set((state) => {
+        const updatedSections = state.sections.filter(section => section.id !== id);
         
-        // Swap with previous section
-        [sections[index - 1], sections[index]] = [sections[index], sections[index - 1]];
-        
-        // Update both sections array and wireframe.sections
-        if (state.wireframe) {
-          return { 
-            sections,
-            wireframe: {
-              ...state.wireframe,
-              sections
-            }
-          };
-        }
-        
-        return { sections };
+        return {
+          sections: updatedSections,
+          wireframeData: state.wireframeData 
+            ? { ...state.wireframeData, sections: updatedSections } 
+            : null
+        };
       }),
       
-      moveSectionDown: (id) => set(state => {
-        const sections = [...(state.sections || [])];
-        const index = sections.findIndex(s => s.id === id);
-        if (index === -1 || index >= sections.length - 1) return state; // Not found or already at the bottom
+      moveSectionUp: (id) => set((state) => {
+        const sectionIndex = state.sections.findIndex(s => s.id === id);
+        if (sectionIndex <= 0) return state; // Already at the top
         
-        // Swap with next section
-        [sections[index], sections[index + 1]] = [sections[index + 1], sections[index]];
+        const updatedSections = [...state.sections];
+        const temp = updatedSections[sectionIndex];
+        updatedSections[sectionIndex] = updatedSections[sectionIndex - 1];
+        updatedSections[sectionIndex - 1] = temp;
         
-        // Update both sections array and wireframe.sections
-        if (state.wireframe) {
-          return { 
-            sections,
-            wireframe: {
-              ...state.wireframe,
-              sections
-            }
-          };
-        }
-        
-        return { sections };
+        return {
+          sections: updatedSections,
+          wireframeData: state.wireframeData 
+            ? { ...state.wireframeData, sections: updatedSections } 
+            : null
+        };
       }),
+      
+      moveSectionDown: (id) => set((state) => {
+        const sectionIndex = state.sections.findIndex(s => s.id === id);
+        if (sectionIndex === -1 || sectionIndex >= state.sections.length - 1) return state;
+        
+        const updatedSections = [...state.sections];
+        const temp = updatedSections[sectionIndex];
+        updatedSections[sectionIndex] = updatedSections[sectionIndex + 1];
+        updatedSections[sectionIndex + 1] = temp;
+        
+        return {
+          sections: updatedSections,
+          wireframeData: state.wireframeData 
+            ? { ...state.wireframeData, sections: updatedSections } 
+            : null
+        };
+      }),
+      
+      setActiveSection: (sectionId) => set({ activeSection: sectionId }),
+      
+      // UI state methods
+      toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
+      toggleShowGrid: () => set((state) => ({ showGrid: !state.showGrid })),
+      toggleHighlightSections: () => set((state) => ({ highlightSections: !state.highlightSections })),
+      setActiveDevice: (device) => set({ activeDevice: device }),
     }),
     {
       name: 'wireframe-storage',
-      serialize: (state) => {
-        const { wireframe, ...rest } = state;
-        
-        // Convert complex types to simpler representations
-        const serializedWireframe = wireframe ? {
-          ...wireframe,
-          colorScheme: colorSchemeToRecord(wireframe.colorScheme),
-          typography: typographyToRecord(wireframe.typography)
-        } : null;
-        
-        return JSON.stringify({ wireframe: serializedWireframe, ...rest });
-      },
-      deserialize: (storedState) => {
-        try {
-          const parsedState = JSON.parse(storedState);
-          if (!parsedState) {
-            return parsedState;
-          }
-          
-          const { wireframe, ...rest } = parsedState;
-          
-          // Convert back to original types
-          const deserializedWireframe = wireframe ? {
-            ...wireframe,
-            colorScheme: wireframe.colorScheme,
-            typography: wireframe.typography
-          } : null;
-          
-          return { 
-            wireframe: deserializedWireframe, 
-            sections: deserializedWireframe?.sections || [],
-            ...rest 
-          };
-        } catch (e) {
-          console.error("Failed to deserialize wireframe state", e);
+      // Handle type conversions during rehydration from storage
+      partialize: (state) => {
+        if (!state.wireframeData) {
           return {
-            wireframe: null,
-            isGenerating: false,
-            error: null,
-            generationParams: null,
-            generationResult: null,
-            darkMode: false,
-            showGrid: true,
-            highlightSections: false,
-            activeDevice: 'desktop',
-            activeSection: null,
-            sections: [],
+            darkMode: state.darkMode,
+            showGrid: state.showGrid,
+            highlightSections: state.highlightSections,
+            activeDevice: state.activeDevice
           };
         }
+
+        // For stored wireframe data with complex types, ensure we convert them properly
+        return {
+          ...state,
+          wireframeData: {
+            ...state.wireframeData,
+            // Convert complex types to compatible storage formats
+            colorScheme: colorSchemeToRecord(state.wireframeData.colorScheme),
+            typography: typographyToRecord(state.wireframeData.typography)
+          }
+        };
       },
+      // Fix any type compatibility issues on rehydration
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          console.log('Wireframe store rehydrated from storage');
+          
+          // Additional processing for rehydration if needed
+          if (state.wireframeData && state.wireframeData.styleToken) {
+            console.log('Found style token in rehydrated data');
+          }
+        }
+      }
     }
   )
 );
