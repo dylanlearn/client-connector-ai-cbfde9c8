@@ -1,4 +1,3 @@
-
 import React, { Component, ErrorInfo, ReactNode, useCallback } from "react";
 import { AlertMessage } from "@/components/ui/alert-message";
 import { Button } from "@/components/ui/button";
@@ -36,37 +35,43 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // Extract component name from component stack or use provided component name
     const componentName = this.props.component || 
       this.extractComponentName(errorInfo.componentStack) || 
       'Unknown';
     
-    // Log the error to our monitoring service
+    console.group(`Error Boundary Caught Error in ${componentName}`);
+    console.error('Error:', error);
+    console.error('Component Stack:', errorInfo.componentStack);
+    console.error('Additional Info:', {
+      timestamp: new Date().toISOString(),
+      location: window.location.href,
+      userAgent: navigator.userAgent
+    });
+    console.groupEnd();
+    
     recordClientError(
       error.message,
       error.stack,
       componentName,
       undefined,
-      { componentStack: errorInfo.componentStack }
+      { 
+        componentStack: errorInfo.componentStack,
+        timestamp: new Date().toISOString(),
+        location: window.location.href,
+        debug: true
+      }
     ).catch(console.error);
-    
-    // Also log to our client error logger
-    logError(error, componentName);
-    
-    console.error("Uncaught error:", error, errorInfo);
     
     this.setState({
       error,
       errorInfo
     });
     
-    // Call custom error handler if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
   }
 
-  // Extract component name from component stack
   extractComponentName(componentStack: string): string | null {
     const lines = componentStack.split('\n');
     if (lines.length > 1) {
@@ -130,15 +135,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-// Custom hook to help with error handling in function components
 function useErrorHandler(componentName?: string) {
   return useCallback((error: Error, context?: string) => {
     console.error(`Error in ${componentName || 'component'}:`, error);
     
-    // Use the correctly exported logError function
     logError(error, componentName || 'UnknownComponent');
     
-    // Show a toast notification
     toast.error("An error occurred", {
       description: error.message,
       action: {
@@ -147,7 +149,7 @@ function useErrorHandler(componentName?: string) {
       },
     });
     
-    return error; // Return error to allow for chaining
+    return error;
   }, [componentName]);
 }
 
