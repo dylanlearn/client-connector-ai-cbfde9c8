@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
+import { DebugLogger } from '@/utils/monitoring/debug-logger';
 
 export function useErrorHandler(options: { componentName?: string; showToast?: boolean } = {}) {
   const { componentName = 'UnknownComponent', showToast = true } = options;
@@ -15,15 +16,18 @@ export function useErrorHandler(options: { componentName?: string; showToast?: b
     const errorMessage = err instanceof Error ? err.message : String(err);
     const errorObj = err instanceof Error ? err : new Error(errorMessage);
     
-    // Enhanced console logging for debugging
-    console.group(`Error in ${componentName}`);
-    console.error('Error details:', {
-      message: errorMessage,
-      stack: errorObj.stack,
+    // Enhanced error logging with context
+    DebugLogger.error(`Error in ${componentName}`, {
       context,
-      timestamp: new Date().toISOString()
+      metadata: {
+        error: errorObj,
+        timestamp: new Date().toISOString(),
+        source: componentName,
+        userAgent: navigator.userAgent,
+        location: window.location.href
+      },
+      grouping: true
     });
-    console.groupEnd();
     
     // Set the error state
     setError(errorObj);
@@ -40,7 +44,7 @@ export function useErrorHandler(options: { componentName?: string; showToast?: b
         userAgent: navigator.userAgent,
         debug: true
       }
-    ).catch(console.error);
+    ).catch(e => DebugLogger.error('Failed to record client error', { metadata: { error: e }}));
     
     // Show toast notification if enabled
     if (showToast) {
@@ -53,19 +57,33 @@ export function useErrorHandler(options: { componentName?: string; showToast?: b
     return errorObj;
   }, [componentName, showToast]);
 
-  // Utility to wrap async functions with error handling and debugging
+  // Optimized utility to wrap async functions with error handling and debugging
   const wrapAsync = useCallback(async <T>(
     fn: () => Promise<T>,
     rethrow: boolean = false,
     context?: string
   ): Promise<T | null> => {
+    const operationId = `${componentName}-${Date.now()}`;
+    DebugLogger.startTimer(operationId);
+    DebugLogger.info(`Starting async operation${context ? `: ${context}` : ''}`, {
+      context: componentName,
+      metadata: { operationId }
+    });
+    
     try {
-      console.log(`[${componentName}] Starting async operation${context ? `: ${context}` : ''}`);
       const result = await fn();
-      console.log(`[${componentName}] Operation completed successfully`);
+      
+      DebugLogger.info(`Operation completed successfully`, {
+        context: componentName,
+        metadata: { operationId }
+      });
+      DebugLogger.endTimer(operationId);
+      
       return result;
     } catch (error) {
+      DebugLogger.endTimer(operationId);
       const handledError = handleError(error, context);
+      
       if (rethrow) {
         throw handledError;
       }
@@ -81,4 +99,3 @@ export function useErrorHandler(options: { componentName?: string; showToast?: b
     setError
   };
 }
-

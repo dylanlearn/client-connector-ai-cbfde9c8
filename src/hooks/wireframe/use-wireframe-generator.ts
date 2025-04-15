@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Toast } from '@/hooks/use-toast';
 import { 
@@ -5,8 +6,8 @@ import {
   WireframeGenerationResult 
 } from '@/services/ai/wireframe/wireframe-types';
 import { unifiedWireframeService } from '@/services/ai/wireframe/unified-wireframe-service';
+import { DebugLogger } from '@/utils/monitoring/debug-logger';
 
-// Rename the export to match the import
 export const useWireframeGenerator = (
   creativityLevel: number, 
   setCurrentWireframe: (wireframe: WireframeGenerationResult | null) => void, 
@@ -21,6 +22,11 @@ export const useWireframeGenerator = (
     setIsGenerating(true);
     setError(null);
     
+    DebugLogger.info('Starting wireframe generation', { 
+      context: 'wireframe-generator',
+      metadata: { params, creativityLevel }
+    });
+    
     try {
       // Apply creativity level if not already set
       const enhancedParams = {
@@ -28,12 +34,17 @@ export const useWireframeGenerator = (
         creativityLevel: params.creativityLevel || creativityLevel
       };
       
-      // Call the unified service
+      // Direct API call with optimized parameters
       const result = await unifiedWireframeService.generateWireframe(enhancedParams);
       
       // Update current wireframe state
       if (result.success && result.wireframe) {
         setCurrentWireframe(result);
+        
+        DebugLogger.info('Wireframe generated successfully', { 
+          context: 'wireframe-generator',
+          metadata: { wireframeId: result.wireframe.id }
+        });
         
         // Show success toast
         toastFn({
@@ -47,6 +58,11 @@ export const useWireframeGenerator = (
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      DebugLogger.error('Wireframe generation failed', { 
+        context: 'wireframe-generator',
+        metadata: { error: errorMessage }
+      });
       
       setError(error instanceof Error ? error : new Error(errorMessage));
       
@@ -75,8 +91,13 @@ export const useWireframeGenerator = (
     setIsGenerating(true);
     setError(null);
     
+    DebugLogger.info('Starting wireframe variation generation', { 
+      context: 'wireframe-generator',
+      metadata: { baseWireframeId: baseWireframe?.id, styleChanges }
+    });
+    
     try {
-      // Call the service to generate a variation
+      // Optimized direct call to generate variation
       const result = await unifiedWireframeService.generateWireframeVariation(
         baseWireframe,
         styleChanges,
@@ -86,6 +107,11 @@ export const useWireframeGenerator = (
       // Update current wireframe state
       if (result.success && result.wireframe) {
         setCurrentWireframe(result);
+        
+        DebugLogger.info('Wireframe variation generated successfully', { 
+          context: 'wireframe-generator',
+          metadata: { wireframeId: result.wireframe.id }
+        });
         
         // Show success toast
         toastFn({
@@ -99,6 +125,11 @@ export const useWireframeGenerator = (
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      
+      DebugLogger.error('Wireframe variation generation failed', { 
+        context: 'wireframe-generator',
+        metadata: { error: errorMessage }
+      });
       
       setError(error instanceof Error ? error : new Error(errorMessage));
       

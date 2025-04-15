@@ -6,15 +6,34 @@ interface LogOptions {
   metadata?: Record<string, unknown>;
   timestamp?: boolean;
   grouping?: boolean;
+  stackTrace?: boolean;
 }
 
 export const DebugLogger = {
   isDebugMode: process.env.NODE_ENV === 'development',
+  logLevel: 'info' as LogLevel, // Default log level
+
+  setLogLevel(level: LogLevel) {
+    this.logLevel = level;
+  },
+
+  shouldLog(level: LogLevel): boolean {
+    if (!this.isDebugMode) return false;
+    
+    const levels: Record<LogLevel, number> = {
+      debug: 0,
+      info: 1,
+      warn: 2,
+      error: 3
+    };
+    
+    return levels[level] >= levels[this.logLevel];
+  },
 
   log(level: LogLevel, message: string, options: LogOptions = {}) {
-    if (!this.isDebugMode) return;
+    if (!this.shouldLog(level)) return;
 
-    const { context, metadata, timestamp = true, grouping = false } = options;
+    const { context, metadata, timestamp = true, grouping = false, stackTrace = false } = options;
     const logData = {
       message,
       ...(timestamp ? { timestamp: new Date().toISOString() } : {}),
@@ -22,7 +41,9 @@ export const DebugLogger = {
       ...(metadata || {})
     };
 
-    if (grouping) console.group(`[${level.toUpperCase()}] ${context || 'Debug Log'}`);
+    const groupTitle = `[${level.toUpperCase()}]${context ? ` ${context}` : ''} - ${message}`;
+    
+    if (grouping) console.group(groupTitle);
     
     switch (level) {
       case 'debug':
@@ -36,6 +57,9 @@ export const DebugLogger = {
         break;
       case 'error':
         console.error(logData);
+        if (stackTrace && metadata?.error instanceof Error) {
+          console.error('Stack trace:', (metadata.error as Error).stack);
+        }
         break;
     }
 
@@ -55,7 +79,32 @@ export const DebugLogger = {
   },
 
   error(message: string, options?: LogOptions) {
-    this.log('error', message, options);
+    this.log('error', message, {
+      ...options,
+      stackTrace: true,
+      grouping: true
+    });
+  },
+  
+  // Performance monitoring
+  startTimer(label: string) {
+    if (!this.isDebugMode) return;
+    console.time(label);
+  },
+  
+  endTimer(label: string) {
+    if (!this.isDebugMode) return;
+    console.timeEnd(label);
+  },
+  
+  // Group logs for better organization
+  group(label: string) {
+    if (!this.isDebugMode) return;
+    console.group(label);
+  },
+  
+  groupEnd() {
+    if (!this.isDebugMode) return;
+    console.groupEnd();
   }
 };
-
