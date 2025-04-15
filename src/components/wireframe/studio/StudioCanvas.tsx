@@ -16,14 +16,14 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
   viewMode,
   onUpdate
 }) => {
-  const handleError = useErrorHandler({ componentName: 'StudioCanvas' });
+  const errorHandler = useErrorHandler({ componentName: 'StudioCanvas' });
   const { selectedSection, handleSectionClick } = useSectionInteractions();
 
   const handleUpdate = (updatedData: WireframeData) => {
     try {
       onUpdate(updatedData);
     } catch (error) {
-      handleError.handleError(error, 'Error in canvas update');
+      errorHandler.handleError(error, 'Error in canvas update');
     }
   };
 

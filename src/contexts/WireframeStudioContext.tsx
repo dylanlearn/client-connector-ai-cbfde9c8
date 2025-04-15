@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useState } from 'react';
 import { DeviceType, ViewMode } from '@/components/wireframe/types/studio-types';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
@@ -25,7 +26,7 @@ export function WireframeStudioProvider({
   children: ReactNode;
   initialData: WireframeData;
 }) {
-  const handleError = useErrorHandler({ componentName: 'WireframeStudio' });
+  const errorHandler = useErrorHandler({ componentName: 'WireframeStudio' });
   
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
@@ -38,7 +39,7 @@ export function WireframeStudioProvider({
     try {
       setWireframeData(wireframe);
     } catch (error) {
-      handleError(error, 'Error updating wireframe');
+      errorHandler.handleError(error, 'Error updating wireframe');
     }
   };
 

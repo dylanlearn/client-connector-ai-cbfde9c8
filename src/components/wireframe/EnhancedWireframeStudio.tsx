@@ -13,7 +13,7 @@ const StudioContent: React.FC<StudioContentProps> = ({
   onUpdate, 
   onExport 
 }) => {
-  const handleError = useErrorHandler({ componentName: 'StudioContent' });
+  const errorHandler = useErrorHandler({ componentName: 'StudioContent' });
   const { 
     deviceType,
     viewMode,
@@ -31,7 +31,7 @@ const StudioContent: React.FC<StudioContentProps> = ({
         onUpdate(updatedWireframe);
       }
     } catch (error) {
-      handleError(error, 'Error updating wireframe');
+      errorHandler.handleError(error, 'Error updating wireframe');
     }
   };
 
