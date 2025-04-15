@@ -1,17 +1,17 @@
 
 import React from 'react';
 
-interface ColorPickerProps {
-  value: string;
+export interface ColorPickerProps {
+  value?: string;
   onChange: (color: string) => void;
   className?: string;
-  id?: string; // Added id property
+  id?: string;
   color?: string; // Added for backward compatibility
 }
 
 export function ColorPicker({ value, color, onChange, className, id }: ColorPickerProps) {
   // Use either value or color prop (for backward compatibility)
-  const colorValue = value || color || '#000000';
+  const colorValue = value !== undefined ? value : color || '#000000';
   
   return (
     <input
