@@ -20,7 +20,7 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({
   projectId,
   onExport
 }) => {
-  const { wireframe } = useWireframeStore();
+  const { wireframeData } = useWireframeStore();
   const { user } = useAuth();
   
   // Handle export with analytics tracking
@@ -30,14 +30,14 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({
     }
     
     // Track export event if user and wireframe are available
-    if (user && wireframe && wireframe.id) {
+    if (user && wireframeData && wireframeData.id) {
       WireframeAnalyticsService.trackExport(
         user.id,
-        wireframe.id,
+        wireframeData.id,
         format
       );
     }
-  }, [onExport, user, wireframe]);
+  }, [onExport, user, wireframeData]);
   
   // Handle section click with analytics tracking
   const handleSectionClick = useCallback((sectionId: string) => {
@@ -46,31 +46,31 @@ const ResponsivePreview: React.FC<ResponsivePreviewProps> = ({
     }
     
     // Track section view if user and wireframe are available
-    if (user && wireframe && wireframe.id) {
-      const section = wireframe.sections.find(s => s.id === sectionId);
+    if (user && wireframeData && wireframeData.id) {
+      const section = wireframeData.sections.find(s => s.id === sectionId);
       if (section) {
         WireframeAnalyticsService.trackSectionView(
           user.id,
-          wireframe.id,
+          wireframeData.id,
           sectionId,
           section.sectionType || 'unknown'
         );
       }
     }
-  }, [onSectionClick, user, wireframe]);
+  }, [onSectionClick, user, wireframeData]);
   
   return (
     <Card className={cn("shadow-md overflow-hidden", className)}>
-      {wireframe && (
+      {wireframeData && (
         <WireframePreviewSystem
-          wireframe={wireframe}
+          wireframe={wireframeData}
           onSectionClick={handleSectionClick}
           onExport={handleExport}
           projectId={projectId}
         />
       )}
       
-      {!wireframe && (
+      {!wireframeData && (
         <div className="p-8 text-center">
           <p className="text-muted-foreground">No wireframe data available</p>
         </div>

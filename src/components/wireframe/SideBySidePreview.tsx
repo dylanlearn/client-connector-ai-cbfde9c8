@@ -24,7 +24,7 @@ const SideBySidePreview: React.FC<SideBySidePreviewProps> = ({
   const [maxPreview, setMaxPreview] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
   const { 
-    wireframe, 
+    wireframeData, 
     activeDevice, 
     setActiveDevice, 
     activeSection, 
@@ -161,8 +161,8 @@ const SideBySidePreview: React.FC<SideBySidePreviewProps> = ({
               className="border rounded-md shadow-sm"
               onSectionClick={handleSectionClick}
             >
-              {wireframe && <Wireframe 
-                wireframe={wireframe} 
+              {wireframeData && <Wireframe 
+                wireframe={wireframeData} 
                 viewMode="preview" 
                 deviceType={activeDevice}
                 onSectionClick={handleSectionClick} 
