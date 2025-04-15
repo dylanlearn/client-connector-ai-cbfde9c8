@@ -25,8 +25,7 @@ export function useErrorHandler(options: { componentName?: string; showToast?: b
         source: componentName,
         userAgent: navigator.userAgent,
         location: window.location.href
-      },
-      grouping: true
+      }
     });
     
     // Set the error state

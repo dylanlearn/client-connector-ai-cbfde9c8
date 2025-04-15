@@ -48,7 +48,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({
               <div key={color} className="space-y-1">
                 <Label>{color.charAt(0).toUpperCase() + color.slice(1)}</Label>
                 <ColorPicker
-                  color={colorScheme?.[color] || '#000000'}
+                  value={colorScheme?.[color] || '#000000'}
                   onChange={(newColor) => handleColorChange(color, newColor)}
                 />
               </div>
