@@ -1,16 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
-import { useConsolidatedWireframe } from '@/hooks/use-consolidated-wireframe';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import React, { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { toast } from 'sonner';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-// Import any other necessary components
+// Import refactored components
 import WireframeToolbar from './editor/WireframeToolbar';
-import WireframeCanvas from './WireframeCanvas';
+import WireframeCanvas from './editor/WireframeCanvas';
 import Wireframe from './Wireframe';
 import WireframeSidebar from './editor/WireframeSidebar';
 import WireframeControls from './editor/WireframeControls';
+import ErrorDisplay from './common/ErrorDisplay';
+
+// Import unified hook
+import { useWireframeStudio } from '@/hooks/use-wireframe-studio';
 
 export interface WireframeEditorProps {
   projectId?: string;
@@ -27,51 +29,48 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
   onUpdate,
   onExport
 }) => {
-  // State
-  const [viewMode, setViewMode] = useState(initialViewMode);
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  
-  // Use our consolidated wireframe hook
+  // Use our unified wireframe studio hook
   const {
     wireframe,
+    error,
     isGenerating,
     isSaving,
+    viewMode,
+    showSidebar,
+    selectedElement,
     updateWireframe,
+    generateWireframe,
     saveWireframe,
     exportWireframe,
-    generateWireframe,
-    error
-  } = useConsolidatedWireframe({
+    setViewMode,
+    toggleSidebar,
+    selectElement,
+    clearError
+  } = useWireframeStudio({
     projectId,
     initialData: initialWireframe,
+    initialViewMode,
     autoSave: true,
     showToasts: true,
-    onError: (err) => {
-      console.error('Wireframe editor error:', err);
-    }
+    componentName: 'WireframeEditor'
   });
   
-  // Handle updates to wireframe from external sources
+  // Handle updates from external sources
   useEffect(() => {
     if (initialWireframe && initialWireframe !== wireframe) {
       updateWireframe(initialWireframe);
     }
   }, [initialWireframe, updateWireframe, wireframe]);
   
-  // Handle manual save
+  // Handle saving
   const handleSave = async () => {
-    if (wireframe) {
-      const saved = await saveWireframe();
-      if (saved && onUpdate) {
-        onUpdate(saved);
-      }
-    } else {
-      toast.error('No wireframe to save');
+    const saved = await saveWireframe();
+    if (saved && onUpdate) {
+      onUpdate(saved);
     }
   };
   
-  // Handle export
+  // Handle exporting
   const handleExport = async (format: string) => {
     const result = await exportWireframe(format);
     if (result && onExport) {
@@ -81,25 +80,28 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
   
   // Handle section click
   const handleSectionClick = (sectionId: string) => {
-    setSelectedElement(sectionId);
+    selectElement(sectionId);
   };
   
-  // Toggle sidebar visibility
-  const toggleSidebar = () => {
-    setShowSidebar(!showSidebar);
+  // Retry generation if error occurred
+  const handleRetry = () => {
+    if (initialWireframe) {
+      updateWireframe(initialWireframe);
+    }
+    clearError();
   };
-  
-  if (error) {
-    return (
-      <div className="p-4 border border-red-300 bg-red-50 rounded-md">
-        <h3 className="text-lg font-medium text-red-800">Error</h3>
-        <p className="text-sm text-red-600">{error.message}</p>
-      </div>
-    );
-  }
   
   return (
     <div className="wireframe-editor flex flex-col h-full">
+      {error && (
+        <ErrorDisplay 
+          error={error} 
+          onRetry={handleRetry}
+          onClearError={clearError}
+          showRetry={true}
+        />
+      )}
+      
       <WireframeToolbar
         viewMode={viewMode}
         onViewModeChange={setViewMode}
@@ -113,8 +115,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
       <div className="flex-1 flex">
         {wireframe ? (
           <>
-            <div className="flex-1 overflow-auto">
-              <WireframeCanvas className="border rounded-md shadow-sm">
+            <div className="flex-1 overflow-auto p-4">
+              <WireframeCanvas viewMode={viewMode}>
                 <Wireframe 
                   wireframe={wireframe} 
                   viewMode={viewMode} 
@@ -133,8 +135,8 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
             )}
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <Card className="p-8 text-center">
+          <div className="flex-1 flex items-center justify-center p-4">
+            <Card className="p-8 text-center max-w-md">
               <p className="text-muted-foreground mb-4">
                 {isGenerating ? 'Generating wireframe...' : 'No wireframe data available'}
               </p>

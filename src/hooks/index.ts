@@ -1,9 +1,12 @@
 
-// Re-export all hooks for centralized access
-export * from './use-auth';
-export * from './use-mobile';
-export * from './use-memory-initialization';
-export * from './use-projects';
-export * from './use-sample-data';
-export * from './use-interaction-tracking';
-export * from './tracking/use-device-detection';
+// Export main hooks
+export { useWireframeStudio } from './use-wireframe-studio';
+export { useErrorHandler } from './use-error-handler';
+export { useWireframe } from './useWireframe';
+
+// Export types
+export type { UseWireframeStudioOptions } from './use-wireframe-studio';
+
+// Export legacy hooks for backward compatibility
+export { useAdvancedWireframe } from './use-enhanced-wireframe';
+export { useConsolidatedWireframe } from './use-consolidated-wireframe';

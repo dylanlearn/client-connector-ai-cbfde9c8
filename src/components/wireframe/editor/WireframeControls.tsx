@@ -4,7 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { WireframeData, WireframeGenerationParams } from '@/services/ai/wireframe/wireframe-types';
+import { 
+  WireframeData, 
+  WireframeGenerationParams
+} from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeControlsProps {
   projectId?: string;
@@ -12,7 +15,7 @@ interface WireframeControlsProps {
   generateWireframe: (params: WireframeGenerationParams) => Promise<any>;
 }
 
-const WireframeControlsForm: React.FC<WireframeControlsProps> = ({
+const WireframeControls: React.FC<WireframeControlsProps> = ({
   projectId,
   onWireframeCreated,
   generateWireframe
@@ -92,4 +95,4 @@ const WireframeControlsForm: React.FC<WireframeControlsProps> = ({
   );
 };
 
-export default WireframeControlsForm;
+export default WireframeControls;
