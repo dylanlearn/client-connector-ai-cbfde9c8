@@ -65,6 +65,17 @@ const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
     id: 'new-wireframe',
     title: 'New Wireframe',
     sections: [],
+    colorScheme: {
+      primary: '#3b82f6',
+      secondary: '#10b981',
+      accent: '#f59e0b',
+      background: '#ffffff',
+      text: '#111827'
+    },
+    typography: {
+      headings: 'Inter',
+      body: 'Inter'
+    }
   },
   ...props
 }) => {
