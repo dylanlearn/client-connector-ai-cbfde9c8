@@ -22,10 +22,8 @@ export const useWireframeGenerator = (
     setIsGenerating(true);
     setError(null);
     
-    DebugLogger.info('Starting wireframe generation', { 
-      context: 'wireframe-generator',
-      metadata: { params, creativityLevel }
-    });
+    const operationId = `wireframe-${Date.now()}`;
+    DebugLogger.startTimer(operationId);
     
     try {
       // Apply creativity level if not already set
@@ -37,16 +35,8 @@ export const useWireframeGenerator = (
       // Direct API call with optimized parameters
       const result = await unifiedWireframeService.generateWireframe(enhancedParams);
       
-      // Update current wireframe state
       if (result.success && result.wireframe) {
         setCurrentWireframe(result);
-        
-        DebugLogger.info('Wireframe generated successfully', { 
-          context: 'wireframe-generator',
-          metadata: { wireframeId: result.wireframe.id }
-        });
-        
-        // Show success toast
         toastFn({
           title: "Wireframe Generated",
           description: "Your wireframe has been created successfully"
@@ -55,9 +45,10 @@ export const useWireframeGenerator = (
         throw new Error(result.message || "Failed to generate wireframe");
       }
       
+      DebugLogger.endTimer(operationId);
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       
       DebugLogger.error('Wireframe generation failed', { 
         context: 'wireframe-generator',
@@ -66,7 +57,6 @@ export const useWireframeGenerator = (
       
       setError(error instanceof Error ? error : new Error(errorMessage));
       
-      // Show error toast
       toastFn({
         title: "Generation Failed",
         description: errorMessage,
@@ -91,29 +81,18 @@ export const useWireframeGenerator = (
     setIsGenerating(true);
     setError(null);
     
-    DebugLogger.info('Starting wireframe variation generation', { 
-      context: 'wireframe-generator',
-      metadata: { baseWireframeId: baseWireframe?.id, styleChanges }
-    });
+    const operationId = `variation-${Date.now()}`;
+    DebugLogger.startTimer(operationId);
     
     try {
-      // Optimized direct call to generate variation
       const result = await unifiedWireframeService.generateWireframeVariation(
         baseWireframe,
         styleChanges,
-        true // Enhanced creativity
+        true
       );
       
-      // Update current wireframe state
       if (result.success && result.wireframe) {
         setCurrentWireframe(result);
-        
-        DebugLogger.info('Wireframe variation generated successfully', { 
-          context: 'wireframe-generator',
-          metadata: { wireframeId: result.wireframe.id }
-        });
-        
-        // Show success toast
         toastFn({
           title: "Variation Generated",
           description: "A new creative variation has been created"
@@ -122,18 +101,18 @@ export const useWireframeGenerator = (
         throw new Error(result.message || "Failed to generate variation");
       }
       
+      DebugLogger.endTimer(operationId);
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       
-      DebugLogger.error('Wireframe variation generation failed', { 
+      DebugLogger.error('Variation generation failed', { 
         context: 'wireframe-generator',
         metadata: { error: errorMessage }
       });
       
       setError(error instanceof Error ? error : new Error(errorMessage));
       
-      // Show error toast
       toastFn({
         title: "Variation Failed",
         description: errorMessage,

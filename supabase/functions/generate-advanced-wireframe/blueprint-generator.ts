@@ -1,54 +1,40 @@
+
 import { callOpenAI } from "./openai-client.ts";
+import { DebugLogger } from "@/utils/monitoring/debug-logger.ts";
 
 /**
  * Generate a wireframe blueprint from user input and design intent
  */
 export async function generateBlueprint(userInput: string, intentData: any, styleToken?: string): Promise<any> {
-  // Optimize the system prompt for more direct, efficient generation
-  const systemPrompt = `You are a professional UX/UI designer specializing in wireframes.
-Generate a complete, optimized wireframe blueprint based on the description and intent.
-Your response must be a valid JSON object with this structure:
+  DebugLogger.info('Starting blueprint generation', {
+    context: 'blueprint-generator',
+    metadata: { userInput: userInput.substring(0, 50), styleToken }
+  });
+
+  // Optimized system prompt for more direct generation
+  const systemPrompt = `As an expert UX/UI designer, generate an optimized wireframe blueprint.
+Output a valid JSON object with this exact structure:
 {
   "id": "unique-id",
-  "title": "Title derived from user input",
-  "description": "Description based on user input",
-  "sections": [
-    {
-      "id": "section-id",
-      "name": "Section Name",
-      "sectionType": "hero | features | testimonials | pricing | contact | footer | etc",
-      "components": [...],
-      "layoutType": "grid | flex | standard",
-      "description": "Description of this section's purpose"
-    }
-  ],
-  "colorScheme": {
-    "primary": "#hexcolor",
-    "secondary": "#hexcolor",
-    "accent": "#hexcolor",
-    "background": "#hexcolor",
-    "text": "#hexcolor"
-  },
-  "typography": {
-    "headings": "font-family",
-    "body": "font-family"
-  },
-  "styleToken": "${styleToken || 'standard'}",
-  "designReasoning": "Explanation of key design decisions"
+  "title": "Title",
+  "description": "Description",
+  "sections": [{ "id": "section-id", "name": "Name", "sectionType": "type", "components": [], "layoutType": "type" }],
+  "colorScheme": { "primary": "#hex", "secondary": "#hex", "accent": "#hex", "background": "#hex", "text": "#hex" },
+  "typography": { "headings": "font", "body": "font" },
+  "styleToken": "token",
+  "designReasoning": "reasoning"
 }`;
 
-  // Optimize the user prompt for clearer, more direct instructions
-  const userPrompt = `Design intent: ${JSON.stringify(intentData)}
-User input: ${userInput}
+  const userPrompt = `Design Intent: ${JSON.stringify(intentData)}
+User Request: ${userInput}
 ${styleToken ? `Style: ${styleToken}` : ''}
 
-Create a wireframe blueprint with 3-7 well-structured sections that fulfills this request.
-Focus on clarity, usability, and ${intentData?.primary || 'conversion'}-oriented design.`;
+Create a wireframe blueprint with 3-7 well-structured sections.
+Focus on ${intentData?.primary || 'conversion'}-oriented design.`;
 
   try {
-    console.log(`Generating blueprint for: "${userInput.substring(0, 50)}..."`);
+    DebugLogger.startTimer('blueprint-generation');
     
-    // Use the proper model and optimization settings
     const response = await callOpenAI(userPrompt, { 
       systemMessage: systemPrompt,
       temperature: 0.7,
@@ -56,50 +42,43 @@ Focus on clarity, usability, and ${intentData?.primary || 'conversion'}-oriented
       responseFormat: { type: "json_object" }
     });
     
-    // Optimize JSON parsing with better error handling
-    try {
-      const blueprint = JSON.parse(response);
-      
-      // Ensure the blueprint has a unique ID
-      if (!blueprint.id) {
-        blueprint.id = crypto.randomUUID();
-      }
-      
-      console.log(`Blueprint generated successfully with ${blueprint.sections?.length || 0} sections`);
-      return blueprint;
-    } catch (parseError) {
-      console.error("Failed to parse blueprint JSON:", parseError);
-      
-      // Extract JSON if wrapped in markdown or text
-      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                         response.match(/(\{[\s\S]*\})/);
-      
-      if (jsonMatch) {
-        const extractedBlueprint = JSON.parse(jsonMatch[1].trim());
-        console.log(`Extracted blueprint from response with ${extractedBlueprint.sections?.length || 0} sections`);
-        return extractedBlueprint;
-      } else {
-        throw new Error("Could not extract valid JSON from the response");
-      }
-    }
-  } catch (error) {
-    console.error("Error generating blueprint:", error);
+    DebugLogger.endTimer('blueprint-generation');
     
-    // Return a minimal valid blueprint as fallback
+    const blueprint = JSON.parse(response);
+    
+    // Ensure blueprint has required fields
+    if (!blueprint.id) {
+      blueprint.id = crypto.randomUUID();
+    }
+    
+    DebugLogger.info('Blueprint generated successfully', {
+      context: 'blueprint-generator',
+      metadata: { 
+        blueprintId: blueprint.id,
+        sectionCount: blueprint.sections?.length 
+      }
+    });
+    
+    return blueprint;
+  } catch (error) {
+    DebugLogger.error('Blueprint generation failed', {
+      context: 'blueprint-generator',
+      metadata: { error }
+    });
+    
+    // Return minimal valid blueprint as fallback
     return {
       id: crypto.randomUUID(),
-      title: "Wireframe from " + userInput.substring(0, 30),
+      title: userInput.substring(0, 30),
       description: userInput,
-      sections: [
-        {
-          id: crypto.randomUUID(),
-          name: "Main Section",
-          sectionType: "content",
-          components: [],
-          layoutType: "standard",
-          description: "Generated as fallback due to error"
-        }
-      ],
+      sections: [{
+        id: crypto.randomUUID(),
+        name: "Main Section",
+        sectionType: "content",
+        components: [],
+        layoutType: "standard",
+        description: "Generated as fallback"
+      }],
       colorScheme: {
         primary: "#3b82f6",
         secondary: "#10b981",
@@ -112,69 +91,61 @@ Focus on clarity, usability, and ${intentData?.primary || 'conversion'}-oriented
         body: "sans-serif"
       },
       styleToken: styleToken || "standard",
-      designReasoning: "Fallback design created due to generation error"
+      designReasoning: "Fallback design due to error"
     };
   }
 }
 
 /**
- * Enhance an existing blueprint with additional details or variations
+ * Enhance an existing blueprint with variations while maintaining creativity
  */
 export async function enhanceBlueprint(blueprint: any, enhancementDirections: string): Promise<any> {
-  // Optimize system prompt for more efficient blueprint enhancement
-  const systemPrompt = `You are a professional UX/UI designer. 
-Enhance the provided wireframe blueprint according to the enhancement directions.
-Maintain the original structure but improve it according to the directions.
-Return ONLY a valid JSON object with the enhanced blueprint.`;
+  DebugLogger.info('Starting blueprint enhancement', {
+    context: 'blueprint-generator',
+    metadata: { 
+      originalBlueprintId: blueprint.id,
+      directions: enhancementDirections.substring(0, 50)
+    }
+  });
 
-  // Optimized user prompt for clearer instructions
-  const userPrompt = `Original blueprint: ${JSON.stringify(blueprint)}
-  
-Enhancement directions: ${enhancementDirections}
+  const systemPrompt = `As an expert UX/UI designer, enhance this wireframe blueprint according to the specified directions.
+Maintain original structure but improve it creatively.
+Return ONLY a valid JSON object matching the original structure.`;
 
-Return the enhanced blueprint as a complete, valid JSON object.
-Focus on maintaining the same structure while applying the requested enhancements.`;
+  const userPrompt = `Original Blueprint: ${JSON.stringify(blueprint)}
+Enhancement Request: ${enhancementDirections}
+
+Return enhanced blueprint as complete JSON while maintaining structure.`;
 
   try {
-    console.log(`Enhancing blueprint ${blueprint.id} with directions: "${enhancementDirections.substring(0, 50)}..."`);
+    DebugLogger.startTimer('blueprint-enhancement');
     
     const response = await callOpenAI(userPrompt, {
       systemMessage: systemPrompt,
       temperature: 0.7,
-      model: "gpt-4o-mini", 
+      model: "gpt-4o-mini",
       responseFormat: { type: "json_object" }
     });
     
-    // Parse with optimized error handling
-    try {
-      const enhancedBlueprint = JSON.parse(response);
-      
-      // Ensure we keep the same ID
-      enhancedBlueprint.id = blueprint.id;
-      
-      console.log(`Blueprint enhanced successfully with ${enhancedBlueprint.sections?.length || 0} sections`);
-      return enhancedBlueprint;
-    } catch (parseError) {
-      console.error("Failed to parse enhanced blueprint JSON:", parseError);
-      
-      // Extract JSON if wrapped in markdown or text
-      const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/) || 
-                         response.match(/(\{[\s\S]*\})/);
-      
-      if (jsonMatch) {
-        const extractedBlueprint = JSON.parse(jsonMatch[1].trim());
-        extractedBlueprint.id = blueprint.id;
-        console.log(`Extracted enhanced blueprint with ${extractedBlueprint.sections?.length || 0} sections`);
-        return extractedBlueprint;
-      } else {
-        // Fall back to the original blueprint
-        console.warn("Could not parse enhancement response, returning original blueprint");
-        return blueprint;
+    DebugLogger.endTimer('blueprint-enhancement');
+    
+    const enhancedBlueprint = JSON.parse(response);
+    enhancedBlueprint.id = blueprint.id;
+    
+    DebugLogger.info('Blueprint enhanced successfully', {
+      context: 'blueprint-generator',
+      metadata: { 
+        blueprintId: enhancedBlueprint.id,
+        sectionCount: enhancedBlueprint.sections?.length 
       }
-    }
+    });
+    
+    return enhancedBlueprint;
   } catch (error) {
-    console.error("Error enhancing blueprint:", error);
-    // Return the original blueprint as fallback
-    return blueprint;
+    DebugLogger.error('Blueprint enhancement failed', {
+      context: 'blueprint-generator',
+      metadata: { error }
+    });
+    return blueprint; // Return original as fallback
   }
 }

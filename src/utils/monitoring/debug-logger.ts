@@ -9,9 +9,16 @@ interface LogOptions {
   stackTrace?: boolean;
 }
 
+interface TimerMetrics {
+  startTime: number;
+  endTime?: number;
+  duration?: number;
+}
+
 export const DebugLogger = {
   isDebugMode: process.env.NODE_ENV === 'development',
-  logLevel: 'info' as LogLevel, // Default log level
+  logLevel: 'info' as LogLevel,
+  activeTimers: new Map<string, TimerMetrics>(),
 
   setLogLevel(level: LogLevel) {
     this.logLevel = level;
@@ -66,6 +73,7 @@ export const DebugLogger = {
     if (grouping) console.groupEnd();
   },
 
+  // Simplified logging methods
   debug(message: string, options?: LogOptions) {
     this.log('debug', message, options);
   },
@@ -86,15 +94,37 @@ export const DebugLogger = {
     });
   },
   
-  // Performance monitoring
+  // Enhanced performance monitoring
   startTimer(label: string) {
     if (!this.isDebugMode) return;
-    console.time(label);
+    
+    this.activeTimers.set(label, {
+      startTime: performance.now()
+    });
+    
+    this.debug(`Timer started: ${label}`);
   },
   
   endTimer(label: string) {
     if (!this.isDebugMode) return;
-    console.timeEnd(label);
+    
+    const timer = this.activeTimers.get(label);
+    if (!timer) {
+      this.warn(`Timer "${label}" not found`);
+      return;
+    }
+    
+    timer.endTime = performance.now();
+    timer.duration = timer.endTime - timer.startTime;
+    
+    this.info(`Timer "${label}" completed`, {
+      metadata: {
+        duration: `${timer.duration.toFixed(2)}ms`,
+        label
+      }
+    });
+    
+    this.activeTimers.delete(label);
   },
   
   // Group logs for better organization
