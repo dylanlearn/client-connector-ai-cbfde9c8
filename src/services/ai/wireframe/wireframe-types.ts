@@ -21,6 +21,13 @@ export interface WireframeComponent {
   content?: string;
   attributes?: Record<string, any>;
   children?: WireframeComponent[];
+  // Additional properties needed across components
+  props?: Record<string, any>;
+  style?: Record<string, any>;
+  className?: string;
+  responsive?: Record<string, any>;
+  components?: WireframeComponent[];
+  layout?: any;
 }
 
 export interface WireframeSection {
@@ -33,6 +40,13 @@ export interface WireframeSection {
     type?: string;
     direction?: string;
     alignment?: string;
+    // Additional layout properties
+    columns?: number;
+    wrap?: boolean;
+    alignItems?: string;
+    justifyContent?: string;
+    minHeight?: string | number;
+    gap?: number | string;
   };
   positionOrder?: number;
   
@@ -54,6 +68,8 @@ export interface WireframeSection {
     y: number;
   };
   layoutType?: string;
+  type?: string; // Added for SectionEditorFactory
+  componentVariant?: string; // Added for various section editors
   copySuggestions?: {
     heading?: string;
     subheading?: string;
