@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode, useState } from 'react';
-import { DeviceType, ViewMode } from '@/components/wireframe/types';
+import { DeviceType, ViewMode } from '@/components/wireframe/types/studio-types';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
 interface WireframeStudioContextProps {
@@ -59,4 +59,3 @@ export const useWireframeStudio = () => {
   }
   return context;
 };
-

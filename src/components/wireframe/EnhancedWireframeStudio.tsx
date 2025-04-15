@@ -4,20 +4,14 @@ import StudioToolbar from './studio/StudioToolbar';
 import StudioCanvas from './studio/StudioCanvas';
 import AISuggestionsPanel from './studio/AISuggestionsPanel';
 import { WireframeStudioProvider, useWireframeStudio } from '@/contexts/WireframeStudioContext';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { StudioContentProps } from './types/studio-types';
 
-interface EnhancedWireframeStudioProps {
-  projectId: string;
-  initialData?: any;
-  standalone?: boolean;
-  onUpdate?: (wireframe: any) => void;
-  onExport?: (format: string) => void;
-}
-
-const StudioContent = ({ 
+const StudioContent: React.FC<StudioContentProps> = ({ 
   projectId, 
   onUpdate, 
   onExport 
-}: Omit<EnhancedWireframeStudioProps, 'initialData' | 'standalone'>) => {
+}) => {
   const { 
     deviceType,
     viewMode,
@@ -28,7 +22,7 @@ const StudioContent = ({
     toggleAISuggestions
   } = useWireframeStudio();
 
-  const handleWireframeUpdate = (updatedWireframe: any) => {
+  const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
     updateWireframe(updatedWireframe);
     if (onUpdate) {
       onUpdate(updatedWireframe);
@@ -60,6 +54,11 @@ const StudioContent = ({
     </div>
   );
 };
+
+interface EnhancedWireframeStudioProps extends StudioContentProps {
+  initialData?: WireframeData;
+  standalone?: boolean;
+}
 
 const EnhancedWireframeStudio: React.FC<EnhancedWireframeStudioProps> = ({
   initialData = {

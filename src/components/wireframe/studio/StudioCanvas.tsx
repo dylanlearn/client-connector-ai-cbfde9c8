@@ -1,20 +1,10 @@
-
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import WireframeCanvasFabric from '../WireframeCanvasFabric';
 import WireframeVisualizer from '../WireframeVisualizer';
 import { useSectionInteractions } from '@/hooks/wireframe/use-section-interactions';
-import { DeviceType, ViewMode } from '@/components/wireframe/types';
-
-interface StudioCanvasProps {
-  projectId: string;
-  wireframeData: any;
-  deviceType: DeviceType;
-  viewMode: ViewMode;
-  selectedSection: string | null;
-  onUpdate: (wireframe: any) => void;
-}
+import { StudioCanvasProps } from '../types/studio-types';
 
 const StudioCanvas: React.FC<StudioCanvasProps> = ({
   projectId,
