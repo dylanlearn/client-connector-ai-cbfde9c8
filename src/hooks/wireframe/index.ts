@@ -1,3 +1,12 @@
+// Core hook exports
+export { useConsolidatedWireframe } from '../use-consolidated-wireframe';
+
+// Utility hooks (keeping for backward compatibility)
+export { useWireframeGenerator } from './use-wireframe-generator';
+export { useWireframeVariations } from './use-wireframe-variations';
+
+// Hook types
+export type { UseConsolidatedWireframeOptions } from '../use-consolidated-wireframe';
 
 // Export our main wireframe hook
 export { useWireframe, type UseWireframeOptions } from '@/hooks/useWireframe';

@@ -1,139 +1,152 @@
 
 import React, { useState, useEffect } from 'react';
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { useWireframe } from '@/hooks/useWireframe';
-import { v4 as uuidv4 } from 'uuid';
-import EditorHeader from './editor/EditorHeader';
-import SectionsList from './editor/SectionsList';
-import FeedbackPanel from './editor/FeedbackPanel';
-import GenerateWireframePanel from './editor/GenerateWireframePanel';
+import { useConsolidatedWireframe } from '@/hooks/use-consolidated-wireframe';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { Card } from '@/components/ui/card';
+import { toast } from 'sonner';
 
-interface WireframeEditorProps {
+// Import any other necessary components
+import WireframeToolbar from './editor/WireframeToolbar';
+import WireframeCanvas from './WireframeCanvas';
+import Wireframe from './Wireframe';
+import WireframeSidebar from './editor/WireframeSidebar';
+import WireframeControls from './editor/WireframeControls';
+
+export interface WireframeEditorProps {
   projectId?: string;
-  wireframe?: WireframeData | null;
+  wireframe?: WireframeData;
+  viewMode?: 'edit' | 'preview' | 'code';
   onUpdate?: (wireframe: WireframeData) => void;
-  viewMode?: 'edit' | 'preview';
-  enhancedFeatures?: boolean;
+  onExport?: (format: string) => void;
 }
 
 const WireframeEditor: React.FC<WireframeEditorProps> = ({
-  projectId = uuidv4(),
-  wireframe: initialWireframe = null,
+  projectId,
+  wireframe: initialWireframe,
+  viewMode: initialViewMode = 'edit',
   onUpdate,
-  viewMode = 'edit',
-  enhancedFeatures = false
+  onExport
 }) => {
-  const [localWireframe, setLocalWireframe] = useState<WireframeData | null>(initialWireframe);
+  // State
+  const [viewMode, setViewMode] = useState(initialViewMode);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
   
+  // Use our consolidated wireframe hook
   const {
+    wireframe,
     isGenerating,
-    currentWireframe,
-    error,
-    generateWireframe,
-    saveWireframe
-  } = useWireframe({
+    isSaving,
+    updateWireframe,
+    saveWireframe,
+    exportWireframe,
+    error
+  } = useConsolidatedWireframe({
     projectId,
-    toastNotifications: true,
-    enhancedValidation: enhancedFeatures,
-    onWireframeGenerated: (result) => {
-      if (result.success && result.wireframe) {
-        setLocalWireframe(result.wireframe);
-        if (onUpdate && result.wireframe) {
-          onUpdate(result.wireframe);
-        }
-      }
+    initialData: initialWireframe,
+    autoSave: true,
+    showToasts: true,
+    onError: (err) => {
+      console.error('Wireframe editor error:', err);
     }
   });
-
-  // Update local wireframe when the prop changes
+  
+  // Handle updates to wireframe from external sources
   useEffect(() => {
-    if (initialWireframe) {
-      setLocalWireframe(initialWireframe);
+    if (initialWireframe && initialWireframe !== wireframe) {
+      updateWireframe(initialWireframe);
     }
-  }, [initialWireframe]);
-
-  // Handle generating a wireframe
-  const handleGenerateWireframe = async (prompt: string) => {
-    await generateWireframe(prompt);
-    // Result handling is done via the onWireframeGenerated callback
-  };
-
-  // Handle applying feedback to the wireframe
-  const handleApplyFeedback = async (feedbackText: string) => {
-    if (!feedbackText.trim() || !localWireframe) return;
-    
-    // Since applyFeedback is not available in the current hook,
-    // we'll implement a basic version here
-    const updatedWireframe = {
-      ...localWireframe,
-      lastUpdated: new Date().toISOString()
-    };
-    setLocalWireframe(updatedWireframe);
-    if (onUpdate) {
-      onUpdate(updatedWireframe);
+  }, [initialWireframe, updateWireframe, wireframe]);
+  
+  // Handle manual save
+  const handleSave = async () => {
+    if (wireframe) {
+      const saved = await saveWireframe();
+      if (saved && onUpdate) {
+        onUpdate(saved);
+      }
+    } else {
+      toast.error('No wireframe to save');
     }
   };
-
-  // Handle saving the wireframe
-  const handleSaveWireframe = async () => {
-    const savedWireframe = await saveWireframe();
-    if (savedWireframe && onUpdate) {
-      onUpdate(savedWireframe);
+  
+  // Handle export
+  const handleExport = async (format: string) => {
+    const result = await exportWireframe(format);
+    if (result && onExport) {
+      onExport(format);
     }
   };
-
-  // Add new section to wireframe
-  const addSection = () => {
-    if (!localWireframe) return;
-
-    const newSection: WireframeSection = {
-      id: uuidv4(),
-      name: `Section ${localWireframe.sections.length + 1}`,
-      sectionType: 'generic',
-      description: 'New section',
-      components: []
-    };
-
-    const updatedWireframe = {
-      ...localWireframe,
-      sections: [...localWireframe.sections, newSection],
-      lastUpdated: new Date().toISOString()
-    };
-
-    setLocalWireframe(updatedWireframe);
-    if (onUpdate) {
-      onUpdate(updatedWireframe);
-    }
+  
+  // Handle section click
+  const handleSectionClick = (sectionId: string) => {
+    setSelectedElement(sectionId);
   };
-
-  // If there's no wireframe yet, show generation UI
-  if (!localWireframe) {
+  
+  // Toggle sidebar visibility
+  const toggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
+  
+  if (error) {
     return (
-      <GenerateWireframePanel 
-        isGenerating={isGenerating} 
-        error={error} 
-        onGenerateWireframe={handleGenerateWireframe} 
-      />
+      <div className="p-4 border border-red-300 bg-red-50 rounded-md">
+        <h3 className="text-lg font-medium text-red-800">Error</h3>
+        <p className="text-sm text-red-600">{error.message}</p>
+      </div>
     );
   }
-
-  // Render the wireframe editor UI
+  
   return (
-    <div className="wireframe-editor">
-      <EditorHeader 
-        title={localWireframe.title} 
-        onAddSection={addSection} 
-        onSaveWireframe={handleSaveWireframe} 
+    <div className="wireframe-editor flex flex-col h-full">
+      <WireframeToolbar
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onSave={handleSave}
+        onExport={handleExport}
+        isSaving={isSaving}
+        showSidebar={showSidebar}
+        toggleSidebar={toggleSidebar}
       />
       
-      <SectionsList sections={localWireframe.sections} />
-
-      {viewMode === 'edit' && (
-        <FeedbackPanel 
-          isGenerating={isGenerating} 
-          onApplyFeedback={handleApplyFeedback} 
-        />
-      )}
+      <div className="flex-1 flex">
+        {wireframe ? (
+          <>
+            <div className="flex-1 overflow-auto">
+              <WireframeCanvas className="border rounded-md shadow-sm">
+                <Wireframe 
+                  wireframe={wireframe} 
+                  viewMode={viewMode} 
+                  onSectionClick={handleSectionClick}
+                  activeSection={selectedElement}
+                />
+              </WireframeCanvas>
+            </div>
+            
+            {showSidebar && viewMode === 'edit' && (
+              <WireframeSidebar
+                wireframe={wireframe}
+                selectedElement={selectedElement}
+                onWireframeUpdate={updateWireframe}
+              />
+            )}
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground mb-4">
+                {isGenerating ? 'Generating wireframe...' : 'No wireframe data available'}
+              </p>
+              {!isGenerating && (
+                <WireframeControls 
+                  projectId={projectId}
+                  onWireframeCreated={updateWireframe}
+                />
+              )}
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
