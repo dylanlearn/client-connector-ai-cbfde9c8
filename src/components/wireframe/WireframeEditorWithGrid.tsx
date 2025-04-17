@@ -7,8 +7,19 @@ import { useCanvasNavigation } from '@/hooks/wireframe/use-canvas-navigation';
 import { Card } from '@/components/ui/card';
 import AdvancedHistoryControls from './canvas/AdvancedHistoryControls';
 import useCanvasHistory from '@/hooks/wireframe/use-canvas-history';
-import { fabric } from 'fabric'; // Import fabric correctly as a module
+import { fabric } from 'fabric';
 import SmartGuideSystem from './canvas/SmartGuideSystem';
+import { 
+  AdvancedTransformControls, 
+  AlignmentDistributionControls,
+  GuideManagement 
+} from './controls';
+import { useCustomGuides } from '@/hooks/wireframe/use-custom-guides';
+import { useAdvancedTransform } from '@/hooks/wireframe/use-advanced-transform';
+import { useAlignmentDistribution } from '@/hooks/wireframe/use-alignment-distribution';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Settings, AlignLeft, Ruler } from 'lucide-react';
 
 interface WireframeEditorWithGridProps {
   width?: number;
@@ -24,6 +35,8 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
   const [smartGuidesEnabled, setSmartGuidesEnabled] = useState<boolean>(true);
+  const [showTransformPanel, setShowTransformPanel] = useState<boolean>(false);
+  const [showGuidesPanel, setShowGuidesPanel] = useState<boolean>(false);
   
   // Use canvas navigation hook for viewport controls
   const {
@@ -68,6 +81,61 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
     maxHistorySteps: 50,
     enableBranching: true
   });
+  
+  // Use custom guides hook
+  const {
+    guides,
+    guidesVisible,
+    presets,
+    addGuide,
+    removeGuide,
+    updateGuide,
+    toggleGuidesVisibility,
+    addPreset,
+    removePreset,
+    applyPreset
+  } = useCustomGuides({
+    canvas: fabricCanvas,
+    canvasWidth: width,
+    canvasHeight: height
+  });
+  
+  // Use advanced transform hook
+  const {
+    selectedObjects,
+    transformValues,
+    maintainAspectRatio,
+    applyTransformation,
+    flipObjects,
+    resetTransformations,
+    toggleAspectRatio
+  } = useAdvancedTransform({
+    canvas: fabricCanvas
+  });
+  
+  // Use alignment and distribution hook
+  const {
+    alignLeft,
+    alignCenterH,
+    alignRight,
+    alignTop,
+    alignMiddle,
+    alignBottom,
+    distributeHorizontally,
+    distributeVertically,
+    spaceEvenlyHorizontal,
+    spaceEvenlyVertical,
+    setupDynamicGuides,
+    hasMultipleObjectsSelected
+  } = useAlignmentDistribution(fabricCanvas);
+  
+  // Set up dynamic alignment guides
+  useEffect(() => {
+    if (fabricCanvas) {
+      const cleanupGuides = setupDynamicGuides();
+      return cleanupGuides;
+    }
+  }, [fabricCanvas, setupDynamicGuides]);
 
   // Callback for when the Canvas is initialized
   const handleCanvasInitialized = (canvas: fabric.Canvas) => {
@@ -94,6 +162,9 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
   const toggleSmartGuides = () => {
     setSmartGuidesEnabled(prev => !prev);
   };
+  
+  // Check if we have an active selection
+  const hasActiveSelection = selectedObjects.length > 0;
 
   return (
     <div className={cn("wireframe-editor-container relative", className)} ref={containerRef}>
@@ -118,21 +189,108 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
             onDeleteBranch={deleteBranch}
           />
           
-          <CanvasViewportControls
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onZoomReset={handleZoomReset}
-            onRotateClockwise={handleRotateClockwise}
-            onRotateCounterClockwise={handleRotateCounterClockwise}
-            onRotateReset={handleRotateReset}
-            onPanReset={handlePanReset}
-            zoom={zoom}
-            rotation={rotation}
-            viewMode={viewMode}
-            onViewModeToggle={toggleViewMode}
-            onFocusReset={resetFocusArea}
-            focusArea={focusArea}
-          />
+          <div className="flex items-center gap-2">
+            <Popover open={showGuidesPanel} onOpenChange={setShowGuidesPanel}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-1.5"
+                  onClick={() => setShowGuidesPanel(prev => !prev)}
+                >
+                  <Ruler className="h-4 w-4" />
+                  Guides
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
+                <GuideManagement
+                  guides={guides}
+                  onAddGuide={addGuide}
+                  onRemoveGuide={removeGuide}
+                  onUpdateGuide={updateGuide}
+                  onToggleGuidesVisibility={toggleGuidesVisibility}
+                  guidesVisible={guidesVisible}
+                  presets={presets}
+                  onAddPreset={addPreset}
+                  onRemovePreset={removePreset}
+                  onApplyPreset={applyPreset}
+                  canvasWidth={width}
+                  canvasHeight={height}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Popover open={showTransformPanel} onOpenChange={setShowTransformPanel}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={hasActiveSelection ? "default" : "outline"} 
+                  size="sm" 
+                  className="h-8 gap-1.5"
+                  disabled={!hasActiveSelection}
+                  onClick={() => setShowTransformPanel(prev => !prev)}
+                >
+                  <Settings className="h-4 w-4" />
+                  Transform
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
+                <AdvancedTransformControls
+                  values={transformValues}
+                  onValuesChange={applyTransformation}
+                  onFlip={flipObjects}
+                  onReset={resetTransformations}
+                  maintainAspectRatio={maintainAspectRatio}
+                  onToggleAspectRatio={toggleAspectRatio}
+                  disabled={!hasActiveSelection}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 gap-1.5"
+                  disabled={!hasMultipleObjectsSelected()}
+                >
+                  <AlignLeft className="h-4 w-4" />
+                  Align
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0" align="end" sideOffset={5}>
+                <AlignmentDistributionControls
+                  onAlignLeft={alignLeft}
+                  onAlignCenterH={alignCenterH}
+                  onAlignRight={alignRight}
+                  onAlignTop={alignTop}
+                  onAlignMiddle={alignMiddle}
+                  onAlignBottom={alignBottom}
+                  onDistributeHorizontally={distributeHorizontally}
+                  onDistributeVertically={distributeVertically}
+                  onSpaceEvenlyHorizontal={spaceEvenlyHorizontal}
+                  onSpaceEvenlyVertical={spaceEvenlyVertical}
+                  multipleSelected={hasMultipleObjectsSelected()}
+                />
+              </PopoverContent>
+            </Popover>
+            
+            <CanvasViewportControls
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onZoomReset={handleZoomReset}
+              onRotateClockwise={handleRotateClockwise}
+              onRotateCounterClockwise={handleRotateCounterClockwise}
+              onRotateReset={handleRotateReset}
+              onPanReset={handlePanReset}
+              zoom={zoom}
+              rotation={rotation}
+              viewMode={viewMode}
+              onViewModeToggle={toggleViewMode}
+              onFocusReset={resetFocusArea}
+              focusArea={focusArea}
+            />
+          </div>
         </div>
         
         {/* Smart Guide system renders alignment guides */}
