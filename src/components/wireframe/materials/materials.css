@@ -1,0 +1,177 @@
+
+/**
+ * Material system styles and transitions
+ */
+
+:root {
+  /* Default transition duration (can be overridden by FidelityContext) */
+  --fidelity-transition-duration: 300ms;
+  
+  /* Material system variables */
+  --material-transition: all var(--fidelity-transition-duration) ease-in-out;
+  --material-shadow-transition: box-shadow var(--fidelity-transition-duration) ease-in-out;
+  --material-color-transition: background var(--fidelity-transition-duration) ease-in-out;
+  --material-transform-transition: transform var(--fidelity-transition-duration) ease-in-out;
+  --material-filter-transition: filter var(--fidelity-transition-duration) ease-in-out;
+}
+
+/* Base material class */
+.material-renderer {
+  transition: var(--material-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Material specific styles */
+.material-basic {
+  transition: var(--material-transition);
+}
+
+.material-flat {
+  transition: var(--material-transition);
+}
+
+.material-matte {
+  transition: var(--material-color-transition), 
+              var(--material-shadow-transition),
+              var(--material-filter-transition);
+}
+
+.material-glossy {
+  transition: var(--material-transition);
+  position: relative;
+}
+
+.material-glossy::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  transition: opacity var(--fidelity-transition-duration) ease-in-out;
+  opacity: var(--material-intensity, 1);
+}
+
+.material-metallic {
+  transition: var(--material-transition);
+  position: relative;
+}
+
+.material-metallic::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  right: -100%;
+  bottom: -100%;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  transition: transform 2s ease-in-out;
+  transform: rotate(45deg) translateY(0);
+  animation: metallicSheen 5s infinite ease-in-out;
+  opacity: var(--material-intensity, 1);
+}
+
+@keyframes metallicSheen {
+  0% { transform: rotate(45deg) translateY(0); }
+  30% { transform: rotate(45deg) translateY(200%); }
+  100% { transform: rotate(45deg) translateY(200%); }
+}
+
+.material-glass {
+  transition: var(--material-transition);
+  position: relative;
+}
+
+.material-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  transition: opacity var(--fidelity-transition-duration) ease-in-out;
+  opacity: var(--material-intensity, 1);
+  border-radius: inherit;
+}
+
+.material-textured {
+  transition: var(--material-transition);
+  background-size: cover;
+  background-position: center;
+}
+
+/* Surface treatment styles */
+.surface-smooth {
+  border-radius: var(--radius);
+}
+
+.surface-rough {
+  position: relative;
+}
+
+.surface-bumpy {
+  position: relative;
+}
+
+.surface-engraved {
+  position: relative;
+}
+
+.surface-embossed {
+  position: relative;
+}
+
+/* Fidelity level transition helpers */
+[data-fidelity="wireframe"] .material-renderer {
+  transition: var(--material-transition);
+}
+
+[data-fidelity="low"] .material-renderer {
+  transition: var(--material-transition);
+}
+
+[data-fidelity="medium"] .material-renderer {
+  transition: var(--material-transition);
+}
+
+[data-fidelity="high"] .material-renderer {
+  transition: var(--material-transition);
+}
+
+/* Performance optimizations for lower fidelity levels */
+[data-fidelity="wireframe"] .material-renderer::before,
+[data-fidelity="low"] .material-renderer::before {
+  display: none;
+}
+
+/* Optimize animations at lower fidelity levels */
+@media (prefers-reduced-motion) {
+  .material-metallic::before {
+    animation: none;
+  }
+}
+
+/* Shadow rendering optimizations */
+[data-fidelity="wireframe"] .material-renderer,
+[data-fidelity="low"] .material-renderer {
+  transform: translateZ(0); /* Use hardware acceleration for smoother rendering */
+}
+
+[data-fidelity="medium"] .material-renderer,
+[data-fidelity="high"] .material-renderer {
+  will-change: transform, opacity, box-shadow;
+}

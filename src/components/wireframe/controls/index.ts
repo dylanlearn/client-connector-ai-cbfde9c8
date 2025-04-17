@@ -6,3 +6,4 @@ export { default as AdvancedTransformControls } from './AdvancedTransformControl
 export { default as GuideManagement } from './GuideManagement';
 export { default as QuickActionsOverlay } from './QuickActionsOverlay';
 export { default as FidelityControls } from './FidelityControls';
+export { default as MaterialControls } from './MaterialControls';
