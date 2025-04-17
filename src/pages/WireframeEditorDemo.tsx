@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { FidelityProvider } from '@/components/wireframe/fidelity/FidelityContext';
 import FidelityDemo from '@/components/wireframe/fidelity/FidelityDemo';
 import MaterialSystemDemo from '@/components/wireframe/demo/MaterialSystemDemo';
+import AdaptationDemo from '@/components/wireframe/adaptation/AdaptationDemo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sparkles, Palette } from 'lucide-react';
+import { Sparkles, Palette, Layout } from 'lucide-react';
 
 const WireframeEditorDemo: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("fidelity");
@@ -23,6 +24,10 @@ const WireframeEditorDemo: React.FC = () => {
           <TabsTrigger value="materials" className="flex items-center">
             <Palette className="mr-2 h-4 w-4" />
             Material System
+          </TabsTrigger>
+          <TabsTrigger value="adaptation" className="flex items-center">
+            <Layout className="mr-2 h-4 w-4" />
+            Adaptive Elements
           </TabsTrigger>
         </TabsList>
         
@@ -46,6 +51,17 @@ const WireframeEditorDemo: React.FC = () => {
             </CardHeader>
             <CardContent>
               <MaterialSystemDemo />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="adaptation">
+          <Card>
+            <CardHeader>
+              <CardTitle>Context-Aware Element Adaptation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdaptationDemo />
             </CardContent>
           </Card>
         </TabsContent>
