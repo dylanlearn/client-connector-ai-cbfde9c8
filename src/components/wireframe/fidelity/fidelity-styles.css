@@ -1,0 +1,118 @@
+
+/* Base styles for fidelity rendering */
+:root {
+  --fidelity-transition-duration: 300ms;
+  --fidelity-shadow-strength: 1;
+  --fidelity-detail-level: 0.75;
+  --fidelity-render-quality: 0.85;
+  --fidelity-color-depth: 'full';
+  --fidelity-round-corners: 1;
+}
+
+/* Transition styles for smooth fidelity changes */
+[data-fidelity-level] * {
+  transition-property: box-shadow, border-radius, opacity, filter, transform, background-color;
+  transition-duration: var(--fidelity-transition-duration);
+  transition-timing-function: ease-in-out;
+}
+
+/* Disable animations when fidelity setting is off */
+.disable-animations * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Wireframe mode */
+[data-fidelity-level="wireframe"] {
+  /* Wireframe style indicators */
+  --fidelity-border-style: 1px solid rgba(0, 0, 0, 0.2);
+  --fidelity-text-opacity: 0.7;
+}
+
+[data-fidelity-level="wireframe"] .wireframe-section {
+  background-color: transparent !important;
+  border: var(--fidelity-border-style);
+}
+
+[data-fidelity-level="wireframe"] button,
+[data-fidelity-level="wireframe"] .button {
+  background-color: transparent !important;
+  border: var(--fidelity-border-style);
+  color: rgba(0, 0, 0, var(--fidelity-text-opacity)) !important;
+}
+
+[data-fidelity-level="wireframe"] img {
+  filter: grayscale(1) contrast(0.5);
+  opacity: 0.6;
+}
+
+/* Low fidelity mode */
+[data-fidelity-level="low"] {
+  --fidelity-box-shadow: 0 1px 2px rgba(0, 0, 0, calc(0.1 * var(--fidelity-shadow-strength)));
+  --fidelity-border-radius: calc(4px * var(--fidelity-round-corners));
+}
+
+[data-fidelity-level="low"] .card,
+[data-fidelity-level="low"] .section {
+  box-shadow: var(--fidelity-box-shadow);
+  border-radius: var(--fidelity-border-radius);
+}
+
+[data-fidelity-level="low"] img {
+  filter: contrast(0.9) saturate(0.8);
+}
+
+/* Medium fidelity mode */
+[data-fidelity-level="medium"] {
+  --fidelity-box-shadow: 0 4px 6px rgba(0, 0, 0, calc(0.1 * var(--fidelity-shadow-strength)));
+  --fidelity-border-radius: calc(6px * var(--fidelity-round-corners));
+}
+
+[data-fidelity-level="medium"] .card,
+[data-fidelity-level="medium"] .section {
+  box-shadow: var(--fidelity-box-shadow);
+  border-radius: var(--fidelity-border-radius);
+}
+
+/* High fidelity mode */
+[data-fidelity-level="high"] {
+  --fidelity-box-shadow: 0 8px 16px rgba(0, 0, 0, calc(0.15 * var(--fidelity-shadow-strength)));
+  --fidelity-border-radius: calc(8px * var(--fidelity-round-corners));
+}
+
+[data-fidelity-level="high"] .card,
+[data-fidelity-level="high"] .section {
+  box-shadow: var(--fidelity-box-shadow);
+  border-radius: var(--fidelity-border-radius);
+}
+
+/* Adjustments based on color depth */
+[data-fidelity-color-depth="grayscale"] img,
+[data-fidelity-color-depth="grayscale"] .image {
+  filter: grayscale(1) !important;
+}
+
+[data-fidelity-color-depth="limited"] img,
+[data-fidelity-color-depth="limited"] .image {
+  filter: saturate(0.7) !important;
+}
+
+/* Detail level adjustments */
+[style*="--fidelity-detail-level:0.3"] .text-xs,
+[style*="--fidelity-detail-level:0.3"] .small-detail {
+  opacity: 0.3;
+  display: none;
+}
+
+[style*="--fidelity-detail-level:0.5"] .micro-detail,
+[style*="--fidelity-detail-level:0.5"] .tertiary-element {
+  opacity: 0.5;
+  display: none;
+}
+
+/* Performance optimizations for lower fidelity levels */
+@media (max-width: 768px) {
+  [data-fidelity-level="high"] {
+    --fidelity-box-shadow: 0 4px 10px rgba(0, 0, 0, calc(0.1 * var(--fidelity-shadow-strength)));
+  }
+}

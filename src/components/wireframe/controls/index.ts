@@ -5,3 +5,4 @@ export { default as AlignmentDistributionControls } from './AlignmentDistributio
 export { default as AdvancedTransformControls } from './AdvancedTransformControls';
 export { default as GuideManagement } from './GuideManagement';
 export { default as QuickActionsOverlay } from './QuickActionsOverlay';
+export { default as FidelityControls } from './FidelityControls';
