@@ -115,7 +115,7 @@ export class ErrorHandler {
           recordError: boolean;
           additionalContext: ErrorContext;
         }> = {}
-      ) => {
+      ): Promise<Error> => {
         return ErrorHandler.handle(error, context, {
           componentName,
           ...defaultOptions,

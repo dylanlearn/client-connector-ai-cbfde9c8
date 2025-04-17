@@ -71,7 +71,11 @@ export function useWireframe({
     if (data && autoSave) {
       // We'll trigger auto-save here if enabled
       unifiedWireframeService.saveWireframe(data).catch(err => {
-        errorHandler.handleError(err, 'auto-saving wireframe', { showToast: false });
+        errorHandler.handleError(err, 'auto-saving wireframe', { showToast: false })
+          .then(handledError => {
+            // We don't set error state for auto-save failures, just log it
+            console.error('Auto-save failed:', handledError.message);
+          });
       });
     }
   }, [autoSave, errorHandler]);
@@ -101,8 +105,10 @@ export function useWireframe({
       
       return result;
     } catch (err) {
-      const handledError = errorHandler.handleError(err, 'generating wireframe');
-      setError(handledError); // Now we're setting an actual Error object, not a Promise<Error>
+      // Handle the error and wait for the Promise to resolve before setting state
+      const handledError = await errorHandler.handleError(err, 'generating wireframe');
+      setError(handledError);
+      
       return {
         wireframe: null,
         success: false,
@@ -123,8 +129,8 @@ export function useWireframe({
       const saved = await unifiedWireframeService.saveWireframe(wireframe);
       return saved;
     } catch (err) {
-      const handledError = errorHandler.handleError(err, 'saving wireframe');
-      setError(handledError); // Fixed: Now we're setting the Error object, not a Promise<Error>
+      const handledError = await errorHandler.handleError(err, 'saving wireframe');
+      setError(handledError);
       return null;
     } finally {
       setIsSaving(false);
@@ -138,8 +144,8 @@ export function useWireframe({
     try {
       return await unifiedWireframeService.exportWireframe(wireframe, format);
     } catch (err) {
-      const handledError = errorHandler.handleError(err, 'exporting wireframe');
-      setError(handledError); // Fixed: Now we're setting the Error object, not a Promise<Error>
+      const handledError = await errorHandler.handleError(err, 'exporting wireframe');
+      setError(handledError);
       return false;
     }
   }, [wireframe, errorHandler]);

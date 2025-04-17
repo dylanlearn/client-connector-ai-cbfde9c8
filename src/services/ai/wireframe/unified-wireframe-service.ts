@@ -16,7 +16,7 @@ class UnifiedWireframeService {
   private errorHandler = ErrorHandler.createHandler('UnifiedWireframeService');
 
   /**
-   * Generate a wireframe with configurable options
+   * Generate a wireframe based on provided parameters
    */
   async generateWireframe(params: WireframeGenerationParams): Promise<WireframeGenerationResult> {
     return await this.errorHandler.wrapAsync(async () => {
