@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ResizeHandles } from '../controls';
-import QuickActionsOverlay, { createDefaultQuickActions } from '../controls/QuickActionsOverlay';
+import QuickActionsOverlay, { createDefaultQuickActions, QuickAction } from '../controls/QuickActionsOverlay';
 import { 
   RotateCw, 
   ArrowLeftRight,
@@ -74,7 +74,7 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
   const [showAdvancedTransform, setShowAdvancedTransform] = useState(false);
   
   // Define the quick actions
-  const quickActions = [
+  const quickActions: QuickAction[] = [
     {
       id: 'rotate',
       icon: <RotateCw className="h-4 w-4" />,
@@ -180,6 +180,7 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
               onReset={onResetTransformation}
               maintainAspectRatio={maintainAspectRatio}
               onToggleAspectRatio={onToggleAspectRatio}
+              disabled={isLocked}
             />
           </PopoverContent>
         </Popover>

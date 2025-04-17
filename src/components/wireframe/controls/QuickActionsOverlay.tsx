@@ -1,18 +1,7 @@
 
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { 
-  Copy, 
-  Trash2, 
-  MoveUp, 
-  MoveDown, 
-  RotateCw, 
-  Edit, 
-  Lock,
-  Unlock,
-  AlignCenter,
-  Layers
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DuplicateIcon, TrashIcon, Undo2, Redo2, ChevronUp, ChevronDown, Edit, Lock, Unlock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface QuickAction {
@@ -20,66 +9,105 @@ export interface QuickAction {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
-  color?: 'default' | 'primary' | 'destructive';
+  disabled?: boolean;
 }
 
 interface QuickActionsOverlayProps {
   show: boolean;
   actions: QuickAction[];
-  position?: 'top' | 'right' | 'bottom' | 'left' | 'top-right';
-  className?: string;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+}
+
+export function createDefaultQuickActions(
+  onDuplicate: () => void,
+  onDelete: () => void,
+  onBringForward: () => void,
+  onSendBackward: () => void,
+  onRotate: () => void,
+  onEdit: () => void,
+  isLocked: boolean,
+  onToggleLock: () => void
+): QuickAction[] {
+  return [
+    {
+      id: 'duplicate',
+      icon: <DuplicateIcon className="h-4 w-4" />,
+      label: "Duplicate",
+      onClick: onDuplicate,
+      disabled: isLocked
+    },
+    {
+      id: 'delete',
+      icon: <TrashIcon className="h-4 w-4" />,
+      label: "Delete",
+      onClick: onDelete,
+      disabled: isLocked
+    },
+    {
+      id: 'bring-forward',
+      icon: <ChevronUp className="h-4 w-4" />,
+      label: "Bring Forward",
+      onClick: onBringForward,
+      disabled: isLocked
+    },
+    {
+      id: 'send-backward',
+      icon: <ChevronDown className="h-4 w-4" />,
+      label: "Send Backward",
+      onClick: onSendBackward,
+      disabled: isLocked
+    },
+    {
+      id: 'edit',
+      icon: <Edit className="h-4 w-4" />,
+      label: "Edit",
+      onClick: onEdit,
+      disabled: isLocked
+    },
+    {
+      id: 'lock',
+      icon: isLocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />,
+      label: isLocked ? "Unlock" : "Lock",
+      onClick: onToggleLock,
+      disabled: false
+    }
+  ];
 }
 
 const QuickActionsOverlay: React.FC<QuickActionsOverlayProps> = ({
   show,
   actions,
-  position = 'top-right',
-  className
+  position = 'top-right'
 }) => {
-  if (!show || actions.length === 0) return null;
+  if (!show) return null;
   
   const positionClasses = {
-    'top': 'top-0 left-1/2 transform -translate-x-1/2 -translate-y-full mb-1',
-    'right': 'right-0 top-1/2 transform translate-x-full -translate-y-1/2 ml-1',
-    'bottom': 'bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full mt-1',
-    'left': 'left-0 top-1/2 transform -translate-x-full -translate-y-1/2 mr-1',
-    'top-right': 'top-0 right-0 transform translate-x-0 -translate-y-full mb-1'
-  };
-  
-  const colorClasses = {
-    default: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200',
-    primary: 'bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300',
-    destructive: 'bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-800/50 text-red-700 dark:text-red-300',
+    'top-left': 'top-0 left-0 -translate-x-1/4 -translate-y-1/4',
+    'top-right': 'top-0 right-0 translate-x-1/4 -translate-y-1/4',
+    'bottom-left': 'bottom-0 left-0 -translate-x-1/4 translate-y-1/4',
+    'bottom-right': 'bottom-0 right-0 translate-x-1/4 translate-y-1/4'
   };
   
   return (
-    <TooltipProvider delayDuration={200}>
-      <div 
-        className={cn(
-          "absolute z-50 flex items-center gap-1 p-1 bg-background/90 backdrop-blur-sm shadow-md rounded-md border animate-in fade-in zoom-in-95",
-          positionClasses[position],
-          className
-        )}
+    <TooltipProvider>
+      <div
+        className={`absolute ${positionClasses[position]} flex flex-col gap-1 z-10`}
       >
         {actions.map((action) => (
           <Tooltip key={action.id}>
             <TooltipTrigger asChild>
-              <button
-                className={cn(
-                  "w-6 h-6 flex items-center justify-center rounded p-1 transition-colors",
-                  colorClasses[action.color || 'default']
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  action.onClick();
-                }}
-                title={action.label}
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-7 w-7 rounded-full shadow-md bg-white"
+                onClick={action.onClick}
+                disabled={action.disabled}
               >
                 {action.icon}
-              </button>
+              </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={5}>
-              {action.label}
+            <TooltipContent>
+              <p>{action.label}</p>
             </TooltipContent>
           </Tooltip>
         ))}
@@ -89,61 +117,3 @@ const QuickActionsOverlay: React.FC<QuickActionsOverlayProps> = ({
 };
 
 export default QuickActionsOverlay;
-
-// Pre-configured action helpers
-export const createDefaultQuickActions = (
-  onDuplicate: () => void,
-  onDelete: () => void,
-  onBringForward: () => void,
-  onSendBackward: () => void,
-  onRotate: () => void, // Changed from accepting an event to no arguments
-  onEdit: () => void,
-  isLocked: boolean = false,
-  onToggleLock: () => void
-): QuickAction[] => {
-  return [
-    {
-      id: 'edit',
-      icon: <Edit size={14} />,
-      label: 'Edit',
-      onClick: onEdit
-    },
-    {
-      id: 'duplicate',
-      icon: <Copy size={14} />,
-      label: 'Duplicate',
-      onClick: onDuplicate
-    },
-    {
-      id: 'rotate',
-      icon: <RotateCw size={14} />,
-      label: 'Rotate',
-      onClick: onRotate // This function now properly matches the expected signature
-    },
-    {
-      id: 'toggle-lock',
-      icon: isLocked ? <Unlock size={14} /> : <Lock size={14} />,
-      label: isLocked ? 'Unlock' : 'Lock',
-      onClick: onToggleLock
-    },
-    {
-      id: 'bring-forward',
-      icon: <MoveUp size={14} />,
-      label: 'Bring Forward',
-      onClick: onBringForward
-    },
-    {
-      id: 'send-backward',
-      icon: <MoveDown size={14} />,
-      label: 'Send Backward',
-      onClick: onSendBackward
-    },
-    {
-      id: 'delete',
-      icon: <Trash2 size={14} />,
-      label: 'Delete',
-      onClick: onDelete,
-      color: 'destructive'
-    }
-  ];
-};
