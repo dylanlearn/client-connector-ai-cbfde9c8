@@ -47,6 +47,8 @@ export const useFidelityRenderer = () => {
     if (settings.showShadows) total += 0.2 * settings.shadowIntensity;
     total += settings.renderQuality * 0.3;
     if (settings.showAnimations) total += 0.15;
+    if (settings.showTextures) total += 0.1;
+    if (settings.showGradients) total += 0.05;
     
     return Math.min(total, 1.0);
   }, [currentLevel, settings]);

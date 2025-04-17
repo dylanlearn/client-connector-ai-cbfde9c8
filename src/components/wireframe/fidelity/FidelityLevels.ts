@@ -23,6 +23,10 @@ export interface FidelitySettings {
   defaultMaterial: MaterialType;
   surfaceTreatment: SurfaceTreatment;
   roundCorners: boolean;
+  // Adding the missing properties
+  showGradients: boolean;
+  showTextures: boolean;
+  showBorders: boolean;
 }
 
 // Presets for each fidelity level
@@ -37,7 +41,10 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     colorDepth: 'grayscale',
     defaultMaterial: 'basic',
     surfaceTreatment: 'smooth',
-    roundCorners: false
+    roundCorners: false,
+    showGradients: false,
+    showTextures: false,
+    showBorders: true
   },
   low: {
     fidelityLevel: 'low',
@@ -49,7 +56,10 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     colorDepth: 'limited',
     defaultMaterial: 'flat',
     surfaceTreatment: 'smooth',
-    roundCorners: true
+    roundCorners: true,
+    showGradients: false,
+    showTextures: false,
+    showBorders: true
   },
   medium: {
     fidelityLevel: 'medium',
@@ -61,7 +71,10 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     colorDepth: 'full',
     defaultMaterial: 'matte',
     surfaceTreatment: 'smooth',
-    roundCorners: true
+    roundCorners: true,
+    showGradients: true,
+    showTextures: false,
+    showBorders: true
   },
   high: {
     fidelityLevel: 'high',
@@ -73,7 +86,10 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     colorDepth: 'full',
     defaultMaterial: 'glossy',
     surfaceTreatment: 'smooth',
-    roundCorners: true
+    roundCorners: true,
+    showGradients: true,
+    showTextures: true,
+    showBorders: true
   }
 };
 

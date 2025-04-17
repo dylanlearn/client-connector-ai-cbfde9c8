@@ -1,351 +1,270 @@
 
 import { useCallback, useEffect } from 'react';
 import { useFidelity } from '@/components/wireframe/fidelity/FidelityContext';
-import { FidelitySettings, MaterialType, SurfaceTreatment } from '@/components/wireframe/fidelity/FidelityLevels';
-import { fabric } from 'fabric';
+import { MaterialType, SurfaceTreatment } from '@/components/wireframe/fidelity/FidelityLevels';
+
+interface MaterialStyle {
+  background?: string;
+  boxShadow?: string;
+  borderRadius?: string;
+  border?: string;
+  opacity?: number;
+  filter?: string;
+  backdropFilter?: string;
+  transition?: string;
+}
 
 interface UseMaterialRendererOptions {
-  canvas?: fabric.Canvas | null;
-  defaultMaterial?: MaterialType;
-  defaultSurface?: SurfaceTreatment;
-  optimizationEnabled?: boolean;
+  material?: MaterialType;
+  surface?: SurfaceTreatment;
+  color?: string;
+  intensity?: number;
+  darkMode?: boolean;
 }
 
-/**
- * Hook for applying material rendering optimizations based on fidelity settings
- */
-export function useMaterialRenderer({
-  canvas,
-  defaultMaterial = 'matte',
-  defaultSurface = 'smooth',
-  optimizationEnabled = true
-}: UseMaterialRendererOptions = {}) {
-  const { settings, currentLevel, isTransitioning } = useFidelity();
+export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) => {
+  const { 
+    material: materialOverride, 
+    surface: surfaceOverride, 
+    color = '#4a90e2',
+    intensity: intensityOverride,
+    darkMode = false
+  } = options;
   
-  // Apply material to a Fabric.js object
-  const applyMaterial = useCallback((
-    object: fabric.Object,
-    material: MaterialType = defaultMaterial,
-    surface: SurfaceTreatment = defaultSurface,
-    color?: string
-  ) => {
-    if (!object) return;
+  const { currentLevel, settings } = useFidelity();
+  
+  // Generate CSS variables for the material system
+  useEffect(() => {
+    document.documentElement.style.setProperty('--material-transition-duration', 'var(--fidelity-transition-duration, 300ms)');
     
-    // Get current fidelity settings
-    const currentSettings = settings;
-    
-    // Base shadow settings
-    const shadowSettings = {
-      color: 'rgba(0,0,0,0.2)',
-      blur: 5,
-      offsetX: 0,
-      offsetY: 2
+    return () => {
+      document.documentElement.removeAttribute('style');
+    };
+  }, []);
+  
+  // Generate material styles based on fidelity level
+  const getMaterialStyles = useCallback((
+    materialType: MaterialType = settings.defaultMaterial,
+    surfaceType: SurfaceTreatment = settings.surfaceTreatment,
+    materialIntensity: number = 1.0
+  ): MaterialStyle => {
+    // Convert hex color to RGB for various effects
+    const hexToRgb = (hex: string): {r: number, g: number, b: number} => {
+      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      const formattedHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
+      
+      return result
+        ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16),
+          }
+        : { r: 0, g: 0, b: 0 };
     };
     
-    // Set fill color
-    if (color) {
-      object.set('fill', color);
-    }
+    const rgb = hexToRgb(color);
+    const rgbString = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
     
-    // Skip enhancements in wireframe mode
-    if (currentLevel === 'wireframe') {
-      object.set({
-        stroke: '#000',
-        strokeWidth: 1,
-        fill: '#fff',
-        shadow: null
-      });
-      return;
-    }
+    // Base styles
+    const baseStyles: MaterialStyle = {
+      background: color,
+      borderRadius: (surfaceType === 'smooth' && settings.roundCorners) ? 'var(--radius)' : '0px',
+      transition: 'all var(--fidelity-transition-duration, 300ms) ease-in-out',
+    };
     
-    // Apply material-specific settings
-    switch (material) {
+    // Gradients - only show if fidelity settings allow it
+    const gradients: Record<MaterialType, string | undefined> = {
+      basic: undefined,
+      flat: undefined,
+      matte: settings.showGradients ? 
+        `linear-gradient(to bottom, rgba(${rgbString}, ${0.95 * materialIntensity}) 0%, rgba(${rgbString}, 1) 100%)` : 
+        color,
+      glossy: settings.showGradients ? 
+        `linear-gradient(to bottom, rgba(${rgbString}, 1) 0%, rgba(${rgbString}, 0.85) 100%)` : 
+        color,
+      metallic: settings.showGradients ? 
+        `linear-gradient(135deg, rgba(${rgbString}, 0.9) 0%, rgba(${rgbString}, 1) 50%, rgba(${rgbString}, 0.8) 100%)` : 
+        color,
+      glass: `rgba(${rgbString}, ${0.15 * materialIntensity})`,
+      textured: color
+    };
+    
+    // Material-specific styles
+    switch (materialType) {
       case 'basic':
-        object.set({
-          shadow: null
-        });
-        break;
-      
+        return {
+          ...baseStyles,
+          background: color,
+          boxShadow: 'none'
+        };
+        
       case 'flat':
-        if (currentSettings.showShadows) {
-          object.set({
-            shadow: new fabric.Shadow({
-              ...shadowSettings,
-              blur: 3,
-              offsetY: 1
-            })
-          });
-        }
-        break;
-      
+        return {
+          ...baseStyles,
+          background: color,
+          boxShadow: 'none'
+        };
+        
       case 'matte':
-        if (currentSettings.showShadows) {
-          object.set({
-            shadow: new fabric.Shadow({
-              ...shadowSettings,
-              blur: 5,
-              offsetY: 2
-            })
-          });
-        }
-        break;
-      
+        return {
+          ...baseStyles,
+          background: gradients.matte || color,
+          boxShadow: settings.showShadows ? 
+            `0px 2px 4px rgba(0, 0, 0, ${0.1 * materialIntensity * settings.shadowIntensity})` : 
+            'none'
+        };
+        
       case 'glossy':
-        if (currentSettings.showShadows) {
-          object.set({
-            shadow: new fabric.Shadow({
-              ...shadowSettings,
-              blur: 8,
-              offsetY: 3
-            })
-          });
-        }
+        return {
+          ...baseStyles,
+          background: gradients.glossy || color,
+          boxShadow: settings.showShadows ? 
+            `0px 2px 8px rgba(0, 0, 0, ${0.15 * materialIntensity * settings.shadowIntensity}), 
+            inset 0px 1px 1px rgba(255, 255, 255, ${0.25 * materialIntensity})` : 
+            'none'
+        };
         
-        if (currentSettings.showGradients) {
-          // Simulate glossy effect with gradient if object is a rect/path
-          if (object instanceof fabric.Rect) {
-            const originalFill = object.fill?.toString() || '#000000';
-            const gradient = new fabric.Gradient({
-              type: 'linear',
-              coords: {
-                x1: 0,
-                y1: 0,
-                x2: 0,
-                y2: object.height || 100
-              },
-              colorStops: [
-                { offset: 0, color: fabric.Color.fromHex(originalFill).toLive('rgb') },
-                { offset: 0.5, color: originalFill },
-                { offset: 1, color: fabric.Color.fromHex(originalFill).darken(0.1).toLive('rgb') }
-              ]
-            });
-            
-            object.set('fill', gradient);
-          }
-        }
-        break;
-      
       case 'metallic':
-        if (currentSettings.showShadows) {
-          object.set({
-            shadow: new fabric.Shadow({
-              ...shadowSettings,
-              blur: 7,
-              offsetY: 2
-            })
-          });
-        }
+        return {
+          ...baseStyles,
+          background: gradients.metallic || color,
+          boxShadow: settings.showShadows ? 
+            `0px 3px 10px rgba(0, 0, 0, ${0.2 * materialIntensity * settings.shadowIntensity}),
+            inset 0px 1px 1px rgba(255, 255, 255, ${0.3 * materialIntensity})` : 
+            'none'
+        };
         
-        if (currentSettings.showGradients) {
-          // Simulate metallic effect with gradient
-          if (object instanceof fabric.Rect) {
-            const originalFill = object.fill?.toString() || '#000000';
-            const gradient = new fabric.Gradient({
-              type: 'linear',
-              coords: {
-                x1: 0,
-                y1: 0,
-                x2: object.width || 100,
-                y2: object.height || 100
-              },
-              colorStops: [
-                { offset: 0, color: fabric.Color.fromHex(originalFill).lighten(0.2).toLive('rgb') },
-                { offset: 0.5, color: originalFill },
-                { offset: 1, color: fabric.Color.fromHex(originalFill).darken(0.1).toLive('rgb') }
-              ]
-            });
-            
-            object.set('fill', gradient);
-          }
-        }
-        break;
-      
       case 'glass':
-        // For glass material, adjust opacity
-        object.set({
-          opacity: 0.7
-        });
+        return {
+          ...baseStyles,
+          background: gradients.glass,
+          backdropFilter: settings.showTextures ? `blur(${8 * materialIntensity}px)` : 'none',
+          boxShadow: settings.showShadows ? 
+            `0px 4px 12px rgba(0, 0, 0, ${0.1 * materialIntensity * settings.shadowIntensity}),
+            inset 0px 1px 1px rgba(255, 255, 255, ${0.3 * materialIntensity})` : 
+            'none'
+        };
         
-        if (currentSettings.showShadows) {
-          object.set({
-            shadow: new fabric.Shadow({
-              ...shadowSettings,
-              blur: 10,
-              offsetY: 2,
-              opacity: 0.2
-            })
-          });
-        }
-        break;
-      
       case 'textured':
-        if (currentSettings.showTextures && object instanceof fabric.Rect) {
-          // We would apply a texture pattern here in a real implementation
-          // For this example, we'll just use a gradient pattern
-          const originalFill = object.fill?.toString() || '#000000';
-          const patternSrc = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGZpbHRlciBpZD0iYSIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJ0dXJidWxlbmNlIiBiYXNlRnJlcXVlbmN5PSIwLjIiIG51bU9jdGF2ZXM9IjQiIHNlZWQ9IjEiIHN0aXRjaFRpbGVzPSJzdGl0Y2giIHJlc3VsdD0idHVyYnVsZW5jZSIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgaW4yPSJ0dXJidWxlbmNlIiBzY2FsZT0iNSIgeENoYW5uZWxTZWxlY3Rvcj0iUiIgeUNoYW5uZWxTZWxlY3Rvcj0iRyIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0idHJhbnNwYXJlbnQiLz48cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIGZpbGw9IiMwMDAiIGZpbHRlcj0idXJsKCNhKSIgb3BhY2l0eT0iMC4wOCIvPjwvc3ZnPg==';
-          
-          // This would be an async operation in a real implementation
-          // using fabric.util.loadImage
-          object.set({
-            fill: originalFill
-          });
-        }
+        return {
+          ...baseStyles,
+          background: color,
+          boxShadow: settings.showShadows ? 
+            `0px 2px 6px rgba(0, 0, 0, ${0.15 * materialIntensity * settings.shadowIntensity})` : 
+            'none'
+        };
         
-        if (currentSettings.showShadows) {
-          object.set({
-            shadow: new fabric.Shadow({
-              ...shadowSettings,
-              blur: 5,
-              offsetY: 2
-            })
-          });
-        }
-        break;
+      default:
+        return baseStyles;
     }
-    
-    // Apply surface treatment
-    switch (surface) {
-      case 'none':
-        // No special treatment
-        break;
-      
-      case 'smooth':
-        object.set({
-          rx: 5,
-          ry: 5
-        });
-        break;
-      
-      case 'rough':
-        // In a real implementation, we would apply a noise filter or pattern
-        break;
-      
-      case 'bumpy':
-        // In a real implementation, we would apply a bump map or displacement filter
-        break;
-      
-      case 'engraved':
-        if (currentSettings.showShadows) {
-          // Simulate engraved effect with inner shadow
-          // (In fabric.js, we'd typically use a composite shadow or filter for this)
-          object.set({
-            stroke: 'rgba(0,0,0,0.1)',
-            strokeWidth: 1
-          });
-        }
-        break;
-      
-      case 'embossed':
-        if (currentSettings.showShadows) {
-          // Simulate embossed effect
-          // (In fabric.js, we'd typically use a composite shadow or filter for this)
-          object.set({
-            stroke: 'rgba(255,255,255,0.2)',
-            strokeWidth: 1
-          });
-        }
-        break;
-    }
-    
-    // Update object
-    if (canvas) {
-      canvas.renderAll();
-    }
-    
-  }, [canvas, settings, currentLevel, defaultMaterial, defaultSurface]);
+  }, [color, settings]);
   
-  // Batch apply materials to multiple objects
-  const applyMaterialToObjects = useCallback((
-    objects: fabric.Object[],
-    material?: MaterialType,
-    surface?: SurfaceTreatment,
-    colors?: string[]
-  ) => {
-    objects.forEach((obj, index) => {
-      const color = colors ? colors[index % colors.length] : undefined;
-      applyMaterial(obj, material, surface, color);
-    });
-    
-    if (canvas) {
-      canvas.renderAll();
+  // Apply surface treatment styles
+  const getSurfaceTreatmentStyles = useCallback((
+    surface: SurfaceTreatment,
+    intensity: number = 1.0
+  ): MaterialStyle => {
+    if (surface === 'smooth') {
+      return {};
     }
-  }, [applyMaterial, canvas]);
+    
+    // Surface treatment styles
+    const treatmentStyles: Record<SurfaceTreatment, MaterialStyle> = {
+      smooth: {},
+      rough: {
+        filter: `contrast(${0.95 * intensity}) brightness(${0.98 * intensity})`
+      },
+      bumpy: {
+        filter: `contrast(${1.05 * intensity})`
+      },
+      engraved: {
+        boxShadow: settings.showShadows ? 
+          `inset 0 1px 3px rgba(0,0,0,${0.2 * intensity * settings.shadowIntensity})` : 
+          'none'
+      },
+      embossed: {
+        boxShadow: settings.showShadows ? 
+          `0 1px 2px rgba(255,255,255,${0.3 * intensity}), 
+          inset 0 1px 1px rgba(0,0,0,${0.15 * intensity * settings.shadowIntensity})` : 
+          'none'
+      }
+    };
+    
+    return treatmentStyles[surface] || {};
+  }, [settings]);
   
-  // Optimization: Apply performance optimizations based on fidelity level
-  useEffect(() => {
-    if (!optimizationEnabled || !canvas) return;
-    
-    // Get all objects on canvas
-    const objects = canvas.getObjects();
-    
-    // Optimization strategies based on fidelity level
-    switch (currentLevel) {
-      case 'wireframe':
-        // Maximum performance: disable object caching, simple strokes
-        objects.forEach(obj => {
-          obj.set({
-            objectCaching: false,
-            stroke: '#000',
-            strokeWidth: 1,
-            shadow: null,
-            fill: '#fff'
-          });
-        });
-        break;
-      
-      case 'low':
-        // Balance performance: enable caching, simple shadows
-        objects.forEach(obj => {
-          obj.set({
-            objectCaching: true,
-            strokeWidth: settings.showBorders ? 1 : 0
-          });
-        });
-        break;
-      
-      case 'medium':
-        // Default settings
-        objects.forEach(obj => {
-          obj.set({
-            objectCaching: true,
-            strokeWidth: settings.showBorders ? 1 : 0
-          });
-        });
-        break;
-      
-      case 'high':
-        // Maximum quality: enable all effects
-        objects.forEach(obj => {
-          obj.set({
-            objectCaching: true,
-            strokeWidth: settings.showBorders ? 1 : 0,
-            // Additional high-quality settings could be applied here
-          });
-        });
-        break;
+  // Apply border styles based on fidelity level
+  const getBorderStyles = useCallback((
+    wireframeMode: boolean = currentLevel === 'wireframe'
+  ): MaterialStyle => {
+    if (wireframeMode && settings.showBorders) {
+      return {
+        border: '1px solid rgba(0, 0, 0, 0.2)',
+        background: 'transparent'
+      };
     }
     
-    // Apply overall quality settings
-    canvas.enableRetinaScaling = settings.renderQuality > 0.8;
-    
-    // Skip rendering during transitions for performance
-    if (isTransitioning) {
-      canvas.skipTargetFind = true;
-      canvas.selection = false;
-    } else {
-      canvas.skipTargetFind = false;
-      canvas.selection = true;
+    if (currentLevel === 'low' && settings.showBorders) {
+      return {
+        border: '1px solid rgba(0, 0, 0, 0.1)'
+      };
     }
     
-    canvas.renderAll();
-  }, [canvas, currentLevel, settings, optimizationEnabled, isTransitioning]);
+    if (currentLevel === 'medium' && settings.showBorders) {
+      return {
+        border: '1px solid rgba(0, 0, 0, 0.05)'
+      };
+    }
+    
+    return {};
+  }, [currentLevel, settings]);
+  
+  // Combine all style effects
+  const generateStyles = useCallback(() => {
+    const material = materialOverride || settings.defaultMaterial;
+    const surface = surfaceOverride || settings.surfaceTreatment;
+    const intensity = intensityOverride !== undefined ? intensityOverride : 1.0;
+    
+    // Get all style components
+    const materialStyles = getMaterialStyles(material, surface, intensity);
+    const surfaceStyles = getSurfaceTreatmentStyles(surface, intensity);
+    const borderStyles = getBorderStyles();
+    
+    // Apply dark mode adjustments if needed
+    const darkModeAdjustments: MaterialStyle = darkMode ? {
+      filter: `brightness(0.8) ${materialStyles.filter || ''}`,
+      boxShadow: materialStyles.boxShadow ? 
+        materialStyles.boxShadow.replace(/rgba\(0,\s*0,\s*0/g, 'rgba(0, 0, 0') : 
+        undefined
+    } : {};
+    
+    // Combine all styles
+    return {
+      ...materialStyles,
+      ...surfaceStyles,
+      ...borderStyles,
+      ...(darkMode ? darkModeAdjustments : {})
+    };
+  }, [
+    currentLevel, 
+    settings,
+    materialOverride,
+    surfaceOverride,
+    intensityOverride,
+    darkMode,
+    getMaterialStyles,
+    getSurfaceTreatmentStyles,
+    getBorderStyles
+  ]);
   
   return {
-    applyMaterial,
-    applyMaterialToObjects,
     currentLevel,
     settings,
-    isTransitioning
+    generateStyles,
+    getMaterialStyles,
+    getSurfaceTreatmentStyles
   };
-}
+};
+
+export default useMaterialRenderer;
