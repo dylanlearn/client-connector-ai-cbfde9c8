@@ -6,8 +6,8 @@ import {
   AlignCenterVertical,
   AlignLeft,
   AlignRight,
-  AlignTop,
-  AlignBottom,
+  AlignStartVertical,
+  AlignEndVertical,
   AlignHorizontalSpaceAround,
   AlignVerticalSpaceAround,
   AlignHorizontalSpaceBetween,
@@ -100,7 +100,7 @@ const AlignmentDistributionControls: React.FC<AlignmentDistributionControlsProps
               onClick={onAlignTop}
               className="h-8 w-8 rounded-none border-r"
             >
-              <AlignTop className="h-4 w-4" />
+              <AlignStartVertical className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Align Top</TooltipContent>
@@ -128,7 +128,7 @@ const AlignmentDistributionControls: React.FC<AlignmentDistributionControlsProps
               onClick={onAlignBottom}
               className="h-8 w-8 rounded-none"
             >
-              <AlignBottom className="h-4 w-4" />
+              <AlignEndVertical className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Align Bottom</TooltipContent>

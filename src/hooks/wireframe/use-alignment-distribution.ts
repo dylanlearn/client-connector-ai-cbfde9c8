@@ -163,7 +163,13 @@ export function useAlignmentDistribution(canvas: fabric.Canvas | null) {
       
       // Add guides to canvas
       activeGuides.forEach(guide => canvas.add(guide));
-      guide.sendToBack();
+      
+      // Ensure guides are at the back
+      activeGuides.forEach(guide => {
+        if (guide) {
+          guide.sendToBack();
+        }
+      });
     };
     
     const handleObjectModified = () => {
