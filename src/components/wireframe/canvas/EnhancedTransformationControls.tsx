@@ -73,10 +73,11 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showAdvancedTransform, setShowAdvancedTransform] = useState(false);
   
-  // Transform the values to match the expected interface of AdvancedTransformControls
-  const advancedTransformValues = {
+  // Ensure transformValues includes all required properties for AdvancedTransformControls
+  const advancedTransformValues: import('../controls/AdvancedTransformControls').TransformationValues = {
     ...transformValues,
-    opacity: transformValues.opacity || 1 // Provide a default value if opacity is undefined
+    opacity: transformValues.opacity || 1, // Provide a default value if opacity is undefined
+    scale: transformValues.scale || 1 // Provide a default value if scale is undefined
   };
   
   // Define the quick actions
