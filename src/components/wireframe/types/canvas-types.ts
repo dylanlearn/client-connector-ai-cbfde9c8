@@ -109,6 +109,7 @@ export interface EnterpriseGridConfig {
   showNumbers: boolean;
   dashPattern?: number[];
   highlightEvery?: number;
+  showBreakpoints?: boolean;
   
   // Custom grid properties
   customSettings?: Record<string, any>;

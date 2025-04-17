@@ -6,11 +6,9 @@ import { Ruler } from 'lucide-react';
 import { 
   GridConfig, 
   DEFAULT_GRID_CONFIG, 
-  GridBreakpoint,
   calculateColumnPositions,
   calculateGridPositions
 } from '@/components/wireframe/utils/grid-utils';
-import { useTheme } from '@/hooks/use-theme';
 
 export type GridType = 'lines' | 'dots' | 'columns' | 'custom';
 
@@ -38,7 +36,7 @@ interface EnhancedGridSystemProps {
   /**
    * Whether to show responsive breakpoints
    */
-  showBreakpoints?: boolean;
+  showResponsiveBreakpoints?: boolean;
   /**
    * Callback when grid config changes
    */
@@ -59,21 +57,17 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
   height = 800,
   visible = true,
   snapToGrid = true,
-  showBreakpoints = false,
+  showResponsiveBreakpoints = false,
   onConfigChange,
   className,
   responsiveWidth
 }) => {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-  
   // Get the actual configuration to use
   const config: GridConfig = {
     ...DEFAULT_GRID_CONFIG,
     ...gridConfig,
     visible,
     snapToGrid,
-    showBreakpoints
   };
   
   // Calculate grid positions
@@ -81,15 +75,8 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
     if (!config.visible) return { horizontal: [], vertical: [] };
     
     if (config.type === 'columns') {
-      const columnPositions = calculateColumnPositions(
-        width,
-        config.columns,
-        config.gutterSize,
-        config.marginSize
-      );
-      
       return {
-        vertical: columnPositions,
+        vertical: calculateColumnPositions(width, config.size, 0, 0),
         horizontal: []
       };
     } else {
@@ -100,15 +87,6 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
       );
     }
   }, [config, width, height]);
-  
-  // Handle breakpoint click
-  const handleBreakpointClick = (breakpoint: GridBreakpoint) => {
-    if (onConfigChange) {
-      onConfigChange({
-        type: 'columns' // Changed from 'tailwind' to 'columns' to match allowed types
-      });
-    }
-  };
 
   if (!visible) return null;
   
@@ -155,7 +133,7 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
       )}
       
       {/* Breakpoint indicators */}
-      {config.showBreakpoints && (
+      {showResponsiveBreakpoints && config.breakpoints && (
         <div className="breakpoint-indicators absolute bottom-4 right-4 flex items-center gap-2 pointer-events-auto">
           {config.breakpoints.map((breakpoint, index) => {
             const isActive = responsiveWidth && responsiveWidth >= breakpoint.width;
@@ -169,7 +147,7 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
                   "text-xs h-7 px-2",
                   breakpoint.color ? `bg-${breakpoint.color}` : ""
                 )}
-                onClick={() => handleBreakpointClick(breakpoint)}
+                onClick={() => onConfigChange?.({ currentBreakpoint: breakpoint.name })}
                 title={`${breakpoint.name} (${breakpoint.width}px)`}
               >
                 {breakpoint.name}
@@ -180,7 +158,7 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
       )}
       
       {/* Current width indicator */}
-      {config.showBreakpoints && responsiveWidth && (
+      {showResponsiveBreakpoints && responsiveWidth && (
         <div className="current-width absolute bottom-4 left-4 text-sm bg-background border px-2 py-1 rounded pointer-events-auto">
           {responsiveWidth}px
         </div>

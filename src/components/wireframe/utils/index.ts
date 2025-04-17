@@ -57,8 +57,8 @@ export {
   TAILWIND_BREAKPOINTS,
 } from './grid-utils';
 
-// Re-export types from grid-utils
-export type { GridConfig, GridBreakpoint } from './grid-utils';
+// Re-export types from canvas-types rather than grid-utils
+export type { GridConfig, GridBreakpoint } from '../types/canvas-types';
 
 // Export grid system utilities
 export {

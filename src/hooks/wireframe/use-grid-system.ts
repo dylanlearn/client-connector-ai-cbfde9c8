@@ -3,9 +3,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   GridConfig, 
-  DEFAULT_GRID_CONFIG, 
-  GridBreakpoint, 
-  getResponsiveGridConfig 
+  DEFAULT_GRID_CONFIG
 } from '@/components/wireframe/utils/grid-utils';
 
 /**
@@ -87,9 +85,10 @@ export function useGridSystem(initialConfig?: Partial<GridConfig>) {
   
   // Set responsive grid config
   const setResponsiveGridConfig = useCallback((width: number) => {
-    const responsiveConfig = getResponsiveGridConfig(gridConfig, width);
-    setGridConfig(responsiveConfig);
-  }, [gridConfig]);
+    // Implementation would depend on the grid-utils implementation
+    // For now, just update the width
+    setGridConfig(prev => ({ ...prev, width }));
+  }, []);
   
   // Update grid config
   const updateGridConfig = useCallback((config: Partial<GridConfig>) => {

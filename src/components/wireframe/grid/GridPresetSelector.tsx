@@ -111,8 +111,8 @@ const GridPresetSelector: React.FC<GridPresetSelectorProps> = ({
                         {onDeletePreset && !preset.isSystem && (
                           <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 ml-2"
+                            size="sm"
+                            className="h-6 w-6 p-0 ml-2"
                             onClick={(e) => {
                               e.stopPropagation();
                               onDeletePreset(preset);

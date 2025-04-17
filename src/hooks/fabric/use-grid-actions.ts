@@ -66,6 +66,14 @@ export function useGridActions(
       compatConfig.gridColor = enterpriseConfig.color;
     }
     
+    if ('opacity' in enterpriseConfig) {
+      compatConfig.gridOpacity = enterpriseConfig.opacity;
+    }
+    
+    if ('showNumbers' in enterpriseConfig) {
+      compatConfig.showGridNumbers = enterpriseConfig.showNumbers;
+    }
+    
     updateConfig(compatConfig);
   }, [updateConfig]);
   
