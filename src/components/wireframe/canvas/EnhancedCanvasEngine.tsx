@@ -9,6 +9,7 @@ import DragEnhancementHandler from './DragEnhancementHandler';
 import CanvasLoadingIndicator from './CanvasLoadingIndicator';
 import CanvasErrorDisplay from './CanvasErrorDisplay';
 import { EnhancedCanvasEngineProps } from '../types/canvas-types';
+import SmartGuideSystem from '../guides/SmartGuideSystem';
 
 /**
  * Enhanced Canvas Engine Component with TypeScript-safe implementation
@@ -141,11 +142,25 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
         </div>
       )}
       
+      {/* Smart Guide System */}
+      {fabricCanvas && config.showSmartGuides && (
+        <SmartGuideSystem
+          canvas={fabricCanvas}
+          enabled={config.showSmartGuides}
+          guideColor={config.guideColor || 'rgba(0, 120, 255, 0.8)'}
+          snapThreshold={config.snapTolerance}
+          showEdgeGuides={config.showEdgeGuides}
+          showCenterGuides={config.showCenterGuides}
+          showDistanceIndicators={config.showDistanceIndicators}
+          magneticStrength={config.magneticStrength || 5}
+        />
+      )}
+      
       {/* Drag Enhancement Handler */}
       {fabricCanvas && (
         <DragEnhancementHandler
           canvas={fabricCanvas}
-          enabled={config.snapToGrid || config.showSmartGuides}
+          enabled={config.snapToGrid}
           gridConfig={{
             visible: config.showGrid,
             size: config.gridSize,
@@ -155,7 +170,7 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
             gutterWidth: 20,
             marginWidth: 40,
             snapThreshold: config.snapTolerance,
-            showGuides: config.showSmartGuides,
+            showGuides: false, // Disable legacy guides, use our new system
             guideColor: 'rgba(0, 120, 255, 0.75)',
             showRulers: true,
             rulerSize: 20

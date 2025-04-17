@@ -1,4 +1,3 @@
-
 import { fabric } from 'fabric';
 
 /**
@@ -17,6 +16,11 @@ export interface WireframeCanvasConfig {
   backgroundColor: string;
   showSmartGuides: boolean;
   gridColor: string;
+  guideColor?: string;
+  showEdgeGuides?: boolean;
+  showCenterGuides?: boolean;
+  showDistanceIndicators?: boolean;
+  magneticStrength?: number;
   [key: string]: any;
 }
 
