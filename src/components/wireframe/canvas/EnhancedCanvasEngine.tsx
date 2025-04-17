@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '../utils/types';
 import { useCanvasInitialization } from './useCanvasInitialization';
@@ -10,6 +10,7 @@ import CanvasLoadingIndicator from './CanvasLoadingIndicator';
 import CanvasErrorDisplay from './CanvasErrorDisplay';
 import { EnhancedCanvasEngineProps } from '../types/canvas-types';
 import SmartGuideSystem from '../guides/SmartGuideSystem';
+import EnterpriseGridSystem from '../grid/EnterpriseGridSystem';
 
 /**
  * Enhanced Canvas Engine Component with TypeScript-safe implementation
@@ -29,6 +30,7 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const renderStartTimeRef = useRef<number>(0);
+  const [smartGuidesEnabled, setSmartGuidesEnabled] = useState<boolean>(true);
   
   // Default configuration
   const defaultConfig: WireframeCanvasConfig = {
@@ -123,6 +125,21 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
     }
   }, [fabricCanvas, config.width, config.height, performanceOptions.enableRetina]);
   
+  // Handle config changes for smart guides
+  const handleConfigChange = (newConfig: Partial<WireframeCanvasConfig>) => {
+    if (newConfig.showSmartGuides !== undefined) {
+      setSmartGuidesEnabled(newConfig.showSmartGuides);
+    }
+  };
+
+  // Handle grid configuration changes
+  const handleGridConfigChange = (gridConfig: any) => {
+    // Update any canvas properties or settings based on grid changes
+    if (fabricCanvas) {
+      fabricCanvas.renderAll();
+    }
+  };
+  
   return (
     <div className={className ? className : "enhanced-canvas-container relative"}>
       <canvas ref={canvasRef} />
@@ -135,15 +152,33 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
         <div className="absolute bottom-2 right-2 bg-muted/60 text-xs p-1 rounded">
           {renderStats.frameRate > 0 ? (
             <>
-              {renderStats.frameRate} FPS | {renderStats.objectCount} objects
-              {renderStats.memoryUsage && ` | ${renderStats.memoryUsage} MB`}
+              {renderStats.frameRate.toFixed(1)} FPS | {renderStats.objectCount} objects
+              {renderStats.memoryUsage && ` | ${renderStats.memoryUsage.toFixed(1)} MB`}
             </>
           ) : null}
         </div>
       )}
       
+      {/* Enterprise Grid System */}
+      {fabricCanvas && config.showGrid && (
+        <EnterpriseGridSystem
+          canvas={fabricCanvas}
+          width={config.width}
+          height={config.height}
+          initialConfig={{
+            visible: config.showGrid,
+            type: config.gridType as any,
+            size: config.gridSize,
+            snapToGrid: config.snapToGrid,
+            snapThreshold: config.snapTolerance,
+            color: config.gridColor || '#e0e0e0'
+          }}
+          onConfigChange={handleGridConfigChange}
+        />
+      )}
+      
       {/* Smart Guide System */}
-      {fabricCanvas && config.showSmartGuides && (
+      {fabricCanvas && smartGuidesEnabled && (
         <SmartGuideSystem
           canvas={fabricCanvas}
           enabled={config.showSmartGuides}
