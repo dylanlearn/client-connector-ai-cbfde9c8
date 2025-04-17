@@ -1,278 +1,143 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import EnterpriseGrid, { DEFAULT_GRID_CONFIG } from './grid/EnterpriseGrid';
-import EnterpriseGridControls from './grid/EnterpriseGridControls';
-import { EnhancedCanvasEngine } from './canvas/EnhancedCanvasEngine';
-import { useEnterpriseGrid } from '@/hooks/wireframe/use-enterprise-grid';
-import { useFabric } from '@/hooks/fabric/use-fabric';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EnhancedCanvasEngine } from './canvas';
 import EnhancedLayerManager from './EnhancedLayerManager';
-import { fabric } from 'fabric';
-import { useCanvasPerformance } from './hooks/useCanvasPerformance';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Grid, Layers, Monitor, Tablet, Smartphone } from 'lucide-react';
+import { useGridActions } from '@/hooks/fabric/use-grid-actions';
+import { WireframeCanvasConfig } from './utils/types';
+import { useState } from 'react';
 
 interface WireframeEditorWithGridProps {
   width?: number;
   height?: number;
   className?: string;
+  onSectionClick?: (id: string, section: any) => void;
 }
 
 const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
   width = 1200,
   height = 800,
   className,
+  onSectionClick
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-  const [viewportWidth, setViewportWidth] = useState(width);
-  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  
-  // Initialize Fabric canvas
-  const { 
-    fabricCanvas, 
-    canvasConfig, 
-    updateConfig,
-    zoomIn, 
-    zoomOut, 
-    resetZoom
-  } = useFabric({
-    persistConfig: true,
-    initialConfig: {
-      width,
-      height,
-      showGrid: true,
-      snapToGrid: true
-    }
-  });
-  
-  // Set up canvas when fabricCanvas is available
-  useEffect(() => {
-    if (fabricCanvas) {
-      setCanvas(fabricCanvas);
-    }
-  }, [fabricCanvas]);
-  
-  // Initialize grid system
-  const {
-    gridConfig,
-    guideConfig,
-    updateGridConfig,
-    updateGuideConfig,
-    toggleGridVisibility,
-    toggleSnapToGrid,
-    setGridType,
-    setGridSize,
-    updateColumnSettings,
-    toggleResponsiveGrid,
-    getResponsiveGridConfig
-  } = useEnterpriseGrid({
-    canvas,
-    width: viewportWidth,
+  const [canvasInstance, setCanvasInstance] = useState<fabric.Canvas | null>(null);
+  const [canvasConfig, setCanvasConfig] = useState<WireframeCanvasConfig>({
+    width,
     height,
-    persistConfig: true,
-    initialConfig: {
-      visible: true,
-      type: 'columns',
-      columns: 12,
-      gutterWidth: 20,
-      marginWidth: 40,
-      responsive: true
-    }
+    zoom: 1,
+    panOffset: { x: 0, y: 0 },
+    showGrid: true,
+    snapToGrid: true,
+    gridSize: 20,
+    gridType: 'lines',
+    snapTolerance: 5,
+    backgroundColor: '#ffffff',
+    showSmartGuides: true,
+    gridColor: '#e0e0e0'
   });
   
-  // Monitor canvas performance
-  const { renderStats, optimizeCanvas } = useCanvasPerformance(
-    canvas, 
-    { enableCaching: true, skipOffscreen: true }
+  const gridActions = useGridActions(
+    (updates) => setCanvasConfig(prev => ({ ...prev, ...updates })),
+    canvasConfig
   );
-  
-  // Update canvas size and grid when device type changes
-  useEffect(() => {
-    if (!canvas) return;
-    
-    let newWidth = width;
-    
-    switch (deviceType) {
-      case 'mobile':
-        newWidth = 375;
-        break;
-      case 'tablet':
-        newWidth = 768;
-        break;
-      case 'desktop':
-        newWidth = 1200;
-        break;
-    }
-    
-    setViewportWidth(newWidth);
-    
-    // Delay resize to allow smooth transitions
-    const resizeTimer = setTimeout(() => {
-      canvas.setWidth(newWidth);
-      canvas.setHeight(height);
-      
-      // Get the appropriate grid config for this viewport width
-      const responsiveGridConfig = getResponsiveGridConfig(newWidth);
-      updateGridConfig(responsiveGridConfig);
-      
-      canvas.renderAll();
-    }, 300);
-    
-    return () => clearTimeout(resizeTimer);
-  }, [deviceType, canvas, height, width, getResponsiveGridConfig, updateGridConfig]);
-  
-  // Handle canvas ready event
-  const handleCanvasReady = (fabricCanvas: fabric.Canvas) => {
-    setCanvas(fabricCanvas);
-    optimizeCanvas();
-  };
-  
-  // Add a sample rectangle when the canvas is double-clicked
-  const handleCanvasDoubleClick = (e: React.MouseEvent) => {
-    if (!canvas) return;
-    
-    const rect = new fabric.Rect({
-      left: e.nativeEvent.offsetX - 75,
-      top: e.nativeEvent.offsetY - 50,
-      width: 150,
-      height: 100,
-      fill: '#e0f2fe',
-      stroke: '#0ea5e9',
-      strokeWidth: 2,
-      rx: 8,
-      ry: 8
-    });
-    
-    canvas.add(rect);
-    canvas.setActiveObject(rect);
-    canvas.renderAll();
-  };
-  
+
   return (
-    <div className={`wireframe-editor-with-grid ${className}`}>
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Canvas & Grid Area */}
-        <div className="lg:flex-grow">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant={deviceType === 'desktop' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDeviceType('desktop')}
-              >
-                <Monitor className="h-4 w-4 mr-1" />
-                Desktop
-              </Button>
-              <Button
-                variant={deviceType === 'tablet' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDeviceType('tablet')}
-              >
-                <Tablet className="h-4 w-4 mr-1" />
-                Tablet
-              </Button>
-              <Button
-                variant={deviceType === 'mobile' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setDeviceType('mobile')}
-              >
-                <Smartphone className="h-4 w-4 mr-1" />
-                Mobile
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={zoomOut}>
-                - Zoom
-              </Button>
-              <Button variant="outline" size="sm" onClick={zoomIn}>
-                + Zoom
-              </Button>
-              <Button variant="outline" size="sm" onClick={resetZoom}>
-                Reset
-              </Button>
-            </div>
-          </div>
-          
-          <div 
-            className="border rounded-md overflow-hidden transition-all duration-300 bg-gray-50 relative" 
-            style={{ 
-              width: '100%',
-              height: `${height}px`,
-              maxHeight: '80vh'
-            }}
-            onDoubleClick={handleCanvasDoubleClick}
-          >
-            {/* Canvas */}
-            <EnhancedCanvasEngine 
-              width={viewportWidth}
-              height={height}
-              canvasConfig={{
-                ...canvasConfig,
-                backgroundColor: '#ffffff',
-              }}
-              onCanvasReady={handleCanvasReady}
-              className="transition-width duration-300"
-            />
-            
-            {/* Grid Overlay */}
-            {canvas && (
-              <EnterpriseGrid
-                canvas={canvas}
-                config={gridConfig}
-                width={viewportWidth}
-                height={height}
-                onChange={updateGridConfig}
-                guideConfig={guideConfig}
-                onGuideConfigChange={updateGuideConfig}
-              />
-            )}
-            
-            {/* Performance stats */}
-            {renderStats && (
-              <div className="absolute bottom-2 left-2 text-xs bg-black/70 text-white px-2 py-1 rounded pointer-events-none">
-                {renderStats.frameRate} FPS | {renderStats.objectCount} objects
-              </div>
-            )}
-          </div>
-        </div>
+    <div className={className}>
+      <Tabs defaultValue="canvas">
+        <TabsList>
+          <TabsTrigger value="canvas">Canvas</TabsTrigger>
+          <TabsTrigger value="grid">Grid Settings</TabsTrigger>
+        </TabsList>
         
-        {/* Controls Sidebar */}
-        <div className="lg:w-80">
-          <Tabs defaultValue="grid">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="grid">
-                <Grid className="h-4 w-4 mr-1" />
-                Grid
-              </TabsTrigger>
-              <TabsTrigger value="layers">
-                <Layers className="h-4 w-4 mr-1" />
-                Layers
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="grid" className="mt-4">
-              <EnterpriseGridControls
-                config={gridConfig}
-                onChange={updateGridConfig}
-                guideConfig={guideConfig}
-                onGuideConfigChange={updateGuideConfig}
-                canvasWidth={viewportWidth}
+        <TabsContent value="canvas" className="flex gap-4">
+          <Card className="flex-1">
+            <CardContent className="p-0">
+              <EnhancedCanvasEngine
+                width={width}
+                height={height}
+                canvasConfig={canvasConfig}
+                onCanvasReady={setCanvasInstance}
               />
-            </TabsContent>
+            </CardContent>
+          </Card>
+          
+          {canvasInstance && (
+            <EnhancedLayerManager 
+              canvas={canvasInstance}
+              className="w-[300px] shrink-0"
+              maxHeight={600}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="grid" className="flex gap-4">
+          <Card className="p-4 space-y-4">
+            <h3 className="text-lg font-medium">Grid Configuration</h3>
             
-            <TabsContent value="layers" className="mt-4">
-              {canvas && <EnhancedLayerManager canvas={canvas} maxHeight={500} />}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  checked={canvasConfig.showGrid} 
+                  onChange={gridActions.toggleGrid} 
+                />
+                Show Grid
+              </label>
+              
+              <label className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  checked={canvasConfig.snapToGrid} 
+                  onChange={gridActions.toggleSnapToGrid} 
+                />
+                Snap to Grid
+              </label>
+            </div>
+            
+            <div>
+              <label htmlFor="grid-size" className="block mb-1">
+                Grid Size: {canvasConfig.gridSize}px
+              </label>
+              <input
+                id="grid-size"
+                type="range"
+                min="5"
+                max="50"
+                value={canvasConfig.gridSize}
+                onChange={(e) => gridActions.setGridSize(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label className="block mb-1">Grid Type</label>
+              <select 
+                value={canvasConfig.gridType} 
+                onChange={(e) => gridActions.setGridType(e.target.value as 'lines' | 'dots' | 'columns')}
+                className="w-full p-2 border rounded"
+              >
+                <option value="lines">Lines</option>
+                <option value="dots">Dots</option>
+                <option value="columns">Columns</option>
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="grid-color" className="block mb-1">
+                Grid Color
+              </label>
+              <input
+                id="grid-color"
+                type="color"
+                value={canvasConfig.gridColor}
+                onChange={(e) => gridActions.setGridColor(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
