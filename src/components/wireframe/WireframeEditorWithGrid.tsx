@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { fabric } from 'fabric';
 import AdvancedWireframeEditor from './AdvancedWireframeEditor';
 
 interface WireframeEditorWithGridProps {

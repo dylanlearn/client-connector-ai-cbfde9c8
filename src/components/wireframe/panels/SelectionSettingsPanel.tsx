@@ -1,292 +1,285 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { fabric } from 'fabric';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { HexColorPicker } from 'react-color';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { SelectionConfig } from '@/components/wireframe/utils/types';
-import { Input } from '@/components/ui/input';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ArrowsOutCardinal, ArrowsVertical, ArrowsHorizontal } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Copy, 
+  Trash2, 
+  Lock, 
+  Unlock,
+  MoveHorizontal,
+  MoveVertical, 
+  CornerDownRight,
+  CornerUpLeft,
+  Move,
+  ArrowUpNarrow,
+  ArrowDownNarrow,
+  Maximize2,
+  Hash
+} from 'lucide-react';
 
 interface SelectionSettingsPanelProps {
-  config: SelectionConfig;
-  onChange: (config: Partial<SelectionConfig>) => void;
+  selectedObjects: fabric.Object[];
+  canvas: fabric.Canvas | null;
+  onDelete?: () => void;
+  onDuplicate?: () => void;
+  onBringForward?: () => void;
+  onSendBackward?: () => void;
+  onLockToggle?: () => void;
 }
 
 const SelectionSettingsPanel: React.FC<SelectionSettingsPanelProps> = ({
-  config,
-  onChange
+  selectedObjects,
+  canvas,
+  onDelete,
+  onDuplicate,
+  onBringForward,
+  onSendBackward,
+  onLockToggle
 }) => {
-  const [borderColor, setBorderColor] = useState(config.style.borderColor);
-  const [cornerColor, setCornerColor] = useState(config.style.cornerColor);
-  const [selectionBg, setSelectionBg] = useState(config.style.selectionBackgroundColor);
+  const [opacity, setOpacity] = useState<number>(100);
   
-  // Update color pickers when config changes
-  useEffect(() => {
-    setBorderColor(config.style.borderColor);
-    setCornerColor(config.style.cornerColor);
-    setSelectionBg(config.style.selectionBackgroundColor);
-  }, [config]);
+  // Get the first selected object to display its properties
+  const primaryObject = selectedObjects[0];
+  const isLocked = primaryObject?.lockMovementX && primaryObject?.lockMovementY;
   
-  // Handle color changes with a timeout to avoid excessive updates
-  const handleColorChange = (colorType: 'border' | 'corner' | 'background', color: string) => {
-    if (colorType === 'border') {
-      setBorderColor(color);
-      onChange({ 
-        style: { ...config.style, borderColor: color } 
+  // Calculate combined dimensions of multiple objects
+  const getBoundingRect = () => {
+    if (!canvas || selectedObjects.length === 0) return null;
+    
+    if (selectedObjects.length === 1) {
+      const obj = selectedObjects[0];
+      return {
+        width: Math.round(obj.width! * obj.scaleX!),
+        height: Math.round(obj.height! * obj.scaleY!),
+        left: Math.round(obj.left!),
+        top: Math.round(obj.top!),
+        angle: Math.round(obj.angle!)
+      };
+    }
+    
+    // For multiple objects, get the selection bounding box
+    const activeSelection = canvas.getActiveObject();
+    if (activeSelection && activeSelection.type === 'activeSelection') {
+      return {
+        width: Math.round(activeSelection.width! * activeSelection.scaleX!),
+        height: Math.round(activeSelection.height! * activeSelection.scaleY!),
+        left: Math.round(activeSelection.left!),
+        top: Math.round(activeSelection.top!),
+        angle: Math.round(activeSelection.angle!)
+      };
+    }
+    
+    return null;
+  };
+  
+  const rect = getBoundingRect();
+  
+  // Apply opacity to all selected objects
+  const handleOpacityChange = (value: number[]) => {
+    setOpacity(value[0]);
+    
+    if (canvas) {
+      selectedObjects.forEach(obj => {
+        obj.set('opacity', value[0] / 100);
       });
-    } else if (colorType === 'corner') {
-      setCornerColor(color);
-      onChange({ 
-        style: { ...config.style, cornerColor: color } 
-      });
-    } else if (colorType === 'background') {
-      setSelectionBg(color);
-      onChange({ 
-        style: { ...config.style, selectionBackgroundColor: color } 
-      });
+      canvas.renderAll();
     }
   };
-
+  
+  // Handle movement by precise amounts
+  const moveObjects = (direction: 'left' | 'right' | 'up' | 'down', pixels: number) => {
+    if (!canvas) return;
+    
+    const moveMap = {
+      left: { left: -pixels },
+      right: { left: pixels },
+      up: { top: -pixels },
+      down: { top: pixels }
+    };
+    
+    selectedObjects.forEach(obj => {
+      obj.set(moveMap[direction]);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    canvas.fire('object:modified');
+  };
+  
   return (
-    <div className="selection-settings-panel space-y-4 p-4">
-      <h3 className="text-lg font-medium">Selection Settings</h3>
-      
-      <Accordion type="single" collapsible defaultValue="selection-behavior">
-        <AccordionItem value="selection-behavior">
-          <AccordionTrigger className="py-2">Selection Behavior</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="selection-mode">Selection Mode</Label>
-                <Select
-                  value={config.mode}
-                  onValueChange={(value) => onChange({ mode: value as 'single' | 'multiple' })}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Selection Mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="multiple">Multiple</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label htmlFor="selection-key">Multi-select Key</Label>
-                <Select
-                  value={config.selectionKey}
-                  onValueChange={(value) => onChange({ selectionKey: value as 'shift' | 'ctrl' | 'alt' })}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Selection Key" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="shift">Shift</SelectItem>
-                    <SelectItem value="ctrl">Ctrl</SelectItem>
-                    <SelectItem value="alt">Alt</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label htmlFor="object-priority">Selection Priority</Label>
-                <Select
-                  value={config.objectSelectionPriority}
-                  onValueChange={(value) => onChange({ 
-                    objectSelectionPriority: value as 'front-to-back' | 'back-to-front' 
-                  })}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="front-to-back">Front to Back</SelectItem>
-                    <SelectItem value="back-to-front">Back to Front</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label htmlFor="allow-deselect">Allow Deselection</Label>
-                <Switch
-                  id="allow-deselect"
-                  checked={config.allowDeselect}
-                  onCheckedChange={(checked) => onChange({ allowDeselect: checked })}
-                />
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      
-        <AccordionItem value="keyboard-movement">
-          <AccordionTrigger className="py-2">
-            <div className="flex items-center space-x-2">
-              <ArrowsVertical className="h-4 w-4" />
-              <span>Keyboard Movement</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Movement Step (px)</Label>
-                  <span className="text-sm">{config.keyboardMovementStep}px</span>
-                </div>
-                <Slider
-                  id="movement-step"
-                  min={1}
-                  max={20}
-                  step={1}
-                  value={[config.keyboardMovementStep]}
-                  onValueChange={(value) => onChange({ keyboardMovementStep: value[0] })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Hold Shift for 10x movement speed
-                </p>
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      
-        <AccordionItem value="visual-style">
-          <AccordionTrigger className="py-2">Visual Style</AccordionTrigger>
-          <AccordionContent>
+    <div className="selection-settings-panel space-y-4">
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-medium mb-2">
+            {selectedObjects.length > 1 
+              ? `${selectedObjects.length} Objects Selected` 
+              : 'Object Properties'
+            }
+          </h3>
+          
+          {/* Object type info */}
+          <p className="text-sm text-muted-foreground mb-4">
+            {selectedObjects.length > 1 
+              ? 'Multiple types' 
+              : primaryObject?.type || 'Unknown'
+            }
+          </p>
+          
+          {/* Quick actions */}
+          <div className="grid grid-cols-3 gap-1 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDuplicate}
+              className="flex flex-col items-center justify-center h-16 gap-1"
+              title="Duplicate (Ctrl+D)"
+            >
+              <Copy size={16} />
+              <span className="text-xs">Duplicate</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDelete}
+              className="flex flex-col items-center justify-center h-16 gap-1"
+              title="Delete (Delete)"
+            >
+              <Trash2 size={16} />
+              <span className="text-xs">Delete</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLockToggle}
+              className="flex flex-col items-center justify-center h-16 gap-1"
+              title="Lock/Unlock (Ctrl+L)"
+            >
+              {isLocked ? <Unlock size={16} /> : <Lock size={16} />}
+              <span className="text-xs">{isLocked ? 'Unlock' : 'Lock'}</span>
+            </Button>
+          </div>
+          
+          <Separator className="my-4" />
+          
+          {/* Position & Size */}
+          {rect && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Border Color</Label>
-                  <div className="flex">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <div 
-                          className="h-8 w-8 rounded-md border cursor-pointer"
-                          style={{ backgroundColor: borderColor }}
-                        />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <HexColorPicker 
-                          color={borderColor}
-                          onChange={(color) => handleColorChange('border', color)}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <Input 
-                      value={borderColor}
-                      onChange={(e) => handleColorChange('border', e.target.value)}
-                      className="w-24 ml-2"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Corner Color</Label>
-                  <div className="flex">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <div 
-                          className="h-8 w-8 rounded-md border cursor-pointer"
-                          style={{ backgroundColor: cornerColor }}
-                        />
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <HexColorPicker 
-                          color={cornerColor}
-                          onChange={(color) => handleColorChange('corner', color)}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <Input 
-                      value={cornerColor}
-                      onChange={(e) => handleColorChange('corner', e.target.value)}
-                      className="w-24 ml-2"
-                    />
-                  </div>
+              <div>
+                <h4 className="text-sm font-medium mb-2 flex items-center">
+                  <Hash size={14} className="mr-1" />
+                  Dimensions
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>W: {rect.width}px</div>
+                  <div>H: {rect.height}px</div>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label>Selection Background</Label>
-                <div className="flex">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div 
-                        className="h-8 w-8 rounded-md border cursor-pointer"
-                        style={{ backgroundColor: selectionBg }}
-                      />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <HexColorPicker 
-                        color={selectionBg}
-                        onChange={(color) => handleColorChange('background', color)}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <Input 
-                    value={selectionBg}
-                    onChange={(e) => handleColorChange('background', e.target.value)}
-                    className="w-24 ml-2"
-                  />
+              <div>
+                <h4 className="text-sm font-medium mb-2 flex items-center">
+                  <Move size={14} className="mr-1" />
+                  Position
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>X: {rect.left}px</div>
+                  <div>Y: {rect.top}px</div>
+                  {rect.angle !== 0 && (
+                    <div>Rotation: {rect.angle}°</div>
+                  )}
                 </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <Label>Transparent Corners</Label>
-                <Switch
-                  checked={config.style.transparentCorners}
-                  onCheckedChange={(checked) => onChange({ 
-                    style: { ...config.style, transparentCorners: checked } 
-                  })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Corner Size</Label>
-                  <span className="text-sm">{config.style.cornerSize}px</span>
-                </div>
-                <Slider
-                  min={4}
-                  max={16}
+              <div>
+                <h4 className="text-sm font-medium mb-2">Opacity</h4>
+                <Slider 
+                  value={[opacity]} 
+                  min={0} 
+                  max={100} 
                   step={1}
-                  value={[config.style.cornerSize]}
-                  onValueChange={(value) => onChange({ 
-                    style: { ...config.style, cornerSize: value[0] } 
-                  })}
+                  onValueChange={handleOpacityChange} 
                 />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label>Corner Style</Label>
-                <Select
-                  value={config.style.cornerStyle}
-                  onValueChange={(value) => onChange({ 
-                    style: { ...config.style, cornerStyle: value as 'circle' | 'rect' } 
-                  })}
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Corner Style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="circle">Circle</SelectItem>
-                    <SelectItem value="rect">Rectangle</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="text-xs text-right mt-1">{opacity}%</div>
               </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          )}
+          
+          <Separator className="my-4" />
+          
+          {/* Movement controls */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium">Precise Movement</h4>
+            
+            <div className="flex justify-center mb-2">
+              <Toggle
+                variant="outline"
+                size="sm"
+                onClick={() => moveObjects('up', 1)}
+                title="Move Up 1px"
+              >
+                <ArrowUpNarrow size={16} />
+              </Toggle>
+            </div>
+            
+            <div className="flex justify-between">
+              <Toggle
+                variant="outline"
+                size="sm"
+                onClick={() => moveObjects('left', 1)}
+                title="Move Left 1px"
+              >
+                <MoveHorizontal size={16} />
+              </Toggle>
+              
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onBringForward}
+                  title="Bring Forward (Ctrl+])"
+                >
+                  <ArrowUpNarrow size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onSendBackward}
+                  title="Send Backward (Ctrl+[)"
+                >
+                  <ArrowDownNarrow size={16} />
+                </Button>
+              </div>
+              
+              <Toggle
+                variant="outline"
+                size="sm"
+                onClick={() => moveObjects('right', 1)}
+                title="Move Right 1px"
+              >
+                <MoveHorizontal size={16} className="transform rotate-180" />
+              </Toggle>
+            </div>
+            
+            <div className="flex justify-center">
+              <Toggle
+                variant="outline"
+                size="sm"
+                onClick={() => moveObjects('down', 1)}
+                title="Move Down 1px"
+              >
+                <ArrowDownNarrow size={16} />
+              </Toggle>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

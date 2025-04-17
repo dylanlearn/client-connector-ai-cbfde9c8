@@ -1,414 +1,253 @@
 
 import { useCallback } from 'react';
 import { fabric } from 'fabric';
-import { useToast } from '@/hooks/use-toast';
 
-interface UseObjectManipulationsProps {
-  canvas: fabric.Canvas | null;
-  onHistorySave?: (label: string) => void;
-}
-
-export function useObjectManipulations({ canvas, onHistorySave }: UseObjectManipulationsProps) {
-  const { toast } = useToast();
-
-  // Duplicate objects
-  const duplicate = useCallback(() => {
-    if (!canvas) return;
+/**
+ * Hook for common object manipulation operations
+ */
+export function useObjectManipulations(canvas: fabric.Canvas | null) {
+  
+  // Duplicate the selected objects
+  const duplicateObjects = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
+    // Clone the objects and position them slightly offset
+    const clones: fabric.Object[] = [];
     
-    // Clone the object
-    activeObject.clone((cloned: fabric.Object) => {
-      canvas.discardActiveObject();
-      
-      // If it's a selection of multiple objects
-      if (cloned.type === 'activeSelection') {
-        // Get the grouped objects from _objects property
-        const activeSelection = cloned as unknown as { _objects: fabric.Object[] };
-        const newObjects: fabric.Object[] = [];
+    objects.forEach(obj => {
+      obj.clone((clone: fabric.Object) => {
+        clone.set({
+          left: obj.left! + 20,
+          top: obj.top! + 20,
+          evented: true
+        });
         
-        activeSelection._objects.forEach((obj: fabric.Object) => {
-          // Clone each object in the group
-          const duplicate = fabric.util.object.clone(obj);
+        if (clone.type === 'activeSelection') {
+          // If this is an active selection, clear the group
+          // and add the objects individually
+          const activeSelection = clone as fabric.ActiveSelection;
+          const items = activeSelection.getObjects();
+          canvas.discardActiveObject();
           
-          // Offset the position
-          duplicate.set({
-            left: (obj.left || 0) + 20,
-            top: (obj.top || 0) + 20,
+          activeSelection.getObjects().forEach((item) => {
+            item.set({
+              left: item.left! + 20,
+              top: item.top! + 20
+            });
+            canvas.add(item);
+            clones.push(item);
           });
-          
-          canvas.add(duplicate);
-          newObjects.push(duplicate);
-        });
-        
-        // Select all the duplicated objects
-        if (newObjects.length > 0) {
-          const selection = new fabric.ActiveSelection(newObjects, { canvas });
-          canvas.setActiveObject(selection);
+        } else {
+          canvas.add(clone);
+          clones.push(clone);
         }
-      } else {
-        // Single object duplication
-        cloned.set({
-          left: (activeObject.left || 0) + 20,
-          top: (activeObject.top || 0) + 20,
-        });
-        
-        canvas.add(cloned);
-        canvas.setActiveObject(cloned);
-      }
-      
-      canvas.renderAll();
-      
-      if (onHistorySave) {
-        onHistorySave('Duplicated objects');
-      }
-      
-      toast({
-        title: 'Objects Duplicated',
-        description: 'Objects have been duplicated and offset slightly.',
       });
     });
-  }, [canvas, toast, onHistorySave]);
+    
+    // Select the newly created clones
+    if (clones.length > 0) {
+      if (clones.length === 1) {
+        canvas.setActiveObject(clones[0]);
+      } else {
+        const selection = new fabric.ActiveSelection(clones, { canvas });
+        canvas.setActiveObject(selection);
+      }
+    }
+    
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Delete selected objects
-  const remove = useCallback(() => {
-    if (!canvas) return;
+  // Delete the selected objects
+  const deleteObjects = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
     
-    const activeObjects = canvas.getActiveObjects();
-    if (activeObjects.length === 0) return;
+    objects.forEach(obj => {
+      canvas.remove(obj);
+    });
     
-    canvas.remove(...activeObjects);
     canvas.discardActiveObject();
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave('Deleted objects');
-    }
-    
-    toast({
-      title: 'Objects Deleted',
-      description: `${activeObjects.length} object${activeObjects.length === 1 ? '' : 's'} deleted.`,
-    });
-  }, [canvas, toast, onHistorySave]);
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Group selected objects
-  const group = useCallback(() => {
-    if (!canvas) return;
+  // Group the selected objects
+  const groupObjects = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length <= 1) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject || activeObject.type !== 'activeSelection') return;
-    
-    // Convert active selection to a group
-    const group = (activeObject as fabric.ActiveSelection).toGroup();
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave('Grouped objects');
-    }
-    
-    toast({
-      title: 'Objects Grouped',
-      description: 'Selected objects have been grouped together.',
+    const group = new fabric.Group(objects, {
+      originX: 'center',
+      originY: 'center'
     });
     
-    return group;
-  }, [canvas, toast, onHistorySave]);
-  
-  // Ungroup a grouped object
-  const ungroup = useCallback(() => {
-    if (!canvas) return;
-    
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject || activeObject.type !== 'group') return;
-    
-    // Convert group to active selection
-    const items = (activeObject as fabric.Group).getObjects();
-    (activeObject as fabric.Group).destroy();
-    canvas.remove(activeObject);
-    
-    canvas.add(...items);
-    
-    const selection = new fabric.ActiveSelection(items, { canvas });
-    canvas.setActiveObject(selection);
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave('Ungrouped objects');
-    }
-    
-    toast({
-      title: 'Group Ungrouped',
-      description: 'Group has been split into individual objects.',
+    objects.forEach(obj => {
+      canvas.remove(obj);
     });
     
-    return items;
-  }, [canvas, toast, onHistorySave]);
+    canvas.add(group);
+    canvas.setActiveObject(group);
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Toggle lock state of objects
-  const toggleLock = useCallback(() => {
+  // Ungroup a group
+  const ungroupObjects = useCallback((group: fabric.Group) => {
     if (!canvas) return;
     
-    const activeObjects = canvas.getActiveObjects();
-    if (activeObjects.length === 0) return;
+    const items = group.getObjects();
+    group._restoreObjectsState();
     
-    const allLocked = activeObjects.every(obj => 
-      obj.lockMovementX && obj.lockMovementY && obj.lockRotation && obj.lockScalingX && obj.lockScalingY
-    );
+    canvas.remove(group);
     
-    // Toggle the lock state
-    activeObjects.forEach(obj => {
+    for (const item of items) {
+      canvas.add(item);
+    }
+    
+    canvas.setActiveObject(new fabric.ActiveSelection(items, { canvas }));
+    canvas.requestRenderAll();
+  }, [canvas]);
+  
+  // Toggle the lock state of objects
+  const toggleObjectLock = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
+    
+    // Determine if we should lock or unlock based on the first object
+    const firstObjLocked = objects[0].lockMovementX && objects[0].lockMovementY;
+    const shouldLock = !firstObjLocked;
+    
+    objects.forEach(obj => {
       obj.set({
-        lockMovementX: !allLocked,
-        lockMovementY: !allLocked,
-        lockRotation: !allLocked,
-        lockScalingX: !allLocked,
-        lockScalingY: !allLocked,
-        hasControls: allLocked,
-        selectable: allLocked,
-        hoverCursor: allLocked ? 'move' : 'not-allowed',
+        lockMovementX: shouldLock,
+        lockMovementY: shouldLock,
+        lockRotation: shouldLock,
+        lockScalingX: shouldLock,
+        lockScalingY: shouldLock,
+        hasControls: !shouldLock,
+        selectable: !shouldLock
       });
     });
     
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave(`${allLocked ? 'Unlocked' : 'Locked'} objects`);
+    // If we're locking, clear the selection
+    if (shouldLock) {
+      canvas.discardActiveObject();
     }
     
-    toast({
-      title: allLocked ? 'Objects Unlocked' : 'Objects Locked',
-      description: allLocked 
-        ? 'Objects can now be moved and edited.' 
-        : 'Objects are now locked and cannot be modified.',
+    canvas.requestRenderAll();
+  }, [canvas]);
+  
+  // Bring objects forward in z-index
+  const bringForward = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
+    
+    objects.forEach(obj => {
+      canvas.bringForward(obj);
     });
     
-    return !allLocked;
-  }, [canvas, toast, onHistorySave]);
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Bring selected objects forward
-  const bringForward = useCallback(() => {
-    if (!canvas) return;
+  // Send objects backward in z-index
+  const sendBackward = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
+    objects.forEach(obj => {
+      canvas.sendBackward(obj);
+    });
     
-    canvas.bringForward(activeObject);
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave('Brought objects forward');
-    }
-  }, [canvas, onHistorySave]);
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Send selected objects backward
-  const sendBackward = useCallback(() => {
-    if (!canvas) return;
+  // Bring objects to front in z-index
+  const bringToFront = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
+    objects.forEach(obj => {
+      canvas.bringToFront(obj);
+    });
     
-    canvas.sendBackwards(activeObject);
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave('Sent objects backward');
-    }
-  }, [canvas, onHistorySave]);
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Bring selected objects to front (top)
-  const bringToFront = useCallback(() => {
-    if (!canvas) return;
+  // Send objects to back in z-index
+  const sendToBack = useCallback((objects: fabric.Object[]) => {
+    if (!canvas || objects.length === 0) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
+    objects.forEach(obj => {
+      canvas.sendToBack(obj);
+    });
     
-    canvas.bringToFront(activeObject);
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave('Brought objects to front');
-    }
-  }, [canvas, onHistorySave]);
+    canvas.requestRenderAll();
+  }, [canvas]);
   
-  // Send selected objects to back (bottom)
-  const sendToBack = useCallback(() => {
-    if (!canvas) return;
+  // Align objects (left, right, top, bottom, center)
+  const alignObjects = useCallback((objects: fabric.Object[], alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+    if (!canvas || objects.length <= 1) return;
     
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject) return;
+    let minX = Number.MAX_VALUE;
+    let maxX = Number.MIN_VALUE;
+    let minY = Number.MAX_VALUE;
+    let maxY = Number.MIN_VALUE;
     
-    canvas.sendToBack(activeObject);
-    canvas.renderAll();
+    // Find the bounding box of all objects
+    objects.forEach(obj => {
+      const bound = obj.getBoundingRect(true);
+      minX = Math.min(minX, bound.left);
+      maxX = Math.max(maxX, bound.left + bound.width);
+      minY = Math.min(minY, bound.top);
+      maxY = Math.max(maxY, bound.top + bound.height);
+    });
     
-    if (onHistorySave) {
-      onHistorySave('Sent objects to back');
-    }
-  }, [canvas, onHistorySave]);
-  
-  // Align objects horizontally or vertically
-  const alignObjects = useCallback((alignType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
-    if (!canvas) return;
-    
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject || (activeObject.type !== 'activeSelection' && activeObject.type !== 'group')) {
-      return;
-    }
-    
-    const selection = activeObject as fabric.ActiveSelection | fabric.Group;
-    let targetValue: number;
-    
-    const objects = selection.type === 'activeSelection' 
-      ? (selection as fabric.ActiveSelection).getObjects()
-      : (selection as fabric.Group).getObjects();
-    
-    if (objects.length <= 1) return;
-    
-    switch (alignType) {
-      case 'left':
-        objects.forEach(obj => {
-          obj.set({ left: 0 }).setCoords();
-        });
-        break;
-        
-      case 'center':
-        objects.forEach(obj => {
-          obj.set({ 
-            left: (selection.width! / 2) - (obj.width! * obj.scaleX! / 2) 
-          }).setCoords();
-        });
-        break;
-        
-      case 'right':
-        objects.forEach(obj => {
-          obj.set({ 
-            left: selection.width! - obj.width! * obj.scaleX! 
-          }).setCoords();
-        });
-        break;
-        
-      case 'top':
-        objects.forEach(obj => {
-          obj.set({ top: 0 }).setCoords();
-        });
-        break;
-        
-      case 'middle':
-        objects.forEach(obj => {
-          obj.set({ 
-            top: (selection.height! / 2) - (obj.height! * obj.scaleY! / 2) 
-          }).setCoords();
-        });
-        break;
-        
-      case 'bottom':
-        objects.forEach(obj => {
-          obj.set({ 
-            top: selection.height! - obj.height! * obj.scaleY! 
-          }).setCoords();
-        });
-        break;
-    }
-    
-    if (selection.type === 'group') {
-      selection.addWithUpdate();
-    }
-    
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave(`Aligned objects ${alignType}`);
-    }
-  }, [canvas, onHistorySave]);
-  
-  // Distribute objects evenly
-  const distributeObjects = useCallback((direction: 'horizontal' | 'vertical') => {
-    if (!canvas) return;
-    
-    const activeObject = canvas.getActiveObject();
-    if (!activeObject || activeObject.type !== 'activeSelection') {
-      return;
-    }
-    
-    const selection = activeObject as fabric.ActiveSelection;
-    const objects = selection.getObjects();
-    
-    if (objects.length <= 2) return;
-    
-    // Get objects sorted by position
-    const sortedObjects = [...objects];
-    if (direction === 'horizontal') {
-      sortedObjects.sort((a, b) => (a.left || 0) - (b.left || 0));
-    } else {
-      sortedObjects.sort((a, b) => (a.top || 0) - (b.top || 0));
-    }
-    
-    // Get the first and last objects
-    const firstObject = sortedObjects[0];
-    const lastObject = sortedObjects[sortedObjects.length - 1];
-    
-    // Calculate bounds
-    let totalSpace: number;
-    let objectSizes: number = 0;
-    
-    if (direction === 'horizontal') {
-      const minLeft = firstObject.left || 0;
-      const maxRight = (lastObject.left || 0) + (lastObject.width || 0) * (lastObject.scaleX || 1);
-      totalSpace = maxRight - minLeft;
+    // Apply alignment
+    objects.forEach(obj => {
+      const bound = obj.getBoundingRect(true);
       
-      // Calculate total object widths
-      sortedObjects.forEach(obj => {
-        objectSizes += (obj.width || 0) * (obj.scaleX || 1);
-      });
-    } else {
-      const minTop = firstObject.top || 0;
-      const maxBottom = (lastObject.top || 0) + (lastObject.height || 0) * (lastObject.scaleY || 1);
-      totalSpace = maxBottom - minTop;
-      
-      // Calculate total object heights
-      sortedObjects.forEach(obj => {
-        objectSizes += (obj.height || 0) * (obj.scaleY || 1);
-      });
-    }
-    
-    // Calculate spacing between objects
-    const spacing = (totalSpace - objectSizes) / (objects.length - 1);
-    
-    // Distribute objects
-    let currentPosition = direction === 'horizontal' 
-      ? firstObject.left || 0
-      : firstObject.top || 0;
-    
-    sortedObjects.forEach((obj, index) => {
-      if (index === 0) return;
-      
-      if (direction === 'horizontal') {
-        currentPosition += (sortedObjects[index-1].width || 0) * (sortedObjects[index-1].scaleX || 1) + spacing;
-        obj.set({ left: currentPosition }).setCoords();
-      } else {
-        currentPosition += (sortedObjects[index-1].height || 0) * (sortedObjects[index-1].scaleY || 1) + spacing;
-        obj.set({ top: currentPosition }).setCoords();
+      switch (alignment) {
+        case 'left':
+          obj.set({ left: minX });
+          break;
+        case 'center':
+          obj.set({ left: minX + (maxX - minX) / 2 - bound.width / 2 });
+          break;
+        case 'right':
+          obj.set({ left: maxX - bound.width });
+          break;
+        case 'top':
+          obj.set({ top: minY });
+          break;
+        case 'middle':
+          obj.set({ top: minY + (maxY - minY) / 2 - bound.height / 2 });
+          break;
+        case 'bottom':
+          obj.set({ top: maxY - bound.height });
+          break;
       }
+      
+      obj.setCoords();
     });
     
-    canvas.renderAll();
-    
-    if (onHistorySave) {
-      onHistorySave(`Distributed objects ${direction}`);
-    }
-  }, [canvas, onHistorySave]);
-
+    canvas.requestRenderAll();
+  }, [canvas]);
+  
+  // Mock undo/redo for now (would require a proper history implementation)
+  const undo = useCallback(() => {
+    console.log('Undo operation (not yet implemented)');
+  }, []);
+  
+  const redo = useCallback(() => {
+    console.log('Redo operation (not yet implemented)');
+  }, []);
+  
   return {
-    duplicate,
-    remove,
-    group,
-    ungroup,
-    toggleLock,
+    duplicateObjects,
+    deleteObjects,
+    groupObjects,
+    ungroupObjects,
+    toggleObjectLock,
     bringForward,
     sendBackward,
     bringToFront,
     sendToBack,
     alignObjects,
-    distributeObjects,
+    undo,
+    redo
   };
 }
+
+export default useObjectManipulations;
