@@ -1,26 +1,27 @@
 
 import React from 'react';
-import { WireframeVisualizerProps } from './types';
-import Wireframe from './Wireframe';
 import { Card } from '@/components/ui/card';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import Wireframe from './Wireframe';
 
-/**
- * WireframeVisualizer is a wrapper component that renders a wireframe in various view modes
- * with consistent styling and behavior.
- */
+interface WireframeVisualizerProps {
+  wireframe: WireframeData;
+  viewMode?: 'edit' | 'preview' | 'code';
+  onSectionClick?: (sectionId: string) => void;
+  activeSection?: string | null;
+  showControls?: boolean;
+}
+
 const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
   wireframe,
-  darkMode = false,
-  deviceType = 'desktop',
   viewMode = 'preview',
   onSectionClick,
-  selectedSectionId,
-  onSelect,
-  preview = false
+  activeSection = null,
+  showControls = false
 }) => {
   if (!wireframe) {
     return (
-      <Card className="flex items-center justify-center p-8 h-full">
+      <Card className="p-4 text-center">
         <p className="text-muted-foreground">No wireframe data available</p>
       </Card>
     );
@@ -28,14 +29,11 @@ const WireframeVisualizer: React.FC<WireframeVisualizerProps> = ({
 
   return (
     <div className="wireframe-visualizer">
-      <Wireframe
-        wireframe={wireframe}
-        viewMode={viewMode}
-        darkMode={darkMode}
-        deviceType={deviceType}
+      <Wireframe 
+        wireframe={wireframe} 
+        viewMode={viewMode} 
         onSectionClick={onSectionClick}
-        activeSection={selectedSectionId}
-        onSelect={onSelect}
+        activeSection={activeSection}
       />
     </div>
   );

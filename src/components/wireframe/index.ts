@@ -18,4 +18,4 @@ export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenera
 export { default as ErrorDisplay } from './common/ErrorDisplay';
 
 // Export types from hooks for better integration
-export type { UseWireframeStudioOptions } from '@/hooks/use-wireframe-studio';
+export type { UseWireframeOptions } from '@/hooks/useWireframe';
