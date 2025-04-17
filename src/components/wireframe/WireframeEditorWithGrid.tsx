@@ -7,6 +7,7 @@ import { useCanvasNavigation } from '@/hooks/wireframe/use-canvas-navigation';
 import { Card } from '@/components/ui/card';
 import AdvancedHistoryControls from './canvas/AdvancedHistoryControls';
 import useCanvasHistory from '@/hooks/wireframe/use-canvas-history';
+import { fabric } from 'fabric'; // Import fabric correctly as a module
 
 interface WireframeEditorWithGridProps {
   width?: number;
