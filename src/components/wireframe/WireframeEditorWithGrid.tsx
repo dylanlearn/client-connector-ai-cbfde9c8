@@ -37,6 +37,22 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
     resetFocusArea
   } = useCanvasNavigation();
 
+  // Adapter function to convert section ID to a focus area
+  const handleSectionFocus = (sectionId: string) => {
+    // This is a simplified example - in a real app, you'd calculate actual area coordinates
+    // based on the section's position and size in the DOM
+    const mockFocusAreas: Record<string, { x: number; y: number; width: number; height: number }> = {
+      header: { x: 0, y: 0, width: 400, height: 100 },
+      content: { x: 0, y: 100, width: 400, height: 300 },
+      footer: { x: 0, y: 400, width: 400, height: 100 }
+    };
+    
+    const area = mockFocusAreas[sectionId];
+    if (area) {
+      applyFocusArea(area);
+    }
+  };
+
   return (
     <div className={cn("wireframe-editor-container relative", className)} ref={containerRef}>
       <Card className="wireframe-editor-card relative overflow-hidden">
@@ -71,7 +87,7 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
             zoom={zoom}
             rotation={rotation}
             viewMode={viewMode}
-            onAreaFocus={applyFocusArea}
+            onAreaFocus={handleSectionFocus}
             focusArea={focusArea}
           />
         </div>
