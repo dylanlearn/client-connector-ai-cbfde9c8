@@ -54,6 +54,7 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
           onViewModeToggle={toggleViewMode}
           className="absolute top-3 right-3 z-10"
           onFocusReset={resetFocusArea}
+          focusArea={focusArea}
         />
         
         <div 

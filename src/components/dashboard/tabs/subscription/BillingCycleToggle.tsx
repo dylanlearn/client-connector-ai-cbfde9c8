@@ -17,10 +17,10 @@ export const BillingCycleToggle = ({ billingCycle, onChange }: BillingCycleToggl
         onValueChange={(value) => value && onChange(value as BillingCycle)}
         className="border rounded-md"
       >
-        <ToggleGroupItem value="monthly" size="sm" className="text-xs px-3">
+        <ToggleGroupItem value="monthly" className="text-xs px-3">
           Monthly
         </ToggleGroupItem>
-        <ToggleGroupItem value="annual" size="sm" className="text-xs px-3">
+        <ToggleGroupItem value="annual" className="text-xs px-3">
           Annual
         </ToggleGroupItem>
       </ToggleGroup>

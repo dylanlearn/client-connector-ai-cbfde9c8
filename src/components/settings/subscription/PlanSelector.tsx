@@ -30,10 +30,10 @@ export function PlanSelector({ startSubscription }: PlanSelectorProps) {
           onValueChange={(value) => value && setBillingCycle(value as BillingCycle)}
           className="border rounded-md"
         >
-          <ToggleGroupItem value="monthly" size="sm" className="px-3">
+          <ToggleGroupItem value="monthly" className="px-3">
             Monthly
           </ToggleGroupItem>
-          <ToggleGroupItem value="annual" size="sm" className="px-3">
+          <ToggleGroupItem value="annual" className="px-3">
             Annual (Save 16%)
           </ToggleGroupItem>
         </ToggleGroup>
