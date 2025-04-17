@@ -128,7 +128,7 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
       <canvas ref={canvasRef} />
       
       <CanvasLoadingIndicator isLoading={isLoading} />
-      <CanvasErrorDisplay error={error || null} />
+      <CanvasErrorDisplay error={error} />
       
       {/* Render stats (development only) */}
       {process.env.NODE_ENV === 'development' && fabricCanvas && (

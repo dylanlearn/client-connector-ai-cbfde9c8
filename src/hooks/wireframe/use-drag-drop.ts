@@ -109,13 +109,12 @@ export function useDragDrop(canvas: fabric.Canvas | null) {
     });
     
     return true;
-  }, [dragState, canvas, toast]);
+  }, [canvas, dragState, toast]);
 
   /**
    * Cancel the current drag operation
    */
   const cancelDrag = useCallback(() => {
-    // Reset canvas cursor
     if (canvas) {
       canvas.defaultCursor = 'default';
     }
@@ -125,12 +124,12 @@ export function useDragDrop(canvas: fabric.Canvas | null) {
       draggedComponent: null,
       dragStartPosition: null
     });
-    
-    return true;
   }, [canvas]);
-  
+
   return {
-    ...dragState,
+    isDragging: dragState.isDragging,
+    draggedComponent: dragState.draggedComponent,
+    dragStartPosition: dragState.dragStartPosition,
     startDrag,
     updateDrag,
     endDrag,
@@ -138,116 +137,93 @@ export function useDragDrop(canvas: fabric.Canvas | null) {
   };
 }
 
-/**
- * Helper function to create a fabric object from a wireframe component
- */
-function createFabricObjectFromComponent(
-  component: WireframeComponent, 
-  position: { x: number, y: number }
-): fabric.Object | null {
-  const { type } = component;
+// Helper function to create a Fabric.js object from a component
+function createFabricObjectFromComponent(component: WireframeComponent, position: { x: number, y: number }) {
+  const { type, size, props = {} } = component;
+  let obj;
   
-  // Basic properties all objects will have
+  // Common properties
   const commonProps = {
     left: position.x,
     top: position.y,
-    width: component.size.width,
-    height: component.size.height,
-    originX: 'left',
-    originY: 'top',
+    width: size.width,
+    height: size.height,
     data: {
-      id: component.id || uuidv4(),
-      type: component.type,
-      componentData: component
+      id: `component-${uuidv4()}`,
+      name: props.name || `${type} ${Date.now().toString().slice(-4)}`,
+      componentType: type,
+      ...props
     }
   };
   
-  switch (type.toLowerCase()) {
+  // Create specific objects based on type
+  switch (type) {
+    case 'rectangle':
     case 'box':
-    case 'container':
-    case 'section':
-      return new fabric.Rect({
+      obj = new fabric.Rect({
         ...commonProps,
-        fill: component.props?.backgroundColor || 'rgba(200, 200, 200, 0.3)',
-        stroke: '#cccccc',
-        strokeWidth: 1,
-        rx: 4,
-        ry: 4
+        fill: props.fill || '#e2e8f0',
+        stroke: props.stroke || '#94a3b8',
+        strokeWidth: props.strokeWidth || 1,
+        rx: props.borderRadius || 0,
+        ry: props.borderRadius || 0
       });
-      
+      break;
+    
     case 'text':
-      return new fabric.Textbox(component.props?.text || 'Text', {
+      obj = new fabric.Textbox(props.text || 'Text', {
         ...commonProps,
-        fill: component.props?.color || '#000000',
-        fontFamily: component.props?.fontFamily || 'Arial',
-        fontSize: component.props?.fontSize || 16
+        fill: props.fill || '#000000',
+        fontFamily: props.fontFamily || 'Arial',
+        fontSize: props.fontSize || 16,
+        fontWeight: props.fontWeight || 'normal',
+        textAlign: props.textAlign || 'left'
       });
-      
+      break;
+    
     case 'image':
-      // Create a placeholder rectangle until image loads
-      const rect = new fabric.Rect({
+      // For images, we need to create an Image object first
+      // This is a placeholder for the actual implementation
+      obj = new fabric.Rect({
         ...commonProps,
-        fill: 'rgba(200, 200, 200, 0.3)',
-        stroke: '#cccccc',
+        fill: '#f0f0f0',
+        stroke: '#d0d0d0',
         strokeWidth: 1
       });
-      
-      // If we have an image URL, load it
-      if (component.props?.src) {
-        fabric.Image.fromURL(component.props.src, (img) => {
-          img.set({
-            ...commonProps,
-            scaleX: commonProps.width / img.width,
-            scaleY: commonProps.height / img.height
-          });
-          
-          // Replace the placeholder with the actual image
-          if (rect.canvas) {
-            const canvas = rect.canvas;
-            canvas.remove(rect);
-            canvas.add(img);
-            canvas.renderAll();
-          }
+      break;
+    
+    case 'circle':
+      obj = new fabric.Circle({
+        left: position.x,
+        top: position.y,
+        radius: Math.min(size.width, size.height) / 2,
+        fill: props.fill || '#e2e8f0',
+        stroke: props.stroke || '#94a3b8',
+        strokeWidth: props.strokeWidth || 1,
+        data: commonProps.data
+      });
+      break;
+    
+    case 'path':
+      if (props.path) {
+        obj = new fabric.Path(props.path, {
+          ...commonProps,
+          fill: props.fill || 'transparent',
+          stroke: props.stroke || '#000000',
+          strokeWidth: props.strokeWidth || 2
         });
       }
-      
-      return rect;
-      
-    case 'button':
-      const buttonBg = new fabric.Rect({
-        width: component.size.width,
-        height: component.size.height,
-        fill: component.props?.backgroundColor || '#3b82f6',
-        rx: 4,
-        ry: 4
-      });
-      
-      const buttonText = new fabric.Text(
-        component.props?.text || 'Button',
-        {
-          fontSize: component.props?.fontSize || 14,
-          fill: component.props?.color || '#ffffff',
-          fontFamily: component.props?.fontFamily || 'Arial',
-          originX: 'center',
-          originY: 'center',
-          left: component.size.width / 2,
-          top: component.size.height / 2
-        }
-      );
-      
-      return new fabric.Group([buttonBg, buttonText], {
-        ...commonProps
-      });
-      
+      break;
+    
     default:
-      // Generic placeholder for unsupported component types
-      return new fabric.Rect({
+      // Default to a simple rect if type is not recognized
+      obj = new fabric.Rect({
         ...commonProps,
-        fill: 'rgba(200, 200, 200, 0.3)',
-        stroke: '#cccccc',
-        strokeWidth: 1,
-        rx: 4,
-        ry: 4
+        fill: '#e0e0e0',
+        stroke: '#a0a0a0',
+        strokeWidth: 1
       });
   }
+  
+  return obj;
 }

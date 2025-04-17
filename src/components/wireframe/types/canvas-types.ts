@@ -40,7 +40,7 @@ export interface CanvasInitializationOptions {
 export interface CanvasInitializationResult {
   fabricCanvas: fabric.Canvas | null;
   isLoading: boolean;
-  error?: Error | null;
+  error: Error | null;
 }
 
 /**
