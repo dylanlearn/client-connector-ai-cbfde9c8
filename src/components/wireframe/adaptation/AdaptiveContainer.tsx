@@ -2,19 +2,8 @@
 import React, { useRef, useState, useEffect, ReactNode } from 'react';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { cn } from '@/lib/utils';
-import { AdaptiveRules } from './adaptation-types';
+import { AdaptiveRules, AdaptiveContainerProps } from './adaptation-types';
 import { applyAdaptiveRules } from './adaptation-utils';
-
-interface AdaptiveContainerProps {
-  children: ReactNode;
-  className?: string;
-  adaptiveRules?: AdaptiveRules;
-  minWidth?: number;
-  maxWidth?: number;
-  preserveHeight?: boolean;
-  debug?: boolean;
-  id?: string;
-}
 
 /**
  * A container that adapts its children based on available space
@@ -28,6 +17,7 @@ const AdaptiveContainer: React.FC<AdaptiveContainerProps> = ({
   maxWidth = Infinity,
   preserveHeight = false,
   debug = false,
+  style,
   id
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,7 +60,8 @@ const AdaptiveContainer: React.FC<AdaptiveContainerProps> = ({
       id={id}
       style={{
         minWidth: minWidth > 0 ? `${minWidth}px` : undefined,
-        maxWidth: maxWidth < Infinity ? `${maxWidth}px` : undefined
+        maxWidth: maxWidth < Infinity ? `${maxWidth}px` : undefined,
+        ...style
       }}
     >
       {adaptedChildren}

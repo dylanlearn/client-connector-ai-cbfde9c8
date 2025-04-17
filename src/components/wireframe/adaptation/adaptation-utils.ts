@@ -69,26 +69,26 @@ export function applyAdaptiveRules(
 
     // Apply the transformations to the child
     let adaptedChild = child;
+    const adaptedProps: Record<string, any> = {};
 
     // Apply stacking transformation if specified
     if (adaptiveState === 'compact' && stackOnCompact) {
-      adaptedChild = React.cloneElement(adaptedChild, {
-        className: `${adaptedChild.props.className || ''} flex-col`,
-      });
+      adaptedProps.className = `${adaptedChild.props.className || ''} flex-col`;
     }
 
     // Apply truncation if specified (for text content)
     if (adaptiveState === 'compact' && truncateOnCompact) {
-      adaptedChild = React.cloneElement(adaptedChild, {
-        className: `${adaptedChild.props.className || ''} truncate`,
-      });
+      adaptedProps.className = `${adaptedChild.props.className || ''} truncate`;
     }
 
-    // Clone the element with additional adaptive props
-    return React.cloneElement(adaptedChild, {
-      'data-adaptive-state': adaptiveState,
-      ...adaptedChild.props
-    });
+    // Add adaptive state data attribute
+    adaptedProps['data-adaptive-state'] = adaptiveState;
+
+    // Clone the element with the adapted props
+    return React.cloneElement(
+      adaptedChild,
+      adaptedProps
+    );
   });
 }
 

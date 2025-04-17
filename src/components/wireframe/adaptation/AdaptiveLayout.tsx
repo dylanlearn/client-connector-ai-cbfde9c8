@@ -2,18 +2,8 @@
 import React, { useRef, useState, useEffect, ReactNode } from 'react';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { cn } from '@/lib/utils';
-import { AdaptiveRules } from './adaptation-types';
+import { AdaptiveRules, AdaptiveLayoutProps } from './adaptation-types';
 import { calculateAdaptiveLayout } from './adaptation-utils';
-
-interface AdaptiveLayoutProps {
-  children: ReactNode;
-  className?: string;
-  adaptiveRules?: AdaptiveRules;
-  minColumns?: number;
-  maxColumns?: number;
-  gap?: number | string;
-  debug?: boolean;
-}
 
 /**
  * A component that automatically adjusts layout based on available space
@@ -26,7 +16,8 @@ const AdaptiveLayout: React.FC<AdaptiveLayoutProps> = ({
   minColumns = 1,
   maxColumns = 4,
   gap = 16,
-  debug = false
+  debug = false,
+  style
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<'grid' | 'stack' | 'row'>('row');
@@ -89,7 +80,8 @@ const AdaptiveLayout: React.FC<AdaptiveLayoutProps> = ({
       data-columns={columns}
       style={{
         ...gridStyle,
-        ...flexGapStyle
+        ...flexGapStyle,
+        ...style
       }}
     >
       {children}

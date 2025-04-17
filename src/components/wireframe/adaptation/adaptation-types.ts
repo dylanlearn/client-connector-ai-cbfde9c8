@@ -105,6 +105,35 @@ export interface AdaptiveElementProps {
 }
 
 /**
+ * Props for adaptive containers
+ */
+export interface AdaptiveContainerProps {
+  children: ReactNode;
+  className?: string;
+  adaptiveRules?: AdaptiveRules;
+  minWidth?: number;
+  maxWidth?: number;
+  preserveHeight?: boolean;
+  debug?: boolean;
+  id?: string;
+  style?: React.CSSProperties;
+}
+
+/**
+ * Props for adaptive layouts
+ */
+export interface AdaptiveLayoutProps {
+  children: ReactNode;
+  className?: string;
+  adaptiveRules?: AdaptiveRules;
+  minColumns?: number;
+  maxColumns?: number;
+  gap?: number | string;
+  debug?: boolean;
+  style?: React.CSSProperties;
+}
+
+/**
  * Adaptation context provided to child components
  */
 export interface AdaptationContext {

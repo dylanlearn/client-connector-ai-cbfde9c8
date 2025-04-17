@@ -1,219 +1,282 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdaptiveContainer from './AdaptiveContainer';
 import AdaptiveElement from './AdaptiveElement';
 import AdaptiveLayout from './AdaptiveLayout';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
-  LayoutGrid, 
-  User, 
-  Calendar, 
+  LayoutDashboard, 
   BarChart3, 
-  Mail, 
-  MessageSquare, 
+  Users, 
+  Calendar, 
+  Settings, 
   Bell, 
-  Settings 
+  MessageSquare,
+  FileText,
+  ShoppingCart,
+  CreditCard,
+  Inbox
 } from 'lucide-react';
 
-/**
- * Demo component showcasing the adaptive layout system
- */
 const AdaptationDemo: React.FC = () => {
-  const [containerWidth, setContainerWidth] = useState<number>(1000);
-  
+  const [containerWidth, setContainerWidth] = useState(800);
+  const [activeTab, setActiveTab] = useState('basic');
+
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 p-4">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Adaptive Container Width</h2>
+        <h2 className="text-2xl font-bold mb-2">Adaptive UI Components</h2>
+        <p className="text-muted-foreground mb-4">
+          Components that automatically adapt to available space and context
+        </p>
+        
         <div className="flex items-center gap-4 mb-6">
+          <span className="text-sm font-medium min-w-24">Container Width:</span>
           <Slider
             value={[containerWidth]}
-            onValueChange={(values) => setContainerWidth(values[0])}
             min={300}
             max={1200}
             step={10}
-            className="w-full"
+            onValueChange={(values) => setContainerWidth(values[0])}
+            className="flex-1"
           />
-          <span className="text-sm font-mono w-16">{containerWidth}px</span>
+          <span className="text-sm font-medium min-w-16">{containerWidth}px</span>
         </div>
       </div>
-      
-      {/* Basic Adaptive Elements Demo */}
-      <section>
-        <h3 className="text-xl font-bold mb-4">Basic Adaptive Elements</h3>
-        <AdaptiveContainer 
-          className="border p-4 rounded-lg bg-background shadow-sm" 
-          style={{ width: containerWidth }}
-          debug={true}
-        >
-          <div className="flex gap-4 w-full flex-wrap">
-            <AdaptiveElement 
-              hideOnCompact 
-              className="bg-blue-100 dark:bg-blue-900/20 p-4 rounded-lg"
-            >
-              This element hides in compact mode
-            </AdaptiveElement>
-            
-            <AdaptiveElement 
-              truncateOnCompact 
-              className="bg-green-100 dark:bg-green-900/20 p-4 rounded-lg flex-1"
-            >
-              This element truncates text content when in compact mode - the text gets cut off with an ellipsis
-            </AdaptiveElement>
-            
-            <AdaptiveElement 
-              stackOnCompact
-              className="bg-amber-100 dark:bg-amber-900/20 p-4 rounded-lg flex gap-2"
-            >
-              <div className="bg-amber-200 dark:bg-amber-800/50 p-2 rounded">Item 1</div>
-              <div className="bg-amber-200 dark:bg-amber-800/50 p-2 rounded">Item 2</div>
-              <div className="bg-amber-200 dark:bg-amber-800/50 p-2 rounded">Item 3</div>
-            </AdaptiveElement>
-          </div>
-        </AdaptiveContainer>
-      </section>
-      
-      {/* Adaptive Layout Demo */}
-      <section>
-        <h3 className="text-xl font-bold mb-4">Adaptive Layout</h3>
-        <AdaptiveLayout 
-          className="border rounded-lg bg-background shadow-sm" 
-          style={{ width: containerWidth }}
-          minColumns={1}
-          maxColumns={4}
-          gap={16}
-          debug={true}
-        >
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="p-4 h-32 flex items-center justify-center">
-              <span className="text-lg font-semibold">Card {i + 1}</span>
-            </Card>
-          ))}
-        </AdaptiveLayout>
-      </section>
-      
-      {/* Complex Dashboard Example */}
-      <section>
-        <h3 className="text-xl font-bold mb-4">Dashboard Example</h3>
-        <AdaptiveContainer 
-          className="border rounded-lg bg-background shadow-sm" 
-          style={{ width: containerWidth }}
-          debug={true}
-        >
-          {/* Header */}
-          <div className="p-4 border-b flex justify-between items-center">
-            <AdaptiveElement className="flex items-center gap-2">
-              <LayoutGrid className="h-5 w-5" />
-              <AdaptiveElement hideOnCompact>
-                <span className="font-bold">Dashboard</span>
-              </AdaptiveElement>
-            </AdaptiveElement>
-            
-            <AdaptiveElement className="flex items-center gap-2">
-              <AdaptiveElement hideOnCompact className="flex gap-2">
-                <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                  <Bell size={18} />
-                </button>
-                <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                  <MessageSquare size={18} />
-                </button>
-              </AdaptiveElement>
-              
-              <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                <User size={18} />
-              </button>
-            </AdaptiveElement>
-          </div>
-          
-          {/* Main Content */}
-          <div className="flex flex-col md:flex-row">
-            {/* Sidebar */}
-            <AdaptiveElement 
-              hideOnCompact
-              className="w-full md:w-56 p-4 border-r"
-            >
-              <div className="space-y-2">
-                <button className="flex items-center gap-2 w-full p-2 rounded-lg bg-primary/10 text-primary">
-                  <LayoutGrid size={18} />
-                  <span>Dashboard</span>
-                </button>
-                {[
-                  { icon: <User size={18} />, label: 'Users' },
-                  { icon: <Calendar size={18} />, label: 'Calendar' },
-                  { icon: <BarChart3 size={18} />, label: 'Analytics' },
-                  { icon: <Mail size={18} />, label: 'Messages' },
-                  { icon: <Settings size={18} />, label: 'Settings' }
-                ].map((item, i) => (
-                  <button 
-                    key={i} 
-                    className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="basic">Basic Elements</TabsTrigger>
+          <TabsTrigger value="layout">Adaptive Layout</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard Example</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="basic">
+          <Card>
+            <CardHeader>
+              <CardTitle>Adaptive Elements</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdaptiveContainer 
+                className="border border-dashed border-gray-300 rounded-lg p-4"
+                debug={true}
+                style={{ width: containerWidth }}
+              >
+                <div className="flex flex-wrap gap-4">
+                  <AdaptiveElement 
+                    adaptivePriority={3} 
+                    adaptiveType="button"
+                    hideOnCompact={false}
                   >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            </AdaptiveElement>
-            
-            {/* Content */}
-            <AdaptiveElement className="flex-1 p-4">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold mb-1">Welcome back</h2>
-                <AdaptiveElement hideOnCompact>
-                  <p className="text-gray-500 dark:text-gray-400">Here's an overview of your dashboard</p>
-                </AdaptiveElement>
-              </div>
-              
-              {/* Stats */}
+                    <Button className="w-full">Primary Action</Button>
+                  </AdaptiveElement>
+                  
+                  <AdaptiveElement 
+                    adaptivePriority={2}
+                    adaptiveType="button"
+                    hideOnCompact={true}
+                  >
+                    <Button variant="outline" className="w-full">Secondary Action</Button>
+                  </AdaptiveElement>
+                  
+                  <AdaptiveElement 
+                    adaptivePriority={1}
+                    adaptiveType="info"
+                    truncateOnCompact={true}
+                  >
+                    <div className="bg-muted px-4 py-2 rounded text-sm">
+                      Additional information that can be truncated or hidden when space is limited
+                    </div>
+                  </AdaptiveElement>
+                </div>
+              </AdaptiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="layout">
+          <Card>
+            <CardHeader>
+              <CardTitle>Adaptive Layout System</CardTitle>
+            </CardHeader>
+            <CardContent>
               <AdaptiveLayout 
-                className="mb-6" 
-                minColumns={1} 
+                className="border border-dashed border-gray-300 rounded-lg p-4"
+                minColumns={1}
                 maxColumns={3}
                 gap={16}
+                debug={true}
+                style={{ width: containerWidth }}
               >
-                {[
-                  { label: 'Total Users', value: '1,234', color: 'bg-blue-100 dark:bg-blue-900/20' },
-                  { label: 'Revenue', value: '$12,345', color: 'bg-green-100 dark:bg-green-900/20' },
-                  { label: 'Active Projects', value: '12', color: 'bg-amber-100 dark:bg-amber-900/20' }
-                ].map((stat, i) => (
-                  <div 
-                    key={i} 
-                    className={`p-4 rounded-lg ${stat.color}`}
-                  >
-                    <h3 className="text-sm font-medium">{stat.label}</h3>
-                    <p className="text-2xl font-bold">{stat.value}</p>
+                {[1, 2, 3, 4, 5, 6].map((item) => (
+                  <div key={item} className="bg-muted p-4 rounded h-24 flex items-center justify-center">
+                    Item {item}
                   </div>
                 ))}
               </AdaptiveLayout>
-              
-              {/* Recent Activity */}
-              <Card className="p-4">
-                <h3 className="font-bold mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="flex gap-3 items-center">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-                        <div>
-                          <p className="font-medium">Activity {i + 1}</p>
-                          <AdaptiveElement hideOnCompact>
-                            <p className="text-sm text-gray-500">Description of the activity</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="dashboard">
+          <Card>
+            <CardHeader>
+              <CardTitle>Adaptive Dashboard</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdaptiveContainer
+                className="border border-dashed border-gray-300 rounded-lg p-4"
+                debug={true}
+                style={{ width: containerWidth }}
+              >
+                {/* Sidebar */}
+                <div className="flex h-[500px]">
+                  <AdaptiveElement
+                    adaptiveType="sidebar"
+                    adaptivePriority={3}
+                    className="border-r"
+                    hideOnCompact={true}
+                    compact={
+                      <div className="w-14 border-r h-full flex flex-col items-center py-4 space-y-6">
+                        <LayoutDashboard size={20} />
+                        <BarChart3 size={20} />
+                        <Users size={20} />
+                        <Calendar size={20} />
+                        <Settings size={20} />
+                      </div>
+                    }
+                  >
+                    <div className="w-56 h-full p-4 flex flex-col space-y-4">
+                      <div className="flex items-center space-x-3 font-medium">
+                        <LayoutDashboard size={20} />
+                        <span>Dashboard</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <BarChart3 size={20} />
+                        <span>Analytics</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Users size={20} />
+                        <span>Customers</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Calendar size={20} />
+                        <span>Calendar</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Settings size={20} />
+                        <span>Settings</span>
+                      </div>
+                    </div>
+                  </AdaptiveElement>
+                  
+                  {/* Main Content */}
+                  <div className="flex-1 p-4 overflow-hidden">
+                    {/* Header */}
+                    <AdaptiveElement
+                      adaptiveType="header"
+                      adaptivePriority={2}
+                      className="mb-4"
+                      stackOnCompact={true}
+                    >
+                      <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold">Dashboard Overview</h2>
+                        <div className="flex items-center gap-2">
+                          <AdaptiveElement hideOnCompact={true}>
+                            <Button variant="outline" size="sm">
+                              <Bell className="mr-1 h-4 w-4" />
+                              Notifications
+                            </Button>
+                          </AdaptiveElement>
+                          <AdaptiveElement adaptivePriority={1}>
+                            <Button size="sm">
+                              <MessageSquare className="mr-1 h-4 w-4" />
+                              Messages
+                            </Button>
                           </AdaptiveElement>
                         </div>
                       </div>
-                      <AdaptiveElement hideOnCompact>
-                        <Badge variant="outline">New</Badge>
-                      </AdaptiveElement>
+                    </AdaptiveElement>
+                    
+                    {/* Stats Cards */}
+                    <AdaptiveLayout
+                      className="mb-4"
+                      minColumns={1}
+                      maxColumns={4}
+                      gap={16}
+                    >
+                      <Card>
+                        <CardContent className="p-4 flex items-center space-x-3">
+                          <FileText className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Documents</p>
+                            <p className="text-2xl font-bold">245</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4 flex items-center space-x-3">
+                          <ShoppingCart className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Orders</p>
+                            <p className="text-2xl font-bold">16</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4 flex items-center space-x-3">
+                          <CreditCard className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Revenue</p>
+                            <p className="text-2xl font-bold">$4,256</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4 flex items-center space-x-3">
+                          <Inbox className="h-8 w-8 text-primary" />
+                          <div>
+                            <p className="text-sm text-muted-foreground">Messages</p>
+                            <p className="text-2xl font-bold">12</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </AdaptiveLayout>
+                    
+                    {/* Main Content Area */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="md:col-span-2">
+                        <CardHeader>
+                          <CardTitle>Activity Overview</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-64 flex items-center justify-center bg-muted/30">
+                          <span className="text-muted-foreground">Chart Placeholder</span>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Recent Activity</CardTitle>
+                        </CardHeader>
+                        <CardContent className="h-64">
+                          <ul className="space-y-2">
+                            <li className="text-sm pb-2 border-b">New user registered</li>
+                            <li className="text-sm pb-2 border-b">Invoice #123 paid</li>
+                            <li className="text-sm pb-2 border-b">Project "Alpha" completed</li>
+                            <li className="text-sm pb-2 border-b">New comment on task #45</li>
+                          </ul>
+                        </CardContent>
+                      </Card>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </Card>
-            </AdaptiveElement>
-          </div>
-        </AdaptiveContainer>
-      </section>
+              </AdaptiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
