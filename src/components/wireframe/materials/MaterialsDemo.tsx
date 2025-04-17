@@ -1,44 +1,33 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useFidelity } from '../fidelity/FidelityContext';
+import { Play, Pause, RotateCcw } from 'lucide-react';
+import TransitionPreviewFrame from '../animation/TransitionPreviewFrame';
+import MaterialControls from '../controls/MaterialControls';
 import { MaterialType, SurfaceTreatment } from '../fidelity/FidelityLevels';
-import { TransitionPreviewFrame } from '../animation/TransitionPreviewFrame';
-import { generateMaterialStyles } from '../fidelity/FidelityLevels';
-import { Play, Pause, RotateCcw, Settings, Palette } from 'lucide-react';
-
-const materials: MaterialType[] = ['basic', 'flat', 'matte', 'glossy', 'metallic', 'glass', 'textured'];
-const surfaces: SurfaceTreatment[] = ['smooth', 'rough', 'bumpy', 'engraved', 'embossed'];
-const colors = [
-  { name: 'Blue', value: '#4a90e2' },
-  { name: 'Green', value: '#43c59e' },
-  { name: 'Purple', value: '#9b59b6' },
-  { name: 'Orange', value: '#e67e22' },
-  { name: 'Pink', value: '#e84393' },
-];
+import './materials.css';
 
 const MaterialsDemo: React.FC = () => {
-  const { settings } = useFidelity();
-  const [selectedMaterial, setSelectedMaterial] = useState<MaterialType>('matte');
-  const [selectedSurface, setSelectedSurface] = useState<SurfaceTreatment>('smooth');
-  const [selectedColor, setSelectedColor] = useState(colors[0].value);
-  const [intensity, setIntensity] = useState(1.0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [activeTab, setActiveTab] = useState('materials');
+  // Material state
+  const [material, setMaterial] = useState<MaterialType>('matte');
+  const [surface, setSurface] = useState<SurfaceTreatment>('smooth');
+  const [color, setColor] = useState<string>('#4a90e2');
+  const [intensity, setIntensity] = useState<number>(0.8);
+  
+  // Playback state
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
-  const handleMaterialChange = (material: MaterialType) => {
-    setSelectedMaterial(material);
-  };
-
-  const handleSurfaceChange = (surface: SurfaceTreatment) => {
-    setSelectedSurface(surface);
-  };
-
-  const handleColorChange = (color: string) => {
-    setSelectedColor(color);
+  const handleMaterialChange = (settings: {
+    material: MaterialType;
+    surface: SurfaceTreatment;
+    color: string;
+    intensity: number;
+  }) => {
+    setMaterial(settings.material);
+    setSurface(settings.surface);
+    setColor(settings.color);
+    setIntensity(settings.intensity);
   };
 
   const togglePlayback = () => {
@@ -47,129 +36,61 @@ const MaterialsDemo: React.FC = () => {
 
   const resetAnimation = () => {
     setIsPlaying(false);
+    // Add a small delay before starting playback again
     setTimeout(() => setIsPlaying(true), 100);
   };
 
-  const materialStyle = generateMaterialStyles(selectedMaterial, selectedSurface, selectedColor, intensity);
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Material Configuration</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="materials">
-                <Palette className="h-4 w-4 mr-2" />
-                Materials
-              </TabsTrigger>
-              <TabsTrigger value="surfaces">
-                <Settings className="h-4 w-4 mr-2" />
-                Surfaces
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="materials" className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {materials.map((material) => (
-                  <Button
-                    key={material}
-                    variant={selectedMaterial === material ? "default" : "outline"}
-                    onClick={() => handleMaterialChange(material)}
-                    className="capitalize"
-                  >
-                    {material}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="space-y-2 pt-2">
-                <div className="flex justify-between">
-                  <label htmlFor="intensity" className="text-sm font-medium">Material Intensity</label>
-                  <span className="text-xs text-muted-foreground">{Math.round(intensity * 100)}%</span>
-                </div>
-                <Slider
-                  id="intensity"
-                  min={0.1}
-                  max={1.0}
-                  step={0.01}
-                  value={[intensity]}
-                  onValueChange={(value) => setIntensity(value[0])}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Material Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {colors.map((color) => (
-                    <button
-                      key={color.name}
-                      className={`w-8 h-8 rounded-full border-2 ${selectedColor === color.value ? 'border-primary' : 'border-transparent'}`}
-                      style={{ backgroundColor: color.value }}
-                      onClick={() => handleColorChange(color.value)}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="surfaces" className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {surfaces.map((surface) => (
-                  <Button
-                    key={surface}
-                    variant={selectedSurface === surface ? "default" : "outline"}
-                    onClick={() => handleSurfaceChange(surface)}
-                    className="capitalize"
-                  >
-                    {surface}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="pt-2 space-y-2">
-                <div className="flex items-center p-3 rounded-md border bg-muted/50">
-                  <div className="text-sm">
-                    <p className="font-medium">Surface Treatment Effects</p>
-                    <p className="text-muted-foreground text-xs mt-1">
-                      The {selectedSurface} treatment affects texture, reflectivity, and shadow details.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <div className="flex justify-between pt-2">
-            <Button variant="outline" onClick={togglePlayback}>
-              {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-              {isPlaying ? "Pause" : "Play"}
-            </Button>
-            <Button variant="ghost" onClick={resetAnimation}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Material Preview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TransitionPreviewFrame
-            materialStyle={materialStyle}
-            materialType={selectedMaterial}
-            surfaceTreatment={selectedSurface}
-            isPlaying={isPlaying}
-            settings={settings}
-          />
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Material Controls</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MaterialControls
+                initialMaterial={material}
+                initialSurface={surface}
+                initialColor={color}
+                initialIntensity={intensity}
+                onChange={handleMaterialChange}
+              />
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={togglePlayback}>
+                {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+                {isPlaying ? "Pause Animation" : "Play Animation"}
+              </Button>
+              <Button variant="ghost" onClick={resetAnimation}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Material Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TransitionPreviewFrame
+              material={material}
+              surfaceTreatment={surface}
+              color={color}
+              intensity={intensity}
+              isPlaying={isPlaying}
+              onTransitionEnd={() => console.log('Material transition complete')}
+            />
+          </CardContent>
+          <CardFooter>
+            <div className="text-sm text-muted-foreground">
+              The preview shows how the material would appear with applied effects and animations.
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -62,7 +62,7 @@
     "fabric": "^5.5.1",
     "fast-diff": "^1.2.0",
     "file-saver": "^2.0.5",
-    "framer-motion": "^12.6.3",
+    "framer-motion": "^12.7.4",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.2.4",
     "jspdf": "^2.5.1",

@@ -10,13 +10,13 @@ import AnimationPreviewFrame from '../animation/AnimationPreviewFrame';
 import { ChevronRight, Play, Pause, RotateCcw } from 'lucide-react';
 
 const FidelityDemo: React.FC = () => {
-  const { currentLevel, setLevel, settings, updateSettings, isTransitioning } = useFidelity();
+  const { currentLevel, setFidelityLevel, settings, updateSettings, isTransitioning } = useFidelity();
   const [showDetailControls, setShowDetailControls] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const { toast } = useToast();
 
   const handleLevelChange = (level: FidelityLevel) => {
-    setLevel(level);
+    setFidelityLevel(level);
     toast({
       title: `Switched to ${level} fidelity`,
       description: `Rendering with ${FIDELITY_PRESETS[level].renderQuality * 100}% quality`
