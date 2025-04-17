@@ -1,8 +1,13 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { ViewMode } from './controls/CanvasViewportControls';
 import { FocusArea } from '@/hooks/wireframe/use-canvas-navigation';
+import CanvasControls from './controls/CanvasControls';
+import AlignmentDistributionControls from './controls/AlignmentDistributionControls';
+import SmartGuideSystem from './canvas/SmartGuideSystem';
+import { useAlignmentDistribution } from '@/hooks/wireframe/use-alignment-distribution';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export interface AdvancedWireframeEditorProps {
   width: number;
@@ -33,6 +38,9 @@ const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(true);
+  const [selectedObjects, setSelectedObjects] = useState<fabric.Object[]>([]);
   
   // Initialize fabric canvas
   useEffect(() => {
@@ -77,6 +85,19 @@ const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
     
     canvas.add(rect, circle, text);
     
+    // Setup selection event listeners
+    canvas.on('selection:created', (e: fabric.IEvent) => {
+      setSelectedObjects(canvas.getActiveObjects());
+    });
+    
+    canvas.on('selection:updated', (e: fabric.IEvent) => {
+      setSelectedObjects(canvas.getActiveObjects());
+    });
+    
+    canvas.on('selection:cleared', () => {
+      setSelectedObjects([]);
+    });
+    
     // Notify parent component that canvas is initialized
     if (onCanvasInitialized) {
       onCanvasInitialized(canvas);
@@ -89,7 +110,46 @@ const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
     };
   }, [width, height, onCanvasInitialized]);
   
-  // Simple placeholder implementation showing a wireframe with key parameters
+  // Use the alignment and distribution hook
+  const { 
+    alignLeft,
+    alignCenterH,
+    alignRight,
+    alignTop,
+    alignMiddle,
+    alignBottom,
+    distributeHorizontally,
+    distributeVertically,
+    spaceEvenlyHorizontal,
+    spaceEvenlyVertical
+  } = useAlignmentDistribution(fabricCanvasRef.current);
+
+  // Handle zoom and canvas controls
+  const handleZoomIn = () => {
+    if (!fabricCanvasRef.current) return;
+    fabricCanvasRef.current.setZoom(fabricCanvasRef.current.getZoom() * 1.1);
+  };
+  
+  const handleZoomOut = () => {
+    if (!fabricCanvasRef.current) return;
+    fabricCanvasRef.current.setZoom(fabricCanvasRef.current.getZoom() / 1.1);
+  };
+  
+  const handleResetZoom = () => {
+    if (!fabricCanvasRef.current) return;
+    fabricCanvasRef.current.setZoom(1);
+  };
+  
+  const handleToggleGrid = () => {
+    setShowGrid(prev => !prev);
+    // Grid implementation would go here
+  };
+  
+  const handleToggleSnapToGrid = () => {
+    setSnapToGrid(prev => !prev);
+    // Snap to grid implementation would go here
+  };
+  
   return (
     <div 
       className="advanced-wireframe-editor"
@@ -100,6 +160,45 @@ const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
         overflow: 'hidden'
       }}
     >
+      <TooltipProvider>
+        <div className="absolute top-4 left-4 z-10 flex gap-4 items-center">
+          <CanvasControls
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
+            onToggleGrid={handleToggleGrid}
+            onToggleSnapToGrid={handleToggleSnapToGrid}
+            showGrid={showGrid}
+            snapToGrid={snapToGrid}
+          />
+          
+          {selectedObjects.length > 0 && (
+            <AlignmentDistributionControls
+              onAlignLeft={alignLeft}
+              onAlignCenterH={alignCenterH}
+              onAlignRight={alignRight}
+              onAlignTop={alignTop}
+              onAlignMiddle={alignMiddle}
+              onAlignBottom={alignBottom}
+              onDistributeHorizontally={distributeHorizontally}
+              onDistributeVertically={distributeVertically}
+              onSpaceEvenlyHorizontal={spaceEvenlyHorizontal}
+              onSpaceEvenlyVertical={spaceEvenlyVertical}
+              multipleSelected={selectedObjects.length > 1}
+            />
+          )}
+        </div>
+      </TooltipProvider>
+      
+      {/* Smart Guides System */}
+      <SmartGuideSystem 
+        canvas={fabricCanvasRef.current}
+        enabled={true}
+        threshold={10}
+        snapThreshold={5}
+        showLabels={true}
+      />
+      
       <canvas ref={canvasRef} />
       
       <div className="wireframe-display border border-dashed border-gray-300 bg-white"

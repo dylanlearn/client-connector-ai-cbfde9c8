@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import AdvancedWireframeEditor from './AdvancedWireframeEditor';
 import CanvasViewportControls from './controls/CanvasViewportControls';
@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import AdvancedHistoryControls from './canvas/AdvancedHistoryControls';
 import useCanvasHistory from '@/hooks/wireframe/use-canvas-history';
 import { fabric } from 'fabric'; // Import fabric correctly as a module
+import SmartGuideSystem from './canvas/SmartGuideSystem';
 
 interface WireframeEditorWithGridProps {
   width?: number;
@@ -22,6 +23,7 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<fabric.Canvas | null>(null);
+  const [smartGuidesEnabled, setSmartGuidesEnabled] = useState<boolean>(true);
   
   // Use canvas navigation hook for viewport controls
   const {
@@ -88,6 +90,11 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
     }
   };
 
+  // Toggle smart guides
+  const toggleSmartGuides = () => {
+    setSmartGuidesEnabled(prev => !prev);
+  };
+
   return (
     <div className={cn("wireframe-editor-container relative", className)} ref={containerRef}>
       <Card className="wireframe-editor-card relative overflow-hidden">
@@ -127,6 +134,17 @@ const WireframeEditorWithGrid: React.FC<WireframeEditorWithGridProps> = ({
             focusArea={focusArea}
           />
         </div>
+        
+        {/* Smart Guide system renders alignment guides */}
+        {fabricCanvas && (
+          <SmartGuideSystem
+            canvas={fabricCanvas}
+            enabled={smartGuidesEnabled}
+            threshold={10}
+            snapThreshold={5}
+            showLabels={true}
+          />
+        )}
         
         <div 
           className="canvas-transform-container transition-transform duration-200 ease-out"
