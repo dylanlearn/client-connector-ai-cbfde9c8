@@ -76,3 +76,52 @@ export interface CanvasRenderStats {
   frameRate: number;
   memoryUsage?: number;
 }
+
+/**
+ * Grid system configuration with responsive breakpoint support
+ */
+export interface EnterpriseGridConfig {
+  visible: boolean;
+  type: 'lines' | 'dots' | 'columns' | 'custom';
+  size: number;
+  snapToGrid: boolean;
+  snapThreshold: number;
+  color: string;
+  showGuides: boolean;
+  showRulers: boolean;
+  
+  // Column-based grid settings
+  columns: number;
+  gutterWidth: number;
+  marginWidth: number;
+  
+  // Responsive behavior
+  responsive: boolean;
+  breakpoints: GridBreakpoint[];
+  currentBreakpoint: string;
+}
+
+/**
+ * Responsive grid breakpoint definition
+ */
+export interface GridBreakpoint {
+  name: string;
+  width: number;
+  columns: number;
+  gutterWidth: number;
+  marginWidth: number;
+  color?: string;
+  active?: boolean;
+}
+
+/**
+ * Configuration for grid guidelines and alignments
+ */
+export interface GridGuideConfig {
+  showVerticalGuides: boolean;
+  showHorizontalGuides: boolean;
+  guideColor: string;
+  snapToGuides: boolean;
+  guideThreshold: number;
+  showDistanceIndicators: boolean;
+}

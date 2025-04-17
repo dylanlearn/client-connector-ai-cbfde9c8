@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+import { EnterpriseGridConfig } from '@/components/wireframe/types/canvas-types';
 
 export function useGridActions(
   updateConfig: (config: Partial<WireframeCanvasConfig>) => void,
@@ -36,12 +37,45 @@ export function useGridActions(
     updateConfig({ snapTolerance: tolerance });
   }, [updateConfig]);
   
+  // Update enterprise grid config (bridge to new system)
+  const updateEnterpriseGrid = useCallback((enterpriseConfig: Partial<EnterpriseGridConfig>) => {
+    // Map enterprise grid config to legacy config for compatibility
+    const compatConfig: Partial<WireframeCanvasConfig> = {};
+    
+    if ('visible' in enterpriseConfig) {
+      compatConfig.showGrid = enterpriseConfig.visible;
+    }
+    
+    if ('type' in enterpriseConfig) {
+      compatConfig.gridType = enterpriseConfig.type as 'lines' | 'dots' | 'columns';
+    }
+    
+    if ('size' in enterpriseConfig) {
+      compatConfig.gridSize = enterpriseConfig.size;
+    }
+    
+    if ('snapToGrid' in enterpriseConfig) {
+      compatConfig.snapToGrid = enterpriseConfig.snapToGrid;
+    }
+    
+    if ('snapThreshold' in enterpriseConfig) {
+      compatConfig.snapTolerance = enterpriseConfig.snapThreshold;
+    }
+    
+    if ('color' in enterpriseConfig) {
+      compatConfig.gridColor = enterpriseConfig.color;
+    }
+    
+    updateConfig(compatConfig);
+  }, [updateConfig]);
+  
   return {
     toggleGrid,
     toggleSnapToGrid,
     setGridSize,
     setGridType,
     setGridColor,
-    setSnapTolerance
+    setSnapTolerance,
+    updateEnterpriseGrid
   };
 }
