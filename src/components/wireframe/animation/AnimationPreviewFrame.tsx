@@ -139,13 +139,11 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
             className={`absolute inset-0 p-6 ${getAnimationClass()}`}
             variants={getAnimationVariants()}
             initial="initial"
-            animate="animate"
-            exit="exit"
-            // We apply pulse as a separate animate prop, not in the variants
             animate={{
               ...getAnimationVariants().animate,
               ...getPulseAnimation()
             }}
+            exit="exit"
           >
             {renderContent()}
           </motion.div>
