@@ -22,18 +22,14 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
   
   const {
     isGenerating,
-    currentWireframe,
-    generationResult,
+    wireframe,
     generateWireframe,
     error: wireframeError
   } = useWireframe({
     projectId: bridgeProjectId,
-    enhancedValidation: true,
-    onWireframeGenerated: result => {
-      if (result.wireframe && onWireframeGenerated) {
-        onWireframeGenerated(result.wireframe);
-      }
-    }
+    showToasts: true,
+    componentName: 'IntakeWireframeBridge',
+    viewMode: 'preview'
   });
   
   // Generate a prompt based on intake data
@@ -97,7 +93,7 @@ const IntakeWireframeBridge: React.FC<IntakeWireframeBridgeProps> = ({
       return <p className="text-red-500">{wireframeError.message}</p>;
     }
     
-    if (currentWireframe) {
+    if (wireframe) {
       return <p className="text-green-500">Wireframe generated successfully!</p>;
     }
     

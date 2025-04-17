@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { DeviceType, ViewMode } from './types';
+import { DeviceType } from './types';
 import WireframeVisualizer from './WireframeVisualizer';
 
 interface WireframePreviewProps {
   wireframe: any;
   deviceType?: DeviceType;
   darkMode?: boolean;
-  viewMode?: ViewMode;
+  viewMode?: 'preview' | 'edit' | 'code';
   onSectionClick?: (sectionId: string) => void;
 }
 

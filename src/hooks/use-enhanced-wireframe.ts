@@ -8,13 +8,16 @@ import { WireframeGenerationParams, WireframeGenerationResult } from '@/services
 export function useAdvancedWireframe() {
   const {
     isGenerating,
-    currentWireframe,
-    generationResult,
+    wireframe,
+    currentWireframe, // Already mapped in useWireframe
+    generationResult, // Already mapped in useWireframe
     error,
     generateWireframe,
     saveWireframe,
-    reset
+    reset,
+    clearError
   } = useWireframe({
+    showToasts: false,
     toastNotifications: false,
     enhancedValidation: true
   });
@@ -25,13 +28,14 @@ export function useAdvancedWireframe() {
   
   return {
     isGenerating,
-    currentWireframe,
+    currentWireframe: wireframe || currentWireframe,
     generationResults: generationResult,
     intentData,
     blueprint,
     generateWireframe,
     saveWireframe,
-    applyFeedback: async (feedback: string) => currentWireframe, // Mock function for backward compatibility
-    error
+    applyFeedback: async (feedback: string) => wireframe || currentWireframe, // Mock function for backward compatibility
+    error,
+    reset: reset || clearError
   };
 }

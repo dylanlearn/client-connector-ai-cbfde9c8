@@ -4,7 +4,7 @@ export { useWireframeStudio } from './use-wireframe-studio';
 export { useErrorHandler } from './use-error-handler';
 export { useWireframe } from './useWireframe';
 
-// Export types
+// Export types with proper TypeScript syntax
 export type { UseWireframeStudioOptions } from './use-wireframe-studio';
 export type { UseWireframeOptions } from './useWireframe';
 

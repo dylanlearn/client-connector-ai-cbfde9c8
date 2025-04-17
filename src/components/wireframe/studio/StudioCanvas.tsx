@@ -14,10 +14,11 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
   wireframeData,
   deviceType,
   viewMode,
+  selectedSection,
   onUpdate
 }) => {
   const errorHandler = useErrorHandler({ componentName: 'StudioCanvas' });
-  const { selectedSection, handleSectionClick } = useSectionInteractions();
+  const { selectedSection: interactionSelectedSection, handleSectionClick } = useSectionInteractions();
 
   const handleUpdate = (updatedData: WireframeData) => {
     try {
@@ -52,10 +53,11 @@ const StudioCanvas: React.FC<StudioCanvasProps> = ({
           <CardContent className="p-6">
             <WireframeVisualizer
               wireframe={wireframeData}
-              deviceType={deviceType}
+              darkMode={false} 
               viewMode={viewMode}
               onSectionClick={handleSectionClick}
-              selectedSectionId={selectedSection}
+              activeSection={selectedSection}
+              deviceType={deviceType}
             />
           </CardContent>
         </Card>

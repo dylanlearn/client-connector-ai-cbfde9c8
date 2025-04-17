@@ -79,7 +79,7 @@ class UnifiedWireframeService {
   /**
    * Generate a variation of an existing wireframe
    */
-  async generateVariation(
+  async generateWireframeVariation(
     baseWireframe: WireframeData, 
     styleChanges: string,
     enhancedCreativity: boolean = false

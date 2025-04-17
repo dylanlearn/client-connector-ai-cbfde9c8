@@ -16,6 +16,9 @@ export interface UseWireframeOptions {
   autoSave?: boolean;
   showToasts?: boolean;
   componentName?: string;
+  // Legacy options for backward compatibility
+  toastNotifications?: boolean;
+  enhancedValidation?: boolean;
 }
 
 export function useWireframe({
@@ -24,8 +27,14 @@ export function useWireframe({
   viewMode: initialViewMode = 'edit',
   autoSave = false,
   showToasts = true,
-  componentName = 'WireframeComponent'
+  componentName = 'WireframeComponent',
+  // Handle legacy options
+  toastNotifications,
+  enhancedValidation
 }: UseWireframeOptions = {}) {
+  // Use toastNotifications as fallback if provided (for backward compatibility)
+  const shouldShowToasts = toastNotifications !== undefined ? toastNotifications : showToasts;
+  
   // State declarations
   const [wireframe, setWireframe] = useState<WireframeData | null>(initialData);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,7 +45,7 @@ export function useWireframe({
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   
   const errorHandler = ErrorHandler.createHandler(componentName, {
-    showToast: showToasts,
+    showToast: shouldShowToasts,
     userId: undefined // Could be set from auth context if available
   });
   
@@ -83,7 +92,7 @@ export function useWireframe({
       
       if (result.success && result.wireframe) {
         setWireframe(result.wireframe);
-        if (showToasts) {
+        if (shouldShowToasts) {
           toast.success('Wireframe generated successfully');
         }
       } else {
@@ -103,7 +112,7 @@ export function useWireframe({
     } finally {
       setIsGenerating(false);
     }
-  }, [projectId, showToasts, errorHandler]);
+  }, [projectId, shouldShowToasts, errorHandler]);
   
   // Save wireframe
   const saveWireframe = useCallback(async (): Promise<WireframeData | null> => {
@@ -135,7 +144,15 @@ export function useWireframe({
     }
   }, [wireframe, errorHandler]);
   
+  // For backward compatibility with old hook APIs
+  const reset = useCallback(() => {
+    setWireframe(null);
+    clearError();
+  }, [clearError]);
+  
+  // Return new API and backward compatibility properties
   return {
+    // New API
     wireframe,
     error,
     isGenerating,
@@ -150,6 +167,17 @@ export function useWireframe({
     setViewMode,
     toggleSidebar,
     selectElement,
-    clearError
+    clearError,
+    
+    // Backward compatibility properties (so old code doesn't break)
+    currentWireframe: wireframe,
+    generationResult: wireframe ? { 
+      wireframe,
+      success: true,
+      message: 'Wireframe available',
+      intentData: null,
+      blueprint: null
+    } : null,
+    reset
   };
 }

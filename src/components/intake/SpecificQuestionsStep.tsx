@@ -72,7 +72,18 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
               id: "preview",
               title: displayData.projectName || displayData.businessName || "Business Preview",
               description: displayData.projectDescription || displayData.businessDescription || "Based on your inputs",
-              sections: []
+              sections: [],
+              colorScheme: {
+                primary: "#0070f3",
+                secondary: "#0070f3",
+                accent: "#0070f3",
+                background: "#ffffff",
+                text: "#000000"
+              },
+              typography: {
+                headings: "Inter",
+                body: "Inter"
+              }
             }}
             preview={true}
           />

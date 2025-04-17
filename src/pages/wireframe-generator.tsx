@@ -15,12 +15,12 @@ const WireframeGenerator = () => {
   
   const {
     isGenerating,
-    currentWireframe,
+    wireframe,
     generateWireframe,
     error
   } = useWireframe({
     projectId,
-    toastNotifications: true,
+    showToasts: true,
     autoSave: true
   });
   

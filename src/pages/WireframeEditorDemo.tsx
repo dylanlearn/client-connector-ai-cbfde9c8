@@ -18,13 +18,13 @@ const WireframeEditorDemo: React.FC = () => {
   const [projectId] = useState(() => uuidv4());
   
   const {
-    currentWireframe,
+    wireframe,
     isGenerating,
     generateWireframe,
     saveWireframe
   } = useWireframe({
     projectId,
-    toastNotifications: true
+    showToasts: true
   });
   
   return (
@@ -45,8 +45,8 @@ const WireframeEditorDemo: React.FC = () => {
             <Button 
               variant="default" 
               size="sm"
-              onClick={() => currentWireframe && saveWireframe()}
-              disabled={!currentWireframe}
+              onClick={() => wireframe && saveWireframe()}
+              disabled={!wireframe}
             >
               <Save className="h-4 w-4 mr-1" />
               Save
