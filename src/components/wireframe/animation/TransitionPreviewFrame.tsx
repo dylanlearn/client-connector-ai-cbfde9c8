@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, TargetAndTransition } from 'framer-motion';
 import { MaterialType, SurfaceTreatment, generateMaterialStyles } from '../fidelity/FidelityLevels';
 import '../materials/materials.css';
 
@@ -56,7 +56,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
   } as React.CSSProperties;
 
   // Get animation based on material type
-  const getMaterialAnimation = () => {
+  const getMaterialAnimation = (): TargetAndTransition => {
     if (!isPlaying) return {};
 
     switch (material) {
@@ -66,7 +66,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
           rotate: [0, 0.5, 0],
           transition: {
             repeat: Infinity,
-            repeatType: "loop" as const,
+            repeatType: "loop",
             duration: 4
           }
         };
@@ -75,7 +75,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
           y: [0, -3, 0],
           transition: {
             repeat: Infinity,
-            repeatType: "loop" as const,
+            repeatType: "loop",
             duration: 3
           }
         };
@@ -88,7 +88,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
           ],
           transition: {
             repeat: Infinity,
-            repeatType: "loop" as const,
+            repeatType: "loop",
             duration: 3.5
           }
         };

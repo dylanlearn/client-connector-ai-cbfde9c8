@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { motion, AnimatePresence, Variants, TargetAndTransition } from 'framer-motion';
 import { FidelityLevel } from '../fidelity/FidelityLevels';
 import { useFidelityRenderer } from '@/hooks/wireframe/use-fidelity-renderer';
 
@@ -64,9 +65,13 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
     if (fidelityLevel === 'high' && isPlaying) {
       variants.animate = {
         ...variants.animate,
+        scale: 1,
+        opacity: 1,
+        y: 0,
         transition: {
-          ...variants.animate.transition,
           duration: 0.7,
+          delay: 0.1,
+          ease: "easeOut",
           type: "spring",
           stiffness: 100,
           damping: 10
@@ -78,14 +83,14 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
   };
 
   // Get pulsing animation as a separate variant (not part of the main variants object)
-  const getPulseAnimation = () => {
+  const getPulseAnimation = (): TargetAndTransition => {
     if (isPlaying && fidelityLevel !== 'wireframe') {
       return {
         scale: [1, 1.02, 1],
         transition: {
           duration: 2,
           repeat: Infinity,
-          repeatType: "loop" as const
+          repeatType: "loop"
         }
       };
     }
