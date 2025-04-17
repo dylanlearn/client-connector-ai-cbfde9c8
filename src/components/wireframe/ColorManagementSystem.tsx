@@ -10,7 +10,7 @@ import AccessibilityChecker from './color/AccessibilityChecker';
 import ColorSchemeSelector from './ColorSchemeSelector';
 import { ColorScheme } from './ColorSchemeSelector';
 import { useDesignMemory } from '@/hooks/wireframe/use-design-memory';
-import { AdaptiveContainer } from './adaptation/AdaptiveContainer';
+import AdaptiveContainer from '@/components/wireframe/adaptation/AdaptiveContainer'; // Changed import
 import { useToast } from '@/hooks/use-toast';
 
 export interface ColorManagementSystemProps {
