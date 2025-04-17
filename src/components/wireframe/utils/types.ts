@@ -22,6 +22,10 @@ export interface WireframeCanvasConfig {
   showCenterGuides?: boolean;
   showDistanceIndicators?: boolean;
   magneticStrength?: number;
+  selectionMode?: 'single' | 'multiple';
+  keyboardMovementStep?: number;
+  objectSelectionPriority?: 'front-to-back' | 'back-to-front';
+  selectionStyle?: fabric.IObjectOptions;
   [key: string]: any;
 }
 
@@ -152,3 +156,25 @@ export interface GridVisualSettings {
   showLabels: boolean;
   labelColor: string;
 }
+
+/**
+ * Selection mode configuration
+ */
+export interface SelectionConfig {
+  mode: 'single' | 'multiple';
+  allowDeselect: boolean;
+  selectionKey: 'shift' | 'ctrl' | 'alt';
+  dragSelectionKey: 'shift' | 'ctrl' | 'alt' | 'none';
+  keyboardMovementStep: number;
+  objectSelectionPriority: 'front-to-back' | 'back-to-front';
+  style: {
+    borderColor: string;
+    cornerColor: string;
+    cornerStyle: 'circle' | 'rect';
+    cornerSize: number;
+    transparentCorners: boolean;
+    cornerStrokeColor: string;
+    selectionBackgroundColor: string;
+  };
+}
+
