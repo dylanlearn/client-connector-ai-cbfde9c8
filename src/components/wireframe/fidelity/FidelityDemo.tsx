@@ -80,7 +80,7 @@ const FidelityDemo: React.FC<FidelityDemoProps> = ({
             
             <TabsContent value="controls">
               <div className="max-w-md mx-auto">
-                <FidelityControls showDetailedControls={true} />
+                <FidelityControls showDetailControls={true} />
               </div>
             </TabsContent>
           </div>
