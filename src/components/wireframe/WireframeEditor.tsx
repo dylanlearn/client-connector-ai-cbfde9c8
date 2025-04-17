@@ -49,7 +49,7 @@ const WireframeEditor: React.FC<WireframeEditorProps> = ({
   } = useWireframeStudio({
     projectId,
     initialData: initialWireframe,
-    viewMode: initialViewMode,  // Changed initialViewMode to viewMode
+    viewMode: initialViewMode,
     autoSave: true,
     showToasts: true,
     componentName: 'WireframeEditor'

@@ -1,12 +1,12 @@
 
 import { useState, useCallback } from 'react';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData, WireframeGenerationParams } from '@/services/ai/wireframe/wireframe-types';
 import { useErrorHandler } from './use-error-handler';
 
 export interface UseWireframeStudioOptions {
   projectId?: string;
   initialData?: WireframeData | null;
-  viewMode?: 'edit' | 'preview' | 'code';  // Added this property
+  viewMode?: 'edit' | 'preview' | 'code';
   autoSave?: boolean;
   showToasts?: boolean;
   componentName?: string;
@@ -53,14 +53,14 @@ export function useWireframeStudio(options: UseWireframeStudioOptions = {}) {
     setWireframe(data);
   }, []);
   
-  // Generate wireframe (simplified mock)
-  const generateWireframe = useCallback(async (prompt: string) => {
+  // Generate wireframe - Updated to accept WireframeGenerationParams instead of string
+  const generateWireframe = useCallback(async (params: WireframeGenerationParams) => {
     setIsGenerating(true);
     setError(null);
     
     try {
       // Mock implementation
-      console.log('Generating wireframe with prompt:', prompt);
+      console.log('Generating wireframe with params:', params);
       return { success: true };
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
