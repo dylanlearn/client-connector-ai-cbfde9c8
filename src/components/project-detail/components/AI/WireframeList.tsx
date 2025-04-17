@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,19 +13,41 @@ interface WireframeListProps {
 const WireframeList: React.FC<WireframeListProps> = ({ projectId }) => {
   const navigate = useNavigate();
   
-  // Mock data for wireframes
+  // Mock data for wireframes with required properties
   const wireframes = [
     {
       id: '1',
       title: 'Homepage Wireframe',
       description: 'Main landing page wireframe',
-      sections: []
+      sections: [],
+      colorScheme: {
+        primary: '#3182ce',
+        secondary: '#805ad5',
+        accent: '#ed8936',
+        background: '#ffffff',
+        text: '#1a202c'
+      },
+      typography: {
+        headings: 'Inter',
+        body: 'Inter'
+      }
     },
     {
       id: '2',
       title: 'About Page',
       description: 'About page with team info',
-      sections: []
+      sections: [],
+      colorScheme: {
+        primary: '#3182ce',
+        secondary: '#805ad5',
+        accent: '#ed8936',
+        background: '#ffffff',
+        text: '#1a202c'
+      },
+      typography: {
+        headings: 'Inter',
+        body: 'Inter'
+      }
     }
   ];
 

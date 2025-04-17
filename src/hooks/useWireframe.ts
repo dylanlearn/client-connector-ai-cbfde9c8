@@ -102,7 +102,7 @@ export function useWireframe({
       return result;
     } catch (err) {
       const handledError = errorHandler.handleError(err, 'generating wireframe');
-      setError(handledError);
+      setError(handledError); // Now we're setting an actual Error object, not a Promise<Error>
       return {
         wireframe: null,
         success: false,
@@ -124,7 +124,7 @@ export function useWireframe({
       return saved;
     } catch (err) {
       const handledError = errorHandler.handleError(err, 'saving wireframe');
-      setError(handledError);
+      setError(handledError); // Fixed: Now we're setting the Error object, not a Promise<Error>
       return null;
     } finally {
       setIsSaving(false);
@@ -139,7 +139,7 @@ export function useWireframe({
       return await unifiedWireframeService.exportWireframe(wireframe, format);
     } catch (err) {
       const handledError = errorHandler.handleError(err, 'exporting wireframe');
-      setError(handledError);
+      setError(handledError); // Fixed: Now we're setting the Error object, not a Promise<Error>
       return false;
     }
   }, [wireframe, errorHandler]);
