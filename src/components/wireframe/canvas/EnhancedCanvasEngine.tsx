@@ -1,23 +1,19 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '../utils/types';
 import { useCanvasInitialization } from './useCanvasInitialization';
 import { useSectionRenderer } from './useSectionRenderer';
+import { useCanvasPerformance } from '../hooks/useCanvasPerformance';
 import DragEnhancementHandler from './DragEnhancementHandler';
+import CanvasLoadingIndicator from './CanvasLoadingIndicator';
+import CanvasErrorDisplay from './CanvasErrorDisplay';
+import { EnhancedCanvasEngineProps } from '../types/canvas-types';
 
-interface EnhancedCanvasEngineProps {
-  width?: number;
-  height?: number;
-  canvasConfig?: Partial<WireframeCanvasConfig>;
-  sections?: any[];
-  className?: string;
-  onSectionClick?: (id: string, section: any) => void;
-  onObjectsSelected?: (objects: fabric.Object[]) => void;
-  onObjectModified?: (object: fabric.Object) => void;
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
-}
-
+/**
+ * Enhanced Canvas Engine Component with TypeScript-safe implementation
+ * and performance optimizations
+ */
 const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
   width = 1200,
   height = 800,
@@ -27,9 +23,11 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
   onSectionClick,
   onObjectsSelected,
   onObjectModified,
-  onCanvasReady
+  onCanvasReady,
+  onRenderComplete
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderStartTimeRef = useRef<number>(0);
   
   // Default configuration
   const defaultConfig: WireframeCanvasConfig = {
@@ -50,14 +48,27 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
   // Merged configuration
   const config = { ...defaultConfig, ...canvasConfig };
   
+  // Performance options
+  const performanceOptions = {
+    enableCaching: true,
+    objectCaching: true,
+    skipOffscreen: true,
+    enableRetina: window.devicePixelRatio < 2, // Disable for high-DPI devices
+    renderBatchSize: 50
+  };
+  
   // Initialize canvas using our custom hook
-  const { fabricCanvas, isLoading } = useCanvasInitialization(
+  const { fabricCanvas, isLoading, error } = useCanvasInitialization(
     canvasRef,
     config,
     onObjectsSelected,
     onObjectModified,
-    onCanvasReady
+    onCanvasReady,
+    performanceOptions
   );
+  
+  // Performance monitoring
+  const { renderStats, optimizeCanvas } = useCanvasPerformance(fabricCanvas, performanceOptions);
   
   // Render sections using our custom hook
   useSectionRenderer(
@@ -69,13 +80,64 @@ const EnhancedCanvasEngine: React.FC<EnhancedCanvasEngineProps> = ({
     },
     onSectionClick
   );
+
+  // Track rendering performance
+  useEffect(() => {
+    if (renderStartTimeRef.current === 0 && !isLoading && fabricCanvas) {
+      renderStartTimeRef.current = performance.now();
+      
+      // Optimize after initial render is complete
+      const timeoutId = setTimeout(() => {
+        optimizeCanvas();
+        
+        const renderTime = performance.now() - renderStartTimeRef.current;
+        console.debug(`Canvas render complete in ${renderTime.toFixed(2)}ms`);
+        
+        if (onRenderComplete) {
+          onRenderComplete();
+        }
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isLoading, fabricCanvas, optimizeCanvas, onRenderComplete]);
+
+  // Adjust canvas for device pixel ratio (for retina displays)
+  useEffect(() => {
+    if (fabricCanvas && window.devicePixelRatio > 1) {
+      const canvasElement = fabricCanvas.getElement();
+      const context = canvasElement.getContext('2d');
+      
+      if (context && performanceOptions.enableRetina) {
+        // Scale the canvas for high-DPI displays
+        const ratio = window.devicePixelRatio;
+        canvasElement.width = config.width * ratio;
+        canvasElement.height = config.height * ratio;
+        canvasElement.style.width = `${config.width}px`;
+        canvasElement.style.height = `${config.height}px`;
+        
+        context.scale(ratio, ratio);
+        fabricCanvas.renderAll();
+      }
+    }
+  }, [fabricCanvas, config.width, config.height, performanceOptions.enableRetina]);
   
   return (
-    <div className={className}>
+    <div className={className ? className : "enhanced-canvas-container relative"}>
       <canvas ref={canvasRef} />
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-          <p>Loading canvas...</p>
+      
+      <CanvasLoadingIndicator isLoading={isLoading} />
+      <CanvasErrorDisplay error={error || null} />
+      
+      {/* Render stats (development only) */}
+      {process.env.NODE_ENV === 'development' && fabricCanvas && (
+        <div className="absolute bottom-2 right-2 bg-muted/60 text-xs p-1 rounded">
+          {renderStats.frameRate > 0 ? (
+            <>
+              {renderStats.frameRate} FPS | {renderStats.objectCount} objects
+              {renderStats.memoryUsage && ` | ${renderStats.memoryUsage} MB`}
+            </>
+          ) : null}
         </div>
       )}
       
