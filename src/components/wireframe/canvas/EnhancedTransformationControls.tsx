@@ -76,9 +76,10 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
   // Define the quick actions
   const quickActions = [
     {
+      id: 'rotate',
       icon: <RotateCw className="h-4 w-4" />,
       label: "Rotate",
-      action: () => {
+      onClick: () => {
         // We'll create a synthetic event when the button is clicked
         const syntheticEvent = new MouseEvent('click') as unknown as React.MouseEvent;
         onRotateStart(syntheticEvent);
@@ -86,21 +87,24 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
       disabled: isLocked
     },
     {
+      id: 'flip-x',
       icon: <FlipHorizontal className="h-4 w-4" />,
       label: "Flip X",
-      action: () => onFlip('horizontal'),
+      onClick: () => onFlip('horizontal'),
       disabled: isLocked
     },
     {
+      id: 'flip-y',
       icon: <FlipVertical className="h-4 w-4" />,
       label: "Flip Y",
-      action: () => onFlip('vertical'),
+      onClick: () => onFlip('vertical'),
       disabled: isLocked
     },
     {
+      id: 'transform',
       icon: <Settings className="h-4 w-4" />,
       label: "Transform",
-      action: () => setShowAdvancedTransform(!showAdvancedTransform),
+      onClick: () => setShowAdvancedTransform(!showAdvancedTransform),
       disabled: false
     },
     ...createDefaultQuickActions(

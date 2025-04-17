@@ -148,7 +148,7 @@ export function useAlignmentDistribution(canvas: fabric.Canvas | null) {
       if (!e.target) return;
       
       // Clear any existing guides
-      activeGuides.forEach(guide => canvas.remove(guide));
+      activeGuides.forEach(existingGuide => canvas.remove(existingGuide));
       activeGuides = [];
       
       // Get all other objects
@@ -174,7 +174,7 @@ export function useAlignmentDistribution(canvas: fabric.Canvas | null) {
     
     const handleObjectModified = () => {
       // Clear guides when object stops moving
-      activeGuides.forEach(guide => canvas.remove(guide));
+      activeGuides.forEach(existingGuide => canvas.remove(existingGuide));
       activeGuides = [];
       canvas.requestRenderAll();
     };

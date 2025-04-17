@@ -1,48 +1,31 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { 
+  RotateClockwise, 
+  RotateCounterClockwise, 
+  FlipHorizontal, 
+  FlipVertical, 
+  RefreshCw, 
+  Ruler, 
+  Lock, 
+  Unlock 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { 
-  RotateCw, 
-  FlipHorizontal, 
-  FlipVertical, 
-  MoveHorizontal, 
-  MoveVertical,
-  Lock,
-  Unlock,
-  RefreshCw,
-  ArrowRightLeft,
-  ArrowUpDown,
-  Minus,
-  Plus
-} from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-
-export interface TransformationValues {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-  skewX: number;
-  skewY: number;
-  flipX: boolean;
-  flipY: boolean;
-}
+import { TransformationValues } from '@/hooks/wireframe/use-advanced-transform';
 
 interface AdvancedTransformControlsProps {
   values: TransformationValues;
   onValuesChange: (values: Partial<TransformationValues>) => void;
   onFlip: (axis: 'horizontal' | 'vertical') => void;
   onReset: () => void;
+  className?: string;
   maintainAspectRatio: boolean;
   onToggleAspectRatio: (maintain: boolean) => void;
-  className?: string;
-  disabled?: boolean;
 }
 
 const AdvancedTransformControls: React.FC<AdvancedTransformControlsProps> = ({
@@ -50,376 +33,198 @@ const AdvancedTransformControls: React.FC<AdvancedTransformControlsProps> = ({
   onValuesChange,
   onFlip,
   onReset,
-  maintainAspectRatio,
-  onToggleAspectRatio,
   className,
-  disabled = false
+  maintainAspectRatio,
+  onToggleAspectRatio
 }) => {
-  const [localValues, setLocalValues] = useState<TransformationValues>(values);
-  
-  useEffect(() => {
-    setLocalValues(values);
-  }, [values]);
-  
-  const handleInputChange = (field: keyof TransformationValues, value: string) => {
-    const numValue = parseFloat(value);
-    
-    if (isNaN(numValue)) return;
-    
-    const updatedValues: Partial<TransformationValues> = { [field]: numValue };
-    
-    // If maintaining aspect ratio and changing width/height
-    if (maintainAspectRatio) {
-      if (field === 'width') {
-        const aspectRatio = values.width / values.height;
-        updatedValues.height = numValue / aspectRatio;
-      } else if (field === 'height') {
-        const aspectRatio = values.width / values.height;
-        updatedValues.width = numValue * aspectRatio;
-      }
-    }
-    
-    setLocalValues({ ...localValues, ...updatedValues });
+  const handleChange = (field: keyof TransformationValues, value: number) => {
+    onValuesChange({ [field]: value });
   };
   
-  const handleBlur = () => {
-    onValuesChange(localValues);
+  const handleRotateBy = (degrees: number) => {
+    // Ensure rotation is a number before adding
+    const currentRotation = typeof values.rotation === 'number' ? values.rotation : 0;
+    onValuesChange({ rotation: currentRotation + degrees });
   };
   
-  const handleIncrement = (field: keyof TransformationValues, step: number = 1) => {
-    const updatedValues: Partial<TransformationValues> = { 
-      [field]: Math.round((values[field] + step) * 100) / 100 
-    };
-    
-    // If maintaining aspect ratio and changing width/height
-    if (maintainAspectRatio) {
-      if (field === 'width') {
-        const aspectRatio = values.width / values.height;
-        updatedValues.height = Math.round((updatedValues.width as number) / aspectRatio * 100) / 100;
-      } else if (field === 'height') {
-        const aspectRatio = values.width / values.height;
-        updatedValues.width = Math.round((updatedValues.height as number) * aspectRatio * 100) / 100;
-      }
-    }
-    
-    onValuesChange(updatedValues);
-  };
-
   return (
-    <div className={cn("bg-background border rounded-md p-3 space-y-3", className)}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Transform</h3>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={onReset}
-            disabled={disabled}
-            className="h-7 w-7"
-            title="Reset all transforms"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
+    <div className={cn("p-4 space-y-4", className)}>
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-semibold">Transform Object</h3>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onReset}
+          className="h-7 text-xs"
+        >
+          <RefreshCw className="w-3 h-3 mr-1" /> Reset
+        </Button>
       </div>
       
-      <Tabs defaultValue="position" className="w-full">
-        <TabsList className="grid grid-cols-3 h-8">
-          <TabsTrigger value="position" className="text-xs">Position</TabsTrigger>
-          <TabsTrigger value="size" className="text-xs">Size</TabsTrigger>
-          <TabsTrigger value="rotation" className="text-xs">Rotation</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="position" className="space-y-3 pt-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">X</Label>
-              <div className="flex">
-                <Input
-                  type="number"
-                  value={localValues.x}
-                  onChange={(e) => handleInputChange('x', e.target.value)}
-                  onBlur={handleBlur}
-                  className="h-8 text-xs"
-                  disabled={disabled}
-                />
-                <div className="flex flex-col ml-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('x', 1)}
-                    disabled={disabled}
-                    className="h-4 w-4 mb-0.5 p-0"
-                  >
-                    <Plus className="h-2 w-2" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('x', -1)}
-                    disabled={disabled}
-                    className="h-4 w-4 p-0"
-                  >
-                    <Minus className="h-2 w-2" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <Label className="text-xs">Y</Label>
-              <div className="flex">
-                <Input
-                  type="number"
-                  value={localValues.y}
-                  onChange={(e) => handleInputChange('y', e.target.value)}
-                  onBlur={handleBlur}
-                  className="h-8 text-xs"
-                  disabled={disabled}
-                />
-                <div className="flex flex-col ml-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('y', 1)}
-                    disabled={disabled}
-                    className="h-4 w-4 mb-0.5 p-0"
-                  >
-                    <Plus className="h-2 w-2" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('y', -1)}
-                    disabled={disabled}
-                    className="h-4 w-4 p-0"
-                  >
-                    <Minus className="h-2 w-2" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-2 py-1">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => onFlip('horizontal')}
-              disabled={disabled}
-              className="h-7 text-xs flex items-center"
-            >
-              <FlipHorizontal className="h-3 w-3 mr-1" />
-              Flip X
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => onFlip('vertical')}
-              disabled={disabled}
-              className="h-7 text-xs flex items-center"
-            >
-              <FlipVertical className="h-3 w-3 mr-1" />
-              Flip Y
-            </Button>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="size" className="space-y-3 pt-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Width</Label>
-              <div className="flex">
-                <Input
-                  type="number"
-                  value={localValues.width}
-                  onChange={(e) => handleInputChange('width', e.target.value)}
-                  onBlur={handleBlur}
-                  className="h-8 text-xs"
-                  disabled={disabled}
-                />
-                <div className="flex flex-col ml-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('width', 1)}
-                    disabled={disabled}
-                    className="h-4 w-4 mb-0.5 p-0"
-                  >
-                    <Plus className="h-2 w-2" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('width', -1)}
-                    disabled={disabled}
-                    className="h-4 w-4 p-0"
-                  >
-                    <Minus className="h-2 w-2" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <Label className="text-xs">Height</Label>
-              <div className="flex">
-                <Input
-                  type="number"
-                  value={localValues.height}
-                  onChange={(e) => handleInputChange('height', e.target.value)}
-                  onBlur={handleBlur}
-                  className="h-8 text-xs"
-                  disabled={disabled}
-                />
-                <div className="flex flex-col ml-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('height', 1)}
-                    disabled={disabled}
-                    className="h-4 w-4 mb-0.5 p-0"
-                  >
-                    <Plus className="h-2 w-2" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('height', -1)}
-                    disabled={disabled}
-                    className="h-4 w-4 p-0"
-                  >
-                    <Minus className="h-2 w-2" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <Label className="text-xs cursor-pointer" htmlFor="maintain-ratio">
-              Maintain aspect ratio
-            </Label>
-            <Switch
-              id="maintain-ratio"
-              checked={maintainAspectRatio}
-              onCheckedChange={onToggleAspectRatio}
-              disabled={disabled}
+      <div className="space-y-3">
+        {/* Position controls */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="pos-x" className="text-xs">X Position</Label>
+            <Input
+              id="pos-x"
+              type="number"
+              value={values.x}
+              onChange={(e) => handleChange('x', Number(e.target.value))}
+              className="h-8"
             />
           </div>
-        </TabsContent>
-        
-        <TabsContent value="rotation" className="space-y-3 pt-2">
-          <div className="grid grid-cols-1 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Rotation</Label>
-              <div className="flex">
-                <Input
-                  type="number"
-                  value={localValues.rotation}
-                  onChange={(e) => handleInputChange('rotation', e.target.value)}
-                  onBlur={handleBlur}
-                  className="h-8 text-xs"
-                  disabled={disabled}
-                />
-                <div className="flex flex-col ml-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('rotation', 15)}
-                    disabled={disabled}
-                    className="h-4 w-4 mb-0.5 p-0"
-                  >
-                    <Plus className="h-2 w-2" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleIncrement('rotation', -15)}
-                    disabled={disabled}
-                    className="h-4 w-4 p-0"
-                  >
-                    <Minus className="h-2 w-2" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Skew X</Label>
-                <div className="flex">
-                  <Input
-                    type="number"
-                    value={localValues.skewX}
-                    onChange={(e) => handleInputChange('skewX', e.target.value)}
-                    onBlur={handleBlur}
-                    className="h-8 text-xs"
-                    disabled={disabled}
-                  />
-                  <div className="flex flex-col ml-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleIncrement('skewX', 5)}
-                      disabled={disabled}
-                      className="h-4 w-4 mb-0.5 p-0"
-                    >
-                      <Plus className="h-2 w-2" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleIncrement('skewX', -5)}
-                      disabled={disabled}
-                      className="h-4 w-4 p-0"
-                    >
-                      <Minus className="h-2 w-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-1">
-                <Label className="text-xs">Skew Y</Label>
-                <div className="flex">
-                  <Input
-                    type="number"
-                    value={localValues.skewY}
-                    onChange={(e) => handleInputChange('skewY', e.target.value)}
-                    onBlur={handleBlur}
-                    className="h-8 text-xs"
-                    disabled={disabled}
-                  />
-                  <div className="flex flex-col ml-1">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleIncrement('skewY', 5)}
-                      disabled={disabled}
-                      className="h-4 w-4 mb-0.5 p-0"
-                    >
-                      <Plus className="h-2 w-2" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleIncrement('skewY', -5)}
-                      disabled={disabled}
-                      className="h-4 w-4 p-0"
-                    >
-                      <Minus className="h-2 w-2" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div>
+            <Label htmlFor="pos-y" className="text-xs">Y Position</Label>
+            <Input
+              id="pos-y"
+              type="number"
+              value={values.y}
+              onChange={(e) => handleChange('y', Number(e.target.value))}
+              className="h-8"
+            />
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        {/* Size controls */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="width" className="text-xs">Width</Label>
+            <Input
+              id="width"
+              type="number"
+              value={values.width}
+              onChange={(e) => handleChange('width', Number(e.target.value))}
+              className="h-8"
+            />
+          </div>
+          <div>
+            <Label htmlFor="height" className="text-xs">Height</Label>
+            <Input
+              id="height"
+              type="number"
+              value={values.height}
+              onChange={(e) => handleChange('height', Number(e.target.value))}
+              className="h-8"
+            />
+          </div>
+        </div>
+        
+        {/* Maintain aspect ratio toggle */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="aspect-ratio" className="text-xs cursor-pointer">
+            Maintain aspect ratio
+          </Label>
+          <Switch 
+            id="aspect-ratio" 
+            checked={maintainAspectRatio} 
+            onCheckedChange={onToggleAspectRatio} 
+            className="data-[state=checked]:bg-blue-500"
+          />
+        </div>
+
+        <Separator />
+        
+        {/* Rotation control */}
+        <div>
+          <Label htmlFor="rotation" className="text-xs">Rotation (degrees)</Label>
+          <div className="flex gap-2 mt-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0"
+              onClick={() => handleRotateBy(-15)}
+            >
+              <RotateCounterClockwise className="h-4 w-4" />
+            </Button>
+            <Input
+              id="rotation"
+              type="number"
+              value={typeof values.rotation === 'number' ? values.rotation : 0}
+              onChange={(e) => handleChange('rotation', Number(e.target.value))}
+              className="h-8"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0"
+              onClick={() => handleRotateBy(15)}
+            >
+              <RotateClockwise className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Skew controls */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="skew-x" className="text-xs">Skew X (degrees)</Label>
+            <Input
+              id="skew-x"
+              type="number"
+              value={typeof values.skewX === 'number' ? values.skewX : 0}
+              onChange={(e) => handleChange('skewX', Number(e.target.value))}
+              className="h-8"
+            />
+          </div>
+          <div>
+            <Label htmlFor="skew-y" className="text-xs">Skew Y (degrees)</Label>
+            <Input
+              id="skew-y"
+              type="number"
+              value={typeof values.skewY === 'number' ? values.skewY : 0}
+              onChange={(e) => handleChange('skewY', Number(e.target.value))}
+              className="h-8"
+            />
+          </div>
+        </div>
+        
+        <Separator />
+        
+        {/* Flip controls */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => onFlip('horizontal')}
+          >
+            <FlipHorizontal className="h-4 w-4 mr-1" /> Flip H
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={() => onFlip('vertical')}
+          >
+            <FlipVertical className="h-4 w-4 mr-1" /> Flip V
+          </Button>
+        </div>
+        
+        {/* Scale controls */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="scale-x" className="text-xs">Scale X (%)</Label>
+            <Input
+              id="scale-x"
+              type="number"
+              value={typeof values.scaleX === 'number' ? values.scaleX * 100 : 100}
+              onChange={(e) => handleChange('scaleX', Number(e.target.value) / 100)}
+              className="h-8"
+            />
+          </div>
+          <div>
+            <Label htmlFor="scale-y" className="text-xs">Scale Y (%)</Label>
+            <Input
+              id="scale-y"
+              type="number"
+              value={typeof values.scaleY === 'number' ? values.scaleY * 100 : 100}
+              onChange={(e) => handleChange('scaleY', Number(e.target.value) / 100)}
+              className="h-8"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
