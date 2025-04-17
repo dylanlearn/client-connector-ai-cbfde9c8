@@ -1,192 +1,146 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { ColorPicker } from '@/components/ui/color-picker';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WireframeColorScheme, WireframeTypography } from '@/services/ai/wireframe/wireframe-types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ColorManagementSystem from '../../ColorManagementSystem';
+import { Switch } from '@/components/ui/switch';
+import ColorSchemeSelector from '../../ColorSchemeSelector';
 
 interface StyleEditorProps {
-  colorScheme: WireframeColorScheme;
-  typography: WireframeTypography;
-  onChange: (styles: { colorScheme?: WireframeColorScheme; typography?: WireframeTypography }) => void;
+  colorScheme?: WireframeColorScheme;
+  typography?: WireframeTypography;
+  onChange: (updates: Partial<{
+    colorScheme: WireframeColorScheme;
+    typography: WireframeTypography;
+  }>) => void;
 }
 
-const StyleEditor: React.FC<StyleEditorProps> = ({
-  colorScheme,
-  typography,
-  onChange
+const StyleEditor: React.FC<StyleEditorProps> = ({ 
+  colorScheme, 
+  typography, 
+  onChange 
 }) => {
-  // Handle color change
-  const handleColorChange = (key: keyof WireframeColorScheme, color: string) => {
-    onChange({
-      colorScheme: {
-        ...colorScheme,
-        [key]: color
-      }
+  const [advancedMode, setAdvancedMode] = useState(false);
+  
+  const handleColorChange = (newColorScheme: WireframeColorScheme) => {
+    onChange({ colorScheme: newColorScheme });
+  };
+
+  const handleTypographyChange = (key: keyof WireframeTypography, value: string) => {
+    onChange({ 
+      typography: { 
+        ...typography, 
+        [key]: value 
+      } 
     });
   };
-  
-  // Handle font change
-  const handleFontChange = (key: keyof WireframeTypography, font: string) => {
-    onChange({
-      typography: {
-        ...typography,
-        [key]: font
-      }
-    });
-  };
-  
-  const fontOptions = [
-    'Inter',
-    'Roboto',
-    'Open Sans',
-    'Lato',
-    'Montserrat',
-    'Raleway',
-    'Oswald',
-    'Merriweather'
-  ];
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="py-3">
-          <CardTitle className="text-base">Colors</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="primary-color">Primary</Label>
-              <div className="flex items-center gap-2">
-                <ColorPicker 
-                  value={colorScheme.primary} 
-                  onChange={(color) => handleColorChange('primary', color)} 
-                />
-                <Input 
-                  id="primary-color" 
-                  value={colorScheme.primary} 
-                  onChange={(e) => handleColorChange('primary', e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="secondary-color">Secondary</Label>
-              <div className="flex items-center gap-2">
-                <ColorPicker 
-                  value={colorScheme.secondary} 
-                  onChange={(color) => handleColorChange('secondary', color)} 
-                />
-                <Input 
-                  id="secondary-color" 
-                  value={colorScheme.secondary} 
-                  onChange={(e) => handleColorChange('secondary', e.target.value)}
-                  className="flex-1" 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="accent-color">Accent</Label>
-              <div className="flex items-center gap-2">
-                <ColorPicker 
-                  value={colorScheme.accent} 
-                  onChange={(color) => handleColorChange('accent', color)} 
-                />
-                <Input 
-                  id="accent-color" 
-                  value={colorScheme.accent} 
-                  onChange={(e) => handleColorChange('accent', e.target.value)}
-                  className="flex-1" 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="background-color">Background</Label>
-              <div className="flex items-center gap-2">
-                <ColorPicker 
-                  value={colorScheme.background} 
-                  onChange={(color) => handleColorChange('background', color)} 
-                />
-                <Input 
-                  id="background-color" 
-                  value={colorScheme.background} 
-                  onChange={(e) => handleColorChange('background', e.target.value)}
-                  className="flex-1" 
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="text-color">Text</Label>
-              <div className="flex items-center gap-2">
-                <ColorPicker 
-                  value={colorScheme.text} 
-                  onChange={(color) => handleColorChange('text', color)} 
-                />
-                <Input 
-                  id="text-color" 
-                  value={colorScheme.text} 
-                  onChange={(e) => handleColorChange('text', e.target.value)}
-                  className="flex-1" 
-                />
-              </div>
-            </div>
+    <Card className="border-0 shadow-none">
+      <CardContent className="space-y-4 px-0">
+        <div className="flex items-center justify-between">
+          <Label className="text-base font-medium">Style Configuration</Label>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="advanced-mode" className="text-sm">Advanced</Label>
+            <Switch
+              id="advanced-mode"
+              checked={advancedMode}
+              onCheckedChange={setAdvancedMode}
+            />
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="py-3">
-          <CardTitle className="text-base">Typography</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="headings-font">Headings Font</Label>
-              <Select 
-                value={typography.headings} 
-                onValueChange={(value) => handleFontChange('headings', value)}
-              >
-                <SelectTrigger id="headings-font">
-                  <SelectValue placeholder="Select font..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {fontOptions.map(font => (
-                    <SelectItem key={font} value={font}>
-                      {font}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        </div>
+
+        <Tabs defaultValue="colors">
+          <TabsList className="w-full">
+            <TabsTrigger value="colors" className="flex-1">Colors</TabsTrigger>
+            <TabsTrigger value="typography" className="flex-1">Typography</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="colors" className="space-y-4 mt-4">
+            {advancedMode ? (
+              <ColorManagementSystem
+                initialColorScheme={colorScheme}
+                onChange={handleColorChange}
+              />
+            ) : (
+              <div className="space-y-4">
+                <Label>Color Scheme</Label>
+                <div className="bg-card p-4 rounded-lg border">
+                  <ColorSchemeSelector
+                    colorScheme={colorScheme}
+                    onChange={handleColorChange}
+                    showSaveControls
+                  />
+                </div>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="typography" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <Label>Typography</Label>
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="headings-font">Headings</Label>
+                  <Select 
+                    value={typography?.headings || 'Inter'}
+                    onValueChange={(value) => handleTypographyChange('headings', value)}
+                  >
+                    <SelectTrigger id="headings-font">
+                      <SelectValue placeholder="Headings Font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Inter', 'Raleway', 'Roboto', 'Open Sans', 'Montserrat', 'Playfair Display', 'Merriweather'].map(font => (
+                        <SelectItem key={font} value={font}>{font}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="body-font">Body</Label>
+                  <Select 
+                    value={typography?.body || 'Inter'}
+                    onValueChange={(value) => handleTypographyChange('body', value)}
+                  >
+                    <SelectTrigger id="body-font">
+                      <SelectValue placeholder="Body Font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Inter', 'Raleway', 'Roboto', 'Open Sans', 'Montserrat', 'Source Sans Pro', 'Lato'].map(font => (
+                        <SelectItem key={font} value={font}>{font}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {advancedMode && (
+                  <div className="p-4 border rounded-lg mt-2">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-medium" style={{ fontFamily: typography?.headings }}>
+                          Heading Preview
+                        </h3>
+                        <h4 className="text-md" style={{ fontFamily: typography?.headings }}>
+                          Secondary Heading
+                        </h4>
+                      </div>
+                      <div>
+                        <p style={{ fontFamily: typography?.body }}>
+                          This is a preview of your body text. The quick brown fox jumps over the lazy dog.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="body-font">Body Font</Label>
-              <Select 
-                value={typography.body} 
-                onValueChange={(value) => handleFontChange('body', value)}
-              >
-                <SelectTrigger id="body-font">
-                  <SelectValue placeholder="Select font..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {fontOptions.map(font => (
-                    <SelectItem key={font} value={font}>
-                      {font}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
