@@ -35,7 +35,7 @@ interface EnhancedTransformationControlsProps {
   onFlip: (axis: 'horizontal' | 'vertical') => void;
   isLocked: boolean;
   rotation?: number;
-  transformValues: TransformationValues;
+  transformValues: TransformationValues & { opacity: number };
   onTransformChange: (values: Partial<TransformationValues>) => void;
   onResetTransformation: () => void;
   maintainAspectRatio: boolean;
@@ -72,6 +72,12 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
 }) => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showAdvancedTransform, setShowAdvancedTransform] = useState(false);
+  
+  // Transform the values to match the expected interface of AdvancedTransformControls
+  const advancedTransformValues = {
+    ...transformValues,
+    opacity: transformValues.opacity || 1 // Provide a default value if opacity is undefined
+  };
   
   // Define the quick actions
   const quickActions: QuickAction[] = [
@@ -174,7 +180,7 @@ const EnhancedTransformationControls: React.FC<EnhancedTransformationControlsPro
         <Popover open={showAdvancedTransform} onOpenChange={setShowAdvancedTransform}>
           <PopoverContent className="w-80 p-0" align="end" sideOffset={10}>
             <AdvancedTransformControls
-              values={transformValues}
+              values={advancedTransformValues}
               onValuesChange={onTransformChange}
               onFlip={onFlip}
               onReset={onResetTransformation}

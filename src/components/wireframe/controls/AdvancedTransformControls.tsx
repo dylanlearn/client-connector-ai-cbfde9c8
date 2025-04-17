@@ -1,31 +1,21 @@
 
-import React, { useState } from 'react';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { 
-  RotateCw, 
-  RotateCcw,
-  ArrowLeftRight,
-  ArrowUpDown,
-  FlipHorizontal,
-  FlipVertical,
-  RefreshCw
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RotateCw, RotateCcw, FlipHorizontal, FlipVertical, ArrowLeftRight, ArrowUpDown } from 'lucide-react';
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-// Define the transformation values type
 export interface TransformationValues {
   x: number;
   y: number;
   width: number;
   height: number;
   rotation: number;
-  scaleX?: number;
-  scaleY?: number;
+  scale: number;
   skewX: number;
   skewY: number;
   opacity: number;
@@ -50,365 +40,237 @@ const AdvancedTransformControls: React.FC<AdvancedTransformControlsProps> = ({
   onToggleAspectRatio,
   disabled = false
 }) => {
-  const [activeTab, setActiveTab] = useState('position');
-  
-  const handleRotateChange = (value: number) => {
-    onValuesChange({ rotation: value });
-  };
-  
-  const handlePositionChange = (axis: 'x' | 'y', value: number) => {
-    onValuesChange({ [axis]: value });
-  };
-  
-  const handleSizeChange = (dimension: 'width' | 'height', value: number) => {
-    if (maintainAspectRatio) {
-      const aspectRatio = values.width / values.height;
-      
-      if (dimension === 'width') {
-        onValuesChange({
-          width: value,
-          height: value / aspectRatio
-        });
-      } else {
-        onValuesChange({
-          width: value * aspectRatio,
-          height: value
-        });
-      }
-    } else {
-      onValuesChange({ [dimension]: value });
-    }
-  };
-  
-  const handleSkewChange = (axis: 'skewX' | 'skewY', value: number) => {
-    onValuesChange({ [axis]: value });
-  };
-  
-  const handleOpacityChange = (value: number) => {
-    onValuesChange({ opacity: value });
-  };
-  
-  const handleInputChange = (property: keyof TransformationValues, value: string) => {
+  const handleNumberChange = (key: keyof TransformationValues, value: string) => {
     const numValue = parseFloat(value);
-    
     if (!isNaN(numValue)) {
-      switch(property) {
-        case 'x':
-        case 'y':
-          handlePositionChange(property, numValue);
-          break;
-        case 'width':
-        case 'height':
-          handleSizeChange(property, numValue);
-          break;
-        case 'rotation':
-          handleRotateChange(numValue);
-          break;
-        case 'skewX':
-        case 'skewY':
-          handleSkewChange(property, numValue);
-          break;
-        case 'opacity':
-          handleOpacityChange(numValue);
-          break;
-        default:
-          onValuesChange({ [property]: numValue });
-      }
+      onValuesChange({ [key]: numValue });
     }
   };
-  
+
+  // Handle the linked scale changes when maintaining aspect ratio
+  const handleScaleChange = (key: 'scale', value: number) => {
+    onValuesChange({ [key]: value });
+  };
+
   return (
-    <div className={cn("p-4", disabled && "opacity-50 pointer-events-none")}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-base font-semibold">Transform</h3>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm">Lock Aspect</span>
-          <Switch 
-            checked={maintainAspectRatio} 
-            onCheckedChange={onToggleAspectRatio} 
-            disabled={disabled}
-          />
-        </div>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 mb-4">
-          <TabsTrigger value="position">Position & Size</TabsTrigger>
-          <TabsTrigger value="transform">Transform</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="position" className="space-y-4">
-          {/* Position Controls */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="x-position">X Position</Label>
-              <Input 
-                id="x-position"
-                type="number" 
-                value={Math.round(values.x)} 
-                onChange={(e) => handleInputChange('x', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.x]}
-              min={-1000}
-              max={1000}
-              step={1}
-              onValueChange={([value]) => handlePositionChange('x', value)}
-              disabled={disabled}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="y-position">Y Position</Label>
-              <Input 
-                id="y-position"
-                type="number" 
-                value={Math.round(values.y)} 
-                onChange={(e) => handleInputChange('y', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.y]}
-              min={-1000}
-              max={1000}
-              step={1}
-              onValueChange={([value]) => handlePositionChange('y', value)}
-              disabled={disabled}
-            />
-          </div>
-          
-          {/* Size Controls */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="width">Width</Label>
-              <Input 
-                id="width"
-                type="number" 
-                value={Math.round(values.width)} 
-                onChange={(e) => handleInputChange('width', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.width]}
-              min={10}
-              max={1000}
-              step={1}
-              onValueChange={([value]) => handleSizeChange('width', value)}
-              disabled={disabled}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="height">Height</Label>
-              <Input 
-                id="height"
-                type="number" 
-                value={Math.round(values.height)} 
-                onChange={(e) => handleInputChange('height', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.height]}
-              min={10}
-              max={1000}
-              step={1}
-              onValueChange={([value]) => handleSizeChange('height', value)}
-              disabled={disabled}
-            />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="transform" className="space-y-4">
-          {/* Rotation Control */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="rotation">Rotation (°)</Label>
-              <Input 
-                id="rotation"
-                type="number" 
-                value={Math.round(values.rotation)} 
-                onChange={(e) => handleInputChange('rotation', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.rotation]}
-              min={-180}
-              max={180}
-              step={1}
-              onValueChange={([value]) => handleRotateChange(value)}
-              disabled={disabled}
-            />
-            <div className="flex justify-center space-x-2 mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleRotateChange(values.rotation - 45)}
-                disabled={disabled}
-              >
-                <RotateCcw className="h-4 w-4" />
-                <span className="ml-1">-45°</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleRotateChange(values.rotation + 45)}
-                disabled={disabled}
-              >
-                <RotateCw className="h-4 w-4" />
-                <span className="ml-1">+45°</span>
-              </Button>
-            </div>
-          </div>
-          
-          {/* Scale Controls */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="scale-x">Scale X</Label>
-              <Input 
-                id="scale-x"
-                type="number" 
-                value={(values.scaleX !== undefined ? values.scaleX : 1).toFixed(2)} 
-                onChange={(e) => handleInputChange('scaleX', e.target.value)}
-                step={0.1}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="scale-y">Scale Y</Label>
-              <Input 
-                id="scale-y"
-                type="number" 
-                value={(values.scaleY !== undefined ? values.scaleY : 1).toFixed(2)} 
-                onChange={(e) => handleInputChange('scaleY', e.target.value)}
-                step={0.1}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-          </div>
-          
-          {/* Skew Controls */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="skew-x">Skew X (°)</Label>
-              <Input 
-                id="skew-x"
-                type="number" 
-                value={Math.round(values.skewX)} 
-                onChange={(e) => handleInputChange('skewX', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.skewX]}
-              min={-60}
-              max={60}
-              step={1}
-              onValueChange={([value]) => handleSkewChange('skewX', value)}
-              disabled={disabled}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="skew-y">Skew Y (°)</Label>
-              <Input 
-                id="skew-y"
-                type="number" 
-                value={Math.round(values.skewY)} 
-                onChange={(e) => handleInputChange('skewY', e.target.value)}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.skewY]}
-              min={-60}
-              max={60}
-              step={1}
-              onValueChange={([value]) => handleSkewChange('skewY', value)}
-              disabled={disabled}
-            />
-          </div>
-          
-          {/* Opacity Control */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="opacity">Opacity</Label>
-              <Input 
-                id="opacity"
-                type="number" 
-                value={(values.opacity * 100).toFixed(0)} 
-                onChange={(e) => handleInputChange('opacity', (parseInt(e.target.value) / 100).toString())}
-                min={0}
-                max={100}
-                className="w-20" 
-                disabled={disabled}
-              />
-            </div>
-            <Slider
-              value={[values.opacity * 100]}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={([value]) => handleOpacityChange(value / 100)}
-              disabled={disabled}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      <div className="mt-6 flex justify-between">
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onFlip('horizontal')}
-            title="Flip Horizontally"
-            disabled={disabled}
-          >
-            <FlipHorizontal className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onFlip('vertical')}
-            title="Flip Vertically"
-            disabled={disabled}
-          >
-            <FlipVertical className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <Button
-          variant="outline"
-          size="sm"
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-medium text-sm">Transform Controls</h3>
+        <Button 
+          variant="ghost" 
+          size="sm" 
           onClick={onReset}
-          title="Reset Transformations"
           disabled={disabled}
         >
-          <RefreshCw className="h-4 w-4 mr-1" />
           Reset
         </Button>
       </div>
+      
+      <Tabs defaultValue="position" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="position">Position</TabsTrigger>
+          <TabsTrigger value="size">Size</TabsTrigger>
+          <TabsTrigger value="rotate">Rotate & Skew</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="position" className="space-y-3 pt-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="x-position">X Position</Label>
+              <Input
+                id="x-position"
+                type="number"
+                value={values.x}
+                onChange={(e) => handleNumberChange('x', e.target.value)}
+                disabled={disabled}
+                className="col-span-1"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="y-position">Y Position</Label>
+              <Input
+                id="y-position"
+                type="number"
+                value={values.y}
+                onChange={(e) => handleNumberChange('y', e.target.value)}
+                disabled={disabled}
+                className="col-span-1"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="opacity">Opacity</Label>
+            <div className="flex items-center gap-2">
+              <Slider
+                id="opacity"
+                defaultValue={[values.opacity * 100]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={(value) => onValuesChange({ opacity: value[0] / 100 })}
+                disabled={disabled}
+                className="flex-1"
+              />
+              <span className="text-sm w-8 text-right">{Math.round(values.opacity * 100)}%</span>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="size" className="space-y-3 pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="maintain-ratio">Maintain Aspect Ratio</Label>
+            <Switch
+              id="maintain-ratio"
+              checked={maintainAspectRatio}
+              onCheckedChange={onToggleAspectRatio}
+              disabled={disabled}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="width">Width</Label>
+              <Input
+                id="width"
+                type="number"
+                value={values.width}
+                onChange={(e) => handleNumberChange('width', e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="height">Height</Label>
+              <Input
+                id="height"
+                type="number"
+                value={values.height}
+                onChange={(e) => handleNumberChange('height', e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="scale">Scale</Label>
+            <div className="flex items-center gap-2">
+              <Slider
+                id="scale"
+                defaultValue={[values.scale * 100]}
+                min={10}
+                max={200}
+                step={1}
+                onValueChange={(value) => handleScaleChange('scale', value[0] / 100)}
+                disabled={disabled}
+                className="flex-1"
+              />
+              <span className="text-sm w-12 text-right">{Math.round(values.scale * 100)}%</span>
+            </div>
+          </div>
+          
+          <div className="flex gap-2 mt-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1"
+              onClick={() => onFlip('horizontal')}
+              disabled={disabled}
+            >
+              <FlipHorizontal className="h-4 w-4 mr-1" /> Flip H
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1"
+              onClick={() => onFlip('vertical')}
+              disabled={disabled}
+            >
+              <FlipVertical className="h-4 w-4 mr-1" /> Flip V
+            </Button>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="rotate" className="space-y-3 pt-3">
+          <div className="space-y-1">
+            <Label htmlFor="rotation">Rotation (degrees)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="rotation"
+                type="number"
+                value={values.rotation}
+                onChange={(e) => handleNumberChange('rotation', e.target.value)}
+                disabled={disabled}
+                className="flex-1"
+              />
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => onValuesChange({ rotation: (values.rotation - 90) % 360 })}
+                disabled={disabled}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => onValuesChange({ rotation: (values.rotation + 90) % 360 })}
+                disabled={disabled}
+              >
+                <RotateCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <Separator className="my-2" />
+          
+          <div className="space-y-1">
+            <Label htmlFor="skew-x">Skew X (degrees)</Label>
+            <div className="flex items-center gap-2">
+              <Slider
+                id="skew-x"
+                defaultValue={[values.skewX]}
+                min={-45}
+                max={45}
+                step={1}
+                onValueChange={(value) => onValuesChange({ skewX: value[0] })}
+                disabled={disabled}
+                className="flex-1"
+              />
+              <Input
+                type="number"
+                value={values.skewX}
+                onChange={(e) => handleNumberChange('skewX', e.target.value)}
+                disabled={disabled}
+                className="w-16"
+              />
+              <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="skew-y">Skew Y (degrees)</Label>
+            <div className="flex items-center gap-2">
+              <Slider
+                id="skew-y"
+                defaultValue={[values.skewY]}
+                min={-45}
+                max={45}
+                step={1}
+                onValueChange={(value) => onValuesChange({ skewY: value[0] })}
+                disabled={disabled}
+                className="flex-1"
+              />
+              <Input
+                type="number"
+                value={values.skewY}
+                onChange={(e) => handleNumberChange('skewY', e.target.value)}
+                disabled={disabled}
+                className="w-16"
+              />
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

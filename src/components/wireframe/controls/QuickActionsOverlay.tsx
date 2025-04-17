@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { DuplicateIcon, TrashIcon, Undo2, Redo2, ChevronUp, ChevronDown, Edit, Lock, Unlock } from 'lucide-react';
+import { Copy, TrashIcon, Undo2, Redo2, ChevronUp, ChevronDown, Edit, Lock, Unlock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface QuickAction {
@@ -31,7 +31,7 @@ export function createDefaultQuickActions(
   return [
     {
       id: 'duplicate',
-      icon: <DuplicateIcon className="h-4 w-4" />,
+      icon: <Copy className="h-4 w-4" />,
       label: "Duplicate",
       onClick: onDuplicate,
       disabled: isLocked
