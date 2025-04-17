@@ -11,8 +11,8 @@ export interface TransformationValues {
   skewY: number;
   flipX: boolean;
   flipY: boolean;
-  scale: number;  // Added scale property to match the expected interface
-  opacity: number; // Added opacity property to match the expected interface
+  scale: number;
+  opacity: number;
 }
 
 export interface UseAdvancedTransformOptions {
@@ -24,6 +24,7 @@ export interface UseAdvancedTransformOptions {
   constrainToContainer?: boolean;
   onChange?: (values: TransformationValues) => void;
   maintainAspectRatio?: boolean;
+  canvas?: any; // Add canvas property to accept fabric canvas
 }
 
 export function useAdvancedTransform({
@@ -34,7 +35,8 @@ export function useAdvancedTransform({
   maxHeight = 10000,
   constrainToContainer = false,
   onChange,
-  maintainAspectRatio: initialMaintainAspectRatio = false
+  maintainAspectRatio: initialMaintainAspectRatio = false,
+  canvas // Support for canvas object
 }: UseAdvancedTransformOptions = {}) {
   const [transformValues, setTransformValues] = useState<TransformationValues>({
     x: 0,
@@ -46,8 +48,8 @@ export function useAdvancedTransform({
     skewY: 0,
     flipX: false,
     flipY: false,
-    scale: 1,    // Default scale value
-    opacity: 1,  // Default opacity value
+    scale: 1,
+    opacity: 1,
     ...initialValues
   });
   
@@ -138,6 +140,57 @@ export function useAdvancedTransform({
     });
   }, [transformValues.flipX, transformValues.flipY, updateTransform]);
   
+  // Add these methods to match the expected API in WireframeEditorWithGrid.tsx
+  const selectedObjects = [];
+  
+  const applyTransformation = useCallback(() => {
+    // Apply the transformation to canvas objects if a canvas is provided
+    if (canvas && typeof canvas.renderAll === 'function') {
+      canvas.renderAll();
+    }
+  }, [canvas]);
+  
+  const flipObjects = useCallback((axis: 'horizontal' | 'vertical') => {
+    // First update our local transform values
+    flip(axis);
+    
+    // Then apply to canvas if available
+    if (canvas && typeof canvas.renderAll === 'function') {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject) {
+        if (axis === 'horizontal') {
+          activeObject.set('flipX', !activeObject.flipX);
+        } else {
+          activeObject.set('flipY', !activeObject.flipY);
+        }
+        canvas.renderAll();
+      }
+    }
+  }, [flip, canvas]);
+  
+  const resetTransformations = useCallback(() => {
+    // Reset our local transform values
+    resetTransformation();
+    
+    // Then apply to canvas if available
+    if (canvas && typeof canvas.renderAll === 'function') {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject) {
+        activeObject.set({
+          angle: 0,
+          skewX: 0,
+          skewY: 0,
+          flipX: false,
+          flipY: false,
+          scaleX: 1,
+          scaleY: 1,
+          opacity: 1
+        });
+        canvas.renderAll();
+      }
+    }
+  }, [resetTransformation, canvas]);
+  
   return {
     transformValues,
     updateTransform,
@@ -147,7 +200,12 @@ export function useAdvancedTransform({
     startResize,
     startRotation,
     startSkew,
-    flip
+    flip,
+    // Add the missing properties to match the expected API in WireframeEditorWithGrid.tsx
+    selectedObjects,
+    applyTransformation,
+    flipObjects,
+    resetTransformations
   };
 }
 
