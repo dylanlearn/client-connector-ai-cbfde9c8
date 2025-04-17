@@ -1,11 +1,12 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeRenderer } from '@/hooks/wireframe/use-wireframe-renderer';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import CanvasControls from '../controls/CanvasControls';
-import { Loader2 } from 'lucide-react';
+import CanvasLoadingIndicator from '../canvas/CanvasLoadingIndicator';
+import CanvasErrorDisplay from '../canvas/CanvasErrorDisplay';
 import { fabric } from 'fabric';
 
 export interface EnhancedWireframeCanvasProps {
@@ -88,7 +89,7 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     }
   }, [initializeCanvas, wireframe, deviceType, darkMode, renderWireframe]);
   
-  // Handle zoom in
+  // Handle canvas control actions
   const handleZoomIn = () => {
     if (canvas) {
       const newZoom = Math.min(3, canvas.getZoom() + 0.1);
@@ -101,7 +102,6 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     }
   };
   
-  // Handle zoom out
   const handleZoomOut = () => {
     if (canvas) {
       const newZoom = Math.max(0.1, canvas.getZoom() - 0.1);
@@ -114,7 +114,6 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     }
   };
   
-  // Handle reset zoom
   const handleResetZoom = () => {
     if (canvas) {
       canvas.setZoom(1);
@@ -127,7 +126,6 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     }
   };
   
-  // Toggle grid visibility
   const handleToggleGrid = () => {
     if (canvas) {
       // Remove existing grid lines
@@ -156,7 +154,6 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     }
   };
 
-  // Handle toggle snap to grid
   const handleToggleSnapToGrid = () => {
     if (onToggleSnapToGrid) {
       onToggleSnapToGrid();
@@ -197,20 +194,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       >
         <canvas ref={canvasRef} className="w-full h-full" />
         
-        {isRendering && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-sm">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-destructive/10 backdrop-blur-sm">
-            <div className="bg-card p-4 rounded-md shadow-lg">
-              <h3 className="font-semibold text-destructive">Rendering Error</h3>
-              <p className="text-sm">{error.message}</p>
-            </div>
-          </div>
-        )}
+        <CanvasLoadingIndicator isLoading={isRendering} />
+        <CanvasErrorDisplay error={error} />
       </div>
     </div>
   );
