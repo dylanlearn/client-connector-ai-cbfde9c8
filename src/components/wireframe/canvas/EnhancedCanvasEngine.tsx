@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '../utils/types';
 import { useCanvasInitialization } from './useCanvasInitialization';
