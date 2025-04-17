@@ -1,3 +1,4 @@
+
 import { fabric } from 'fabric';
 
 /**
@@ -87,7 +88,7 @@ export interface DragResult {
 export interface AlignmentGuide {
   orientation: 'horizontal' | 'vertical';
   position: number;
-  type: 'edge' | 'center' | 'distribution' | 'grid';
+  type: 'edge' | 'center' | 'distribution' | 'grid' | 'left-edge' | 'right-edge' | 'top-edge' | 'bottom-edge' | 'equal-spacing';
   strength?: number;
   label?: string;
 }

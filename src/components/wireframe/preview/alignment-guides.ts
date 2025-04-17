@@ -6,7 +6,7 @@
 export interface AlignmentGuide {
   orientation: 'horizontal' | 'vertical';
   position: number;
-  type: 'edge' | 'center' | 'grid';
+  type: 'edge' | 'center' | 'grid' | 'left-edge' | 'right-edge' | 'top-edge' | 'bottom-edge' | 'equal-spacing' | 'distribution';
   strength?: number;
 }
 
@@ -60,7 +60,7 @@ export function generateAlignmentGuides(
       guides.push({
         orientation: 'vertical',
         position: object.position.x,
-        type: 'edge',
+        type: 'left-edge',
         strength: 10
       });
       
@@ -68,7 +68,7 @@ export function generateAlignmentGuides(
       guides.push({
         orientation: 'vertical',
         position: object.position.x + object.size.width,
-        type: 'edge',
+        type: 'right-edge',
         strength: 10
       });
       
@@ -76,7 +76,7 @@ export function generateAlignmentGuides(
       guides.push({
         orientation: 'horizontal',
         position: object.position.y,
-        type: 'edge',
+        type: 'top-edge',
         strength: 10
       });
       
@@ -84,7 +84,7 @@ export function generateAlignmentGuides(
       guides.push({
         orientation: 'horizontal',
         position: object.position.y + object.size.height,
-        type: 'edge',
+        type: 'bottom-edge',
         strength: 10
       });
     }
