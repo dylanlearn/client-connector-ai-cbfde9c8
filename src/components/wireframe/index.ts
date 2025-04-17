@@ -3,6 +3,7 @@
 export { default as WireframeEditor } from './WireframeEditor';
 export { default as Wireframe } from './Wireframe';
 export { default as WireframeCanvas } from './editor/WireframeCanvas';
+export { default as WireframeVisualizer } from './WireframeVisualizer';
 
 // Editor components
 export { default as WireframeToolbar } from './editor/WireframeToolbar';
@@ -17,4 +18,4 @@ export { default as AdvancedWireframeGenerator } from './AdvancedWireframeGenera
 export { default as ErrorDisplay } from './common/ErrorDisplay';
 
 // Export types from hooks for better integration
-export { UseWireframeStudioOptions } from '@/hooks/use-wireframe-studio';
+export type { UseWireframeStudioOptions } from '@/hooks/use-wireframe-studio';
