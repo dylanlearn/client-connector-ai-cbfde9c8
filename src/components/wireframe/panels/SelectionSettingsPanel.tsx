@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ArrowUpNarrowWide, ArrowDownNarrowWide } from 'lucide-react';
 import { useWireframeStudio } from '@/contexts/WireframeStudioContext';
@@ -7,9 +8,25 @@ import { Slider } from '@/components/ui/slider';
 
 interface SelectionSettingsPanelProps {
   className?: string;
+  canvas?: any; // Add canvas prop
+  selectedObjects?: any[]; // Add selectedObjects prop
+  onDelete?: () => void; // Add callback props
+  onDuplicate?: () => void;
+  onBringForward?: () => void;
+  onSendBackward?: () => void;
+  onLockToggle?: () => void;
 }
 
-const SelectionSettingsPanel: React.FC<SelectionSettingsPanelProps> = ({ className }) => {
+const SelectionSettingsPanel: React.FC<SelectionSettingsPanelProps> = ({ 
+  className,
+  selectedObjects,
+  canvas,
+  onDelete,
+  onDuplicate,
+  onBringForward,
+  onSendBackward,
+  onLockToggle
+}) => {
   const { selectedSection, wireframeData, updateWireframe } = useWireframeStudio();
   
   if (!selectedSection) {
@@ -30,10 +47,10 @@ const SelectionSettingsPanel: React.FC<SelectionSettingsPanelProps> = ({ classNa
     );
   }
   
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
     const updatedSections = wireframeData.sections.map(s =>
-      s.id === selectedSection ? { ...s, title: newTitle } : s
+      s.id === selectedSection ? { ...s, name: newName } : s
     );
     updateWireframe({ ...wireframeData, sections: updatedSections });
   };
@@ -46,25 +63,41 @@ const SelectionSettingsPanel: React.FC<SelectionSettingsPanelProps> = ({ classNa
     updateWireframe({ ...wireframeData, sections: updatedSections });
   };
   
-  const handleOrderChange = (newOrder: number[]) => {
-    const updatedSections = wireframeData.sections.map(s => {
-        const newIndex = newOrder.indexOf(s.order);
-        return { ...s, order: newIndex };
-    }).sort((a, b) => a.order - b.order);
+  const handlePositionChange = (newPosition: number) => {
+    // Get current sections and their positions
+    const sections = [...wireframeData.sections];
+    const currentIndex = sections.findIndex(s => s.id === selectedSection);
     
-    updateWireframe({ ...wireframeData, sections: updatedSections });
+    // Ensure valid bounds
+    if (newPosition < 0) newPosition = 0;
+    if (newPosition >= sections.length) newPosition = sections.length - 1;
+    
+    // If position hasn't changed, do nothing
+    if (currentIndex === newPosition) return;
+    
+    // Remove the section from its current position
+    const [movedSection] = sections.splice(currentIndex, 1);
+    
+    // Insert it at the new position
+    sections.splice(newPosition, 0, movedSection);
+    
+    // Update the wireframe with reordered sections
+    updateWireframe({ ...wireframeData, sections });
   };
+  
+  // Find the current index of the selected section
+  const currentIndex = wireframeData.sections.findIndex(s => s.id === selectedSection);
   
   return (
     <div className={className}>
       <div className="space-y-4">
         <div>
-          <Label htmlFor="section-title">Title</Label>
+          <Label htmlFor="section-name">Name</Label>
           <Input 
             type="text" 
-            id="section-title" 
-            value={section.title} 
-            onChange={handleTitleChange} 
+            id="section-name" 
+            value={section.name || ''} 
+            onChange={handleNameChange} 
           />
         </div>
         <div>
@@ -72,23 +105,19 @@ const SelectionSettingsPanel: React.FC<SelectionSettingsPanelProps> = ({ classNa
           <Input 
             type="text" 
             id="section-description" 
-            value={section.description} 
+            value={section.description || ''} 
             onChange={handleDescriptionChange} 
           />
         </div>
         <div>
-          <Label>Order</Label>
+          <Label>Position</Label>
           <div className="flex items-center space-x-2">
             <ArrowUpNarrowWide className="h-4 w-4 cursor-pointer" />
             <Slider 
-              defaultValue={[section.order]}
+              defaultValue={[currentIndex]}
               max={wireframeData.sections.length - 1}
               step={1}
-              onValueChange={(value) => {
-                const newOrder = wireframeData.sections.map((s, index) => index);
-                newOrder[section.order] = value[0];
-                handleOrderChange(newOrder);
-              }}
+              onValueChange={(value) => handlePositionChange(value[0])}
             />
             <ArrowDownNarrowWide className="h-4 w-4 cursor-pointer" />
           </div>
