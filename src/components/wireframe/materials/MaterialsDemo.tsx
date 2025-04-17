@@ -1,145 +1,175 @@
 
 import React, { useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MaterialType, SurfaceTreatment } from '../fidelity/FidelityLevels';
-import MaterialRenderer from './MaterialRenderer';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import { useFidelity } from '../fidelity/FidelityContext';
+import { MaterialType, SurfaceTreatment } from '../fidelity/FidelityLevels';
+import { TransitionPreviewFrame } from '../animation/TransitionPreviewFrame';
+import { generateMaterialStyles } from '../fidelity/FidelityLevels';
+import { Play, Pause, RotateCcw, Settings, Palette } from 'lucide-react';
 
-const MaterialsDemo = () => {
+const materials: MaterialType[] = ['basic', 'flat', 'matte', 'glossy', 'metallic', 'glass', 'textured'];
+const surfaces: SurfaceTreatment[] = ['smooth', 'rough', 'bumpy', 'engraved', 'embossed'];
+const colors = [
+  { name: 'Blue', value: '#4a90e2' },
+  { name: 'Green', value: '#43c59e' },
+  { name: 'Purple', value: '#9b59b6' },
+  { name: 'Orange', value: '#e67e22' },
+  { name: 'Pink', value: '#e84393' },
+];
+
+const MaterialsDemo: React.FC = () => {
   const { settings } = useFidelity();
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialType>('matte');
   const [selectedSurface, setSelectedSurface] = useState<SurfaceTreatment>('smooth');
-  const [color, setColor] = useState('#4a90e2');
+  const [selectedColor, setSelectedColor] = useState(colors[0].value);
   const [intensity, setIntensity] = useState(1.0);
-  const [darkMode, setDarkMode] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [activeTab, setActiveTab] = useState('materials');
 
-  const materialTypes: MaterialType[] = ['basic', 'flat', 'matte', 'glossy', 'metallic', 'glass', 'textured'];
-  const surfaceTypes: SurfaceTreatment[] = ['smooth', 'rough', 'bumpy', 'engraved', 'embossed'];
+  const handleMaterialChange = (material: MaterialType) => {
+    setSelectedMaterial(material);
+  };
+
+  const handleSurfaceChange = (surface: SurfaceTreatment) => {
+    setSelectedSurface(surface);
+  };
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+  };
+
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const resetAnimation = () => {
+    setIsPlaying(false);
+    setTimeout(() => setIsPlaying(true), 100);
+  };
+
+  const materialStyle = generateMaterialStyles(selectedMaterial, selectedSurface, selectedColor, intensity);
 
   return (
-    <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-medium">Material System</h2>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-4 py-2 rounded-md text-sm"
-        >
-          {darkMode ? 'Light Mode' : 'Dark Mode'}
-        </button>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8">
-        <div>
-          <div className="aspect-square w-full overflow-hidden rounded-lg mb-4">
-            <MaterialRenderer
-              material={selectedMaterial}
-              surface={selectedSurface}
-              color={color}
-              intensity={intensity}
-              width="100%"
-              height="100%"
-              isContainer={true}
-              darkMode={darkMode}
-              textureUrl={selectedMaterial === 'textured' ? 'https://images.unsplash.com/photo-1533035353720-f1c6a75cd8ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Y29uY3JldGUlMjB0ZXh0dXJlfGVufDB8fDB8fHww' : undefined}
-            >
-              <div className="flex flex-col h-full justify-center items-center">
-                <div className="text-2xl font-bold mb-4">Material Preview</div>
-                <div className="text-sm opacity-70">Fidelity Level: {settings.fidelityLevel}</div>
-                <div className="text-sm opacity-70">Material: {selectedMaterial}</div>
-                <div className="text-sm opacity-70">Surface: {selectedSurface}</div>
-              </div>
-            </MaterialRenderer>
-          </div>
-        </div>
-
-        <div>
-          <Tabs defaultValue="material">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Material Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
-              <TabsTrigger value="material">Material</TabsTrigger>
-              <TabsTrigger value="surface">Surface</TabsTrigger>
-              <TabsTrigger value="color">Color</TabsTrigger>
+              <TabsTrigger value="materials">
+                <Palette className="h-4 w-4 mr-2" />
+                Materials
+              </TabsTrigger>
+              <TabsTrigger value="surfaces">
+                <Settings className="h-4 w-4 mr-2" />
+                Surfaces
+              </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="material" className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                {materialTypes.map(material => (
-                  <button
+            
+            <TabsContent value="materials" className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {materials.map((material) => (
+                  <Button
                     key={material}
-                    onClick={() => setSelectedMaterial(material)}
-                    className={`p-3 rounded-md text-sm ${
-                      selectedMaterial === material 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted hover:bg-muted/80'
-                    }`}
+                    variant={selectedMaterial === material ? "default" : "outline"}
+                    onClick={() => handleMaterialChange(material)}
+                    className="capitalize"
                   >
-                    {material.charAt(0).toUpperCase() + material.slice(1)}
-                  </button>
+                    {material}
+                  </Button>
                 ))}
               </div>
-            </TabsContent>
-
-            <TabsContent value="surface" className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                {surfaceTypes.map(surface => (
-                  <button
-                    key={surface}
-                    onClick={() => setSelectedSurface(surface)}
-                    className={`p-3 rounded-md text-sm ${
-                      selectedSurface === surface 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted hover:bg-muted/80'
-                    }`}
-                  >
-                    {surface.charAt(0).toUpperCase() + surface.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="color" className="space-y-4">
-              <Card className="p-4">
-                <HexColorPicker color={color} onChange={setColor} className="w-full mb-4" />
-              </Card>
-
-              <div className="space-y-2">
+              
+              <div className="space-y-2 pt-2">
                 <div className="flex justify-between">
-                  <Label htmlFor="intensity">Material Intensity</Label>
-                  <span className="text-sm">{intensity.toFixed(2)}</span>
+                  <label htmlFor="intensity" className="text-sm font-medium">Material Intensity</label>
+                  <span className="text-xs text-muted-foreground">{Math.round(intensity * 100)}%</span>
                 </div>
                 <Slider
                   id="intensity"
-                  min={0}
-                  max={1}
-                  step={0.05}
+                  min={0.1}
+                  max={1.0}
+                  step={0.01}
                   value={[intensity]}
-                  onValueChange={(values) => setIntensity(values[0])}
+                  onValueChange={(value) => setIntensity(value[0])}
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Material Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {colors.map((color) => (
+                    <button
+                      key={color.name}
+                      className={`w-8 h-8 rounded-full border-2 ${selectedColor === color.value ? 'border-primary' : 'border-transparent'}`}
+                      style={{ backgroundColor: color.value }}
+                      onClick={() => handleColorChange(color.value)}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="surfaces" className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {surfaces.map((surface) => (
+                  <Button
+                    key={surface}
+                    variant={selectedSurface === surface ? "default" : "outline"}
+                    onClick={() => handleSurfaceChange(surface)}
+                    className="capitalize"
+                  >
+                    {surface}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="pt-2 space-y-2">
+                <div className="flex items-center p-3 rounded-md border bg-muted/50">
+                  <div className="text-sm">
+                    <p className="font-medium">Surface Treatment Effects</p>
+                    <p className="text-muted-foreground text-xs mt-1">
+                      The {selectedSurface} treatment affects texture, reflectivity, and shadow details.
+                    </p>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-        {['matte', 'glossy', 'metallic'].map((material) => (
-          <MaterialRenderer
-            key={material}
-            material={material as MaterialType}
-            surface="smooth"
-            color={color}
-            height={120}
-            darkMode={darkMode}
-          >
-            <div className="flex justify-center items-center h-full">
-              <span className="text-lg font-medium capitalize">{material}</span>
-            </div>
-          </MaterialRenderer>
-        ))}
-      </div>
+          
+          <div className="flex justify-between pt-2">
+            <Button variant="outline" onClick={togglePlayback}>
+              {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+              {isPlaying ? "Pause" : "Play"}
+            </Button>
+            <Button variant="ghost" onClick={resetAnimation}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Material Preview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TransitionPreviewFrame
+            materialStyle={materialStyle}
+            materialType={selectedMaterial}
+            surfaceTreatment={selectedSurface}
+            isPlaying={isPlaying}
+            settings={settings}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };
