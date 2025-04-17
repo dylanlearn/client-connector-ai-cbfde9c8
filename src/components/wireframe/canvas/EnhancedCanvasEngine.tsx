@@ -1,5 +1,6 @@
 
 import React, { useRef } from 'react';
+import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '../utils/types';
 import { useCanvasInitialization } from './useCanvasInitialization';
 import { useSectionRenderer } from './useSectionRenderer';

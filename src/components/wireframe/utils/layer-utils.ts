@@ -3,32 +3,57 @@ import { fabric } from 'fabric';
 import { v4 as uuidv4 } from 'uuid';
 import { LayerInfo } from './types';
 
+// Define the LayerItem interface here to match what's expected in use-layer-management
+export interface LayerItem {
+  id: string;
+  name: string;
+  type: string;
+  visible: boolean;
+  locked: boolean;
+  selected: boolean;
+  zIndex: number;
+  isGroup: boolean;
+  children: LayerItem[];
+  data: any;
+}
+
 /**
  * Converts canvas objects to layer information
  */
-export function convertCanvasObjectsToLayers(objects: fabric.Object[]): LayerInfo[] {
-  // Assuming objects have been initialized with appropriate data properties
+export function convertCanvasObjectsToLayers(canvas: fabric.Canvas, selectedIds: string[] = []): LayerItem[] {
+  if (!canvas) return [];
+  
+  const objects = canvas.getObjects();
+  
+  // Convert canvas objects to layer items
   return objects.map(obj => {
     const data = obj.data || {};
+    const id = data.id || `object-${uuidv4()}`;
     const isGroup = obj.type === 'group';
-    const children: LayerInfo[] = [];
+    const children: LayerItem[] = [];
     
     // If it's a group, process its objects
     if (isGroup && obj instanceof fabric.Group) {
       const groupObjects = obj.getObjects();
       // Convert nested objects to layers recursively
-      const childLayers = convertCanvasObjectsToLayers(groupObjects);
+      const childLayers = convertCanvasObjectsToLayers(
+        new fabric.Canvas(document.createElement('canvas'), {
+          width: 1,
+          height: 1,
+          renderOnAddRemove: false
+        }).add(...groupObjects)
+      );
       childLayers.forEach(layer => children.push(layer));
     }
     
     return {
-      id: data.id || `object-${uuidv4()}`,
+      id,
       name: data.name || `${obj.type || 'Object'} ${obj.zIndex || 0}`,
       type: obj.type || 'object',
       zIndex: obj.zIndex || 0,
       visible: obj.visible !== false,
       locked: !!obj.lockMovementX && !!obj.lockMovementY,
-      selected: !!obj.active,
+      selected: selectedIds.includes(id),
       isGroup: isGroup,
       children: children,
       data: data
