@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { fabric } from 'fabric';
 import { ViewMode } from './controls/CanvasViewportControls';
 import { FocusArea } from '@/hooks/wireframe/use-canvas-navigation';
 
@@ -14,6 +15,7 @@ export interface AdvancedWireframeEditorProps {
   onAreaFocus?: (sectionId: string) => void;
   focusSection?: string | null;
   focusArea?: FocusArea | null;
+  onCanvasInitialized?: (canvas: fabric.Canvas) => void;
 }
 
 const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
@@ -26,8 +28,67 @@ const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
   viewportIndex = 0,
   onAreaFocus,
   focusSection,
-  focusArea
+  focusArea,
+  onCanvasInitialized
 }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
+  
+  // Initialize fabric canvas
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    
+    // Create fabric canvas instance
+    const canvas = new fabric.Canvas(canvasRef.current, {
+      width,
+      height,
+      backgroundColor: '#ffffff'
+    });
+    
+    // Store reference to canvas
+    fabricCanvasRef.current = canvas;
+    
+    // Add some demo content
+    const rect = new fabric.Rect({
+      left: 50,
+      top: 50,
+      width: 100,
+      height: 100,
+      fill: '#6b7280',
+      stroke: '#374151',
+      strokeWidth: 2
+    });
+    
+    const circle = new fabric.Circle({
+      left: 200,
+      top: 100,
+      radius: 50,
+      fill: '#3b82f6',
+      stroke: '#2563eb',
+      strokeWidth: 2
+    });
+    
+    const text = new fabric.Text('Wireframe Editor', {
+      left: 150,
+      top: 200,
+      fontFamily: 'Arial',
+      fontSize: 24
+    });
+    
+    canvas.add(rect, circle, text);
+    
+    // Notify parent component that canvas is initialized
+    if (onCanvasInitialized) {
+      onCanvasInitialized(canvas);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      canvas.dispose();
+      fabricCanvasRef.current = null;
+    };
+  }, [width, height, onCanvasInitialized]);
+  
   // Simple placeholder implementation showing a wireframe with key parameters
   return (
     <div 
@@ -39,6 +100,8 @@ const AdvancedWireframeEditor: React.FC<AdvancedWireframeEditorProps> = ({
         overflow: 'hidden'
       }}
     >
+      <canvas ref={canvasRef} />
+      
       <div className="wireframe-display border border-dashed border-gray-300 bg-white"
         style={{
           width: width * zoom,
