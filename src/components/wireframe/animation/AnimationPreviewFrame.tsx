@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Variants, TargetAndTransition } from 'framer-motion';
-import { FidelityLevel } from '../fidelity/FidelityLevels';
+import { FidelityLevel } from '@/hooks/wireframe/use-fidelity-renderer';
 import { useFidelityRenderer } from '@/hooks/wireframe/use-fidelity-renderer';
 
 interface AnimationPreviewFrameProps {
@@ -17,23 +16,19 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
   onTransitionEnd,
   customAnimation
 }) => {
-  const { settings } = useFidelityRenderer();
+  const fidelityRenderer = useFidelityRenderer();
   const [showContent, setShowContent] = useState<boolean>(true);
   const [animationKey, setAnimationKey] = useState<number>(0);
   
-  // Reset animation state when play status changes
   useEffect(() => {
     if (isPlaying) {
       setShowContent(true);
       setAnimationKey(prev => prev + 1);
     } else {
-      // Keep current state when paused
     }
   }, [isPlaying]);
 
-  // Animation variants with proper TypeScript typing
   const getAnimationVariants = (): Variants => {
-    // Base animation variants
     const variants: Variants = {
       initial: { 
         scale: 0.95, 
@@ -61,7 +56,6 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
       }
     };
 
-    // Add different effects based on fidelity level
     if (fidelityLevel === 'high' && isPlaying) {
       variants.animate = {
         ...variants.animate,
@@ -82,7 +76,6 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
     return variants;
   };
 
-  // Get pulsing animation as a separate variant (not part of the main variants object)
   const getPulseAnimation = (): TargetAndTransition => {
     if (isPlaying && fidelityLevel !== 'wireframe') {
       return {
@@ -97,7 +90,6 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
     return {};
   };
 
-  // Content to display in the preview frame
   const renderContent = () => {
     return (
       <div className="space-y-4">
@@ -117,7 +109,6 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
     );
   };
 
-  // Get animation class based on fidelity level
   const getAnimationClass = () => {
     if (!isPlaying) return "";
     switch (fidelityLevel) {

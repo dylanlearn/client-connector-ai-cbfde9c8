@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 
 export type FidelityLevel = 'low' | 'medium' | 'high';
@@ -116,7 +117,7 @@ export function useFidelityRenderer(options: UseFidelityRendererOptions = {}) {
     
     // Apply light intensity
     if (lightIntensity > 1) {
-      styles.boxShadow = `0 0 ${lightIntensity.toString()}px ${baseColor}`;
+      styles.boxShadow = `0 0 ${lightIntensity}px ${baseColor}`;
     }
     
     return styles;

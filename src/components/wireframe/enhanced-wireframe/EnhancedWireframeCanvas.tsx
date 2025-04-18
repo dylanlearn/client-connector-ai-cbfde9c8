@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeRenderer } from '@/hooks/wireframe/use-wireframe-renderer';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
@@ -8,6 +8,7 @@ import CanvasControls from '../controls/CanvasControls';
 import CanvasLoadingIndicator from '../canvas/CanvasLoadingIndicator';
 import CanvasErrorDisplay from '../canvas/CanvasErrorDisplay';
 import { fabric } from 'fabric';
+import { useFabric } from '@/hooks/fabric/use-fabric';
 
 export interface EnhancedWireframeCanvasProps {
   wireframe: WireframeData | null;
@@ -72,8 +73,13 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     interactive,
     canvasConfig: mergedConfig,
     onSectionClick,
-    onRenderComplete,
-    // Remove enableAnimation property as it doesn't exist in the type
+    onRenderComplete
+    // Remove enableAnimation property as it doesn't exist in type
+  });
+  
+  // Use fabric hook for additional canvas manipulation
+  const { zoomIn, zoomOut, resetZoom } = useFabric({
+    initialConfig: mergedConfig
   });
   
   // Initialize canvas when component mounts
@@ -100,6 +106,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onZoomIn) {
         onZoomIn();
       }
+    } else if (zoomIn) {
+      zoomIn();
     }
   };
   
@@ -112,6 +120,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onZoomOut) {
         onZoomOut();
       }
+    } else if (zoomOut) {
+      zoomOut();
     }
   };
   
@@ -124,6 +134,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onResetZoom) {
         onResetZoom();
       }
+    } else if (resetZoom) {
+      resetZoom();
     }
   };
   
