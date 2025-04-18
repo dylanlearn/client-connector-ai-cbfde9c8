@@ -1,11 +1,9 @@
 
 import { memo } from "react";
 import { DesignOption } from "./types";
-import { 
-  EmptyEffectsPreview, 
-  AnimationSection, 
-  InteractionSection 
-} from "./effects";
+import AnimationSection from "./effects/AnimationSection";
+import InteractionSection from "./effects/InteractionSection";
+import { EmptyEffectsPreview } from "./effects/EmptyEffectsPreview";
 
 interface EffectsPreviewProps {
   hasAnimation: boolean;
