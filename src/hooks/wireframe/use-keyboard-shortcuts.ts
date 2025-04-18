@@ -74,7 +74,7 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = DEFAULT_C
       categories[category].push(shortcut);
     });
     
-    const message = (
+    const messageContent = (
       <div className="shortcuts-toast">
         <h3 className="font-bold mb-2">Keyboard Shortcuts</h3>
         {Object.entries(categories).map(([category, categoryShortcuts]) => (
@@ -97,7 +97,7 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = DEFAULT_C
     
     toast({
       title: "Keyboard Shortcuts",
-      description: message,
+      description: messageContent,
       duration: 8000,
     });
   }, [shortcuts, shortcutConfig.showToasts, toast]);
