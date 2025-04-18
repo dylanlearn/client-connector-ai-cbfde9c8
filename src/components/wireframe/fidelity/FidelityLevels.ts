@@ -1,213 +1,188 @@
 
-// Define the fidelity levels for the rendering system
+// Defines the different fidelity levels and their associated settings
+
 export type FidelityLevel = 'wireframe' | 'low' | 'medium' | 'high';
+export type MaterialType = 'basic' | 'flat' | 'glass' | 'textured' | 'metal' | 'plastic';
+export type SurfaceTreatment = 'matte' | 'glossy' | 'frosted' | 'textured';
+export type WidgetRenderMode = 'outline' | 'basic' | 'detailed' | 'realistic';
+export type ColorDepth = 'grayscale' | 'limited' | 'full' | 'extended';
 
-// Define material types for the material system
-export type MaterialType = 'basic' | 'flat' | 'matte' | 'glossy' | 'metallic' | 'glass' | 'textured';
-
-// Define surface treatments for the material system
-export type SurfaceTreatment = 'smooth' | 'rough' | 'bumpy' | 'engraved' | 'embossed';
-
-// Define color depth options
-export type ColorDepth = 'grayscale' | 'limited' | 'full';
-
-// Define settings for each fidelity level
 export interface FidelitySettings {
-  fidelityLevel: FidelityLevel;
-  detailLevel: number; // 0-1
   showShadows: boolean;
-  shadowIntensity: number; // 0-1
-  renderQuality: number; // 0-1
-  showAnimations: boolean;
-  colorDepth: ColorDepth;
+  shadowIntensity: number;
+  showTextures: boolean;
+  showGradients: boolean;
+  renderQuality: number;
+  detailLevel: number;
   defaultMaterial: MaterialType;
   surfaceTreatment: SurfaceTreatment;
-  roundCorners: boolean;
-  // Adding the missing properties
-  showGradients: boolean;
-  showTextures: boolean;
-  showBorders: boolean;
+  widgetRenderMode: WidgetRenderMode;
+  showAnimations: boolean;
+  colorDepth: ColorDepth;
+  maxElementsPerView: number;
+  performanceMode: boolean;
+  exportResolution: number;
+  antiAliasing: boolean;
 }
 
-// Presets for each fidelity level
 export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
   wireframe: {
-    fidelityLevel: 'wireframe',
-    detailLevel: 0.3,
     showShadows: false,
     shadowIntensity: 0,
-    renderQuality: 0.5,
+    showTextures: false,
+    showGradients: false,
+    renderQuality: 0.2,
+    detailLevel: 0,
+    defaultMaterial: 'basic',
+    surfaceTreatment: 'matte',
+    widgetRenderMode: 'outline',
     showAnimations: false,
     colorDepth: 'grayscale',
-    defaultMaterial: 'basic',
-    surfaceTreatment: 'smooth',
-    roundCorners: false,
-    showGradients: false,
-    showTextures: false,
-    showBorders: true
+    maxElementsPerView: 500,
+    performanceMode: true,
+    exportResolution: 72,
+    antiAliasing: false
   },
   low: {
-    fidelityLevel: 'low',
-    detailLevel: 0.5,
     showShadows: true,
     shadowIntensity: 0.3,
-    renderQuality: 0.6,
+    showTextures: false,
+    showGradients: true,
+    renderQuality: 0.4,
+    detailLevel: 0.3,
+    defaultMaterial: 'flat',
+    surfaceTreatment: 'matte',
+    widgetRenderMode: 'basic',
     showAnimations: true,
     colorDepth: 'limited',
-    defaultMaterial: 'flat',
-    surfaceTreatment: 'smooth',
-    roundCorners: true,
-    showGradients: false,
-    showTextures: false,
-    showBorders: true
+    maxElementsPerView: 300,
+    performanceMode: true,
+    exportResolution: 96,
+    antiAliasing: false
   },
   medium: {
-    fidelityLevel: 'medium',
-    detailLevel: 0.8,
     showShadows: true,
-    shadowIntensity: 0.7,
-    renderQuality: 0.8,
+    shadowIntensity: 0.6,
+    showTextures: true,
+    showGradients: true,
+    renderQuality: 0.7,
+    detailLevel: 0.6,
+    defaultMaterial: 'plastic',
+    surfaceTreatment: 'glossy',
+    widgetRenderMode: 'detailed',
     showAnimations: true,
     colorDepth: 'full',
-    defaultMaterial: 'matte',
-    surfaceTreatment: 'smooth',
-    roundCorners: true,
-    showGradients: true,
-    showTextures: false,
-    showBorders: true
+    maxElementsPerView: 200,
+    performanceMode: false,
+    exportResolution: 150,
+    antiAliasing: true
   },
   high: {
-    fidelityLevel: 'high',
-    detailLevel: 1.0,
     showShadows: true,
     shadowIntensity: 1.0,
-    renderQuality: 1.0,
-    showAnimations: true,
-    colorDepth: 'full',
-    defaultMaterial: 'glossy',
-    surfaceTreatment: 'smooth',
-    roundCorners: true,
-    showGradients: true,
     showTextures: true,
-    showBorders: true
+    showGradients: true,
+    renderQuality: 1.0,
+    detailLevel: 1.0,
+    defaultMaterial: 'glass',
+    surfaceTreatment: 'glossy',
+    widgetRenderMode: 'realistic',
+    showAnimations: true,
+    colorDepth: 'extended',
+    maxElementsPerView: 100,
+    performanceMode: false,
+    exportResolution: 300,
+    antiAliasing: true
   }
 };
 
-// Helper function to get settings with overrides
-export const getFidelitySettings = (
-  level: FidelityLevel,
-  overrides: Partial<FidelitySettings> = {}
-): FidelitySettings => {
-  return {
-    ...FIDELITY_PRESETS[level],
-    ...overrides
-  };
+// Helper function to get fidelity settings with potential overrides
+export const getFidelitySettings = (level: FidelityLevel, overrides?: Partial<FidelitySettings>): FidelitySettings => {
+  const baseSettings = FIDELITY_PRESETS[level];
+  return overrides ? { ...baseSettings, ...overrides } : baseSettings;
 };
 
-// Material style generation function
+// Generate CSS-in-JS styles for materials
 export const generateMaterialStyles = (
-  materialType: MaterialType,
-  surfaceType: SurfaceTreatment,
-  color: string = '#4a90e2',
+  materialType: MaterialType, 
+  surface: SurfaceTreatment, 
+  color: string, 
   intensity: number = 1.0
 ): React.CSSProperties => {
-  // Convert hex color to RGB for various effects
-  const hexToRgb = (hex: string): {r: number, g: number, b: number} => {
+  // Helper to convert hex to RGB format
+  const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    const formattedHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const formattedHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
     
-    return result
-      ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16),
+    return result 
+      ? { 
+          r: parseInt(result[1], 16), 
+          g: parseInt(result[2], 16), 
+          b: parseInt(result[3], 16)
         }
       : { r: 0, g: 0, b: 0 };
   };
-  
+
   const rgb = hexToRgb(color);
-  const rgbString = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+  const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
   
-  // Base styles
   const baseStyles: React.CSSProperties = {
-    background: color,
-    borderRadius: surfaceType === 'smooth' ? 'var(--radius)' : '0px',
-    transition: 'all var(--fidelity-transition-duration, 300ms) ease-in-out',
-    '--color-rgb': rgbString,
-    '--material-intensity': intensity.toString(),
-    '--color-fill-rgb': rgbString
-  } as React.CSSProperties;
-  
-  // Material-specific styles
+    '--color-fill-rgb': rgbStr,
+    transition: 'all 0.3s ease-out',
+  };
+
+  // Apply material-specific styles
   switch (materialType) {
-    case 'basic':
+    case 'glass':
       return {
         ...baseStyles,
-        background: color
+        background: `rgba(${rgbStr}, ${0.2 * intensity})`,
+        backdropFilter: 'blur(8px)',
+        boxShadow: `0 4px 6px rgba(0, 0, 0, ${0.1 * intensity}), 
+                    0 1px 3px rgba(0, 0, 0, ${0.08 * intensity}), 
+                    inset 0 0 0 1px rgba(255, 255, 255, ${0.15 * intensity})`,
+        borderRadius: '4px',
+      };
+    
+    case 'metal':
+      return {
+        ...baseStyles,
+        background: `linear-gradient(145deg, rgba(${rgbStr}, 1), rgba(${rgbStr}, 0.85))`,
+        boxShadow: `0 4px 6px rgba(0, 0, 0, ${0.12 * intensity}), 
+                    0 1px 3px rgba(0, 0, 0, ${0.1 * intensity})`,
+        borderRadius: '4px',
+      };
+    
+    case 'plastic':
+      return {
+        ...baseStyles,
+        background: color,
+        boxShadow: `0 2px 4px rgba(0, 0, 0, ${0.08 * intensity})`,
+        borderRadius: '4px',
+      };
+      
+    case 'textured':
+      return {
+        ...baseStyles,
+        background: color,
+        boxShadow: `0 2px 4px rgba(0, 0, 0, ${0.08 * intensity})`,
+        backgroundImage: 'var(--texture-url, none)',
+        borderRadius: '4px',
       };
       
     case 'flat':
       return {
         ...baseStyles,
         background: color,
-        boxShadow: 'none'
+        borderRadius: '2px',
       };
       
-    case 'matte':
-      return {
-        ...baseStyles,
-        background: `linear-gradient(to bottom, 
-          rgba(${rgbString}, ${0.95 * intensity}) 0%, 
-          rgba(${rgbString}, 1) 100%)`,
-        boxShadow: `0px 2px 4px rgba(0, 0, 0, ${0.1 * intensity})`
-      };
-      
-    case 'glossy':
+    case 'basic':
+    default:
       return {
         ...baseStyles,
         background: color,
-        boxShadow: `
-          0px 2px 8px rgba(0, 0, 0, ${0.15 * intensity}),
-          inset 0px 1px 1px rgba(255, 255, 255, ${0.25 * intensity})
-        `
       };
-      
-    case 'metallic':
-      return {
-        ...baseStyles,
-        background: `linear-gradient(135deg, 
-          rgba(${rgbString}, 0.9) 0%, 
-          rgba(${rgbString}, 1) 50%,
-          rgba(${rgbString}, 0.8) 100%)`,
-        boxShadow: `
-          0px 3px 10px rgba(0, 0, 0, ${0.2 * intensity}),
-          inset 0px 1px 1px rgba(255, 255, 255, ${0.3 * intensity})
-        `
-      };
-      
-    case 'glass':
-      return {
-        ...baseStyles,
-        background: `rgba(${rgbString}, ${0.15 * intensity})`,
-        backdropFilter: `blur(${8 * intensity}px)`,
-        boxShadow: `
-          0px 4px 12px rgba(0, 0, 0, ${0.1 * intensity}),
-          inset 0px 1px 1px rgba(255, 255, 255, ${0.3 * intensity})
-        `
-      };
-      
-    case 'textured':
-      return {
-        ...baseStyles,
-        backgroundImage: 'var(--texture-url)',
-        backgroundSize: 'cover',
-        backgroundBlendMode: 'multiply',
-        boxShadow: `0px 2px 6px rgba(0, 0, 0, ${0.15 * intensity})`
-      };
-      
-    default:
-      return baseStyles;
   }
 };
-
