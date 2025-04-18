@@ -163,6 +163,23 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = DEFAULT_C
     };
   }, [shortcuts, shortcutConfig, areKeysPressed]);
 
+  // Register common shortcuts
+  useEffect(() => {
+    // Register help shortcut (question mark)
+    registerShortcut({
+      name: 'showShortcutsHelp',
+      keys: ['shift', '?'],
+      description: 'Show keyboard shortcuts',
+      action: showShortcutsHelp,
+      category: 'Help'
+    });
+
+    // Clean up shortcut on unmount
+    return () => {
+      unregisterShortcut('showShortcutsHelp');
+    };
+  }, [registerShortcut, showShortcutsHelp, unregisterShortcut]);
+
   return {
     registerShortcut,
     unregisterShortcut,
