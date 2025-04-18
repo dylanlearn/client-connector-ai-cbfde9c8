@@ -46,6 +46,8 @@ export interface FidelitySettings {
   antiAliasing?: boolean;
   showBorders?: boolean;
   roundCorners?: boolean;
+  showTextures?: boolean;
+  showGradients?: boolean;
 }
 
 // Define default presets for fidelity levels
@@ -60,7 +62,9 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     detailLevel: 0,
     renderQuality: 0.2,
     colorDepth: 1,
-    showAnimations: false
+    showAnimations: false,
+    showTextures: false,
+    showGradients: false
   },
   low: {
     level: 'low',
@@ -72,7 +76,9 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     detailLevel: 0.3,
     renderQuality: 0.5,
     colorDepth: 2,
-    showAnimations: false
+    showAnimations: false,
+    showTextures: false,
+    showGradients: true
   },
   medium: {
     level: 'medium',
@@ -84,7 +90,9 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     detailLevel: 0.7,
     renderQuality: 0.8,
     colorDepth: 3,
-    showAnimations: true
+    showAnimations: true,
+    showTextures: true,
+    showGradients: true
   },
   high: {
     level: 'high',
@@ -98,7 +106,9 @@ export const FIDELITY_PRESETS: Record<FidelityLevel, FidelitySettings> = {
     colorDepth: 4,
     showAnimations: true,
     showBorders: true,
-    roundCorners: true
+    roundCorners: true,
+    showTextures: true,
+    showGradients: true
   }
 };
 
@@ -126,6 +136,8 @@ export interface MaterialStyle {
   boxShadow?: string;
   border?: string;
   opacity?: number;
+  filter?: string;
+  backdropFilter?: string;
   // Add other CSS properties as needed
 }
 
@@ -242,13 +254,12 @@ export const generateMaterialStyles = (
       break;
   }
 
-  // Add CSS variables as a valid type
-  materialStyles = {
+  // Add CSS variables using type assertion
+  const styleWithVariables = {
     ...materialStyles,
-    // Use type assertion for custom CSS properties
     '--color-fill-rgb': getRgbFromHex(color),
     '--color-fill': color
   } as React.CSSProperties;
 
-  return materialStyles;
+  return styleWithVariables;
 };

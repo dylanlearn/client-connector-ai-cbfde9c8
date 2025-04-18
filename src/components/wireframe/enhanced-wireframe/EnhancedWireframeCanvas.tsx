@@ -73,7 +73,7 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     canvasConfig: mergedConfig,
     onSectionClick,
     onRenderComplete,
-    // Remove enableAnimation property
+    // Remove enableAnimation property as it doesn't exist in the type
   });
   
   // Initialize canvas when component mounts

@@ -35,6 +35,18 @@ export interface LayerSelectionConfig {
   };
 }
 
+export interface SelectionConfig {
+  style: {
+    transparentCorners?: boolean;
+    borderColor?: string;
+    cornerColor?: string;
+    cornerStyle?: string;
+    cornerSize?: number;
+    cornerStrokeColor?: string;
+    selectionBackgroundColor?: string;
+  }
+}
+
 export type LayerOperation = 
   | 'create'
   | 'update'

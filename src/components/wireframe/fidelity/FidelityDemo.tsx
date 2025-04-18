@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -157,7 +156,7 @@ const FidelityDemo: React.FC = () => {
                   <div 
                     className="bg-primary h-full" 
                     style={{ 
-                      width: `${(1 - settings.performanceMode ? 0.4 : 0.7) * 100}%`,
+                      width: `${(1 - Number(settings.performanceMode)) * 100}%`,
                       transition: 'width 0.5s ease-out'
                     }}
                   ></div>
