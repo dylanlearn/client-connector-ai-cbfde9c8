@@ -1,358 +1,414 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import { fabric } from 'fabric';
+import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { 
-  useEnhancedCanvasNavigation, 
-  ViewMode, 
-  FocusArea 
-} from '@/hooks/wireframe/use-enhanced-canvas-navigation';
-import CanvasViewportControls from '../controls/CanvasViewportControls';
-import CanvasMinimap from './CanvasMinimap';
-import { 
-  ZoomIn, ZoomOut, RotateCw, RotateCcw, 
-  Maximize, LayoutGrid, SplitSquareVertical, Eye 
+  Plus, 
+  X, 
+  Grid, 
+  Columns, 
+  Maximize, 
+  Layout 
 } from 'lucide-react';
+import { 
+  useEnhancedCanvasNavigation,
+  ViewMode,
+  FocusArea
+} from '@/hooks/wireframe/use-enhanced-canvas-navigation';
+import { EnhancedWireframeCanvas } from '@/components/wireframe/utils';
 
-export interface MultiViewportCanvasProps {
-  canvas: fabric.Canvas | null;
+interface MultiViewportCanvasProps {
+  width?: number;
+  height?: number;
+  initialViewMode?: ViewMode;
   className?: string;
-  viewportConfig?: {
-    showControls?: boolean;
-    showMinimap?: boolean;
-    allowMultiViewport?: boolean;
-    persistViewportState?: boolean;
-    storageKey?: string;
-  };
-  children?: React.ReactNode;
+  onSectionFocus?: (viewportIndex: number, sectionId: string) => void;
+  wireframeData?: any;
 }
 
 const MultiViewportCanvas: React.FC<MultiViewportCanvasProps> = ({
-  canvas,
+  width = 1200,
+  height = 800,
+  initialViewMode = 'single',
   className,
-  viewportConfig = {
-    showControls: true,
-    showMinimap: true,
-    allowMultiViewport: true,
-    persistViewportState: true,
-    storageKey: 'canvas-viewport-state'
-  },
-  children
+  onSectionFocus,
+  wireframeData
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const {
-    zoom,
-    rotation,
-    pan,
-    viewMode,
-    viewports,
-    activeViewportId,
-    activeViewport,
-    isAnimating,
-    canvasTransform,
-    handleZoomIn,
-    handleZoomOut,
-    handleZoomReset,
-    handleRotateClockwise,
-    handleRotateCounterClockwise,
-    handleRotateReset,
-    handlePan,
-    handleViewModeToggle,
-    handleApplyFocusArea,
-    addViewport,
-    removeViewport,
-    switchToViewport
-  } = useEnhancedCanvasNavigation({
-    canvas,
-    persistState: viewportConfig.persistViewportState,
-    stateStorageKey: viewportConfig.storageKey,
-    animationDuration: 300
+  const navigation = useEnhancedCanvasNavigation({
+    maxHistorySize: 100,
+    animationDuration: 300,
+    enableSnapToGrid: true,
+    gridSize: 20,
+    showMinimap: true
   });
+  
+  const { 
+    viewports, 
+    viewMode,
+    activeViewport, 
+    setActiveViewport, 
+    handleViewModeToggle, 
+    addViewport, 
+    removeViewport 
+  } = navigation;
 
-  // Set up canvas pan on mouse drag
+  // Set initial view mode
   useEffect(() => {
-    if (!canvas || !containerRef.current) return;
+    if (initialViewMode !== viewMode) {
+      handleViewModeToggle(initialViewMode);
+    }
+  }, [initialViewMode, handleViewModeToggle, viewMode]);
 
-    let isDragging = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      // Only start dragging on middle mouse button or when holding space
-      if ((e.button === 1) || (e.button === 0 && e.getModifierState && e.getModifierState('Space'))) {
-        isDragging = true;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        containerRef.current!.style.cursor = 'grabbing';
-      }
+  // Handle section focus events
+  const handleAreaFocus = (viewportIndex: number, sectionId: string) => {
+    setActiveViewport(viewportIndex);
+    // Set focus area based on section ID
+    const sectionBounds: FocusArea = {
+      x: 100, // Example values - in a real app you'd calculate these
+      y: 100, 
+      width: 400,
+      height: 300
     };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-
-      const deltaX = e.clientX - lastX;
-      const deltaY = e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-
-      handlePan(deltaX, deltaY);
-    };
-
-    const handleMouseUp = () => {
-      isDragging = false;
-      if (containerRef.current) {
-        containerRef.current.style.cursor = '';
-      }
-    };
-
-    // Wheel event for zooming
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        
-        if (e.deltaY < 0) {
-          handleZoomIn();
-        } else {
-          handleZoomOut();
-        }
-      }
-    };
-
-    const container = containerRef.current;
+    navigation.handleApplyFocusArea(sectionBounds);
     
-    container.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      container.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      container.removeEventListener('wheel', handleWheel);
-    };
-  }, [canvas, handlePan, handleZoomIn, handleZoomOut]);
-
-  // Focus on specific area (e.g., for error highlighting)
-  const focusOnArea = (area: FocusArea) => {
-    handleApplyFocusArea(area);
+    if (onSectionFocus) {
+      onSectionFocus(viewportIndex, sectionId);
+    }
   };
 
-  // Render multi-viewport layout
-  const renderViewports = () => {
-    if (viewMode === 'single') {
-      return (
+  // Render layouts based on view mode
+  const renderSingleView = () => {
+    const viewport = viewports[0];
+    if (!viewport) return null;
+
+    return (
+      <div
+        className="viewport-container w-full h-full relative"
+      >
         <div 
-          className="viewport-container relative w-full h-full overflow-hidden"
-          style={{ transform: canvasTransform, transition: isAnimating ? 'transform 0.3s ease-out' : 'none' }}
+          className={cn(
+            "viewport-transform-container transition-transform duration-300 ease-out",
+            navigation.isAnimating && "transition-all"
+          )}
+          style={{
+            transform: `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom}) rotate(${viewport.rotation}deg)`,
+            transformOrigin: 'center center',
+            width: '100%',
+            height: '100%'
+          }}
         >
-          {children}
+          <EnhancedWireframeCanvas
+            wireframe={wireframeData}
+            darkMode={false}
+            deviceType="desktop"
+            onSectionClick={(sectionId) => handleAreaFocus(0, sectionId)}
+            interactive={true}
+            canvasConfig={{
+              width: width,
+              height: height,
+              zoom: viewport.zoom,
+              showGrid: true,
+              gridSize: 20,
+              backgroundColor: '#ffffff',
+              gridColor: '#e0e0e0'
+            }}
+          />
         </div>
-      );
-    }
-    
-    if (viewMode === 'split') {
-      // Show two viewports side by side
-      return (
-        <div className="viewports-split flex w-full h-full">
-          {viewports.slice(0, 2).map((viewport, index) => (
+        <div className="viewport-index absolute top-2 left-2 bg-primary/80 text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+          1
+        </div>
+      </div>
+    );
+  };
+
+  const renderSplitView = () => {
+    return (
+      <div className="split-view grid grid-cols-2 gap-2 w-full h-full">
+        {viewports.slice(0, 2).map((viewport, index) => (
+          <div
+            key={viewport.id}
+            className={cn(
+              "viewport-container relative border rounded",
+              activeViewport === index && "ring-2 ring-primary"
+            )}
+            onClick={() => setActiveViewport(index)}
+          >
             <div 
+              className="viewport-transform-container transition-transform duration-300 ease-out"
+              style={{
+                transform: `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom}) rotate(${viewport.rotation}deg)`,
+                transformOrigin: 'center center',
+                width: '100%',
+                height: '100%'
+              }}
+            >
+              <EnhancedWireframeCanvas
+                wireframe={wireframeData}
+                darkMode={false}
+                deviceType="desktop"
+                onSectionClick={(sectionId) => handleAreaFocus(index, sectionId)}
+                interactive={activeViewport === index}
+                canvasConfig={{
+                  width: width / 2 - 20,
+                  height: height - 20,
+                  zoom: viewport.zoom,
+                  showGrid: index === activeViewport,
+                  gridSize: 20,
+                  backgroundColor: '#ffffff',
+                  gridColor: '#e0e0e0'
+                }}
+              />
+            </div>
+            <div className="viewport-index absolute top-2 left-2 bg-primary/80 text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+              {index + 1}
+            </div>
+            {index > 0 && (
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="absolute top-2 right-2 h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeViewport(index);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderQuadView = () => {
+    return (
+      <div className="quad-view grid grid-cols-2 grid-rows-2 gap-2 w-full h-full">
+        {viewports.slice(0, 4).map((viewport, index) => (
+          <div
+            key={viewport.id}
+            className={cn(
+              "viewport-container relative border rounded",
+              activeViewport === index && "ring-2 ring-primary"
+            )}
+            onClick={() => setActiveViewport(index)}
+          >
+            <div 
+              className="viewport-transform-container transition-transform duration-300 ease-out"
+              style={{
+                transform: `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom}) rotate(${viewport.rotation}deg)`,
+                transformOrigin: 'center center',
+                width: '100%',
+                height: '100%'
+              }}
+            >
+              <EnhancedWireframeCanvas
+                wireframe={wireframeData}
+                darkMode={false}
+                deviceType="desktop"
+                onSectionClick={(sectionId) => handleAreaFocus(index, sectionId)}
+                interactive={activeViewport === index}
+                canvasConfig={{
+                  width: width / 2 - 20,
+                  height: height / 2 - 20,
+                  zoom: viewport.zoom,
+                  showGrid: index === activeViewport,
+                  gridSize: 20,
+                  backgroundColor: '#ffffff',
+                  gridColor: '#e0e0e0'
+                }}
+              />
+            </div>
+            <div className="viewport-index absolute top-2 left-2 bg-primary/80 text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+              {index + 1}
+            </div>
+            {index > 0 && (
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="absolute top-2 right-2 h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeViewport(index);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderGridView = () => {
+    // Grid view has a main large viewport and smaller ones
+    return (
+      <div className="grid-view flex flex-col gap-2 w-full h-full">
+        {/* Main viewport */}
+        <div 
+          className={cn(
+            "main-viewport h-2/3 relative border rounded",
+            activeViewport === 0 && "ring-2 ring-primary"
+          )}
+          onClick={() => setActiveViewport(0)}
+        >
+          <div 
+            className="viewport-transform-container transition-transform duration-300 ease-out"
+            style={{
+              transform: `translate(${viewports[0]?.pan.x || 0}px, ${viewports[0]?.pan.y || 0}px) scale(${viewports[0]?.zoom || 1}) rotate(${viewports[0]?.rotation || 0}deg)`,
+              transformOrigin: 'center center',
+              width: '100%',
+              height: '100%'
+            }}
+          >
+            <EnhancedWireframeCanvas
+              wireframe={wireframeData}
+              darkMode={false}
+              deviceType="desktop"
+              onSectionClick={(sectionId) => handleAreaFocus(0, sectionId)}
+              interactive={activeViewport === 0}
+              canvasConfig={{
+                width: width,
+                height: (height * 2/3) - 20,
+                zoom: viewports[0]?.zoom || 1,
+                showGrid: activeViewport === 0,
+                gridSize: 20,
+                backgroundColor: '#ffffff',
+                gridColor: '#e0e0e0'
+              }}
+            />
+          </div>
+          <div className="viewport-index absolute top-2 left-2 bg-primary/80 text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+            1
+          </div>
+        </div>
+        
+        {/* Smaller viewports */}
+        <div className="grid grid-cols-5 gap-2 h-1/3">
+          {viewports.slice(1, 6).map((viewport, index) => (
+            <div
               key={viewport.id}
               className={cn(
-                "viewport-container relative w-1/2 h-full overflow-hidden border-r last:border-r-0", 
-                { "opacity-80": viewport.id !== activeViewportId }
+                "viewport-container relative border rounded",
+                activeViewport === index + 1 && "ring-2 ring-primary"
               )}
-              style={{ 
-                transform: viewport.id === activeViewportId 
-                  ? canvasTransform 
-                  : `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom}) rotate(${viewport.rotation}deg)`,
-                transition: isAnimating ? 'transform 0.3s ease-out' : 'none'
-              }}
-              onClick={() => switchToViewport(viewport.id)}
+              onClick={() => setActiveViewport(index + 1)}
             >
-              {viewport.id === activeViewportId && children}
-              
-              <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 text-xs rounded shadow-sm">
-                Viewport {index + 1}
+              <div 
+                className="viewport-transform-container transition-transform duration-300 ease-out"
+                style={{
+                  transform: `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom}) rotate(${viewport.rotation}deg)`,
+                  transformOrigin: 'center center',
+                  width: '100%',
+                  height: '100%'
+                }}
+              >
+                <EnhancedWireframeCanvas
+                  wireframe={wireframeData}
+                  darkMode={false}
+                  deviceType="desktop"
+                  onSectionClick={(sectionId) => handleAreaFocus(index + 1, sectionId)}
+                  interactive={activeViewport === index + 1}
+                  canvasConfig={{
+                    width: (width / 5) - 10,
+                    height: (height / 3) - 10,
+                    zoom: viewport.zoom,
+                    showGrid: false,
+                    gridSize: 20,
+                    backgroundColor: '#ffffff',
+                    gridColor: '#e0e0e0'
+                  }}
+                />
               </div>
-              
-              {viewport.id !== activeViewportId && (
-                <div className="absolute inset-0 bg-transparent z-10" />
-              )}
+              <div className="viewport-index absolute top-2 left-2 bg-primary/80 text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                {index + 2}
+              </div>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="absolute top-2 right-2 h-6 w-6"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeViewport(index + 1);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
             </div>
           ))}
-        </div>
-      );
-    }
-    
-    if (viewMode === 'grid') {
-      // Show four viewports in a 2x2 grid
-      return (
-        <div className="viewports-grid grid grid-cols-2 grid-rows-2 w-full h-full">
-          {viewports.slice(0, 4).map((viewport, index) => (
-            <div 
-              key={viewport.id}
-              className={cn(
-                "viewport-container relative w-full h-full overflow-hidden border-r border-b last:border-r-0 last:border-b-0", 
-                { "opacity-80": viewport.id !== activeViewportId }
-              )}
-              style={{ 
-                transform: viewport.id === activeViewportId 
-                  ? canvasTransform 
-                  : `translate(${viewport.pan.x}px, ${viewport.pan.y}px) scale(${viewport.zoom}) rotate(${viewport.rotation}deg)`,
-                transition: isAnimating ? 'transform 0.3s ease-out' : 'none'
-              }}
-              onClick={() => switchToViewport(viewport.id)}
+          
+          {/* Add viewport button */}
+          {viewports.length < 6 && (
+            <Button
+              variant="outline"
+              className="h-full border-dashed flex flex-col items-center justify-center"
+              onClick={addViewport}
             >
-              {viewport.id === activeViewportId && children}
-              
-              <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 text-xs rounded shadow-sm">
-                Viewport {index + 1}
-              </div>
-              
-              {viewport.id !== activeViewportId && (
-                <div className="absolute inset-0 bg-transparent z-10" />
-              )}
-            </div>
-          ))}
+              <Plus className="h-6 w-6 mb-1" />
+              <span className="text-xs">Add View</span>
+            </Button>
+          )}
         </div>
-      );
+      </div>
+    );
+  };
+
+  // Render the canvas based on current view mode
+  const renderCanvasByViewMode = () => {
+    switch (viewMode) {
+      case 'single':
+        return renderSingleView();
+      case 'split':
+        return renderSplitView();
+      case 'quad':
+        return renderQuadView();
+      case 'grid':
+        return renderGridView();
+      default:
+        return renderSingleView();
     }
-    
-    return null;
   };
 
   return (
     <div className={cn("multi-viewport-canvas flex flex-col", className)}>
-      {viewportConfig.showControls && (
-        <div className="viewport-controls flex items-center justify-between p-2 bg-background/95 backdrop-blur-sm shadow-sm z-10">
-          <div className="left-controls flex items-center gap-2">
-            {/* Zoom controls */}
-            <button
-              onClick={() => handleZoomOut()}
-              className="p-1 rounded hover:bg-primary/10 transition-colors"
-              title="Zoom Out (Ctrl+-)"
-            >
-              <ZoomOut size={16} />
-            </button>
-            
-            <div className="zoom-level min-w-[50px] text-center text-xs font-mono">
-              {Math.round(zoom * 100)}%
-            </div>
-            
-            <button
-              onClick={() => handleZoomIn()}
-              className="p-1 rounded hover:bg-primary/10 transition-colors"
-              title="Zoom In (Ctrl++)"
-            >
-              <ZoomIn size={16} />
-            </button>
-            
-            <button
-              onClick={() => handleZoomReset()}
-              className="p-1 rounded hover:bg-primary/10 transition-colors"
-              title="Reset Zoom (Ctrl+0)"
-            >
-              <Maximize size={16} />
-            </button>
-            
-            <Separator orientation="vertical" className="h-6 mx-2" />
-            
-            {/* Rotation controls */}
-            <button
-              onClick={() => handleRotateCounterClockwise()}
-              className="p-1 rounded hover:bg-primary/10 transition-colors"
-              title="Rotate Counter-clockwise"
-            >
-              <RotateCcw size={16} />
-            </button>
-            
-            <div className="rotation-value min-w-[40px] text-center text-xs font-mono">
-              {rotation}°
-            </div>
-            
-            <button
-              onClick={() => handleRotateClockwise()}
-              className="p-1 rounded hover:bg-primary/10 transition-colors"
-              title="Rotate Clockwise"
-            >
-              <RotateCw size={16} />
-            </button>
-          </div>
-          
-          {viewportConfig.allowMultiViewport && (
-            <div className="viewport-modes flex items-center gap-2">
-              <button
-                onClick={() => handleViewModeToggle('single')}
-                className={cn(
-                  "p-1 rounded transition-colors",
-                  viewMode === 'single' 
-                    ? "bg-primary text-primary-foreground" 
-                    : "hover:bg-primary/10"
-                )}
-                title="Single View"
-              >
-                <Eye size={16} />
-              </button>
-              
-              <button
-                onClick={() => handleViewModeToggle('split')}
-                className={cn(
-                  "p-1 rounded transition-colors",
-                  viewMode === 'split' 
-                    ? "bg-primary text-primary-foreground" 
-                    : "hover:bg-primary/10"
-                )}
-                title="Split View"
-              >
-                <SplitSquareVertical size={16} />
-              </button>
-              
-              <button
-                onClick={() => handleViewModeToggle('grid')}
-                className={cn(
-                  "p-1 rounded transition-colors",
-                  viewMode === 'grid' 
-                    ? "bg-primary text-primary-foreground" 
-                    : "hover:bg-primary/10"
-                )}
-                title="Grid View"
-              >
-                <LayoutGrid size={16} />
-              </button>
-              
-              {viewMode !== 'single' && (
-                <button
-                  onClick={() => addViewport()}
-                  className="p-1 rounded hover:bg-primary/10 transition-colors"
-                  title="Add Viewport"
-                >
-                  <ZoomIn size={16} />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-      
-      <div 
-        ref={containerRef}
-        className="canvas-container flex-1 relative overflow-hidden"
-        style={{ cursor: isAnimating ? 'grabbing' : undefined }}
-      >
-        {renderViewports()}
-        
-        {viewportConfig.showMinimap && canvas && (
-          <CanvasMinimap 
-            canvas={canvas}
-            options={{
-              position: 'bottom-right',
-              alwaysVisible: false,
-              showOnHover: true
-            }}
-          />
-        )}
+      <div className="view-mode-controls flex gap-2 mb-4">
+        <Button 
+          variant={viewMode === 'single' ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleViewModeToggle('single')}
+        >
+          <Maximize className="h-4 w-4 mr-2" />
+          Single
+        </Button>
+        <Button 
+          variant={viewMode === 'split' ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleViewModeToggle('split')}
+        >
+          <Columns className="h-4 w-4 mr-2" />
+          Split
+        </Button>
+        <Button 
+          variant={viewMode === 'quad' ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleViewModeToggle('quad')}
+        >
+          <Grid className="h-4 w-4 mr-2" />
+          Quad
+        </Button>
+        <Button 
+          variant={viewMode === 'grid' ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleViewModeToggle('grid')}
+        >
+          <Layout className="h-4 w-4 mr-2" />
+          Grid
+        </Button>
+      </div>
+
+      <div className="canvas-container relative border rounded-md bg-muted/30 w-full" style={{ height: height }}>
+        {renderCanvasByViewMode()}
       </div>
     </div>
   );

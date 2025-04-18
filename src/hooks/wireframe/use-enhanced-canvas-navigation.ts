@@ -1,378 +1,413 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { FocusArea } from './use-canvas-navigation';
+import { useState, useCallback, useMemo } from 'react';
 
-export type ViewportMode = 'single' | 'split' | 'quad';
+// Export these types explicitly
+export type ViewMode = 'single' | 'split' | 'quad' | 'grid';
 
-export interface EnhancedNavigationConfig {
-  minZoom: number;
-  maxZoom: number;
-  zoomStep: number;
-  rotationStep: number;
-  animationDuration: number;
-  enableAnimation: boolean;
-  showMinimap: boolean;
-  minimapSize: number;
-  enableHistory: boolean;
-  historyLimit: number;
-  enablePersistence: boolean;
-  storageKey: string;
+export interface FocusArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export interface ViewportState {
+  id: string;
   zoom: number;
   rotation: number;
-  pan: { x: number; y: number };
+  pan: { x: number, y: number };
   focusArea: FocusArea | null;
+  visible: boolean;
 }
 
-export interface NavigationHistoryItem {
+interface NavigationHistoryItem {
+  viewports: ViewportState[];
+  viewMode: ViewMode;
+  activeViewport: number;
   timestamp: number;
-  state: ViewportState;
-  label?: string;
+  description?: string;
+}
+
+export interface EnhancedNavigationConfig {
+  maxHistorySize: number;
+  animationDuration: number;
+  enableSnapToGrid: boolean;
+  gridSize: number;
+  showMinimap: boolean;
 }
 
 const DEFAULT_CONFIG: EnhancedNavigationConfig = {
-  minZoom: 0.1,
-  maxZoom: 5,
-  zoomStep: 0.1,
-  rotationStep: 15,
+  maxHistorySize: 50,
   animationDuration: 300,
-  enableAnimation: true,
-  showMinimap: true,
-  minimapSize: 200,
-  enableHistory: true,
-  historyLimit: 50,
-  enablePersistence: true,
-  storageKey: 'canvas-navigation-state'
+  enableSnapToGrid: true,
+  gridSize: 10,
+  showMinimap: true
 };
 
 export function useEnhancedCanvasNavigation(initialConfig?: Partial<EnhancedNavigationConfig>) {
-  // Merge with default config
-  const config = { ...DEFAULT_CONFIG, ...initialConfig };
+  const config = useMemo(() => ({ ...DEFAULT_CONFIG, ...initialConfig }), [initialConfig]);
   
-  // State for viewport(s)
-  const [viewMode, setViewMode] = useState<ViewportMode>('single');
-  const [activeViewport, setActiveViewport] = useState<number>(0);
-  const [viewports, setViewports] = useState<ViewportState[]>([{
-    zoom: 1,
-    rotation: 0,
-    pan: { x: 0, y: 0 },
-    focusArea: null
-  }]);
-  
-  // Animation and history
-  const animationRef = useRef<number | null>(null);
-  const [history, setHistory] = useState<NavigationHistoryItem[]>([]);
-  const [historyPosition, setHistoryPosition] = useState<number>(-1);
-  
-  // Add to history
-  const addToHistory = useCallback((label?: string) => {
-    if (!config.enableHistory) return;
-    
-    const newItem: NavigationHistoryItem = {
-      timestamp: Date.now(),
-      state: { ...viewports[activeViewport] },
-      label
-    };
-    
-    setHistory(prev => {
-      // If we're not at the end of history, truncate
-      const newHistory = historyPosition < prev.length - 1
-        ? prev.slice(0, historyPosition + 1)
-        : [...prev];
-      
-      // Add new item and trim if needed
-      return [...newHistory, newItem].slice(-config.historyLimit);
-    });
-    
-    setHistoryPosition(prev => Math.min(prev + 1, config.historyLimit - 1));
-  }, [viewports, activeViewport, historyPosition, config.enableHistory, config.historyLimit]);
-  
-  // Update viewport state
-  const updateViewport = useCallback((updates: Partial<ViewportState>, saveHistory = true) => {
-    setViewports(prev => {
-      const updated = [...prev];
-      updated[activeViewport] = {
-        ...updated[activeViewport],
-        ...updates
-      };
-      return updated;
-    });
-    
-    if (saveHistory) {
-      addToHistory();
-    }
-  }, [activeViewport, addToHistory]);
-  
-  // Handle viewport animation
-  const animateViewportTo = useCallback((targetState: Partial<ViewportState>, duration = config.animationDuration) => {
-    if (!config.enableAnimation) {
-      updateViewport(targetState);
-      return;
-    }
-    
-    const startState = { ...viewports[activeViewport] };
-    const startTime = Date.now();
-    
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    
-    const animateFrame = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      // Ease in/out function
-      const easeProgress = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      
-      const current: Partial<ViewportState> = {};
-      
-      // Interpolate values
-      if (targetState.zoom !== undefined) {
-        current.zoom = startState.zoom + (targetState.zoom - startState.zoom) * easeProgress;
-      }
-      
-      if (targetState.rotation !== undefined) {
-        current.rotation = startState.rotation + (targetState.rotation - startState.rotation) * easeProgress;
-      }
-      
-      if (targetState.pan) {
-        current.pan = {
-          x: startState.pan.x + ((targetState.pan?.x || 0) - startState.pan.x) * easeProgress,
-          y: startState.pan.y + ((targetState.pan?.y || 0) - startState.pan.y) * easeProgress
-        };
-      }
-      
-      // Update without adding to history during animation
-      updateViewport(current, false);
-      
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animateFrame);
-      } else {
-        // Final update and add to history when complete
-        updateViewport(targetState, true);
-        animationRef.current = null;
-      }
-    };
-    
-    animationRef.current = requestAnimationFrame(animateFrame);
-  }, [viewports, activeViewport, config.enableAnimation, config.animationDuration, updateViewport]);
-
-  // Basic navigation operations
-  const zoomIn = useCallback(() => {
-    const newZoom = Math.min(config.maxZoom, viewports[activeViewport].zoom + config.zoomStep);
-    animateViewportTo({ zoom: newZoom });
-  }, [viewports, activeViewport, config.maxZoom, config.zoomStep, animateViewportTo]);
-  
-  const zoomOut = useCallback(() => {
-    const newZoom = Math.max(config.minZoom, viewports[activeViewport].zoom - config.zoomStep);
-    animateViewportTo({ zoom: newZoom });
-  }, [viewports, activeViewport, config.minZoom, config.zoomStep, animateViewportTo]);
-  
-  const resetZoom = useCallback(() => {
-    animateViewportTo({ zoom: 1 });
-  }, [animateViewportTo]);
-  
-  const panTo = useCallback((x: number, y: number) => {
-    animateViewportTo({ pan: { x, y } });
-  }, [animateViewportTo]);
-  
-  const resetPan = useCallback(() => {
-    animateViewportTo({ pan: { x: 0, y: 0 } });
-  }, [animateViewportTo]);
-  
-  const rotateTo = useCallback((degrees: number) => {
-    // Normalize to 0-360
-    const normalized = ((degrees % 360) + 360) % 360;
-    animateViewportTo({ rotation: normalized });
-  }, [animateViewportTo]);
-  
-  const rotateClockwise = useCallback(() => {
-    const newRotation = viewports[activeViewport].rotation + config.rotationStep;
-    rotateTo(newRotation);
-  }, [viewports, activeViewport, config.rotationStep, rotateTo]);
-  
-  const rotateCounterClockwise = useCallback(() => {
-    const newRotation = viewports[activeViewport].rotation - config.rotationStep;
-    rotateTo(newRotation);
-  }, [viewports, activeViewport, config.rotationStep, rotateTo]);
-  
-  const resetRotation = useCallback(() => {
-    animateViewportTo({ rotation: 0 });
-  }, [animateViewportTo]);
-  
-  // Reset all transforms
-  const resetTransforms = useCallback(() => {
-    animateViewportTo({
+  // Viewports state
+  const [viewports, setViewports] = useState<ViewportState[]>([
+    {
+      id: 'default',
       zoom: 1,
       rotation: 0,
-      pan: { x: 0, y: 0 }
-    });
-  }, [animateViewportTo]);
-  
-  // History navigation
-  const goBack = useCallback(() => {
-    if (!config.enableHistory || historyPosition <= 0) return;
-    
-    const newPosition = historyPosition - 1;
-    const historyItem = history[newPosition];
-    
-    setHistoryPosition(newPosition);
-    
-    if (historyItem) {
-      // Update without animation and without adding to history
-      updateViewport(historyItem.state, false);
+      pan: { x: 0, y: 0 },
+      focusArea: null,
+      visible: true
     }
-  }, [config.enableHistory, historyPosition, history, updateViewport]);
+  ]);
   
-  const goForward = useCallback(() => {
-    if (!config.enableHistory || historyPosition >= history.length - 1) return;
-    
-    const newPosition = historyPosition + 1;
-    const historyItem = history[newPosition];
-    
-    setHistoryPosition(newPosition);
-    
-    if (historyItem) {
-      // Update without animation and without adding to history
-      updateViewport(historyItem.state, false);
+  const [viewMode, setViewMode] = useState<ViewMode>('single');
+  const [activeViewport, setActiveViewport] = useState<number>(0);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  
+  // History state
+  const [history, setHistory] = useState<NavigationHistoryItem[]>([
+    {
+      viewports: [...viewports], 
+      viewMode, 
+      activeViewport,
+      timestamp: Date.now()
     }
-  }, [config.enableHistory, historyPosition, history, history.length, updateViewport]);
+  ]);
+  const [historyPosition, setHistoryPosition] = useState<number>(0);
   
-  // Focus area
-  const focusOnArea = useCallback((area: FocusArea) => {
-    const newZoom = Math.min(config.maxZoom, 1.5);
-    animateViewportTo({
-      zoom: newZoom,
-      pan: { x: -area.x + (area.width / 2), y: -area.y + (area.height / 2) },
-      focusArea: area
-    });
-  }, [config.maxZoom, animateViewportTo]);
+  // Calculate active viewport ID
+  const activeViewportId = viewports[activeViewport]?.id || 'default';
   
-  const clearFocus = useCallback(() => {
-    updateViewport({ focusArea: null });
-  }, [updateViewport]);
+  // Extract current viewport properties
+  const zoom = viewports[activeViewport]?.zoom || 1;
+  const rotation = viewports[activeViewport]?.rotation || 0;
+  const pan = viewports[activeViewport]?.pan || { x: 0, y: 0 };
   
-  // Viewport management
-  const setViewportMode = useCallback((mode: ViewportMode) => {
-    setViewMode(mode);
-    
-    // Create appropriate number of viewports
-    const viewportCount = mode === 'single' ? 1 : mode === 'split' ? 2 : 4;
-    
-    setViewports(prev => {
-      const current = [...prev];
+  // Calculate canvas transform for current viewport
+  const canvasTransform = useMemo(() => {
+    return `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`;
+  }, [zoom, rotation, pan]);
+  
+  // Add history entry
+  const addHistoryEntry = useCallback((description?: string) => {
+    setHistory(prev => {
+      const newEntry = {
+        viewports: JSON.parse(JSON.stringify(viewports)),
+        viewMode,
+        activeViewport,
+        timestamp: Date.now(),
+        description
+      };
       
-      // Keep existing viewports
-      while (current.length < viewportCount) {
-        current.push({
+      const newHistory = [
+        ...prev.slice(0, historyPosition + 1),
+        newEntry
+      ].slice(-config.maxHistorySize);
+      
+      return newHistory;
+    });
+    
+    setHistoryPosition(prev => {
+      const newPos = Math.min(prev + 1, config.maxHistorySize - 1);
+      return newPos;
+    });
+  }, [viewports, viewMode, activeViewport, historyPosition, config.maxHistorySize]);
+  
+  // Zoom controls
+  const handleZoomIn = useCallback(() => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        zoom: Math.min(5, (newViewports[activeViewport].zoom || 1) + 0.1)
+      };
+      return newViewports;
+    });
+    addHistoryEntry('Zoom in');
+  }, [activeViewport, addHistoryEntry]);
+  
+  const handleZoomOut = useCallback(() => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        zoom: Math.max(0.1, (newViewports[activeViewport].zoom || 1) - 0.1)
+      };
+      return newViewports;
+    });
+    addHistoryEntry('Zoom out');
+  }, [activeViewport, addHistoryEntry]);
+  
+  const handleZoomReset = useCallback(() => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        zoom: 1
+      };
+      return newViewports;
+    });
+    addHistoryEntry('Reset zoom');
+  }, [activeViewport, addHistoryEntry]);
+  
+  // Rotation controls
+  const handleRotateClockwise = useCallback(() => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        rotation: (newViewports[activeViewport].rotation || 0) + 15
+      };
+      return newViewports;
+    });
+    addHistoryEntry('Rotate clockwise');
+  }, [activeViewport, addHistoryEntry]);
+  
+  const handleRotateCounterClockwise = useCallback(() => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        rotation: (newViewports[activeViewport].rotation || 0) - 15
+      };
+      return newViewports;
+    });
+    addHistoryEntry('Rotate counter-clockwise');
+  }, [activeViewport, addHistoryEntry]);
+  
+  const handleRotateReset = useCallback(() => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        rotation: 0
+      };
+      return newViewports;
+    });
+    addHistoryEntry('Reset rotation');
+  }, [activeViewport, addHistoryEntry]);
+  
+  // Pan controls
+  const handlePan = useCallback((x: number, y: number) => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        pan: {
+          x: (newViewports[activeViewport].pan?.x || 0) + x,
+          y: (newViewports[activeViewport].pan?.y || 0) + y
+        }
+      };
+      return newViewports;
+    });
+  }, [activeViewport]);
+  
+  const finalizeViewportPan = useCallback(() => {
+    addHistoryEntry('Pan viewport');
+  }, [addHistoryEntry]);
+  
+  // View mode toggle
+  const handleViewModeToggle = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    addHistoryEntry(`Switch to ${mode} view`);
+    
+    // Adjust viewports for the new mode
+    const currentViewports = [...viewports];
+    
+    if (mode === 'single' && currentViewports.length !== 1) {
+      setViewports([currentViewports[activeViewport]]);
+      setActiveViewport(0);
+    } else if (mode === 'split' && currentViewports.length !== 2) {
+      if (currentViewports.length < 2) {
+        // Add another viewport
+        setViewports([
+          currentViewports[0],
+          {
+            id: `viewport-${Date.now()}`,
+            zoom: 1,
+            rotation: 0,
+            pan: { x: 0, y: 0 },
+            focusArea: null,
+            visible: true
+          }
+        ]);
+      } else {
+        // Keep only first two
+        setViewports(currentViewports.slice(0, 2));
+      }
+      setActiveViewport(0);
+    } else if (mode === 'quad' && currentViewports.length !== 4) {
+      const newViewports = [...currentViewports];
+      
+      while (newViewports.length < 4) {
+        newViewports.push({
+          id: `viewport-${Date.now()}-${newViewports.length}`,
           zoom: 1,
           rotation: 0,
           pan: { x: 0, y: 0 },
-          focusArea: null
+          focusArea: null,
+          visible: true
         });
       }
       
-      // Trim if needed
-      return current.slice(0, viewportCount);
+      setViewports(newViewports.slice(0, 4));
+      setActiveViewport(0);
+    } else if (mode === 'grid' && currentViewports.length !== 6) {
+      const newViewports = [...currentViewports];
+      
+      while (newViewports.length < 6) {
+        newViewports.push({
+          id: `viewport-${Date.now()}-${newViewports.length}`,
+          zoom: 1,
+          rotation: 0,
+          pan: { x: 0, y: 0 },
+          focusArea: null,
+          visible: true
+        });
+      }
+      
+      setViewports(newViewports.slice(0, 6));
+      setActiveViewport(0);
+    }
+  }, [viewports, activeViewport, addHistoryEntry]);
+  
+  // Focus area
+  const handleApplyFocusArea = useCallback((area: FocusArea) => {
+    setViewports(prev => {
+      const newViewports = [...prev];
+      newViewports[activeViewport] = {
+        ...newViewports[activeViewport],
+        focusArea: area,
+        zoom: 1.5,
+        pan: {
+          x: -area.x + (area.width / 2),
+          y: -area.y + (area.height / 2)
+        }
+      };
+      return newViewports;
     });
     
-    // Set active viewport to first one
-    setActiveViewport(0);
-  }, []);
-  
-  const switchToViewport = useCallback((index: number) => {
-    if (index >= 0 && index < viewports.length) {
-      setActiveViewport(index);
-    }
-  }, [viewports.length]);
-
-  // Persistence
-  useEffect(() => {
-    if (!config.enablePersistence) return;
+    setIsAnimating(true);
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, config.animationDuration);
     
-    // Load persisted state
-    try {
-      const saved = localStorage.getItem(config.storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setViewports(parsed.viewports || viewports);
-        setViewMode(parsed.viewMode || viewMode);
-        setActiveViewport(parsed.activeViewport || 0);
-      }
-    } catch (e) {
-      console.error('Failed to load canvas navigation state:', e);
-    }
-  }, [config.enablePersistence, config.storageKey]);
+    addHistoryEntry('Focus on area');
+  }, [activeViewport, addHistoryEntry, config.animationDuration]);
   
-  // Save state when it changes
-  useEffect(() => {
-    if (!config.enablePersistence) return;
+  // Manage viewports
+  const addViewport = useCallback(() => {
+    setViewports(prev => [
+      ...prev,
+      {
+        id: `viewport-${Date.now()}`,
+        zoom: 1,
+        rotation: 0,
+        pan: { x: 0, y: 0 },
+        focusArea: null,
+        visible: true
+      }
+    ]);
     
-    try {
-      localStorage.setItem(config.storageKey, JSON.stringify({
-        viewports,
-        viewMode,
-        activeViewport
-      }));
-    } catch (e) {
-      console.error('Failed to save canvas navigation state:', e);
+    addHistoryEntry('Add viewport');
+    
+    // If we have too many viewports for current mode, switch to grid
+    if (viewMode === 'single') {
+      setViewMode('split');
+    } else if (viewMode === 'split' && viewports.length >= 2) {
+      setViewMode('quad');
+    } else if (viewMode === 'quad' && viewports.length >= 4) {
+      setViewMode('grid');
     }
-  }, [viewports, viewMode, activeViewport, config.enablePersistence, config.storageKey]);
+  }, [viewports.length, viewMode, addHistoryEntry]);
   
-  // Clean up animation frame on unmount
-  useEffect(() => {
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
+  const removeViewport = useCallback((index: number) => {
+    if (viewports.length <= 1) {
+      return; // Don't remove last viewport
+    }
+    
+    setViewports(prev => prev.filter((_, i) => i !== index));
+    
+    // Adjust active viewport if needed
+    if (activeViewport === index) {
+      setActiveViewport(0);
+    } else if (activeViewport > index) {
+      setActiveViewport(prev => prev - 1);
+    }
+    
+    addHistoryEntry('Remove viewport');
+    
+    // Adjust view mode if needed
+    if (viewports.length - 1 === 1) {
+      setViewMode('single');
+    } else if (viewports.length - 1 === 2) {
+      setViewMode('split');
+    } else if (viewports.length - 1 === 4) {
+      setViewMode('quad');
+    }
+  }, [viewports.length, activeViewport, addHistoryEntry]);
+  
+  // History navigation
+  const canUndo = historyPosition > 0;
+  const canRedo = historyPosition < history.length - 1;
+  
+  const undo = useCallback(() => {
+    if (!canUndo) return;
+    
+    const prevPosition = historyPosition - 1;
+    const prevState = history[prevPosition];
+    
+    setViewports(prevState.viewports);
+    setViewMode(prevState.viewMode);
+    setActiveViewport(prevState.activeViewport);
+    setHistoryPosition(prevPosition);
+  }, [canUndo, history, historyPosition]);
+  
+  const redo = useCallback(() => {
+    if (!canRedo) return;
+    
+    const nextPosition = historyPosition + 1;
+    const nextState = history[nextPosition];
+    
+    setViewports(nextState.viewports);
+    setViewMode(nextState.viewMode);
+    setActiveViewport(nextState.activeViewport);
+    setHistoryPosition(nextPosition);
+  }, [canRedo, history, historyPosition]);
+  
+  const updateConfig = useCallback((updates: Partial<EnhancedNavigationConfig>) => {
+    // This is just for type checking - the actual implementation would
+    // update the config object with the new values
   }, []);
   
   return {
-    // State
     viewports,
     viewMode,
     activeViewport,
     history,
     historyPosition,
-    
-    // Basic operations
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    panTo,
-    resetPan,
-    rotateClockwise,
-    rotateCounterClockwise,
-    resetRotation,
-    resetTransforms,
-    
-    // History operations
-    goBack,
-    goForward,
-    addToHistory,
-    
-    // Focus operations
-    focusOnArea,
-    clearFocus,
-    
-    // Viewport operations
-    setViewportMode,
-    switchToViewport,
-    
-    // Advanced operations
-    animateViewportTo,
-    
-    // Current state getters
-    currentZoom: viewports[activeViewport]?.zoom || 1,
-    currentRotation: viewports[activeViewport]?.rotation || 0,
-    currentPan: viewports[activeViewport]?.pan || { x: 0, y: 0 },
-    currentFocus: viewports[activeViewport]?.focusArea || null,
-    
-    // Configuration
-    config
+    activeViewportId,
+    config,
+    isAnimating,
+    zoom,
+    rotation,
+    pan,
+    canvasTransform,
+    handleZoomIn,
+    handleZoomOut,
+    handleZoomReset,
+    handleRotateClockwise,
+    handleRotateCounterClockwise,
+    handleRotateReset,
+    handlePan,
+    finalizeViewportPan,
+    handleViewModeToggle,
+    handleApplyFocusArea,
+    addViewport,
+    removeViewport,
+    setActiveViewport,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    updateConfig
   };
 }

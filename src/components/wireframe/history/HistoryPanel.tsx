@@ -1,225 +1,170 @@
 
-import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { 
+  History, 
+  RotateCcw, 
+  RotateCw, 
+  Braces, // Changed from Branches to Braces
+  Tag,
+  Save
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Branches, Undo2, Redo2, Save, GitMerge } from 'lucide-react';
-import { HistoryState, HistoryBranch } from '@/hooks/wireframe/use-enhanced-history';
+import { useEnhancedHistory } from '@/hooks/wireframe/use-enhanced-history';
+import { HistoryItemsList } from './HistoryItemsList';
+import { HistoryBranchesList } from './HistoryBranchesList';
+import { NamedStatesDisplay } from './NamedStatesDisplay';
 
-interface HistoryPanelProps<T> {
-  branches: HistoryBranch<T>[];
-  activeBranchId: string;
-  currentStateIndex: number;
-  onGoToState: (stateId: string) => void;
-  onSwitchBranch: (branchId: string) => void;
-  onMergeBranch: (branchId: string) => void;
-  onCreateBranch: (name: string) => void;
-  onCreateCheckpoint: (name: string) => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
+interface HistoryPanelProps {
+  projectId?: string;
+  onSave?: () => void;
   className?: string;
 }
 
-function HistoryPanel<T>({
-  branches,
-  activeBranchId,
-  currentStateIndex,
-  onGoToState,
-  onSwitchBranch,
-  onMergeBranch,
-  onCreateBranch,
-  onCreateCheckpoint,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-  className,
-}: HistoryPanelProps<T>) {
-  const [newBranchName, setNewBranchName] = useState('');
-  const [newCheckpointName, setNewCheckpointName] = useState('');
-  const [expandedBranches, setExpandedBranches] = useState<Record<string, boolean>>({
-    [activeBranchId]: true,
-  });
+const HistoryPanel: React.FC<HistoryPanelProps> = ({
+  projectId,
+  onSave,
+  className
+}) => {
+  const { 
+    history, 
+    currentPosition,
+    branches,
+    activeBranch,
+    namedStates,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    saveNamedState,
+    switchBranch,
+    createBranch,
+    jumpToState,
+    diffStates
+  } = useEnhancedHistory(projectId);
 
-  const toggleBranchExpand = (branchId: string) => {
-    setExpandedBranches(prev => ({
-      ...prev,
-      [branchId]: !prev[branchId],
-    }));
-  };
-
-  const handleCreateBranch = () => {
-    if (newBranchName.trim() !== '') {
-      onCreateBranch(newBranchName);
-      setNewBranchName('');
+  const handleCreateNamedState = () => {
+    const name = prompt('Enter a name for this state:');
+    if (name) {
+      saveNamedState(name);
     }
   };
 
-  const handleCreateCheckpoint = () => {
-    if (newCheckpointName.trim() !== '') {
-      onCreateCheckpoint(newCheckpointName);
-      setNewCheckpointName('');
+  const handleCreateBranch = () => {
+    const name = prompt('Enter a name for the new branch:');
+    if (name) {
+      createBranch(name);
     }
   };
 
   return (
-    <div className={cn("history-panel border rounded-md p-2", className)}>
+    <div className={`history-panel ${className || ''}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">History</h3>
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onUndo}
+        <div className="flex items-center">
+          <History className="mr-2 h-5 w-5" />
+          <h3 className="text-lg font-medium">History</h3>
+        </div>
+        <div className="flex gap-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={undo}
             disabled={!canUndo}
-            title="Undo"
           >
-            <Undo2 className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Undo
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRedo}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={redo}
             disabled={!canRedo}
-            title="Redo"
           >
-            <Redo2 className="h-4 w-4" />
+            <RotateCw className="h-4 w-4 mr-1" />
+            Redo
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 mb-4">
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="New branch name..."
-            value={newBranchName}
-            onChange={(e) => setNewBranchName(e.target.value)}
-            className="text-sm h-8"
-          />
-          <Button variant="outline" size="sm" onClick={handleCreateBranch}>
-            <Branches className="h-4 w-4 mr-1" />
-            Branch
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Checkpoint name..."
-            value={newCheckpointName}
-            onChange={(e) => setNewCheckpointName(e.target.value)}
-            className="text-sm h-8"
-          />
-          <Button variant="outline" size="sm" onClick={handleCreateCheckpoint}>
-            <Save className="h-4 w-4 mr-1" />
-            Save
-          </Button>
-        </div>
-      </div>
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="history">
+          <AccordionTrigger>History Timeline</AccordionTrigger>
+          <AccordionContent>
+            <ScrollArea className="h-[200px]">
+              <HistoryItemsList 
+                history={history} 
+                currentPosition={currentPosition} 
+                onJumpTo={jumpToState}
+              />
+            </ScrollArea>
+          </AccordionContent>
+        </AccordionItem>
 
-      <ScrollArea className="h-[350px]">
-        <div className="space-y-2">
-          {branches.map((branch) => (
-            <Collapsible
-              key={branch.id}
-              open={expandedBranches[branch.id]}
-              onOpenChange={() => toggleBranchExpand(branch.id)}
-            >
-              <div
-                className={cn(
-                  "flex items-center justify-between p-2 rounded cursor-pointer",
-                  branch.id === activeBranchId
-                    ? "bg-primary/10 font-medium"
-                    : "hover:bg-muted"
-                )}
+        <AccordionItem value="branches">
+          <AccordionTrigger className="flex items-center">
+            <div className="flex items-center">
+              <Braces className="h-4 w-4 mr-2" />
+              Branches
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="mb-2 flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCreateBranch}
               >
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center flex-1">
-                    <Branches className="h-4 w-4 mr-2" />
-                    <span>{branch.name}</span>
-                  </div>
-                </CollapsibleTrigger>
-                <div className="flex items-center gap-1">
-                  {branch.id !== activeBranchId && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => onSwitchBranch(branch.id)}
-                        title="Switch to this branch"
-                      >
-                        <Branches className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => onMergeBranch(branch.id)}
-                        title="Merge this branch"
-                      >
-                        <GitMerge className="h-3 w-3" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <CollapsibleContent>
-                <div className="ml-4 mt-1 border-l pl-4 space-y-1">
-                  {branch.states.map((state, stateIndex) => {
-                    const isActive = 
-                      branch.id === activeBranchId && 
-                      stateIndex === currentStateIndex;
-                    
-                    return (
-                      <div
-                        key={state.id}
-                        className={cn(
-                          "flex items-center py-1 px-2 text-sm rounded",
-                          isActive 
-                            ? "bg-primary text-primary-foreground" 
-                            : "hover:bg-muted cursor-pointer"
-                        )}
-                        onClick={() => {
-                          if (!isActive) {
-                            if (branch.id !== activeBranchId) {
-                              onSwitchBranch(branch.id);
-                            }
-                            onGoToState(state.id);
-                          }
-                        }}
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium">
-                            {state.name || `State ${stateIndex + 1}`}
-                          </div>
-                          <div className="text-xs opacity-70">
-                            {new Date(state.timestamp).toLocaleString()}
-                            {state.isCheckpoint && (
-                              <span className="ml-2 bg-secondary/30 text-secondary-foreground px-1 rounded-sm text-xs">
-                                Checkpoint
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
+                New Branch
+              </Button>
+            </div>
+            <HistoryBranchesList 
+              branches={branches}
+              activeBranch={activeBranch}
+              onSwitchBranch={switchBranch}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="named-states">
+          <AccordionTrigger className="flex items-center">
+            <div className="flex items-center">
+              <Tag className="h-4 w-4 mr-2" />
+              Named States
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="mb-2 flex justify-end">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleCreateNamedState}
+              >
+                Save Current State
+              </Button>
+            </div>
+            <NamedStatesDisplay 
+              namedStates={namedStates}
+              onJumpTo={jumpToState}
+              onCompare={diffStates}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {onSave && (
+        <div className="mt-4">
+          <Button 
+            className="w-full" 
+            onClick={onSave}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Project
+          </Button>
         </div>
-      </ScrollArea>
+      )}
     </div>
   );
-}
+};
 
 export default HistoryPanel;

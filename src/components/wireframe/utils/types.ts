@@ -1,180 +1,89 @@
 
+import { WireframeData } from "@/services/ai/wireframe/wireframe-types";
 import { fabric } from 'fabric';
 
-/**
- * Configuration for the canvas
- */
 export interface WireframeCanvasConfig {
   width: number;
   height: number;
   zoom: number;
-  panOffset: { x: number, y: number };
-  showGrid: boolean;
-  snapToGrid: boolean;
-  gridSize: number;
-  gridType: 'lines' | 'dots' | 'columns';
-  snapTolerance: number;
-  backgroundColor: string;
-  showSmartGuides: boolean;
-  gridColor: string;
-  guideColor?: string;
-  showEdgeGuides?: boolean;
-  showCenterGuides?: boolean;
-  showDistanceIndicators?: boolean;
-  magneticStrength?: number;
-  selectionMode?: 'single' | 'multiple';
-  keyboardMovementStep?: number;
-  objectSelectionPriority?: 'front-to-back' | 'back-to-front';
-  selectionStyle?: fabric.IObjectOptions;
+  panOffset?: { x: number, y: number };
+  showGrid?: boolean;
+  snapToGrid?: boolean;
+  gridSize?: number;
+  gridType?: 'lines' | 'dots' | 'columns';
+  snapTolerance?: number;
+  backgroundColor?: string;
+  showSmartGuides?: boolean;
+  gridColor?: string;
+  gridOpacity?: number;
+  showGridNumbers?: boolean;
+  showRulers?: boolean;
+  rulerSize?: number;
+  rulerColor?: string;
+  rulerMarkings?: boolean;
+  historyEnabled?: boolean;
+  maxHistorySteps?: number;
   [key: string]: any;
 }
 
-/**
- * Options for rendering sections
- */
 export interface SectionRenderingOptions {
-  width: number;
-  height: number;
-  darkMode: boolean;
-  showGrid: boolean;
-  gridSize: number;
-  responsive: boolean;
-  deviceType: string;
-  interactive: boolean;
-  showBorders: boolean;
+  deviceType?: string;
+  darkMode?: boolean;
+  renderGrid?: boolean;
+  withControls?: boolean;
+  interactive?: boolean;
 }
 
-/**
- * Layer information data structure 
- */
 export interface LayerInfo {
   id: string;
   name: string;
   type: string;
   visible: boolean;
   locked: boolean;
-  selected: boolean;
-  zIndex: number;
-  isGroup: boolean;
-  children: LayerInfo[];
-  data: any;
+  children?: LayerInfo[];
+  depth: number;
+  object?: fabric.Object;
 }
 
-/**
- * Layer structure for nested components
- */
-export interface LayerItem {
-  id: string;
-  name: string;
-  type: string;
+export interface GridSettings {
+  size: number;
+  color: string;
   visible: boolean;
-  locked: boolean;
-  selected: boolean;
-  zIndex: number;
-  isGroup: boolean;
-  children: LayerItem[];
-  data: any;
+  type: 'lines' | 'dots' | 'columns';
+  opacity: number;
+  showNumbers: boolean;
 }
 
-/**
- * Result of drag operation
- */
-export interface DragResult {
-  success: boolean;
-  message?: string;
-  error?: Error;
-  position?: { x: number; y: number };
-}
-
-/**
- * Alignment guides for layout
- */
-export interface AlignmentGuide {
-  orientation: 'horizontal' | 'vertical';
-  position: number;
-  type: 'edge' | 'center' | 'distribution' | 'grid' | 'left-edge' | 'right-edge' | 'top-edge' | 'bottom-edge' | 'equal-spacing';
-  strength?: number;
+export interface DropZoneIndicator {
+  active: boolean;
+  position: { x: number, y: number };
+  size: { width: number, height: number };
+  type: 'section' | 'component' | 'group';
   label?: string;
 }
 
-/**
- * Grid settings configuration
- */
-export interface GridSettings {
-  size: number;
-  visible: boolean;
-  snapToGrid: boolean;
-  color: string;
-  type: 'lines' | 'dots' | 'columns';
-}
-
-/**
- * Drop zone indicator for drag-and-drop 
- */
-export interface DropZoneIndicator {
-  active: boolean;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
-  type: 'valid' | 'invalid' | 'neutral';
-}
-
-/**
- * Visualization of guides
- */
 export interface GuideVisualization {
-  id: string;
-  element: HTMLElement | null;
-  guide: AlignmentGuide;
+  type: 'horizontal' | 'vertical' | 'center' | 'middle' | 'distribution';
+  position: number;
+  length: number;
+  color: string;
+  dashArray?: number[];
+  objects?: fabric.Object[];
 }
 
-/**
- * Grid configuration type
- */
-export interface GridConfiguration {
-  visible: boolean;
-  size: number;
-  snapToGrid: boolean;
-  type: 'lines' | 'dots' | 'columns';
-  columns: number;
-  gutterWidth: number;
-  marginWidth: number;
-  snapThreshold: number;
-  showGuides: boolean;
-  guideColor: string;
-  showRulers: boolean;
-  rulerSize: number;
+export interface EnhancedWireframeCanvasProps {
+  wireframe: WireframeData | null;
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  canvasConfig?: Partial<WireframeCanvasConfig>;
+  className?: string;
+  onSectionClick?: (sectionId: string, section?: any) => void;
+  onRenderComplete?: (canvas: fabric.Canvas) => void;
+  interactive?: boolean;
+  showControls?: boolean;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  onToggleGrid?: () => void;
+  onToggleSnapToGrid?: () => void;
 }
-
-/**
- * Visual settings for grid display
- */
-export interface GridVisualSettings {
-  lineColor: string;
-  lineThickness: number;
-  dotSize: number;
-  opacity: number;
-  showLabels: boolean;
-  labelColor: string;
-}
-
-/**
- * Selection mode configuration
- */
-export interface SelectionConfig {
-  mode: 'single' | 'multiple';
-  allowDeselect: boolean;
-  selectionKey: 'shift' | 'ctrl' | 'alt';
-  dragSelectionKey: 'shift' | 'ctrl' | 'alt' | 'none';
-  keyboardMovementStep: number;
-  objectSelectionPriority: 'front-to-back' | 'back-to-front';
-  style: {
-    borderColor: string;
-    cornerColor: string;
-    cornerStyle: 'circle' | 'rect';
-    cornerSize: number;
-    transparentCorners: boolean;
-    cornerStrokeColor: string;
-    selectionBackgroundColor: string;
-  };
-}
-
