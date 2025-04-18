@@ -436,6 +436,42 @@ export type Database = {
         }
         Relationships: []
       }
+      animation_presets: {
+        Row: {
+          animation_type: string
+          created_at: string | null
+          duration: number | null
+          easing: string | null
+          id: string
+          is_system_preset: boolean | null
+          keyframes: Json
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          animation_type: string
+          created_at?: string | null
+          duration?: number | null
+          easing?: string | null
+          id?: string
+          is_system_preset?: boolean | null
+          keyframes: Json
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          animation_type?: string
+          created_at?: string | null
+          duration?: number | null
+          easing?: string | null
+          id?: string
+          is_system_preset?: boolean | null
+          keyframes?: Json
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       api_usage_metrics: {
         Row: {
           endpoint: string
@@ -731,6 +767,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      color_schemes: {
+        Row: {
+          accessibility_rating: number | null
+          created_at: string | null
+          id: string
+          is_system_scheme: boolean | null
+          name: string
+          palette: Json
+          user_id: string | null
+        }
+        Insert: {
+          accessibility_rating?: number | null
+          created_at?: string | null
+          id?: string
+          is_system_scheme?: boolean | null
+          name: string
+          palette: Json
+          user_id?: string | null
+        }
+        Update: {
+          accessibility_rating?: number | null
+          created_at?: string | null
+          id?: string
+          is_system_scheme?: boolean | null
+          name?: string
+          palette?: Json
+          user_id?: string | null
+        }
+        Relationships: []
       }
       component_fields: {
         Row: {
@@ -1226,6 +1292,42 @@ export type Database = {
           },
         ]
       }
+      fidelity_configurations: {
+        Row: {
+          animations_enabled: boolean | null
+          created_at: string | null
+          id: string
+          level: Database["public"]["Enums"]["fidelity_level"]
+          performance_mode: boolean | null
+          render_quality: number | null
+          shadows_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          animations_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["fidelity_level"]
+          performance_mode?: boolean | null
+          render_quality?: number | null
+          shadows_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          animations_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          level?: Database["public"]["Enums"]["fidelity_level"]
+          performance_mode?: boolean | null
+          render_quality?: number | null
+          shadows_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       global_memories: {
         Row: {
           category: string
@@ -1334,6 +1436,36 @@ export type Database = {
           viewport_width?: number | null
           x_position?: number
           y_position?: number
+        }
+        Relationships: []
+      }
+      material_presets: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_system_preset: boolean | null
+          material_type: string
+          name: string
+          properties: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_system_preset?: boolean | null
+          material_type: string
+          name: string
+          properties: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_system_preset?: boolean | null
+          material_type?: string
+          name?: string
+          properties?: Json
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1703,6 +1835,33 @@ export type Database = {
           last_refill?: string
           tokens?: number
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      responsive_configurations: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_system_config: boolean | null
+          name: string
+          rules: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_system_config?: boolean | null
+          name: string
+          rules: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_system_config?: boolean | null
+          name?: string
+          rules?: Json
           user_id?: string | null
         }
         Relationships: []
@@ -3455,6 +3614,7 @@ export type Database = {
         | "MANAGE_USERS"
         | "VIEW_ADMIN_PANEL"
         | "ACCESS_PREMIUM_FEATURES"
+      fidelity_level: "wireframe" | "low" | "medium" | "high"
       subscription_status:
         | "free"
         | "basic"
@@ -3609,6 +3769,7 @@ export const Constants = {
         "VIEW_ADMIN_PANEL",
         "ACCESS_PREMIUM_FEATURES",
       ],
+      fidelity_level: ["wireframe", "low", "medium", "high"],
       subscription_status: [
         "free",
         "basic",
