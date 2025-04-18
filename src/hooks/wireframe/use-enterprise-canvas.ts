@@ -92,14 +92,16 @@ export function useEnterpriseCanvas({
         // Get memory usage if available
         let memoryUsage: number | undefined = undefined;
         
-        // Only attempt to access performance.memory if it's supported
+        // Check if memory API is available before trying to use it
         if (enableMemoryTracking && 
             typeof performance !== 'undefined' && 
-            'memory' in performance && 
-            performance.memory) {
-          // TypeScript doesn't know about memory, so we use any
-          const perfAny = performance as any;
-          memoryUsage = perfAny.memory?.usedJSHeapSize / 1048576; // Convert to MB
+            // Using Type guard to check if performance has a memory property
+            (performance as any).memory) {
+          const perfMemory = (performance as any).memory;
+          // Now safely access memory properties with type checking
+          if (perfMemory && typeof perfMemory.usedJSHeapSize === 'number') {
+            memoryUsage = perfMemory.usedJSHeapSize / 1048576; // Convert to MB
+          }
         }
         
         setMetrics({
@@ -118,7 +120,7 @@ export function useEnterpriseCanvas({
       return result;
     };
     
-  }, []);
+  }, [enableMemoryTracking]);
   
   // Get current canvas
   const getCanvas = useCallback(() => {

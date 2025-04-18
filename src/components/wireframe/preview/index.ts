@@ -46,8 +46,8 @@ export {
   TAILWIND_BREAKPOINTS,
 } from '../utils/grid-utils';
 
-// Re-export types from canvas-types instead of grid-utils
-export type { GridConfig, GridBreakpoint } from '../types/canvas-types';
+// Re-export types from canvas-types
+export type { GridConfig, GridBreakpoint, EnterpriseGridConfig } from '../types/canvas-types';
 
 // Export new alignment guides utilities
 export * from './alignment-guides';
