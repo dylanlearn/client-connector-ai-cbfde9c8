@@ -1,55 +1,32 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { fabric } from 'fabric';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
-type KeyAction = {
+export interface KeyboardShortcutsConfig {
+  enabled?: boolean;
+  movementStep?: number;
+  snappingEnabled?: boolean;
+  preventDefaultKeys?: boolean;
+}
+
+interface KeyCombination {
   key: string;
   ctrl?: boolean;
   alt?: boolean;
   shift?: boolean;
+}
+
+interface ShortcutAction {
+  name: string;
   description: string;
+  keyCombination: KeyCombination;
   action: () => void;
-};
+}
 
-type KeyboardShortcutsOptions = {
-  canvas: fabric.Canvas | null;
-  enabled?: boolean;
-  skipOnInput?: boolean;
-  onDuplicate?: () => void;
-  onDelete?: () => void;
-  onGroup?: () => void;
-  onUngroup?: () => void;
-  onLockToggle?: () => void;
-  onBringForward?: () => void;
-  onSendBackward?: () => void;
-  onBringToFront?: () => void;
-  onSendToBack?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  onSave?: () => void;
-  onSelectAll?: () => void;
-  onCopy?: () => void;
-  onPaste?: () => void;
-  onCut?: () => void;
-  onEscape?: () => void;
-  keyboardMovementStep?: number;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
-  onZoomReset?: () => void;
-  onToggleGrid?: () => void;
-  onToggleRulers?: () => void;
-  onCustomAction?: (actionId: string) => void;
-  customShortcuts?: KeyAction[];
-};
-
-/**
- * Hook for managing keyboard shortcuts in canvas applications
- */
 export function useKeyboardShortcuts({
   canvas,
-  enabled = true,
-  skipOnInput = true,
+  config = {},
   onDuplicate,
   onDelete,
   onGroup,
@@ -57,402 +34,273 @@ export function useKeyboardShortcuts({
   onLockToggle,
   onBringForward,
   onSendBackward,
-  onBringToFront,
-  onSendToBack,
   onUndo,
   onRedo,
-  onSave,
-  onSelectAll,
-  onCopy,
-  onPaste,
-  onCut,
-  onEscape,
-  keyboardMovementStep = 1,
-  onZoomIn,
-  onZoomOut,
-  onZoomReset,
-  onToggleGrid,
-  onToggleRulers,
-  onCustomAction,
-  customShortcuts = []
-}: KeyboardShortcutsOptions) {
+}: {
+  canvas: fabric.Canvas | null;
+  config?: KeyboardShortcutsConfig;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
+  onGroup?: () => void;
+  onUngroup?: () => void;
+  onLockToggle?: () => void;
+  onBringForward?: () => void;
+  onSendBackward?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+}) {
   const { toast } = useToast();
+  const keysDown = useRef<Set<string>>(new Set());
+  const shortcutsEnabled = useRef<boolean>(config.enabled !== false);
+  const movementStep = useRef<number>(config.movementStep || 1);
+  const snappingEnabled = useRef<boolean>(config.snappingEnabled !== false);
+  const preventDefaultKeys = useRef<boolean>(config.preventDefaultKeys !== false);
   
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!enabled || !canvas) return;
-
-      // Skip if target is an input element and skipOnInput is true
-      if (
-        skipOnInput &&
-        (e.target instanceof HTMLInputElement ||
-          e.target instanceof HTMLTextAreaElement ||
-          e.target instanceof HTMLSelectElement)
-      ) {
+  // Track registered keyboard shortcuts
+  const shortcuts = useRef<ShortcutAction[]>([]);
+  
+  // Register a new keyboard shortcut
+  const registerShortcut = useCallback((shortcut: ShortcutAction) => {
+    shortcuts.current.push(shortcut);
+  }, []);
+  
+  // Remove a keyboard shortcut
+  const unregisterShortcut = useCallback((name: string) => {
+    shortcuts.current = shortcuts.current.filter(s => s.name !== name);
+  }, []);
+  
+  // Check if a key combination matches the current key state
+  const matchesKeyCombination = useCallback((combo: KeyCombination, event: KeyboardEvent): boolean => {
+    const keyMatches = event.key.toLowerCase() === combo.key.toLowerCase();
+    const ctrlMatches = !!combo.ctrl === (event.ctrlKey || event.metaKey);
+    const altMatches = !!combo.alt === event.altKey;
+    const shiftMatches = !!combo.shift === event.shiftKey;
+    
+    return keyMatches && ctrlMatches && altMatches && shiftMatches;
+  }, []);
+  
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!shortcutsEnabled.current || !canvas) return;
+    
+    // Skip if we're in an input field
+    if (e.target instanceof HTMLInputElement || 
+        e.target instanceof HTMLTextAreaElement || 
+        e.target instanceof HTMLSelectElement) {
+      return;
+    }
+    
+    const key = e.key.toLowerCase();
+    keysDown.current.add(key);
+    
+    // Check for registered shortcuts
+    for (const shortcut of shortcuts.current) {
+      if (matchesKeyCombination(shortcut.keyCombination, e)) {
+        if (preventDefaultKeys.current) {
+          e.preventDefault();
+        }
+        shortcut.action();
         return;
       }
-
-      const activeObject = canvas.getActiveObject();
-      const ctrlKey = e.ctrlKey || e.metaKey;
-      const altKey = e.altKey;
-      const shiftKey = e.shiftKey;
-
-      // Process custom shortcuts first
-      for (const shortcut of customShortcuts) {
-        if (
-          e.key.toLowerCase() === shortcut.key.toLowerCase() &&
-          (shortcut.ctrl === undefined || shortcut.ctrl === ctrlKey) &&
-          (shortcut.alt === undefined || shortcut.alt === altKey) &&
-          (shortcut.shift === undefined || shortcut.shift === shiftKey)
-        ) {
-          e.preventDefault();
-          shortcut.action();
-          return;
-        }
-      }
-
-      // Ctrl combinations
-      if (ctrlKey) {
-        // Ctrl+D: Duplicate
-        if (e.key === 'd' || e.key === 'D') {
-          e.preventDefault();
-          if (onDuplicate && activeObject) {
-            onDuplicate();
-            return;
-          }
-        }
-
-        // Ctrl+G: Group
-        if (e.key === 'g' || e.key === 'G') {
-          e.preventDefault();
-          if (shiftKey) {
-            // Ctrl+Shift+G: Ungroup
-            if (onUngroup && activeObject) {
-              onUngroup();
-              return;
-            }
-          } else {
-            // Ctrl+G: Group
-            if (onGroup && activeObject && activeObject.type === 'activeSelection') {
-              onGroup();
-              return;
-            }
-          }
-        }
-
-        // Ctrl+L: Toggle lock
-        if (e.key === 'l' || e.key === 'L') {
-          e.preventDefault();
-          if (onLockToggle && activeObject) {
-            onLockToggle();
-            return;
-          }
-        }
-
-        // Ctrl+]: Bring forward
-        if (e.key === ']') {
-          e.preventDefault();
-          if (onBringForward && activeObject) {
-            onBringForward();
-            return;
-          }
-        }
-
-        // Ctrl+[: Send backward
-        if (e.key === '[') {
-          e.preventDefault();
-          if (onSendBackward && activeObject) {
-            onSendBackward();
-            return;
-          }
-        }
-
-        // Ctrl+Shift+]: Bring to front
-        if (e.key === ']' && shiftKey) {
-          e.preventDefault();
-          if (onBringToFront && activeObject) {
-            onBringToFront();
-            return;
-          }
-        }
-
-        // Ctrl+Shift+[: Send to back
-        if (e.key === '[' && shiftKey) {
-          e.preventDefault();
-          if (onSendToBack && activeObject) {
-            onSendToBack();
-            return;
-          }
-        }
-
-        // Ctrl+Z: Undo
-        if ((e.key === 'z' || e.key === 'Z') && !shiftKey) {
-          e.preventDefault();
-          if (onUndo) {
-            onUndo();
-            return;
-          }
-        }
-
-        // Ctrl+Y or Ctrl+Shift+Z: Redo
-        if (
-          (e.key === 'y' || e.key === 'Y') ||
-          ((e.key === 'z' || e.key === 'Z') && shiftKey)
-        ) {
-          e.preventDefault();
-          if (onRedo) {
-            onRedo();
-            return;
-          }
-        }
-
-        // Ctrl+S: Save
-        if (e.key === 's' || e.key === 'S') {
-          e.preventDefault();
-          if (onSave) {
-            onSave();
-            return;
-          }
-        }
-
-        // Ctrl+A: Select All
-        if (e.key === 'a' || e.key === 'A') {
-          e.preventDefault();
-          if (onSelectAll) {
-            onSelectAll();
-            return;
-          }
-        }
-
-        // Ctrl+C: Copy
-        if (e.key === 'c' || e.key === 'C') {
-          if (onCopy && activeObject) {
-            onCopy();
-            return;
-          }
-        }
-
-        // Ctrl+V: Paste
-        if (e.key === 'v' || e.key === 'V') {
-          if (onPaste) {
-            onPaste();
-            return;
-          }
-        }
-
-        // Ctrl+X: Cut
-        if (e.key === 'x' || e.key === 'X') {
-          if (onCut && activeObject) {
-            onCut();
-            return;
-          }
-        }
-
-        // Ctrl++: Zoom In
-        if (e.key === '+' || e.key === '=') {
-          e.preventDefault();
-          if (onZoomIn) {
-            onZoomIn();
-            return;
-          }
-        }
-
-        // Ctrl+-: Zoom Out
-        if (e.key === '-' || e.key === '_') {
-          e.preventDefault();
-          if (onZoomOut) {
-            onZoomOut();
-            return;
-          }
-        }
-
-        // Ctrl+0: Reset Zoom
-        if (e.key === '0') {
-          e.preventDefault();
-          if (onZoomReset) {
-            onZoomReset();
-            return;
-          }
-        }
-      }
-
-      // Alt combinations
-      if (altKey) {
-        // Alt+G: Toggle Grid
-        if (e.key === 'g' || e.key === 'G') {
-          e.preventDefault();
-          if (onToggleGrid) {
-            onToggleGrid();
-            return;
-          }
-        }
-
-        // Alt+R: Toggle Rulers
-        if (e.key === 'r' || e.key === 'R') {
-          e.preventDefault();
-          if (onToggleRulers) {
-            onToggleRulers();
-            return;
-          }
-        }
-      }
-
-      // Regular keys
-
-      // Escape: Deselect or Cancel
-      if (e.key === 'Escape') {
-        if (onEscape) {
-          onEscape();
-          return;
-        } else if (activeObject) {
-          canvas.discardActiveObject();
-          canvas.requestRenderAll();
-          return;
-        }
-      }
-
-      // Delete or Backspace: Delete selected objects
-      if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject) {
-        e.preventDefault();
-        if (onDelete) {
-          onDelete();
-          return;
-        }
-      }
-
-      // Arrow keys: Move objects
-      if (
-        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
-        activeObject
-      ) {
-        e.preventDefault();
-
-        // Calculate movement step (larger step with shift key)
-        const step = shiftKey ? keyboardMovementStep * 10 : keyboardMovementStep;
-
-        switch (e.key) {
-          case 'ArrowUp':
-            activeObject.top! -= step;
-            break;
-          case 'ArrowDown':
-            activeObject.top! += step;
-            break;
-          case 'ArrowLeft':
-            activeObject.left! -= step;
-            break;
-          case 'ArrowRight':
-            activeObject.left! += step;
-            break;
-        }
-
-        activeObject.setCoords();
-        canvas.renderAll();
-        canvas.trigger('object:modified', { target: activeObject });
-      }
-    },
-    [
-      canvas,
-      enabled,
-      skipOnInput,
-      keyboardMovementStep,
-      onDuplicate,
-      onDelete,
-      onGroup,
-      onUngroup,
-      onLockToggle,
-      onBringForward,
-      onSendBackward,
-      onBringToFront,
-      onSendToBack,
-      onUndo,
-      onRedo,
-      onSave,
-      onSelectAll,
-      onCopy,
-      onPaste,
-      onCut,
-      onEscape,
-      onZoomIn,
-      onZoomOut,
-      onZoomReset,
-      onToggleGrid,
-      onToggleRulers,
-      customShortcuts
-    ]
-  );
-
-  // Register the keyboard event handler
-  useEffect(() => {
-    if (enabled) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-      };
     }
-  }, [enabled, handleKeyDown]);
-
-  // List of available keyboard shortcuts
-  const getShortcutsList = () => {
-    const shortcuts = [
-      { key: 'Ctrl+D', description: 'Duplicate selected object' },
-      { key: 'Ctrl+G', description: 'Group selected objects' },
-      { key: 'Ctrl+Shift+G', description: 'Ungroup selected group' },
-      { key: 'Ctrl+L', description: 'Toggle lock for selected object' },
-      { key: 'Ctrl+]', description: 'Bring object forward' },
-      { key: 'Ctrl+[', description: 'Send object backward' },
-      { key: 'Ctrl+Shift+]', description: 'Bring object to front' },
-      { key: 'Ctrl+Shift+[', description: 'Send object to back' },
-      { key: 'Ctrl+Z', description: 'Undo' },
-      { key: 'Ctrl+Y', description: 'Redo' },
-      { key: 'Ctrl+S', description: 'Save' },
-      { key: 'Ctrl+A', description: 'Select all objects' },
-      { key: 'Delete/Backspace', description: 'Delete selected object' },
-      { key: 'Arrow keys', description: 'Move selected object' },
-      { key: 'Shift+Arrow keys', description: 'Move selected object by larger increment' },
-      { key: 'Ctrl++', description: 'Zoom in' },
-      { key: 'Ctrl+-', description: 'Zoom out' },
-      { key: 'Ctrl+0', description: 'Reset zoom' },
-      { key: 'Alt+G', description: 'Toggle grid' },
-      { key: 'Alt+R', description: 'Toggle rulers' },
-      { key: 'Escape', description: 'Deselect all / Cancel current operation' }
-    ];
-
-    // Add custom shortcuts
-    customShortcuts.forEach((shortcut) => {
-      let keyCombo = '';
-      if (shortcut.ctrl) keyCombo += 'Ctrl+';
-      if (shortcut.alt) keyCombo += 'Alt+';
-      if (shortcut.shift) keyCombo += 'Shift+';
-      keyCombo += shortcut.key;
-
-      shortcuts.push({
-        key: keyCombo,
-        description: shortcut.description
+    
+    const activeObject = canvas.getActiveObject();
+    
+    // Default shortcuts
+    
+    // Ctrl combinations
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl+D: Duplicate
+      if (key === 'd') {
+        e.preventDefault();
+        if (onDuplicate && activeObject) {
+          onDuplicate();
+        }
+        return;
+      }
+      
+      // Ctrl+G: Group
+      if (key === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Ctrl+Shift+G: Ungroup
+          if (onUngroup && activeObject) {
+            onUngroup();
+          }
+        } else {
+          // Ctrl+G: Group
+          if (onGroup && activeObject && activeObject.type === 'activeSelection') {
+            onGroup();
+          }
+        }
+        return;
+      }
+      
+      // Ctrl+L: Toggle lock
+      if (key === 'l') {
+        e.preventDefault();
+        if (onLockToggle && activeObject) {
+          onLockToggle();
+        }
+        return;
+      }
+      
+      // Ctrl+]: Bring forward
+      if (key === ']') {
+        e.preventDefault();
+        if (onBringForward && activeObject) {
+          onBringForward();
+        }
+        return;
+      }
+      
+      // Ctrl+[: Send backward
+      if (key === '[') {
+        e.preventDefault();
+        if (onSendBackward && activeObject) {
+          onSendBackward();
+        }
+        return;
+      }
+      
+      // Ctrl+Z: Undo
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (onUndo) {
+          onUndo();
+        }
+        return;
+      }
+      
+      // Ctrl+Y or Ctrl+Shift+Z: Redo
+      if (key === 'y' || (key === 'z' && e.shiftKey)) {
+        e.preventDefault();
+        if (onRedo) {
+          onRedo();
+        }
+        return;
+      }
+    }
+    
+    // Regular keys
+    
+    // Delete or Backspace: Delete selected objects
+    if ((key === 'delete' || key === 'backspace') && activeObject) {
+      e.preventDefault();
+      if (onDelete) {
+        onDelete();
+      }
+      return;
+    }
+    
+    // Arrow keys: Move objects
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && activeObject) {
+      e.preventDefault();
+      
+      // Calculate movement step (larger step with shift key)
+      const step = e.shiftKey ? movementStep.current * 10 : movementStep.current;
+      
+      switch (key) {
+        case 'arrowup':
+          activeObject.top! -= step;
+          break;
+        case 'arrowdown':
+          activeObject.top! += step;
+          break;
+        case 'arrowleft':
+          activeObject.left! -= step;
+          break;
+        case 'arrowright':
+          activeObject.left! += step;
+          break;
+      }
+      
+      activeObject.setCoords();
+      canvas.renderAll();
+      canvas.trigger('object:modified', { target: activeObject });
+    }
+  }, [canvas, matchesKeyCombination, onBringForward, onDelete, onDuplicate, onGroup, onLockToggle, onRedo, onSendBackward, onUndo, onUngroup]);
+  
+  const handleKeyUp = useCallback((e: KeyboardEvent) => {
+    keysDown.current.delete(e.key.toLowerCase());
+  }, []);
+  
+  // Configure keyboard shortcuts
+  const configure = useCallback((newConfig: KeyboardShortcutsConfig) => {
+    if ('enabled' in newConfig) shortcutsEnabled.current = newConfig.enabled !== false;
+    if ('movementStep' in newConfig) movementStep.current = newConfig.movementStep || 1;
+    if ('snappingEnabled' in newConfig) snappingEnabled.current = newConfig.snappingEnabled !== false;
+    if ('preventDefaultKeys' in newConfig) preventDefaultKeys.current = newConfig.preventDefaultKeys !== false;
+  }, []);
+  
+  // Helper to check if a key is currently pressed
+  const isKeyPressed = useCallback((key: string): boolean => {
+    return keysDown.current.has(key.toLowerCase());
+  }, []);
+  
+  // Helper to check if multiple keys are currently pressed
+  const areKeysPressed = useCallback((keys: string[]): boolean => {
+    return keys.every(key => keysDown.current.has(key.toLowerCase()));
+  }, []);
+  
+  // Show toast with active keyboard shortcuts
+  const showShortcutsHelp = useCallback(() => {
+    if (shortcuts.current.length === 0) {
+      toast({
+        title: "Keyboard Shortcuts",
+        description: "No custom shortcuts registered",
       });
-    });
-
-    return shortcuts;
-  };
-
-  // Show keyboard shortcuts in a toast
-  const showShortcutsToast = () => {
-    const shortcuts = getShortcutsList()
-      .map((s) => `${s.key}: ${s.description}`)
-      .join('\n');
-
+      return;
+    }
+    
+    // Format shortcuts for display
+    const shortcutsList = shortcuts.current.map(shortcut => {
+      let combo = '';
+      if (shortcut.keyCombination.ctrl) combo += 'Ctrl+';
+      if (shortcut.keyCombination.alt) combo += 'Alt+';
+      if (shortcut.keyCombination.shift) combo += 'Shift+';
+      combo += shortcut.keyCombination.key.toUpperCase();
+      
+      return `${combo}: ${shortcut.description}`;
+    }).join('\n');
+    
     toast({
-      title: 'Keyboard Shortcuts',
-      description: (
-        <pre className="text-xs max-h-[200px] overflow-y-auto">
-          {shortcuts}
-        </pre>
-      ),
-      duration: 10000
+      title: "Keyboard Shortcuts",
+      description: shortcutsList,
     });
-  };
-
+  }, [toast]);
+  
+  // Set up keyboard event listeners
+  useEffect(() => {
+    if (!shortcutsEnabled.current) return;
+    
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    // Register default shortcuts
+    const defaultShortcuts: ShortcutAction[] = [
+      {
+        name: 'help',
+        description: 'Show keyboard shortcuts help',
+        keyCombination: { key: '?', shift: true },
+        action: showShortcutsHelp
+      }
+    ];
+    
+    shortcuts.current = [...shortcuts.current, ...defaultShortcuts];
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp, showShortcutsHelp]);
+  
   return {
-    shortcuts: getShortcutsList(),
-    showShortcutsToast
+    registerShortcut,
+    unregisterShortcut,
+    isKeyPressed,
+    areKeysPressed,
+    showShortcutsHelp,
+    configure,
+    keysDown: keysDown.current
   };
 }
