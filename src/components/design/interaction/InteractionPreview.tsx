@@ -11,7 +11,7 @@ const InteractionPreview: React.FC<InteractionPreviewProps> = ({ interaction }) 
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
-        <h3 className="text-lg font-semibold mb-2">{interaction.name}</h3>
+        <h3 className="text-lg font-semibold mb-2">{interaction.name || 'Unnamed Interaction'}</h3>
         <p className="text-sm text-muted-foreground">{interaction.description}</p>
         
         {interaction.preview && (

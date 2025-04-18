@@ -1,15 +1,13 @@
 
 export interface DesignOption {
   id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  category: "hero" | "navbar" | "about" | "footer" | "font" | "animation" | "interaction";
-  rank?: number;
-  notes?: string;
-}
-
-export interface DesignPreviewProps {
-  selectedDesigns: Record<string, DesignOption>;
-  className?: string;
+  name: string;
+  description?: string;
+  preview?: string;
+  type?: string;
+  value?: string | number | boolean;
+  selected?: boolean;
+  category?: string;
+  tags?: string[];
+  metadata?: Record<string, any>;
 }

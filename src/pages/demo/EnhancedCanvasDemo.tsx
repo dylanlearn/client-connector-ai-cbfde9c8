@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedWireframeCanvas } from '@/components/wireframe/utils';
-import { MultiViewportCanvas } from '@/components/wireframe/navigation/MultiViewportCanvas';
+import MultiViewportCanvas from '@/components/wireframe/navigation/MultiViewportCanvas';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import { fabric } from 'fabric';
 

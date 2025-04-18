@@ -28,26 +28,35 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
   className
 }) => {
   const { 
-    history, 
-    currentPosition,
+    data,
     branches,
-    activeBranch,
-    namedStates,
+    currentBranch,
+    checkpoints,
     canUndo,
     canRedo,
     undo,
     redo,
-    saveNamedState,
-    switchBranch,
+    createCheckpoint,
     createBranch,
-    jumpToState,
-    diffStates
+    switchBranch,
+    jumpToCheckpoint,
+    computeStateDiff
   } = useEnhancedHistory(projectId);
 
+  // Map history API to component props
+  const historyItems = data ? JSON.parse(data).history || [] : [];
+  const currentPosition = data ? JSON.parse(data).currentPosition || 0 : 0;
+  const mappedBranches = branches.map(branch => ({
+    id: branch.id,
+    name: branch.name,
+    createdAt: branch.createdAt,
+    historyCount: branch.historyCount
+  }));
+  
   const handleCreateNamedState = () => {
     const name = prompt('Enter a name for this state:');
     if (name) {
-      saveNamedState(name);
+      createCheckpoint(name);
     }
   };
 
@@ -93,9 +102,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
           <AccordionContent>
             <ScrollArea className="h-[200px]">
               <HistoryItemsList 
-                history={history} 
+                history={historyItems} 
                 currentPosition={currentPosition} 
-                onJumpTo={jumpToState}
+                onJumpTo={jumpToCheckpoint}
               />
             </ScrollArea>
           </AccordionContent>
@@ -119,8 +128,8 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
               </Button>
             </div>
             <HistoryBranchesList 
-              branches={branches}
-              activeBranch={activeBranch}
+              branches={mappedBranches}
+              activeBranch={currentBranch}
               onSwitchBranch={switchBranch}
             />
           </AccordionContent>
@@ -144,9 +153,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
               </Button>
             </div>
             <NamedStatesDisplay 
-              namedStates={namedStates}
-              onJumpTo={jumpToState}
-              onCompare={diffStates}
+              namedStates={checkpoints}
+              onJumpTo={jumpToCheckpoint}
+              onCompare={computeStateDiff}
             />
           </AccordionContent>
         </AccordionItem>

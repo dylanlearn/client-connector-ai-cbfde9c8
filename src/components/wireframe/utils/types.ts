@@ -32,6 +32,24 @@ export interface SectionRenderingOptions {
   renderGrid?: boolean;
   withControls?: boolean;
   interactive?: boolean;
+  width?: number;
+  height?: number;
+  showGrid?: boolean;
+  gridSize?: number;
+  responsive?: boolean;
+  showBorders?: boolean;
+}
+
+export interface SelectionConfig {
+  allowMultiple: boolean;
+  selectionMode: 'normal' | 'area' | 'direct';
+  selectOnClick: boolean;
+  deselectOnEmptyClick: boolean;
+  groupSelection: boolean;
+  selectionColor: string;
+  selectionBorderColor: string;
+  selectionLineWidth: number;
+  selectionDashArray: number[];
 }
 
 export interface LayerInfo {
@@ -43,6 +61,8 @@ export interface LayerInfo {
   children?: LayerInfo[];
   depth: number;
   object?: fabric.Object;
+  isGroup?: boolean;
+  zIndex?: number;
 }
 
 export interface GridSettings {
@@ -86,4 +106,8 @@ export interface EnhancedWireframeCanvasProps {
   onResetZoom?: () => void;
   onToggleGrid?: () => void;
   onToggleSnapToGrid?: () => void;
+}
+
+export interface EnhancedNavigationConfig {
+  enableAnimation?: boolean;
 }
