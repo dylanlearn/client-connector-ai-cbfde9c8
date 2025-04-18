@@ -1,28 +1,38 @@
 
 import React from 'react';
-import { MaterialType, SurfaceTreatment } from '../fidelity/FidelityLevels';
-import MaterialRenderer from './MaterialRenderer';
+import { cn } from '@/lib/utils';
+import { MaterialType, SurfaceTreatment, generateMaterialStyles } from '../fidelity/FidelityLevels';
 
 interface MaterialSwatchProps {
   material: MaterialType;
   surface?: SurfaceTreatment;
-  color: string;
+  color?: string;
+  intensity?: number;
   size?: 'sm' | 'md' | 'lg';
+  className?: string;
   onClick?: () => void;
   selected?: boolean;
-  label?: string;
 }
 
 const MaterialSwatch: React.FC<MaterialSwatchProps> = ({
   material,
-  surface = 'glossy',
-  color,
+  surface = 'smooth',
+  color = '#4a90e2',
+  intensity = 1,
   size = 'md',
+  className,
   onClick,
-  selected = false,
-  label
+  selected = false
 }) => {
-  // Size mappings
+  // Generate material styles
+  const materialStyles = generateMaterialStyles(
+    material,
+    surface,
+    color,
+    intensity
+  );
+  
+  // Determine swatch size
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
@@ -31,28 +41,15 @@ const MaterialSwatch: React.FC<MaterialSwatchProps> = ({
   
   return (
     <div 
-      className="material-swatch"
-      onClick={onClick}
-    >
-      <div 
-        className={`
-          relative rounded-md overflow-hidden cursor-pointer
-          ${sizeClasses[size]} 
-          ${selected ? 'ring-2 ring-primary' : 'ring-1 ring-inset ring-border'}
-        `}
-      >
-        <MaterialRenderer
-          material={material}
-          surface={surface}
-          color={color}
-          width="100%"
-          height="100%"
-        />
-      </div>
-      {label && (
-        <p className="text-xs text-center mt-1">{label}</p>
+      className={cn(
+        "material-swatch rounded-md border transition-all cursor-pointer",
+        sizeClasses[size],
+        selected && "ring-2 ring-primary ring-offset-2",
+        className
       )}
-    </div>
+      style={materialStyles}
+      onClick={onClick}
+    />
   );
 };
 

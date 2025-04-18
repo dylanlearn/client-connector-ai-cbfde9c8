@@ -58,23 +58,25 @@ const FidelityControls = ({ showDetailControls = false }: FidelityControlsProps)
             />
           </div>
 
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <Label htmlFor="detail-level">Detail Level</Label>
-              <span className="text-sm text-muted-foreground">
-                {settings.detailLevel.toFixed(1)}
-              </span>
+          {settings.detailLevel !== undefined && (
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <Label htmlFor="detail-level">Detail Level</Label>
+                <span className="text-sm text-muted-foreground">
+                  {settings.detailLevel.toFixed(1)}
+                </span>
+              </div>
+              <Slider
+                id="detail-level"
+                min={0}
+                max={1}
+                step={0.1}
+                value={[settings.detailLevel]}
+                onValueChange={(values) => updateSettings({ detailLevel: values[0] })}
+                disabled={isTransitioning}
+              />
             </div>
-            <Slider
-              id="detail-level"
-              min={0}
-              max={1}
-              step={0.1}
-              value={[settings.detailLevel]}
-              onValueChange={(values) => updateSettings({ detailLevel: values[0] })}
-              disabled={isTransitioning}
-            />
-          </div>
+          )}
 
           <div>
             <Button

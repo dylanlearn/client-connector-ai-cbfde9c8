@@ -10,8 +10,8 @@ import './materials.css';
 
 const MaterialsDemo: React.FC = () => {
   // Material state
-  const [material, setMaterial] = useState<MaterialType>('matte' as MaterialType);
-  const [surface, setSurface] = useState<SurfaceTreatment>('smooth' as SurfaceTreatment);
+  const [material, setMaterial] = useState<MaterialType>('matte');
+  const [surface, setSurface] = useState<SurfaceTreatment>('smooth');
   const [color, setColor] = useState<string>('#4a90e2');
   const [intensity, setIntensity] = useState<number>(0.8);
   

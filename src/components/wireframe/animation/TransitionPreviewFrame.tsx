@@ -59,42 +59,45 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
   const getMaterialAnimation = (): TargetAndTransition => {
     if (!isPlaying) return {};
 
-    switch (material) {
-      case 'metallic' as MaterialType:
-        return {
-          scale: [1, 1.02, 1],
-          rotate: [0, 0.5, 0],
-          transition: {
-            repeat: Infinity,
-            repeatType: "loop",
-            duration: 4
-          }
-        };
-      case 'glass' as MaterialType:
-        return {
-          y: [0, -3, 0],
-          transition: {
-            repeat: Infinity,
-            repeatType: "loop",
-            duration: 3
-          }
-        };
-      case 'glossy' as MaterialType:
-        return {
-          boxShadow: [
-            '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)',
-            '0 6px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.3)',
-            '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)'
-          ],
-          transition: {
-            repeat: Infinity,
-            repeatType: "loop",
-            duration: 3.5
-          }
-        };
-      default:
-        return {};
+    if (material === 'metallic' || material === 'metal') {
+      return {
+        scale: [1, 1.02, 1],
+        rotate: [0, 0.5, 0],
+        transition: {
+          repeat: Infinity,
+          repeatType: "loop",
+          duration: 4
+        }
+      };
     }
+    
+    if (material === 'glass') {
+      return {
+        y: [0, -3, 0],
+        transition: {
+          repeat: Infinity,
+          repeatType: "loop",
+          duration: 3
+        }
+      };
+    }
+    
+    if (material === 'glossy' || material === 'plastic') {
+      return {
+        boxShadow: [
+          '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)',
+          '0 6px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.3)',
+          '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)'
+        ],
+        transition: {
+          repeat: Infinity,
+          repeatType: "loop",
+          duration: 3.5
+        }
+      };
+    }
+    
+    return {};
   };
 
   return (

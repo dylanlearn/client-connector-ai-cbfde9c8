@@ -21,8 +21,8 @@ export interface MaterialControlsProps {
 }
 
 const MaterialControls: React.FC<MaterialControlsProps> = ({
-  initialMaterial = 'matte' as MaterialType,
-  initialSurface = 'smooth' as SurfaceTreatment,
+  initialMaterial = 'matte',
+  initialSurface = 'smooth',
   initialColor = '#4a90e2',
   initialIntensity = 1.0,
   onChange
@@ -79,6 +79,8 @@ const MaterialControls: React.FC<MaterialControlsProps> = ({
             <SelectItem value="metallic">Metallic</SelectItem>
             <SelectItem value="glass">Glass</SelectItem>
             <SelectItem value="textured">Textured</SelectItem>
+            <SelectItem value="metal">Metal</SelectItem>
+            <SelectItem value="plastic">Plastic</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -95,6 +97,10 @@ const MaterialControls: React.FC<MaterialControlsProps> = ({
             <SelectItem value="bumpy">Bumpy</SelectItem>
             <SelectItem value="engraved">Engraved</SelectItem>
             <SelectItem value="embossed">Embossed</SelectItem>
+            <SelectItem value="matte">Matte</SelectItem>
+            <SelectItem value="glossy">Glossy</SelectItem>
+            <SelectItem value="frosted">Frosted</SelectItem>
+            <SelectItem value="textured">Textured</SelectItem>
           </SelectContent>
         </Select>
       </div>
