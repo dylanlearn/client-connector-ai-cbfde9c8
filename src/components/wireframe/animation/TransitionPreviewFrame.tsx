@@ -60,7 +60,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
     if (!isPlaying) return {};
 
     switch (material) {
-      case 'metallic':
+      case 'metallic' as MaterialType:
         return {
           scale: [1, 1.02, 1],
           rotate: [0, 0.5, 0],
@@ -70,7 +70,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
             duration: 4
           }
         };
-      case 'glass':
+      case 'glass' as MaterialType:
         return {
           y: [0, -3, 0],
           transition: {
@@ -79,7 +79,7 @@ const TransitionPreviewFrame: React.FC<TransitionPreviewFrameProps> = ({
             duration: 3
           }
         };
-      case 'glossy':
+      case 'glossy' as MaterialType:
         return {
           boxShadow: [
             '0 4px 8px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.2)',

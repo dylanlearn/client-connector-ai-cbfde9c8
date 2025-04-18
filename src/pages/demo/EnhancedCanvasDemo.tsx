@@ -6,8 +6,9 @@ import { EnhancedWireframeCanvas } from '@/components/wireframe/utils';
 import MultiViewportCanvas from '@/components/wireframe/navigation/MultiViewportCanvas';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
 import { fabric } from 'fabric';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-const mockWireframeData = {
+const mockWireframeData: WireframeData = {
   id: 'demo-wireframe',
   title: 'Demo Wireframe',
   description: 'A demo wireframe for the canvas',
@@ -16,18 +17,21 @@ const mockWireframeData = {
       id: 'section-1',
       name: 'Header',
       sectionType: 'header',
+      description: 'Main header section', // Added required description
       components: []
     },
     {
       id: 'section-2',
       name: 'Hero',
       sectionType: 'hero',
+      description: 'Hero section with main content', // Added required description
       components: []
     },
     {
       id: 'section-3',
       name: 'Features',
       sectionType: 'features',
+      description: 'Features showcase section', // Added required description
       components: []
     }
   ],
@@ -35,7 +39,8 @@ const mockWireframeData = {
     primary: '#3498db',
     secondary: '#2ecc71',
     accent: '#e74c3c',
-    background: '#f8f9fa'
+    background: '#f8f9fa',
+    text: '#333333' // Added required text color
   },
   typography: {
     headings: 'Inter',

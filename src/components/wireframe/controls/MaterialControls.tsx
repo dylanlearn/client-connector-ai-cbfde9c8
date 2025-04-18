@@ -21,8 +21,8 @@ export interface MaterialControlsProps {
 }
 
 const MaterialControls: React.FC<MaterialControlsProps> = ({
-  initialMaterial = 'matte',
-  initialSurface = 'smooth',
+  initialMaterial = 'matte' as MaterialType,
+  initialSurface = 'smooth' as SurfaceTreatment,
   initialColor = '#4a90e2',
   initialIntensity = 1.0,
   onChange
