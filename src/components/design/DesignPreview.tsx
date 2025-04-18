@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PreviewHeader from "./preview/PreviewHeader";
 import LayoutPreview from "./preview/LayoutPreview";
-import EffectsPreview from "./preview/EffectsPreview";
-import { DesignPreviewProps } from "./preview/types";
+import EffectsPreview from "./preview/effects";
+import { DesignPreviewProps, DesignOption } from "./preview/types";
 
 // Re-export the DesignOption type
 export type { DesignOption } from "./preview/types";
@@ -17,8 +17,8 @@ const DesignPreview = ({ selectedDesigns, className = "" }: DesignPreviewProps) 
   // Filter selected designs by category
   const hasAnimation = Object.values(selectedDesigns).some(design => design.category === "animation");
   const hasInteraction = Object.values(selectedDesigns).some(design => design.category === "interaction");
-  const selectedAnimations = Object.values(selectedDesigns).filter(design => design.category === "animation");
-  const selectedInteractions = Object.values(selectedDesigns).filter(design => design.category === "interaction");
+  const selectedAnimations = Object.values(selectedDesigns).filter(design => design.category === "animation") as DesignOption[];
+  const selectedInteractions = Object.values(selectedDesigns).filter(design => design.category === "interaction") as DesignOption[];
 
   return (
     <Card className={`shadow-md h-full ${className}`}>

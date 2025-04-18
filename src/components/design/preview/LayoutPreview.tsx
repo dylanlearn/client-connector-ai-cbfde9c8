@@ -33,8 +33,8 @@ const LayoutPreview = ({
               .map(design => (
                 <div key={design.id} className="p-4">
                   <img 
-                    src={design.imageUrl} 
-                    alt={design.title}
+                    src={design.imageUrl || design.preview || '/placeholder-navbar.png'} 
+                    alt={design.title || design.name}
                     className="w-full h-auto object-contain max-h-20"
                   />
                 </div>
@@ -49,8 +49,8 @@ const LayoutPreview = ({
               .map(design => (
                 <div key={design.id}>
                   <img 
-                    src={design.imageUrl} 
-                    alt={design.title}
+                    src={design.imageUrl || design.preview || '/placeholder-hero.png'} 
+                    alt={design.title || design.name}
                     className="w-full h-auto"
                   />
                 </div>
@@ -65,8 +65,8 @@ const LayoutPreview = ({
               .map(design => (
                 <div key={design.id}>
                   <img 
-                    src={design.imageUrl} 
-                    alt={design.title}
+                    src={design.imageUrl || design.preview || '/placeholder-about.png'} 
+                    alt={design.title || design.name}
                     className="w-full h-auto"
                   />
                 </div>
@@ -81,8 +81,8 @@ const LayoutPreview = ({
               .map(design => (
                 <div key={design.id}>
                   <img 
-                    src={design.imageUrl} 
-                    alt={design.title}
+                    src={design.imageUrl || design.preview || '/placeholder-footer.png'} 
+                    alt={design.title || design.name}
                     className="w-full h-auto"
                   />
                 </div>

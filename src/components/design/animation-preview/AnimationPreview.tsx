@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { DesignOption } from "../DesignPreview";
+import { DesignOption } from "../preview/types";
 import { useAnimationAnalytics } from "@/hooks/use-animation-analytics";
 import { getAnimationCategory, getAnimationConfig, clearAnimationConfigCache } from "../animations/AnimationConfig";
 import { AnimationControls } from "./AnimationControls";
@@ -81,7 +81,7 @@ const AnimationPreview = memo(({ animation }: AnimationPreviewProps) => {
 
   return (
     <div className="bg-white rounded-lg p-4 shadow-md">
-      <h3 className="text-lg font-medium mb-3">{animation.title}</h3>
+      <h3 className="text-lg font-medium mb-3">{animation.title || animation.name}</h3>
       
       {showWebsitePreview ? (
         <WebsitePreview 

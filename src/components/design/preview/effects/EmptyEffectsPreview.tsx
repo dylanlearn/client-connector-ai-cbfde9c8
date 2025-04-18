@@ -1,14 +1,16 @@
 
-import { Sparkles } from "lucide-react";
+import { EyeOff } from "lucide-react";
 
 const EmptyEffectsPreview = () => (
   <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-    <Sparkles className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-    <h3 className="text-lg font-medium text-muted-foreground">No animations or interactions selected</h3>
+    <EyeOff className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+    <h3 className="text-lg font-medium text-muted-foreground">No effects selected</h3>
     <p className="text-sm text-muted-foreground max-w-md mt-2">
-      Select animations and interactions to see them previewed here. These will add life and engagement to your website.
+      Select animation or interaction elements to preview their effects here.
     </p>
   </div>
 );
 
 export default EmptyEffectsPreview;
+
+export { EmptyEffectsPreview };

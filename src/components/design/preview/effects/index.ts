@@ -1,4 +1,5 @@
 
-export { default as EmptyEffectsPreview } from './EmptyEffectsPreview';
-export { default as AnimationSection } from './AnimationSection';
-export { default as InteractionSection } from './InteractionSection';
+export { default } from './EffectsPreview';
+export * from './AnimationSection';
+export * from './InteractionSection';
+export * from './EmptyEffectsPreview';
