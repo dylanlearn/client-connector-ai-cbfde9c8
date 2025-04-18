@@ -3,7 +3,7 @@ import { LucideIcon, LucideProps } from 'lucide-react';
 import React from 'react';
 
 export const DiffIcon: LucideIcon = React.forwardRef<SVGSVGElement, LucideProps>(
-  ({ color = 'currentColor', size = 24, strokeWidth = 2, ...props }, ref) => {
+  function DiffIcon({ color = 'currentColor', size = 24, strokeWidth = 2, ...props }, ref) {
     return (
       <svg
         ref={ref}
@@ -27,4 +27,3 @@ export const DiffIcon: LucideIcon = React.forwardRef<SVGSVGElement, LucideProps>
 );
 
 DiffIcon.displayName = 'DiffIcon';
-
