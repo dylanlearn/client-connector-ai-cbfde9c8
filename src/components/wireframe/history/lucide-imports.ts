@@ -3,7 +3,9 @@ import { LucideIcon, LucideProps } from 'lucide-react';
 import React from 'react';
 
 export const DiffIcon: LucideIcon = React.forwardRef<SVGSVGElement, LucideProps>(
-  function DiffIcon({ color = 'currentColor', size = 24, strokeWidth = 2, ...props }, ref) {
+  function DiffIcon(props, ref) {
+    const { color = 'currentColor', size = 24, strokeWidth = 2, ...otherProps } = props;
+    
     return (
       <svg
         ref={ref}
@@ -16,7 +18,7 @@ export const DiffIcon: LucideIcon = React.forwardRef<SVGSVGElement, LucideProps>
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeLinejoin="round"
-        {...props}
+        {...otherProps}
       >
         <path d="M12 3v14" />
         <path d="M5 10h14" />
