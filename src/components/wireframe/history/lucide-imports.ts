@@ -1,5 +1,4 @@
 
-// This file imports additional icons from Lucide that aren't directly exported
 import { LucideProps } from 'lucide-react';
 
 export const DiffIcon = (props: LucideProps) => {
