@@ -1,7 +1,8 @@
 
 import { LucideProps } from 'lucide-react';
+import React from 'react';
 
-export const DiffIcon = (props: LucideProps) => {
+export const DiffIcon: React.FC<LucideProps> = (props) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
