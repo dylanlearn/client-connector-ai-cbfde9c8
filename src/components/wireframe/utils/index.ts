@@ -1,4 +1,3 @@
-
 // Export all utility functions
 export * from './fabric-converters';
 export * from './canvas-serialization';
@@ -105,3 +104,15 @@ export {
   ungroupLayer,
   getFlatLayerList
 } from './layer-utils';
+
+// Export new selection and manipulation utilities
+export { default as useEnhancedSelection } from '@/hooks/wireframe/use-enhanced-selection';
+export { default as useAdvancedTransform } from '@/hooks/wireframe/use-advanced-transform';
+export { useKeyboardShortcuts } from '@/hooks/wireframe/use-keyboard-shortcuts';
+export { useEnhancedCanvasNavigation } from '@/hooks/wireframe/use-enhanced-canvas-navigation';
+
+// Export new components
+export { default as EnhancedTransformControls } from '../controls/EnhancedTransformControls';
+export { default as MultiViewportCanvas } from '../navigation/MultiViewportCanvas';
+export { default as CanvasMinimap } from '../navigation/CanvasMinimap';
+export { default as EnhancedWireframeCanvas } from '../EnhancedWireframeCanvas';
