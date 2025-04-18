@@ -1,460 +1,631 @@
 
 import { fabric } from 'fabric';
 
-interface BoundingBox {
+// Types for alignment and distribution
+export interface AlignmentOptions {
+  respectBounds?: boolean;
+  alignToCanvas?: boolean;
+}
+
+// Helper function to get the selected objects or all objects if none are selected
+const getTargetObjects = (canvas: fabric.Canvas, options: AlignmentOptions = {}): fabric.Object[] => {
+  // Get active selection or selected object
+  const activeSelection = canvas.getActiveObject();
+  
+  if (activeSelection && activeSelection.type === 'activeSelection') {
+    // Return objects within the active selection
+    return (activeSelection as fabric.ActiveSelection).getObjects();
+  } else if (activeSelection) {
+    // Single object selected
+    return [activeSelection];
+  } else if (options.alignToCanvas) {
+    // No selection, but alignToCanvas is true - use all objects
+    return canvas.getObjects().filter(obj => obj.visible !== false);
+  }
+  
+  return [];
+};
+
+// Calculate bounds of a group of objects
+const calculateBounds = (objects: fabric.Object[]): {
   left: number;
   top: number;
+  right: number;
+  bottom: number;
   width: number;
   height: number;
-}
-
-/**
- * Get the bounding box for a collection of objects
- */
-export function getCollectionBounds(objects: fabric.Object[]): BoundingBox {
+  centerX: number;
+  centerY: number;
+} => {
   if (!objects.length) {
-    return { left: 0, top: 0, width: 0, height: 0 };
+    return {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: 0,
+      height: 0,
+      centerX: 0,
+      centerY: 0,
+    };
   }
 
-  let minX = Number.MAX_SAFE_INTEGER;
-  let minY = Number.MAX_SAFE_INTEGER;
-  let maxX = Number.MIN_SAFE_INTEGER;
-  let maxY = Number.MIN_SAFE_INTEGER;
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
 
-  objects.forEach(obj => {
+  objects.forEach((obj) => {
     const objBounds = obj.getBoundingRect(true, true);
-    minX = Math.min(minX, objBounds.left);
-    minY = Math.min(minY, objBounds.top);
-    maxX = Math.max(maxX, objBounds.left + objBounds.width);
-    maxY = Math.max(maxY, objBounds.top + objBounds.height);
+    left = Math.min(left, objBounds.left);
+    top = Math.min(top, objBounds.top);
+    right = Math.max(right, objBounds.left + objBounds.width);
+    bottom = Math.max(bottom, objBounds.top + objBounds.height);
   });
 
+  const width = right - left;
+  const height = bottom - top;
+
   return {
-    left: minX,
-    top: minY,
-    width: maxX - minX,
-    height: maxY - minY
+    left,
+    top,
+    right,
+    bottom,
+    width,
+    height,
+    centerX: left + width / 2,
+    centerY: top + height / 2,
   };
+};
+
+// Alignment functions
+export const alignObjects = {
+  left: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+
+    const bounds = calculateBounds(objects);
+    
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const deltaX = bounds.left - objBounds.left;
+      obj.set('left', obj.left ? obj.left + deltaX : deltaX);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  centerH: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+
+    const bounds = calculateBounds(objects);
+    
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const objCenter = objBounds.left + objBounds.width / 2;
+      const deltaX = bounds.centerX - objCenter;
+      obj.set('left', obj.left ? obj.left + deltaX : deltaX);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  right: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+
+    const bounds = calculateBounds(objects);
+    
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const objRight = objBounds.left + objBounds.width;
+      const deltaX = bounds.right - objRight;
+      obj.set('left', obj.left ? obj.left + deltaX : deltaX);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  top: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+
+    const bounds = calculateBounds(objects);
+    
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const deltaY = bounds.top - objBounds.top;
+      obj.set('top', obj.top ? obj.top + deltaY : deltaY);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  middle: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+
+    const bounds = calculateBounds(objects);
+    
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const objCenter = objBounds.top + objBounds.height / 2;
+      const deltaY = bounds.centerY - objCenter;
+      obj.set('top', obj.top ? obj.top + deltaY : deltaY);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  bottom: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+
+    const bounds = calculateBounds(objects);
+    
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const objBottom = objBounds.top + objBounds.height;
+      const deltaY = bounds.bottom - objBottom;
+      obj.set('top', obj.top ? obj.top + deltaY : deltaY);
+      obj.setCoords();
+    });
+    
+    canvas.renderAll();
+    return true;
+  }
+};
+
+// Distribution functions
+export const distributeObjects = {
+  horizontally: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 3) return false;
+    
+    // Sort objects by their left position
+    const sortedObjects = [...objects].sort((a, b) => {
+      const boundsA = a.getBoundingRect(true, true);
+      const boundsB = b.getBoundingRect(true, true);
+      return boundsA.left - boundsB.left;
+    });
+    
+    const firstObj = sortedObjects[0];
+    const lastObj = sortedObjects[sortedObjects.length - 1];
+    const firstBounds = firstObj.getBoundingRect(true, true);
+    const lastBounds = lastObj.getBoundingRect(true, true);
+    
+    // Calculate total available space
+    const totalSpace = (lastBounds.left - firstBounds.left - firstBounds.width);
+    
+    // Calculate total width of middle objects
+    let totalMiddleWidth = 0;
+    for (let i = 1; i < sortedObjects.length - 1; i++) {
+      const bounds = sortedObjects[i].getBoundingRect(true, true);
+      totalMiddleWidth += bounds.width;
+    }
+    
+    // Calculate gap between objects
+    const numGaps = sortedObjects.length - 1;
+    const gap = (totalSpace - totalMiddleWidth) / numGaps;
+    
+    if (gap < 0) return false; // Objects are overlapping, can't distribute
+    
+    // Position each object except the first one
+    let currentLeft = firstBounds.left + firstBounds.width + gap;
+    for (let i = 1; i < sortedObjects.length - 1; i++) {
+      const obj = sortedObjects[i];
+      const bounds = obj.getBoundingRect(true, true);
+      const deltaX = currentLeft - bounds.left;
+      
+      obj.set('left', obj.left ? obj.left + deltaX : deltaX);
+      obj.setCoords();
+      
+      currentLeft += bounds.width + gap;
+    }
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  vertically: (canvas: fabric.Canvas, options: AlignmentOptions = {}): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 3) return false;
+    
+    // Sort objects by their top position
+    const sortedObjects = [...objects].sort((a, b) => {
+      const boundsA = a.getBoundingRect(true, true);
+      const boundsB = b.getBoundingRect(true, true);
+      return boundsA.top - boundsB.top;
+    });
+    
+    const firstObj = sortedObjects[0];
+    const lastObj = sortedObjects[sortedObjects.length - 1];
+    const firstBounds = firstObj.getBoundingRect(true, true);
+    const lastBounds = lastObj.getBoundingRect(true, true);
+    
+    // Calculate total available space
+    const totalSpace = (lastBounds.top - firstBounds.top - firstBounds.height);
+    
+    // Calculate total height of middle objects
+    let totalMiddleHeight = 0;
+    for (let i = 1; i < sortedObjects.length - 1; i++) {
+      const bounds = sortedObjects[i].getBoundingRect(true, true);
+      totalMiddleHeight += bounds.height;
+    }
+    
+    // Calculate gap between objects
+    const numGaps = sortedObjects.length - 1;
+    const gap = (totalSpace - totalMiddleHeight) / numGaps;
+    
+    if (gap < 0) return false; // Objects are overlapping, can't distribute
+    
+    // Position each object except the first one
+    let currentTop = firstBounds.top + firstBounds.height + gap;
+    for (let i = 1; i < sortedObjects.length - 1; i++) {
+      const obj = sortedObjects[i];
+      const bounds = obj.getBoundingRect(true, true);
+      const deltaY = currentTop - bounds.top;
+      
+      obj.set('top', obj.top ? obj.top + deltaY : deltaY);
+      obj.setCoords();
+      
+      currentTop += bounds.height + gap;
+    }
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  spaceEvenlyHorizontal: (canvas: fabric.Canvas, options?: AlignmentOptions): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+    
+    // Sort objects by their left position
+    const sortedObjects = [...objects].sort((a, b) => {
+      const boundsA = a.getBoundingRect(true, true);
+      const boundsB = b.getBoundingRect(true, true);
+      return boundsA.left - boundsB.left;
+    });
+    
+    const bounds = calculateBounds(sortedObjects);
+    const totalWidth = bounds.width;
+    
+    // Calculate individual object widths
+    let objectsWidth = 0;
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      objectsWidth += objBounds.width;
+    });
+    
+    // Calculate equal space between objects
+    const spacing = (totalWidth - objectsWidth) / (objects.length - 1);
+    if (spacing < 0) return false; // Objects are too wide to space evenly
+    
+    // Position objects with equal spacing
+    let currentX = bounds.left;
+    sortedObjects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const deltaX = currentX - objBounds.left;
+      
+      obj.set('left', obj.left ? obj.left + deltaX : deltaX);
+      obj.setCoords();
+      
+      currentX += objBounds.width + spacing;
+    });
+    
+    canvas.renderAll();
+    return true;
+  },
+  
+  spaceEvenlyVertical: (canvas: fabric.Canvas, options?: AlignmentOptions): boolean => {
+    const objects = getTargetObjects(canvas, options);
+    if (objects.length < 2) return false;
+    
+    // Sort objects by their top position
+    const sortedObjects = [...objects].sort((a, b) => {
+      const boundsA = a.getBoundingRect(true, true);
+      const boundsB = b.getBoundingRect(true, true);
+      return boundsA.top - boundsB.top;
+    });
+    
+    const bounds = calculateBounds(sortedObjects);
+    const totalHeight = bounds.height;
+    
+    // Calculate individual object heights
+    let objectsHeight = 0;
+    objects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      objectsHeight += objBounds.height;
+    });
+    
+    // Calculate equal space between objects
+    const spacing = (totalHeight - objectsHeight) / (objects.length - 1);
+    if (spacing < 0) return false; // Objects are too tall to space evenly
+    
+    // Position objects with equal spacing
+    let currentY = bounds.top;
+    sortedObjects.forEach((obj) => {
+      const objBounds = obj.getBoundingRect(true, true);
+      const deltaY = currentY - objBounds.top;
+      
+      obj.set('top', obj.top ? obj.top + deltaY : deltaY);
+      obj.setCoords();
+      
+      currentY += objBounds.height + spacing;
+    });
+    
+    canvas.renderAll();
+    return true;
+  }
+};
+
+// Preset alignments
+export const alignmentPresets = {
+  topLeft: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.left(canvas) && alignObjects.top(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  topCenter: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.centerH(canvas) && alignObjects.top(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  topRight: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.right(canvas) && alignObjects.top(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  middleLeft: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.left(canvas) && alignObjects.middle(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  center: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.centerH(canvas) && alignObjects.middle(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  middleRight: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.right(canvas) && alignObjects.middle(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  bottomLeft: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.left(canvas) && alignObjects.bottom(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  bottomCenter: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.centerH(canvas) && alignObjects.bottom(canvas)) {
+      return true;
+    }
+    return false;
+  },
+  
+  bottomRight: (canvas: fabric.Canvas): boolean => {
+    if (alignObjects.right(canvas) && alignObjects.bottom(canvas)) {
+      return true;
+    }
+    return false;
+  }
+};
+
+// Dynamic alignment guides
+export interface AlignmentGuide {
+  type: 'edge' | 'center' | 'line';
+  position: fabric.Point;
+  dimension: number; // length of guide
+  orientation: 'horizontal' | 'vertical';
 }
 
-/**
- * Alignment functions
- */
-export const alignObjects = {
-  // Horizontal alignments
-  left: (canvas: fabric.Canvas, targetLeft?: number) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length === 0) return;
-    
-    // If targetLeft is not provided, use the left-most object as reference
-    if (targetLeft === undefined) {
-      const bounds = getCollectionBounds(activeObjects);
-      targetLeft = bounds.left;
-    }
-    
-    activeObjects.forEach(obj => {
-      obj.set('left', targetLeft);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
+// Create alignment guides based on object positions
+export const createAlignmentGuides = (
+  canvas: fabric.Canvas,
+  activeObject: fabric.Object,
+  otherObjects: fabric.Object[]
+): fabric.Line[] => {
+  if (!activeObject || !otherObjects.length) return [];
   
-  centerH: (canvas: fabric.Canvas) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length === 0) return;
-    
-    const selectionBounds = getCollectionBounds(activeObjects);
-    const centerX = selectionBounds.left + selectionBounds.width / 2;
-    
-    activeObjects.forEach(obj => {
-      const objWidth = obj.getScaledWidth();
-      obj.set('left', centerX - objWidth / 2);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  right: (canvas: fabric.Canvas, targetRight?: number) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length === 0) return;
-    
-    // If targetRight is not provided, use the right-most object as reference
-    if (targetRight === undefined) {
-      const bounds = getCollectionBounds(activeObjects);
-      targetRight = bounds.left + bounds.width;
-    }
-    
-    activeObjects.forEach(obj => {
-      const objWidth = obj.getScaledWidth();
-      obj.set('left', targetRight - objWidth);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  // Vertical alignments
-  top: (canvas: fabric.Canvas, targetTop?: number) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length === 0) return;
-    
-    // If targetTop is not provided, use the top-most object as reference
-    if (targetTop === undefined) {
-      const bounds = getCollectionBounds(activeObjects);
-      targetTop = bounds.top;
-    }
-    
-    activeObjects.forEach(obj => {
-      obj.set('top', targetTop);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  middle: (canvas: fabric.Canvas) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length === 0) return;
-    
-    const selectionBounds = getCollectionBounds(activeObjects);
-    const centerY = selectionBounds.top + selectionBounds.height / 2;
-    
-    activeObjects.forEach(obj => {
-      const objHeight = obj.getScaledHeight();
-      obj.set('top', centerY - objHeight / 2);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  bottom: (canvas: fabric.Canvas, targetBottom?: number) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length === 0) return;
-    
-    // If targetBottom is not provided, use the bottom-most object as reference
-    if (targetBottom === undefined) {
-      const bounds = getCollectionBounds(activeObjects);
-      targetBottom = bounds.top + bounds.height;
-    }
-    
-    activeObjects.forEach(obj => {
-      const objHeight = obj.getScaledHeight();
-      obj.set('top', targetBottom - objHeight);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  }
-};
-
-/**
- * Distribution functions
- */
-export const distributeObjects = {
-  horizontally: (canvas: fabric.Canvas) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length < 3) return false;
-    
-    // Sort objects by their horizontal position
-    const sortedObjects = [...activeObjects].sort((a, b) => 
-      (a.left || 0) - (b.left || 0)
-    );
-    
-    // Calculate total available space
-    const firstObject = sortedObjects[0];
-    const lastObject = sortedObjects[sortedObjects.length - 1];
-    const leftBound = firstObject.left || 0;
-    const rightBound = (lastObject.left || 0) + lastObject.getScaledWidth();
-    const totalSpace = rightBound - leftBound;
-    
-    // Calculate total objects width
-    let totalObjectsWidth = 0;
-    sortedObjects.forEach(obj => {
-      totalObjectsWidth += obj.getScaledWidth();
-    });
-    
-    // Calculate equal spacing between objects
-    const spacing = (totalSpace - totalObjectsWidth) / (sortedObjects.length - 1);
-    
-    // Position each object with equal spacing
-    let currentLeft = leftBound;
-    sortedObjects.forEach((obj, index) => {
-      if (index === 0) return; // Skip the first object, it stays in place
-      if (index === sortedObjects.length - 1) return; // Skip the last object, it stays in place
-      
-      const previousObj = sortedObjects[index - 1];
-      currentLeft = (previousObj.left || 0) + previousObj.getScaledWidth() + spacing;
-      obj.set('left', currentLeft);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  vertically: (canvas: fabric.Canvas) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length < 3) return false;
-    
-    // Sort objects by their vertical position
-    const sortedObjects = [...activeObjects].sort((a, b) => 
-      (a.top || 0) - (b.top || 0)
-    );
-    
-    // Calculate total available space
-    const firstObject = sortedObjects[0];
-    const lastObject = sortedObjects[sortedObjects.length - 1];
-    const topBound = firstObject.top || 0;
-    const bottomBound = (lastObject.top || 0) + lastObject.getScaledHeight();
-    const totalSpace = bottomBound - topBound;
-    
-    // Calculate total objects height
-    let totalObjectsHeight = 0;
-    sortedObjects.forEach(obj => {
-      totalObjectsHeight += obj.getScaledHeight();
-    });
-    
-    // Calculate equal spacing between objects
-    const spacing = (totalSpace - totalObjectsHeight) / (sortedObjects.length - 1);
-    
-    // Position each object with equal spacing
-    let currentTop = topBound;
-    sortedObjects.forEach((obj, index) => {
-      if (index === 0) return; // Skip the first object, it stays in place
-      if (index === sortedObjects.length - 1) return; // Skip the last object, it stays in place
-      
-      const previousObj = sortedObjects[index - 1];
-      currentTop = (previousObj.top || 0) + previousObj.getScaledHeight() + spacing;
-      obj.set('top', currentTop);
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  spaceEvenlyHorizontal: (canvas: fabric.Canvas) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length < 3) return false;
-    
-    // Sort objects by their horizontal position
-    const sortedObjects = [...activeObjects].sort((a, b) => 
-      (a.left || 0) - (b.left || 0)
-    );
-    
-    // Calculate the bounds of the selection
-    const bounds = getCollectionBounds(activeObjects);
-    
-    // Calculate equal spacing
-    const totalWidth = bounds.width;
-    let objectsWidth = 0;
-    
-    sortedObjects.forEach(obj => {
-      objectsWidth += obj.getScaledWidth();
-    });
-    
-    const totalSpacing = totalWidth - objectsWidth;
-    const spacing = totalSpacing / (sortedObjects.length - 1);
-    
-    // Position objects
-    let currentLeft = bounds.left;
-    sortedObjects.forEach((obj, index) => {
-      obj.set('left', currentLeft);
-      currentLeft += obj.getScaledWidth() + spacing;
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  },
-  
-  spaceEvenlyVertical: (canvas: fabric.Canvas) => {
-    const activeObjects = canvas.getActiveObjects();
-    if (!activeObjects || activeObjects.length < 3) return false;
-    
-    // Sort objects by their vertical position
-    const sortedObjects = [...activeObjects].sort((a, b) => 
-      (a.top || 0) - (b.top || 0)
-    );
-    
-    // Calculate the bounds of the selection
-    const bounds = getCollectionBounds(activeObjects);
-    
-    // Calculate equal spacing
-    const totalHeight = bounds.height;
-    let objectsHeight = 0;
-    
-    sortedObjects.forEach(obj => {
-      objectsHeight += obj.getScaledHeight();
-    });
-    
-    const totalSpacing = totalHeight - objectsHeight;
-    const spacing = totalSpacing / (sortedObjects.length - 1);
-    
-    // Position objects
-    let currentTop = bounds.top;
-    sortedObjects.forEach((obj, index) => {
-      obj.set('top', currentTop);
-      currentTop += obj.getScaledHeight() + spacing;
-    });
-    
-    canvas.requestRenderAll();
-    return true;
-  }
-};
-
-/**
- * Create dynamic alignment guides
- */
-export function createAlignmentGuides(
-  canvas: fabric.Canvas, 
-  object: fabric.Object,
-  objects: fabric.Object[],
-  threshold: number = 10
-): fabric.Line[] {
-  const guides: fabric.Line[] = [];
-  
-  if (!object || !objects.length) return guides;
-  
-  // Get object bounds
-  const objectBounds = object.getBoundingRect(true, true);
-  const objectCenter = {
-    x: objectBounds.left + objectBounds.width / 2,
-    y: objectBounds.top + objectBounds.height / 2
+  const activeBounds = activeObject.getBoundingRect(true, true);
+  const activeCenter = {
+    x: activeBounds.left + activeBounds.width / 2,
+    y: activeBounds.top + activeBounds.height / 2
   };
   
-  // For each other object, check if we should create alignment guides
-  objects.forEach(otherObj => {
-    if (otherObj === object) return;
-    
-    const otherBounds = otherObj.getBoundingRect(true, true);
-    const otherCenter = {
-      x: otherBounds.left + otherBounds.width / 2,
-      y: otherBounds.top + otherBounds.height / 2
+  const guides: fabric.Line[] = [];
+  const snapThreshold = 10; // pixels
+  const guideStyle = {
+    stroke: '#2196f3', // blue color
+    strokeWidth: 1,
+    strokeDashArray: [5, 5],
+    selectable: false,
+    evented: false,
+    data: { type: 'guide' }
+  };
+  
+  // Function to create a guide line
+  const createGuideLine = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    isActive: boolean
+  ): fabric.Line => {
+    const line = new fabric.Line([x1, y1, x2, y2], {
+      ...guideStyle,
+      opacity: isActive ? 1 : 0.5,
+    });
+    return line;
+  };
+  
+  // Check each object for possible alignments
+  otherObjects.forEach(obj => {
+    const objBounds = obj.getBoundingRect(true, true);
+    const objCenter = {
+      x: objBounds.left + objBounds.width / 2,
+      y: objBounds.top + objBounds.height / 2
     };
     
-    // Horizontal center alignment
-    if (Math.abs(objectCenter.x - otherCenter.x) < threshold) {
+    // Check for vertical alignments (left, center, right)
+    
+    // Left edges alignment
+    if (Math.abs(activeBounds.left - objBounds.left) < snapThreshold) {
+      const y1 = Math.min(activeBounds.top, objBounds.top) - 20;
+      const y2 = Math.max(
+        activeBounds.top + activeBounds.height,
+        objBounds.top + objBounds.height
+      ) + 20;
+      
       guides.push(
-        new fabric.Line(
-          [otherCenter.x, 0, otherCenter.x, canvas.height || 600],
-          {
-            stroke: '#1EAEDB',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false
-          }
+        createGuideLine(
+          objBounds.left,
+          y1,
+          objBounds.left,
+          y2,
+          true
         )
       );
     }
     
-    // Vertical center alignment
-    if (Math.abs(objectCenter.y - otherCenter.y) < threshold) {
+    // Right edges alignment
+    if (
+      Math.abs(
+        activeBounds.left + activeBounds.width - 
+        (objBounds.left + objBounds.width)
+      ) < snapThreshold
+    ) {
+      const y1 = Math.min(activeBounds.top, objBounds.top) - 20;
+      const y2 = Math.max(
+        activeBounds.top + activeBounds.height,
+        objBounds.top + objBounds.height
+      ) + 20;
+      
       guides.push(
-        new fabric.Line(
-          [0, otherCenter.y, canvas.width || 800, otherCenter.y],
-          {
-            stroke: '#1EAEDB',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false
-          }
+        createGuideLine(
+          objBounds.left + objBounds.width,
+          y1,
+          objBounds.left + objBounds.width,
+          y2,
+          true
         )
       );
     }
     
-    // Left edge alignment
-    if (Math.abs(objectBounds.left - otherBounds.left) < threshold) {
+    // Center vertical alignment
+    if (Math.abs(activeCenter.x - objCenter.x) < snapThreshold) {
+      const y1 = Math.min(activeBounds.top, objBounds.top) - 20;
+      const y2 = Math.max(
+        activeBounds.top + activeBounds.height,
+        objBounds.top + objBounds.height
+      ) + 20;
+      
       guides.push(
-        new fabric.Line(
-          [otherBounds.left, 0, otherBounds.left, canvas.height || 600],
-          {
-            stroke: '#1EAEDB',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false
-          }
+        createGuideLine(
+          objCenter.x,
+          y1,
+          objCenter.x,
+          y2,
+          true
         )
       );
     }
     
-    // Right edge alignment
-    if (Math.abs(
-      (objectBounds.left + objectBounds.width) - 
-      (otherBounds.left + otherBounds.width)
-    ) < threshold) {
-      const rightEdge = otherBounds.left + otherBounds.width;
+    // Check for horizontal alignments (top, middle, bottom)
+    
+    // Top edges alignment
+    if (Math.abs(activeBounds.top - objBounds.top) < snapThreshold) {
+      const x1 = Math.min(activeBounds.left, objBounds.left) - 20;
+      const x2 = Math.max(
+        activeBounds.left + activeBounds.width,
+        objBounds.left + objBounds.width
+      ) + 20;
+      
       guides.push(
-        new fabric.Line(
-          [rightEdge, 0, rightEdge, canvas.height || 600],
-          {
-            stroke: '#1EAEDB',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false
-          }
+        createGuideLine(
+          x1,
+          objBounds.top,
+          x2,
+          objBounds.top,
+          true
         )
       );
     }
     
-    // Top edge alignment
-    if (Math.abs(objectBounds.top - otherBounds.top) < threshold) {
+    // Bottom edges alignment
+    if (
+      Math.abs(
+        activeBounds.top + activeBounds.height - 
+        (objBounds.top + objBounds.height)
+      ) < snapThreshold
+    ) {
+      const x1 = Math.min(activeBounds.left, objBounds.left) - 20;
+      const x2 = Math.max(
+        activeBounds.left + activeBounds.width,
+        objBounds.left + objBounds.width
+      ) + 20;
+      
       guides.push(
-        new fabric.Line(
-          [0, otherBounds.top, canvas.width || 800, otherBounds.top],
-          {
-            stroke: '#1EAEDB',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false
-          }
+        createGuideLine(
+          x1,
+          objBounds.top + objBounds.height,
+          x2,
+          objBounds.top + objBounds.height,
+          true
         )
       );
     }
     
-    // Bottom edge alignment
-    if (Math.abs(
-      (objectBounds.top + objectBounds.height) - 
-      (otherBounds.top + otherBounds.height)
-    ) < threshold) {
-      const bottomEdge = otherBounds.top + otherBounds.height;
+    // Middle horizontal alignment
+    if (Math.abs(activeCenter.y - objCenter.y) < snapThreshold) {
+      const x1 = Math.min(activeBounds.left, objBounds.left) - 20;
+      const x2 = Math.max(
+        activeBounds.left + activeBounds.width,
+        objBounds.left + objBounds.width
+      ) + 20;
+      
       guides.push(
-        new fabric.Line(
-          [0, bottomEdge, canvas.width || 800, bottomEdge],
-          {
-            stroke: '#1EAEDB',
-            strokeWidth: 1,
-            strokeDashArray: [5, 5],
-            selectable: false,
-            evented: false
-          }
+        createGuideLine(
+          x1,
+          objCenter.y,
+          x2,
+          objCenter.y,
+          true
         )
       );
     }
   });
   
   return guides;
-}
+};
 
-/**
- * Clear all alignment guides from the canvas
- */
-export function clearAlignmentGuides(canvas: fabric.Canvas) {
-  const guides = canvas.getObjects().filter(obj => {
-    return obj.type === 'line' && 
-      obj.stroke === '#1EAEDB' && 
-      !obj.selectable && 
-      !obj.evented;
-  });
-  
-  guides.forEach(guide => {
-    canvas.remove(guide);
-  });
-  
-  canvas.requestRenderAll();
-}
+// Clear all alignment guides from canvas
+export const clearAlignmentGuides = (canvas: fabric.Canvas): void => {
+  const guides = canvas.getObjects().filter(obj => obj.data?.type === 'guide');
+  guides.forEach(guide => canvas.remove(guide));
+};
