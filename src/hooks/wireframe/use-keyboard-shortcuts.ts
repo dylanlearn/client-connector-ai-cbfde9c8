@@ -74,30 +74,39 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = DEFAULT_C
       categories[category].push(shortcut);
     });
     
-    const messageContent = (
-      <div className="shortcuts-toast">
-        <h3 className="font-bold mb-2">Keyboard Shortcuts</h3>
-        {Object.entries(categories).map(([category, categoryShortcuts]) => (
-          <div key={category} className="mb-2">
-            <h4 className="font-semibold text-sm">{category}</h4>
-            <ul className="text-sm">
-              {categoryShortcuts.map(shortcut => (
-                <li key={shortcut.name} className="flex justify-between">
-                  <span>{shortcut.description}</span>
-                  <span className="font-mono bg-muted px-1 rounded ml-2">
-                    {shortcut.keys.join('+')}
+    // Create structured message content for the toast
+    // We're using a string description instead of JSX
+    const formatShortcuts = () => {
+      return Object.entries(categories).map(([category, categoryShortcuts]) => {
+        return `
+          <div key="${category}" class="mb-2">
+            <h4 class="font-semibold text-sm">${category}</h4>
+            <ul class="text-sm">
+              ${categoryShortcuts.map(shortcut => `
+                <li key="${shortcut.name}" class="flex justify-between">
+                  <span>${shortcut.description}</span>
+                  <span class="font-mono bg-muted px-1 rounded ml-2">
+                    ${shortcut.keys.join('+')}
                   </span>
                 </li>
-              ))}
+              `).join('')}
             </ul>
           </div>
-        ))}
+        `;
+      }).join('');
+    };
+    
+    // Format HTML string for the toast description
+    const htmlContent = `
+      <div class="shortcuts-toast">
+        <h3 class="font-bold mb-2">Keyboard Shortcuts</h3>
+        ${formatShortcuts()}
       </div>
-    );
+    `;
     
     toast({
       title: "Keyboard Shortcuts",
-      description: messageContent,
+      description: htmlContent,
       duration: 8000,
     });
   }, [shortcuts, shortcutConfig.showToasts, toast]);
