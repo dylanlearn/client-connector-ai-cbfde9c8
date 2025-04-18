@@ -74,7 +74,6 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     canvasConfig: mergedConfig,
     onSectionClick,
     onRenderComplete
-    // Remove enableAnimation property as it doesn't exist in type
   });
   
   // Use fabric hook for additional canvas manipulation

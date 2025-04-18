@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Variants, TargetAndTransition } from 'framer-motion';
 import { FidelityLevel } from '@/hooks/wireframe/use-fidelity-renderer';
@@ -77,7 +78,7 @@ const AnimationPreviewFrame: React.FC<AnimationPreviewFrameProps> = ({
   };
 
   const getPulseAnimation = (): TargetAndTransition => {
-    if (isPlaying && fidelityLevel !== 'wireframe') {
+    if (isPlaying && fidelityLevel !== 'low') {
       return {
         scale: [1, 1.02, 1],
         transition: {
