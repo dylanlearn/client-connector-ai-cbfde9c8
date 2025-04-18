@@ -1,64 +1,139 @@
+import { useState, useCallback } from 'react';
 
-import { useCallback, useEffect } from 'react';
-import { useFidelity } from '@/components/wireframe/fidelity/FidelityContext';
+export type FidelityLevel = 'low' | 'medium' | 'high';
+export type MaterialType = 'basic' | 'flat' | 'matte' | 'glossy' | 'metallic' | 'glass' | 'textured' | 'metal' | 'plastic';
+export type SurfaceTreatment = 'smooth' | 'rough' | 'bumpy' | 'engraved' | 'embossed' | 'matte' | 'glossy' | 'textured' | 'frosted';
 
-export const useFidelityRenderer = () => {
-  const { currentLevel, settings, isTransitioning } = useFidelity();
+export interface MaterialStyle {
+  backgroundColor?: string;
+  color?: string;
+  border?: string;
+  boxShadow?: string;
+  filter?: string;
+  // Add other style properties as needed
+}
+
+export interface UseFidelityRendererOptions {
+  initialFidelity?: FidelityLevel;
+  initialMaterial?: MaterialType;
+  initialSurface?: SurfaceTreatment;
+  initialColor?: string;
+  initialIntensity?: number;
+}
+
+export function useFidelityRenderer(options: UseFidelityRendererOptions = {}) {
+  const {
+    initialFidelity = 'medium',
+    initialMaterial = 'flat',
+    initialSurface = 'smooth',
+    initialColor = '#4a90e2',
+    initialIntensity = 1
+  } = options;
   
-  // Apply performance optimizations based on fidelity level
-  useEffect(() => {
-    // Add data attributes to document for CSS-based optimizations
-    document.documentElement.setAttribute('data-fidelity-level', currentLevel);
-    document.documentElement.style.setProperty('--fidelity-detail-level', settings.detailLevel.toString());
-    document.documentElement.style.setProperty('--fidelity-shadow-strength', settings.shadowIntensity.toString());
-    document.documentElement.style.setProperty('--fidelity-render-quality', settings.renderQuality.toString());
+  const [fidelity, setFidelity] = useState<FidelityLevel>(initialFidelity);
+  const [material, setMaterial] = useState<MaterialType>(initialMaterial);
+  const [surface, setSurface] = useState<SurfaceTreatment>(initialSurface);
+  const [color, setColor] = useState<string>(initialColor);
+  const [intensity, setIntensity] = useState<number>(initialIntensity);
+  
+  // Fidelity level styles
+  const fidelityStyles: Record<FidelityLevel, React.CSSProperties> = {
+    low: {
+      border: '1px solid #ccc',
+      backgroundColor: '#eee'
+    },
+    medium: {
+      border: '1px solid #999',
+      backgroundColor: '#ddd'
+    },
+    high: {
+      border: '1px solid #666',
+      backgroundColor: '#ccc'
+    }
+  };
+  
+  // Material gloss maps
+  const materialGlossMap: Partial<Record<MaterialType, string>> = {
+    matte: 'matte',
+    glossy: 'glossy',
+    metallic: 'metallic',
+    glass: 'glass',
+    textured: 'textured',
+    metal: 'metal',
+    plastic: 'plastic'
+  };
+  
+  // Surface treatments
+  const surfaceTreatments: Record<SurfaceTreatment, MaterialStyle> = {
+    smooth: {},
+    rough: {
+      filter: 'blur(1px)'
+    },
+    bumpy: {
+      filter: 'blur(2px)'
+    },
+    engraved: {
+      boxShadow: 'inset 0px 0px 5px rgba(0,0,0,0.6)'
+    },
+    embossed: {
+      boxShadow: '2px 2px 5px rgba(0,0,0,0.3)'
+    },
+    matte: {},
+    glossy: {},
+    textured: {},
+    frosted: {}
+  };
+  
+  // Generate material styles
+  const generateMaterialStyles = useCallback((
+    materialType: MaterialType,
+    surfaceTreatment: SurfaceTreatment,
+    baseColor: string,
+    lightIntensity: number
+  ): MaterialStyle => {
+    let styles: MaterialStyle = {};
     
-    // Apply additional settings based on fidelity level
-    if (currentLevel === 'wireframe') {
-      document.documentElement.style.setProperty('--fidelity-color-depth', 'grayscale');
-    } else {
-      document.documentElement.style.setProperty('--fidelity-color-depth', settings.colorDepth);
+    // Apply base color
+    styles.backgroundColor = baseColor;
+    styles.color = baseColor;
+    
+    // Apply gloss
+    const gloss = materialGlossMap[materialType];
+    if (gloss === 'glossy') {
+      styles.boxShadow = `0 0 10px ${baseColor}`;
+    } else if (gloss === 'metallic') {
+      styles.border = `1px solid ${baseColor}`;
+    } else if (gloss === 'glass') {
+      styles.backgroundColor = 'transparent';
+      styles.border = `1px solid ${baseColor}`;
     }
     
-    if (!settings.showAnimations) {
-      document.documentElement.classList.add('disable-animations');
-    } else {
-      document.documentElement.classList.remove('disable-animations');
+    // Apply surface treatment
+    const surfaceStyle = surfaceTreatments[surfaceTreatment];
+    if (surfaceStyle) {
+      styles = { ...styles, ...surfaceStyle };
     }
     
-    return () => {
-      // Clean up when unmounted
-      document.documentElement.removeAttribute('data-fidelity-level');
-    };
-  }, [currentLevel, settings]);
-  
-  // Calculate the performance impact of current settings
-  const getPerformanceImpact = useCallback(() => {
-    const baseScore = {
-      wireframe: 0.2,
-      low: 0.4,
-      medium: 0.7,
-      high: 1.0
-    }[currentLevel];
+    // Apply light intensity
+    if (lightIntensity > 1) {
+      styles.boxShadow = `0 0 ${lightIntensity.toString()}px ${baseColor}`;
+    }
     
-    let total = baseScore;
-    
-    // Add impact of various features
-    if (settings.showShadows) total += 0.2 * settings.shadowIntensity;
-    total += settings.renderQuality * 0.3;
-    if (settings.showAnimations) total += 0.15;
-    if (settings.showTextures) total += 0.1;
-    if (settings.showGradients) total += 0.05;
-    
-    return Math.min(total, 1.0);
-  }, [currentLevel, settings]);
+    return styles;
+  }, [materialGlossMap, surfaceTreatments]);
   
   return {
-    currentLevel,
-    settings,
-    isTransitioning,
-    performanceImpact: getPerformanceImpact()
+    fidelity,
+    material,
+    surface,
+    color,
+    intensity,
+    setFidelity,
+    setMaterial,
+    setSurface,
+    setColor,
+    setIntensity,
+    fidelityStyles,
+    generateMaterialStyles
   };
-};
-
-export default useFidelityRenderer;
+}

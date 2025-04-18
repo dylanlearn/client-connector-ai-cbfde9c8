@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect } from 'react';
 import { useFidelity } from '@/components/wireframe/fidelity/FidelityContext';
 import { MaterialType, SurfaceTreatment } from '@/components/wireframe/fidelity/FidelityLevels';
@@ -74,9 +73,7 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
     };
     
     // Gradients - only show if fidelity settings allow it
-    const gradients: Record<MaterialType, string | undefined> = {
-      basic: undefined,
-      flat: undefined,
+    const materialGlossMap: Partial<Record<MaterialType, string>> = {
       matte: settings.showGradients ? 
         `linear-gradient(to bottom, rgba(${rgbString}, ${0.95 * materialIntensity}) 0%, rgba(${rgbString}, 1) 100%)` : 
         color,
@@ -87,7 +84,9 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
         `linear-gradient(135deg, rgba(${rgbString}, 0.9) 0%, rgba(${rgbString}, 1) 50%, rgba(${rgbString}, 0.8) 100%)` : 
         color,
       glass: `rgba(${rgbString}, ${0.15 * materialIntensity})`,
-      textured: color
+      textured: color,
+      metal: color,
+      plastic: color
     };
     
     // Material-specific styles
@@ -109,7 +108,7 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
       case 'matte':
         return {
           ...baseStyles,
-          background: gradients.matte || color,
+          background: materialGlossMap.matte || color,
           boxShadow: settings.showShadows ? 
             `0px 2px 4px rgba(0, 0, 0, ${0.1 * materialIntensity * settings.shadowIntensity})` : 
             'none'
@@ -118,7 +117,7 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
       case 'glossy':
         return {
           ...baseStyles,
-          background: gradients.glossy || color,
+          background: materialGlossMap.glossy || color,
           boxShadow: settings.showShadows ? 
             `0px 2px 8px rgba(0, 0, 0, ${0.15 * materialIntensity * settings.shadowIntensity}), 
             inset 0px 1px 1px rgba(255, 255, 255, ${0.25 * materialIntensity})` : 
@@ -128,7 +127,7 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
       case 'metallic':
         return {
           ...baseStyles,
-          background: gradients.metallic || color,
+          background: materialGlossMap.metallic || color,
           boxShadow: settings.showShadows ? 
             `0px 3px 10px rgba(0, 0, 0, ${0.2 * materialIntensity * settings.shadowIntensity}),
             inset 0px 1px 1px rgba(255, 255, 255, ${0.3 * materialIntensity})` : 
@@ -138,7 +137,7 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
       case 'glass':
         return {
           ...baseStyles,
-          background: gradients.glass,
+          background: materialGlossMap.glass,
           backdropFilter: settings.showTextures ? `blur(${8 * materialIntensity}px)` : 'none',
           boxShadow: settings.showShadows ? 
             `0px 4px 12px rgba(0, 0, 0, ${0.1 * materialIntensity * settings.shadowIntensity}),
@@ -170,7 +169,7 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
     }
     
     // Surface treatment styles
-    const treatmentStyles: Record<SurfaceTreatment, MaterialStyle> = {
+    const surfaceTreatments: Record<SurfaceTreatment, MaterialStyle> = {
       smooth: {},
       rough: {
         filter: `contrast(${0.95 * intensity}) brightness(${0.98 * intensity})`
@@ -188,10 +187,22 @@ export const useMaterialRenderer = (options: UseMaterialRendererOptions = {}) =>
           `0 1px 2px rgba(255,255,255,${0.3 * intensity}), 
           inset 0 1px 1px rgba(0,0,0,${0.15 * intensity * settings.shadowIntensity})` : 
           'none'
+      },
+      matte: {
+        filter: `contrast(${0.95 * intensity}) brightness(${0.98 * intensity})`
+      },
+      glossy: {
+        filter: `contrast(${1.05 * intensity})`
+      },
+      textured: {
+        filter: `contrast(${0.95 * intensity}) brightness(${0.98 * intensity})`
+      },
+      frosted: {
+        filter: `contrast(${0.95 * intensity}) brightness(${0.98 * intensity})`
       }
     };
     
-    return treatmentStyles[surface] || {};
+    return surfaceTreatments[surface] || {};
   }, [settings]);
   
   // Apply border styles based on fidelity level

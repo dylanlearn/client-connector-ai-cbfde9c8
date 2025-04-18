@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
-import { SelectionConfig } from '@/components/wireframe/utils/types';
+import { SelectionConfig } from '@/components/wireframe/layers/LayerTypes';
 
 /**
  * Hook to manage advanced selection functionality

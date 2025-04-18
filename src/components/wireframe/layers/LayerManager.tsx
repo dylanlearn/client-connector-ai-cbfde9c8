@@ -200,7 +200,7 @@ const LayerManager: React.FC<LayerManagerProps> = ({ initialLayers = [], onLayer
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </ContextMenuTrigger>
-            <ContextMenuContent align="end" className="w-[200px]">
+            <ContextMenuContent className="w-64">
               <ContextMenuItem onClick={() => toggleVisibility(layer.id)}>
                 {layer.visible ? 'Hide Layer' : 'Show Layer'}
               </ContextMenuItem>
@@ -235,7 +235,7 @@ const LayerManager: React.FC<LayerManagerProps> = ({ initialLayers = [], onLayer
           Add Layer
         </Button>
       </div>
-      <Accordion type="multiple" collapsible>
+      <Accordion type="multiple">
         {layers.map(layer => (
           <AccordionItem value={layer.id} key={layer.id}>
             <AccordionTrigger className="font-medium">{layer.name}</AccordionTrigger>
