@@ -1,349 +1,312 @@
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { fabric } from 'fabric';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { useEnhancedSelection } from '@/hooks/wireframe/use-enhanced-selection';
+import { useWireframeRenderer } from '@/hooks/wireframe/use-wireframe-renderer';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
+import CanvasControls from './controls/CanvasControls';
+import CanvasLoadingIndicator from './canvas/CanvasLoadingIndicator';
+import CanvasErrorDisplay from './canvas/CanvasErrorDisplay';
+import { fabric } from 'fabric';
 import { useKeyboardShortcuts } from '@/hooks/wireframe/use-keyboard-shortcuts';
-import { GuideHandler } from '@/components/wireframe/preview/alignment-guides';
-import EnhancedTransformControls from './controls/EnhancedTransformControls';
-import MultiViewportCanvas from './navigation/MultiViewportCanvas';
-import CanvasMinimap from './navigation/CanvasMinimap';
+import KeyboardShortcutHandler from './controls/KeyboardShortcutHandler';
+import { useEnhancedCanvasNavigation } from '@/hooks/wireframe/use-enhanced-canvas-navigation';
+import { toast } from 'sonner';
 
 export interface EnhancedWireframeCanvasProps {
-  width?: number;
-  height?: number;
+  wireframe: WireframeData | null;
+  darkMode?: boolean;
+  deviceType?: 'desktop' | 'tablet' | 'mobile';
+  canvasConfig?: Partial<WireframeCanvasConfig>;
   className?: string;
-  initialConfig?: {
-    showGrid?: boolean;
-    snapToGrid?: boolean;
-    showGuides?: boolean;
-    gridSize?: number;
-    backgroundColor?: string;
-  };
-  viewportConfig?: {
-    showControls?: boolean;
-    showMinimap?: boolean;
-    allowMultiViewport?: boolean;
-    persistViewportState?: boolean;
-  };
-  onCanvasReady?: (canvas: fabric.Canvas) => void;
-  onObjectSelected?: (object: fabric.Object | null) => void;
-  onObjectsModified?: (objects: fabric.Object[]) => void;
+  onSectionClick?: (sectionId: string, section: any) => void;
+  onRenderComplete?: (canvas: fabric.Canvas) => void;
+  interactive?: boolean;
+  showControls?: boolean;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onResetZoom?: () => void;
+  onToggleGrid?: () => void;
+  onToggleSnapToGrid?: () => void;
+  enableKeyboardShortcuts?: boolean;
 }
 
 const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
-  width = 1200,
-  height = 800,
+  wireframe,
+  darkMode = false,
+  deviceType = 'desktop',
+  canvasConfig = {},
   className,
-  initialConfig = {
-    showGrid: true,
-    snapToGrid: true,
-    showGuides: true,
-    gridSize: 20,
-    backgroundColor: '#ffffff'
-  },
-  viewportConfig = {
-    showControls: true,
-    showMinimap: true,
-    allowMultiViewport: true,
-    persistViewportState: true
-  },
-  onCanvasReady,
-  onObjectSelected,
-  onObjectsModified
+  onSectionClick,
+  onRenderComplete,
+  interactive = true,
+  showControls = true,
+  onZoomIn,
+  onZoomOut,
+  onResetZoom,
+  onToggleGrid,
+  onToggleSnapToGrid,
+  enableKeyboardShortcuts = true
 }) => {
-  const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-  const [showGrid, setShowGrid] = useState<boolean>(initialConfig.showGrid ?? true);
-  const [snapToGrid, setSnapToGrid] = useState<boolean>(initialConfig.snapToGrid ?? true);
-  const [gridSize, setGridSize] = useState<number>(initialConfig.gridSize ?? 20);
-  const guideHandlerRef = useRef<any>(null);
-
-  // Initialize enhanced selection
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Default canvas configuration
+  const defaultConfig: Partial<WireframeCanvasConfig> = {
+    width: 1200,
+    height: 800,
+    zoom: 1,
+    showGrid: true,
+    gridSize: 20,
+    backgroundColor: darkMode ? '#1a1a1a' : '#ffffff',
+    gridColor: darkMode ? 'rgba(255,255,255,0.1)' : '#e0e0e0'
+  };
+  
+  // Merge with provided config
+  const mergedConfig = { ...defaultConfig, ...canvasConfig };
+  
+  // Use the wireframe renderer hook
   const {
-    selectedObject,
-    selectedObjects,
-    selectObjectById,
-    selectMultipleObjectsById,
-    clearSelection
-  } = useEnhancedSelection({
-    canvas,
-    maxHistorySize: 30,
-    selectionPriority: 'front-to-back',
-    persistSelection: true
+    canvasRef,
+    initializeCanvas,
+    renderWireframe,
+    isRendering,
+    error,
+    canvas
+  } = useWireframeRenderer({
+    darkMode,
+    deviceType,
+    interactive,
+    canvasConfig: mergedConfig,
+    onSectionClick,
+    onRenderComplete
   });
 
-  // Initialize canvas
+  // Enhanced navigation
+  const navigation = useEnhancedCanvasNavigation({
+    enableAnimation: true,
+    showMinimap: true
+  });
+
+  // Keyboard shortcuts
+  const keyboardShortcuts = useKeyboardShortcuts({
+    enabled: enableKeyboardShortcuts,
+    showToasts: true
+  });
+
+  // Register keyboard shortcuts
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (enableKeyboardShortcuts && canvas) {
+      // Register common shortcuts
+      keyboardShortcuts.registerShortcut({
+        name: 'delete-selection',
+        keys: ['Delete'],
+        description: 'Delete selected objects',
+        action: () => {
+          const activeObject = canvas.getActiveObject();
+          if (activeObject) {
+            canvas.remove(activeObject);
+            canvas.renderAll();
+            toast.success('Object deleted');
+          }
+        },
+        category: 'Objects'
+      });
 
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-      width,
-      height,
-      backgroundColor: initialConfig.backgroundColor ?? '#ffffff',
-      selection: true,
-      preserveObjectStacking: true
-    });
+      keyboardShortcuts.registerShortcut({
+        name: 'duplicate-selection',
+        keys: ['Ctrl', 'd'],
+        description: 'Duplicate selected objects',
+        action: () => {
+          const activeObject = canvas.getActiveObject();
+          if (activeObject) {
+            activeObject.clone((clone: fabric.Object) => {
+              clone.set({
+                left: activeObject.left! + 20,
+                top: activeObject.top! + 20
+              });
+              canvas.add(clone);
+              canvas.setActiveObject(clone);
+              canvas.renderAll();
+              toast.success('Object duplicated');
+            });
+          }
+        },
+        category: 'Objects'
+      });
 
-    setCanvas(fabricCanvas);
-    
-    if (onCanvasReady) {
-      onCanvasReady(fabricCanvas);
-    }
-
-    // Initialize grid if enabled
-    if (initialConfig.showGrid) {
-      createGrid(fabricCanvas, initialConfig.gridSize ?? 20);
-    }
-
-    // Initialize alignment guides if enabled
-    if (initialConfig.showGuides) {
-      guideHandlerRef.current = new GuideHandler(fabricCanvas, {
-        guideColor: '#2563eb',
-        snapDistance: 8,
-        showDistanceIndicators: true,
-        showCenterGuides: true
+      keyboardShortcuts.registerShortcut({
+        name: 'show-shortcuts',
+        keys: ['?'],
+        description: 'Show keyboard shortcuts',
+        action: () => {
+          keyboardShortcuts.showShortcutsHelp();
+        },
+        category: 'Help'
       });
     }
 
     return () => {
-      fabricCanvas.dispose();
+      if (enableKeyboardShortcuts) {
+        keyboardShortcuts.unregisterShortcut('delete-selection');
+        keyboardShortcuts.unregisterShortcut('duplicate-selection');
+        keyboardShortcuts.unregisterShortcut('show-shortcuts');
+      }
     };
-  }, []);
-
-  // Create grid function
-  const createGrid = useCallback((canvas: fabric.Canvas, size: number = 20) => {
-    // Remove existing grid
-    const existingGridLines = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
-    existingGridLines.forEach(line => canvas.remove(line));
-
-    // Create new grid
-    const canvasWidth = canvas.width ?? width;
-    const canvasHeight = canvas.height ?? height;
-
-    // Create horizontal lines
-    for (let i = 0; i <= canvasHeight; i += size) {
-      const line = new fabric.Line([0, i, canvasWidth, i], {
-        stroke: '#e0e0e0',
-        selectable: false,
-        evented: false,
-        data: { type: 'grid' }
-      });
-      canvas.add(line);
-      canvas.sendToBack(line);
-    }
-
-    // Create vertical lines
-    for (let i = 0; i <= canvasWidth; i += size) {
-      const line = new fabric.Line([i, 0, i, canvasHeight], {
-        stroke: '#e0e0e0',
-        selectable: false,
-        evented: false,
-        data: { type: 'grid' }
-      });
-      canvas.add(line);
-      canvas.sendToBack(line);
-    }
-
-    canvas.renderAll();
-  }, [width, height]);
-
-  // Toggle grid visibility
-  const handleToggleGrid = useCallback(() => {
-    if (!canvas) return;
-
-    const newShowGrid = !showGrid;
-    setShowGrid(newShowGrid);
-
-    const gridLines = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
-
-    if (newShowGrid) {
-      // Show grid
-      createGrid(canvas, gridSize);
-    } else {
-      // Hide grid
-      gridLines.forEach(line => canvas.remove(line));
-    }
-
-    canvas.renderAll();
-
-    toast({
-      title: newShowGrid ? "Grid Shown" : "Grid Hidden",
-      description: newShowGrid
-        ? "The grid is now visible."
-        : "The grid has been hidden."
-    });
-  }, [canvas, showGrid, gridSize, createGrid, toast]);
-
-  // Toggle snap to grid
-  const handleToggleSnapToGrid = useCallback(() => {
-    if (!canvas) return;
-
-    const newSnapToGrid = !snapToGrid;
-    setSnapToGrid(newSnapToGrid);
-
-    toast({
-      title: newSnapToGrid ? "Snap to Grid Enabled" : "Snap to Grid Disabled",
-      description: newSnapToGrid
-        ? "Objects will snap to grid points."
-        : "Objects will move freely."
-    });
-  }, [canvas, snapToGrid, toast]);
-
-  // Update grid size
+  }, [enableKeyboardShortcuts, canvas, keyboardShortcuts]);
+  
+  // Initialize canvas when component mounts
   useEffect(() => {
-    if (canvas && showGrid) {
-      createGrid(canvas, gridSize);
-    }
-  }, [canvas, gridSize, showGrid, createGrid]);
-
-  // Apply snap to grid behavior
-  useEffect(() => {
-    if (!canvas) return;
-
-    const handleObjectMoving = (e: fabric.IEvent) => {
-      if (!snapToGrid || !e.target) return;
-
-      const target = e.target;
-      const x = Math.round((target.left ?? 0) / gridSize) * gridSize;
-      const y = Math.round((target.top ?? 0) / gridSize) * gridSize;
-
-      target.set({
-        left: x,
-        top: y
-      });
-    };
-
-    if (snapToGrid) {
-      canvas.on('object:moving', handleObjectMoving);
-    }
-
-    return () => {
-      canvas.off('object:moving', handleObjectMoving);
-    };
-  }, [canvas, snapToGrid, gridSize]);
-
-  // Set up keyboard shortcuts
-  const { showShortcutsToast } = useKeyboardShortcuts({
-    canvas,
-    enabled: true,
-    skipOnInput: true,
-    onDuplicate: () => {
-      if (!canvas || !selectedObject) return;
+    if (canvasRef.current) {
+      const fabricCanvas = initializeCanvas(canvasRef.current);
       
-      selectedObject.clone((cloned: fabric.Object) => {
-        cloned.set({
-          left: (selectedObject.left || 0) + 20,
-          top: (selectedObject.top || 0) + 20
+      if (fabricCanvas && wireframe) {
+        renderWireframe(wireframe, fabricCanvas, {
+          deviceType,
+          darkMode
         });
-        
-        canvas.add(cloned);
-        canvas.setActiveObject(cloned);
-        canvas.requestRenderAll();
-      });
-    },
-    onDelete: () => {
-      if (!canvas || !selectedObject) return;
+      }
+    }
+  }, [initializeCanvas, wireframe, deviceType, darkMode, renderWireframe]);
+  
+  // Handle canvas control actions
+  const handleZoomIn = () => {
+    if (canvas) {
+      navigation.zoomIn();
+      const newZoom = navigation.currentZoom;
+      canvas.setZoom(newZoom);
+      canvas.renderAll();
       
-      if (selectedObject.type === 'activeSelection') {
-        const selection = selectedObject as fabric.ActiveSelection;
-        selection.getObjects().forEach(obj => canvas.remove(obj));
-        canvas.discardActiveObject();
+      if (onZoomIn) {
+        onZoomIn();
+      }
+    }
+  };
+  
+  const handleZoomOut = () => {
+    if (canvas) {
+      navigation.zoomOut();
+      const newZoom = navigation.currentZoom;
+      canvas.setZoom(newZoom);
+      canvas.renderAll();
+      
+      if (onZoomOut) {
+        onZoomOut();
+      }
+    }
+  };
+  
+  const handleResetZoom = () => {
+    if (canvas) {
+      navigation.resetTransforms();
+      canvas.setZoom(1);
+      canvas.absolutePan(new fabric.Point(0, 0));
+      canvas.renderAll();
+      
+      if (onResetZoom) {
+        onResetZoom();
+      }
+    }
+  };
+  
+  const handleToggleGrid = () => {
+    if (canvas) {
+      // Remove existing grid lines
+      const gridObjects = canvas.getObjects().filter(obj => obj.data?.type === 'grid');
+      gridObjects.forEach(obj => canvas.remove(obj));
+      
+      // Create new grid if needed
+      const showGrid = !Boolean(gridObjects.length);
+      
+      if (showGrid) {
+        // Re-render with grid
+        if (wireframe) {
+          renderWireframe(wireframe, canvas, {
+            deviceType,
+            darkMode,
+            renderGrid: true
+          });
+        }
       } else {
-        canvas.remove(selectedObject);
+        canvas.renderAll();
       }
       
-      canvas.requestRenderAll();
-    },
-    onGroup: () => {
-      if (!canvas || !selectedObject || selectedObject.type !== 'activeSelection') return;
-      
-      const group = (selectedObject as fabric.ActiveSelection).toGroup();
-      canvas.requestRenderAll();
-    },
-    onUngroup: () => {
-      if (!canvas || !selectedObject || selectedObject.type !== 'group') return;
-      
-      const objects = (selectedObject as fabric.Group).toActiveSelection();
-      canvas.requestRenderAll();
-    },
-    onBringForward: () => {
-      if (!canvas || !selectedObject) return;
-      canvas.bringForward(selectedObject);
-      canvas.requestRenderAll();
-    },
-    onSendBackward: () => {
-      if (!canvas || !selectedObject) return;
-      canvas.sendBackwards(selectedObject);
-      canvas.requestRenderAll();
-    },
-    onToggleGrid: handleToggleGrid,
-    onZoomIn: () => {
-      // This will be handled by the MultiViewportCanvas
-    },
-    onZoomOut: () => {
-      // This will be handled by the MultiViewportCanvas
-    }
-  });
-
-  // Call onObjectSelected when selection changes
-  useEffect(() => {
-    if (onObjectSelected) {
-      onObjectSelected(selectedObject);
-    }
-  }, [selectedObject, onObjectSelected]);
-
-  // Call onObjectsModified when objects are modified
-  useEffect(() => {
-    if (!canvas) return;
-    
-    const handleObjectModified = (e: fabric.IEvent) => {
-      if (onObjectsModified && e.target) {
-        onObjectsModified([e.target]);
+      if (onToggleGrid) {
+        onToggleGrid();
       }
-    };
-    
-    canvas.on('object:modified', handleObjectModified);
-    
-    return () => {
-      canvas.off('object:modified', handleObjectModified);
-    };
-  }, [canvas, onObjectsModified]);
+    }
+  };
 
-  // Show keyboard shortcuts helper
-  const handleShowKeyboardShortcuts = useCallback(() => {
-    showShortcutsToast();
-  }, [showShortcutsToast]);
+  const handleToggleSnapToGrid = () => {
+    if (onToggleSnapToGrid) {
+      onToggleSnapToGrid();
+    }
+  };
 
   return (
-    <div className={cn("enhanced-wireframe-canvas relative flex flex-col", className)}>
-      <MultiViewportCanvas
-        canvas={canvas}
-        viewportConfig={viewportConfig}
-        className="flex-1"
+    <div className="enhanced-wireframe-canvas-container">
+      {showControls && (
+        <CanvasControls
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onResetZoom={handleResetZoom}
+          onToggleGrid={handleToggleGrid}
+          onToggleSnapToGrid={handleToggleSnapToGrid}
+          showGrid={mergedConfig.showGrid}
+          snapToGrid={mergedConfig.snapToGrid || false}
+          className="mb-2"
+        />
+      )}
+      
+      <div 
+        ref={containerRef}
+        className={cn(
+          "enhanced-wireframe-canvas relative border rounded-md overflow-hidden transition-all duration-300",
+          darkMode ? "bg-gray-900" : "bg-white",
+          {
+            "opacity-70": isRendering,
+          },
+          className
+        )}
+        style={{
+          width: `${mergedConfig.width}px`,
+          height: `${mergedConfig.height}px`,
+          maxWidth: "100%",
+          maxHeight: "80vh"
+        }}
       >
-        <canvas ref={canvasRef} width={width} height={height} />
+        <canvas ref={canvasRef} className="w-full h-full" />
         
-        {selectedObject && (
-          <EnhancedTransformControls
-            canvas={canvas!}
-            activeObject={selectedObject}
-            showRotationControl={true}
-            showScaleControls={true}
-            showFlipControls={true}
+        <CanvasLoadingIndicator isLoading={isRendering} />
+        <CanvasErrorDisplay error={error} />
+
+        {/* Add keyboard shortcuts handler */}
+        {enableKeyboardShortcuts && canvas && (
+          <KeyboardShortcutHandler 
+            canvas={canvas}
+            onDelete={() => {
+              const activeObject = canvas.getActiveObject();
+              if (activeObject) {
+                canvas.remove(activeObject);
+                canvas.renderAll();
+              }
+            }}
+            onDuplicate={() => {
+              const activeObject = canvas.getActiveObject();
+              if (activeObject) {
+                activeObject.clone((clone: fabric.Object) => {
+                  clone.set({
+                    left: activeObject.left! + 20,
+                    top: activeObject.top! + 20
+                  });
+                  canvas.add(clone);
+                  canvas.setActiveObject(clone);
+                  canvas.renderAll();
+                });
+              }
+            }}
           />
         )}
-      </MultiViewportCanvas>
-      
-      <button
-        onClick={handleShowKeyboardShortcuts}
-        className="absolute bottom-4 left-4 z-20 p-2 rounded-full bg-background/80 hover:bg-background backdrop-blur-sm shadow-sm text-xs"
-        title="Show Keyboard Shortcuts"
-      >
-        ?
-      </button>
+      </div>
     </div>
   );
 };

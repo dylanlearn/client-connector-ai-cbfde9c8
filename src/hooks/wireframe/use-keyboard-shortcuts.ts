@@ -1,305 +1,175 @@
 
-import { useCallback, useEffect, useRef } from 'react';
-import { fabric } from 'fabric';
-import { useToast } from '@/components/ui/use-toast';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
+export interface ShortcutAction {
+  name: string;
+  keys: string[];
+  description: string;
+  action: () => void;
+  category?: string;
+}
 
 export interface KeyboardShortcutsConfig {
   enabled?: boolean;
-  movementStep?: number;
-  snappingEnabled?: boolean;
-  preventDefaultKeys?: boolean;
+  preventDefaultForKeys?: boolean;
+  useHelpModal?: boolean;
+  showToasts?: boolean;
 }
 
-interface KeyCombination {
-  key: string;
-  ctrl?: boolean;
-  alt?: boolean;
-  shift?: boolean;
-}
+const DEFAULT_CONFIG: KeyboardShortcutsConfig = {
+  enabled: true,
+  preventDefaultForKeys: true,
+  useHelpModal: true,
+  showToasts: true
+};
 
-interface ShortcutAction {
-  name: string;
-  description: string;
-  keyCombination: KeyCombination;
-  action: () => void;
-}
-
-export function useKeyboardShortcuts({
-  canvas,
-  config = {},
-  onDuplicate,
-  onDelete,
-  onGroup,
-  onUngroup,
-  onLockToggle,
-  onBringForward,
-  onSendBackward,
-  onUndo,
-  onRedo,
-}: {
-  canvas: fabric.Canvas | null;
-  config?: KeyboardShortcutsConfig;
-  onDuplicate?: () => void;
-  onDelete?: () => void;
-  onGroup?: () => void;
-  onUngroup?: () => void;
-  onLockToggle?: () => void;
-  onBringForward?: () => void;
-  onSendBackward?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-}) {
-  const { toast } = useToast();
+export function useKeyboardShortcuts(config: KeyboardShortcutsConfig = DEFAULT_CONFIG) {
+  const [shortcuts, setShortcuts] = useState<Record<string, ShortcutAction>>({});
   const keysDown = useRef<Set<string>>(new Set());
-  const shortcutsEnabled = useRef<boolean>(config.enabled !== false);
-  const movementStep = useRef<number>(config.movementStep || 1);
-  const snappingEnabled = useRef<boolean>(config.snappingEnabled !== false);
-  const preventDefaultKeys = useRef<boolean>(config.preventDefaultKeys !== false);
-  
-  // Track registered keyboard shortcuts
-  const shortcuts = useRef<ShortcutAction[]>([]);
-  
-  // Register a new keyboard shortcut
+  const [shortcutConfig, setShortcutConfig] = useState<KeyboardShortcutsConfig>({
+    ...DEFAULT_CONFIG,
+    ...config
+  });
+  const { toast } = useToast();
+
+  // Register a shortcut
   const registerShortcut = useCallback((shortcut: ShortcutAction) => {
-    shortcuts.current.push(shortcut);
+    setShortcuts(prev => ({
+      ...prev,
+      [shortcut.name]: shortcut
+    }));
   }, []);
-  
-  // Remove a keyboard shortcut
+
+  // Unregister a shortcut
   const unregisterShortcut = useCallback((name: string) => {
-    shortcuts.current = shortcuts.current.filter(s => s.name !== name);
+    setShortcuts(prev => {
+      const updated = { ...prev };
+      delete updated[name];
+      return updated;
+    });
   }, []);
-  
-  // Check if a key combination matches the current key state
-  const matchesKeyCombination = useCallback((combo: KeyCombination, event: KeyboardEvent): boolean => {
-    const keyMatches = event.key.toLowerCase() === combo.key.toLowerCase();
-    const ctrlMatches = !!combo.ctrl === (event.ctrlKey || event.metaKey);
-    const altMatches = !!combo.alt === event.altKey;
-    const shiftMatches = !!combo.shift === event.shiftKey;
-    
-    return keyMatches && ctrlMatches && altMatches && shiftMatches;
-  }, []);
-  
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!shortcutsEnabled.current || !canvas) return;
-    
-    // Skip if we're in an input field
-    if (e.target instanceof HTMLInputElement || 
-        e.target instanceof HTMLTextAreaElement || 
-        e.target instanceof HTMLSelectElement) {
-      return;
-    }
-    
-    const key = e.key.toLowerCase();
-    keysDown.current.add(key);
-    
-    // Check for registered shortcuts
-    for (const shortcut of shortcuts.current) {
-      if (matchesKeyCombination(shortcut.keyCombination, e)) {
-        if (preventDefaultKeys.current) {
-          e.preventDefault();
-        }
-        shortcut.action();
-        return;
-      }
-    }
-    
-    const activeObject = canvas.getActiveObject();
-    
-    // Default shortcuts
-    
-    // Ctrl combinations
-    if (e.ctrlKey || e.metaKey) {
-      // Ctrl+D: Duplicate
-      if (key === 'd') {
-        e.preventDefault();
-        if (onDuplicate && activeObject) {
-          onDuplicate();
-        }
-        return;
-      }
-      
-      // Ctrl+G: Group
-      if (key === 'g') {
-        e.preventDefault();
-        if (e.shiftKey) {
-          // Ctrl+Shift+G: Ungroup
-          if (onUngroup && activeObject) {
-            onUngroup();
-          }
-        } else {
-          // Ctrl+G: Group
-          if (onGroup && activeObject && activeObject.type === 'activeSelection') {
-            onGroup();
-          }
-        }
-        return;
-      }
-      
-      // Ctrl+L: Toggle lock
-      if (key === 'l') {
-        e.preventDefault();
-        if (onLockToggle && activeObject) {
-          onLockToggle();
-        }
-        return;
-      }
-      
-      // Ctrl+]: Bring forward
-      if (key === ']') {
-        e.preventDefault();
-        if (onBringForward && activeObject) {
-          onBringForward();
-        }
-        return;
-      }
-      
-      // Ctrl+[: Send backward
-      if (key === '[') {
-        e.preventDefault();
-        if (onSendBackward && activeObject) {
-          onSendBackward();
-        }
-        return;
-      }
-      
-      // Ctrl+Z: Undo
-      if (key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        if (onUndo) {
-          onUndo();
-        }
-        return;
-      }
-      
-      // Ctrl+Y or Ctrl+Shift+Z: Redo
-      if (key === 'y' || (key === 'z' && e.shiftKey)) {
-        e.preventDefault();
-        if (onRedo) {
-          onRedo();
-        }
-        return;
-      }
-    }
-    
-    // Regular keys
-    
-    // Delete or Backspace: Delete selected objects
-    if ((key === 'delete' || key === 'backspace') && activeObject) {
-      e.preventDefault();
-      if (onDelete) {
-        onDelete();
-      }
-      return;
-    }
-    
-    // Arrow keys: Move objects
-    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key) && activeObject) {
-      e.preventDefault();
-      
-      // Calculate movement step (larger step with shift key)
-      const step = e.shiftKey ? movementStep.current * 10 : movementStep.current;
-      
-      switch (key) {
-        case 'arrowup':
-          activeObject.top! -= step;
-          break;
-        case 'arrowdown':
-          activeObject.top! += step;
-          break;
-        case 'arrowleft':
-          activeObject.left! -= step;
-          break;
-        case 'arrowright':
-          activeObject.left! += step;
-          break;
-      }
-      
-      activeObject.setCoords();
-      canvas.renderAll();
-      canvas.trigger('object:modified', { target: activeObject });
-    }
-  }, [canvas, matchesKeyCombination, onBringForward, onDelete, onDuplicate, onGroup, onLockToggle, onRedo, onSendBackward, onUndo, onUngroup]);
-  
-  const handleKeyUp = useCallback((e: KeyboardEvent) => {
-    keysDown.current.delete(e.key.toLowerCase());
-  }, []);
-  
-  // Configure keyboard shortcuts
-  const configure = useCallback((newConfig: KeyboardShortcutsConfig) => {
-    if ('enabled' in newConfig) shortcutsEnabled.current = newConfig.enabled !== false;
-    if ('movementStep' in newConfig) movementStep.current = newConfig.movementStep || 1;
-    if ('snappingEnabled' in newConfig) snappingEnabled.current = newConfig.snappingEnabled !== false;
-    if ('preventDefaultKeys' in newConfig) preventDefaultKeys.current = newConfig.preventDefaultKeys !== false;
-  }, []);
-  
-  // Helper to check if a key is currently pressed
-  const isKeyPressed = useCallback((key: string): boolean => {
+
+  // Check if a key is pressed
+  const isKeyPressed = useCallback((key: string) => {
     return keysDown.current.has(key.toLowerCase());
   }, []);
-  
-  // Helper to check if multiple keys are currently pressed
-  const areKeysPressed = useCallback((keys: string[]): boolean => {
+
+  // Check if all keys in an array are pressed
+  const areKeysPressed = useCallback((keys: string[]) => {
     return keys.every(key => keysDown.current.has(key.toLowerCase()));
   }, []);
-  
-  // Show toast with active keyboard shortcuts
-  const showShortcutsHelp = useCallback(() => {
-    if (shortcuts.current.length === 0) {
-      toast({
-        title: "Keyboard Shortcuts",
-        description: "No custom shortcuts registered",
-      });
-      return;
-    }
+
+  // Show toast with shortcuts help
+  const showShortcutsToast = useCallback(() => {
+    if (!shortcutConfig.showToasts) return;
     
-    // Format shortcuts for display
-    const shortcutsList = shortcuts.current.map(shortcut => {
-      let combo = '';
-      if (shortcut.keyCombination.ctrl) combo += 'Ctrl+';
-      if (shortcut.keyCombination.alt) combo += 'Alt+';
-      if (shortcut.keyCombination.shift) combo += 'Shift+';
-      combo += shortcut.keyCombination.key.toUpperCase();
-      
-      return `${combo}: ${shortcut.description}`;
-    }).join('\n');
+    const categories: Record<string, ShortcutAction[]> = {};
+    
+    Object.values(shortcuts).forEach(shortcut => {
+      const category = shortcut.category || 'General';
+      if (!categories[category]) {
+        categories[category] = [];
+      }
+      categories[category].push(shortcut);
+    });
+    
+    const message = (
+      <div className="shortcuts-toast">
+        <h3 className="font-bold mb-2">Keyboard Shortcuts</h3>
+        {Object.entries(categories).map(([category, categoryShortcuts]) => (
+          <div key={category} className="mb-2">
+            <h4 className="font-semibold text-sm">{category}</h4>
+            <ul className="text-sm">
+              {categoryShortcuts.map(shortcut => (
+                <li key={shortcut.name} className="flex justify-between">
+                  <span>{shortcut.description}</span>
+                  <span className="font-mono bg-muted px-1 rounded ml-2">
+                    {shortcut.keys.join('+')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    );
     
     toast({
       title: "Keyboard Shortcuts",
-      description: shortcutsList,
+      description: message,
+      duration: 8000,
     });
-  }, [toast]);
-  
-  // Set up keyboard event listeners
+  }, [shortcuts, shortcutConfig.showToasts, toast]);
+
+  // Show shortcuts help
+  const showShortcutsHelp = useCallback(() => {
+    if (shortcutConfig.useHelpModal) {
+      // Logic for showing a modal would go here
+      console.log('Show shortcuts modal');
+    } else {
+      // Show a toast with shortcuts
+      showShortcutsToast();
+    }
+  }, [shortcutConfig.useHelpModal, showShortcutsToast]);
+
+  // Update configuration
+  const configure = useCallback((newConfig: KeyboardShortcutsConfig) => {
+    setShortcutConfig(prev => ({
+      ...prev,
+      ...newConfig
+    }));
+  }, []);
+
+  // Event handlers for keyboard events
   useEffect(() => {
-    if (!shortcutsEnabled.current) return;
-    
+    if (!shortcutConfig.enabled) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if we're in an input field
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      keysDown.current.add(key);
+
+      // Check for matching shortcuts
+      Object.values(shortcuts).forEach(shortcut => {
+        if (areKeysPressed(shortcut.keys.map(k => k.toLowerCase()))) {
+          if (shortcutConfig.preventDefaultForKeys) {
+            e.preventDefault();
+          }
+          shortcut.action();
+        }
+      });
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      keysDown.current.delete(key);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
-    // Register default shortcuts
-    const defaultShortcuts: ShortcutAction[] = [
-      {
-        name: 'help',
-        description: 'Show keyboard shortcuts help',
-        keyCombination: { key: '?', shift: true },
-        action: showShortcutsHelp
-      }
-    ];
-    
-    shortcuts.current = [...shortcuts.current, ...defaultShortcuts];
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [handleKeyDown, handleKeyUp, showShortcutsHelp]);
-  
+  }, [shortcuts, shortcutConfig, areKeysPressed]);
+
   return {
     registerShortcut,
     unregisterShortcut,
     isKeyPressed,
     areKeysPressed,
     showShortcutsHelp,
+    showShortcutsToast,
     configure,
     keysDown: keysDown.current
   };

@@ -1,591 +1,378 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { FocusArea } from './use-canvas-navigation';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { fabric } from 'fabric';
+export type ViewportMode = 'single' | 'split' | 'quad';
 
-export type ViewMode = 'single' | 'split' | 'grid';
-
-export interface FocusArea {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label?: string;
+export interface EnhancedNavigationConfig {
+  minZoom: number;
+  maxZoom: number;
+  zoomStep: number;
+  rotationStep: number;
+  animationDuration: number;
+  enableAnimation: boolean;
+  showMinimap: boolean;
+  minimapSize: number;
+  enableHistory: boolean;
+  historyLimit: number;
+  enablePersistence: boolean;
+  storageKey: string;
 }
 
-export interface Viewport {
-  id: string;
+export interface ViewportState {
   zoom: number;
-  pan: { x: number, y: number };
   rotation: number;
+  pan: { x: number; y: number };
   focusArea: FocusArea | null;
 }
 
-export interface NavigationHistoryEntry {
-  viewports: Viewport[];
-  activeViewportId: string;
+export interface NavigationHistoryItem {
   timestamp: number;
+  state: ViewportState;
+  label?: string;
 }
 
-export interface UseCanvasNavigationOptions {
-  canvas: fabric.Canvas | null;
-  maxHistorySize?: number;
-  initialZoom?: number;
-  initialRotation?: number;
-  initialPan?: { x: number, y: number };
-  animationDuration?: number;
-  persistState?: boolean;
-  stateStorageKey?: string;
-}
+const DEFAULT_CONFIG: EnhancedNavigationConfig = {
+  minZoom: 0.1,
+  maxZoom: 5,
+  zoomStep: 0.1,
+  rotationStep: 15,
+  animationDuration: 300,
+  enableAnimation: true,
+  showMinimap: true,
+  minimapSize: 200,
+  enableHistory: true,
+  historyLimit: 50,
+  enablePersistence: true,
+  storageKey: 'canvas-navigation-state'
+};
 
-export function useEnhancedCanvasNavigation({
-  canvas,
-  maxHistorySize = 30,
-  initialZoom = 1,
-  initialRotation = 0,
-  initialPan = { x: 0, y: 0 },
-  animationDuration = 300,
-  persistState = true,
-  stateStorageKey = 'canvas-navigation-state'
-}: UseCanvasNavigationOptions) {
-  // Load persisted state if available
-  const loadInitialState = () => {
-    if (persistState) {
-      try {
-        const savedState = localStorage.getItem(stateStorageKey);
-        if (savedState) {
-          const parsed = JSON.parse(savedState);
-          return {
-            zoom: parsed.zoom ?? initialZoom,
-            rotation: parsed.rotation ?? initialRotation,
-            pan: parsed.pan ?? initialPan,
-            viewMode: parsed.viewMode ?? 'single' as ViewMode,
-            viewports: parsed.viewports ?? [createDefaultViewport()],
-            activeViewportId: parsed.activeViewportId ?? 'default'
-          };
-        }
-      } catch (error) {
-        console.error('Failed to load canvas navigation state:', error);
-      }
-    }
-    
-    return {
-      zoom: initialZoom,
-      rotation: initialRotation,
-      pan: initialPan,
-      viewMode: 'single' as ViewMode,
-      viewports: [createDefaultViewport()],
-      activeViewportId: 'default'
-    };
-  };
+export function useEnhancedCanvasNavigation(initialConfig?: Partial<EnhancedNavigationConfig>) {
+  // Merge with default config
+  const config = { ...DEFAULT_CONFIG, ...initialConfig };
   
-  // Create default viewport
-  const createDefaultViewport = (): Viewport => ({
-    id: 'default',
-    zoom: initialZoom,
-    pan: { ...initialPan },
-    rotation: initialRotation,
+  // State for viewport(s)
+  const [viewMode, setViewMode] = useState<ViewportMode>('single');
+  const [activeViewport, setActiveViewport] = useState<number>(0);
+  const [viewports, setViewports] = useState<ViewportState[]>([{
+    zoom: 1,
+    rotation: 0,
+    pan: { x: 0, y: 0 },
     focusArea: null
-  });
-
-  // State for navigation parameters
-  const initialState = loadInitialState();
-  const [zoom, setZoom] = useState<number>(initialState.zoom);
-  const [rotation, setRotation] = useState<number>(initialState.rotation);
-  const [pan, setPan] = useState<{ x: number, y: number }>(initialState.pan);
-  const [viewMode, setViewMode] = useState<ViewMode>(initialState.viewMode);
-  const [viewports, setViewports] = useState<Viewport[]>(initialState.viewports);
-  const [activeViewportId, setActiveViewportId] = useState<string>(initialState.activeViewportId);
-  const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryEntry[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const [isAnimating, setIsAnimating] = useState<boolean>(false);
-  const animatingRef = useRef<boolean>(false);
-  const animationFrameRef = useRef<number | null>(null);
-
-  // Get the active viewport
-  const activeViewport = useMemo(() => {
-    return viewports.find(vp => vp.id === activeViewportId) || viewports[0];
-  }, [viewports, activeViewportId]);
-
-  // Persist state when it changes
-  useEffect(() => {
-    if (persistState) {
-      try {
-        localStorage.setItem(stateStorageKey, JSON.stringify({
-          zoom,
-          rotation,
-          pan,
-          viewMode,
-          viewports,
-          activeViewportId
-        }));
-      } catch (error) {
-        console.error('Failed to save canvas navigation state:', error);
-      }
-    }
-  }, [zoom, rotation, pan, viewMode, viewports, activeViewportId, persistState, stateStorageKey]);
-
-  // Add current state to history
-  const addToHistory = useCallback(() => {
-    setNavigationHistory(prev => {
-      // Truncate history if we're not at the end (user went back in history)
-      const updatedHistory = historyIndex >= 0 && historyIndex < prev.length - 1
-        ? prev.slice(0, historyIndex + 1)
-        : prev;
-      
-      const newEntry: NavigationHistoryEntry = {
-        viewports: JSON.parse(JSON.stringify(viewports)), // Deep clone
-        activeViewportId,
-        timestamp: Date.now()
-      };
-      
-      const newHistory = [...updatedHistory, newEntry].slice(-maxHistorySize);
-      setHistoryIndex(newHistory.length - 1);
-      
-      return newHistory;
-    });
-  }, [viewports, activeViewportId, historyIndex, maxHistorySize]);
-
-  // Apply canvas transformations (with animation)
-  const applyCanvasTransform = useCallback((targetZoom: number, targetPan: { x: number, y: number }, targetRotation: number, animate: boolean = false) => {
-    if (!canvas) return;
+  }]);
+  
+  // Animation and history
+  const animationRef = useRef<number | null>(null);
+  const [history, setHistory] = useState<NavigationHistoryItem[]>([]);
+  const [historyPosition, setHistoryPosition] = useState<number>(-1);
+  
+  // Add to history
+  const addToHistory = useCallback((label?: string) => {
+    if (!config.enableHistory) return;
     
-    const applyImmediately = () => {
-      // Apply zoom
-      canvas.setZoom(targetZoom);
-      
-      // Apply pan
-      canvas.absolutePan(new fabric.Point(targetPan.x, targetPan.y));
-      
-      // Apply rotation (not directly supported by Fabric, would need to rotate all objects)
-      // This is usually better handled at the container level in CSS
-      
-      canvas.requestRenderAll();
+    const newItem: NavigationHistoryItem = {
+      timestamp: Date.now(),
+      state: { ...viewports[activeViewport] },
+      label
     };
     
-    if (!animate || animationDuration <= 0) {
-      applyImmediately();
-      return;
-    }
-    
-    // Stop any existing animation
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
-    // Get current state
-    const startZoom = canvas.getZoom();
-    const viewportTransform = canvas.viewportTransform;
-    
-    if (!viewportTransform) {
-      applyImmediately();
-      return;
-    }
-    
-    const startPanX = -viewportTransform[4];
-    const startPanY = -viewportTransform[5];
-    
-    // Animation variables
-    const startTime = performance.now();
-    animatingRef.current = true;
-    setIsAnimating(true);
-    
-    // Animation frame function
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / animationDuration, 1);
+    setHistory(prev => {
+      // If we're not at the end of history, truncate
+      const newHistory = historyPosition < prev.length - 1
+        ? prev.slice(0, historyPosition + 1)
+        : [...prev];
       
-      // Ease function (cubic ease out)
-      const eased = 1 - Math.pow(1 - progress, 3);
+      // Add new item and trim if needed
+      return [...newHistory, newItem].slice(-config.historyLimit);
+    });
+    
+    setHistoryPosition(prev => Math.min(prev + 1, config.historyLimit - 1));
+  }, [viewports, activeViewport, historyPosition, config.enableHistory, config.historyLimit]);
+  
+  // Update viewport state
+  const updateViewport = useCallback((updates: Partial<ViewportState>, saveHistory = true) => {
+    setViewports(prev => {
+      const updated = [...prev];
+      updated[activeViewport] = {
+        ...updated[activeViewport],
+        ...updates
+      };
+      return updated;
+    });
+    
+    if (saveHistory) {
+      addToHistory();
+    }
+  }, [activeViewport, addToHistory]);
+  
+  // Handle viewport animation
+  const animateViewportTo = useCallback((targetState: Partial<ViewportState>, duration = config.animationDuration) => {
+    if (!config.enableAnimation) {
+      updateViewport(targetState);
+      return;
+    }
+    
+    const startState = { ...viewports[activeViewport] };
+    const startTime = Date.now();
+    
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    
+    const animateFrame = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease in/out function
+      const easeProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      const current: Partial<ViewportState> = {};
       
       // Interpolate values
-      const currentZoom = startZoom + (targetZoom - startZoom) * eased;
-      const currentPanX = startPanX + (targetPan.x - startPanX) * eased;
-      const currentPanY = startPanY + (targetPan.y - startPanY) * eased;
+      if (targetState.zoom !== undefined) {
+        current.zoom = startState.zoom + (targetState.zoom - startState.zoom) * easeProgress;
+      }
       
-      // Apply interpolated values
-      canvas.setZoom(currentZoom);
-      canvas.absolutePan(new fabric.Point(currentPanX, currentPanY));
-      canvas.requestRenderAll();
+      if (targetState.rotation !== undefined) {
+        current.rotation = startState.rotation + (targetState.rotation - startState.rotation) * easeProgress;
+      }
       
-      // Continue animation if not complete
+      if (targetState.pan) {
+        current.pan = {
+          x: startState.pan.x + ((targetState.pan?.x || 0) - startState.pan.x) * easeProgress,
+          y: startState.pan.y + ((targetState.pan?.y || 0) - startState.pan.y) * easeProgress
+        };
+      }
+      
+      // Update without adding to history during animation
+      updateViewport(current, false);
+      
       if (progress < 1) {
-        animationFrameRef.current = requestAnimationFrame(animate);
+        animationRef.current = requestAnimationFrame(animateFrame);
       } else {
-        // Animation complete
-        animatingRef.current = false;
-        setIsAnimating(false);
-        animationFrameRef.current = null;
+        // Final update and add to history when complete
+        updateViewport(targetState, true);
+        animationRef.current = null;
       }
     };
     
-    // Start animation
-    animationFrameRef.current = requestAnimationFrame(animate);
-  }, [canvas, animationDuration]);
+    animationRef.current = requestAnimationFrame(animateFrame);
+  }, [viewports, activeViewport, config.enableAnimation, config.animationDuration, updateViewport]);
 
-  // Update canvas when zoom, pan, or rotation changes
-  useEffect(() => {
-    if (!canvas || isAnimating) return;
-    
-    applyCanvasTransform(zoom, pan, rotation, false);
-  }, [canvas, zoom, pan, rotation, isAnimating, applyCanvasTransform]);
-
-  // Zoom controls
-  const handleZoomIn = useCallback((animate: boolean = true) => {
-    setZoom(prevZoom => {
-      const newZoom = Math.min(prevZoom + 0.1, 5);
-      // Update active viewport
-      setViewports(prev => prev.map(viewport => 
-        viewport.id === activeViewportId 
-          ? { ...viewport, zoom: newZoom } 
-          : viewport
-      ));
-      
-      return newZoom;
+  // Basic navigation operations
+  const zoomIn = useCallback(() => {
+    const newZoom = Math.min(config.maxZoom, viewports[activeViewport].zoom + config.zoomStep);
+    animateViewportTo({ zoom: newZoom });
+  }, [viewports, activeViewport, config.maxZoom, config.zoomStep, animateViewportTo]);
+  
+  const zoomOut = useCallback(() => {
+    const newZoom = Math.max(config.minZoom, viewports[activeViewport].zoom - config.zoomStep);
+    animateViewportTo({ zoom: newZoom });
+  }, [viewports, activeViewport, config.minZoom, config.zoomStep, animateViewportTo]);
+  
+  const resetZoom = useCallback(() => {
+    animateViewportTo({ zoom: 1 });
+  }, [animateViewportTo]);
+  
+  const panTo = useCallback((x: number, y: number) => {
+    animateViewportTo({ pan: { x, y } });
+  }, [animateViewportTo]);
+  
+  const resetPan = useCallback(() => {
+    animateViewportTo({ pan: { x: 0, y: 0 } });
+  }, [animateViewportTo]);
+  
+  const rotateTo = useCallback((degrees: number) => {
+    // Normalize to 0-360
+    const normalized = ((degrees % 360) + 360) % 360;
+    animateViewportTo({ rotation: normalized });
+  }, [animateViewportTo]);
+  
+  const rotateClockwise = useCallback(() => {
+    const newRotation = viewports[activeViewport].rotation + config.rotationStep;
+    rotateTo(newRotation);
+  }, [viewports, activeViewport, config.rotationStep, rotateTo]);
+  
+  const rotateCounterClockwise = useCallback(() => {
+    const newRotation = viewports[activeViewport].rotation - config.rotationStep;
+    rotateTo(newRotation);
+  }, [viewports, activeViewport, config.rotationStep, rotateTo]);
+  
+  const resetRotation = useCallback(() => {
+    animateViewportTo({ rotation: 0 });
+  }, [animateViewportTo]);
+  
+  // Reset all transforms
+  const resetTransforms = useCallback(() => {
+    animateViewportTo({
+      zoom: 1,
+      rotation: 0,
+      pan: { x: 0, y: 0 }
     });
+  }, [animateViewportTo]);
+  
+  // History navigation
+  const goBack = useCallback(() => {
+    if (!config.enableHistory || historyPosition <= 0) return;
     
-    // Add to history after timeout to avoid rapid additions
-    setTimeout(() => addToHistory(), 300);
-  }, [activeViewportId, addToHistory]);
-
-  const handleZoomOut = useCallback((animate: boolean = true) => {
-    setZoom(prevZoom => {
-      const newZoom = Math.max(prevZoom - 0.1, 0.1);
-      // Update active viewport
-      setViewports(prev => prev.map(viewport => 
-        viewport.id === activeViewportId 
-          ? { ...viewport, zoom: newZoom } 
-          : viewport
-      ));
-      
-      return newZoom;
+    const newPosition = historyPosition - 1;
+    const historyItem = history[newPosition];
+    
+    setHistoryPosition(newPosition);
+    
+    if (historyItem) {
+      // Update without animation and without adding to history
+      updateViewport(historyItem.state, false);
+    }
+  }, [config.enableHistory, historyPosition, history, updateViewport]);
+  
+  const goForward = useCallback(() => {
+    if (!config.enableHistory || historyPosition >= history.length - 1) return;
+    
+    const newPosition = historyPosition + 1;
+    const historyItem = history[newPosition];
+    
+    setHistoryPosition(newPosition);
+    
+    if (historyItem) {
+      // Update without animation and without adding to history
+      updateViewport(historyItem.state, false);
+    }
+  }, [config.enableHistory, historyPosition, history, history.length, updateViewport]);
+  
+  // Focus area
+  const focusOnArea = useCallback((area: FocusArea) => {
+    const newZoom = Math.min(config.maxZoom, 1.5);
+    animateViewportTo({
+      zoom: newZoom,
+      pan: { x: -area.x + (area.width / 2), y: -area.y + (area.height / 2) },
+      focusArea: area
     });
-    
-    // Add to history after timeout to avoid rapid additions
-    setTimeout(() => addToHistory(), 300);
-  }, [activeViewportId, addToHistory]);
-
-  const handleZoomReset = useCallback((animate: boolean = true) => {
-    setZoom(initialZoom);
-    setPan(initialPan);
-    
-    // Update active viewport
-    setViewports(prev => prev.map(viewport => 
-      viewport.id === activeViewportId 
-        ? { ...viewport, zoom: initialZoom, pan: { ...initialPan } } 
-        : viewport
-    ));
-    
-    addToHistory();
-  }, [initialZoom, initialPan, activeViewportId, addToHistory]);
-
-  // Rotation controls
-  const handleRotateClockwise = useCallback(() => {
-    setRotation(prevRotation => {
-      const newRotation = (prevRotation + 15) % 360;
-      // Update active viewport
-      setViewports(prev => prev.map(viewport => 
-        viewport.id === activeViewportId 
-          ? { ...viewport, rotation: newRotation } 
-          : viewport
-      ));
-      
-      return newRotation;
-    });
-    
-    addToHistory();
-  }, [activeViewportId, addToHistory]);
-
-  const handleRotateCounterClockwise = useCallback(() => {
-    setRotation(prevRotation => {
-      const newRotation = (prevRotation - 15 + 360) % 360;
-      // Update active viewport
-      setViewports(prev => prev.map(viewport => 
-        viewport.id === activeViewportId 
-          ? { ...viewport, rotation: newRotation } 
-          : viewport
-      ));
-      
-      return newRotation;
-    });
-    
-    addToHistory();
-  }, [activeViewportId, addToHistory]);
-
-  const handleRotateReset = useCallback(() => {
-    setRotation(initialRotation);
-    
-    // Update active viewport
-    setViewports(prev => prev.map(viewport => 
-      viewport.id === activeViewportId 
-        ? { ...viewport, rotation: initialRotation } 
-        : viewport
-    ));
-    
-    addToHistory();
-  }, [initialRotation, activeViewportId, addToHistory]);
-
-  // Pan controls
-  const handlePan = useCallback((x: number, y: number) => {
-    setPan(prevPan => {
-      const newPan = { 
-        x: prevPan.x + x, 
-        y: prevPan.y + y 
-      };
-      
-      // Update active viewport
-      setViewports(prev => prev.map(viewport => 
-        viewport.id === activeViewportId 
-          ? { ...viewport, pan: newPan } 
-          : viewport
-      ));
-      
-      return newPan;
-    });
-    
-    // We don't add to history for small pan movements to avoid history cluttering
-  }, [activeViewportId]);
-
-  const handlePanReset = useCallback(() => {
-    setPan(initialPan);
-    
-    // Update active viewport
-    setViewports(prev => prev.map(viewport => 
-      viewport.id === activeViewportId 
-        ? { ...viewport, pan: { ...initialPan } } 
-        : viewport
-    ));
-    
-    addToHistory();
-  }, [initialPan, activeViewportId, addToHistory]);
-
-  // View mode toggle
-  const handleViewModeToggle = useCallback((mode: ViewMode) => {
+  }, [config.maxZoom, animateViewportTo]);
+  
+  const clearFocus = useCallback(() => {
+    updateViewport({ focusArea: null });
+  }, [updateViewport]);
+  
+  // Viewport management
+  const setViewportMode = useCallback((mode: ViewportMode) => {
     setViewMode(mode);
     
-    // If we're switching to split or grid mode, make sure we have enough viewports
-    if (mode === 'split' && viewports.length < 2) {
-      setViewports(prev => [...prev, {
-        id: `viewport-${Date.now()}`,
-        zoom: initialZoom,
-        pan: { ...initialPan },
-        rotation: initialRotation,
-        focusArea: null
-      }]);
-    } else if (mode === 'grid' && viewports.length < 4) {
-      const newViewports = [...viewports];
-      while (newViewports.length < 4) {
-        newViewports.push({
-          id: `viewport-${Date.now()}-${newViewports.length}`,
-          zoom: initialZoom,
-          pan: { ...initialPan },
-          rotation: initialRotation,
+    // Create appropriate number of viewports
+    const viewportCount = mode === 'single' ? 1 : mode === 'split' ? 2 : 4;
+    
+    setViewports(prev => {
+      const current = [...prev];
+      
+      // Keep existing viewports
+      while (current.length < viewportCount) {
+        current.push({
+          zoom: 1,
+          rotation: 0,
+          pan: { x: 0, y: 0 },
           focusArea: null
         });
       }
-      setViewports(newViewports);
-    }
-    
-    addToHistory();
-  }, [viewports, initialZoom, initialPan, initialRotation, addToHistory]);
-
-  // Focus area controls
-  const handleApplyFocusArea = useCallback((area: FocusArea, animate: boolean = true) => {
-    // Calculate zoom and pan to focus on the area
-    if (!canvas) return;
-    
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
-    
-    // Calculate the zoom needed to fit the area with some padding
-    const paddingFactor = 0.9; // 10% padding
-    const zoomX = (canvasWidth / area.width) * paddingFactor;
-    const zoomY = (canvasHeight / area.height) * paddingFactor;
-    const newZoom = Math.min(zoomX, zoomY, 5); // Cap zoom at 5x
-    
-    // Calculate pan to center the area
-    const areaCenterX = area.x + area.width / 2;
-    const areaCenterY = area.y + area.height / 2;
-    
-    const newPanX = -(areaCenterX * newZoom - canvasWidth / 2);
-    const newPanY = -(areaCenterY * newZoom - canvasHeight / 2);
-    
-    // Update state
-    setZoom(newZoom);
-    setPan({ x: newPanX, y: newPanY });
-    
-    // Update active viewport
-    setViewports(prev => prev.map(viewport => 
-      viewport.id === activeViewportId 
-        ? { 
-            ...viewport, 
-            zoom: newZoom, 
-            pan: { x: newPanX, y: newPanY },
-            focusArea: { ...area }
-          } 
-        : viewport
-    ));
-    
-    // Apply transform with animation
-    applyCanvasTransform(newZoom, { x: newPanX, y: newPanY }, rotation, animate);
-    
-    addToHistory();
-  }, [canvas, rotation, activeViewportId, applyCanvasTransform, addToHistory]);
-
-  const handleResetFocusArea = useCallback(() => {
-    // Update active viewport
-    setViewports(prev => prev.map(viewport => 
-      viewport.id === activeViewportId 
-        ? { ...viewport, focusArea: null } 
-        : viewport
-    ));
-    
-    handleZoomReset();
-  }, [activeViewportId, handleZoomReset]);
-
-  // Navigation history controls
-  const navigateHistory = useCallback((delta: number) => {
-    if (navigationHistory.length === 0) return;
-    
-    setHistoryIndex(prevIndex => {
-      const newIndex = Math.max(0, Math.min(prevIndex + delta, navigationHistory.length - 1));
       
-      // Apply the historical state if it changed
-      if (newIndex !== prevIndex) {
-        const historyEntry = navigationHistory[newIndex];
-        
-        // Restore viewports
-        setViewports(historyEntry.viewports);
-        
-        // Restore active viewport
-        setActiveViewportId(historyEntry.activeViewportId);
-        
-        // Get the active viewport from history
-        const activeVP = historyEntry.viewports.find(vp => vp.id === historyEntry.activeViewportId);
-        
-        if (activeVP) {
-          // Apply the viewport state
-          setZoom(activeVP.zoom);
-          setPan(activeVP.pan);
-          setRotation(activeVP.rotation);
-          
-          // Apply to canvas with animation
-          applyCanvasTransform(activeVP.zoom, activeVP.pan, activeVP.rotation, true);
-        }
-      }
-      
-      return newIndex;
+      // Trim if needed
+      return current.slice(0, viewportCount);
     });
-  }, [navigationHistory, applyCanvasTransform]);
+    
+    // Set active viewport to first one
+    setActiveViewport(0);
+  }, []);
+  
+  const switchToViewport = useCallback((index: number) => {
+    if (index >= 0 && index < viewports.length) {
+      setActiveViewport(index);
+    }
+  }, [viewports.length]);
 
-  // Viewport management
-  const addViewport = useCallback(() => {
-    const newViewport: Viewport = {
-      id: `viewport-${Date.now()}`,
-      zoom: initialZoom,
-      pan: { ...initialPan },
-      rotation: initialRotation,
-      focusArea: null
+  // Persistence
+  useEffect(() => {
+    if (!config.enablePersistence) return;
+    
+    // Load persisted state
+    try {
+      const saved = localStorage.getItem(config.storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setViewports(parsed.viewports || viewports);
+        setViewMode(parsed.viewMode || viewMode);
+        setActiveViewport(parsed.activeViewport || 0);
+      }
+    } catch (e) {
+      console.error('Failed to load canvas navigation state:', e);
+    }
+  }, [config.enablePersistence, config.storageKey]);
+  
+  // Save state when it changes
+  useEffect(() => {
+    if (!config.enablePersistence) return;
+    
+    try {
+      localStorage.setItem(config.storageKey, JSON.stringify({
+        viewports,
+        viewMode,
+        activeViewport
+      }));
+    } catch (e) {
+      console.error('Failed to save canvas navigation state:', e);
+    }
+  }, [viewports, viewMode, activeViewport, config.enablePersistence, config.storageKey]);
+  
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
-    
-    setViewports(prev => [...prev, newViewport]);
-    setActiveViewportId(newViewport.id);
-    
-    // If we're in single view mode, switch to split or grid
-    if (viewMode === 'single') {
-      setViewMode('split');
-    }
-    
-    addToHistory();
-  }, [initialZoom, initialPan, initialRotation, viewMode, addToHistory]);
-
-  const removeViewport = useCallback((id: string) => {
-    // Prevent removing the last viewport
-    if (viewports.length <= 1) return;
-    
-    setViewports(prev => {
-      const filtered = prev.filter(vp => vp.id !== id);
-      
-      // If we removed the active viewport, select a different one
-      if (id === activeViewportId) {
-        setActiveViewportId(filtered[0].id);
-        
-        // Apply the new active viewport's state
-        setZoom(filtered[0].zoom);
-        setPan(filtered[0].pan);
-        setRotation(filtered[0].rotation);
-        
-        // Apply to canvas
-        if (canvas) {
-          applyCanvasTransform(filtered[0].zoom, filtered[0].pan, filtered[0].rotation, true);
-        }
-      }
-      
-      // If we're down to one viewport, switch to single mode
-      if (filtered.length === 1) {
-        setViewMode('single');
-      }
-      
-      return filtered;
-    });
-    
-    addToHistory();
-  }, [viewports.length, activeViewportId, canvas, applyCanvasTransform, addToHistory]);
-
-  const switchToViewport = useCallback((id: string) => {
-    const viewport = viewports.find(vp => vp.id === id);
-    if (!viewport) return;
-    
-    setActiveViewportId(id);
-    
-    // Apply the viewport's state
-    setZoom(viewport.zoom);
-    setPan(viewport.pan);
-    setRotation(viewport.rotation);
-    
-    // Apply to canvas with animation
-    applyCanvasTransform(viewport.zoom, viewport.pan, viewport.rotation, true);
-    
-    addToHistory();
-  }, [viewports, applyCanvasTransform, addToHistory]);
-
-  // Combine all transformations for CSS transform
-  const canvasTransform = useMemo(() => {
-    return `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`;
-  }, [zoom, rotation, pan]);
-
-  // Return all controls and state
+  }, []);
+  
   return {
     // State
-    zoom,
-    rotation,
-    pan,
-    viewMode,
     viewports,
-    activeViewportId,
+    viewMode,
     activeViewport,
-    isAnimating,
-    navigationHistory,
-    historyIndex,
-    canvasTransform,
+    history,
+    historyPosition,
     
-    // Methods
-    handleZoomIn,
-    handleZoomOut,
-    handleZoomReset,
-    handleRotateClockwise,
-    handleRotateCounterClockwise,
-    handleRotateReset,
-    handlePan,
-    handlePanReset,
-    handleViewModeToggle,
-    handleApplyFocusArea,
-    handleResetFocusArea,
-    navigateHistory,
-    addViewport,
-    removeViewport,
-    switchToViewport,
+    // Basic operations
+    zoomIn,
+    zoomOut,
+    resetZoom,
+    panTo,
+    resetPan,
+    rotateClockwise,
+    rotateCounterClockwise,
+    resetRotation,
+    resetTransforms,
+    
+    // History operations
+    goBack,
+    goForward,
     addToHistory,
-    applyCanvasTransform
+    
+    // Focus operations
+    focusOnArea,
+    clearFocus,
+    
+    // Viewport operations
+    setViewportMode,
+    switchToViewport,
+    
+    // Advanced operations
+    animateViewportTo,
+    
+    // Current state getters
+    currentZoom: viewports[activeViewport]?.zoom || 1,
+    currentRotation: viewports[activeViewport]?.rotation || 0,
+    currentPan: viewports[activeViewport]?.pan || { x: 0, y: 0 },
+    currentFocus: viewports[activeViewport]?.focusArea || null,
+    
+    // Configuration
+    config
   };
 }
