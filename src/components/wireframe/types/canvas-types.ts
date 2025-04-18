@@ -116,6 +116,21 @@ export interface EnterpriseGridConfig {
 }
 
 /**
+ * Basic Grid configuration (for backward compatibility)
+ */
+export interface GridConfig {
+  visible: boolean;
+  size: number;
+  type: 'lines' | 'dots' | 'columns' | 'custom';
+  snapToGrid: boolean;
+  color: string;
+  opacity?: number;
+  breakpoints?: GridBreakpoint[];
+  currentBreakpoint?: string;
+  showBreakpoints?: boolean;
+}
+
+/**
  * Responsive grid breakpoint definition
  */
 export interface GridBreakpoint {

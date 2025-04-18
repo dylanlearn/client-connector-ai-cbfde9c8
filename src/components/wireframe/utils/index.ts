@@ -58,7 +58,11 @@ export {
 } from './grid-utils';
 
 // Re-export types from canvas-types
-export type { GridConfig, GridBreakpoint, EnterpriseGridConfig } from '../types/canvas-types';
+export type { 
+  GridConfig, 
+  GridBreakpoint, 
+  EnterpriseGridConfig 
+} from '../types/canvas-types';
 
 // Export grid system utilities
 export {

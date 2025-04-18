@@ -47,7 +47,11 @@ export {
 } from '../utils/grid-utils';
 
 // Re-export types from canvas-types
-export type { GridConfig, GridBreakpoint, EnterpriseGridConfig } from '../types/canvas-types';
+export type { 
+  GridConfig, 
+  GridBreakpoint, 
+  EnterpriseGridConfig 
+} from '../types/canvas-types';
 
 // Export new alignment guides utilities
 export * from './alignment-guides';
