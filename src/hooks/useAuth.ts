@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
@@ -10,91 +11,135 @@ interface User {
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate authentication check
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    // Track if component is mounted
+    let isMounted = true;
+    
+    // Set up listener for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log("Auth state change event:", event);
+        if (isMounted) {
+          if (currentSession?.user) {
+            setUser({
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              name: currentSession.user.user_metadata?.name
+            });
+          } else {
+            setUser(null);
+          }
+        }
       }
-      setIsLoading(false);
-    };
+    );
 
-    // Artificial delay to simulate network request
-    setTimeout(checkAuth, 500);
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (isMounted) {
+        if (currentSession?.user) {
+          setUser({
+            id: currentSession.user.id,
+            email: currentSession.user.email || '',
+            name: currentSession.user.user_metadata?.name
+          });
+        }
+        setIsLoading(false);
+      }
+    });
+
+    // Clean up function
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    // Simulate authentication
     setIsLoading(true);
+    setError(null);
     
-    // For demo purposes, we'll just create a mock user
-    const mockUser = {
-      id: '1',
-      email,
-      name: 'Demo User'
-    };
-    
-    // Store in localStorage for persistence
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
-    setIsLoading(false);
-    
-    return mockUser;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+      
+      if (error) {
+        console.error("Login error:", error.message);
+        setError(error.message);
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Error in signIn:", err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signOut = async () => {
-    // Clear stored user data
-    localStorage.removeItem('user');
-    setUser(null);
-  };
-
-  const signInWithGoogle = async () => {
-    // Mock Google authentication
     setIsLoading(true);
+    setError(null);
     
-    const mockGoogleUser = {
-      id: '2',
-      email: 'google.user@example.com',
-      name: 'Google User'
-    };
-    
-    localStorage.setItem('user', JSON.stringify(mockGoogleUser));
-    setUser(mockGoogleUser);
-    setIsLoading(false);
-    
-    return mockGoogleUser;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Logout error:", error.message);
+        setError(error.message);
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Error in signOut:", err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const signUp = async (email: string, password: string, name: string, phoneNumber: string) => {
-    // Simulate registration
+  const signUp = async (email: string, password: string, name?: string) => {
     setIsLoading(true);
+    setError(null);
     
-    const mockNewUser = {
-      id: '3',
-      email,
-      name
-    };
-    
-    // Store the new user
-    localStorage.setItem('user', JSON.stringify(mockNewUser));
-    setUser(mockNewUser);
-    setIsLoading(false);
-    
-    return mockNewUser;
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name }
+        }
+      });
+      
+      if (error) {
+        console.error("Registration error:", error.message);
+        setError(error.message);
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Error in signUp:", err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  // Computed properties
-  const isLoggedIn = !!user;
 
   return {
     user,
     isLoading,
-    isLoggedIn,
+    error,
     signIn,
     signOut,
-    signInWithGoogle,
-    signUp
+    signUp,
+    isLoggedIn: !!user
   };
 };
