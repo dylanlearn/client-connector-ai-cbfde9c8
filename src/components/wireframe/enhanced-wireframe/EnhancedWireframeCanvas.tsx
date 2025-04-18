@@ -77,7 +77,11 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
   });
   
   // Use fabric hook for additional canvas manipulation
-  const { zoomIn, zoomOut, resetZoom } = useFabric({
+  const { 
+    zoomIn: fabricZoomIn, 
+    zoomOut: fabricZoomOut, 
+    resetZoom: fabricResetZoom 
+  } = useFabric({
     initialConfig: mergedConfig
   });
   
@@ -105,8 +109,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onZoomIn) {
         onZoomIn();
       }
-    } else if (zoomIn) {
-      zoomIn();
+    } else if (fabricZoomIn) {
+      fabricZoomIn();
     }
   };
   
@@ -119,8 +123,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onZoomOut) {
         onZoomOut();
       }
-    } else if (zoomOut) {
-      zoomOut();
+    } else if (fabricZoomOut) {
+      fabricZoomOut();
     }
   };
   
@@ -133,8 +137,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onResetZoom) {
         onResetZoom();
       }
-    } else if (resetZoom) {
-      resetZoom();
+    } else if (fabricResetZoom) {
+      fabricResetZoom();
     }
   };
   
