@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useWireframeRenderer } from '@/hooks/wireframe/use-wireframe-renderer';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
@@ -8,10 +8,7 @@ import CanvasControls from './controls/CanvasControls';
 import CanvasLoadingIndicator from './canvas/CanvasLoadingIndicator';
 import CanvasErrorDisplay from './canvas/CanvasErrorDisplay';
 import { fabric } from 'fabric';
-import { useKeyboardShortcuts } from '@/hooks/wireframe/use-keyboard-shortcuts';
-import KeyboardShortcutHandler from './controls/KeyboardShortcutHandler';
-import { useEnhancedCanvasNavigation } from '@/hooks/wireframe/use-enhanced-canvas-navigation';
-import { toast } from 'sonner';
+import { useFabric } from '@/hooks/fabric/use-fabric';
 
 export interface EnhancedWireframeCanvasProps {
   wireframe: WireframeData | null;
@@ -28,7 +25,6 @@ export interface EnhancedWireframeCanvasProps {
   onResetZoom?: () => void;
   onToggleGrid?: () => void;
   onToggleSnapToGrid?: () => void;
-  enableKeyboardShortcuts?: boolean;
 }
 
 const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
@@ -45,8 +41,7 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
   onZoomOut,
   onResetZoom,
   onToggleGrid,
-  onToggleSnapToGrid,
-  enableKeyboardShortcuts = true
+  onToggleSnapToGrid
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -80,79 +75,15 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
     onSectionClick,
     onRenderComplete
   });
-
-  // Enhanced navigation
-  const navigation = useEnhancedCanvasNavigation({
-    enableAnimation: true,
-    showMinimap: true
+  
+  // Use fabric hook for additional canvas manipulation
+  const { 
+    zoomIn: fabricZoomIn, 
+    zoomOut: fabricZoomOut, 
+    resetZoom: fabricResetZoom 
+  } = useFabric({
+    initialConfig: mergedConfig
   });
-
-  // Keyboard shortcuts
-  const keyboardShortcuts = useKeyboardShortcuts({
-    enabled: enableKeyboardShortcuts,
-    showToasts: true
-  });
-
-  // Register keyboard shortcuts
-  useEffect(() => {
-    if (enableKeyboardShortcuts && canvas) {
-      // Register common shortcuts
-      keyboardShortcuts.registerShortcut({
-        name: 'delete-selection',
-        keys: ['Delete'],
-        description: 'Delete selected objects',
-        action: () => {
-          const activeObject = canvas.getActiveObject();
-          if (activeObject) {
-            canvas.remove(activeObject);
-            canvas.renderAll();
-            toast.success('Object deleted');
-          }
-        },
-        category: 'Objects'
-      });
-
-      keyboardShortcuts.registerShortcut({
-        name: 'duplicate-selection',
-        keys: ['Ctrl', 'd'],
-        description: 'Duplicate selected objects',
-        action: () => {
-          const activeObject = canvas.getActiveObject();
-          if (activeObject) {
-            activeObject.clone((clone: fabric.Object) => {
-              clone.set({
-                left: activeObject.left! + 20,
-                top: activeObject.top! + 20
-              });
-              canvas.add(clone);
-              canvas.setActiveObject(clone);
-              canvas.renderAll();
-              toast.success('Object duplicated');
-            });
-          }
-        },
-        category: 'Objects'
-      });
-
-      keyboardShortcuts.registerShortcut({
-        name: 'show-shortcuts',
-        keys: ['?'],
-        description: 'Show keyboard shortcuts',
-        action: () => {
-          keyboardShortcuts.showShortcutsHelp();
-        },
-        category: 'Help'
-      });
-    }
-
-    return () => {
-      if (enableKeyboardShortcuts) {
-        keyboardShortcuts.unregisterShortcut('delete-selection');
-        keyboardShortcuts.unregisterShortcut('duplicate-selection');
-        keyboardShortcuts.unregisterShortcut('show-shortcuts');
-      }
-    };
-  }, [enableKeyboardShortcuts, canvas, keyboardShortcuts]);
   
   // Initialize canvas when component mounts
   useEffect(() => {
@@ -171,33 +102,34 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
   // Handle canvas control actions
   const handleZoomIn = () => {
     if (canvas) {
-      navigation.zoomIn();
-      const newZoom = navigation.currentZoom;
+      const newZoom = Math.min(3, canvas.getZoom() + 0.1);
       canvas.setZoom(newZoom);
       canvas.renderAll();
       
       if (onZoomIn) {
         onZoomIn();
       }
+    } else if (fabricZoomIn) {
+      fabricZoomIn();
     }
   };
   
   const handleZoomOut = () => {
     if (canvas) {
-      navigation.zoomOut();
-      const newZoom = navigation.currentZoom;
+      const newZoom = Math.max(0.1, canvas.getZoom() - 0.1);
       canvas.setZoom(newZoom);
       canvas.renderAll();
       
       if (onZoomOut) {
         onZoomOut();
       }
+    } else if (fabricZoomOut) {
+      fabricZoomOut();
     }
   };
   
   const handleResetZoom = () => {
     if (canvas) {
-      navigation.resetTransforms();
       canvas.setZoom(1);
       canvas.absolutePan(new fabric.Point(0, 0));
       canvas.renderAll();
@@ -205,6 +137,8 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       if (onResetZoom) {
         onResetZoom();
       }
+    } else if (fabricResetZoom) {
+      fabricResetZoom();
     }
   };
   
@@ -241,7 +175,7 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       onToggleSnapToGrid();
     }
   };
-
+  
   return (
     <div className="enhanced-wireframe-canvas-container">
       {showControls && (
@@ -278,34 +212,6 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
         
         <CanvasLoadingIndicator isLoading={isRendering} />
         <CanvasErrorDisplay error={error} />
-
-        {/* Add keyboard shortcuts handler */}
-        {enableKeyboardShortcuts && canvas && (
-          <KeyboardShortcutHandler 
-            canvas={canvas}
-            onDelete={() => {
-              const activeObject = canvas.getActiveObject();
-              if (activeObject) {
-                canvas.remove(activeObject);
-                canvas.renderAll();
-              }
-            }}
-            onDuplicate={() => {
-              const activeObject = canvas.getActiveObject();
-              if (activeObject) {
-                activeObject.clone((clone: fabric.Object) => {
-                  clone.set({
-                    left: activeObject.left! + 20,
-                    top: activeObject.top! + 20
-                  });
-                  canvas.add(clone);
-                  canvas.setActiveObject(clone);
-                  canvas.renderAll();
-                });
-              }
-            }}
-          />
-        )}
       </div>
     </div>
   );
