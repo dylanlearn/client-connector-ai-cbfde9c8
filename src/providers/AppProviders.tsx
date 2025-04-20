@@ -4,6 +4,8 @@ import { QueryProvider } from './QueryProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
+import { VisualStateProvider } from '@/contexts/VisualStateContext';
+import { DesignProcessProvider } from '@/contexts/design-process/DesignProcessProvider';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -18,11 +20,14 @@ export const AppProviders = ({ children }: AppProvidersProps) => {
     <QueryProvider>
       <AuthProvider>
         <ProfileProvider>
-          {children}
-          <Toaster richColors position="top-right" />
+          <VisualStateProvider>
+            <DesignProcessProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </DesignProcessProvider>
+          </VisualStateProvider>
         </ProfileProvider>
       </AuthProvider>
     </QueryProvider>
   );
 };
-

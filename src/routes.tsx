@@ -89,7 +89,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/design-process',
-    element: <DesignProcessPage />,
+    element: <DesignProcessPage />, // The provider is now in AppProviders
   },
   {
     path: '/ai-suggestions',
