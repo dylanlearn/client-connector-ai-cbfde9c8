@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +16,7 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp, error, isLoading } = useAuth();
+  const { error, isLoading, user, signUp } = useAuth();
   const navigate = useNavigate();
 
   // Check if user is already logged in
@@ -48,6 +47,11 @@ const RegisterPage: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      if (!signUp) {
+        toast.error("Registration functionality is not available");
+        return;
+      }
+      
       const success = await signUp(email, password, name);
       if (success) {
         toast.success("Registration successful! Please check your email for confirmation.");

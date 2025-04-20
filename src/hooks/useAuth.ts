@@ -7,12 +7,32 @@ import { AuthContext } from "@/contexts/AuthContext";
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider.");
-  // Adding convenient error and loading fields for compatibility
-  // (If needed for form handling; otherwise these can be removed)
+  
   return {
     ...ctx,
-    // NOTE: ctx isLoading is already present; error handling is passed via thrown errors
+    // Adding convenient error and loading fields for compatibility
+    // (If needed for form handling; otherwise these can be removed)
     error: undefined,
     isLoggedIn: !!ctx.user,
+    signUp: async (email: string, password: string, name?: string, phoneNumber?: string) => {
+      try {
+        const { error } = await ctx.supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name,
+              phone_number: phoneNumber,
+            },
+          }
+        });
+        
+        if (error) throw error;
+        return true;
+      } catch (error) {
+        console.error("Error signing up:", error);
+        return false;
+      }
+    }
   };
 }

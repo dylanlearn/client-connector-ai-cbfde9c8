@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn?: (email: string, password: string) => Promise<void>;
   signOut?: () => Promise<void>;
   signInWithGoogle?: () => Promise<void>;
+  supabase: typeof supabase;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -19,6 +20,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   isLoading: true,
+  supabase,
 });
 
 interface AuthProviderProps {
@@ -79,7 +81,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signIn,
       signOut,
       signInWithGoogle,
-      profile: null // Will be provided by ProfileProvider
+      profile: null, // Will be provided by ProfileProvider
+      supabase,
     }}>
       {children}
     </AuthContext.Provider>
