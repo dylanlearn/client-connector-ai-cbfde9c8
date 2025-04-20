@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,14 +8,29 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { supabase } from '@/integrations/supabase/client';
 
 const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { signUp, error, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,15 +45,24 @@ const RegisterPage: React.FC = () => {
       return;
     }
     
-    const success = await signUp(email, password, name);
-    if (success) {
-      toast.success("Registration successful! Please check your email for confirmation.");
-      navigate('/login');
+    setIsSubmitting(true);
+    
+    try {
+      const success = await signUp(email, password, name);
+      if (success) {
+        toast.success("Registration successful! Please check your email for confirmation.");
+        navigate('/login');
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+      toast.error("Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Card>
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="text-center">Register</CardTitle>
       </CardHeader>
@@ -57,6 +81,7 @@ const RegisterPage: React.FC = () => {
               placeholder="Your name" 
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={isLoading || isSubmitting}
             />
           </div>
           
@@ -68,6 +93,7 @@ const RegisterPage: React.FC = () => {
               placeholder="Email address" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading || isSubmitting}
               required 
             />
           </div>
@@ -80,6 +106,7 @@ const RegisterPage: React.FC = () => {
               placeholder="Password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading || isSubmitting}
               required 
             />
           </div>
@@ -92,6 +119,7 @@ const RegisterPage: React.FC = () => {
               placeholder="Confirm password" 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={isLoading || isSubmitting}
               required 
             />
           </div>
@@ -99,14 +127,20 @@ const RegisterPage: React.FC = () => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
           >
-            {isLoading ? 'Registering...' : 'Register'}
+            {(isLoading || isSubmitting) ? (
+              <div className="flex items-center justify-center">
+                <LoadingSpinner size="sm" className="mr-2" />
+                <span>Registering...</span>
+              </div>
+            ) : 'Register'}
           </Button>
           
-          <div className="text-center text-sm">
+          <div className="text-center text-sm mt-4">
+            <span className="text-muted-foreground">Already have an account? </span>
             <a href="/login" className="text-primary hover:underline">
-              Already have an account? Login
+              Login
             </a>
           </div>
         </form>

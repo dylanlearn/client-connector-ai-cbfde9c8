@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import { Session } from '@supabase/supabase-js';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name?: string;
@@ -10,6 +11,7 @@ interface User {
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,8 +30,10 @@ export const useAuth = () => {
               email: currentSession.user.email || '',
               name: currentSession.user.user_metadata?.name
             });
+            setSession(currentSession);
           } else {
             setUser(null);
+            setSession(null);
           }
         }
       }
@@ -44,6 +48,7 @@ export const useAuth = () => {
             email: currentSession.user.email || '',
             name: currentSession.user.user_metadata?.name
           });
+          setSession(currentSession);
         }
         setIsLoading(false);
       }
@@ -163,6 +168,7 @@ export const useAuth = () => {
 
   return {
     user,
+    session,
     isLoading,
     error,
     signIn,
