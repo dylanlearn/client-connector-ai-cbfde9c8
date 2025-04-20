@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TabManager, TabItem } from "@/components/ui/tab-manager";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAnalytics } from "@/hooks/use-analytics";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useDesignSelection } from "@/hooks/use-design-selection";
 import AnalyticsHeader from "@/components/analytics/AnalyticsHeader";
 import OverviewTab from "@/components/analytics/tabs/OverviewTab";
@@ -13,6 +13,7 @@ import HeatmapsTab from "@/components/analytics/tabs/HeatmapsTab";
 import ConversionTab from "@/components/analytics/tabs/ConversionTab";
 import { useSubscription } from "@/hooks/use-subscription";
 import InteractionTracker from "@/components/analytics/InteractionTracker";
+import { setupRealtimeForClientTables } from "@/utils/realtime-utils";
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -20,6 +21,13 @@ const Analytics = () => {
   const { user } = useAuth();
   const { clientAccessMode, viewOnlyMode } = useDesignSelection({});
   const { status, isActive, isAdmin, adminAssignedStatus } = useSubscription();
+  
+  // Initialize realtime functionality when the component mounts
+  useEffect(() => {
+    setupRealtimeForClientTables().catch(error => {
+      console.error("Error setting up realtime:", error);
+    });
+  }, []);
   
   // Enhanced determination if user has access to Pro features
   const hasProData = 

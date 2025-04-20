@@ -2,21 +2,22 @@
 import React, { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal, AlertTriangle } from "lucide-react";
+import { Terminal, AlertTriangle, BarChart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileQueryTable from "./ProfileQueryTable";
 import ProfileQuerySetupAlert from "./ProfileQuerySetupAlert";
 import { useFetchErrorHandler } from "@/hooks/error-handling/use-fetch-error-handler";
 import { LoadingStateWrapper } from "@/components/ui/LoadingStateWrapper";
+import { toast } from "sonner";
 
 interface QueryStatsResult {
   timestamp: string;
-  extensionEnabled: boolean; // Changed to camelCase for consistency
+  extensionEnabled: boolean;
   queries: Array<{
     query: string;
     calls: number;
-    totalExecTime: number; // Changed to camelCase for consistency
-    meanExecTime: number; // Changed to camelCase for consistency
+    totalExecTime: number;
+    meanExecTime: number;
   }>;
 }
 
@@ -31,6 +32,28 @@ export const ProfileQueryMonitor: React.FC = () => {
 
   useEffect(() => {
     fetchProfileQueryStats();
+    
+    // Set up realtime subscription for query stats updates
+    const channel = supabase.channel('system-monitoring')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'system_monitoring',
+          filter: `component=eq.database_queries`
+        },
+        () => {
+          console.log('Database queries were updated, refreshing stats');
+          fetchProfileQueryStats();
+          toast.info("Database query statistics updated");
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchProfileQueryStats = async () => {
@@ -139,7 +162,7 @@ export const ProfileQueryMonitor: React.FC = () => {
           Profile Query Performance
         </CardTitle>
         <CardDescription>
-          Monitor performance of database queries related to user profiles
+          Monitor database query performance for user profiles. Watch for queries taking &gt;200ms that might need optimization.
         </CardDescription>
       </CardHeader>
       

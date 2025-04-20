@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiMetricsHeader } from "./api-metrics/ApiMetricsHeader";
 import { ApiMetricsOverview } from "./api-metrics/ApiMetricsOverview";
 import { ApiRequestsTable } from "./api-metrics/ApiRequestsTable";
+import { toast } from "sonner";
 
 interface ApiUsageMetricsProps {
   refreshInterval?: number;
@@ -99,10 +99,37 @@ export function ApiUsageMetrics({
   useEffect(() => {
     fetchApiUsageData();
     
+    // Set up realtime subscription for api usage metrics
+    const channel = supabase.channel('api-metrics')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'api_usage_metrics'
+        },
+        (payload) => {
+          console.log('New API request tracked:', payload);
+          fetchApiUsageData();
+          toast.info("New API request detected", {
+            description: `${payload.new.method} ${payload.new.endpoint}`
+          });
+        }
+      )
+      .subscribe();
+    
+    // Still keep the refresh interval as a backup
     if (refreshInterval > 0) {
       const intervalId = setInterval(fetchApiUsageData, refreshInterval * 1000);
-      return () => clearInterval(intervalId);
+      return () => {
+        clearInterval(intervalId);
+        supabase.removeChannel(channel);
+      };
     }
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [refreshInterval, limit]);
 
   return (
@@ -122,6 +149,9 @@ export function ApiUsageMetrics({
         </TabsList>
         
         <TabsContent value="overview">
+          <div className="mb-2 text-sm text-muted-foreground">
+            Monitor API usage patterns. Watch for high response times (&gt;300ms) or error rates above 5% that may indicate issues.
+          </div>
           <ApiMetricsOverview summary={summary} isLoading={isLoading} />
         </TabsContent>
         
