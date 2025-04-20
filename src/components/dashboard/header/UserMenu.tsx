@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,12 +14,9 @@ export const UserMenu = () => {
 
   const handleSignOut = async () => {
     try {
-      const success = await signOut();
-      if (success) {
-        navigate("/login");
-      }
+      await signOut?.();
+      navigate("/login");
     } catch (error) {
-      console.error("Error signing out:", error);
       toast.error("Failed to sign out. Please try again.");
     }
   };
@@ -50,17 +46,14 @@ export const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
         <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           Settings
         </DropdownMenuItem>
-        
         <DropdownMenuItem onClick={() => navigate("/user/profile")} className="cursor-pointer">
           <User className="mr-2 h-4 w-4" />
           Profile
         </DropdownMenuItem>
-        
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
@@ -69,9 +62,7 @@ export const UserMenu = () => {
             </DropdownMenuItem>
           </>
         )}
-        
         <DropdownMenuSeparator />
-        
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
           Sign out

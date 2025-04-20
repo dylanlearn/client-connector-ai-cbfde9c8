@@ -31,10 +31,8 @@ const AdminPanel = () => {
   
   const handleSignOut = async () => {
     try {
-      const success = await signOut();
-      if (success) {
-        navigate("/login");
-      }
+      await signOut?.();
+      navigate("/login");
     } catch (error) {
       toast({
         title: "Error",

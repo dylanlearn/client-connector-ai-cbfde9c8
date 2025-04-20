@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Settings as SettingsIcon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(profile?.name || user?.user_metadata?.name || "");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -20,7 +19,6 @@ const Settings = () => {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
-    
     try {
       // Update profile logic would go here
       toast.success("Profile updated successfully");
@@ -34,10 +32,8 @@ const Settings = () => {
 
   const handleSignOut = async () => {
     try {
-      const success = await signOut();
-      if (success) {
-        navigate("/login");
-      }
+      await signOut?.();
+      navigate("/login");
     } catch (error) {
       toast.error("Failed to sign out");
       console.error("Error signing out:", error);
@@ -54,7 +50,7 @@ const Settings = () => {
               <SettingsIcon className="h-4 w-4 mr-2" />
               {isUpdating ? "Saving..." : "Save Changes"}
             </Button>
-            <Button variant="destructive" onClick={handleSignOut}>
+            <Button variant="destructive" onClick={handleSignOut} disabled={isLoading}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>

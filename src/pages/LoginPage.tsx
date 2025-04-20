@@ -15,42 +15,29 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, signInWithGoogle, error, isLoading } = useAuth();
+  const { signIn, signInWithGoogle, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+  const [error, setError] = useState<string | undefined>(undefined);
+
   const from = (location.state as { from?: string })?.from || "/dashboard";
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate(from, { replace: true });
-      }
-    };
-    
-    checkSession();
-  }, [navigate, from]);
+    if (user) navigate(from, { replace: true });
+  }, [user, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email || !password) {
-      toast.error("Please enter both email and password");
+      setError("Please enter both email and password");
       return;
     }
-
     setIsSubmitting(true);
-    
+    setError(undefined);
     try {
-      const success = await signIn(email, password);
-      if (success) {
-        toast.success("Login successful");
-        navigate(from, { replace: true });
-      }
-    } catch (err) {
-      console.error("Error during login:", err);
-      toast.error("Login failed. Please try again.");
+      await signIn?.(email, password);
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -58,11 +45,9 @@ const LoginPage: React.FC = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
-      // Redirect is handled by Supabase OAuth flow
-    } catch (err) {
-      console.error("Google sign in error:", err);
-      toast.error("Failed to sign in with Google");
+      await signInWithGoogle?.();
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in with Google");
     }
   };
 
