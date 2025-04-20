@@ -133,6 +133,34 @@ export const useAuth = () => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      
+      if (error) {
+        console.error("Google login error:", error.message);
+        setError(error.message);
+        return false;
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Error in signInWithGoogle:", err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     user,
     isLoading,
@@ -140,6 +168,7 @@ export const useAuth = () => {
     signIn,
     signOut,
     signUp,
+    signInWithGoogle,
     isLoggedIn: !!user
   };
 };
