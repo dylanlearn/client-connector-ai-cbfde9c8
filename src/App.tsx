@@ -1,52 +1,46 @@
-
 import React from 'react';
-import { GlobalErrorBoundary } from './components/error-handling/GlobalErrorBoundary';
-import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from 'sonner';
-import { useEffect } from 'react';
-import { initializeErrorHandling } from '@/utils/monitoring/error-handling';
-import { ClientErrorLogger } from '@/utils/monitoring/client-error-logger';
-import router from '@/routes';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { RouterProvider } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/auth/AuthContext';
-import { AIProvider } from '@/contexts/ai/ai-provider';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ResponsiveSystemPage from './pages/ResponsiveSystemPage';
+import Layout from './components/layout/Layout';
 
-// Create a simple QueryClient for React Query
-import { QueryClient } from '@tanstack/react-query';
-const queryClient = new QueryClient();
-
-function App() {
-  // Initialize error handling on mount
-  useEffect(() => {
-    initializeErrorHandling();
-    ClientErrorLogger.initialize();
-    
-    // Clean up on unmount
-    return () => {
-      // Check if cleanup method exists before calling it
-      if (ClientErrorLogger && typeof ClientErrorLogger.cleanup === 'function') {
-        ClientErrorLogger.cleanup();
-      }
-    };
-  }, []);
-
+const App = () => {
   return (
-    <GlobalErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <AuthProvider>
-            <AIProvider>
-              <RouterProvider router={router} />
-              <Toaster />
-              <SonnerToaster position="top-right" closeButton richColors />
-            </AIProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </GlobalErrorBoundary>
+    <Router>
+      <Routes>
+        <Route path="/" element={
+          <Layout>
+            <ResponsiveSystemPage />
+          </Layout>
+        } />
+        <Route path="/projects" element={
+          <Layout>
+            <div>Projects Page</div>
+          </Layout>
+        } />
+        <Route path="/projects/:projectId" element={
+          <Layout>
+            <div>Project Detail Page</div>
+          </Layout>
+        } />
+        <Route path="/wireframes" element={
+          <Layout>
+            <div>Wireframes Page</div>
+          </Layout>
+        } />
+        <Route path="/wireframes/:wireframeId" element={
+          <Layout>
+            <div>Wireframe Detail Page</div>
+          </Layout>
+        } />
+        <Route path="/settings" element={
+          <Layout>
+            <div>Settings Page</div>
+          </Layout>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
