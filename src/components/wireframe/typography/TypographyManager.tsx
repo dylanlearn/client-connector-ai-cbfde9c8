@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TypographyControls } from './TypographyControls';
@@ -7,6 +7,7 @@ import { TypographyPreview } from './TypographyPreview';
 import { TextScaleVisualizer } from './TextScaleVisualizer';
 import { LineHeightVisualizer } from './LineHeightVisualizer';
 import { useToast } from '@/hooks/use-toast';
+import { WireframeTypography } from '@/services/ai/wireframe/wireframe-types';
 
 export interface TypographyConfig {
   headingFont: string;
@@ -22,6 +23,8 @@ export interface TypographyManagerProps {
   initialConfig?: Partial<TypographyConfig>;
   onChange?: (config: TypographyConfig) => void;
   className?: string;
+  typography?: WireframeTypography; // Added typography prop
+  darkMode?: boolean; // Added darkMode prop
 }
 
 /**
@@ -30,19 +33,32 @@ export interface TypographyManagerProps {
 export const TypographyManager: React.FC<TypographyManagerProps> = ({
   initialConfig,
   onChange,
-  className
+  className,
+  typography,
+  darkMode = false
 }) => {
   const { toast } = useToast();
-  // Set up state with default or initial config
+  // Set up state with default or initial config, using typography prop if available
   const [config, setConfig] = useState<TypographyConfig>({
-    headingFont: initialConfig?.headingFont || 'Inter',
-    bodyFont: initialConfig?.bodyFont || 'Inter',
+    headingFont: typography?.headings || initialConfig?.headingFont || 'Inter',
+    bodyFont: typography?.body || initialConfig?.bodyFont || 'Inter',
     scaleRatio: initialConfig?.scaleRatio || 1.25,
     lineHeights: {
       heading: initialConfig?.lineHeights?.heading || 1.1,
       body: initialConfig?.lineHeights?.body || 1.5
     }
   });
+  
+  // Update config when typography prop changes
+  useEffect(() => {
+    if (typography) {
+      setConfig(prevConfig => ({
+        ...prevConfig,
+        headingFont: typography.headings,
+        bodyFont: typography.body
+      }));
+    }
+  }, [typography]);
   
   // Handle font changes
   const handleFontChange = (type: 'heading' | 'body', font: string) => {
@@ -113,7 +129,7 @@ export const TypographyManager: React.FC<TypographyManagerProps> = ({
         <CardHeader>
           <CardTitle>Typography System</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className={darkMode ? "dark" : ""}>
           <Tabs defaultValue="preview">
             <TabsList className="mb-4">
               <TabsTrigger value="preview">Preview</TabsTrigger>
@@ -128,6 +144,7 @@ export const TypographyManager: React.FC<TypographyManagerProps> = ({
                 bodyFont={config.bodyFont}
                 scaleRatio={config.scaleRatio}
                 lineHeights={config.lineHeights}
+                darkMode={darkMode}
               />
             </TabsContent>
             
@@ -140,6 +157,7 @@ export const TypographyManager: React.FC<TypographyManagerProps> = ({
                 onFontChange={handleFontChange}
                 onScaleChange={handleScaleChange}
                 onLineHeightChange={handleLineHeightChange}
+                darkMode={darkMode}
               />
             </TabsContent>
             
@@ -148,6 +166,7 @@ export const TypographyManager: React.FC<TypographyManagerProps> = ({
                 headingFont={config.headingFont}
                 bodyFont={config.bodyFont}
                 scaleRatio={config.scaleRatio}
+                darkMode={darkMode}
               />
             </TabsContent>
             
@@ -156,6 +175,7 @@ export const TypographyManager: React.FC<TypographyManagerProps> = ({
                 headingFont={config.headingFont}
                 bodyFont={config.bodyFont}
                 lineHeights={config.lineHeights}
+                darkMode={darkMode}
               />
             </TabsContent>
           </Tabs>

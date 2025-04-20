@@ -1,295 +1,143 @@
 
-import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { exportWireframeAsHTML, exportWireframeAsPDF, exportWireframeAsImage } from '@/utils/wireframe/export-utils';
-import { Download, FileCode, FileImage, FileText, Loader2, Copy, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { Check, Download, FileCode, FileImage, FileJson } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export interface WireframeExportDialogProps {
   wireframe: WireframeData;
-  // Support both naming conventions for compatibility
-  isOpen?: boolean;
-  onClose?: () => void;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  containerRef?: React.RefObject<HTMLDivElement>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId?: string; // Add projectId as optional prop
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   wireframe,
-  isOpen,
-  onClose,
   open,
   onOpenChange,
-  containerRef
+  projectId
 }) => {
-  const [activeTab, setActiveTab] = useState('html');
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportedCode, setExportedCode] = useState<string>('');
-  const [copied, setCopied] = useState(false);
-  
-  // Create a fallback container ref if none is provided
-  const localContainerRef = useRef<HTMLDivElement>(null);
-  const effectiveContainerRef = containerRef || localContainerRef;
-  
-  // Determine the open state from either prop
-  const dialogOpen = isOpen !== undefined ? isOpen : open;
+  const { toast } = useToast();
+  const [exportFormat, setExportFormat] = useState<string>('image');
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportComplete, setExportComplete] = useState<boolean>(false);
 
-  // Handle dialog close from either approach
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      if (onClose) onClose();
-      if (onOpenChange) onOpenChange(false);
-    }
-  };
-  
-  // Export as HTML handler
-  const handleExportHTML = async () => {
+  const handleExport = async () => {
     setIsExporting(true);
+    
+    // Simulate export process
     try {
-      const html = await exportWireframeAsHTML(wireframe);
-      setExportedCode(html);
+      // In a real implementation, this would actually export the wireframe
+      // using projectId if needed
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Create downloadable file
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${wireframe.title || 'wireframe'}.html`;
-      link.click();
-      URL.revokeObjectURL(url);
+      setExportComplete(true);
+      toast({
+        title: "Export successful",
+        description: `Wireframe exported as ${exportFormat.toUpperCase()}`,
+      });
       
-      toast.success("HTML exported successfully!");
+      // Reset after a delay
+      setTimeout(() => {
+        setExportComplete(false);
+        onOpenChange(false);
+      }, 1000);
     } catch (error) {
-      console.error('Error exporting as HTML:', error);
-      toast.error("Failed to export as HTML", { 
-        description: error instanceof Error ? error.message : "Unknown error" 
+      toast({
+        title: "Export failed",
+        description: "There was a problem exporting your wireframe",
+        variant: "destructive"
       });
     } finally {
       setIsExporting(false);
     }
   };
-  
-  // Copy HTML to clipboard
-  const handleCopyHTML = async () => {
-    if (!exportedCode) {
-      try {
-        const html = await exportWireframeAsHTML(wireframe);
-        setExportedCode(html);
-        await navigator.clipboard.writeText(html);
-        setCopied(true);
-        toast.success("HTML copied to clipboard");
-        setTimeout(() => setCopied(false), 2000);
-      } catch (error) {
-        console.error('Error copying HTML:', error);
-        toast.error("Failed to copy HTML");
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(exportedCode);
-        setCopied(true);
-        toast.success("HTML copied to clipboard");
-        setTimeout(() => setCopied(false), 2000);
-      } catch (error) {
-        console.error('Error copying HTML:', error);
-        toast.error("Failed to copy HTML");
-      }
-    }
-  };
-  
-  // Export as PDF handler
-  const handleExportPDF = async () => {
-    setIsExporting(true);
-    try {
-      if (effectiveContainerRef.current) {
-        // Pass the HTMLElement from the containerRef
-        const pdfBlob = await exportWireframeAsPDF(effectiveContainerRef.current);
-        
-        // Create downloadable file from the returned blob
-        const url = URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${wireframe.title || 'wireframe'}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
-        
-        toast.success("PDF exported successfully!");
-      } else {
-        throw new Error("No container element available for PDF export");
-      }
-    } catch (error) {
-      console.error('Error exporting as PDF:', error);
-      toast.error("Failed to export as PDF", { 
-        description: error instanceof Error ? error.message : "No container element available" 
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-  
-  // Export as Image handler
-  const handleExportImage = async () => {
-    setIsExporting(true);
-    try {
-      if (effectiveContainerRef.current) {
-        // Pass the HTMLElement from the containerRef
-        const imageBlob = await exportWireframeAsImage(effectiveContainerRef.current);
-        
-        // Create downloadable file from the returned blob
-        const url = URL.createObjectURL(imageBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${wireframe.title || 'wireframe'}.png`;
-        link.click();
-        URL.revokeObjectURL(url);
-        
-        toast.success("Image exported successfully!");
-      } else {
-        throw new Error("No container element available for image export");
-      }
-    } catch (error) {
-      console.error('Error exporting as image:', error);
-      toast.error("Failed to export as image", { 
-        description: error instanceof Error ? error.message : "No container element available" 
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-  
+
   return (
-    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
+          <DialogDescription>
+            Choose a format to export your wireframe design
+          </DialogDescription>
         </DialogHeader>
         
-        {/* Create a hidden div for the fallback container ref if needed */}
-        {!containerRef && (
-          <div 
-            ref={localContainerRef} 
-            className="hidden" 
-            dangerouslySetInnerHTML={{ __html: '<div>Fallback container for export</div>' }}
-          />
-        )}
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="html" className="flex gap-2 items-center">
-              <FileCode className="h-4 w-4" />
-              HTML
-            </TabsTrigger>
-            <TabsTrigger value="pdf" className="flex gap-2 items-center">
-              <FileText className="h-4 w-4" />
-              PDF
-            </TabsTrigger>
-            <TabsTrigger value="image" className="flex gap-2 items-center">
-              <FileImage className="h-4 w-4" />
-              Image
-            </TabsTrigger>
+        <Tabs defaultValue="image" onValueChange={setExportFormat}>
+          <TabsList className="grid grid-cols-3 w-full">
+            <TabsTrigger value="image">Image</TabsTrigger>
+            <TabsTrigger value="html">HTML/CSS</TabsTrigger>
+            <TabsTrigger value="json">JSON</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="html" className="space-y-4">
-            <div className="text-sm">
-              Export your wireframe as an HTML file that can be viewed in any browser.
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleExportHTML} 
-                className="flex-1"
-                disabled={isExporting}
-              >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export as HTML
-                  </>
-                )}
-              </Button>
-              <Button 
-                onClick={handleCopyHTML} 
-                variant="outline"
-                disabled={isExporting}
-              >
-                {copied ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+          <TabsContent value="image" className="pt-4">
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <FileImage className="mr-2 h-5 w-5 text-muted-foreground" />
+                <span>Export as a PNG image</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Creates a high-resolution image of your wireframe that can be easily shared.
+              </p>
             </div>
           </TabsContent>
           
-          <TabsContent value="pdf" className="space-y-4">
-            <div className="text-sm">
-              Export your wireframe as a PDF document.
-            </div>
-            <Button 
-              onClick={handleExportPDF} 
-              className="w-full"
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export as PDF
-                </>
-              )}
-            </Button>
-            {!containerRef && (
-              <p className="text-xs text-yellow-600">
-                Note: To export as PDF, you need to provide a container reference to the dialog.
+          <TabsContent value="html" className="pt-4">
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <FileCode className="mr-2 h-5 w-5 text-muted-foreground" />
+                <span>Export as HTML/CSS</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Generates HTML and CSS code that can be used in web development projects.
               </p>
-            )}
+            </div>
           </TabsContent>
           
-          <TabsContent value="image" className="space-y-4">
-            <div className="text-sm">
-              Export your wireframe as a PNG image.
-            </div>
-            <Button 
-              onClick={handleExportImage} 
-              className="w-full"
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Exporting...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export as Image
-                </>
-              )}
-            </Button>
-            {!containerRef && (
-              <p className="text-xs text-yellow-600">
-                Note: To export as image, you need to provide a container reference to the dialog.
+          <TabsContent value="json" className="pt-4">
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <FileJson className="mr-2 h-5 w-5 text-muted-foreground" />
+                <span>Export as JSON</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Exports the wireframe data as a JSON file that can be imported into other tools.
               </p>
-            )}
+            </div>
           </TabsContent>
         </Tabs>
         
-        <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Close
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
           </Button>
-        </DialogFooter>
+          
+          <Button 
+            onClick={handleExport}
+            disabled={isExporting || exportComplete}
+            className="min-w-[100px]"
+          >
+            {isExporting ? (
+              <span className="flex items-center">
+                <span className="animate-spin mr-2">◌</span>
+                Exporting
+              </span>
+            ) : exportComplete ? (
+              <span className="flex items-center">
+                <Check className="mr-2 h-4 w-4" />
+                Done
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </span>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

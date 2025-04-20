@@ -1,12 +1,13 @@
 
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { DeviceType } from '../preview/DeviceInfo';
 
 interface WireframeCanvasProps {
   children: ReactNode;
   className?: string;
   viewMode?: 'edit' | 'preview' | 'code';
-  deviceType?: 'mobile' | 'tablet' | 'desktop';
+  deviceType?: DeviceType;
 }
 
 const WireframeCanvas: React.FC<WireframeCanvasProps> = ({
@@ -21,8 +22,11 @@ const WireframeCanvas: React.FC<WireframeCanvasProps> = ({
     
     switch (deviceType) {
       case 'mobile':
+      case 'mobileSm':
+      case 'mobileLandscape':
         return '375px';
       case 'tablet':
+      case 'tabletLandscape':
         return '768px';
       case 'desktop':
       default:
