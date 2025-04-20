@@ -1,7 +1,7 @@
 
 import { ReactNode, useEffect, useRef } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export interface ProtectedRouteProps {
@@ -40,20 +40,6 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
     };
   }, [isLoading, location.pathname, user]);
 
-  // Debug logs for admin access
-  useEffect(() => {
-    if (adminOnly) {
-      console.log('AdminOnly route access attempt:', { 
-        isLoading, 
-        userExists: !!user, 
-        profile, 
-        userEmail: user?.email,
-        userRole: profile?.role,
-        adminEmails: ['dylanmohseni0@gmail.com', 'admin@example.com']
-      });
-    }
-  }, [adminOnly, isLoading, user, profile]);
-
   // Show loading state if auth is still being checked
   if (isLoading) {
     return (
@@ -71,14 +57,6 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
   
   // For admin routes, check if user has admin role or is in admin email list
   if (adminOnly) {
-    // Force debug output to help diagnose the issue
-    console.log('Admin access check:', {
-      email: user.email,
-      role: profile?.role,
-      isAdminByRole: profile?.role === 'admin',
-      isAdminByEmail: user.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email)
-    });
-    
     const isAdmin = profile?.role === 'admin';
     const isAdminEmail = user.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email);
     
@@ -90,9 +68,6 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
       });
       return <Navigate to="/dashboard" replace />;
     }
-    
-    // User is confirmed admin, proceed
-    console.log('Admin access granted to', user.email);
   }
 
   return children ? <>{children}</> : <Outlet />;

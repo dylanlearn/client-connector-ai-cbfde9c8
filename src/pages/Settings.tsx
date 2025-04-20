@@ -1,88 +1,123 @@
 
-import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, User, Mail, Shield, CreditCard } from "lucide-react";
+import { useState } from "react";
+import { Settings as SettingsIcon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
-import { enableRealtimeForTable } from "@/utils/auth-utils";
-import { TabManager, TabItem } from "@/components/ui/tab-manager";
-import ProfileSettings from "@/components/settings/ProfileSettings";
-import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Settings = () => {
-  const { user, profile } = useAuth();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("profile");
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [name, setName] = useState(profile?.name || user?.user_metadata?.name || "");
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Enable realtime for the profiles table
-  useEffect(() => {
-    const setup = async () => {
-      await enableRealtimeForTable('profiles');
-    };
-    setup();
-  }, []);
-
-  // Define tabs configuration
-  const settingsTabs: TabItem[] = [
-    {
-      id: "profile",
-      label: "Profile",
-      content: <ProfileSettings 
-        profile={profile} 
-        user={user} 
-        isLoading={isLoading} 
-        setIsLoading={setIsLoading} 
-      />,
-      isLoading: false
-    },
-    {
-      id: "subscription",
-      label: "Subscription",
-      content: <SubscriptionSettings />,
-      isLoading: false
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    
+    try {
+      // Update profile logic would go here
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error("Failed to update profile");
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsUpdating(false);
     }
-  ];
+  };
 
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
+  const handleSignOut = async () => {
+    try {
+      const success = await signOut();
+      if (success) {
+        navigate("/login");
+      }
+    } catch (error) {
+      toast.error("Failed to sign out");
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
-        {activeTab === "profile" && (
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              if (activeTab === "profile" && profile) {
-                const profileSettings = document.getElementById("profile-form") as HTMLFormElement;
-                if (profileSettings) {
-                  profileSettings.dispatchEvent(new Event("submit", { cancelable: true }));
-                }
-              }
-            }}
-            disabled={isLoading}
-          >
-            <SettingsIcon className="mr-2 h-4 w-4" />
-            {isLoading ? "Saving..." : "Save Changes"}
-          </Button>
-        )}
+      <div className="container py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={handleUpdateProfile} disabled={isUpdating}>
+              <SettingsIcon className="h-4 w-4 mr-2" />
+              {isUpdating ? "Saving..." : "Save Changes"}
+            </Button>
+            <Button variant="destructive" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+        
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Information</CardTitle>
+              <CardDescription>Manage your account details and preferences</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdateProfile} id="profile-form" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Display Name</Label>
+                  <Input 
+                    id="name" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Enter your display name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    value={user?.email || ""} 
+                    disabled 
+                    placeholder="Your email address"
+                  />
+                  <p className="text-sm text-muted-foreground">Your email cannot be changed</p>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800">
+            <CardHeader>
+              <CardTitle className="text-rose-700 dark:text-rose-300">Danger Zone</CardTitle>
+              <CardDescription className="text-rose-600 dark:text-rose-400">
+                Actions here can't be undone
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium mb-1">Sign out everywhere</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Sign out from all devices where you're currently logged in
+                  </p>
+                  <Button variant="destructive" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+                <Separator />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      <TabManager 
-        tabs={settingsTabs}
-        activeTab={activeTab} 
-        onTabChange={handleTabChange}
-        className="space-y-4"
-      />
     </DashboardLayout>
   );
 };

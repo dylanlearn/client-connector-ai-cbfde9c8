@@ -16,17 +16,33 @@ import {
   Database, 
   ArrowRight, 
   HeartPulse, 
-  ActivitySquare 
+  ActivitySquare, 
+  LogOut 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import RoleManagementGuide from "@/components/admin/RoleManagementGuide";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdmin, isVerifying } = useAdminStatus();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
+  
+  const handleSignOut = async () => {
+    try {
+      const success = await signOut();
+      if (success) {
+        navigate("/login");
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   
   if (isVerifying) {
     return (
@@ -57,11 +73,16 @@ const AdminPanel = () => {
   return (
     <DashboardLayout>
       <div className="container py-6">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
-          <p className="text-muted-foreground">
-            Manage your application settings and user access
-          </p>
+          <Button 
+            variant="destructive" 
+            onClick={handleSignOut}
+            className="flex items-center"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
         </div>
         
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6">

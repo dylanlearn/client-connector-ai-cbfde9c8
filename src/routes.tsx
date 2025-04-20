@@ -20,23 +20,9 @@ import WireframeGenerator from './pages/wireframe-generator';
 import DesignProcessPage from './pages/DesignProcessPage';
 import ClientHub from './pages/ClientHub';
 import WebsiteAnalyzer from './pages/design-analysis/WebsiteAnalyzer';
-import { useAuth } from './hooks/useAuth';
-
-// Protected Route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn, isLoading } = useAuth();
-  const location = useLocation();
-  
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-  
-  if (!isLoggedIn) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
-  
-  return <>{children}</>;
-};
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import Settings from './pages/Settings';
+import AdminPanel from './pages/AdminPanel';
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
@@ -121,7 +107,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/settings',
-    element: <ProtectedRoute><DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Settings</h1></div></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><Settings /></ProtectedRoute>,
+  },
+  {
+    path: '/admin',
+    element: <ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>,
   },
 
   // Not found

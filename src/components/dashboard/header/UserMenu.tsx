@@ -4,39 +4,29 @@ import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
-import { useAuth } from "@/hooks/use-auth";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { ShieldCheck, Activity, Database, Settings, LogOut, User, FileText } from "lucide-react";
-import { logError } from "@/utils/monitoring/client-error-logger";
-import { useAdminStatus } from "@/hooks/use-admin-status"; // Switch to useAdminStatus hook
+import { useAuth } from "@/hooks/useAuth";
+import { Settings, LogOut, User } from "lucide-react";
+import { toast } from "sonner";
 
 export const UserMenu = () => {
   const { user, signOut, profile } = useAuth();
-  const { isAdmin } = useAdminStatus(); // Use the dedicated admin hook
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      navigate("/login");
+      const success = await signOut();
+      if (success) {
+        navigate("/login");
+      }
     } catch (error) {
       console.error("Error signing out:", error);
-      // Use the correctly exported logError function
-      logError(
-        error instanceof Error ? error : new Error("Sign out error"), 
-        "UserMenu", 
-        user?.id
-      );
+      toast.error("Failed to sign out. Please try again.");
     }
   };
-  
-  const handleAdminPanelClick = () => {
-    console.log("Navigating to admin panel. Current admin status:", { isAdmin, email: user?.email, role: profile?.role });
-    navigate("/admin");
-  };
 
+  const isAdmin = profile?.role === 'admin' || user?.email === 'dylanmohseni0@gmail.com' || user?.email === 'admin@example.com';
+  
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
       <DropdownMenuTrigger asChild>
@@ -62,36 +52,20 @@ export const UserMenu = () => {
         <DropdownMenuSeparator />
         
         <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={() => navigate("/user/profile")} className="cursor-pointer">
           <User className="mr-2 h-4 w-4" />
-          Account Settings
+          Profile
         </DropdownMenuItem>
         
-        <DropdownMenuItem onClick={() => navigate("/templates")} className="cursor-pointer">
-          <FileText className="mr-2 h-4 w-4" />
-          Templates
-        </DropdownMenuItem>
-        
-        {/* Admin menu items - shown based on admin status */}
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
-              Admin Controls
-            </DropdownMenuLabel>
-            
-            <DropdownMenuItem onClick={handleAdminPanelClick} className="text-indigo-600 cursor-pointer">
-              <ShieldCheck className="mr-2 h-4 w-4" />
+            <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer text-blue-600">
               Admin Panel
-            </DropdownMenuItem>
-            
-            <DropdownMenuItem onClick={() => navigate("/admin/analytics")} className="text-indigo-600 cursor-pointer">
-              <Activity className="mr-2 h-4 w-4" />
-              Admin Analytics
-            </DropdownMenuItem>
-            
-            <DropdownMenuItem onClick={() => navigate("/admin/supabase-audit")} className="text-indigo-600 cursor-pointer">
-              <Database className="mr-2 h-4 w-4" />
-              Supabase Audit
             </DropdownMenuItem>
           </>
         )}
