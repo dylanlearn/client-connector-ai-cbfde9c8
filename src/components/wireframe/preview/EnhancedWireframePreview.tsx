@@ -169,8 +169,8 @@ const EnhancedWireframePreview: React.FC<EnhancedWireframePreviewProps> = ({
       </div>
       
       <WireframeExportDialog
-        isOpen={showExportDialog}
-        onClose={() => setShowExportDialog(false)}
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
         wireframe={wireframe}
       />
     </div>

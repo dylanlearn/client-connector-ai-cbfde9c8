@@ -25,13 +25,13 @@ describe('WireframeExportDialog', () => {
       }
     };
     
-    const onCloseMock = vi.fn();
+    const onOpenChangeMock = vi.fn();
 
     renderWithProviders(
       <WireframeExportDialog 
         wireframe={mockWireframe} 
         open={true} 
-        onClose={onCloseMock}
+        onOpenChange={onOpenChangeMock}
       />
     );
 
@@ -58,13 +58,13 @@ describe('WireframeExportDialog', () => {
       }
     };
     
-    const onCloseMock = vi.fn();
+    const onOpenChangeMock = vi.fn();
 
     renderWithProviders(
       <WireframeExportDialog 
         wireframe={mockWireframe} 
         open={true} 
-        onClose={onCloseMock}
+        onOpenChange={onOpenChangeMock}
       />
     );
 
@@ -72,6 +72,6 @@ describe('WireframeExportDialog', () => {
     const cancelButton = screen.getByText(/Cancel/i);
     fireEvent.click(cancelButton);
 
-    expect(onCloseMock).toHaveBeenCalled();
+    expect(onOpenChangeMock).toHaveBeenCalledWith(false);
   });
 });

@@ -9,21 +9,34 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface WireframeExportDialogProps {
   wireframe: WireframeData;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  projectId?: string; // Add projectId as optional prop
+  open?: boolean;
+  isOpen?: boolean; // For backward compatibility
+  onOpenChange?: (open: boolean) => void;
+  onClose?: (open: boolean) => void; // For backward compatibility
+  projectId?: string;
 }
 
 const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   wireframe,
   open,
+  isOpen,
   onOpenChange,
+  onClose,
   projectId
 }) => {
+  // Use either the new or old prop pattern for open state
+  const isDialogOpen = open !== undefined ? open : isOpen;
+  
   const { toast } = useToast();
   const [exportFormat, setExportFormat] = useState<string>('image');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportComplete, setExportComplete] = useState<boolean>(false);
+
+  // Handle dialog state changes with both callback patterns
+  const handleOpenChange = (state: boolean) => {
+    if (onOpenChange) onOpenChange(state);
+    if (onClose) onClose(state);
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -43,7 +56,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
       // Reset after a delay
       setTimeout(() => {
         setExportComplete(false);
-        onOpenChange(false);
+        handleOpenChange(false);
       }, 1000);
     } catch (error) {
       toast({
@@ -57,7 +70,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Export Wireframe</DialogTitle>
@@ -111,7 +124,7 @@ const WireframeExportDialog: React.FC<WireframeExportDialogProps> = ({
         </Tabs>
         
         <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
           

@@ -6,6 +6,7 @@ export interface TextScaleVisualizerProps {
   headingFont: string;
   bodyFont: string;
   scaleRatio?: number;
+  darkMode?: boolean; // Add darkMode prop
 }
 
 /**
@@ -15,6 +16,7 @@ export const TextScaleVisualizer: React.FC<TextScaleVisualizerProps> = ({
   headingFont,
   bodyFont,
   scaleRatio = 1.25,
+  darkMode = false, // Default to false
 }) => {
   // Calculate the scale steps
   const baseSize = 16; // 1rem = 16px
@@ -30,7 +32,7 @@ export const TextScaleVisualizer: React.FC<TextScaleVisualizerProps> = ({
   ];
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden ${darkMode ? 'bg-gray-900 text-gray-100' : ''}`}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-medium">Typography Scale</CardTitle>
       </CardHeader>

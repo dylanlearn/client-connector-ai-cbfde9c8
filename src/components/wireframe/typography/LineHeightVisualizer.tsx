@@ -11,6 +11,7 @@ export interface LineHeightVisualizerProps {
     body: number;
   };
   className?: string;
+  darkMode?: boolean; // Add darkMode prop
 }
 
 /**
@@ -20,13 +21,14 @@ export const LineHeightVisualizer: React.FC<LineHeightVisualizerProps> = ({
   headingFont,
   bodyFont,
   lineHeights = { heading: 1.1, body: 1.5 },
-  className
+  className,
+  darkMode = false // Default to false
 }) => {
   const sampleHeading = "The quick brown fox jumps over the lazy dog";
   const sampleBody = "Typography is the art and technique of arranging type to make written language legible, readable, and appealing when displayed. The arrangement of type involves selecting typefaces, point sizes, line lengths, line-spacing, and letter-spacing.";
   
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden", className, darkMode ? 'bg-gray-900 text-gray-100' : '')}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-medium">Line Height Visualization</CardTitle>
       </CardHeader>
