@@ -30,6 +30,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import WireframeGenerator from "./pages/wireframe-generator";
+import ResponsiveSystemPage from "./pages/ResponsiveSystemPage";
+import VisualStatesSystemPage from "./pages/VisualStatesSystemPage";
 
 // Admin routes check function
 interface WindowWithAdminRoutes extends Window {
@@ -66,7 +68,11 @@ const getDemoProjectId = (): string => {
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout><Index /></Layout>,
+    element: <Layout><ResponsiveSystemPage /></Layout>,
+  },
+  {
+    path: "/visual-states",
+    element: <Layout><VisualStatesSystemPage /></Layout>,
   },
   {
     path: "/home",
@@ -114,7 +120,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/projects',
-    element: <ProtectedRoute><Layout><Projects /></Layout></ProtectedRoute>,
+    element: <Layout><Projects /></Layout>,
   },
   {
     path: '/project/:projectId/wireframe-studio',
@@ -131,6 +137,14 @@ const router = createBrowserRouter([
   {
     path: '/wireframe-generator',
     element: <ProtectedRoute><Layout><WireframeGenerator /></Layout></ProtectedRoute>,
+  },
+  {
+    path: '/wireframes',
+    element: <Layout><div>Wireframes Page</div></Layout>,
+  },
+  {
+    path: '/wireframes/:wireframeId',
+    element: <Layout><div>Wireframe Detail Page</div></Layout>,
   },
   {
     path: '/design-picker',

@@ -1,139 +1,110 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useVisualState, ComponentState } from '@/contexts/VisualStateContext';
-import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import StatefulComponent from './StatefulComponent';
+import { ComponentState, useVisualState } from '@/contexts/VisualStateContext';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Pause, Play, RotateCcw } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
-export interface StateTransitionPreviewProps {
-  children: React.ReactNode;
-  className?: string;
-  transitionSequence?: ComponentState[];
-  autoPlay?: boolean;
-  intervalDuration?: number;
-}
+export const StateTransitionPreview: React.FC = () => {
+  const { transitionDuration, transitionTimingFunction } = useVisualState();
+  const [currentState, setCurrentState] = useState<ComponentState>('default');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const states: ComponentState[] = ['default', 'hover', 'active', 'focus', 'disabled'];
 
-/**
- * Component for previewing state transitions for a component or set of components.
- * Supports automatic playback of transition sequences or manual stepping.
- */
-export function StateTransitionPreview({
-  children,
-  className,
-  transitionSequence = ['default', 'hover', 'active', 'focus', 'disabled', 'default'],
-  autoPlay = false,
-  intervalDuration = 2000,
-}: StateTransitionPreviewProps) {
-  const { 
-    setPreviewState, 
-    transitionDuration, 
-    transitionDelay,
-    setIsAnimating 
-  } = useVisualState();
-  
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const totalDuration = transitionDuration + transitionDelay;
-
-  // When the current index changes, update the preview state
-  useEffect(() => {
-    setPreviewState(transitionSequence[currentIndex]);
-    
-    // Indicate animation is happening during transition
-    setIsAnimating(true);
-    const timer = setTimeout(() => {
-      setIsAnimating(false);
-    }, totalDuration);
-    
-    return () => clearTimeout(timer);
-  }, [currentIndex, setPreviewState, transitionSequence, setIsAnimating, totalDuration]);
-
-  // Auto-play functionality
+  // Auto-play transition sequence
   useEffect(() => {
     if (!isPlaying) return;
-
+    
+    let currentIndex = states.indexOf(currentState);
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % transitionSequence.length);
-    }, intervalDuration);
-
+      currentIndex = (currentIndex + 1) % states.length;
+      setCurrentState(states[currentIndex]);
+    }, transitionDuration + 500); // Add buffer time so the transition completes
+    
     return () => clearInterval(interval);
-  }, [isPlaying, intervalDuration, transitionSequence.length]);
+  }, [isPlaying, currentState, transitionDuration]);
 
-  // Navigate to the next state in the sequence
-  const handleNext = useCallback(() => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % transitionSequence.length);
-  }, [transitionSequence.length]);
-
-  // Reset to the initial state
-  const handleReset = useCallback(() => {
-    setCurrentIndex(0);
-  }, []);
-
-  // Toggle play/pause
-  const togglePlayback = useCallback(() => {
-    setIsPlaying((prev) => !prev);
-  }, []);
+  const togglePlay = () => {
+    if (!isPlaying) {
+      setCurrentState('default');
+      setTimeout(() => setIsPlaying(true), 100);
+    } else {
+      setIsPlaying(false);
+    }
+  };
 
   return (
-    <Card className={cn("w-full", className)}>
-      <CardContent className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+    <Card className="p-6">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-medium">
+              Current State: <span className="capitalize">{currentState}</span>
+            </h3>
             <Button 
+              onClick={togglePlay} 
               variant="outline" 
               size="sm"
-              onClick={togglePlayback}
-              aria-label={isPlaying ? "Pause" : "Play"}
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleReset}
-              aria-label="Reset"
-            >
-              <RotateCcw className="h-4 w-4" />
+              {isPlaying ? 'Stop' : 'Play Sequence'}
             </Button>
           </div>
-
-          <div className="flex items-center space-x-1">
-            {transitionSequence.map((state, index) => (
-              <React.Fragment key={`${state}-${index}`}>
-                <div 
-                  className={cn(
-                    "px-3 py-1 text-xs rounded-md capitalize", 
-                    currentIndex === index 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {state}
-                </div>
-                {index < transitionSequence.length - 1 && (
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                )}
-              </React.Fragment>
+          
+          <div className="flex flex-col gap-4 p-4 border border-gray-200 rounded-md">
+            {/* Button Example */}
+            <StatefulComponent
+              forceState={currentState}
+              defaultStyles="px-4 py-2 bg-blue-500 text-white rounded"
+              hoverStyles="bg-blue-600"
+              activeStyles="bg-blue-700"
+              focusStyles="ring-2 ring-blue-300 outline-none"
+              disabledStyles="bg-blue-300 cursor-not-allowed"
+            >
+              <button className="w-full">Button Example</button>
+            </StatefulComponent>
+            
+            {/* Card Example */}
+            <StatefulComponent
+              forceState={currentState}
+              defaultStyles="border border-gray-200 rounded-md p-4 bg-white shadow-sm"
+              hoverStyles="shadow-md border-gray-300"
+              activeStyles="bg-gray-50"
+              focusStyles="ring-2 ring-blue-200 outline-none"
+              disabledStyles="opacity-60 bg-gray-50"
+            >
+              <div className="text-center">
+                <p className="font-medium">Card Example</p>
+              </div>
+            </StatefulComponent>
+          </div>
+        </div>
+        
+        <div className="flex-1">
+          <h3 className="text-base font-medium mb-4">
+            Manual State Control
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {states.map(state => (
+              <Button 
+                key={state}
+                onClick={() => {
+                  setIsPlaying(false);
+                  setCurrentState(state);
+                }}
+                variant={state === currentState ? "default" : "outline"}
+                className="capitalize"
+              >
+                {state}
+              </Button>
             ))}
           </div>
-
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleNext}
-            aria-label="Next state"
-          >
-            Next
-          </Button>
+          
+          <div className="mt-4 text-sm text-gray-500">
+            <p>Transition: {transitionDuration}ms {transitionTimingFunction}</p>
+          </div>
         </div>
-
-        <div className="p-4 border rounded-lg flex items-center justify-center min-h-[200px]">
-          {children}
-        </div>
-      </CardContent>
+      </div>
     </Card>
   );
-}
-
-export default StateTransitionPreview;
+};

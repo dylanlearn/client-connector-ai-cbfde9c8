@@ -1,20 +1,12 @@
 
 import React from 'react';
 import { useVisualState, ComponentState } from '@/contexts/VisualStateContext';
-import { cn } from '@/lib/utils';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export interface StateControlsProps {
-  className?: string;
-}
-
-/**
- * Control panel for managing visual state transitions and previews.
- * Allows adjusting timing, easing functions, and state selection.
- */
-export function StateControls({ className }: StateControlsProps) {
+export const StateControls: React.FC = () => {
   const {
     previewState,
     setPreviewState,
@@ -23,77 +15,84 @@ export function StateControls({ className }: StateControlsProps) {
     transitionTimingFunction,
     setTransitionTimingFunction,
     transitionDelay,
-    setTransitionDelay,
+    setTransitionDelay
   } = useVisualState();
 
-  // Available component states
-  const componentStates: ComponentState[] = ['default', 'hover', 'active', 'focus', 'disabled'];
-
-  // Common easing functions
-  const easingFunctions = [
-    { value: 'ease', label: 'Ease' },
-    { value: 'linear', label: 'Linear' },
-    { value: 'ease-in', label: 'Ease In' },
-    { value: 'ease-out', label: 'Ease Out' },
-    { value: 'ease-in-out', label: 'Ease In Out' },
-    { value: 'cubic-bezier(0.4, 0, 0.2, 1)', label: 'Material Standard' },
-    { value: 'cubic-bezier(0.8, 0, 0.2, 1)', label: 'Gentle Bounce' },
-    { value: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', label: 'Swift' },
+  const states: ComponentState[] = ['default', 'hover', 'active', 'focus', 'disabled'];
+  const timingFunctions = [
+    'linear',
+    'ease',
+    'ease-in',
+    'ease-out',
+    'ease-in-out',
+    'cubic-bezier(0.4, 0, 0.2, 1)', // Tailwind's DEFAULT
+    'cubic-bezier(0.4, 0, 1, 1)',   // Tailwind's IN
+    'cubic-bezier(0, 0, 0.2, 1)',   // Tailwind's OUT
+    'cubic-bezier(0.4, 0, 0.6, 1)'  // Tailwind's IN-OUT
   ];
 
   return (
-    <div className={cn("space-y-6", className)}>
-      <div className="space-y-3">
-        <Label>Component State</Label>
-        <div className="flex flex-wrap gap-2">
-          {componentStates.map((state) => (
-            <button
-              key={state}
-              type="button"
-              onClick={() => setPreviewState(state)}
-              className={cn(
-                'px-3 py-1.5 text-sm rounded-md capitalize transition-colors',
-                previewState === state
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-              )}
-            >
-              {state}
-            </button>
+    <div className="flex flex-col gap-6">
+      {/* State Selection */}
+      <div>
+        <h3 className="text-base font-medium mb-3">Component State</h3>
+        <RadioGroup
+          value={previewState}
+          onValueChange={(value) => setPreviewState(value as ComponentState)}
+          className="flex flex-wrap gap-2 md:gap-4"
+        >
+          {states.map((state) => (
+            <div key={state} className="flex items-center space-x-2">
+              <RadioGroupItem 
+                value={state} 
+                id={`state-${state}`} 
+                className="text-blue-600" 
+              />
+              <Label htmlFor={`state-${state}`} className="capitalize">
+                {state}
+              </Label>
+            </div>
           ))}
-        </div>
+        </RadioGroup>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-baseline justify-between">
-          <Label htmlFor="duration-slider">Transition Duration: {transitionDuration}ms</Label>
+      {/* Transition Duration */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <Label htmlFor="duration">Transition Duration: {transitionDuration}ms</Label>
         </div>
         <Slider
-          id="duration-slider"
-          min={0}
-          max={1500}
-          step={50}
-          value={[transitionDuration]}
-          onValueChange={(values) => setTransitionDuration(values[0])}
-        />
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-baseline justify-between">
-          <Label htmlFor="delay-slider">Transition Delay: {transitionDelay}ms</Label>
-        </div>
-        <Slider
-          id="delay-slider"
+          id="duration"
           min={0}
           max={1000}
           step={50}
-          value={[transitionDelay]}
-          onValueChange={(values) => setTransitionDelay(values[0])}
+          value={[transitionDuration]}
+          onValueChange={(value) => setTransitionDuration(value[0])}
+          className="w-full"
         />
       </div>
 
-      <div className="space-y-3">
-        <Label htmlFor="timing-function">Timing Function</Label>
+      {/* Transition Delay */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <Label htmlFor="delay">Transition Delay: {transitionDelay}ms</Label>
+        </div>
+        <Slider
+          id="delay"
+          min={0}
+          max={500}
+          step={10}
+          value={[transitionDelay]}
+          onValueChange={(value) => setTransitionDelay(value[0])}
+          className="w-full"
+        />
+      </div>
+
+      {/* Timing Function */}
+      <div>
+        <Label htmlFor="timing-function" className="block mb-2">
+          Timing Function
+        </Label>
         <Select
           value={transitionTimingFunction}
           onValueChange={setTransitionTimingFunction}
@@ -102,9 +101,9 @@ export function StateControls({ className }: StateControlsProps) {
             <SelectValue placeholder="Select timing function" />
           </SelectTrigger>
           <SelectContent>
-            {easingFunctions.map((easing) => (
-              <SelectItem key={easing.value} value={easing.value}>
-                {easing.label}
+            {timingFunctions.map(fn => (
+              <SelectItem key={fn} value={fn}>
+                {fn}
               </SelectItem>
             ))}
           </SelectContent>
@@ -112,6 +111,4 @@ export function StateControls({ className }: StateControlsProps) {
       </div>
     </div>
   );
-}
-
-export default StateControls;
+};
