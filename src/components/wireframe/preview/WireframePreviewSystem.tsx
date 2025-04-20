@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions } from './DeviceInfo';
+import React, { useState, useCallback, useEffect } from 'react';
+import { DeviceType, DEVICE_DIMENSIONS, DeviceDimensions, rotateDevice, formatDimensions } from './DeviceInfo';
+import PreviewHeader from './PreviewHeader';
 import PreviewDisplay from './PreviewDisplay';
 import WireframeExportDialog from '../export/WireframeExportDialog';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import DeviceSelector from './DeviceSelector';
-import ViewControls from './ViewControls';
+import DevicePreviewSystem from './DevicePreviewSystem';
+import { useToast } from '@/hooks/use-toast';
 
 interface WireframePreviewSystemProps {
   wireframe: WireframeData;
@@ -21,71 +21,97 @@ const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
   onExport,
   projectId
 }) => {
+  const { toast } = useToast();
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [exportDialogOpen, setExportDialogOpen] = useState<boolean>(false);
+  const [isRotated, setIsRotated] = useState<boolean>(false);
   
   // Get current device dimensions
   const currentDimensions: DeviceDimensions = DEVICE_DIMENSIONS[deviceType];
   
   // Handle device type change
-  const handleDeviceChange = (newDevice: DeviceType) => {
+  const handleDeviceChange = useCallback((newDevice: DeviceType) => {
     setDeviceType(newDevice);
-  };
+    setIsRotated(['mobileLandscape', 'tabletLandscape'].includes(newDevice));
+    
+    toast({
+      title: `Device changed to ${DEVICE_DIMENSIONS[newDevice].name}`,
+      description: formatDimensions(DEVICE_DIMENSIONS[newDevice]),
+      duration: 2000
+    });
+  }, [toast]);
   
   // Toggle dark mode
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev);
+  }, []);
+  
+  // Handle rotate device
+  const handleRotateDevice = useCallback(() => {
+    if (deviceType === 'desktop') return;
+    
+    const rotatedDevice = rotateDevice(deviceType);
+    setDeviceType(rotatedDevice);
+    setIsRotated(!isRotated);
+    
+    toast({
+      title: `Device rotated to ${DEVICE_DIMENSIONS[rotatedDevice].name}`,
+      description: formatDimensions(DEVICE_DIMENSIONS[rotatedDevice]),
+      duration: 2000
+    });
+  }, [deviceType, isRotated, toast]);
   
   // Handle export button click
-  const handleExportClick = () => {
+  const handleExportClick = useCallback(() => {
     setExportDialogOpen(true);
     
     // If onExport callback is provided, call it
     if (onExport) {
       onExport('dialog-opened');
     }
-  };
+  }, [onExport]);
+  
+  // Format dimensions for display
+  const formatDeviceDimensions = useCallback(() => {
+    return `${currentDimensions.name} (${currentDimensions.width}×${currentDimensions.height})`;
+  }, [currentDimensions]);
   
   return (
-    <div className="wireframe-preview-system">
-      <div className="flex justify-between items-center p-2 border-b">
-        <Tabs 
-          defaultValue="desktop" 
-          value={deviceType}
-          onValueChange={(value) => handleDeviceChange(value as DeviceType)}
-          className="w-full"
-        >
-          <div className="flex justify-between items-center">
-            <DeviceSelector 
-              deviceType={deviceType} 
-              onChange={handleDeviceChange}
-            />
-            
-            <ViewControls 
-              darkMode={darkMode} 
-              onToggleDarkMode={toggleDarkMode} 
-              onExport={handleExportClick} 
-            />
-          </div>
-        </Tabs>
-      </div>
+    <div className="wireframe-preview-system flex flex-col h-full">
+      <PreviewHeader
+        activeDevice={deviceType}
+        isRotated={isRotated}
+        darkMode={darkMode}
+        onDeviceChange={handleDeviceChange}
+        onRotate={handleRotateDevice}
+        onToggleDarkMode={toggleDarkMode}
+        formatDimensions={formatDeviceDimensions}
+        onExport={handleExportClick}
+      />
       
-      <div id="wireframe-preview-container" className="flex justify-center p-4 bg-muted/30 min-h-[400px]">
-        <PreviewDisplay
-          currentDimensions={currentDimensions}
-          darkMode={darkMode}
-          wireframe={wireframe}
-          deviceType={deviceType}
-          onSectionClick={onSectionClick}
-        />
+      <div className="flex-1 overflow-hidden">
+        <DevicePreviewSystem 
+          initialDevice={deviceType}
+          showControls={false}
+          className="h-full"
+          onDeviceChange={handleDeviceChange}
+        >
+          <PreviewDisplay
+            currentDimensions={currentDimensions}
+            darkMode={darkMode}
+            wireframe={wireframe}
+            deviceType={deviceType}
+            onSectionClick={onSectionClick}
+          />
+        </DevicePreviewSystem>
       </div>
       
       <WireframeExportDialog
         wireframe={wireframe}
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
+        projectId={projectId}
       />
     </div>
   );

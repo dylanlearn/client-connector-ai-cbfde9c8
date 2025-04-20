@@ -1,275 +1,161 @@
 
-import React, { useState } from 'react';
-import { WireframeTypography } from '@/services/ai/wireframe/wireframe-types';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
+import { FontSelector } from './FontSelector';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { COMMON_FONT_FAMILIES } from './font-constants';
 
 export interface TypographyControlsProps {
-  typography: WireframeTypography;
-  onChange: (updates: Partial<WireframeTypography>) => void;
-  fontFamilies: string[];
-  lineHeights: { label: string; value: string }[];
-  fontWeights: { label: string; value: string }[];
+  headingFont: string;
+  bodyFont: string;
+  scaleRatio: number;
+  lineHeights: {
+    heading: number;
+    body: number;
+  };
+  onFontChange: (type: 'heading' | 'body', font: string) => void;
+  onScaleChange: (value: number) => void;
+  onLineHeightChange: (type: 'heading' | 'body', value: number) => void;
+  className?: string;
 }
 
 /**
- * Typography Controls - UI for managing typography settings
+ * Typography Controls - UI for adjusting typography settings
  */
 export const TypographyControls: React.FC<TypographyControlsProps> = ({
-  typography,
-  onChange,
-  fontFamilies,
+  headingFont,
+  bodyFont,
+  scaleRatio,
   lineHeights,
-  fontWeights,
+  onFontChange,
+  onScaleChange,
+  onLineHeightChange,
+  className
 }) => {
-  const [advancedMode, setAdvancedMode] = useState<boolean>(false);
-  const [customFontUrl, setCustomFontUrl] = useState<string>('');
-
-  const handleFontFamilyChange = (
-    key: keyof WireframeTypography,
-    value: string
-  ) => {
-    onChange({
-      ...typography,
-      [key]: value,
-    });
-  };
-
-  const handleAddCustomFont = () => {
-    if (!customFontUrl) return;
-    
-    // In a real implementation, we would validate and process the font URL
-    // For now, we'll just show an alert
-    alert(`Custom font URL ${customFontUrl} would be added to the system`);
-    setCustomFontUrl('');
-  };
+  // Font scale options
+  const scaleOptions = [
+    { label: 'Small (1.125)', value: 1.125 },
+    { label: 'Minor Second (1.067)', value: 1.067 },
+    { label: 'Major Second (1.125)', value: 1.125 },
+    { label: 'Minor Third (1.2)', value: 1.2 },
+    { label: 'Major Third (1.25)', value: 1.25 },
+    { label: 'Perfect Fourth (1.333)', value: 1.333 },
+    { label: 'Augmented Fourth (1.414)', value: 1.414 },
+    { label: 'Perfect Fifth (1.5)', value: 1.5 },
+    { label: 'Golden Ratio (1.618)', value: 1.618 },
+  ];
 
   return (
-    <div className="typography-controls space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium">Typography Settings</h3>
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="advanced-mode" className="text-sm">
-            Advanced Mode
-          </Label>
-          <Switch
-            id="advanced-mode"
-            checked={advancedMode}
-            onCheckedChange={setAdvancedMode}
-          />
-        </div>
-      </div>
-
-      <Tabs defaultValue="fonts" className="w-full">
-        <TabsList className="grid grid-cols-2 mb-4">
-          <TabsTrigger value="fonts">Fonts</TabsTrigger>
-          <TabsTrigger value="metrics">Metrics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="fonts" className="space-y-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="headings-font">Headings Font</Label>
-              <Select
-                value={typography.headings || 'Inter'}
-                onValueChange={(value) => handleFontFamilyChange('headings', value)}
-              >
-                <SelectTrigger id="headings-font">
-                  <SelectValue placeholder="Select heading font" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fontFamilies.map((font) => (
-                    <SelectItem key={font} value={font}>
-                      <span style={{ fontFamily: font }}>{font}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div
-                className="mt-2 p-3 border rounded bg-muted/20"
-                style={{ fontFamily: typography.headings }}
-              >
-                <span className="text-xl font-bold">
-                  This is a heading preview
-                </span>
-              </div>
+    <Card className={className}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-medium">Typography Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Tabs defaultValue="fonts">
+          <TabsList className="mb-4">
+            <TabsTrigger value="fonts">Fonts</TabsTrigger>
+            <TabsTrigger value="scale">Scale</TabsTrigger>
+            <TabsTrigger value="line-heights">Line Heights</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="fonts" className="space-y-4">
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">Heading Font</Label>
+              <FontSelector
+                value={headingFont}
+                onChange={(font) => onFontChange('heading', font)}
+                fonts={COMMON_FONT_FAMILIES}
+              />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="body-font">Body Font</Label>
-              <Select
-                value={typography.body || 'Inter'}
-                onValueChange={(value) => handleFontFamilyChange('body', value)}
-              >
-                <SelectTrigger id="body-font">
-                  <SelectValue placeholder="Select body font" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fontFamilies.map((font) => (
-                    <SelectItem key={font} value={font}>
-                      <span style={{ fontFamily: font }}>{font}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div
-                className="mt-2 p-3 border rounded bg-muted/20"
-                style={{ fontFamily: typography.body }}
-              >
-                <span>
-                  This is a paragraph text preview. It shows how body text will
-                  appear.
-                </span>
-              </div>
+            
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">Body Font</Label>
+              <FontSelector
+                value={bodyFont}
+                onChange={(font) => onFontChange('body', font)}
+                fonts={COMMON_FONT_FAMILIES}
+              />
             </div>
-          </div>
-
-          {advancedMode && (
-            <Accordion type="single" collapsible className="mt-6 w-full">
-              <AccordionItem value="custom-font">
-                <AccordionTrigger>Add Custom Font</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-font-url">
-                        Font URL (Google Fonts or CSS)
-                      </Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="custom-font-url"
-                          value={customFontUrl}
-                          onChange={(e) => setCustomFontUrl(e.target.value)}
-                          placeholder="https://fonts.googleapis.com/css2?family=..."
-                          className="flex-1"
-                        />
-                        <Button
-                          onClick={handleAddCustomFont}
-                          disabled={!customFontUrl}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Enter a Google Fonts URL or a CSS @import URL
-                      </p>
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          )}
-        </TabsContent>
-
-        <TabsContent value="metrics" className="space-y-4">
-          {advancedMode && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="base-font-size">Base Font Size (px)</Label>
-                <div className="flex items-center space-x-4">
-                  <Slider
-                    id="base-font-size"
-                    min={12}
-                    max={20}
-                    step={1}
-                    defaultValue={[16]}
-                    className="flex-1"
-                  />
-                  <span className="text-sm font-medium w-8 text-right">16</span>
+          </TabsContent>
+          
+          <TabsContent value="scale" className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Type Scale Ratio: {scaleRatio}</Label>
+                <Select 
+                  value={scaleRatio.toString()} 
+                  onValueChange={(value) => onScaleChange(parseFloat(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select scale" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scaleOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value.toString()}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-semibold mb-6 block">Type Scale</Label>
+                <div className="pl-2 border-l-2 border-primary space-y-2">
+                  <p className="text-4xl font-bold" style={{ fontFamily: headingFont }}>Heading 1</p>
+                  <p className="text-3xl font-bold" style={{ fontFamily: headingFont }}>Heading 2</p>
+                  <p className="text-2xl font-bold" style={{ fontFamily: headingFont }}>Heading 3</p>
+                  <p className="text-xl font-bold" style={{ fontFamily: headingFont }}>Heading 4</p>
+                  <p className="text-lg" style={{ fontFamily: bodyFont }}>Large text</p>
+                  <p className="text-base" style={{ fontFamily: bodyFont }}>Base text</p>
+                  <p className="text-sm" style={{ fontFamily: bodyFont }}>Small text</p>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scale-ratio">Scale Ratio</Label>
-                <Select defaultValue="1.250">
-                  <SelectTrigger id="scale-ratio">
-                    <SelectValue placeholder="Select scale ratio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1.200">
-                      Minor Third (1.200)
-                    </SelectItem>
-                    <SelectItem value="1.250">
-                      Major Third (1.250)
-                    </SelectItem>
-                    <SelectItem value="1.333">
-                      Perfect Fourth (1.333)
-                    </SelectItem>
-                    <SelectItem value="1.414">
-                      Augmented Fourth (1.414)
-                    </SelectItem>
-                    <SelectItem value="1.500">
-                      Perfect Fifth (1.500)
-                    </SelectItem>
-                    <SelectItem value="1.618">
-                      Golden Ratio (1.618)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="heading-line-height">Heading Line Height</Label>
-                <Select defaultValue="1.2">
-                  <SelectTrigger id="heading-line-height">
-                    <SelectValue placeholder="Select heading line height" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lineHeights.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="body-line-height">Body Line Height</Label>
-                <Select defaultValue="1.5">
-                  <SelectTrigger id="body-line-height">
-                    <SelectValue placeholder="Select body line height" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {lineHeights.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-
-          <div className="pt-4 border-t mt-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">
-              Font Pairing Recommendation
-            </h3>
-            <div className="p-3 border rounded bg-primary/5">
-              <p className="text-sm">
-                The current combination of <strong style={{ fontFamily: typography.headings }}>{typography.headings}</strong> for headings and <strong style={{ fontFamily: typography.body }}>{typography.body}</strong> for body text creates a {typography.headings === typography.body ? "consistent" : "complementary"} typographic system.
-              </p>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+          </TabsContent>
+          
+          <TabsContent value="line-heights" className="space-y-4">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label className="text-sm font-semibold">Heading Line Height: {lineHeights.heading}x</Label>
+              </div>
+              <Slider
+                value={[lineHeights.heading * 100]}
+                min={90}
+                max={200}
+                step={5}
+                onValueChange={(value) => onLineHeightChange('heading', value[0] / 100)}
+              />
+              <div className="mt-4 p-3 border rounded-md">
+                <p className="text-xl font-bold" style={{ fontFamily: headingFont, lineHeight: lineHeights.heading }}>
+                  The quick brown fox jumps over the lazy dog. This sample text demonstrates line height for headings.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-2">
+                <Label className="text-sm font-semibold">Body Line Height: {lineHeights.body}x</Label>
+              </div>
+              <Slider
+                value={[lineHeights.body * 100]}
+                min={100}
+                max={200}
+                step={5}
+                onValueChange={(value) => onLineHeightChange('body', value[0] / 100)}
+              />
+              <div className="mt-4 p-3 border rounded-md">
+                <p style={{ fontFamily: bodyFont, lineHeight: lineHeights.body }}>
+                  Typography is the art and technique of arranging type to make written language legible, readable, and appealing when displayed. The arrangement of type involves selecting typefaces, point sizes, line lengths, line-spacing, and letter-spacing. This sample text demonstrates line height for body text.
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };

@@ -1,91 +1,105 @@
 
 import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { FontCard } from './FontCard';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { FontFamilyOption, COMMON_FONT_FAMILIES } from './font-constants';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export interface FontSelectorProps {
-  fonts: Array<{
-    family: string;
-    category: 'serif' | 'sans-serif' | 'display' | 'monospace';
-    variants?: string[];
-  }>;
-  selectedFont?: string;
-  onFontSelect: (font: string) => void;
+  value: string;
+  onChange: (value: string) => void;
+  fonts?: FontFamilyOption[];
+  placeholder?: string;
 }
 
 /**
- * Font Selector - UI for browsing and selecting fonts
+ * FontSelector - A dropdown component for selecting fonts with preview
  */
 export const FontSelector: React.FC<FontSelectorProps> = ({
-  fonts,
-  selectedFont,
-  onFontSelect,
+  value,
+  onChange,
+  fonts = COMMON_FONT_FAMILIES,
+  placeholder = 'Select font...'
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [category, setCategory] = useState('all');
-
-  const handleCategoryChange = (value: string) => {
-    setCategory(value);
+  const [open, setOpen] = useState(false);
+  
+  // Find the current font in the options
+  const selectedFont = fonts.find(font => font.value === value) || {
+    name: value,
+    value: value,
+    category: 'sans-serif' as const
   };
-
-  // Filter fonts based on search query and category
-  const filteredFonts = fonts.filter((font) => {
-    const matchesSearch = font.family
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      category === 'all' || font.category === category;
-    return matchesSearch && matchesCategory;
-  });
-
-  const getFontDescription = (font: typeof fonts[0]) => {
-    return `${font.variants ? font.variants.length : 1} weights available`;
-  };
-
+  
+  // Group fonts by category
+  const fontsByCategory = fonts.reduce((acc, font) => {
+    if (!acc[font.category]) {
+      acc[font.category] = [];
+    }
+    acc[font.category].push(font);
+    return acc;
+  }, {} as Record<string, FontFamilyOption[]>);
+  
   return (
-    <div className="font-selector space-y-4">
-      <Input
-        type="search"
-        placeholder="Search fonts..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full"
-      />
-
-      <Tabs defaultValue="all" onValueChange={handleCategoryChange}>
-        <TabsList className="grid grid-cols-5 mb-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="sans-serif">Sans</TabsTrigger>
-          <TabsTrigger value="serif">Serif</TabsTrigger>
-          <TabsTrigger value="display">Display</TabsTrigger>
-          <TabsTrigger value="monospace">Mono</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={category}>
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
-              {filteredFonts.length > 0 ? (
-                filteredFonts.map((font) => (
-                  <FontCard
-                    key={font.family}
-                    fontFamily={font.family}
-                    category={font.category}
-                    description={getFontDescription(font)}
-                    isSelected={font.family === selectedFont}
-                    onSelect={() => onFontSelect(font.family)}
-                  />
-                ))
-              ) : (
-                <p className="text-muted-foreground text-sm col-span-2 text-center py-4">
-                  No fonts found matching your search
-                </p>
-              )}
-            </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span 
+            style={{ fontFamily: `${selectedFont.value}, ${selectedFont.category}` }}
+            className="flex items-center gap-2"
+          >
+            <span className="text-base">
+              {selectedFont.name}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              ({selectedFont.category})
+            </span>
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0">
+        <Command>
+          <CommandInput placeholder="Search fonts..." />
+          <CommandEmpty>No font found.</CommandEmpty>
+          <ScrollArea className="h-[300px]">
+            <CommandList>
+              {Object.entries(fontsByCategory).map(([category, categoryFonts]) => (
+                <CommandGroup key={category} heading={category.charAt(0).toUpperCase() + category.slice(1)}>
+                  {categoryFonts.map((font) => (
+                    <CommandItem
+                      key={font.value}
+                      onSelect={() => {
+                        onChange(font.value);
+                        setOpen(false);
+                      }}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex flex-col">
+                        <span style={{ fontFamily: `${font.value}, ${font.category}` }} className="font-medium">
+                          {font.name}
+                        </span>
+                        {font.description && (
+                          <span className="text-xs text-muted-foreground">
+                            {font.description}
+                          </span>
+                        )}
+                      </div>
+                      {font.value === value && <Check className="h-4 w-4" />}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ))}
+            </CommandList>
           </ScrollArea>
-        </TabsContent>
-      </Tabs>
-    </div>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };

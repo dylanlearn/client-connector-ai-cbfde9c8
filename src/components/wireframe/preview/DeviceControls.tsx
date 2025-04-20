@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Monitor, Tablet, Smartphone, RotateCcw } from 'lucide-react';
+import { Monitor, Tablet, Smartphone, RotateCcw, Computer } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -37,6 +37,7 @@ const DeviceControls: React.FC<DeviceControlsProps> = ({
               disabled={activeDevice === 'desktop'}
             >
               <RotateCcw className="h-4 w-4" />
+              <span className="sr-only">Rotate device</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>Rotate device</TooltipContent>
@@ -50,7 +51,7 @@ const DeviceControls: React.FC<DeviceControlsProps> = ({
       >
         <TabsList className="w-full">
           <TabsTrigger value="desktop" className="flex items-center gap-1 w-full">
-            <Monitor className="h-4 w-4" />
+            <Computer className="h-4 w-4" />
             <span className="hidden md:inline">Desktop</span>
           </TabsTrigger>
           <TabsTrigger value="tablet" className="flex items-center gap-1 w-full">
@@ -62,7 +63,7 @@ const DeviceControls: React.FC<DeviceControlsProps> = ({
             <span className="hidden md:inline">Mobile</span>
           </TabsTrigger>
           <TabsTrigger value="mobileSm" className="flex items-center gap-1 w-full">
-            <Smartphone className="h-4 w-4" />
+            <Smartphone className="h-3 w-3" />
             <span className="hidden md:inline">Small</span>
           </TabsTrigger>
         </TabsList>
