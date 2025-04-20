@@ -9,6 +9,7 @@ import CanvasLoadingIndicator from './canvas/CanvasLoadingIndicator';
 import CanvasErrorDisplay from './canvas/CanvasErrorDisplay';
 import { fabric } from 'fabric';
 import { useFabric } from '@/hooks/fabric/use-fabric';
+import { TypographyManager } from './typography/TypographyManager';
 
 export interface EnhancedWireframeCanvasProps {
   wireframe: WireframeData | null;
@@ -25,6 +26,8 @@ export interface EnhancedWireframeCanvasProps {
   onResetZoom?: () => void;
   onToggleGrid?: () => void;
   onToggleSnapToGrid?: () => void;
+  showTypographyManager?: boolean;
+  onTypographyChange?: (typography: any) => void;
 }
 
 const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
@@ -41,7 +44,9 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
   onZoomOut,
   onResetZoom,
   onToggleGrid,
-  onToggleSnapToGrid
+  onToggleSnapToGrid,
+  showTypographyManager = false,
+  onTypographyChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -175,9 +180,27 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
       onToggleSnapToGrid();
     }
   };
+
+  const handleTypographyChange = (typography: any) => {
+    if (onTypographyChange && wireframe) {
+      onTypographyChange(typography);
+      
+      // Re-render wireframe with updated typography if canvas exists
+      if (canvas && wireframe) {
+        renderWireframe(
+          { ...wireframe, typography },
+          canvas,
+          {
+            deviceType,
+            darkMode
+          }
+        );
+      }
+    }
+  };
   
   return (
-    <div className="enhanced-wireframe-canvas-container">
+    <div className="enhanced-wireframe-canvas-container space-y-6">
       {showControls && (
         <CanvasControls
           onZoomIn={handleZoomIn}
@@ -213,6 +236,16 @@ const EnhancedWireframeCanvas: React.FC<EnhancedWireframeCanvasProps> = ({
         <CanvasLoadingIndicator isLoading={isRendering} />
         <CanvasErrorDisplay error={error} />
       </div>
+
+      {showTypographyManager && wireframe?.typography && (
+        <div className="mt-8">
+          <TypographyManager
+            typography={wireframe.typography}
+            onChange={handleTypographyChange}
+            darkMode={darkMode}
+          />
+        </div>
+      )}
     </div>
   );
 };
