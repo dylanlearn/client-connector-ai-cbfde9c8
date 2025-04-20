@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
-import WebsiteAnalyzerHeader from "./components/WebsiteAnalyzerHeader";
-import WebsiteAnalyzerForm from "./components/WebsiteAnalyzerForm";
-import AnalysisResults from "./components/AnalysisResults";
+import WebsiteAnalyzerHeader from "./WebsiteAnalyzerHeader";
+import WebsiteAnalyzerForm from "./WebsiteAnalyzerForm";
+import AnalysisResults from "./AnalysisResults";
 import { useAuth } from "@/hooks/useAuth";
 import { useWebsiteAnalysis } from '@/hooks/ai-design/useWebsiteAnalysis';
 
