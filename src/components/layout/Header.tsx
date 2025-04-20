@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const Header = () => {
   const location = useLocation();
+  const { isLoggedIn } = useAuth();
   
   const isActive = (path: string) => {
     return location.pathname === path ? 'bg-gray-100 text-blue-600' : 'text-gray-600 hover:text-blue-500';
@@ -14,7 +16,7 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between">
         <Link to="/" className="text-xl font-bold text-blue-600">Design System</Link>
         
-        <nav className="flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-4">
           <Link 
             to="/" 
             className={`text-sm font-medium ${isActive('/')}`}
@@ -28,24 +30,42 @@ const Header = () => {
             Visual States
           </Link>
           <Link 
-            to="/projects" 
-            className={`text-sm font-medium ${isActive('/projects')}`}
+            to="/wireframe-generator" 
+            className={`text-sm font-medium ${isActive('/wireframe-generator')}`}
           >
-            Projects
+            Wireframe Generator
           </Link>
           <Link 
-            to="/wireframes" 
-            className={`text-sm font-medium ${isActive('/wireframes')}`}
+            to="/ai-suggestions" 
+            className={`text-sm font-medium ${isActive('/ai-suggestions')}`}
           >
-            Wireframes
+            AI Suggestions
           </Link>
           <Link 
-            to="/settings" 
-            className={`text-sm font-medium ${isActive('/settings')}`}
+            to="/design-process" 
+            className={`text-sm font-medium ${isActive('/design-process')}`}
           >
-            Settings
+            Design Process
           </Link>
         </nav>
+        
+        <div className="flex items-center gap-4">
+          {isLoggedIn ? (
+            <Link 
+              to="/dashboard" 
+              className="text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <Link 
+              to="/login" 
+              className="text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            >
+              Login
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );
