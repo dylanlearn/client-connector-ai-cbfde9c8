@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "./sidebar/AppSidebar";
 import FormResumeHandler from "../shared/FormResumeHandler";
-import Header from "./Header"; // Import the Header component
+import Header from "./Header";
 
 interface LayoutProps {
   children: ReactNode;
@@ -31,7 +31,7 @@ const Layout = memo(({
   return (
     <SidebarProvider>
       <div className={`min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-br from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 ${className}`}>
-        <Header /> {/* Always render the Header component */}
+        <Header />
         {!isIndexPage && <AppSidebar />}
         <main className={`flex-1 transition-all duration-300 ${!isIndexPage ? "ml-0 md:ml-64 pt-16 md:pt-0" : "pt-16"}`}>
           {showFormResumeHandler && !isIndexPage && <FormResumeHandler />}
