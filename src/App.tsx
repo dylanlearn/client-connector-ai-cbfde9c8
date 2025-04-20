@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ResponsiveSystemPage from './pages/ResponsiveSystemPage';
+import VisualStatesSystemPage from './pages/VisualStatesSystemPage';
 import Layout from './components/layout/Layout';
 
 const App = () => {
@@ -10,6 +12,11 @@ const App = () => {
         <Route path="/" element={
           <Layout>
             <ResponsiveSystemPage />
+          </Layout>
+        } />
+        <Route path="/visual-states" element={
+          <Layout>
+            <VisualStatesSystemPage />
           </Layout>
         } />
         <Route path="/projects" element={
