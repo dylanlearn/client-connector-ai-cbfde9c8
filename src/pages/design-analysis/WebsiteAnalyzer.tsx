@@ -3,9 +3,8 @@ import { useState } from 'react';
 import WebsiteAnalyzerHeader from "./components/WebsiteAnalyzerHeader";
 import WebsiteAnalyzerForm from "./components/WebsiteAnalyzerForm";
 import AnalysisResults from "./components/AnalysisResults";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useWebsiteAnalysis } from '@/hooks/ai-design/useWebsiteAnalysis';
-import { SectionType } from '@/hooks/ai-design/website-analysis/types';
 
 /**
  * Website Analyzer page that uses the application shell defined in App.tsx

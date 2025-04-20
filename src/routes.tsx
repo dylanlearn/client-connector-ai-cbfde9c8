@@ -19,21 +19,24 @@ import AIDesignSuggestions from './pages/AIDesignSuggestions';
 import WireframeGenerator from './pages/wireframe-generator';
 import DesignProcessPage from './pages/DesignProcessPage';
 import ClientHub from './pages/ClientHub';
+import WebsiteAnalyzer from './pages/design-analysis/WebsiteAnalyzer';
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
-  // Public routes
+  // Landing page (home)
   {
     path: '/',
+    element: <Home />,
+  },
+  
+  // System pages
+  {
+    path: '/responsive-system',
     element: <Layout><ResponsiveSystemPage /></Layout>,
   },
   {
     path: '/visual-states',
     element: <Layout><VisualStatesSystemPage /></Layout>,
-  },
-  {
-    path: '/home',
-    element: <Home />,
   },
 
   // Auth routes
@@ -57,47 +60,51 @@ const router = createBrowserRouter([
   // Dashboard routes
   {
     path: '/dashboard',
-    element: <Dashboard />,
+    element: <DashboardLayout><Dashboard /></DashboardLayout>,
   },
   {
     path: '/projects',
-    element: <Layout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Projects</h1></div></Layout>,
+    element: <DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Projects</h1></div></DashboardLayout>,
   },
   {
     path: '/wireframes',
-    element: <Layout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Wireframes</h1></div></Layout>,
+    element: <DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Wireframes</h1></div></DashboardLayout>,
   },
   {
     path: '/wireframe-generator',
-    element: <WireframeGenerator />,
+    element: <DashboardLayout><WireframeGenerator /></DashboardLayout>,
   },
   {
     path: '/clients',
-    element: <Clients />,
+    element: <DashboardLayout><Clients /></DashboardLayout>,
   },
   {
     path: '/client-hub',
-    element: <ClientHub />,
+    element: <DashboardLayout><ClientHub /></DashboardLayout>,
   },
   {
     path: '/analytics',
-    element: <Analytics />,
+    element: <DashboardLayout><Analytics /></DashboardLayout>,
   },
   {
     path: '/feedback-analysis',
-    element: <FeedbackAnalysis />,
+    element: <DashboardLayout><FeedbackAnalysis /></DashboardLayout>,
   },
   {
     path: '/design-process',
-    element: <DesignProcessPage />, // The provider is now in AppProviders
+    element: <DashboardLayout><DesignProcessPage /></DashboardLayout>,
   },
   {
     path: '/ai-suggestions',
-    element: <AIDesignSuggestions />,
+    element: <DashboardLayout><AIDesignSuggestions /></DashboardLayout>,
+  },
+  {
+    path: '/website-analyzer',
+    element: <DashboardLayout><WebsiteAnalyzer /></DashboardLayout>,
   },
   {
     path: '/settings',
-    element: <Layout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Settings</h1></div></Layout>,
+    element: <DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Settings</h1></div></DashboardLayout>,
   },
 
   // Not found
