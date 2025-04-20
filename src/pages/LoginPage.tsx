@@ -16,7 +16,7 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signIn, error, isLoading } = useAuth();
+  const { signIn, signInWithGoogle, error, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -60,23 +60,12 @@ const LoginPage: React.FC = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`
-        }
-      });
-      
-      if (error) {
-        toast.error(error.message);
-      }
+      await signInWithGoogle();
+      // Redirect is handled by Supabase OAuth flow
     } catch (err) {
       console.error("Google sign in error:", err);
       toast.error("Failed to sign in with Google");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

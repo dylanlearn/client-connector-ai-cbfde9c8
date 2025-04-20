@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import { AuthLayout } from './components/layout/AuthLayout';
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -20,6 +20,23 @@ import WireframeGenerator from './pages/wireframe-generator';
 import DesignProcessPage from './pages/DesignProcessPage';
 import ClientHub from './pages/ClientHub';
 import WebsiteAnalyzer from './pages/design-analysis/WebsiteAnalyzer';
+import { useAuth } from './hooks/useAuth';
+
+// Protected Route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isLoggedIn, isLoading } = useAuth();
+  const location = useLocation();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+  
+  if (!isLoggedIn) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+  
+  return <>{children}</>;
+};
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
@@ -57,54 +74,54 @@ const router = createBrowserRouter([
     element: <Navigate to="/register" replace />,
   },
 
-  // Dashboard routes
+  // Dashboard routes (protected)
   {
     path: '/dashboard',
-    element: <DashboardLayout><Dashboard /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/projects',
-    element: <DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Projects</h1></div></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Projects</h1></div></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/wireframes',
-    element: <DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Wireframes</h1></div></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Wireframes</h1></div></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/wireframe-generator',
-    element: <DashboardLayout><WireframeGenerator /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><WireframeGenerator /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/clients',
-    element: <DashboardLayout><Clients /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><Clients /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/client-hub',
-    element: <DashboardLayout><ClientHub /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><ClientHub /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/analytics',
-    element: <DashboardLayout><Analytics /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><Analytics /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/feedback-analysis',
-    element: <DashboardLayout><FeedbackAnalysis /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><FeedbackAnalysis /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/design-process',
-    element: <DashboardLayout><DesignProcessPage /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><DesignProcessPage /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/ai-suggestions',
-    element: <DashboardLayout><AIDesignSuggestions /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><AIDesignSuggestions /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/website-analyzer',
-    element: <DashboardLayout><WebsiteAnalyzer /></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><WebsiteAnalyzer /></DashboardLayout></ProtectedRoute>,
   },
   {
     path: '/settings',
-    element: <DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Settings</h1></div></DashboardLayout>,
+    element: <ProtectedRoute><DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">Settings</h1></div></DashboardLayout></ProtectedRoute>,
   },
 
   // Not found

@@ -24,35 +24,45 @@ export const useAuth = () => {
       (event, currentSession) => {
         console.log("Auth state change event:", event);
         if (isMounted) {
+          setSession(currentSession);
           if (currentSession?.user) {
             setUser({
               id: currentSession.user.id,
               email: currentSession.user.email || '',
               name: currentSession.user.user_metadata?.name
             });
-            setSession(currentSession);
           } else {
             setUser(null);
-            setSession(null);
           }
         }
       }
     );
 
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      if (isMounted) {
-        if (currentSession?.user) {
-          setUser({
-            id: currentSession.user.id,
-            email: currentSession.user.email || '',
-            name: currentSession.user.user_metadata?.name
-          });
-          setSession(currentSession);
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (isMounted) {
+          if (data.session?.user) {
+            setUser({
+              id: data.session.user.id,
+              email: data.session.user.email || '',
+              name: data.session.user.user_metadata?.name
+            });
+            setSession(data.session);
+          }
+          setIsLoading(false);
         }
-        setIsLoading(false);
+      } catch (err) {
+        console.error("Session check error:", err);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    });
+    };
+    
+    checkSession();
 
     // Clean up function
     return () => {
@@ -74,6 +84,7 @@ export const useAuth = () => {
       if (error) {
         console.error("Login error:", error.message);
         setError(error.message);
+        setIsLoading(false);
         return false;
       }
       
@@ -81,9 +92,8 @@ export const useAuth = () => {
     } catch (err) {
       console.error("Error in signIn:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 
@@ -96,6 +106,7 @@ export const useAuth = () => {
       if (error) {
         console.error("Logout error:", error.message);
         setError(error.message);
+        setIsLoading(false);
         return false;
       }
       
@@ -103,9 +114,8 @@ export const useAuth = () => {
     } catch (err) {
       console.error("Error in signOut:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 
@@ -118,13 +128,15 @@ export const useAuth = () => {
         email,
         password,
         options: {
-          data: { name }
+          data: { name },
+          emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       
       if (error) {
         console.error("Registration error:", error.message);
         setError(error.message);
+        setIsLoading(false);
         return false;
       }
       
@@ -132,9 +144,8 @@ export const useAuth = () => {
     } catch (err) {
       console.error("Error in signUp:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 
@@ -153,6 +164,7 @@ export const useAuth = () => {
       if (error) {
         console.error("Google login error:", error.message);
         setError(error.message);
+        setIsLoading(false);
         return false;
       }
       
@@ -160,9 +172,10 @@ export const useAuth = () => {
     } catch (err) {
       console.error("Error in signInWithGoogle:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setIsLoading(false);
       return false;
     } finally {
-      setIsLoading(false);
+      // The page will redirect, so we don't need to set isLoading to false here
     }
   };
 
