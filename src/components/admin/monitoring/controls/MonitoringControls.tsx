@@ -12,7 +12,9 @@ export function MonitoringControls({
   onPeriodChange,
   selectedPeriod,
   autoRefresh,
-  onAutoRefreshToggle
+  onAutoRefreshToggle,
+  redisConnected,
+  onConfigUpdate
 }: MonitoringControlsProps) {
   return (
     <div className="flex items-center gap-4 p-2 border rounded-md bg-background">

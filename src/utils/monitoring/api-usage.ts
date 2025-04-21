@@ -96,8 +96,8 @@ export async function recordClientError(
       component_name: componentName,
       userId,
       user_id: userId,
-      browser_info: navigator?.userAgent || 'Unknown',
-      url: window?.location?.href,
+      browser_info: typeof navigator !== 'undefined' ? navigator?.userAgent : 'Unknown',
+      url: typeof window !== 'undefined' ? window?.location?.href : undefined,
       timestamp: new Date().toISOString(),
       metadata
     };

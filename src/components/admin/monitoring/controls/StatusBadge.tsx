@@ -2,7 +2,7 @@
 import React from "react";
 
 export interface StatusBadgeProps {
-  status: "healthy" | "warning" | "critical" | "unknown";
+  status: "healthy" | "warning" | "critical" | "unknown" | "error" | "degraded" | "unhealthy";
   showText?: boolean;
   className?: string;
 }
@@ -15,7 +15,11 @@ export function StatusBadge({ status, showText = false, className = "" }: Status
       case "warning":
         return "bg-yellow-100 text-yellow-800";
       case "critical":
+      case "error":
         return "bg-red-100 text-red-800";
+      case "degraded":
+      case "unhealthy":
+        return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -28,7 +32,11 @@ export function StatusBadge({ status, showText = false, className = "" }: Status
       case "warning":
         return "bg-yellow-600";
       case "critical":
+      case "error":
         return "bg-red-600";
+      case "degraded":
+      case "unhealthy":
+        return "bg-orange-600";
       default:
         return "bg-gray-600";
     }
@@ -42,6 +50,12 @@ export function StatusBadge({ status, showText = false, className = "" }: Status
         return "Warning";
       case "critical":
         return "Critical";
+      case "error":
+        return "Error";
+      case "degraded":
+        return "Degraded";
+      case "unhealthy":
+        return "Unhealthy";
       default:
         return "Unknown";
     }

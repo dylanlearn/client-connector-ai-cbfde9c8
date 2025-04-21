@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 export interface ApiUsageMetricsProps {
   refreshInterval?: number;
   limit?: number;
+  period?: 'hour' | 'day' | 'week';
 }
 
 interface ApiMetric {
@@ -26,7 +28,8 @@ interface ApiMetric {
 
 export function ApiUsageMetrics({
   refreshInterval = 30,
-  limit = 10
+  limit = 10,
+  period = 'day'
 }: ApiUsageMetricsProps) {
   const [metrics, setMetrics] = useState<ApiMetric[]>([]);
   const [summary, setSummary] = useState<any>({});
@@ -118,7 +121,7 @@ export function ApiUsageMetrics({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refreshInterval, limit]);
+  }, [refreshInterval, limit, period]);
 
   return (
     <div className="rounded-lg border p-4">
