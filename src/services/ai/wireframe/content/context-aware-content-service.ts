@@ -1,240 +1,210 @@
 
-import { v4 as uuidv4 } from 'uuid';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { supabase } from '@/integrations/supabase/client';
+import { AIFeatureType, selectModelForFeature } from '@/services/ai/ai-model-selector';
+import { v4 as uuidv4 } from 'uuid';
 
-/**
- * Interface for content generation request
- */
-export interface ContentGenerationRequest {
-  wireframeData: WireframeData;
-  sectionId?: string;  // Optional - if provided, generate content for this specific section
-  industryContext?: string;
-  brandVoice?: 'conversational' | 'formal' | 'technical' | 'friendly';
-  contentLength?: 'short' | 'medium' | 'long';
-  targetAudience?: string;
-}
-
-/**
- * Interface for generated content for a section
- */
-export interface GeneratedContent {
+export interface SectionContent {
+  title?: string;
   heading?: string;
   subheading?: string;
-  body?: string;
-  ctaPrimary?: string;
-  ctaSecondary?: string;
-  features?: string[];
-  stats?: Array<{ value: string; label: string }>;
-  testimonials?: Array<{ quote: string; author: string; position?: string }>;
-  faq?: Array<{ question: string; answer: string }>;
-  [key: string]: any;
+  description?: string;
+  ctaText?: string;
+  bullets?: string[];
+  testimonial?: string;
+  author?: string;
+  statLabel?: string;
+  statValue?: string;
 }
 
-/**
- * Interface for generated section content with metadata
- */
 export interface GeneratedSectionContent {
   sectionId: string;
   sectionType: string;
-  content: GeneratedContent;
+  content: SectionContent;
+}
+
+export interface ContentGenerationOptions {
+  tone?: 'professional' | 'friendly' | 'enthusiastic' | 'technical' | 'formal';
+  contentLength?: 'brief' | 'moderate' | 'detailed';
+  includeCallToAction?: boolean;
+  targetAudience?: string;
+  industry?: string;
+  keywords?: string[];
 }
 
 /**
- * Service responsible for generating contextually aware content
- * for wireframe sections
+ * Service for generating contextually-aware content for wireframes
  */
-export const ContextAwareContentService = {
+export class ContextAwareContentService {
   /**
    * Generate content for an entire wireframe
    */
-  async generateWireframeContent(request: ContentGenerationRequest): Promise<GeneratedSectionContent[]> {
+  static async generateContentForWireframe(
+    wireframe: WireframeData,
+    options: ContentGenerationOptions = {}
+  ): Promise<GeneratedSectionContent[]> {
     try {
-      // In a real implementation, this would make an API call to an AI service
-      // For now, we'll simulate a response with placeholder content
+      // Generate content for each section
+      const contentPromises = wireframe.sections.map(section => 
+        this.generateContentForSection(section, wireframe, options)
+      );
       
-      const generatedContentItems: GeneratedSectionContent[] = [];
+      const sectionsContent = await Promise.all(contentPromises);
+      return sectionsContent;
       
-      // Process each section in the wireframe
-      for (const section of request.wireframeData.sections) {
-        if (!section.id || !section.sectionType) continue;
-        
-        // Generate content for this section
-        const content = await this.generateContentForSectionType(
-          section.sectionType,
-          request.wireframeData.title || '',
-          request.industryContext || 'technology',
-          request.brandVoice || 'conversational'
-        );
-        
-        // Add to results
-        generatedContentItems.push({
-          sectionId: section.id,
-          sectionType: section.sectionType,
-          content
-        });
-      }
-      
-      return generatedContentItems;
     } catch (error) {
-      console.error('Error generating wireframe content:', error);
+      console.error('Error generating content for wireframe:', error);
       return [];
     }
-  },
+  }
   
   /**
    * Generate content for a specific section
    */
-  async generateSectionContent(request: ContentGenerationRequest): Promise<GeneratedSectionContent> {
+  static async generateContentForSection(
+    section: WireframeSection,
+    wireframeContext: WireframeData,
+    options: ContentGenerationOptions = {}
+  ): Promise<GeneratedSectionContent> {
     try {
-      if (!request.sectionId) {
-        throw new Error('Section ID is required for section content generation');
-      }
+      const model = selectModelForFeature(AIFeatureType.ContentGeneration);
       
-      const section = request.wireframeData.sections.find(s => s.id === request.sectionId);
+      // Determine content needs based on section type
+      const contentNeeds = this.determineSectionContentNeeds(section);
       
-      if (!section) {
-        throw new Error('Section not found');
-      }
+      const promptContent = `
+        Generate content for a wireframe section with the following context:
+        
+        Wireframe Title: ${wireframeContext.title}
+        Wireframe Description: ${wireframeContext.description || 'Not provided'}
+        Section Type: ${section.sectionType || 'Generic section'}
+        
+        Content Requirements:
+        ${contentNeeds.map(need => `- ${need}`).join('\n')}
+        
+        Content Style:
+        - Tone: ${options.tone || 'professional'}
+        - Length: ${options.contentLength || 'moderate'}
+        - Include Call to Action: ${options.includeCallToAction ? 'Yes' : 'No'}
+        ${options.targetAudience ? `- Target Audience: ${options.targetAudience}` : ''}
+        ${options.industry ? `- Industry: ${options.industry}` : ''}
+        ${options.keywords?.length ? `- Keywords to include: ${options.keywords.join(', ')}` : ''}
+        
+        Return a JSON object with these fields (only include fields relevant to the section type):
+        {
+          "title": "Section title",
+          "heading": "Main heading",
+          "subheading": "Supporting subheading",
+          "description": "Paragraph text content",
+          "ctaText": "Call to action button text",
+          "bullets": ["Bullet point 1", "Bullet point 2"],
+          "testimonial": "Testimonial text",
+          "author": "Testimonial author",
+          "statLabel": "Statistic label",
+          "statValue": "Statistic value"
+        }
+      `;
       
-      // Generate content for this section
-      const content = await this.generateContentForSectionType(
-        section.sectionType,
-        request.wireframeData.title || '',
-        request.industryContext || 'technology',
-        request.brandVoice || 'conversational'
-      );
+      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
+        body: {
+          messages: [{
+            role: "user",
+            content: promptContent
+          }],
+          systemPrompt: "You are an expert copywriter specializing in creating compelling website content that is concise, engaging, and tailored to the specific section of a wireframe.",
+          temperature: 0.7,
+          model
+        },
+      });
+      
+      if (error) throw new Error(`Content generation error: ${error.message}`);
+      
+      // Parse the response and construct the content object
+      const content = JSON.parse(data.response);
       
       return {
         sectionId: section.id,
-        sectionType: section.sectionType,
+        sectionType: section.sectionType || 'generic',
         content
       };
-    } catch (error) {
-      console.error('Error generating section content:', error);
-      throw error;
-    }
-  },
-  
-  /**
-   * Generate placeholder text based on context
-   */
-  async generatePlaceholderText(
-    context: string,
-    paragraphCount: number = 1,
-    sentencesPerParagraph: number = 3
-  ): Promise<string[]> {
-    try {
-      // In a real implementation, this would make an API call to an AI service
-      // For now, we'll return predefined placeholder content
-      const placeholders = [
-        'This is a contextually relevant paragraph that would be generated by an AI model. It contains sentences that fit the specific context and tone requested.',
-        'Here we have another paragraph with content that matches the brand voice and industry. The text flows naturally and sounds appropriate for the target audience.',
-        'This final paragraph would contain more specific details related to the subject matter. It might include calls to action or summarize key points in the appropriate voice.'
-      ];
       
-      // Return the requested number of paragraphs
-      return placeholders.slice(0, paragraphCount);
     } catch (error) {
-      console.error('Error generating placeholder text:', error);
-      return ['Error generating placeholder text. Please try again.'];
-    }
-  },
-  
-  /**
-   * Internal helper to generate content based on section type
-   */
-  async generateContentForSectionType(
-    sectionType: string,
-    pageTitle: string,
-    industryContext: string,
-    brandVoice: string
-  ): Promise<GeneratedContent> {
-    // In a real implementation, this would call an AI service with appropriate prompting
-    // For now, we'll return sample content based on section type
-    
-    switch (sectionType.toLowerCase()) {
-      case 'hero':
-        return {
-          heading: `${pageTitle || 'Welcome to Our Platform'}`,
-          subheading: 'The smart solution for modern businesses',
-          body: 'We help companies transform their digital presence with cutting-edge technology and beautiful design.',
-          ctaPrimary: 'Get Started',
-          ctaSecondary: 'Learn More'
-        };
-        
-      case 'features':
-        return {
-          heading: 'Key Features',
-          subheading: 'What makes us different',
-          features: [
-            'Intuitive user interface designed for productivity',
-            'Seamless integration with your favorite tools',
-            'Advanced analytics to track performance',
-            'Enterprise-grade security to protect your data'
-          ]
-        };
-        
-      case 'testimonials':
-        return {
-          heading: 'What Our Clients Say',
-          testimonials: [
-            {
-              quote: 'This platform transformed how our team works together. Highly recommended!',
-              author: 'Sarah Johnson',
-              position: 'CEO, TechStart'
-            },
-            {
-              quote: 'The implementation was smooth and the results were immediate.',
-              author: 'Michael Chen',
-              position: 'CTO, GrowthCorp'
-            }
-          ]
-        };
-        
-      case 'cta':
-        return {
-          heading: 'Ready to Transform Your Business?',
-          subheading: 'Join thousands of satisfied customers today',
-          ctaPrimary: 'Start Free Trial',
-          body: 'No credit card required. Free for 14 days.'
-        };
-        
-      case 'stats':
-        return {
-          heading: 'Our Impact in Numbers',
-          stats: [
-            { value: '5000+', label: 'Active Users' },
-            { value: '95%', label: 'Customer Satisfaction' },
-            { value: '150+', label: 'Integration Partners' },
-            { value: '24/7', label: 'Customer Support' }
-          ]
-        };
-        
-      case 'faq':
-        return {
-          heading: 'Frequently Asked Questions',
-          faq: [
-            {
-              question: 'How does the free trial work?',
-              answer: 'Our free trial gives you full access to all features for 14 days with no credit card required.'
-            },
-            {
-              question: 'Can I integrate with my existing tools?',
-              answer: 'Yes, we offer seamless integration with over 150 popular business tools and platforms.'
-            },
-            {
-              question: 'What kind of support do you offer?',
-              answer: 'We provide 24/7 customer support via chat, email, and phone for all paid plans.'
-            }
-          ]
-        };
-        
-      default:
-        return {
-          heading: 'Section Heading',
-          subheading: 'Section Subheading',
-          body: 'This is placeholder content for this section. In a real implementation, AI would generate content specific to this section type and context.'
-        };
+      console.error('Error generating content for section:', error);
+      
+      // Return a minimal valid object in case of error
+      return {
+        sectionId: section.id,
+        sectionType: section.sectionType || 'generic',
+        content: {
+          heading: `Placeholder heading for ${section.sectionType || 'section'}`,
+          description: 'Content generation failed. Please try again.'
+        }
+      };
     }
   }
-};
+  
+  /**
+   * Determine what content fields are needed based on section type
+   */
+  private static determineSectionContentNeeds(section: WireframeSection): string[] {
+    const sectionType = section.sectionType?.toLowerCase() || '';
+    const needs: string[] = [];
+    
+    // Common content needs
+    needs.push('Section title (if appropriate)');
+    
+    // Type-specific content needs
+    if (sectionType.includes('hero') || sectionType.includes('header')) {
+      needs.push('Compelling main heading');
+      needs.push('Brief, engaging subheading');
+      needs.push('Clear call to action text');
+    } 
+    else if (sectionType.includes('feature') || sectionType.includes('benefit')) {
+      needs.push('Feature/benefit heading');
+      needs.push('Concise description of value proposition');
+      needs.push('Supporting details (2-3 bullet points if appropriate)');
+    }
+    else if (sectionType.includes('about')) {
+      needs.push('About section heading');
+      needs.push('Company/product story or description');
+    }
+    else if (sectionType.includes('testimonial')) {
+      needs.push('Brief, impactful testimonial quote');
+      needs.push('Testimonial author name');
+      needs.push('Author role or company (if appropriate)');
+    }
+    else if (sectionType.includes('stat') || sectionType.includes('metrics')) {
+      needs.push('Statistic value (number or percentage)');
+      needs.push('Statistic label or description');
+    }
+    else if (sectionType.includes('cta') || sectionType.includes('contact')) {
+      needs.push('Call to action heading');
+      needs.push('Supporting text explaining value');
+      needs.push('Button or link text');
+    }
+    else if (sectionType.includes('pricing') || sectionType.includes('plan')) {
+      needs.push('Plan name/tier');
+      needs.push('Brief plan description');
+      needs.push('Key features (3-5 bullet points)');
+      needs.push('Call to action for plan selection');
+    }
+    else if (sectionType.includes('faq')) {
+      needs.push('Question text');
+      needs.push('Answer text');
+    }
+    else if (sectionType.includes('footer')) {
+      needs.push('Footer tagline or slogan (if appropriate)');
+      needs.push('Copyright text');
+    }
+    else {
+      // Generic section with no specific type
+      needs.push('Appropriate heading for general content');
+      needs.push('Supporting paragraph text');
+      if (section.components?.some(c => c.type === 'button' || c.type === 'cta')) {
+        needs.push('Call to action text');
+      }
+    }
+    
+    return needs;
+  }
+}

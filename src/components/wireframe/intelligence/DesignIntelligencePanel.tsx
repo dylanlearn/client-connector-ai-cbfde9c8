@@ -1,160 +1,102 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import { 
+  LayoutTemplate, 
+  Accessibility, 
+  FileText, 
+  Brain, 
+  LayoutGrid
+} from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { useLayoutIntelligence } from '@/hooks/ai/use-layout-intelligence';
-import { useContentGeneration } from '@/hooks/ai/use-content-generation';
 import LayoutAnalysisPanel from './LayoutAnalysisPanel';
 import ContentGenerationPanel from './ContentGenerationPanel';
-import { Brain, X } from 'lucide-react';
+import AccessibilityAnalysisPanel from './AccessibilityAnalysisPanel';
+import SmartLayoutAlternativesPanel from './SmartLayoutAlternativesPanel';
 
 interface DesignIntelligencePanelProps {
   wireframe: WireframeData;
-  onUpdateWireframe: (wireframe: WireframeData) => void;
+  onUpdateWireframe: (updated: WireframeData) => void;
   onClose?: () => void;
-  selectedSectionId?: string | null;
 }
 
-export default function DesignIntelligencePanel({
+const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
   wireframe,
   onUpdateWireframe,
-  onClose,
-  selectedSectionId = null
-}: DesignIntelligencePanelProps) {
-  const [activeAccordion, setActiveAccordion] = useState<string | null>('layout-analysis');
-  
-  const {
-    isAnalyzing,
-    analysisResult,
-    analyzeLayout,
-    applyRecommendation
-  } = useLayoutIntelligence({ showToasts: true });
-  
-  const {
-    isGenerating,
-    generatedContent,
-    generateWireframeContent,
-    generateSectionContent,
-    applyContentToWireframe
-  } = useContentGeneration({ showToasts: true });
-  
-  // Run initial layout analysis when wireframe changes
-  useEffect(() => {
-    if (wireframe && wireframe.sections && wireframe.sections.length > 0) {
-      analyzeLayout(wireframe);
-    }
-  }, [wireframe, analyzeLayout]);
-  
-  const handleApplyRecommendation = async (recommendationId: string) => {
-    const updatedWireframe = await applyRecommendation(wireframe, recommendationId);
-    if (updatedWireframe) {
-      onUpdateWireframe(updatedWireframe);
-    }
-  };
-  
-  const handleGenerateContent = async () => {
-    await generateWireframeContent({
-      wireframeData: wireframe,
-      industryContext: 'technology',
-      brandVoice: 'formal',
-      contentLength: 'medium'
-    });
-  };
-  
-  const handleGenerateSectionContent = async (sectionId: string) => {
-    await generateSectionContent({
-      wireframeData: wireframe,
-      sectionId,
-      industryContext: 'technology',
-      brandVoice: 'formal'
-    });
-  };
-  
-  const handleApplyContent = () => {
-    if (generatedContent.length > 0) {
-      const updatedWireframe = applyContentToWireframe(wireframe, generatedContent);
-      onUpdateWireframe(updatedWireframe);
-    }
-  };
+  onClose
+}) => {
+  const [activeTab, setActiveTab] = useState('layout');
   
   return (
-    <div className="design-intelligence-panel bg-background border rounded-lg shadow-md w-full max-w-[450px]">
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center">
-          <Brain className="w-5 h-5 mr-2 text-primary" />
-          <h2 className="font-medium">Design Intelligence</h2>
-        </div>
+    <div className="design-intelligence-panel border rounded-lg shadow-sm bg-white">
+      <div className="flex items-center justify-between border-b p-4">
+        <h2 className="flex items-center font-medium">
+          <Brain className="h-5 w-5 text-primary mr-2" />
+          Design Intelligence
+        </h2>
         {onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
           </Button>
         )}
       </div>
       
-      <div className="p-4">
-        <p className="text-sm text-muted-foreground mb-4">
-          AI-powered design recommendations and contextual content generation to enhance your wireframe.
-        </p>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
+        <TabsList className="grid grid-cols-4">
+          <TabsTrigger value="layout" className="text-xs">
+            <LayoutTemplate className="h-4 w-4 mr-1" />
+            Layout
+          </TabsTrigger>
+          <TabsTrigger value="content" className="text-xs">
+            <FileText className="h-4 w-4 mr-1" />
+            Content
+          </TabsTrigger>
+          <TabsTrigger value="accessibility" className="text-xs">
+            <Accessibility className="h-4 w-4 mr-1" />
+            Accessibility
+          </TabsTrigger>
+          <TabsTrigger value="alternatives" className="text-xs">
+            <LayoutGrid className="h-4 w-4 mr-1" />
+            Alternatives
+          </TabsTrigger>
+        </TabsList>
         
-        <Accordion
-          type="single"
-          value={activeAccordion || undefined}
-          onValueChange={setActiveAccordion as any}
-          className="w-full"
-          collapsible
-        >
-          <AccordionItem value="layout-analysis" className="border-0">
-            <AccordionTrigger className="py-2">
-              Layout Analysis & Recommendations
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="pt-2 pb-4">
-                <LayoutAnalysisPanel
-                  wireframe={wireframe}
-                  recommendations={analysisResult?.recommendations || []}
-                  score={analysisResult?.score || 0.5}
-                  insightSummary={analysisResult?.insightSummary || 'Analyzing your wireframe layout...'}
-                  onApplyRecommendation={handleApplyRecommendation}
-                  isAnalyzing={isAnalyzing}
-                  onRefreshAnalysis={() => analyzeLayout(wireframe)}
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          
-          <AccordionItem value="content-generation" className="border-0">
-            <AccordionTrigger className="py-2">
-              Contextual Content Generation
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="pt-2 pb-4">
-                <ContentGenerationPanel
-                  wireframe={wireframe}
-                  generatedContent={generatedContent}
-                  isGenerating={isGenerating}
-                  onGenerateContent={handleGenerateContent}
-                  onGenerateSectionContent={handleGenerateSectionContent}
-                  onApplyContent={handleApplyContent}
-                  selectedSectionId={selectedSectionId}
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
-      
-      <div className="border-t p-4">
-        <p className="text-xs text-muted-foreground">
-          AI Design Intelligence helps you create better wireframes through expert analysis and contextually relevant content.
-        </p>
-      </div>
+        <TabsContent value="layout" className="pt-4">
+          <LayoutAnalysisPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="content" className="pt-4">
+          <ContentGenerationPanel 
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="accessibility" className="pt-4">
+          <AccessibilityAnalysisPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="alternatives" className="pt-4">
+          <SmartLayoutAlternativesPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}
+};
+
+export default DesignIntelligencePanel;

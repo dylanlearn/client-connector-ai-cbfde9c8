@@ -1,121 +1,201 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+  FileText, 
+  PenLine, 
+  MessageSquare, 
+  ListChecks,
+  Sparkles,
+  RotateCw
+} from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { GeneratedSectionContent } from '@/services/ai/wireframe/content/context-aware-content-service';
+import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Type, Check } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { 
+  ContextAwareContentService, 
+  ContentGenerationOptions, 
+  GeneratedSectionContent
+} from '@/services/ai/wireframe/content/context-aware-content-service';
 
 interface ContentGenerationPanelProps {
   wireframe: WireframeData;
-  generatedContent: GeneratedSectionContent[];
-  isGenerating: boolean;
-  onGenerateContent: () => void;
-  onGenerateSectionContent: (sectionId: string) => void;
-  onApplyContent: () => void;
-  selectedSectionId?: string | null;
+  onUpdateWireframe: (updated: WireframeData) => void;
 }
 
-export default function ContentGenerationPanel({
-  wireframe,
-  generatedContent,
-  isGenerating,
-  onGenerateContent,
-  onGenerateSectionContent,
-  onApplyContent,
-  selectedSectionId
-}: ContentGenerationPanelProps) {
-  const [brandVoice, setBrandVoice] = useState<string>('conversational');
-  const [selectedSection, setSelectedSection] = useState<string | null>(selectedSectionId || null);
+const ContentGenerationPanel: React.FC<ContentGenerationPanelProps> = ({ 
+  wireframe, 
+  onUpdateWireframe 
+}) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<string>('all');
+  const [generatedContent, setGeneratedContent] = useState<GeneratedSectionContent[]>([]);
+  const [options, setOptions] = useState<ContentGenerationOptions>({
+    tone: 'professional',
+    contentLength: 'moderate',
+    includeCallToAction: true
+  });
   
-  // When selectedSectionId prop changes, update the internal state
-  React.useEffect(() => {
-    if (selectedSectionId) {
-      setSelectedSection(selectedSectionId);
+  const handleGenerateContent = async () => {
+    setIsGenerating(true);
+    try {
+      let content: GeneratedSectionContent[];
+      
+      if (selectedSection === 'all') {
+        content = await ContextAwareContentService.generateContentForWireframe(wireframe, options);
+      } else {
+        const section = wireframe.sections.find(s => s.id === selectedSection);
+        if (section) {
+          const sectionContent = await ContextAwareContentService.generateContentForSection(section, wireframe, options);
+          content = [sectionContent];
+        } else {
+          content = [];
+        }
+      }
+      
+      setGeneratedContent(content);
+    } catch (error) {
+      console.error('Error generating content:', error);
+    } finally {
+      setIsGenerating(false);
     }
-  }, [selectedSectionId]);
-  
-  const handleSectionSelect = (sectionId: string) => {
-    setSelectedSection(sectionId);
   };
   
-  const handleGenerateForSection = () => {
-    if (selectedSection) {
-      onGenerateSectionContent(selectedSection);
-    }
+  const handleApplyContent = () => {
+    if (generatedContent.length === 0) return;
+    
+    const updatedSections = [...wireframe.sections];
+    
+    generatedContent.forEach(content => {
+      const sectionIndex = updatedSections.findIndex(s => s.id === content.sectionId);
+      if (sectionIndex !== -1) {
+        updatedSections[sectionIndex] = {
+          ...updatedSections[sectionIndex],
+          name: content.content.title || updatedSections[sectionIndex].name,
+          // Use optional chaining to safely access properties
+          copySuggestions: {
+            ...(updatedSections[sectionIndex].copySuggestions || {}),
+            heading: content.content.heading,
+            subheading: content.content.subheading,
+            description: content.content.description,
+            ctaText: content.content.ctaText
+          }
+        };
+        
+        // If there are components with text content, update them too
+        if (updatedSections[sectionIndex].components) {
+          updatedSections[sectionIndex].components = updatedSections[sectionIndex].components?.map(component => {
+            if (component.type === 'heading' && content.content.heading) {
+              return { ...component, content: content.content.heading };
+            }
+            if (component.type === 'subheading' && content.content.subheading) {
+              return { ...component, content: content.content.subheading };
+            }
+            if ((component.type === 'paragraph' || component.type === 'text') && content.content.description) {
+              return { ...component, content: content.content.description };
+            }
+            if ((component.type === 'button' || component.type === 'cta') && content.content.ctaText) {
+              return { ...component, content: content.content.ctaText };
+            }
+            return component;
+          });
+        }
+      }
+    });
+    
+    onUpdateWireframe({
+      ...wireframe,
+      sections: updatedSections
+    });
   };
-  
-  // Find the content for the selected section
-  const selectedSectionContent = selectedSection ? 
-    generatedContent.find(content => content.sectionId === selectedSection) : null;
-  
-  // Find the section object from the wireframe
-  const sectionObject = selectedSection ?
-    wireframe.sections.find(section => section.id === selectedSection) : null;
   
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Content Generation Settings</h3>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Brand Voice</label>
-            <Select value={brandVoice} onValueChange={setBrandVoice}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select voice" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="conversational">Conversational</SelectItem>
-                <SelectItem value="formal">Formal</SelectItem>
-                <SelectItem value="technical">Technical</SelectItem>
-                <SelectItem value="friendly">Friendly</SelectItem>
-              </SelectContent>
-            </Select>
+    <Card className="border rounded-md">
+      <div className="p-4 space-y-4">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="section-select">Select Section</Label>
+              <Select 
+                value={selectedSection} 
+                onValueChange={setSelectedSection}
+              >
+                <SelectTrigger id="section-select">
+                  <SelectValue placeholder="Choose a section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sections</SelectItem>
+                  {wireframe.sections.map((section) => (
+                    <SelectItem key={section.id} value={section.id}>
+                      {section.name || section.sectionType || `Section ${section.id.slice(0, 4)}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="tone-select">Content Tone</Label>
+              <Select 
+                value={options.tone} 
+                onValueChange={(value) => setOptions({...options, tone: value})}
+              >
+                <SelectTrigger id="tone-select">
+                  <SelectValue placeholder="Select tone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="friendly">Friendly & Casual</SelectItem>
+                  <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
+                  <SelectItem value="technical">Technical</SelectItem>
+                  <SelectItem value="formal">Formal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Section</label>
-            <Select 
-              value={selectedSection || ''} 
-              onValueChange={handleSectionSelect}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select section" />
-              </SelectTrigger>
-              <SelectContent>
-                {wireframe.sections.map((section) => (
-                  <SelectItem key={section.id} value={section.id}>
-                    {section.name || section.sectionType}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="length-select">Content Length</Label>
+              <Select 
+                value={options.contentLength} 
+                onValueChange={(value) => setOptions({...options, contentLength: value})}
+              >
+                <SelectTrigger id="length-select">
+                  <SelectValue placeholder="Select length" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brief">Brief</SelectItem>
+                  <SelectItem value="moderate">Moderate</SelectItem>
+                  <SelectItem value="detailed">Detailed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label htmlFor="cta-switch">Include Call to Action</Label>
+              <Switch 
+                id="cta-switch"
+                checked={options.includeCallToAction}
+                onCheckedChange={(checked) => setOptions({...options, includeCallToAction: checked})}
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button 
-            onClick={onGenerateContent} 
-            disabled={isGenerating} 
-            className="flex-1"
+          
+          <Button
+            onClick={handleGenerateContent}
+            disabled={isGenerating}
+            className="w-full"
           >
             {isGenerating ? (
               <>
@@ -124,165 +204,82 @@ export default function ContentGenerationPanel({
               </>
             ) : (
               <>
-                <Sparkles className="h-4 w-4 mr-1" />
-                Generate for All Sections
+                <FileText className="mr-2 h-4 w-4" />
+                Generate Content
               </>
             )}
           </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={handleGenerateForSection} 
-            disabled={isGenerating || !selectedSection}
-            className="flex-1"
-          >
-            <Type className="h-4 w-4 mr-1" />
-            Generate for Section
-          </Button>
         </div>
-      </div>
-      
-      <Separator className="my-4" />
-      
-      {isGenerating ? (
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-        </div>
-      ) : generatedContent.length > 0 ? (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">Generated Content</h3>
-            <Button size="sm" onClick={onApplyContent} variant="default">
-              <Check className="h-3 w-3 mr-1" />
-              Apply All Content
-            </Button>
-          </div>
-          
-          <ScrollArea className="h-[300px] rounded-md border p-2">
-            {selectedSection && selectedSectionContent ? (
-              <Card>
-                <CardHeader className="px-4 py-2">
-                  <CardTitle className="text-sm">
-                    {sectionObject?.name || sectionObject?.sectionType || 'Section Content'}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    AI generated content for {sectionObject?.sectionType} section
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-4 py-2 space-y-2 text-sm">
-                  {renderContentPreview(selectedSectionContent.content)}
-                </CardContent>
-              </Card>
-            ) : (
+        
+        {generatedContent.length > 0 && (
+          <div className="border rounded-md p-4 space-y-4">
+            <h3 className="text-lg font-medium">Generated Content</h3>
+            
+            <ScrollArea className="h-[300px]">
               <div className="space-y-4">
                 {generatedContent.map((content) => {
                   const section = wireframe.sections.find(s => s.id === content.sectionId);
                   return (
-                    <Card key={content.sectionId} className="cursor-pointer hover:border-primary"
-                      onClick={() => setSelectedSection(content.sectionId)}>
-                      <CardHeader className="px-4 py-2">
-                        <CardTitle className="text-sm">{section?.name || section?.sectionType}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-4 py-2">
-                        <div className="text-xs text-muted-foreground line-clamp-2">
-                          {content.content.heading || content.content.body?.substring(0, 50) + '...'}
+                    <div key={content.sectionId} className="border rounded-md p-3">
+                      <h4 className="font-medium mb-2">
+                        {section?.name || section?.sectionType || `Section ${content.sectionId.slice(0, 4)}`}
+                      </h4>
+                      
+                      {content.content.heading && (
+                        <div className="mb-2">
+                          <Label className="text-xs text-muted-foreground">Heading</Label>
+                          <p className="text-sm font-medium">{content.content.heading}</p>
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                      
+                      {content.content.subheading && (
+                        <div className="mb-2">
+                          <Label className="text-xs text-muted-foreground">Subheading</Label>
+                          <p className="text-sm">{content.content.subheading}</p>
+                        </div>
+                      )}
+                      
+                      {content.content.description && (
+                        <div className="mb-2">
+                          <Label className="text-xs text-muted-foreground">Description</Label>
+                          <p className="text-sm">{content.content.description}</p>
+                        </div>
+                      )}
+                      
+                      {content.content.ctaText && (
+                        <div className="mb-2">
+                          <Label className="text-xs text-muted-foreground">Call to Action</Label>
+                          <p className="text-sm font-medium">{content.content.ctaText}</p>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
-            )}
-          </ScrollArea>
-        </div>
-      ) : (
-        <div className="text-center py-6 text-muted-foreground text-sm">
-          <Type className="mx-auto h-8 w-8 mb-2 opacity-50" />
-          <p>No content generated yet. Click the generate button to create content for your wireframe.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Helper function to render content preview based on content type
-function renderContentPreview(content: any) {
-  return (
-    <div className="space-y-2">
-      {content.heading && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Heading:</div>
-          <div className="font-medium">{content.heading}</div>
-        </div>
-      )}
-      
-      {content.subheading && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Subheading:</div>
-          <div>{content.subheading}</div>
-        </div>
-      )}
-      
-      {content.body && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Body:</div>
-          <div className="text-xs">{content.body}</div>
-        </div>
-      )}
-      
-      {content.ctaPrimary && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Primary CTA:</div>
-          <div className="text-xs font-medium">{content.ctaPrimary}</div>
-        </div>
-      )}
-      
-      {content.ctaSecondary && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Secondary CTA:</div>
-          <div className="text-xs">{content.ctaSecondary}</div>
-        </div>
-      )}
-      
-      {content.features && content.features.length > 0 && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Features:</div>
-          <ul className="text-xs list-disc pl-4">
-            {content.features.map((feature: string, index: number) => (
-              <li key={index}>{feature}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      
-      {content.stats && content.stats.length > 0 && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Stats:</div>
-          <div className="grid grid-cols-2 gap-1">
-            {content.stats.map((stat: any, index: number) => (
-              <div key={index} className="text-xs">
-                <span className="font-bold">{stat.value}</span> {stat.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {content.testimonials && content.testimonials.length > 0 && (
-        <div>
-          <div className="text-xs font-medium text-muted-foreground">Testimonials:</div>
-          {content.testimonials.map((testimonial: any, index: number) => (
-            <div key={index} className="text-xs italic mb-1">
-              "{testimonial.quote}" - {testimonial.author}
-              {testimonial.position && <span>, {testimonial.position}</span>}
+            </ScrollArea>
+            
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline"
+                onClick={handleGenerateContent}
+                size="sm"
+              >
+                <RotateCw className="mr-1 h-3 w-3" />
+                Regenerate
+              </Button>
+              <Button 
+                onClick={handleApplyContent}
+                size="sm"
+              >
+                <Sparkles className="mr-1 h-3 w-3" />
+                Apply Content
+              </Button>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
-}
+};
+
+export default ContentGenerationPanel;
