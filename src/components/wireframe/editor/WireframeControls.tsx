@@ -1,153 +1,182 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { LoadingStateWrapper } from '@/components/ui/LoadingStateWrapper';
-import { Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Wand2, 
+  Book, 
+  Brain,
+  Eye, 
+  EyeOff,
+  Search,
+  Hexagon,
+  Plus,
+  Settings,
+  LayoutGrid
+} from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Toggle } from '@/components/ui/toggle';
+import { DesignIntelligencePanel } from '../intelligence';
+import { WireframeData } from '@/services/ai/wireframe/wireframe-types'; 
 
 interface WireframeControlsProps {
   projectId?: string;
-  onWireframeCreated?: (wireframe: any) => void;
-  generateWireframe: (params: any) => Promise<any>;
+  onWireframeCreated?: (result: any) => void;
+  generateWireframe?: (params: any) => Promise<any>;
   isGenerating?: boolean;
+  wireframe?: WireframeData | null;
 }
 
-const WireframeControls: React.FC<WireframeControlsProps> = ({
+export default function WireframeControls({
   projectId,
   onWireframeCreated,
   generateWireframe,
-  isGenerating = false
-}) => {
-  const [prompt, setPrompt] = useState('');
-  const [creativityLevel, setCreativityLevel] = useState(8);
-  const [style, setStyle] = useState('modern');
-  const [colorScheme, setColorScheme] = useState('auto');
+  isGenerating = false,
+  wireframe
+}: WireframeControlsProps) {
+  const [description, setDescription] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showAIDesignPanel, setShowAIDesignPanel] = useState(false);
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!prompt.trim()) {
-      return;
-    }
-    
-    try {
-      const result = await generateWireframe({
-        description: prompt,
-        projectId,
-        creativityLevel,
-        style,
-        colorScheme
+  const handleGenerateClick = async () => {
+    if (generateWireframe && description) {
+      await generateWireframe({
+        description,
+        projectId
       });
-      
-      if (result.wireframe && onWireframeCreated) {
-        onWireframeCreated(result.wireframe);
-      }
-    } catch (error) {
-      console.error("Generation error:", error);
+    }
+  };
+  
+  const handleTemplateSelect = async (templateId: string) => {
+    if (generateWireframe) {
+      await generateWireframe({
+        templateId,
+        projectId
+      });
+    }
+    setShowTemplates(false);
+  };
+  
+  const handleWireframeUpdate = (updatedWireframe: WireframeData) => {
+    if (onWireframeCreated) {
+      onWireframeCreated({
+        success: true,
+        wireframe: updatedWireframe
+      });
     }
   };
   
   return (
-    <LoadingStateWrapper
-      isLoading={isGenerating}
-      error={null}
-      loadingMessage="Generating your wireframe..."
-      loadingComponent={
-        <div className="flex flex-col items-center gap-4 py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Building your design...</p>
-        </div>
-      }
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="prompt">Describe your wireframe</Label>
-          <Textarea
-            id="prompt"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe what you want to create, e.g. 'A landing page for a fitness app with hero section, features, and testimonials'"
-            className="min-h-[100px]"
+    <div className="wireframe-controls space-y-4">
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <Input
+            placeholder="Describe your wireframe (e.g., landing page for tech startup)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full"
+            disabled={isGenerating}
           />
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="style">Style</Label>
-            <Select
-              value={style}
-              onValueChange={setStyle}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="modern">Modern</SelectItem>
-                <SelectItem value="minimalist">Minimalist</SelectItem>
-                <SelectItem value="classic">Classic</SelectItem>
-                <SelectItem value="bold">Bold</SelectItem>
-                <SelectItem value="playful">Playful</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="colorScheme">Color Scheme</Label>
-            <Select
-              value={colorScheme}
-              onValueChange={setColorScheme}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select color scheme" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Auto Generate</SelectItem>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="brand">Brand Colors</SelectItem>
-                <SelectItem value="monochrome">Monochrome</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="creativity">Creativity Level</Label>
-            <span className="text-sm text-muted-foreground">{creativityLevel}/10</span>
-          </div>
-          <Slider
-            id="creativity"
-            min={1}
-            max={10}
-            step={1}
-            value={[creativityLevel]}
-            onValueChange={(values) => setCreativityLevel(values[0])}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Conservative</span>
-            <span>Creative</span>
-          </div>
-        </div>
-        
         <Button 
-          type="submit"
-          className="w-full"
-          disabled={isGenerating || !prompt.trim()}
+          onClick={handleGenerateClick} 
+          disabled={isGenerating || !description}
+          className="whitespace-nowrap"
         >
-          {isGenerating ? 'Generating...' : 'Generate Wireframe'}
+          {isGenerating ? (
+            <>
+              <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Generate
+            </>
+          )}
         </Button>
-      </form>
-    </LoadingStateWrapper>
+        
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Search className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+            <SheetHeader>
+              <SheetTitle>Template Gallery</SheetTitle>
+              <SheetDescription>
+                Choose from our collection of pre-designed wireframe templates
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              {['landing-page', 'dashboard', 'e-commerce', 'portfolio', 'blog', 'saas'].map(template => (
+                <div 
+                  key={template}
+                  className="border rounded-lg p-2 cursor-pointer hover:border-primary"
+                  onClick={() => handleTemplateSelect(template)}
+                >
+                  <div className="bg-muted aspect-video rounded-md mb-2"></div>
+                  <p className="text-sm font-medium capitalize">{template.replace('-', ' ')}</p>
+                </div>
+              ))}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+      
+      {wireframe && (
+        <div className="flex items-center justify-between border-t border-b py-2 px-1">
+          <div className="flex items-center gap-2">
+            <Toggle
+              aria-label="Toggle AI Design Intelligence"
+              pressed={showAIDesignPanel}
+              onPressedChange={setShowAIDesignPanel}
+            >
+              <Brain className="h-4 w-4 mr-1" />
+              <span className="text-xs">Design Intelligence</span>
+            </Toggle>
+            
+            <Toggle
+              aria-label="Toggle Templates"
+              pressed={showTemplates}
+              onPressedChange={setShowTemplates}
+            >
+              <LayoutGrid className="h-4 w-4 mr-1" />
+              <span className="text-xs">Templates</span>
+            </Toggle>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-xs">
+              <Plus className="h-3 w-3 mr-1" />
+              Add Section
+            </Button>
+            
+            <Button variant="ghost" size="sm" className="text-xs">
+              <Settings className="h-3 w-3 mr-1" />
+              Settings
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {wireframe && showAIDesignPanel && (
+        <div className="mt-4">
+          <DesignIntelligencePanel 
+            wireframe={wireframe} 
+            onUpdateWireframe={handleWireframeUpdate} 
+            onClose={() => setShowAIDesignPanel(false)}
+          />
+        </div>
+      )}
+    </div>
   );
-};
-
-export default WireframeControls;
+}
