@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,15 +16,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { IntakeFormData } from "@/types/intake-form";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 
+// Improved props with canProceed/setCanProceed for validation and navigation
 interface GeneralQuestionsStepProps {
   formData: IntakeFormData;
   updateFormData: (data: Partial<IntakeFormData>) => void;
   onNext: () => void;
   onPrevious: () => void;
   isSaving?: boolean;
+  canProceed: boolean;
+  setCanProceed: (valid: boolean) => void;
 }
 
+// Validation schema for form
 const formSchema = z.object({
   projectName: z.string().min(2, {
     message: "Project name must be at least 2 characters.",
@@ -37,7 +43,7 @@ const formSchema = z.object({
   launchDate: z.string().optional(),
 });
 
-const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, isSaving }: GeneralQuestionsStepProps) => {
+const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, isSaving, canProceed, setCanProceed }: GeneralQuestionsStepProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -46,25 +52,40 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
       targetAudience: formData.targetAudience || "",
       launchDate: formData.launchDate || "",
     },
+    mode: "onChange"
   });
 
+  // Update formData and canProceed state as values change
   useEffect(() => {
-    const subscription = form.watch((value) => {
-      if (Object.values(value).some(v => v)) {
-        updateFormData(value);
-      }
+    const subscription = form.watch((value, { name, type }) => {
+      updateFormData(value);
+      // Validation logic
+      const valid = formSchema.safeParse(value).success;
+      setCanProceed(valid);
     });
     return () => subscription.unsubscribe();
-  }, [form, updateFormData]);
+    // eslint-disable-next-line
+  }, [form, updateFormData, setCanProceed]);
+
+  // On initial mount, set validity
+  useEffect(() => {
+    setCanProceed(form.formState.isValid);
+    // eslint-disable-next-line
+  }, []);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     updateFormData(values);
+    toast({
+      title: "Information Saved",
+      description: "General project details have been updated.",
+      variant: "success"
+    });
     onNext();
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" aria-label="General Project Details">
         <FormField
           control={form.control}
           name="projectName"
@@ -72,7 +93,7 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
             <FormItem>
               <FormLabel>Project Name</FormLabel>
               <FormControl>
-                <Input placeholder="My Awesome Website" {...field} />
+                <Input placeholder="My Awesome Website" {...field} aria-required="true" aria-label="Project Name" />
               </FormControl>
               <FormDescription>
                 What would you like to call your project?
@@ -94,6 +115,8 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
                   className="resize-none"
                   rows={4}
                   {...field}
+                  aria-required="true"
+                  aria-label="Project Description"
                 />
               </FormControl>
               <FormDescription>
@@ -116,6 +139,8 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
                   className="resize-none"
                   rows={3}
                   {...field}
+                  aria-required="true"
+                  aria-label="Target Audience"
                 />
               </FormControl>
               <FormDescription>
@@ -133,7 +158,7 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
             <FormItem>
               <FormLabel>Expected Launch Date</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" {...field} aria-label="Expected Launch Date" />
               </FormControl>
               <FormDescription>
                 When are you planning to launch your website?
@@ -143,11 +168,13 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
           )}
         />
 
-        <div className="flex justify-between pt-4">
-          <Button type="button" variant="outline" onClick={onPrevious}>
+        <div className="flex flex-col sm:flex-row justify-between pt-4 gap-2" role="group" aria-label="Navigation">
+          <Button type="button" variant="outline" onClick={onPrevious} aria-label="Back">
             Back
           </Button>
-          <Button type="submit">Continue</Button>
+          <Button type="submit" disabled={!canProceed || isSaving} aria-label="Continue to next step">
+            Continue
+          </Button>
         </div>
       </form>
     </Form>
