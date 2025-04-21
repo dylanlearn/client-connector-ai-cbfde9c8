@@ -116,7 +116,7 @@ const router = createBrowserRouter([
     path: '/admin',
     element: <ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>,
   },
-  // Add the missing admin routes
+  // Admin routes
   {
     path: '/admin/supabase-audit',
     element: <ProtectedRoute adminOnly={true}><SupabaseAuditDashboard /></ProtectedRoute>,
