@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { DesignSuggestion } from '@/hooks/wireframe/use-wireframe-variations';
-import { WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeGenerationResult, WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { useWireframeGenerator } from '@/hooks/wireframe/use-wireframe-generator';
 import { toast } from '@/hooks/use-toast';
 
@@ -24,13 +24,9 @@ export const DesignWireframeBridge: React.FC<DesignWireframeBridgeProps> = ({
   const [creativityLevel, setCreativityLevel] = useState(7); // Medium-high creativity
   const { generateWireframe, isGenerating } = useWireframeGenerator(
     creativityLevel,
-    (wireframe) => {
-      if (wireframe) {
-        onWireframeGenerated({
-          success: true,
-          message: 'Wireframe generated successfully',
-          wireframe
-        });
+    (result) => {
+      if (result && result.wireframe) {
+        onWireframeGenerated(result);
       }
     },
     toast
