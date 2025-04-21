@@ -1,200 +1,305 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form } from "@/components/ui/form";
-import { Progress } from "@/components/ui/progress";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import SiteTypeStep from "@/components/intake/SiteTypeStep";
-import GeneralQuestionsStep from "@/components/intake/GeneralQuestionsStep";
-import SpecificQuestionsStep from "@/components/intake/SpecificQuestionsStep";
-import DesignPreferencesStep from "@/components/intake/DesignPreferencesStep";
-import CompletionStep from "@/components/intake/CompletionStep";
-import { useIntakeForm } from "@/hooks/intake-form";
-import { useAuth } from "@/hooks/use-auth";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import React, { useState } from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
 
-const IntakeForm = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+type FormValues = {
+  businessName: string;
+  businessDescription: string;
+  projectName: string;
+  websiteGoals: string;
+  targetAudience: string;
+  competitors: string;
+  brandColors: string;
+  typography: string;
+  requiredFeatures: string;
+  additionalComments: string;
+};
+
+export default function IntakeForm() {
   const { toast } = useToast();
-  const { user, isLoading: isAuthLoading } = useAuth();
-  const { 
-    formData, 
-    updateFormData, 
-    submitForm, 
-    clearFormData, 
-    hasStartedForm, 
-    isLoading: isFormLoading,
-    isSaving,
-    getSavedStep,
-    saveCurrentStep,
-    hasInProgressForm
-  } = useIntakeForm();
+  const [activeTab, setActiveTab] = useState('business');
   
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
-  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const form = useForm<FormValues>({
+    defaultValues: {
+      businessName: '',
+      businessDescription: '',
+      projectName: '',
+      websiteGoals: '',
+      targetAudience: '',
+      competitors: '',
+      brandColors: '',
+      typography: '',
+      requiredFeatures: '',
+      additionalComments: '',
+    },
+  });
 
-  useEffect(() => {
-    if (location.pathname !== "/" && hasInProgressForm()) {
-      setShowResumeDialog(true);
-    }
-  }, [location.pathname, hasInProgressForm]);
-
-  useEffect(() => {
-    if (!showResumeDialog) {
-      const savedStep = getSavedStep();
-      if (savedStep > 1) {
-        setCurrentStep(savedStep);
-      }
-    }
-  }, [getSavedStep, showResumeDialog]);
-
-  useEffect(() => {
-    saveCurrentStep(currentStep);
-    window.scrollTo(0, 0);
-  }, [currentStep, saveCurrentStep]);
-
-  useEffect(() => {
-    if (!isAuthLoading && !user) {
-      console.log("User not authenticated, redirecting to login");
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to access the intake form",
-        variant: "destructive",
-      });
-      navigate("/login");
-    }
-  }, [user, navigate, toast, isAuthLoading]);
-
-  if (isAuthLoading || isFormLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-[50vh]">
-          <LoadingSpinner size="lg" />
-          <p className="ml-2">Loading your profile...</p>
-        </div>
-      </DashboardLayout>
-    );
+  function onSubmit(data: FormValues) {
+    console.log(data);
+    toast({
+      title: "Form submitted",
+      description: "We've received your intake form submission.",
+    });
   }
 
-  const handleStartNewForm = () => {
-    clearFormData();
-    setCurrentStep(1);
-    setShowResumeDialog(false);
-  };
-
-  const handleResumeForm = () => {
-    const savedStep = getSavedStep();
-    setCurrentStep(savedStep);
-    setShowResumeDialog(false);
-  };
-
-  const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleComplete = async () => {
-    try {
-      await submitForm();
-      toast({
-        title: "Form submitted successfully",
-        description: "Thank you for completing the intake form. We'll be in touch soon.",
-      });
-      navigate("/dashboard");
-    } catch (error) {
-      toast({
-        title: "Error submitting form",
-        description: "There was an error submitting your form. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} isSaving={isSaving} />;
-      case 2:
-        return <GeneralQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
-      case 3:
-        return <SpecificQuestionsStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
-      case 4:
-        return <DesignPreferencesStep formData={formData} updateFormData={updateFormData} onNext={handleNext} onPrevious={handlePrevious} />;
-      case 5:
-        return <CompletionStep formData={formData} onComplete={handleComplete} onPrevious={handlePrevious} />;
-      default:
-        return <SiteTypeStep formData={formData} updateFormData={updateFormData} onNext={handleNext} isSaving={isSaving} />;
-    }
+  const nextTab = (nextTab: string) => {
+    setActiveTab(nextTab);
   };
 
   return (
     <DashboardLayout>
-      <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-        <AlertDialog open={showResumeDialog} onOpenChange={setShowResumeDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Resume Previous Form?</AlertDialogTitle>
-              <AlertDialogDescription>
-                We found a previously started form. Would you like to resume where you left off or start a new form?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleStartNewForm}>Start New</AlertDialogCancel>
-              <AlertDialogAction onClick={handleResumeForm}>Resume</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold mb-8">Project Intake Form</h1>
+        <p className="text-gray-600 mb-8">
+          Please fill out this form to help us understand your project requirements.
+        </p>
 
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Project Intake Form</h1>
-            <p className="mt-2 text-lg text-gray-600">
-              Help us understand your project better so we can deliver exactly what you need.
-            </p>
-          </div>
-
-          <div className="mb-8">
-            <div className="flex justify-between mb-2 text-sm font-medium text-gray-500">
-              <span>Step {currentStep} of {totalSteps}</span>
-              <span>{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
-            </div>
-            <Progress value={(currentStep / totalSteps) * 100} className="h-2" />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {currentStep === 1 && "What are you building?"}
-                {currentStep === 2 && "General Information"}
-                {currentStep === 3 && "Specific Requirements"}
-                {currentStep === 4 && "Design Preferences"}
-                {currentStep === 5 && "Review & Submit"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderStepContent()}
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Project Details</CardTitle>
+            <CardDescription>
+              Fill out the information below to get started with your project.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="mb-8">
+                    <TabsTrigger value="business">Business Info</TabsTrigger>
+                    <TabsTrigger value="project">Project Goals</TabsTrigger>
+                    <TabsTrigger value="design">Design Preferences</TabsTrigger>
+                    <TabsTrigger value="features">Features</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="business" className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="businessName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Business Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your business name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="businessDescription"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Business Description</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe your business or organization"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="projectName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Project Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Name for this project" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end">
+                      <Button type="button" onClick={() => nextTab('project')}>
+                        Next: Project Goals
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="project" className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="websiteGoals"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website Goals</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="What are the main goals of your website?"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetAudience"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Audience</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Describe your target audience or customer base"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="competitors"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Competitors</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="List your main competitors or similar websites you like"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => nextTab('business')}>
+                        Back
+                      </Button>
+                      <Button type="button" onClick={() => nextTab('design')}>
+                        Next: Design Preferences
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="design" className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="brandColors"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Brand Colors</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Brand colors (e.g. #ff0000, blue)" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Enter your brand colors or color preferences
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="typography"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Typography</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Font preferences or typography style"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => nextTab('project')}>
+                        Back
+                      </Button>
+                      <Button type="button" onClick={() => nextTab('features')}>
+                        Next: Features
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="features" className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="requiredFeatures"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Required Features</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="What features do you need on your website?"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="additionalComments"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Additional Comments</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Any other information you'd like to share"
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => nextTab('design')}>
+                        Back
+                      </Button>
+                      <Button type="submit">Submit Form</Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
-};
-
-export default IntakeForm;
+}

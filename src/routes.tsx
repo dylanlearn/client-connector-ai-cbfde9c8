@@ -29,6 +29,8 @@ import { MonitoringDashboard } from './components/admin/monitoring';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import ResponsiveSystemPage from './pages/ResponsiveSystemPage';
 import VisualStatesSystemPage from './pages/VisualStatesSystemPage';
+import DesignPicker from './pages/DesignPicker';
+import IntakeForm from './pages/IntakeForm';
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
@@ -128,6 +130,14 @@ const router = createBrowserRouter([
   {
     path: '/settings',
     element: <ProtectedRoute><Settings /></ProtectedRoute>,
+  },
+  {
+    path: '/design-picker',
+    element: <ProtectedRoute><DesignPicker /></ProtectedRoute>,
+  },
+  {
+    path: '/intake-form',
+    element: <ProtectedRoute><IntakeForm /></ProtectedRoute>,
   },
   {
     path: '/admin',

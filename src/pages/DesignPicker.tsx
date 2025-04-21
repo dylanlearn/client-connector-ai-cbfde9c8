@@ -1,316 +1,153 @@
 
-import React, { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Paintbrush, Palette, Layout, RefreshCw } from "lucide-react";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { VisualPicker, DesignOption } from "@/components/design/AnimatedVisualPicker";
-import { toast } from "sonner";
-import { designOptions } from "@/data/design-options";
-import { useDesignImageGeneration } from "@/hooks/use-design-image-generation";
-import { useAuth } from "@/hooks/use-auth";
-import DesignImageManager from "@/components/design/DesignImageManager";
-import { AnimatedVisualPicker } from "@/components/design/AnimatedVisualPicker";
+import React from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { VisualPicker, DesignOption } from '@/components/design/VisualPicker';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState } from 'react';
 
-const DesignPicker = () => {
-  const [activeTab, setActiveTab] = useState("layouts");
-  const [selectedDesigns, setSelectedDesigns] = useState<Record<string, any>>({});
-  const [refreshingCategory, setRefreshingCategory] = useState<string | null>(null);
-  const { isGenerating, generateImage } = useDesignImageGeneration();
-  const { user } = useAuth();
-  
-  const handleDesignSelect = (option: any, liked: boolean) => {
-    if (liked) {
-      setSelectedDesigns(prev => ({
-        ...prev,
-        [option.category]: [...(prev[option.category] || []), option]
-      }));
-      
-      toast.success(`${option.title} added to your selections!`);
-    } else {
-      toast.info(`${option.title} skipped.`);
-    }
-  };
-  
-  const handleRefreshImages = async (category: string) => {
-    if (isGenerating || !user) return;
-    
-    setRefreshingCategory(category);
-    try {
-      const categoryOptions = designOptions.filter(option => option.category === category);
-      
-      toast.info(`Refreshing ${category} designs with AI-generated images. This may take a moment...`);
-      
-      // We'll only refresh the first design in each category for demo purposes
-      // In a real application, you might want to update all designs or let users pick which to update
-      const option = categoryOptions[0];
-      
-      if (option) {
-        const imageUrl = await generateImage(
-          option.category,
-          option.description,
-          option.title
-        );
-        
-        if (imageUrl) {
-          // In a real app, you would update the designOptions array or save to a database
-          toast.success(`Generated new ${category} image! In a real app, this would update your design options.`);
-        }
-      }
-    } finally {
-      setRefreshingCategory(null);
-    }
-  };
-  
-  const handleRefreshNavbarImages = async () => {
-    if (isGenerating || !user) return;
-    
-    setRefreshingCategory("navbar");
-    try {
-      const navbarOptions = designOptions.filter(option => option.category === "navbar");
-      
-      toast.info(`Refreshing navbar designs with AI-generated images. This may take a moment...`);
-      
-      // Generate images for all navbar options
-      for (const option of navbarOptions) {
-        toast.info(`Generating image for ${option.title}...`);
-        
-        const imageUrl = await generateImage(
-          "navbar",
-          option.description,
-          option.title
-        );
-        
-        if (imageUrl) {
-          toast.success(`Generated image for ${option.title}!`);
-        }
-      }
-      
-      toast.success("All navbar images have been refreshed!");
-    } catch (error) {
-      console.error("Error generating navbar images:", error);
-      toast.error("Failed to generate all navbar images. Please try again.");
-    } finally {
-      setRefreshingCategory(null);
-    }
-  };
+// Sample design options
+const heroOptions: DesignOption[] = [
+  {
+    id: 'hero-1',
+    title: 'Modern Hero',
+    description: 'Clean, minimal hero with a strong call to action',
+    imageUrl: '/lovable-uploads/0392ac21-110f-484c-8f3d-5fcbb0dcefc6.png',
+    category: 'hero'
+  },
+  {
+    id: 'hero-2',
+    title: 'Split Hero',
+    description: 'Two-column layout with image and text',
+    imageUrl: '/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png',
+    category: 'hero'
+  },
+  {
+    id: 'hero-3',
+    title: 'Bold Headline',
+    description: 'Large typography focused layout',
+    imageUrl: '/lovable-uploads/23ecc16f-a53c-43af-8d71-1034d90498b3.png',
+    category: 'hero'
+  },
+];
 
-  // Filter design options by category
-  const heroOptions = designOptions.filter(option => option.category === "hero");
-  const navbarOptions = designOptions.filter(option => option.category === "navbar");
-  const aboutOptions = designOptions.filter(option => option.category === "about");
-  const footerOptions = designOptions.filter(option => option.category === "footer");
-  const fontOptions = designOptions.filter(option => option.category === "font");
-  const animationOptions = designOptions.filter(option => option.category === "animation");
-  const interactionOptions = designOptions.filter(option => option.category === "interaction");
+const navbarOptions: DesignOption[] = [
+  {
+    id: 'navbar-1',
+    title: 'Minimal Navbar',
+    description: 'Clean, simple navigation bar',
+    imageUrl: '/lovable-uploads/3ffcf93f-2dca-479f-867d-cc445acdac8d.png',
+    category: 'navbar'
+  },
+  {
+    id: 'navbar-2',
+    title: 'Mega Menu',
+    description: 'Expansive navigation with dropdown categories',
+    imageUrl: '/lovable-uploads/480f7861-cc1e-41e1-9ee1-be7ba9aa52b9.png',
+    category: 'navbar'
+  },
+];
 
-  // Function to handle selecting a design from the AnimatedVisualPicker
-  const handleSelectFromSwiper = (option: DesignOption) => {
-    handleDesignSelect(option, true);
+const footerOptions: DesignOption[] = [
+  {
+    id: 'footer-1',
+    title: 'Simple Footer',
+    description: 'Clean footer with essential links',
+    imageUrl: '/lovable-uploads/4efe39c0-e0e0-4c25-a11a-d9f9648b0495.png',
+    category: 'footer'
+  },
+  {
+    id: 'footer-2',
+    title: 'Full Footer',
+    description: 'Comprehensive footer with multiple sections',
+    imageUrl: '/lovable-uploads/9d1c9181-4f19-48e3-b424-cbe28ccb9ad1.png',
+    category: 'footer'
+  },
+];
+
+export default function DesignPicker() {
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+
+  const handleSelect = (category: string, designId: string) => {
+    setSelectedOptions(prev => ({
+      ...prev,
+      [category]: designId
+    }));
   };
 
   return (
     <DashboardLayout>
-      <div className="container py-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Design Picker</h1>
-          <p className="text-muted-foreground">
-            Swipe through design options to customize your project
-          </p>
-        </div>
-        
-        <DesignImageManager />
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="layouts">
-              <Layout className="mr-2 h-4 w-4" />
-              Layouts
-            </TabsTrigger>
-            <TabsTrigger value="components">
-              <Paintbrush className="mr-2 h-4 w-4" />
-              Components
-            </TabsTrigger>
-            <TabsTrigger value="styles">
-              <Palette className="mr-2 h-4 w-4" />
-              Styles
-            </TabsTrigger>
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold mb-8">Design Picker</h1>
+        <p className="text-gray-600 mb-8">
+          Select your preferred design options for different parts of your website.
+        </p>
+
+        <Tabs defaultValue="hero" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="hero">Hero Section</TabsTrigger>
+            <TabsTrigger value="navbar">Navigation</TabsTrigger>
+            <TabsTrigger value="footer">Footer</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="layouts" className="pt-4">
-            <div className="grid gap-8">
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Hero Sections</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("hero")}
-                    disabled={isGenerating || refreshingCategory === "hero" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "hero" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={heroOptions} 
-                    onSelect={handleSelectFromSwiper}
-                    category="hero"
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Navigation Bars</h3>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      onClick={handleRefreshNavbarImages}
-                      disabled={isGenerating || refreshingCategory === "navbar" || !user}
-                    >
-                      <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "navbar" ? "animate-spin" : ""}`} />
-                      Generate All Navbar Images
-                    </Button>
-                  </div>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={navbarOptions} 
-                    onSelect={handleSelectFromSwiper} 
-                    category="navbar"
-                  />
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="hero">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hero Section</CardTitle>
+                <CardDescription>
+                  Choose a hero design that best represents your brand
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VisualPicker 
+                  options={heroOptions}
+                  selectedId={selectedOptions['hero']}
+                  onSelect={(id) => handleSelect('hero', id)}
+                  fullWidth
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
           
-          <TabsContent value="components" className="pt-4">
-            <div className="grid gap-8 md:grid-cols-2">
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">About Sections</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("about")}
-                    disabled={isGenerating || refreshingCategory === "about" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "about" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={aboutOptions}
-                    onSelect={handleSelectFromSwiper} 
-                    category="about"
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Footer Designs</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("footer")}
-                    disabled={isGenerating || refreshingCategory === "footer" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "footer" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={footerOptions}
-                    onSelect={handleSelectFromSwiper} 
-                    category="footer"
-                  />
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="navbar">
+            <Card>
+              <CardHeader>
+                <CardTitle>Navigation</CardTitle>
+                <CardDescription>
+                  Select a navigation style for your website
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VisualPicker 
+                  options={navbarOptions}
+                  selectedId={selectedOptions['navbar']}
+                  onSelect={(id) => handleSelect('navbar', id)}
+                  fullWidth
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
           
-          <TabsContent value="styles" className="pt-4">
-            <div className="grid gap-8 md:grid-cols-2">
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Typography</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("font")}
-                    disabled={isGenerating || refreshingCategory === "font" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "font" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={fontOptions}
-                    onSelect={handleSelectFromSwiper} 
-                    category="font"
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Animations</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("animation")}
-                    disabled={isGenerating || refreshingCategory === "animation" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "animation" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={animationOptions}
-                    onSelect={handleSelectFromSwiper} 
-                    category="animation"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="grid gap-8 mt-8">
-              <Card className="p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Interactions</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRefreshImages("interaction")}
-                    disabled={isGenerating || refreshingCategory === "interaction" || !user}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${refreshingCategory === "interaction" ? "animate-spin" : ""}`} />
-                    Refresh Images
-                  </Button>
-                </div>
-                <CardContent className="p-0">
-                  <AnimatedVisualPicker 
-                    options={interactionOptions}
-                    onSelect={handleSelectFromSwiper} 
-                    category="interaction"
-                  />
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="footer">
+            <Card>
+              <CardHeader>
+                <CardTitle>Footer</CardTitle>
+                <CardDescription>
+                  Choose a footer layout that includes the elements you need
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VisualPicker 
+                  options={footerOptions}
+                  selectedId={selectedOptions['footer']}
+                  onSelect={(id) => handleSelect('footer', id)}
+                  fullWidth
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
   );
-};
-
-export default DesignPicker;
+}

@@ -3,7 +3,7 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { useLocation } from "react-router-dom";
 import { X, Menu } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useAdminStatus } from "@/hooks/use-admin-status";
 
 const AppSidebar = () => {
@@ -18,7 +18,7 @@ const AppSidebar = () => {
       "profile?.role": profile?.role, 
       "isAdmin from hook": isAdmin,
       "user email": user?.email,
-      "isInAdminList": user?.email && ['dylanmohseni0@gmail.com', 'admin@example.com'].includes(user.email),
+      "isInAdminList": user?.email && ['dylanmohseni0@gmail.com', 'admin@example.com', 'dmohsen@purdue.edu'].includes(user.email),
       "current path": location.pathname
     });
   }, [profile, isAdmin, location.pathname, user]);
