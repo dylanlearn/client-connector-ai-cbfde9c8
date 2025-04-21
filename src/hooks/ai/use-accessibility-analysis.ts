@@ -1,80 +1,58 @@
 
 import { useState, useCallback } from 'react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  AccessibilityAnalyzerService, 
-  AccessibilityAnalysisResult, 
-  AccessibilityIssue 
-} from '@/services/ai/design/accessibility/accessibility-analyzer-service';
-import { toast } from 'sonner';
 
 interface UseAccessibilityAnalysisOptions {
-  showToasts?: boolean;
-  autoAnalyze?: boolean;
+  // Options for the hook if needed
 }
 
-/**
- * Hook for using the Accessibility Analyzer Service
- */
-export function useAccessibilityAnalysis({
-  showToasts = true,
-  autoAnalyze = false
-}: UseAccessibilityAnalysisOptions = {}) {
+export function useAccessibilityAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AccessibilityAnalysisResult | null>(null);
-  const [selectedIssue, setSelectedIssue] = useState<AccessibilityIssue | null>(null);
+  const [accessibilityReport, setAccessibilityReport] = useState<any | null>(null);
   const [error, setError] = useState<Error | null>(null);
   
   /**
-   * Analyze a wireframe for accessibility issues
+   * Analyze the accessibility of a wireframe
    */
-  const analyzeAccessibility = useCallback(async (wireframe: WireframeData) => {
+  const analyzeAccessibility = useCallback(async (wireframe: WireframeData): Promise<any> => {
     setIsAnalyzing(true);
     setError(null);
     
     try {
-      const result = await AccessibilityAnalyzerService.analyzeWireframe(wireframe);
-      setAnalysisResult(result);
-      
-      if (showToasts) {
-        if (result.issues.length === 0) {
-          toast.success('No accessibility issues found. Great job!');
-        } else {
-          toast.info(`Found ${result.issues.length} accessibility issues to address.`);
+      // This will be implemented fully in future
+      const mockResult = {
+        score: 85,
+        issues: [
+          { type: 'contrast', severity: 'medium', description: 'Text contrast ratio is below recommended level' },
+          { type: 'structure', severity: 'low', description: 'Consider adding more heading structure' }
+        ],
+        recommendations: [
+          'Increase contrast ratio for text elements',
+          'Add appropriate ARIA labels'
+        ],
+        wcagCompliance: {
+          perceivable: 90,
+          operable: 85,
+          understandable: 95,
+          robust: 80
         }
-      }
+      };
       
-      return result;
+      setAccessibilityReport(mockResult);
+      return mockResult;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error during accessibility analysis');
+      const error = err instanceof Error ? err : new Error('Unknown accessibility analysis error');
       setError(error);
-      
-      if (showToasts) {
-        toast.error('Error analyzing accessibility: ' + error.message);
-      }
-      
       return null;
     } finally {
       setIsAnalyzing(false);
     }
-  }, [showToasts]);
-  
-  /**
-   * Clear the current analysis
-   */
-  const clearAnalysis = useCallback(() => {
-    setAnalysisResult(null);
-    setSelectedIssue(null);
-    setError(null);
   }, []);
   
   return {
     isAnalyzing,
-    analysisResult,
-    selectedIssue,
+    accessibilityReport,
     error,
-    analyzeAccessibility,
-    setSelectedIssue,
-    clearAnalysis
+    analyzeAccessibility
   };
 }

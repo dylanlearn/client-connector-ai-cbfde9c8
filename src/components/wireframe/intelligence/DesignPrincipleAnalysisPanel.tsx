@@ -1,18 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useDesignPrincipleAnalysis } from '@/hooks/ai';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { 
+  CompositionPrinciple, 
+  PrincipleScore
+} from '@/services/ai/design/principle-analysis/types';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import useDesignPrincipleAnalysis from '@/hooks/ai/use-design-principle-analysis';
-import { CompositionPrinciple, PrincipleScore } from '@/services/ai/design/principle-analysis/types';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface DesignPrincipleAnalysisPanelProps {
   wireframe: WireframeData;
@@ -23,176 +22,143 @@ const DesignPrincipleAnalysisPanel: React.FC<DesignPrincipleAnalysisPanelProps> 
   wireframe,
   onUpdateWireframe
 }) => {
-  const { 
-    isAnalyzing, 
-    analysisResult, 
-    analyzeDesignPrinciples,
-    applyPrincipleImprovement 
-  } = useDesignPrincipleAnalysis();
+  const { isAnalyzing, analysisResult, error, analyzeDesignPrinciples, applyPrincipleImprovement } = useDesignPrincipleAnalysis();
+  const [selectedPrinciple, setSelectedPrinciple] = useState<CompositionPrinciple | null>(null);
   
-  const [selectedPrinciples, setSelectedPrinciples] = useState<CompositionPrinciple[]>([
-    'ruleOfThirds',
-    'goldenRatio',
-    'visualBalance',
-    'contrast',
-    'alignment'
-  ]);
-
-  useEffect(() => {
-    // Run analysis when panel is first loaded
-    if (!analysisResult && wireframe) {
-      analyzeDesignPrinciples(wireframe, selectedPrinciples);
-    }
-  }, [wireframe, analyzeDesignPrinciples, analysisResult, selectedPrinciples]);
-
-  const handleAnalyze = () => {
-    analyzeDesignPrinciples(wireframe, selectedPrinciples);
+  const handleAnalyze = async () => {
+    await analyzeDesignPrinciples(wireframe);
   };
-
+  
   const handleApplyImprovement = async (principle: CompositionPrinciple) => {
+    setSelectedPrinciple(principle);
     const updatedWireframe = await applyPrincipleImprovement(wireframe, principle);
     if (updatedWireframe) {
       onUpdateWireframe(updatedWireframe);
     }
+    setSelectedPrinciple(null);
   };
-
-  const renderScoreIndicator = (score: number) => {
-    if (score >= 80) {
-      return (
-        <div className="flex items-center text-green-500">
-          <CheckCircle2 className="h-4 w-4 mr-1" />
-          <span>Good</span>
-        </div>
-      );
-    } else if (score >= 60) {
-      return (
-        <div className="flex items-center text-amber-500">
-          <Info className="h-4 w-4 mr-1" />
-          <span>Needs Improvement</span>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center text-red-500">
-          <AlertCircle className="h-4 w-4 mr-1" />
-          <span>Poor</span>
-        </div>
-      );
-    }
-  };
-
-  const renderPrincipleItem = (principle: PrincipleScore) => {
+  
+  const renderPrincipleScore = (principleScore: PrincipleScore) => {
+    const { principle, score, feedback, suggestions } = principleScore;
+    const displayName = principle.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    
     return (
-      <AccordionItem key={principle.principle} value={principle.principle}>
-        <AccordionTrigger className="hover:no-underline">
-          <div className="flex items-center justify-between w-full pr-2">
-            <div className="font-medium">
-              {formatPrincipleName(principle.principle)}
-            </div>
-            <div className="flex items-center space-x-2">
-              <Progress value={principle.score} className="w-20 h-2" />
-              <span className="text-sm">{principle.score}/100</span>
-            </div>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="text-sm">
-          <div className="space-y-3">
-            <p>{principle.feedback}</p>
-            
+      <Card key={principle} className="mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex justify-between items-center">
+            {displayName}
+            <span className="text-xs font-normal">
+              Score: {score}/100
+            </span>
+          </CardTitle>
+          <Progress value={score} className="h-2" />
+        </CardHeader>
+        <CardContent className="pt-0 text-sm">
+          <p className="mb-2">{feedback}</p>
+          {suggestions.length > 0 && (
             <div>
-              <strong className="block mb-1 text-xs text-muted-foreground">Suggestions:</strong>
-              <ul className="list-disc pl-4 space-y-1">
-                {principle.suggestions.map((suggestion, idx) => (
-                  <li key={idx}>{suggestion}</li>
+              <p className="font-medium mb-1">Suggestions:</p>
+              <ul className="list-disc pl-5">
+                {suggestions.map((suggestion, i) => (
+                  <li key={i} className="text-xs">{suggestion}</li>
                 ))}
               </ul>
             </div>
-            
-            <Button 
-              size="sm" 
-              onClick={() => handleApplyImprovement(principle.principle)}
-              disabled={isAnalyzing}
-            >
-              Apply Improvements
-            </Button>
-          </div>
-        </AccordionContent>
-      </AccordionItem>
+          )}
+          <Button 
+            size="sm" 
+            className="mt-2" 
+            variant="outline"
+            disabled={isAnalyzing || selectedPrinciple === principle}
+            onClick={() => handleApplyImprovement(principle as CompositionPrinciple)}
+          >
+            {selectedPrinciple === principle ? (
+              <>
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" /> Applying
+              </>
+            ) : (
+              'Apply Improvement'
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     );
   };
-
-  const formatPrincipleName = (principle: string): string => {
-    switch (principle) {
-      case 'ruleOfThirds': return 'Rule of Thirds';
-      case 'goldenRatio': return 'Golden Ratio';
-      case 'visualBalance': return 'Visual Balance';
-      default:
-        // Convert camelCase to Title Case
-        return principle
-          .replace(/([A-Z])/g, ' $1')
-          .replace(/^./, str => str.toUpperCase());
-    }
-  };
-
+  
   return (
-    <div className="design-principle-analysis-panel">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium">Design Principle Analysis</h3>
-        <Button 
-          size="sm" 
-          onClick={handleAnalyze} 
-          disabled={isAnalyzing}
-        >
-          {isAnalyzing ? 'Analyzing...' : 'Analyze Design'}
-        </Button>
-      </div>
-
-      {isAnalyzing ? (
-        <div className="py-8 text-center">
-          <div className="animate-pulse mb-2">Analyzing design principles...</div>
-          <Progress value={undefined} className="w-full h-2" />
+    <div className="design-principle-analysis">
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      )}
+      
+      {!analysisResult && !isAnalyzing && (
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Analyze this design for adherence to composition principles like rule of thirds, visual balance, and more.
+          </p>
+          <Button onClick={handleAnalyze} disabled={isAnalyzing}>
+            Analyze Design Principles
+          </Button>
         </div>
-      ) : analysisResult ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between bg-muted rounded-md p-3">
-            <div>
-              <div className="text-sm font-medium">Overall Score</div>
-              <div className="text-2xl font-bold">{analysisResult.overallScore}/100</div>
+      )}
+      
+      {isAnalyzing && (
+        <div className="flex flex-col items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+          <p>Analyzing design principles...</p>
+        </div>
+      )}
+      
+      {analysisResult && !isAnalyzing && (
+        <ScrollArea className="h-[500px] pr-4">
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium">Overall Score</h3>
+              <span className="font-medium">{analysisResult.overallScore}/100</span>
             </div>
-            {renderScoreIndicator(analysisResult.overallScore)}
+            <Progress value={analysisResult.overallScore} className="h-2 mb-2" />
+            <p className="text-sm text-muted-foreground">{analysisResult.summary}</p>
           </div>
           
-          <div className="text-sm">{analysisResult.summary}</div>
+          {analysisResult.topStrengths.length > 0 && (
+            <div className="mb-4">
+              <h3 className="font-medium flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                Top Strengths
+              </h3>
+              <ul className="list-disc pl-5 mt-1">
+                {analysisResult.topStrengths.map((strength, i) => (
+                  <li key={i} className="text-sm">{strength}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           
-          <div>
-            <h4 className="text-sm font-medium mb-2">Top Issues</h4>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              {analysisResult.topIssues.map((issue, idx) => (
-                <li key={idx} className="text-red-600">{issue}</li>
-              ))}
-            </ul>
+          {analysisResult.topIssues.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-medium flex items-center">
+                <AlertCircle className="h-4 w-4 text-amber-500 mr-2" />
+                Areas for Improvement
+              </h3>
+              <ul className="list-disc pl-5 mt-1">
+                {analysisResult.topIssues.map((issue, i) => (
+                  <li key={i} className="text-sm">{issue}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          <h3 className="font-medium mb-4">Principle Breakdown</h3>
+          {analysisResult.principleScores.map(renderPrincipleScore)}
+          
+          <div className="flex justify-center mt-4">
+            <Button onClick={handleAnalyze} disabled={isAnalyzing}>
+              Re-analyze Design
+            </Button>
           </div>
-          
-          <div>
-            <h4 className="text-sm font-medium mb-2">Top Strengths</h4>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              {analysisResult.topStrengths.map((strength, idx) => (
-                <li key={idx} className="text-green-600">{strength}</li>
-              ))}
-            </ul>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <h4 className="text-sm font-medium">Principle Analysis</h4>
-          <Accordion type="single" collapsible className="w-full">
-            {analysisResult.principleScores.map(renderPrincipleItem)}
-          </Accordion>
-        </div>
-      ) : (
-        <div className="py-8 text-center text-muted-foreground">
-          Click "Analyze Design" to evaluate this wireframe against design principles
-        </div>
+        </ScrollArea>
       )}
     </div>
   );

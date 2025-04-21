@@ -12,7 +12,10 @@ export enum AIFeatureType {
   // Add missing types required by other services
   Summarization = 'summarization',
   ContentGeneration = 'content_generation',
-  DesignRecommendation = 'design_recommendation'
+  DesignRecommendation = 'design_recommendation',
+  // Add the missing feature types
+  ComponentRecommendation = 'component_recommendation',
+  DesignAnalysis = 'design_analysis'
 }
 
 /**
@@ -38,6 +41,10 @@ export function selectModelForFeature(featureType: AIFeatureType): string {
     case AIFeatureType.ContentGeneration:
       return 'gpt-4o';
     case AIFeatureType.DesignRecommendation:
+      return 'gpt-4o';
+    case AIFeatureType.ComponentRecommendation:
+      return 'gpt-4o';
+    case AIFeatureType.DesignAnalysis:
       return 'gpt-4o';
     default:
       return 'gpt-4o'; // Default to GPT-4o for most tasks
@@ -79,6 +86,10 @@ export function getTemperatureForFeature(featureType: AIFeatureType): number {
       return 0.7; // Higher for creative content
     case AIFeatureType.DesignRecommendation:
       return 0.6; // Medium-high for design creativity with some consistency
+    case AIFeatureType.ComponentRecommendation:
+      return 0.6; // Medium-high for component suggestions
+    case AIFeatureType.DesignAnalysis:
+      return 0.3; // Lower for consistent analysis of design principles
     default:
       return 0.7; // Default temperature
   }
