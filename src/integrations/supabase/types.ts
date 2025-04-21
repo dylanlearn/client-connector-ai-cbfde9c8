@@ -949,6 +949,47 @@ export type Database = {
           },
         ]
       }
+      content_sections: {
+        Row: {
+          content: string
+          content_id: string | null
+          created_at: string | null
+          id: string
+          name: string
+          position_order: number | null
+          section_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          content_id?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          position_order?: number | null
+          section_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          content_id?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          position_order?: number | null
+          section_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_sections_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "generated_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_analytics: {
         Row: {
           average_rank: number
@@ -1325,6 +1366,36 @@ export type Database = {
           shadows_enabled?: boolean | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      generated_content: {
+        Row: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string | null
+          id: string
+          page_description: string | null
+          page_title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          id?: string
+          page_description?: string | null
+          page_title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string | null
+          id?: string
+          page_description?: string | null
+          page_title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3614,6 +3685,7 @@ export type Database = {
         | "MANAGE_USERS"
         | "VIEW_ADMIN_PANEL"
         | "ACCESS_PREMIUM_FEATURES"
+      content_type: "page" | "section" | "component"
       fidelity_level: "wireframe" | "low" | "medium" | "high"
       subscription_status:
         | "free"
@@ -3769,6 +3841,7 @@ export const Constants = {
         "VIEW_ADMIN_PANEL",
         "ACCESS_PREMIUM_FEATURES",
       ],
+      content_type: ["page", "section", "component"],
       fidelity_level: ["wireframe", "low", "medium", "high"],
       subscription_status: [
         "free",

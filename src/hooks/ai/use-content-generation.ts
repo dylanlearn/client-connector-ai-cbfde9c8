@@ -9,22 +9,32 @@ import {
 } from '@/services/ai/wireframe/content/context-aware-content-service';
 import { toast } from 'sonner';
 
-// Update the interfaces to include the missing properties
+// Updated interfaces to match database schema and resolve TypeScript errors
+export interface ComponentContent {
+  id?: string;
+  content: string;
+  [key: string]: any;
+}
+
 export interface GeneratedContent {
+  id?: string;
   pageTitle: string;
   pageDescription: string;
   contentSections: Array<{
     sectionId: string;
     name: string;
     content: string;
+    components?: ComponentContent[];
     [key: string]: any;
   }>;
   [key: string]: any;
 }
 
 export interface GeneratedSectionContent {
+  id?: string;
   name: string;
   content: string;
+  components?: ComponentContent[];
   [key: string]: any;
 }
 
@@ -61,6 +71,7 @@ export function useContentGeneration({
               sectionId: section.id || '',
               name: section.name || '',
               content: section.content || '',
+              components: section.components || [],
               ...section
             }))
           : []
@@ -103,6 +114,7 @@ export function useContentGeneration({
       const formattedResult: GeneratedSectionContent = {
         name: result.name || request.section.name || '',
         content: typeof result.content === 'string' ? result.content : '',
+        components: result.components || [],
         ...result
       };
       
