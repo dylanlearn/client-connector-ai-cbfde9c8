@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
@@ -78,6 +77,7 @@ export const useWireframeStore = create<WireframeState>()(
       addSection: (sectionData) => set((state) => {
         const newSection: WireframeSection = {
           id: uuidv4(),
+          sectionType: 'default', // Adding the required sectionType property
           ...sectionData
         };
         

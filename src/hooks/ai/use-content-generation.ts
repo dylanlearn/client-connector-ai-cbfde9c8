@@ -71,7 +71,13 @@ export function useContentGeneration({
               sectionId: section.id || '',
               name: section.name || '',
               content: section.content || '',
-              components: section.components || [],
+              components: Array.isArray(section.components) 
+                ? section.components.map(comp => ({
+                    id: comp.id || undefined,
+                    content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+                    ...comp
+                  }))
+                : [],
               ...section
             }))
           : []
@@ -114,7 +120,13 @@ export function useContentGeneration({
       const formattedResult: GeneratedSectionContent = {
         name: result.name || request.section.name || '',
         content: typeof result.content === 'string' ? result.content : '',
-        components: result.components || [],
+        components: Array.isArray(result.components) 
+          ? result.components.map(comp => ({
+              id: comp.id || undefined,
+              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+              ...comp
+            }))
+          : [],
         ...result
       };
       
