@@ -5,11 +5,15 @@ import { useAuth } from './useAuth';
 export function useAdminStatus() {
   const { user, profile } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
   
   // Define admin emails
   const adminEmails = ['dylanmohseni0@gmail.com', 'admin@example.com', 'dmohsen@purdue.edu'];
   
   useEffect(() => {
+    // Start verification process
+    setIsVerifying(true);
+    
     // Check if user is admin via profile role
     const adminByRole = profile?.role === 'admin';
     
@@ -27,7 +31,10 @@ export function useAdminStatus() {
     });
     
     setIsAdmin(isAdminUser);
+    
+    // End verification process
+    setIsVerifying(false);
   }, [user, profile]);
   
-  return { isAdmin };
+  return { isAdmin, isVerifying };
 }
