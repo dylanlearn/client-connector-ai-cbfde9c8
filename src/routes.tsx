@@ -1,17 +1,18 @@
 
 import React from 'react';
-import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import { AuthLayout } from './components/layout/AuthLayout';
-import DashboardLayout from './components/layout/DashboardLayout';
-import ResponsiveSystemPage from './pages/ResponsiveSystemPage';
-import VisualStatesSystemPage from './pages/VisualStatesSystemPage';
-import { NotFound } from './pages/not-found';
+import ResponsiveWireframeEnhancements from './pages/wireframe/ResponsiveWireframeEnhancements';
+import ResponsiveEnhancementsDashboard from './pages/wireframe/ResponsiveEnhancementsDashboard';
+import WireframeEditorDemo from './pages/WireframeEditorDemo';
+import NotFound from './pages/NotFound';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SignupConfirmation from './pages/SignupConfirmation';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import DashboardLayout from './components/layout/DashboardLayout';
 import Clients from './pages/Clients';
 import Analytics from './pages/Analytics';
 import FeedbackAnalysis from './pages/FeedbackAnalysis';
@@ -26,6 +27,8 @@ import AdminPanel from './pages/AdminPanel';
 import SupabaseAuditDashboard from './pages/admin/SupabaseAuditDashboard';
 import { MonitoringDashboard } from './components/admin/monitoring';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import ResponsiveSystemPage from './pages/ResponsiveSystemPage';
+import VisualStatesSystemPage from './pages/VisualStatesSystemPage';
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
@@ -33,6 +36,20 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <Home />,
+  },
+  
+  // Wireframe routes
+  {
+    path: '/wireframe-enhancements',
+    element: <Layout><ResponsiveWireframeEnhancements /></Layout>,
+  },
+  {
+    path: '/wireframe-dashboard',
+    element: <Layout><ResponsiveEnhancementsDashboard /></Layout>,
+  },
+  {
+    path: '/wireframe-editor-demo',
+    element: <Layout><WireframeEditorDemo /></Layout>,
   },
   
   // System pages

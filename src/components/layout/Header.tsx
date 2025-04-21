@@ -31,10 +31,10 @@ const Header = () => {
         <Link to="/" className="text-xl font-bold text-blue-600">DezignSync</Link>
         <nav className="hidden md:flex items-center gap-4">
           <Link to="/" className={`text-sm font-medium ${isActive('/')}`}>Home</Link>
+          <Link to="/wireframe-enhancements" className={`text-sm font-medium ${isActive('/wireframe-enhancements')}`}>Wireframe Demo</Link>
+          <Link to="/wireframe-dashboard" className={`text-sm font-medium ${isActive('/wireframe-dashboard')}`}>Wireframe Dashboard</Link>
           <Link to="/responsive-system" className={`text-sm font-medium ${isActive('/responsive-system')}`}>Responsive System</Link>
           <Link to="/visual-states" className={`text-sm font-medium ${isActive('/visual-states')}`}>Visual States</Link>
-          <Link to="/wireframe-generator" className={`text-sm font-medium ${isActive('/wireframe-generator')}`}>Wireframe Generator</Link>
-          <Link to="/ai-suggestions" className={`text-sm font-medium ${isActive('/ai-suggestions')}`}>AI Suggestions</Link>
         </nav>
         <div className="flex items-center gap-4">
           {isLoggedIn ? (

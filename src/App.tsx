@@ -1,18 +1,10 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import ResponsiveWireframeEnhancements from './pages/wireframe/ResponsiveWireframeEnhancements';
+import { RouterProvider } from 'react-router-dom';
+import router from './routes';
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/wireframe-enhancements" replace />} />
-        <Route path="/wireframe-enhancements" element={<ResponsiveWireframeEnhancements />} />
-        <Route path="*" element={<Navigate to="/wireframe-enhancements" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

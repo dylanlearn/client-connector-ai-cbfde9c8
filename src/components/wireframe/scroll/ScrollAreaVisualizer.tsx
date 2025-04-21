@@ -1,12 +1,5 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 export interface ScrollAreaVisualizerProps {
   width?: string | number;
@@ -14,238 +7,217 @@ export interface ScrollAreaVisualizerProps {
   showControls?: boolean;
   highlightScrollbars?: boolean;
   showScrollPosition?: boolean;
-  children?: React.ReactNode; // Add children prop to fix the error
+  children?: React.ReactNode;
 }
 
 const ScrollAreaVisualizer: React.FC<ScrollAreaVisualizerProps> = ({
-  width = '100%',
-  height = 300,
+  width = "100%",
+  height = 400,
   showControls = true,
   highlightScrollbars = true,
   showScrollPosition = true,
   children
 }) => {
-  const [scrollTop, setScrollTop] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [contentHeight, setContentHeight] = useState(height * 2);
-  const [contentWidth, setContentWidth] = useState('100%');
-  const [showMetrics, setShowMetrics] = useState(true);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Monitor scroll position
-  const handleScroll = () => {
-    if (scrollContainerRef.current) {
-      setScrollTop(scrollContainerRef.current.scrollTop);
-      setScrollLeft(scrollContainerRef.current.scrollLeft);
-    }
-  };
-  
-  // Calculate scroll percentages
-  const getScrollTopPercentage = () => {
-    if (!scrollContainerRef.current) return 0;
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    return scrollHeight <= clientHeight ? 0 : (scrollTop / (scrollHeight - clientHeight)) * 100;
-  };
-  
-  const getScrollLeftPercentage = () => {
-    if (!scrollContainerRef.current) return 0;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-    return scrollWidth <= clientWidth ? 0 : (scrollLeft / (scrollWidth - clientWidth)) * 100;
-  };
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollInfo, setScrollInfo] = useState({
+    top: 0,
+    left: 0,
+    scrollHeight: 0,
+    scrollWidth: 0,
+    clientHeight: 0,
+    clientWidth: 0,
+    verticalPercentage: 0,
+    horizontalPercentage: 0
+  });
 
-  // Update content dimensions
+  // Update scroll info whenever scroll happens
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      handleScroll();
+    const scrollContainer = containerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const {
+        scrollTop,
+        scrollLeft,
+        scrollHeight,
+        scrollWidth,
+        clientHeight,
+        clientWidth
+      } = scrollContainer;
+
+      const verticalPercentage = Math.round((scrollTop / (scrollHeight - clientHeight)) * 100);
+      const horizontalPercentage = Math.round((scrollLeft / (scrollWidth - clientWidth)) * 100);
+
+      setScrollInfo({
+        top: scrollTop,
+        left: scrollLeft,
+        scrollHeight,
+        scrollWidth,
+        clientHeight,
+        clientWidth,
+        verticalPercentage: isNaN(verticalPercentage) ? 0 : verticalPercentage,
+        horizontalPercentage: isNaN(horizontalPercentage) ? 0 : horizontalPercentage
+      });
+    };
+
+    handleScroll(); // Initial call
+    scrollContainer.addEventListener('scroll', handleScroll);
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Scroll control functions
+  const scrollTo = (direction: 'top' | 'bottom' | 'left' | 'right') => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    switch (direction) {
+      case 'top':
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+        break;
+      case 'bottom':
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        break;
+      case 'left':
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+        break;
+      case 'right':
+        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+        break;
+      default:
+        break;
     }
-  }, [contentHeight, contentWidth]);
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Controls */}
+    <div className="w-full">
       {showControls && (
-        <div className="space-y-4 p-4 bg-slate-50 rounded-md">
-          <h3 className="text-sm font-medium mb-2">Scroll Area Controls</h3>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label htmlFor="content-height">Content Height: {contentHeight}px</Label>
-            </div>
-            <Slider
-              id="content-height"
-              min={height}
-              max={height * 3}
-              step={50}
-              value={[contentHeight]}
-              onValueChange={(value) => setContentHeight(value[0])}
-            />
+        <div className="mb-2 flex justify-between">
+          {/* Vertical scroll controls */}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => scrollTo('top')} 
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Scroll Top
+            </button>
+            <button 
+              onClick={() => scrollTo('bottom')} 
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Scroll Bottom
+            </button>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="content-width">Content Width</Label>
-            <div className="flex gap-2">
-              <button
-                className={cn(
-                  "px-2 py-1 text-xs rounded-md",
-                  contentWidth === '100%' ? "bg-primary text-primary-foreground" : "bg-slate-200"
-                )}
-                onClick={() => setContentWidth('100%')}
-              >
-                100%
-              </button>
-              <button
-                className={cn(
-                  "px-2 py-1 text-xs rounded-md",
-                  contentWidth === '150%' ? "bg-primary text-primary-foreground" : "bg-slate-200"
-                )}
-                onClick={() => setContentWidth('150%')}
-              >
-                150%
-              </button>
-              <button
-                className={cn(
-                  "px-2 py-1 text-xs rounded-md",
-                  contentWidth === '200%' ? "bg-primary text-primary-foreground" : "bg-slate-200"
-                )}
-                onClick={() => setContentWidth('200%')}
-              >
-                200%
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch 
-              id="show-metrics" 
-              checked={showMetrics} 
-              onCheckedChange={setShowMetrics}
-            />
-            <Label htmlFor="show-metrics">Show Scroll Metrics</Label>
+          {/* Horizontal scroll controls */}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => scrollTo('left')} 
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Scroll Left
+            </button>
+            <button 
+              onClick={() => scrollTo('right')} 
+              className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+            >
+              Scroll Right
+            </button>
           </div>
         </div>
       )}
       
-      {/* Scroll metrics display */}
-      {showScrollPosition && showMetrics && (
-        <div className="flex flex-wrap gap-2 text-xs">
-          <Badge variant="outline">
-            Scroll Top: {Math.round(scrollTop)}px
-          </Badge>
-          <Badge variant="outline">
-            Scroll Left: {Math.round(scrollLeft)}px
-          </Badge>
-          <Badge variant="outline">
-            Vertical: {Math.round(getScrollTopPercentage())}%
-          </Badge>
-          <Badge variant="outline">
-            Horizontal: {Math.round(getScrollLeftPercentage())}%
-          </Badge>
+      <div 
+        className="relative border border-gray-200 rounded overflow-hidden"
+        style={{ width }}
+      >
+        {/* Scroll container */}
+        <div 
+          ref={containerRef}
+          className={`overflow-auto ${highlightScrollbars ? 'custom-scrollbar' : ''}`}
+          style={{ 
+            height, 
+            maxHeight: height,
+          }}
+        >
+          {children || (
+            <div className="min-h-[800px] min-w-[1200px] relative p-8 bg-gradient-to-br from-gray-50 to-gray-100">
+              {/* Sample scrollable content */}
+              <div className="absolute top-20 left-20 bg-white p-4 shadow-md rounded">
+                Item in top-left area
+              </div>
+              <div className="absolute top-40 right-20 bg-white p-4 shadow-md rounded">
+                Item in top-right area
+              </div>
+              <div className="absolute bottom-20 left-40 bg-white p-4 shadow-md rounded">
+                Item in bottom-left area
+              </div>
+              <div className="absolute bottom-40 right-40 bg-white p-4 shadow-md rounded">
+                Item in bottom-right area
+              </div>
+              
+              {/* Center Item */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white p-6 shadow-lg rounded">
+                Center Item
+              </div>
+              
+              {/* Far-off items to create scrollable space */}
+              <div className="absolute top-10 right-[1000px] bg-white p-4 shadow-md rounded">
+                Far left item
+              </div>
+              <div className="absolute bottom-10 left-[1000px] bg-white p-4 shadow-md rounded">
+                Far right item
+              </div>
+              <div className="absolute top-[700px] left-1/3 bg-white p-4 shadow-md rounded">
+                Far bottom item
+              </div>
+            </div>
+          )}
         </div>
-      )}
-      
-      {/* Scroll visualization */}
-      <Card className="overflow-hidden" style={{ width }}>
-        <div className="relative">
-          {/* Vertical scroll indicator */}
-          {highlightScrollbars && (
-            <div 
-              className="absolute right-0 top-0 w-2 bg-slate-200 z-10 opacity-50"
-              style={{ height: `${height}px` }}
-            >
-              <div 
-                className="bg-primary w-full rounded-sm"
-                style={{ 
-                  height: `${(height / (contentHeight / height)) || 0}px`,
-                  transform: `translateY(${getScrollTopPercentage() * ((height - (height / (contentHeight / height))) / 100)}px)`,
-                  opacity: contentHeight > height ? 0.8 : 0.3
-                }}
-              />
+        
+        {/* Scroll position indicators */}
+        {showScrollPosition && (
+          <div className="mt-2 text-xs text-gray-500 flex justify-between">
+            <div>
+              <span>Vertical: {scrollInfo.verticalPercentage}%</span>
+              <span className="mx-2">|</span>
+              <span>Horizontal: {scrollInfo.horizontalPercentage}%</span>
             </div>
-          )}
-          
-          {/* Horizontal scroll indicator */}
-          {highlightScrollbars && contentWidth !== '100%' && (
-            <div 
-              className="absolute bottom-0 left-0 h-2 bg-slate-200 z-10 opacity-50"
-              style={{ width: '100%' }}
-            >
-              <div 
-                className="bg-primary h-full rounded-sm"
-                style={{ 
-                  width: contentWidth === '150%' ? '66%' : contentWidth === '200%' ? '50%' : '100%',
-                  transform: `translateX(${getScrollLeftPercentage() * (100 - (contentWidth === '150%' ? 66 : contentWidth === '200%' ? 50 : 100)) / 100}%)`,
-                  opacity: contentWidth !== '100%' ? 0.8 : 0.3
-                }}
-              />
-            </div>
-          )}
-          
-          <div
-            ref={scrollContainerRef}
-            className="overflow-auto scrollbar-thin"
-            style={{ height, maxHeight: height }}
-            onScroll={handleScroll}
-          >
-            <div style={{ height: contentHeight, width: contentWidth }}>
-              {children ? children : (
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {Array(8).fill(0).map((_, idx) => (
-                      <div 
-                        key={idx}
-                        className="p-4 border rounded-md bg-slate-50/50"
-                      >
-                        <h4 className="text-sm font-medium">Item {idx + 1}</h4>
-                        <p className="text-xs text-slate-500">Scroll content item</p>
-                      </div>
-                    ))}
-                    
-                    <div className="col-span-2 p-4 border rounded-md bg-blue-50/50">
-                      <h4 className="text-sm font-medium">Scroll to reach</h4>
-                      <p className="text-xs text-blue-600">This content requires scrolling to see</p>
-                    </div>
-                    
-                    {Array(4).fill(0).map((_, idx) => (
-                      <div 
-                        key={`bottom-${idx}`}
-                        className="p-4 border rounded-md bg-slate-50/50"
-                      >
-                        <h4 className="text-sm font-medium">Bottom Item {idx + 1}</h4>
-                        <p className="text-xs text-slate-500">This is at the bottom</p>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {contentWidth !== '100%' && (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-md" style={{ marginLeft: '120%', width: '70%' }}>
-                      <h4 className="text-sm font-medium">Horizontal Scroll Content</h4>
-                      <p className="text-xs text-amber-700">This content requires horizontal scrolling</p>
-                    </div>
-                  )}
-                </div>
-              )}
+            <div>
+              <span>{scrollInfo.top}px / {scrollInfo.scrollHeight}px</span>
+              <span className="mx-2">×</span>
+              <span>{scrollInfo.left}px / {scrollInfo.scrollWidth}px</span>
             </div>
           </div>
-        </div>
-      </Card>
-      
-      {/* CSS for scrollbar styling */}
-      <style>{`
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: #f1f1f1;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #888;
-          border-radius: 4px;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-          background: #555;
-        }
-      `}</style>
+        )}
+      </div>
+
+      {/* Custom scrollbar styles */}
+      <style>
+        {`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 6px;
+            border: 3px solid #f1f1f1;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+          }
+          .custom-scrollbar::-webkit-scrollbar-corner {
+            background: #f1f1f1;
+          }
+        `}
+      </style>
     </div>
   );
 };
