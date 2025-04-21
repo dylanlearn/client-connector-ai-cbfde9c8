@@ -12,13 +12,17 @@ import {
   Accessibility, 
   FileText, 
   Brain, 
-  LayoutGrid
+  LayoutGrid,
+  Lightbulb,
+  Puzzle
 } from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import LayoutAnalysisPanel from './LayoutAnalysisPanel';
 import ContentGenerationPanel from './ContentGenerationPanel';
 import AccessibilityAnalysisPanel from './AccessibilityAnalysisPanel';
 import SmartLayoutAlternativesPanel from './SmartLayoutAlternativesPanel';
+import DesignPrincipleAnalysisPanel from './DesignPrincipleAnalysisPanel';
+import ComponentRecommendationPanel from './ComponentRecommendationPanel';
 
 interface DesignIntelligencePanelProps {
   wireframe: WireframeData;
@@ -48,7 +52,7 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="p-4">
-        <TabsList className="grid grid-cols-4">
+        <TabsList className="grid grid-cols-6">
           <TabsTrigger value="layout" className="text-xs">
             <LayoutTemplate className="h-4 w-4 mr-1" />
             Layout
@@ -64,6 +68,14 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
           <TabsTrigger value="alternatives" className="text-xs">
             <LayoutGrid className="h-4 w-4 mr-1" />
             Alternatives
+          </TabsTrigger>
+          <TabsTrigger value="principles" className="text-xs">
+            <Lightbulb className="h-4 w-4 mr-1" />
+            Principles
+          </TabsTrigger>
+          <TabsTrigger value="components" className="text-xs">
+            <Puzzle className="h-4 w-4 mr-1" />
+            Components
           </TabsTrigger>
         </TabsList>
         
@@ -90,6 +102,20 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
         
         <TabsContent value="alternatives" className="pt-4">
           <SmartLayoutAlternativesPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="principles" className="pt-4">
+          <DesignPrincipleAnalysisPanel
+            wireframe={wireframe}
+            onUpdateWireframe={onUpdateWireframe}
+          />
+        </TabsContent>
+        
+        <TabsContent value="components" className="pt-4">
+          <ComponentRecommendationPanel
             wireframe={wireframe}
             onUpdateWireframe={onUpdateWireframe}
           />
