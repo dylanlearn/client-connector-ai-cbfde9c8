@@ -1,82 +1,68 @@
 
-import { toast } from 'sonner';
-import { recordClientError } from './api-usage';
-import { getErrorHandlingConfig } from "./error-config";
+// Error handling utilities for monitoring
 
 /**
- * Initialize global error handling
+ * Records client-side errors
  */
-export function initializeErrorHandling(): void {
-  // Handle unhandled promise rejections
-  window.addEventListener('unhandledrejection', async (event) => {
-    const error = event.reason;
-    console.error('Unhandled Promise Rejection:', error);
-    
-    // Check if we have custom handling config for this error type
-    const config = await getErrorHandlingConfig('Global', 'UnhandledRejection');
-    
-    // Record the client error with appropriate metadata
-    recordClientError(
-      error.message || 'Unhandled Promise Rejection',
-      error.stack,
-      'Global'
-    ).catch(console.error);
-  });
-  
-  // Handle uncaught errors
-  window.addEventListener('error', async (event) => {
-    // Prevent logging of the same error twice
-    if (event.error) {
-      console.error('Uncaught Error:', event.error);
-      
-      // Check if we have custom handling config for this error type
-      const config = await getErrorHandlingConfig('Global', 'UncaughtError');
-      
-      recordClientError(
-        event.error.message || 'Uncaught Error',
-        event.error.stack,
-        'Global'
-      ).catch(console.error);
-    }
-  });
-  
-  // Handle network errors
-  const originalFetch = window.fetch;
-  window.fetch = async (...args) => {
-    try {
-      const response = await originalFetch(...args);
-      
-      // Log failed requests
-      if (!response.ok) {
-        const requestUrl = typeof args[0] === 'string' 
-          ? args[0] 
-          : args[0] instanceof URL 
-            ? args[0].href 
-            : (args[0] as Request).url;
-            
-        // Check if we have custom handling config for network errors
-        const config = await getErrorHandlingConfig('API', 'network');
-        
-        console.warn(`Failed fetch request to ${requestUrl}, status: ${response.status}`);
-      }
-      
-      return response;
-    } catch (error) {
-      // Log network errors
-      console.error('Fetch error:', error);
-      
-      // Check if we have custom handling config for network errors
-      const config = await getErrorHandlingConfig('API', 'network');
-      
-      recordClientError(
-        `Network request failed: ${(error as Error).message}`,
-        (error as Error).stack,
-        'API'
-      ).catch(console.error);
-      
-      throw error;
-    }
+export function recordClientError(error: Error, componentName?: string) {
+  // Implementation would log to monitoring service
+  console.error(`Client Error${componentName ? ` in ${componentName}` : ''}: ${error.message}`);
+  return {
+    id: Math.random().toString(36).substr(2, 9),
+    timestamp: new Date().toISOString(),
+    message: error.message,
+    stack: error.stack,
+    component: componentName
   };
+}
+
+/**
+ * Handles API errors and logs them appropriately
+ */
+export function handleApiError(error: Error, endpoint: string) {
+  // Log to monitoring service
+  console.error(`API Error at ${endpoint}: ${error.message}`);
+  return {
+    handled: true,
+    message: error.message,
+    endpoint
+  };
+}
+
+/**
+ * Error reporter utility class
+ */
+export class ErrorReporter {
+  private static instance: ErrorReporter;
   
-  console.log('Global error handling initialized with dynamic configuration');
+  private constructor() {
+    // Private constructor for singleton pattern
+  }
+  
+  static getInstance(): ErrorReporter {
+    if (!ErrorReporter.instance) {
+      ErrorReporter.instance = new ErrorReporter();
+    }
+    return ErrorReporter.instance;
+  }
+  
+  report(error: Error, context?: Record<string, any>) {
+    // Implementation would send to monitoring service
+    console.error('Reported Error:', error.message, context);
+  }
+}
+
+/**
+ * General error recording function
+ */
+export function recordError(error: Error, category: string, metadata?: Record<string, any>) {
+  // Implementation would log to monitoring service
+  console.error(`[${category}] Error: ${error.message}`, metadata);
+  return {
+    id: Math.random().toString(36).substr(2, 9),
+    timestamp: new Date().toISOString(),
+    category,
+    message: error.message,
+    metadata
+  };
 }

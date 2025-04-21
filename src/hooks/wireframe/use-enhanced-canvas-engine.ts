@@ -136,6 +136,7 @@ export function useEnhancedCanvasEngine(options: UseEnhancedCanvasEngineOptions 
     canvas.zoomToPoint(center, newZoom);
     
     toast({
+      title: "Zoom Updated",
       description: `Zoomed in to ${Math.round(newZoom * 100)}%`
     });
   }, [canvas, zoom, toast]);
@@ -154,6 +155,7 @@ export function useEnhancedCanvasEngine(options: UseEnhancedCanvasEngineOptions 
     canvas.zoomToPoint(center, newZoom);
     
     toast({
+      title: "Zoom Updated",
       description: `Zoomed out to ${Math.round(newZoom * 100)}%`
     });
   }, [canvas, zoom, toast]);
@@ -167,6 +169,7 @@ export function useEnhancedCanvasEngine(options: UseEnhancedCanvasEngineOptions 
     canvas.renderAll();
     
     toast({
+      title: "View Reset",
       description: "View reset to 100%"
     });
   }, [canvas, toast]);
@@ -199,6 +202,7 @@ export function useEnhancedCanvasEngine(options: UseEnhancedCanvasEngineOptions 
     canvas.renderAll();
     
     toast({
+      title: "Grid Visibility",
       description: newVisibility ? "Grid shown" : "Grid hidden"
     });
   }, [canvas, gridOptions.size, gridOptions.type, gridVisible, toast]);
