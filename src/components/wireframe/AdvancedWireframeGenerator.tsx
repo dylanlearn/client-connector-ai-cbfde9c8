@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ErrorResponse } from '@/types/error-types';
 import { AlertMessage } from '@/components/ui/alert-message';
 import { Card, CardContent } from '@/components/ui/card';
 import { useWireframe } from '@/hooks/useWireframe';
 import WireframePreviewSystem from './preview/WireframePreviewSystem';
 import WireframeControls from './editor/WireframeControls';
+import { useWireframeState } from '@/hooks/use-wireframe-state';
 
 interface AdvancedWireframeGeneratorProps {
   projectId?: string;
@@ -26,17 +27,17 @@ export function AdvancedWireframeGenerator({
   enhancedCreativity = true,
   intakeData
 }: AdvancedWireframeGeneratorProps) {
-  const [error, setError] = useState<Error | string | null>(null);
+  const { error, setError, updateWireframe, isGenerating, setGenerating } = useWireframeState();
   const [generatedWireframe, setGeneratedWireframe] = useState(initialWireframeData);
   
-  const { generateWireframe, isGenerating } = useWireframe({
+  const { generateWireframe } = useWireframe({
     projectId,
     showToasts: true,
     enhancedValidation: true
   });
 
   const handleError = (errorResponse: ErrorResponse) => {
-    const error = new Error(errorResponse.message || "Unknown error");
+    const error = new Error(errorResponse.message || "Unknown error occurred");
     if (errorResponse.context?.stack) {
       error.stack = String(errorResponse.context.stack);
     }
@@ -49,13 +50,17 @@ export function AdvancedWireframeGenerator({
   const handleGenerateWireframe = async (params: any) => {
     try {
       setError(null);
+      setGenerating(true);
+      
       const result = await generateWireframe({
         ...params,
         projectId,
-        enhancedCreativity
+        enhancedCreativity,
+        intakeData
       });
 
       if (result.success && result.wireframe) {
+        updateWireframe(result.wireframe);
         setGeneratedWireframe(result.wireframe);
         if (onWireframeGenerated) {
           onWireframeGenerated(result);
@@ -65,6 +70,8 @@ export function AdvancedWireframeGenerator({
       }
     } catch (err) {
       handleError(err as ErrorResponse);
+    } finally {
+      setGenerating(false);
     }
   };
 

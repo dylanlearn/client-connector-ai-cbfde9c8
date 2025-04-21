@@ -28,6 +28,7 @@ const WireframeControls: React.FC<WireframeControlsProps> = ({
   const [prompt, setPrompt] = useState('');
   const [creativityLevel, setCreativityLevel] = useState(8);
   const [style, setStyle] = useState('modern');
+  const [colorScheme, setColorScheme] = useState('auto');
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +42,8 @@ const WireframeControls: React.FC<WireframeControlsProps> = ({
         description: prompt,
         projectId,
         creativityLevel,
-        style
+        style,
+        colorScheme
       });
       
       if (result.wireframe && onWireframeCreated) {
@@ -65,23 +67,44 @@ const WireframeControls: React.FC<WireframeControlsProps> = ({
         />
       </div>
       
-      <div>
-        <Label htmlFor="style">Style</Label>
-        <Select
-          value={style}
-          onValueChange={setStyle}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select style" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="modern">Modern</SelectItem>
-            <SelectItem value="minimalist">Minimalist</SelectItem>
-            <SelectItem value="classic">Classic</SelectItem>
-            <SelectItem value="bold">Bold</SelectItem>
-            <SelectItem value="playful">Playful</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="style">Style</Label>
+          <Select
+            value={style}
+            onValueChange={setStyle}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select style" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="modern">Modern</SelectItem>
+              <SelectItem value="minimalist">Minimalist</SelectItem>
+              <SelectItem value="classic">Classic</SelectItem>
+              <SelectItem value="bold">Bold</SelectItem>
+              <SelectItem value="playful">Playful</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="colorScheme">Color Scheme</Label>
+          <Select
+            value={colorScheme}
+            onValueChange={setColorScheme}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select color scheme" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Auto Generate</SelectItem>
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+              <SelectItem value="brand">Brand Colors</SelectItem>
+              <SelectItem value="monochrome">Monochrome</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       
       <div className="space-y-2">
