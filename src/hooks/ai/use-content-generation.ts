@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 
 // Define our own interfaces that match what we actually use in the components
 export interface GeneratedContent {
-  pageTitle?: string;
-  pageDescription?: string;
+  pageTitle: string;
+  pageDescription: string;
   contentSections: Array<{
     sectionId: string;
     name?: string;
@@ -23,7 +23,7 @@ export interface GeneratedContent {
 }
 
 export interface GeneratedSectionContent {
-  name?: string;
+  name: string;
   content: string;
   [key: string]: any;
 }
@@ -96,7 +96,7 @@ export function useContentGeneration({
       
       // Transform service result to our expected interface format
       const formattedResult: GeneratedSectionContent = {
-        name: result.name || request.section.name,
+        name: result.name || request.section.name || '',
         content: typeof result.content === 'string' ? result.content : ''
       };
       
