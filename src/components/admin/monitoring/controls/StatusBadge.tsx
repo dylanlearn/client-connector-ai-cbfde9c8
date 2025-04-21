@@ -3,15 +3,20 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, XCircle, HelpCircle } from 'lucide-react';
 
+type StatusType = 'healthy' | 'warning' | 'critical' | 'unknown';
+
 interface StatusBadgeProps {
-  status: 'healthy' | 'warning' | 'critical' | 'unknown';
+  status: StatusType | string;
   showText?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
 export function StatusBadge({ status, showText = true, size = 'md' }: StatusBadgeProps) {
+  // Normalize status to one of the allowed types
+  const normalizedStatus: StatusType = normalizeStatus(status);
+  
   const getStatusConfig = () => {
-    switch (status) {
+    switch (normalizedStatus) {
       case 'healthy':
         return {
           color: 'bg-green-100 text-green-800 hover:bg-green-200',
@@ -50,4 +55,33 @@ export function StatusBadge({ status, showText = true, size = 'md' }: StatusBadg
       {showText && <span>{text}</span>}
     </Badge>
   );
+}
+
+// Helper function to normalize status strings to the allowed StatusType values
+function normalizeStatus(status: string | StatusType): StatusType {
+  switch (status.toLowerCase()) {
+    case 'healthy':
+    case 'ok':
+    case 'green':
+    case 'active':
+    case 'good':
+      return 'healthy';
+      
+    case 'warning':
+    case 'warn':
+    case 'yellow':
+    case 'degraded':
+      return 'warning';
+      
+    case 'critical':
+    case 'error':
+    case 'red':
+    case 'unhealthy':
+    case 'fail':
+    case 'failed':
+      return 'critical';
+      
+    default:
+      return 'unknown';
+  }
 }
