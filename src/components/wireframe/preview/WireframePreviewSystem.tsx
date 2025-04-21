@@ -13,13 +13,15 @@ interface WireframePreviewSystemProps {
   onSectionClick?: (sectionId: string) => void;
   onExport?: (format: string) => void;
   projectId?: string;
+  viewMode?: string;
 }
 
 const WireframePreviewSystem: React.FC<WireframePreviewSystemProps> = ({
   wireframe,
   onSectionClick,
   onExport,
-  projectId
+  projectId,
+  viewMode = 'preview'
 }) => {
   const { toast } = useToast();
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');

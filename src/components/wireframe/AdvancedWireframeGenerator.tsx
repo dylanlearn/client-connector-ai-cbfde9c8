@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { ErrorResponse } from '@/types/error-types';
-import { WireframePreviewSystem } from './preview/WireframePreviewSystem';
-import { WireframeControls } from './editor/WireframeControls';
 import { AlertMessage } from '@/components/ui/alert-message';
 import { Card, CardContent } from '@/components/ui/card';
 import { useWireframe } from '@/hooks/useWireframe';
+import WireframePreviewSystem from './preview/WireframePreviewSystem';
+import WireframeControls from './editor/WireframeControls';
 
 interface AdvancedWireframeGeneratorProps {
   projectId?: string;
@@ -73,9 +73,11 @@ export function AdvancedWireframeGenerator({
       {error && (
         <AlertMessage 
           type="error" 
-          message={error instanceof Error ? error.message : String(error)}
-          onClose={() => setError(null)}
-        />
+          title="Error"
+          className="mb-4"
+        >
+          {error instanceof Error ? error.message : String(error)}
+        </AlertMessage>
       )}
 
       <Card>
