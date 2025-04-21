@@ -52,7 +52,7 @@ export function MonitoringDashboard() {
       <div className="border rounded-lg p-4 bg-white dark:bg-gray-800">
         <h2 className="text-lg font-medium mb-4 flex items-center">
           System Status
-          <StatusBadge status={getSystemOverallStatus()} className="ml-2" />
+          <StatusBadge status={getSystemOverallStatus()} showText={true} />
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
