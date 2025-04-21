@@ -4,13 +4,13 @@ import { ContextAwareContentService, ContentGenerationRequest, SectionContentGen
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
 // Define required types for content generation
-interface ComponentContent {
+export interface ComponentContent {
   id?: string;
   content: string;
   [key: string]: any;
 }
 
-interface SectionContentResponse {
+export interface SectionContentResponse {
   sectionId: string;
   name: string;
   content: string;
@@ -18,14 +18,14 @@ interface SectionContentResponse {
   [key: string]: any;
 }
 
-interface GeneratedContent {
+export interface GeneratedContent {
   pageTitle?: string;
   pageDescription?: string;
   contentSections?: SectionContentResponse[];
   [key: string]: any;
 }
 
-interface GeneratedSectionContent {
+export interface GeneratedSectionContent {
   content?: string;
   components?: ComponentContent[];
   [key: string]: any;
@@ -80,7 +80,7 @@ export function useContentGeneration(): UseContentGenerationReturn {
                   id: comp.id || undefined,
                   content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
                   ...comp
-                } as ComponentContent; // Use type assertion to single object, not array
+                } as ComponentContent;
               })
             : [],
           ...section
@@ -140,7 +140,7 @@ export function useContentGeneration(): UseContentGenerationReturn {
                 id: comp.id || undefined,
                 content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
                 ...comp
-              } as ComponentContent; // Use type assertion to single object, not array
+              } as ComponentContent;
             })
           : [],
         ...result
