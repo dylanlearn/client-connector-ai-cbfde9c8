@@ -1,294 +1,226 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  AlertCircle, 
-  CheckCircle2, 
-  Info, 
-  LayoutGrid, 
-  Loader2 
-} from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useLayoutIntelligence } from '@/hooks/ai/use-layout-intelligence';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  useLayoutIntelligence, 
-} from '@/hooks/ai';
+import { BarChart3, Check, LayoutGrid, Lightbulb } from 'lucide-react';
 
-// Define layout recommendation type locally to avoid import conflicts
-export interface LayoutRecommendation {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  impact: 'high' | 'medium' | 'low';
-  severity: 'critical' | 'warning' | 'info';
-  suggestedFix: string;
-  beforeAfterComparison?: {
-    before: string;
-    after: string;
-  };
-}
-
-export interface LayoutAnalysisPanelProps {
+interface LayoutAnalysisPanelProps {
   wireframe: WireframeData;
   onUpdate: (updated: WireframeData) => void;
 }
 
-const LayoutAnalysisPanel: React.FC<LayoutAnalysisPanelProps> = ({ wireframe, onUpdate }) => {
-  const { 
-    isAnalyzing, 
-    analysisResult, 
-    error, 
+const LayoutAnalysisPanel: React.FC<LayoutAnalysisPanelProps> = ({
+  wireframe,
+  onUpdate
+}) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
+  
+  const {
+    isAnalyzing,
+    layoutAnalysis,
+    analysisResult,
+    error,
     analyzeLayout,
-    applyRecommendation 
-  } = useLayoutIntelligence();
-  
-  const [selectedRecommendation, setSelectedRecommendation] = useState<LayoutRecommendation | null>(null);
-  const [isApplying, setIsApplying] = useState(false);
-  
-  // Start analysis when wireframe changes
+    applyRecommendation
+  } = useLayoutIntelligence({ showToasts: true });
+
   useEffect(() => {
-    if (wireframe && !isAnalyzing && !analysisResult) {
-      handleAnalyzeLayout();
+    // Run analysis when component mounts if not already analyzed
+    if (!analysisResult && !isAnalyzing) {
+      analyzeLayout(wireframe);
     }
-  }, [wireframe]);
-  
-  const handleAnalyzeLayout = async () => {
-    if (!wireframe) return;
-    await analyzeLayout(wireframe);
-  };
-  
-  const handleApplyRecommendation = async () => {
-    if (!selectedRecommendation || !wireframe) return;
-    
-    setIsApplying(true);
-    try {
-      // Need to cast to our local LayoutRecommendation type
-      const updatedWireframe = await applyRecommendation(wireframe, selectedRecommendation as any);
-      if (updatedWireframe) {
-        onUpdate(updatedWireframe);
-      }
-    } finally {
-      setIsApplying(false);
-      setSelectedRecommendation(null);
-    }
+  }, [wireframe, analyzeLayout, analysisResult, isAnalyzing]);
+
+  const handleApplyRecommendation = async (recommendationId: string) => {
+    const updatedWireframe = await applyRecommendation(wireframe, recommendationId);
+    onUpdate(updatedWireframe);
+    setSelectedRecommendation(null);
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 60) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-  
-  const getScoreText = (score: number) => {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    return 'Needs Improvement';
-  };
-
-  const getSeverityIcon = (severity?: string) => {
-    switch (severity) {
-      case 'critical':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case 'warning':
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
-      case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      default:
-        return <Info className="h-5 w-5 text-blue-500" />;
-    }
-  };
-  
-  const renderScores = () => {
-    if (!analysisResult?.scores) return null;
-    
-    const { scores } = analysisResult;
-    
-    return (
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Overall Score</span>
-            <span className="text-sm font-medium">{scores.overall}%</span>
-          </div>
-          <Progress value={scores.overall} className="h-2" />
-          
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Spacing</span>
-            <span className="text-sm font-medium">{scores.spacing}%</span>
-          </div>
-          <Progress value={scores.spacing} className="h-2" />
-          
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Alignment</span>
-            <span className="text-sm font-medium">{scores.alignment}%</span>
-          </div>
-          <Progress value={scores.alignment} className="h-2" />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Hierarchy</span>
-            <span className="text-sm font-medium">{scores.hierarchy}%</span>
-          </div>
-          <Progress value={scores.hierarchy} className="h-2" />
-          
-          {/* Adding a placeholder for responsiveness score if needed */}
-          <div className="flex justify-between">
-            <span className="text-sm font-medium">Responsiveness</span>
-            <span className="text-sm font-medium">{scores.hierarchy}%</span>
-          </div>
-          <Progress value={scores.hierarchy} className="h-2" />
-        </div>
-      </div>
-    );
-  };
-  
-  const renderRecommendations = () => {
-    if (!analysisResult?.recommendations || analysisResult.recommendations.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />
-          <h3 className="text-lg font-medium">No Layout Issues Found</h3>
-          <p className="text-muted-foreground">Your layout looks great! No improvements needed.</p>
-        </div>
-      );
-    }
-    
-    return (
-      <div className="space-y-4">
-        <h3 className="font-medium">Recommended Improvements</h3>
-        <ScrollArea className="h-[280px]">
-          <div className="space-y-2 pr-4">
-            {analysisResult.recommendations.map((rec: any) => {
-              // Cast to our local LayoutRecommendation and add severity if missing
-              const recommendation: LayoutRecommendation = {
-                ...rec,
-                severity: rec.severity || (
-                  rec.impact === 'high' 
-                    ? 'critical' 
-                    : rec.impact === 'medium' 
-                      ? 'warning' 
-                      : 'info'
-                )
-              };
-              
-              const isSelected = selectedRecommendation?.id === recommendation.id;
-              
-              return (
-                <Card 
-                  key={recommendation.id}
-                  className={`cursor-pointer border-l-4 ${
-                    isSelected 
-                      ? 'border-l-primary bg-muted/50' 
-                      : recommendation.severity === 'critical'
-                        ? 'border-l-red-500'
-                        : recommendation.severity === 'warning'
-                          ? 'border-l-yellow-500'
-                          : 'border-l-blue-500'
-                  }`}
-                  onClick={() => setSelectedRecommendation(recommendation)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        {getSeverityIcon(recommendation.severity)}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-sm">{recommendation.title}</h4>
-                        <p className="text-xs text-muted-foreground">{recommendation.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </ScrollArea>
-      </div>
-    );
-  };
-  
-  if (error) {
-    return (
-      <div className="p-4 border rounded-md bg-red-50 text-red-700">
-        <h3 className="font-medium">Error analyzing layout</h3>
-        <p className="text-sm">{error.message}</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mt-2"
-          onClick={handleAnalyzeLayout}
-        >
-          Try Again
-        </Button>
-      </div>
-    );
-  }
-  
   if (isAnalyzing) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
-        <h3 className="font-medium">Analyzing Layout</h3>
-        <p className="text-sm text-muted-foreground">
-          Our AI is analyzing your wireframe layout...
-        </p>
+      <div className="space-y-4 p-4">
+        <p className="text-center text-muted-foreground">Analyzing layout...</p>
+        <Progress value={65} className="w-full" />
       </div>
     );
   }
-  
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-destructive">Error analyzing layout: {error.message}</p>
+        <Button 
+          variant="outline" 
+          className="mt-4" 
+          onClick={() => analyzeLayout(wireframe)}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!layoutAnalysis) {
+    return (
+      <div className="p-4 text-center">
+        <Button onClick={() => analyzeLayout(wireframe)}>
+          Analyze Layout
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <LayoutGrid className="h-5 w-5" />
-          Layout Intelligence
-        </h2>
-        
+    <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="sections">Sections</TabsTrigger>
+          <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Layout Score</h3>
+            <span className="text-2xl font-bold">{layoutAnalysis.overallScore}%</span>
+          </div>
+          <Progress value={layoutAnalysis.overallScore} className="w-full" />
+          
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Spacing</span>
+                <span className="text-sm font-medium">{layoutAnalysis.spacingScore}%</span>
+              </div>
+              <Progress value={layoutAnalysis.spacingScore} className="w-full h-2" />
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Hierarchy</span>
+                <span className="text-sm font-medium">{layoutAnalysis.hierarchyScore}%</span>
+              </div>
+              <Progress value={layoutAnalysis.hierarchyScore} className="w-full h-2" />
+            </div>
+          </div>
+          
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Consistency</span>
+              <span className="text-sm font-medium">{layoutAnalysis.consistencyScore}%</span>
+            </div>
+            <Progress value={layoutAnalysis.consistencyScore} className="w-full h-2" />
+          </div>
+          
+          <div className="bg-muted rounded-md p-3 mt-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <span className="font-medium">Layout Balance: </span>
+              <span>{layoutAnalysis.layoutBalance}</span>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="sections" className="space-y-4 pt-2">
+          {layoutAnalysis.sections.map((section) => (
+            <Card key={section.id} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">{section.name}</h4>
+                  <span className="font-semibold">{section.score}%</span>
+                </div>
+                <Progress value={section.score} className="w-full h-2 my-2" />
+                
+                {section.issues.length > 0 && (
+                  <div className="mt-2">
+                    <h5 className="text-sm font-medium text-muted-foreground">Issues</h5>
+                    <ul className="text-sm">
+                      {section.issues.map((issue, i) => (
+                        <li key={i} className="mt-1">{issue}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {section.strengths.length > 0 && (
+                  <div className="mt-2">
+                    <h5 className="text-sm font-medium text-muted-foreground">Strengths</h5>
+                    <ul className="text-sm">
+                      {section.strengths.map((strength, i) => (
+                        <li key={i} className="mt-1 flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                          <span>{strength}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="recommendations" className="space-y-4 pt-2">
+          {layoutAnalysis.recommendations && layoutAnalysis.recommendations.length > 0 ? (
+            <div className="space-y-2">
+              {layoutAnalysis.recommendations.map((rec) => (
+                <Card
+                  key={rec.id}
+                  className={`cursor-pointer ${selectedRecommendation === rec.id ? 'border-primary' : ''}`}
+                  onClick={() => setSelectedRecommendation(rec.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-2">
+                      <Lightbulb className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{rec.title}</span>
+                          <span className="text-xs px-2 py-1 rounded-full bg-muted capitalize">
+                            {rec.priority}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-1">{rec.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Impact: {rec.impact}</p>
+                      </div>
+                    </div>
+                    {selectedRecommendation === rec.id && (
+                      <Button
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => handleApplyRecommendation(rec.id)}
+                      >
+                        Apply Recommendation
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-4 bg-muted rounded-md">
+              <LayoutGrid className="h-10 w-10 text-primary mx-auto mb-2" />
+              <p>No layout recommendations available.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+      
+      <div className="flex justify-end">
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={handleAnalyzeLayout}
+          onClick={() => analyzeLayout(wireframe)}
+          disabled={isAnalyzing}
         >
-          Refresh Analysis
+          Re-analyze
         </Button>
       </div>
-      
-      {renderScores()}
-      {renderRecommendations()}
-      
-      {selectedRecommendation && (
-        <div className="pt-4 border-t">
-          <h3 className="font-medium mb-2">Applying This Recommendation</h3>
-          <p className="text-sm mb-3">{selectedRecommendation.suggestedFix}</p>
-          <div className="flex gap-2 justify-end">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setSelectedRecommendation(null)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={handleApplyRecommendation}
-              disabled={isApplying}
-            >
-              {isApplying ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Applying...
-                </>
-              ) : (
-                'Apply Recommendation'
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

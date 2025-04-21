@@ -5,8 +5,6 @@ import {
   ContextAwareContentService, 
   ContentGenerationRequest,
   SectionContentGenerationRequest,
-  GeneratedContent as ServiceGeneratedContent,
-  GeneratedSectionContent as ServiceGeneratedSectionContent,
   PlaceholderTextOptions
 } from '@/services/ai/wireframe/content/context-aware-content-service';
 import { toast } from 'sonner';
