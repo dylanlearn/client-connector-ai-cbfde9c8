@@ -11,6 +11,23 @@ import {
 } from '@/services/ai/wireframe/content/context-aware-content-service';
 import { toast } from 'sonner';
 
+// Extended interface to ensure we have the right properties
+export interface ExtendedGeneratedContent extends GeneratedContent {
+  pageTitle?: string;
+  pageDescription?: string;
+  contentSections: Array<{
+    sectionId: string;
+    name?: string;
+    content?: string;
+    [key: string]: any;
+  }>;
+}
+
+export interface ExtendedGeneratedSectionContent extends GeneratedSectionContent {
+  name?: string;
+  content: string;
+}
+
 interface UseContentGenerationOptions {
   showToasts?: boolean;
 }
@@ -22,25 +39,31 @@ export function useContentGeneration({
   showToasts = true
 }: UseContentGenerationOptions = {}) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationResult, setGenerationResult] = useState<GeneratedContent | GeneratedSectionContent | null>(null);
+  const [generationResult, setGenerationResult] = useState<ExtendedGeneratedContent | ExtendedGeneratedSectionContent | null>(null);
   const [error, setError] = useState<Error | null>(null);
   
   /**
    * Generate content for an entire wireframe
    */
-  const generateContent = useCallback(async (request: ContentGenerationRequest): Promise<GeneratedContent | null> => {
+  const generateContent = useCallback(async (request: ContentGenerationRequest): Promise<ExtendedGeneratedContent | null> => {
     setIsGenerating(true);
     setError(null);
     
     try {
       const result = await ContextAwareContentService.generateWireframeContent(request);
-      setGenerationResult(result);
+      // Cast to our extended interface that ensures the required properties
+      const extendedResult: ExtendedGeneratedContent = {
+        ...result,
+        contentSections: result.contentSections || []
+      };
+      
+      setGenerationResult(extendedResult);
       
       if (showToasts) {
         toast.success('Content generated successfully!');
       }
       
-      return result;
+      return extendedResult;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error generating content');
       setError(error);
@@ -60,19 +83,25 @@ export function useContentGeneration({
    */
   const generateSectionContent = useCallback(async (
     request: SectionContentGenerationRequest
-  ): Promise<GeneratedSectionContent | null> => {
+  ): Promise<ExtendedGeneratedSectionContent | null> => {
     setIsGenerating(true);
     setError(null);
     
     try {
       const result = await ContextAwareContentService.generateSectionContent(request);
-      setGenerationResult(result);
+      // Cast to our extended interface that ensures the required properties
+      const extendedResult: ExtendedGeneratedSectionContent = {
+        ...result,
+        content: result.content || ''
+      };
+      
+      setGenerationResult(extendedResult);
       
       if (showToasts) {
         toast.success(`Content generated for ${request.section.sectionType} section!`);
       }
       
-      return result;
+      return extendedResult;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error generating section content');
       setError(error);

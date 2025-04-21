@@ -3,7 +3,21 @@ import { useState, useCallback } from 'react';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { LayoutAnalyzerService, LayoutAnalysisResult } from '@/services/ai/design/layout-analysis/layout-analyzer-service';
 import { toast } from 'sonner';
-import { LayoutRecommendation } from '@/components/wireframe/intelligence/LayoutAnalysisPanel';
+
+// Define our own LayoutRecommendation type that matches what's used in LayoutAnalysisPanel
+export interface LayoutRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  impact: 'high' | 'medium' | 'low';
+  severity: 'critical' | 'warning' | 'info';
+  suggestedFix: string;
+  beforeAfterComparison?: {
+    before: string;
+    after: string;
+  };
+}
 
 interface UseLayoutIntelligenceOptions {
   showToasts?: boolean;
