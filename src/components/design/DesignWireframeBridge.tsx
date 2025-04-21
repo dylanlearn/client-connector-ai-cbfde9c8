@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -173,7 +174,7 @@ const DesignWireframeBridge: React.FC<DesignWireframeBridgeProps> = ({
             <div className="mt-6 border rounded-lg overflow-hidden">
               <AdvancedWireframeGenerator
                 projectId={bridgeProjectId}
-                initialData={wireframeData}
+                initialWireframeData={wireframeData}
                 viewMode="preview"
               />
             </div>

@@ -5,6 +5,7 @@ import { ErrorResponse } from '@/types/error-types';
 interface AdvancedWireframeGeneratorProps {
   projectId?: string;
   viewMode?: string;
+  initialWireframeData?: any;  // Changed from initialData to initialWireframeData for clarity
   onWireframeGenerated?: (result: any) => void;
   onError?: (error: any) => void;
   enhancedCreativity?: boolean;
@@ -15,6 +16,7 @@ interface AdvancedWireframeGeneratorProps {
 export function AdvancedWireframeGenerator({
   projectId,
   viewMode,
+  initialWireframeData, // Updated prop name
   onWireframeGenerated,
   onError,
   enhancedCreativity,
@@ -44,6 +46,12 @@ export function AdvancedWireframeGenerator({
       {error && <div className="error">{error instanceof Error ? error.message : error}</div>}
       <h1>Advanced Wireframe Generator</h1>
       {/* Rest of component */}
+      {initialWireframeData && (
+        <div className="mt-4">
+          <h2>Generated Wireframe</h2>
+          <p>Wireframe data available</p>
+        </div>
+      )}
     </div>
   );
 }
