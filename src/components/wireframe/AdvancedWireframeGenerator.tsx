@@ -1,12 +1,12 @@
-
 import React, { useState } from 'react';
 import { ErrorResponse } from '@/types/error-types';
 import { AlertMessage } from '@/components/ui/alert-message';
 import { Card, CardContent } from '@/components/ui/card';
 import { useWireframe } from '@/hooks/useWireframe';
+import { useWireframeState } from '@/hooks/use-wireframe-state';
 import WireframePreviewSystem from './preview/WireframePreviewSystem';
 import WireframeControls from './editor/WireframeControls';
-import { useWireframeState } from '@/hooks/use-wireframe-state';
+import HistoryControls from './canvas/HistoryControls';
 
 interface AdvancedWireframeGeneratorProps {
   projectId?: string;
@@ -89,6 +89,14 @@ export function AdvancedWireframeGenerator({
 
       <Card>
         <CardContent className="p-6">
+          <div className="flex justify-end mb-4">
+            <HistoryControls
+              canUndo={false}
+              canRedo={false}
+              onUndo={() => {}}
+              onRedo={() => {}}
+            />
+          </div>
           <WireframeControls
             projectId={projectId}
             onWireframeCreated={handleGenerateWireframe}
