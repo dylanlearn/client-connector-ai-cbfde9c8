@@ -1,174 +1,164 @@
 
-import React, { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatusBadge } from "./controls/StatusBadge";
-import { PerformancePanel } from "./panels/PerformancePanel";
-import { AlertsPanel } from "./panels/AlertsPanel";
-import { ErrorsPanel } from "./panels/ErrorsPanel";
-import { ConfigurationPanel } from "./panels/ConfigurationPanel";
-import { Activity, AlertCircle, MemoryStick, Settings, Database, HardDrive } from "lucide-react";
-import { toast } from "sonner";
-import { getSystemStatus } from "@/utils/monitoring/system-status";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { SystemStatus } from '@/utils/monitoring/types';
+import { getSystemStatus, getSystemMetrics } from '@/utils/monitoring/system-status';
+import { getApiUsageMetrics } from '@/utils/monitoring/api-usage';
+import { StatusBadge } from './controls/StatusBadge';
+import { MonitoringControls } from './controls/MonitoringControls';
+import { ApiUsageMetrics } from './ApiUsageMetrics';
+import { ClientErrorMonitoring } from './ClientErrorMonitoring';
+import { ProfileQueryMonitor } from './ProfileQueryMonitor';
+import { DatabaseMaintenancePanel } from './DatabaseMaintenancePanel';
 
 export function MonitoringDashboard() {
-  const [systemStatus, setSystemStatus] = useState<Record<string, string>>({
-    api: "healthy",
-    database: "healthy",
-    memory: "warning",
-    storage: "healthy",
-    functions: "healthy",
-  });
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("performance");
-  
+  const [error, setError] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState<'hour' | 'day' | 'week'>('day');
+
+  const fetchSystemStatus = async () => {
+    try {
+      setIsLoading(true);
+      const status = await getSystemStatus();
+      setSystemStatus(status);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching system status:', err);
+      setError('Failed to load system status. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSystemStatus = async () => {
-      try {
-        setIsLoading(true);
-        const status = await getSystemStatus();
-        
-        // Extract component statuses from the response
-        const componentStatuses: Record<string, string> = {};
-        Object.entries(status.components).forEach(([key, value]) => {
-          componentStatuses[key] = value.status;
-        });
-        
-        setSystemStatus(componentStatuses);
-      } catch (error) {
-        console.error("Failed to fetch system status:", error);
-        toast.error("Failed to load monitoring data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchSystemStatus();
-    
-    // Set up polling interval for regular updates (every 30 seconds)
-    const intervalId = setInterval(fetchSystemStatus, 30000);
-    
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
-  }, []);
-  
-  // Helper function to map system health statuses to StatusBadge types
-  const mapSystemHealthToStatusType = (status: string): "healthy" | "warning" | "critical" | "unknown" => {
-    switch(status.toLowerCase()) {
-      case "healthy":
-      case "ok":
-        return "healthy";
-      case "warning":
-      case "degraded":
-        return "warning";
-      case "error":
-      case "unhealthy":
-      case "critical":
-        return "critical";
-      default:
-        return "unknown";
+
+    // Set up auto-refresh if enabled
+    let intervalId: number | undefined;
+    if (autoRefresh) {
+      intervalId = window.setInterval(fetchSystemStatus, 60000); // Refresh every minute
     }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [autoRefresh]);
+
+  const handleRefresh = () => {
+    fetchSystemStatus();
   };
 
-  const getSystemOverallStatus = (): "healthy" | "warning" | "critical" | "unknown" => {
-    if (Object.values(systemStatus).some(s => s === "error" || s === "unhealthy" || s === "critical")) {
-      return "critical";
-    }
-    if (Object.values(systemStatus).some(s => s === "warning" || s === "degraded")) {
-      return "warning";
-    }
-    if (Object.values(systemStatus).every(s => s === "healthy" || s === "ok")) {
-      return "healthy";
-    }
-    return "unknown";
+  const handlePeriodChange = (period: 'hour' | 'day' | 'week') => {
+    setSelectedPeriod(period);
   };
 
-  if (isLoading) {
+  const handleAutoRefreshToggle = (enabled: boolean) => {
+    setAutoRefresh(enabled);
+  };
+
+  if (isLoading && !systemStatus) {
     return (
       <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
-        <span className="ml-3 text-muted-foreground">Loading system status...</span>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h2 className="text-lg font-medium mb-4 flex items-center">
-          System Status
-          <StatusBadge status={getSystemOverallStatus()} showText={true} />
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="border rounded-md p-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <Activity className="h-5 w-5 text-blue-500 mr-2" />
-              <span>API</span>
-            </div>
-            <StatusBadge status={mapSystemHealthToStatusType(systemStatus.api || 'unknown')} showText={true} />
-          </div>
-          
-          <div className="border rounded-md p-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <Database className="h-5 w-5 text-indigo-500 mr-2" />
-              <span>Database</span>
-            </div>
-            <StatusBadge status={mapSystemHealthToStatusType(systemStatus.database || 'unknown')} showText={true} />
-          </div>
-          
-          <div className="border rounded-md p-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <MemoryStick className="h-5 w-5 text-yellow-500 mr-2" />
-              <span>Memory</span>
-            </div>
-            <StatusBadge status={mapSystemHealthToStatusType(systemStatus.memory || 'unknown')} showText={true} />
-          </div>
-          
-          <div className="border rounded-md p-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <HardDrive className="h-5 w-5 text-green-500 mr-2" />
-              <span>Storage</span>
-            </div>
-            <StatusBadge status={mapSystemHealthToStatusType(systemStatus.storage || 'unknown')} showText={true} />
-          </div>
-          
-          <div className="border rounded-md p-3 flex items-center justify-between">
-            <div className="flex items-center">
-              <Settings className="h-5 w-5 text-purple-500 mr-2" />
-              <span>Functions</span>
-            </div>
-            <StatusBadge status={mapSystemHealthToStatusType(systemStatus.functions || 'unknown')} showText={true} />
-          </div>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">System Monitoring</h2>
+          <p className="text-muted-foreground">
+            Monitor system health, performance and errors
+          </p>
         </div>
+        
+        <MonitoringControls 
+          onRefresh={handleRefresh} 
+          isRefreshing={isLoading}
+          onPeriodChange={handlePeriodChange}
+          selectedPeriod={selectedPeriod}
+          autoRefresh={autoRefresh}
+          onAutoRefreshToggle={handleAutoRefreshToggle}
+        />
       </div>
 
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
-          <TabsTrigger value="errors">Errors</TabsTrigger>
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="performance">
-          <PerformancePanel />
-        </TabsContent>
-        
-        <TabsContent value="alerts">
-          <AlertsPanel />
-        </TabsContent>
-        
-        <TabsContent value="errors">
-          <ErrorsPanel />
-        </TabsContent>
-        
-        <TabsContent value="configuration">
-          <ConfigurationPanel />
-        </TabsContent>
-      </Tabs>
+      {systemStatus && (
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader className="py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">System Status</CardTitle>
+                <StatusBadge status={systemStatus.status} showText />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(systemStatus.components).map(([key, component]) => (
+                  <Card key={key} className="overflow-hidden">
+                    <CardHeader className="py-3 bg-muted/30">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium">{key}</CardTitle>
+                        <StatusBadge status={component.status} />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        {Object.entries(component.metrics).map(([metric, value]) => (
+                          <div key={metric} className="flex justify-between text-xs">
+                            <span className="text-muted-foreground">{metric}</span>
+                            <span className="font-medium">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue="usage" className="w-full">
+            <TabsList>
+              <TabsTrigger value="usage">Usage Metrics</TabsTrigger>
+              <TabsTrigger value="errors">Error Monitoring</TabsTrigger>
+              <TabsTrigger value="queries">Query Performance</TabsTrigger>
+              <TabsTrigger value="database">Database Maintenance</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="usage" className="space-y-4 pt-4">
+              <ApiUsageMetrics period={selectedPeriod} />
+            </TabsContent>
+            
+            <TabsContent value="errors" className="space-y-4 pt-4">
+              <ClientErrorMonitoring />
+            </TabsContent>
+            
+            <TabsContent value="queries" className="space-y-4 pt-4">
+              <ProfileQueryMonitor />
+            </TabsContent>
+            
+            <TabsContent value="database" className="space-y-4 pt-4">
+              <DatabaseMaintenancePanel />
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
     </div>
   );
 }
-
-export default MonitoringDashboard;

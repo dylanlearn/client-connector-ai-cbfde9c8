@@ -1,116 +1,86 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { SystemMonitoringRecord } from './types';
 
 /**
- * Record API usage metrics
+ * Fetch API usage metrics for a specified time period
  */
-export async function recordApiUsage(
-  endpoint: string,
-  method: string,
-  statusCode: number,
-  responseTime: number,
-  userId?: string
-): Promise<boolean> {
+export async function getApiUsageMetrics(
+  period: 'hour' | 'day' | 'week' | 'month'
+): Promise<SystemMonitoringRecord[]> {
   try {
-    const { error } = await supabase
-      .from('api_usage_metrics')
-      .insert({
-        endpoint,
-        method,
-        status_code: statusCode,
-        response_time: responseTime,
-        user_id: userId,
-        timestamp: new Date().toISOString(),
-        client_info: typeof window !== 'undefined' ? window.navigator.userAgent : 'server'
-      });
-      
-    if (error) {
-      console.error('Error recording API usage:', error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error in recordApiUsage:', error);
-    return false;
-  }
-}
-
-/**
- * Record a client error
- */
-export async function recordClientError(
-  errorMessage: string,
-  errorStack?: string,
-  componentName?: string,
-  userId?: string,
-  metadata?: Record<string, any>
-): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('client_errors')
-      .insert({
-        error_message: errorMessage,
-        component_name: componentName,
-        error_stack: errorStack,
-        browser_info: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
-        url: typeof window !== 'undefined' ? window.location.href : undefined,
-        user_id: userId,
-        timestamp: new Date().toISOString(),
-        metadata
-      });
-      
-    if (error) {
-      console.error('Error recording client error:', error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error in recordClientError:', error);
-    return false;
-  }
-}
-
-/**
- * Get API usage statistics for a time period
- */
-export async function getApiUsageStats(
-  period: 'day' | 'week' | 'month'
-): Promise<any> {
-  try {
-    // Calculate start date based on period
+    // Determine time range based on period
     const now = new Date();
-    let startDate: Date;
+    let startTime: Date;
     
     switch (period) {
+      case 'hour':
+        startTime = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
       case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case 'month':
-        startDate = new Date(now);
-        startDate.setMonth(now.getMonth() - 1);
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       case 'day':
       default:
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 1);
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     }
     
     const { data, error } = await supabase
       .from('api_usage_metrics')
       .select('*')
-      .gte('timestamp', startDate.toISOString());
-      
-    if (error) {
-      console.error('Error fetching API usage stats:', error);
-      return null;
-    }
+      .gte('request_timestamp', startTime.toISOString())
+      .order('request_timestamp', { ascending: true });
     
-    return data;
+    if (error) {
+      console.error('Error fetching API usage metrics:', error);
+      return [];
+    }
+
+    // Transform data into SystemMonitoringRecord format
+    return data.map(record => ({
+      timestamp: record.request_timestamp,
+      component: record.endpoint.split('/').pop() || 'api',
+      metric: 'responseTime',
+      value: record.response_time_ms,
+      status: getStatusFromResponseTime(record.response_time_ms)
+    }));
   } catch (error) {
-    console.error('Error in getApiUsageStats:', error);
-    return null;
+    console.error('Error in getApiUsageMetrics:', error);
+    return [];
   }
+}
+
+/**
+ * Record an API call to the metrics table
+ */
+export async function recordApiCall(
+  endpoint: string, 
+  method: string,
+  statusCode: number, 
+  responseTimeMs: number,
+  payload?: any
+): Promise<void> {
+  try {
+    await supabase.from('api_usage_metrics').insert({
+      endpoint,
+      method,
+      status_code: statusCode,
+      response_time_ms: responseTimeMs,
+      request_payload: payload ? JSON.stringify(payload) : null
+    });
+  } catch (error) {
+    console.error('Error recording API call:', error);
+  }
+}
+
+/**
+ * Determine status based on response time
+ */
+function getStatusFromResponseTime(responseTimeMs: number): 'healthy' | 'warning' | 'critical' | 'unknown' {
+  if (responseTimeMs < 300) return 'healthy';
+  if (responseTimeMs < 1000) return 'warning';
+  return 'critical';
 }
