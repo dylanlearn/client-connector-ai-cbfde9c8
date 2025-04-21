@@ -1,255 +1,216 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Layout, 
-  LayoutGrid, 
-  Wand2, 
-  ThumbsUp, 
-  ThumbsDown,
-  CheckCircle, 
-  Sparkles,
-  MoveHorizontal
-} from 'lucide-react';
+import { Loader2, LayoutGrid, Check, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  SmartLayoutGeneratorService, 
-  LayoutAlternative,
-  LayoutGenerationOptions,
-  LayoutGenerationResult
-} from '@/services/ai/design/layout/smart-layout-generator-service';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useSmartLayoutAlternatives } from '@/hooks/ai/use-smart-layout-alternatives';
+import { LayoutAlternative } from '@/services/ai/design/layout/smart-layout-generator-service';
 
-interface SmartLayoutAlternativesPanelProps {
+export interface SmartLayoutAlternativesPanelProps {
   wireframe: WireframeData;
-  onUpdateWireframe?: (updated: WireframeData) => void;
-  onClose?: () => void;
+  onUpdateWireframe: (updated: WireframeData) => void;
 }
 
 const SmartLayoutAlternativesPanel: React.FC<SmartLayoutAlternativesPanelProps> = ({
   wireframe,
-  onUpdateWireframe,
-  onClose
+  onUpdateWireframe
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<LayoutGenerationResult | null>(null);
-  const [selectedAlternative, setSelectedAlternative] = useState<string | null>(null);
-  const [options, setOptions] = useState<LayoutGenerationOptions>({
-    count: 3,
-    focusArea: 'engagement'
-  });
+  const [creativeLevel, setCreativeLevel] = useState<string>('5');
+  const [preserveContent, setPreserveContent] = useState<boolean>(true);
   
-  const handleGenerateAlternatives = async () => {
-    setIsGenerating(true);
-    try {
-      const result = await SmartLayoutGeneratorService.generateAlternatives(wireframe, options);
-      setResult(result);
-      if (result.alternatives.length > 0) {
-        setSelectedAlternative(result.alternatives[0].id);
-      }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  const { 
+    isGenerating,
+    generationResult,
+    selectedAlternative,
+    error,
+    generateAlternatives,
+    applyAlternative,
+    setSelectedAlternative,
+    reset
+  } = useSmartLayoutAlternatives();
   
-  const handleApplyAlternative = () => {
-    if (!result || !selectedAlternative) return;
+  // Generate layout alternatives
+  const handleGenerateAlternatives = useCallback(async () => {
+    await generateAlternatives(wireframe, {
+      creativeLevel: parseInt(creativeLevel),
+      preserveContent
+    });
+  }, [wireframe, creativeLevel, preserveContent, generateAlternatives]);
+  
+  // Apply selected layout alternative
+  const handleApplyAlternative = useCallback(() => {
+    if (!selectedAlternative || !generationResult) return;
     
-    const updatedWireframe = SmartLayoutGeneratorService.applyLayoutAlternative(
-      wireframe,
-      selectedAlternative,
-      result.alternatives
-    );
-    
-    if (onUpdateWireframe) {
+    const updatedWireframe = applyAlternative(wireframe, selectedAlternative, generationResult.alternatives);
+    if (updatedWireframe) {
       onUpdateWireframe(updatedWireframe);
     }
-  };
+  }, [wireframe, selectedAlternative, generationResult, applyAlternative, onUpdateWireframe]);
   
-  const handleOptionChange = (key: keyof LayoutGenerationOptions, value: any) => {
-    setOptions(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-  
-  const getSelectedAlternative = () => {
-    if (!result || !selectedAlternative) return null;
-    return result.alternatives.find(alt => alt.id === selectedAlternative);
-  };
+  // Find the currently selected alternative
+  const currentAlternative = generationResult?.alternatives.find(
+    alt => alt.id === selectedAlternative
+  );
   
   return (
-    <Card className="overflow-hidden border-t-4 border-t-primary">
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium flex items-center">
-            <LayoutGrid className="mr-2 h-5 w-5" />
-            Smart Layout Alternatives
-          </h3>
-          {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              Close
-            </Button>
-          )}
-        </div>
-        
-        {!result ? (
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Optimization Focus</Label>
-                <Select 
-                  value={options.focusArea} 
-                  onValueChange={(value: any) => handleOptionChange('focusArea', value)}
-                >
+    <div className="smart-layout-alternatives-panel">
+      {!generationResult ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Smart Layout Alternatives</CardTitle>
+            <CardDescription>
+              Generate AI-powered layout variations based on your content
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 mb-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Creativity Level</label>
+                <Select value={creativeLevel} onValueChange={setCreativeLevel}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select focus area" />
+                    <SelectValue placeholder="Select creativity level" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="engagement">Engagement</SelectItem>
-                    <SelectItem value="conversion">Conversion</SelectItem>
-                    <SelectItem value="readability">Readability</SelectItem>
-                    <SelectItem value="accessibility">Accessibility</SelectItem>
+                    <SelectItem value="1">Conservative</SelectItem>
+                    <SelectItem value="3">Balanced</SelectItem>
+                    <SelectItem value="5">Standard</SelectItem>
+                    <SelectItem value="7">Creative</SelectItem>
+                    <SelectItem value="10">Experimental</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="space-y-2">
-                <Label>Number of Alternatives</Label>
-                <Select 
-                  value={options.count?.toString()} 
-                  onValueChange={(value) => handleOptionChange('count', parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Number of alternatives" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Industry Context (Optional)</Label>
-                <Select 
-                  value={options.industryContext} 
-                  onValueChange={(value) => handleOptionChange('industryContext', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select industry" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="technology">Technology</SelectItem>
-                    <SelectItem value="ecommerce">E-commerce</SelectItem>
-                    <SelectItem value="healthcare">Healthcare</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="preserveContent"
+                  checked={preserveContent}
+                  onChange={(e) => setPreserveContent(e.target.checked)}
+                  className="mr-2"
+                />
+                <label htmlFor="preserveContent" className="text-sm">
+                  Preserve existing content
+                </label>
               </div>
             </div>
             
-            <Button onClick={handleGenerateAlternatives} disabled={isGenerating} className="w-full">
+            <Button 
+              onClick={handleGenerateAlternatives} 
+              disabled={isGenerating}
+              className="w-full"
+            >
               {isGenerating ? (
                 <>
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <Wand2 className="mr-2 h-4 w-4" />
+                  <LayoutGrid className="mr-2 h-4 w-4" />
                   Generate Layout Alternatives
                 </>
               )}
             </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-medium">
+              {generationResult.alternatives.length} Layout Alternatives
+            </h3>
+            <Button variant="outline" size="sm" onClick={reset}>
+              Start Over
+            </Button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm">{result.summary}</p>
-            
-            <div className="border rounded-lg overflow-hidden">
-              <RadioGroup 
-                value={selectedAlternative || ''}
-                onValueChange={setSelectedAlternative}
-                className="grid grid-cols-1 divide-y"
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {generationResult.alternatives.map((alternative) => (
+              <Card
+                key={alternative.id}
+                className={`cursor-pointer transition-colors ${
+                  alternative.id === selectedAlternative ? 'border-primary ring-1 ring-primary' : ''
+                }`}
+                onClick={() => setSelectedAlternative(alternative.id)}
               >
-                {result.alternatives.map((alt) => (
-                  <div key={alt.id} className="p-3 hover:bg-muted/50">
-                    <div className="flex items-start">
-                      <RadioGroupItem value={alt.id} id={alt.id} className="mt-1 mr-2" />
-                      <div className="flex-1">
-                        <label htmlFor={alt.id} className="flex items-center text-sm font-medium cursor-pointer">
-                          <Layout className="mr-2 h-4 w-4" />
-                          {alt.name}
-                        </label>
-                        <p className="text-xs text-muted-foreground mt-1">{alt.description}</p>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {alt.benefits?.map((benefit, i) => (
-                            <div key={i} className="text-xs bg-muted px-2 py-1 rounded-full flex items-center">
-                              <Sparkles className="mr-1 h-3 w-3" />
-                              {benefit}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-sm">{alternative.name}</CardTitle>
+                    <Badge variant="outline">
+                      {alternative.layoutType}
+                    </Badge>
                   </div>
-                ))}
-              </RadioGroup>
-            </div>
-            
-            <div className="border rounded-lg p-4">
-              <h4 className="text-sm font-medium mb-2">Selected Alternative Preview</h4>
-              {getSelectedAlternative() ? (
-                <div>
-                  <p className="text-sm mb-4">
-                    <strong>{getSelectedAlternative()?.name}</strong> - 
-                    {getSelectedAlternative()?.description}
-                  </p>
-                  <div className="border-2 border-dashed border-gray-300 h-[200px] rounded-md flex items-center justify-center">
-                    <p className="text-muted-foreground">Preview would appear here</p>
-                    {/* In a real implementation, this would show a simplified preview of the selected layout */}
+                  <CardDescription className="line-clamp-2 text-xs">
+                    {alternative.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pb-2 pt-0">
+                  <div className="bg-muted h-24 rounded-md flex items-center justify-center mb-2">
+                    <div className="text-xs text-muted-foreground">Layout preview</div>
                   </div>
+                </CardContent>
+                <CardFooter className="p-4 pt-0">
+                  {alternative.id === selectedAlternative && (
+                    <Badge className="bg-primary-50 text-primary border-primary">
+                      <Check className="mr-1 h-3 w-3" />
+                      Selected
+                    </Badge>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+          
+          {currentAlternative && (
+            <Card>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm">{currentAlternative.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <p className="text-sm mb-4">{currentAlternative.description}</p>
+                
+                <div className="text-sm text-muted-foreground mb-4">
+                  <p>Layout type: <strong>{currentAlternative.layoutType}</strong></p>
+                  <p>Sections: <strong>{currentAlternative.sections.length}</strong></p>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Select an alternative to see a preview</p>
-              )}
-            </div>
-            
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setResult(null)}
-              >
-                Back
-              </Button>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={handleGenerateAlternatives}
-                  disabled={isGenerating}
-                >
-                  Regenerate
-                </Button>
+                
                 <Button
                   onClick={handleApplyAlternative}
-                  disabled={!selectedAlternative}
+                  className="w-full"
                 >
-                  Apply Selected Layout
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Apply This Layout
                 </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </Card>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-md flex items-center text-sm text-red-800">
+          <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span>Error: {error.message}</span>
+        </div>
+      )}
+    </div>
   );
 };
 

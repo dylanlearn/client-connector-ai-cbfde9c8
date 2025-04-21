@@ -1,395 +1,310 @@
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { supabase } from '@/integrations/supabase/client';
-import { AIFeatureType, selectModelForFeature } from '@/services/ai/ai-model-selector';
+
+import { WireframeData, WireframeSection, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Define types for layout generation
 export interface LayoutAlternative {
   id: string;
   name: string;
   description: string;
   layoutType: string;
+  preview?: string; // URL or base64 image
   sections: WireframeSection[];
-  score?: number;
-  benefits?: string[];
-  preview?: string;
 }
 
 export interface LayoutGenerationOptions {
-  count?: number;
-  focusArea?: 'conversion' | 'readability' | 'engagement' | 'accessibility';
-  preserveSections?: string[];
-  stylePreference?: string;
-  industryContext?: string;
+  preserveContent?: boolean;
+  creativeLevel?: number; // 1-10 scale
+  styles?: string[];
+  layoutTypes?: string[];
+  focusArea?: string;
 }
 
 export interface LayoutGenerationResult {
   alternatives: LayoutAlternative[];
-  originalLayout: {
-    id: string;
-    name: string;
-    sections: WireframeSection[];
+  metadata: {
+    generatedAt: string;
+    originalLayoutType: string;
+    options: LayoutGenerationOptions;
   };
-  summary: string;
 }
 
 /**
- * Service for generating smart layout alternatives based on existing content
+ * Service for generating smart layout alternatives
  */
-export class SmartLayoutGeneratorService {
+export const SmartLayoutGeneratorService = {
   /**
    * Generate layout alternatives for a wireframe
    */
-  static async generateAlternatives(
+  generateAlternatives: async (
     wireframe: WireframeData,
     options: LayoutGenerationOptions = {}
-  ): Promise<LayoutGenerationResult> {
-    try {
-      const { count = 3, focusArea, preserveSections = [], industryContext } = options;
-      
-      // Create a simplified version of the wireframe for AI processing
-      const simplifiedWireframe = {
-        title: wireframe.title,
-        description: wireframe.description,
-        colorScheme: wireframe.colorScheme,
-        typography: wireframe.typography,
-        layoutType: wireframe.layoutType,
-        sections: wireframe.sections.map(section => ({
-          id: section.id,
-          type: section.sectionType,
-          name: section.name,
-          components: section.components?.map(c => ({
-            id: c.id,
-            type: c.type,
-            content: c.content || c.text
-          }))
-        }))
-      };
-      
-      // Identify which sections should be preserved in their current form
-      const sectionsToPreserve = new Set(preserveSections);
-      
-      // Generate alternatives with AI
-      const alternatives = await this.callLayoutAI(
-        simplifiedWireframe,
-        count,
-        focusArea,
-        sectionsToPreserve,
-        industryContext
-      );
-      
-      // Create summary of the alternatives
-      const summary = await this.generateAlternativesSummary(
-        alternatives, 
-        wireframe.title,
-        focusArea
-      );
-      
-      return {
-        alternatives,
-        originalLayout: {
-          id: 'original',
-          name: 'Original Layout',
-          sections: wireframe.sections
-        },
-        summary
-      };
-    } catch (error) {
-      console.error('Error generating layout alternatives:', error);
-      
-      return {
-        alternatives: [],
-        originalLayout: {
-          id: 'original',
-          name: 'Original Layout',
-          sections: wireframe.sections
-        },
-        summary: 'Failed to generate layout alternatives. Please try again later.'
-      };
-    }
-  }
-  
-  /**
-   * Generate alternatives for a specific section
-   */
-  static async generateSectionAlternatives(
-    section: WireframeSection,
-    wireframeContext: WireframeData,
-    count: number = 2
-  ): Promise<LayoutAlternative[]> {
-    try {
-      const model = selectModelForFeature(AIFeatureType.DesignRecommendation);
-      
-      const promptContent = `
-        Generate ${count} alternative layouts for this wireframe section while preserving the core content:
-        ${JSON.stringify(section)}
-        
-        Wireframe context:
-        Title: ${wireframeContext.title}
-        Description: ${wireframeContext.description || 'N/A'}
-        
-        For each alternative, create variations in structure, component arrangement, and visual hierarchy.
-        Return a JSON array with this format:
-        [
-          {
-            "id": "unique-id",
-            "name": "Alternative Name",
-            "description": "Brief description of this alternative approach",
-            "layoutType": "Specific layout pattern name",
-            "sections": [
-              {
-                // Complete section definition with all required properties
-                "id": "string",
-                "name": "string",
-                "sectionType": "string",
-                "components": [...],
-                // Include any other required properties for a valid section
-              }
-            ],
-            "benefits": ["Benefit 1", "Benefit 2"]
-          }
-        ]
-        Ensure that each section has ALL required properties including id, name, sectionType, and components.
-      `;
-      
-      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
-        body: {
-          messages: [{
-            role: "user",
-            content: promptContent
-          }],
-          systemPrompt: "You are a UX/UI design expert specializing in creating layout alternatives that maintain content while exploring different structural approaches.",
-          temperature: 0.7,
-          model
-        },
-      });
-      
-      if (error) {
-        throw new Error(`AI layout generation error: ${error.message}`);
-      }
-      
-      // Parse and validate the response
-      const alternatives = JSON.parse(data.response);
-      
-      // Ensure all alternatives have the required properties
-      return alternatives.map((alt: any) => {
-        // Ensure each section has the required properties
-        const validatedSections = alt.sections.map((section: any) => {
-          return {
-            id: section.id || uuidv4(),
-            name: section.name || 'Unnamed Section',
-            sectionType: section.sectionType || 'generic',
-            components: section.components || [],
-            // Add any other required properties
-            description: section.description || '',
-            position: section.position || { x: 0, y: 0 },
-            dimensions: section.dimensions || { width: '100%', height: 'auto' },
-            style: section.style || {},
-            ...section
-          };
-        });
-        
-        return {
-          id: alt.id || uuidv4(),
-          name: alt.name || 'Unnamed Alternative',
-          description: alt.description || 'Alternative layout variation',
-          layoutType: alt.layoutType || 'custom',
-          sections: validatedSections,
-          benefits: alt.benefits || [],
-          score: alt.score || undefined
-        };
-      });
-    } catch (error) {
-      console.error('Error generating section alternatives:', error);
-      return [];
-    }
-  }
-  
-  /**
-   * Call the AI to generate layout alternatives
-   */
-  private static async callLayoutAI(
-    wireframe: any,
-    count: number,
-    focusArea?: string,
-    sectionsToPreserve: Set<string> = new Set(),
-    industryContext?: string
-  ): Promise<LayoutAlternative[]> {
-    try {
-      const model = selectModelForFeature(AIFeatureType.DesignRecommendation);
-      
-      const promptContent = `
-        Generate ${count} alternative layouts for this wireframe while preserving the core content:
-        ${JSON.stringify(wireframe)}
-        
-        ${focusArea ? `Focus on optimizing for ${focusArea}.` : ''}
-        ${industryContext ? `Industry context: ${industryContext}` : ''}
-        ${sectionsToPreserve.size > 0 ? `The following sections must be preserved as-is: ${Array.from(sectionsToPreserve).join(', ')}` : ''}
-        
-        For each alternative, create variations in structure, component arrangement, and visual hierarchy.
-        Return a JSON array with this format:
-        [
-          {
-            "id": "unique-id",
-            "name": "Alternative Name",
-            "description": "Brief description of this alternative approach",
-            "layoutType": "Specific layout pattern name",
-            "sections": [
-              {
-                // Complete section definition with all required properties
-                "id": "string",
-                "name": "string",
-                "sectionType": "string",
-                "components": [...],
-                // Include any other required properties for a valid section
-              }
-            ],
-            "benefits": ["Benefit 1", "Benefit 2"]
-          }
-        ]
-        Ensure that each section has ALL required properties including id, name, sectionType, and all other necessary fields.
-      `;
-      
-      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
-        body: {
-          messages: [{
-            role: "user",
-            content: promptContent
-          }],
-          systemPrompt: "You are a UX/UI design expert specializing in creating layout alternatives that maintain content while exploring different structural approaches.",
-          temperature: 0.7,
-          model
-        },
-      });
-      
-      if (error) {
-        throw new Error(`AI layout generation error: ${error.message}`);
-      }
-      
-      // Parse and validate the response
-      const alternatives = JSON.parse(data.response);
-      
-      // Process alternatives to ensure they have all required properties
-      return alternatives.map((alt: any) => {
-        // Validate sections to ensure they have all required properties
-        const processedSections = alt.sections.map((section: any) => {
-          // If this section should be preserved, find the original
-          if (sectionsToPreserve.has(section.id)) {
-            const originalSection = wireframe.sections.find((s: any) => s.id === section.id);
-            if (originalSection) {
-              return originalSection;
-            }
-          }
-          
-          // Otherwise ensure it has all required properties
-          return {
-            id: section.id || uuidv4(),
-            name: section.name || 'Unnamed Section',
-            sectionType: section.sectionType || 'generic',
-            description: section.description || '',
-            components: section.components || [],
-            // Add other required properties with defaults
-            layout: section.layout || { type: 'flex', direction: 'column' },
-            position: section.position || { x: 0, y: 0 },
-            dimensions: section.dimensions || { width: '100%', height: 'auto' },
-            style: section.style || {},
-            ...section
-          };
-        });
-        
-        return {
-          id: alt.id || uuidv4(),
-          name: alt.name || 'Alternative Layout',
-          description: alt.description || 'An alternative layout approach',
-          layoutType: alt.layoutType || 'custom',
-          sections: processedSections,
-          benefits: alt.benefits || [],
-          score: alt.score
-        };
-      });
-    } catch (error) {
-      console.error('Error in AI layout generation:', error);
-      return [];
-    }
-  }
-  
-  /**
-   * Generate a summary of the layout alternatives
-   */
-  private static async generateAlternativesSummary(
-    alternatives: LayoutAlternative[],
-    title: string,
-    focusArea?: string
-  ): Promise<string> {
-    if (alternatives.length === 0) {
-      return "No layout alternatives were generated.";
+  ): Promise<LayoutGenerationResult> => {
+    // In a real implementation, this would use AI to generate multiple layout alternatives
+    // For this demo, we'll create some predefined alternatives
+    
+    const { preserveContent = true, creativeLevel = 5 } = options;
+    
+    const alternatives: LayoutAlternative[] = [];
+    
+    // Generate modern grid layout
+    alternatives.push(generateGridLayout(wireframe, preserveContent));
+    
+    // Generate card-based layout
+    alternatives.push(generateCardLayout(wireframe, preserveContent));
+    
+    // Generate asymmetric layout
+    alternatives.push(generateAsymmetricLayout(wireframe, preserveContent));
+    
+    // Generate minimalist layout
+    alternatives.push(generateMinimalistLayout(wireframe, preserveContent));
+    
+    // If creative level is high, add a more experimental layout
+    if (creativeLevel > 7) {
+      alternatives.push(generateExperimentalLayout(wireframe, preserveContent));
     }
     
-    try {
-      const model = selectModelForFeature(AIFeatureType.Summarization);
-      
-      const promptContent = `
-        Summarize these ${alternatives.length} layout alternatives for "${title}":
-        
-        ${alternatives.map(alt => 
-          `Alternative: ${alt.name}
-           Description: ${alt.description}
-           Layout Type: ${alt.layoutType}
-           Benefits: ${alt.benefits?.join(', ')}`
-        ).join('\n\n')}
-        
-        ${focusArea ? `These alternatives were optimized for ${focusArea}.` : ''}
-        
-        Provide a brief, helpful summary highlighting the key differences between the alternatives
-        and how they might impact user experience. Keep your response to 2-3 sentences.
-      `;
-      
-      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
-        body: {
-          messages: [{
-            role: "user",
-            content: promptContent
-          }],
-          systemPrompt: "You are a UX design expert providing concise, insightful summaries of layout alternatives.",
-          temperature: 0.7,
-          model
-        },
-      });
-      
-      if (error) {
-        throw new Error(`Summary generation error: ${error.message}`);
+    return {
+      alternatives,
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        originalLayoutType: wireframe.layoutType || 'standard',
+        options
       }
-      
-      return data.response;
-    } catch (error) {
-      console.error('Error generating alternatives summary:', error);
-      return `Generated ${alternatives.length} layout alternatives with different structural approaches.`;
-    }
-  }
+    };
+  },
   
   /**
    * Apply a selected layout alternative to the wireframe
    */
-  static applyLayoutAlternative(
+  applyLayoutAlternative: (
     wireframe: WireframeData,
     alternativeId: string,
     alternatives: LayoutAlternative[]
-  ): WireframeData {
-    // Find the selected alternative
-    const selected = alternatives.find(alt => alt.id === alternativeId);
+  ): WireframeData => {
+    const selectedAlternative = alternatives.find(alt => alt.id === alternativeId);
     
-    if (!selected) {
-      console.error(`Layout alternative with ID ${alternativeId} not found`);
-      return wireframe;
+    if (!selectedAlternative) {
+      throw new Error('Selected layout alternative not found');
     }
     
-    // Create a new wireframe with the alternative layout
+    // Apply the alternative layout
     return {
       ...wireframe,
-      sections: selected.sections,
-      layoutType: selected.layoutType || wireframe.layoutType,
-      designReasoning: wireframe.designReasoning 
-        ? [...wireframe.designReasoning, `Applied layout alternative: ${selected.name}`]
-        : [`Applied layout alternative: ${selected.name}`]
+      sections: selectedAlternative.sections,
+      layoutType: selectedAlternative.layoutType
     };
   }
+};
+
+// Helper functions to generate different layout alternatives
+
+function generateGridLayout(
+  wireframe: WireframeData,
+  preserveContent: boolean
+): LayoutAlternative {
+  const sections = wireframe.sections.map(section => {
+    // Create a grid layout for this section
+    const gridSection: WireframeSection = {
+      ...section,
+      layout: {
+        type: 'grid',
+        columns: 3,
+        gap: 24,
+        alignItems: 'center'
+      },
+      components: section.components.map(component => {
+        // Preserve content if requested
+        const content = preserveContent ? component.content : `${component.type} content`;
+        
+        return {
+          ...component,
+          content,
+          style: {
+            ...component.style,
+            padding: '16px',
+            margin: '8px',
+            textAlign: 'center'
+          }
+        };
+      })
+    };
+    
+    return gridSection;
+  });
+  
+  return {
+    id: uuidv4(),
+    name: 'Modern Grid Layout',
+    description: 'A clean, structured grid layout that organizes content in a visually balanced way.',
+    layoutType: 'grid',
+    sections
+  };
+}
+
+function generateCardLayout(
+  wireframe: WireframeData,
+  preserveContent: boolean
+): LayoutAlternative {
+  const sections = wireframe.sections.map(section => {
+    // Create a card-based layout for this section
+    const cardSection: WireframeSection = {
+      ...section,
+      layout: {
+        type: 'card',
+        columns: 2,
+        gap: 32,
+        wrap: true
+      },
+      components: section.components.map(component => {
+        // Preserve content if requested
+        const content = preserveContent ? component.content : `${component.type} content`;
+        
+        return {
+          ...component,
+          content,
+          style: {
+            ...component.style,
+            padding: '24px',
+            margin: '16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+          }
+        };
+      })
+    };
+    
+    return cardSection;
+  });
+  
+  return {
+    id: uuidv4(),
+    name: 'Card-Based Layout',
+    description: 'Content presented in distinct card components with clear visual separation.',
+    layoutType: 'card',
+    sections
+  };
+}
+
+function generateAsymmetricLayout(
+  wireframe: WireframeData,
+  preserveContent: boolean
+): LayoutAlternative {
+  const sections = wireframe.sections.map(section => {
+    // Create an asymmetric layout for this section
+    const asymmetricSection: WireframeSection = {
+      ...section,
+      layout: {
+        type: 'asymmetric',
+        direction: 'mixed'
+      },
+      components: section.components.map((component, index) => {
+        // Preserve content if requested
+        const content = preserveContent ? component.content : `${component.type} content`;
+        
+        return {
+          ...component,
+          content,
+          style: {
+            ...component.style,
+            flex: index % 2 === 0 ? '2' : '1',
+            padding: index % 3 === 0 ? '32px' : '16px'
+          }
+        };
+      })
+    };
+    
+    return asymmetricSection;
+  });
+  
+  return {
+    id: uuidv4(),
+    name: 'Dynamic Asymmetric Layout',
+    description: 'A creative asymmetric layout that creates visual interest through varied proportions.',
+    layoutType: 'asymmetric',
+    sections
+  };
+}
+
+function generateMinimalistLayout(
+  wireframe: WireframeData,
+  preserveContent: boolean
+): LayoutAlternative {
+  const sections = wireframe.sections.map(section => {
+    // Create a minimalist layout for this section
+    const minimalistSection: WireframeSection = {
+      ...section,
+      layout: {
+        type: 'minimalist',
+        alignment: 'center',
+        gap: 48
+      },
+      components: section.components.map(component => {
+        // Preserve content if requested
+        const content = preserveContent ? component.content : `${component.type} content`;
+        
+        return {
+          ...component,
+          content,
+          style: {
+            ...component.style,
+            padding: '40px 20px',
+            margin: '8px 0',
+            maxWidth: '800px'
+          }
+        };
+      })
+    };
+    
+    return minimalistSection;
+  });
+  
+  return {
+    id: uuidv4(),
+    name: 'Minimalist Layout',
+    description: 'A clean, distraction-free layout that focuses on essential content with ample white space.',
+    layoutType: 'minimalist',
+    sections
+  };
+}
+
+function generateExperimentalLayout(
+  wireframe: WireframeData,
+  preserveContent: boolean
+): LayoutAlternative {
+  const sections = wireframe.sections.map(section => {
+    // Create an experimental layout for this section
+    const experimentalSection: WireframeSection = {
+      ...section,
+      layout: {
+        type: 'experimental',
+        direction: 'mosaic'
+      },
+      components: section.components.map((component, index) => {
+        // Preserve content if requested
+        const content = preserveContent ? component.content : `${component.type} content`;
+        
+        return {
+          ...component,
+          content,
+          style: {
+            ...component.style,
+            transform: index % 2 === 0 ? 'rotate(-3deg)' : 'rotate(2deg)',
+            padding: '20px',
+            margin: index % 3 === 0 ? '32px 8px' : '16px 24px'
+          }
+        };
+      })
+    };
+    
+    return experimentalSection;
+  });
+  
+  return {
+    id: uuidv4(),
+    name: 'Creative Experimental Layout',
+    description: 'An unconventional layout with creative positioning and unique visual elements.',
+    layoutType: 'experimental',
+    sections
+  };
 }

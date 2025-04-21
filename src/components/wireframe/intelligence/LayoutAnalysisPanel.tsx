@@ -1,174 +1,241 @@
 
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { LayoutRecommendation } from '@/services/ai/design/layout-analysis/layout-analyzer-service';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, ArrowUpRight, AlertTriangle, ThumbsUp, Sparkles } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, RefreshCw, Check, BarChart, AlertCircle } from 'lucide-react';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { useLayoutIntelligence } from '@/hooks/ai/use-layout-intelligence';
 
-interface LayoutAnalysisPanelProps {
-  wireframe: WireframeData;
-  recommendations: LayoutRecommendation[];
-  score: number;
-  insightSummary: string;
-  onApplyRecommendation: (recommendationId: string) => void;
-  onRefreshAnalysis: () => void;
-  isAnalyzing: boolean;
+// Define type for layout recommendations with required properties
+export interface LayoutRecommendation {
+  id: string;
+  title: string; // Added to fix the error
+  description: string;
+  severity: 'low' | 'medium' | 'high'; // Added to fix the error
+  category: string;
+  affectedSections: string[]; // Added to fix the error
+  suggestedFix?: string;
+  beforeAfterComparison?: string;
 }
 
-export default function LayoutAnalysisPanel({
+export interface LayoutAnalysisPanelProps {
+  wireframe: WireframeData;
+  onUpdateWireframe: (updated: WireframeData) => void;
+}
+
+const LayoutAnalysisPanel: React.FC<LayoutAnalysisPanelProps> = ({
   wireframe,
-  recommendations,
-  score,
-  insightSummary,
-  onApplyRecommendation,
-  onRefreshAnalysis,
-  isAnalyzing
-}: LayoutAnalysisPanelProps) {
-  // Function to get appropriate color based on score
-  const getScoreColor = (score: number) => {
-    if (score >= 0.8) return 'text-green-500';
-    if (score >= 0.6) return 'text-yellow-500';
-    return 'text-red-500';
-  };
+  onUpdateWireframe
+}) => {
+  const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
   
-  // Function to get appropriate color for the progress bar
-  const getProgressColor = (score: number) => {
-    if (score >= 0.8) return 'bg-green-500';
-    if (score >= 0.6) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
+  const { 
+    analyzeLayout,
+    isAnalyzing,
+    analysisResult,
+    applyRecommendation,
+    error,
+    clearAnalysis
+  } = useLayoutIntelligence();
   
-  // Function to get severity badge for recommendations
-  const getSeverityBadge = (severity: string) => {
-    const badgeStyles: Record<string, any> = {
-      high: { variant: 'destructive', icon: <AlertTriangle className="h-3 w-3 mr-1" /> },
-      medium: { variant: 'outline', icon: null },
-      low: { variant: 'secondary', icon: null },
-      positive: { variant: 'default', icon: <ThumbsUp className="h-3 w-3 mr-1" /> },
-    };
+  // Find the selected recommendation from the analysis results
+  const activeRecommendation = analysisResult?.recommendations.find(
+    rec => rec.id === selectedRecommendation
+  );
+  
+  // Reset selected recommendation if recommendations change
+  useEffect(() => {
+    if (analysisResult?.recommendations.length && !selectedRecommendation) {
+      setSelectedRecommendation(analysisResult.recommendations[0].id);
+    } else if (analysisResult?.recommendations.length && 
+              !analysisResult.recommendations.find(r => r.id === selectedRecommendation)) {
+      setSelectedRecommendation(analysisResult.recommendations[0].id);
+    }
+  }, [analysisResult, selectedRecommendation]);
+  
+  // Calculate severity counts for the progress bars
+  const severityCounts = analysisResult?.recommendations.reduce(
+    (counts, rec) => {
+      counts[rec.severity]++;
+      return counts;
+    },
+    { high: 0, medium: 0, low: 0 }
+  ) || { high: 0, medium: 0, low: 0 };
+  
+  // Calculate progress for each severity level
+  const totalIssues = severityCounts.high + severityCounts.medium + severityCounts.low;
+  const highProgress = totalIssues ? (severityCounts.high / totalIssues) * 100 : 0;
+  const mediumProgress = totalIssues ? (severityCounts.medium / totalIssues) * 100 : 0;
+  const lowProgress = totalIssues ? (severityCounts.low / totalIssues) * 100 : 0;
+  
+  // Analyze layout
+  const handleAnalyzeLayout = useCallback(async () => {
+    await analyzeLayout(wireframe);
+  }, [wireframe, analyzeLayout]);
+  
+  // Apply layout recommendation
+  const handleApplyRecommendation = useCallback(async () => {
+    if (!activeRecommendation) return;
     
-    const style = badgeStyles[severity.toLowerCase()] || badgeStyles.medium;
-    
-    return (
-      <Badge variant={style.variant as any} className="ml-2 flex items-center">
-        {style.icon}
-        {severity}
-      </Badge>
-    );
-  };
+    const updatedWireframe = await applyRecommendation(wireframe, activeRecommendation);
+    if (updatedWireframe) {
+      onUpdateWireframe(updatedWireframe);
+    }
+  }, [wireframe, activeRecommendation, applyRecommendation, onUpdateWireframe]);
   
   return (
-    <div className="space-y-4">
-      {/* Layout Score and Summary */}
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-medium">Layout Analysis</h3>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRefreshAnalysis} 
-            disabled={isAnalyzing}
-          >
-            <RefreshCw className={`h-3 w-3 mr-1 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-        
-        {isAnalyzing ? (
-          <div className="h-[50px] flex items-center justify-center">
-            <div className="animate-pulse flex gap-2 items-center">
-              <div className="h-4 w-4 rounded-full bg-primary animate-bounce"></div>
-              <span className="text-sm text-muted-foreground">Analyzing layout...</span>
+    <div className="layout-analysis-panel">
+      {!analysisResult ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Layout Analysis</CardTitle>
+            <CardDescription>
+              Analyze your wireframe for layout issues and improvement opportunities
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleAnalyzeLayout} 
+              disabled={isAnalyzing}
+              className="w-full"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <BarChart className="mr-2 h-4 w-4" />
+                  Analyze Layout
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">Layout Score: {analysisResult.overallScore}/100</h3>
+              <Button variant="outline" size="sm" onClick={clearAnalysis}>
+                Reset
+              </Button>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <Progress value={score * 100} className={getProgressColor(score)} />
-              </div>
-              <span className={`text-sm font-medium ${getScoreColor(score)}`}>
-                {Math.round(score * 100)}%
-              </span>
-            </div>
+            <Progress value={analysisResult.overallScore} className="h-2" />
             
-            <p className="text-xs text-muted-foreground">{insightSummary}</p>
-          </>
-        )}
-      </div>
-      
-      <Separator />
-      
-      {/* Recommendations */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium flex items-center">
-          <Sparkles className="h-3 w-3 mr-1 text-primary" />
-          Layout Recommendations 
-          <span className="text-xs text-muted-foreground ml-2">
-            ({recommendations.length})
-          </span>
-        </h3>
-        
-        {isAnalyzing ? (
-          <div className="space-y-2">
-            <div className="h-20 border rounded-md animate-pulse bg-muted/20"></div>
-            <div className="h-20 border rounded-md animate-pulse bg-muted/20"></div>
-          </div>
-        ) : recommendations.length > 0 ? (
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              {recommendations.map((recommendation) => (
-                <div 
-                  key={recommendation.id}
-                  className="border rounded-md p-3 hover:border-primary transition-colors"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center">
-                        <h4 className="text-sm font-medium">{recommendation.title}</h4>
-                        {getSeverityBadge(recommendation.severity)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{recommendation.description}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="ml-2"
-                      onClick={() => onApplyRecommendation(recommendation.id)}
-                    >
-                      <ArrowUpRight className="h-4 w-4" />
-                      <span className="sr-only">Apply</span>
-                    </Button>
-                  </div>
-                  
-                  {recommendation.affectedSections && recommendation.affectedSections.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {recommendation.affectedSections.map((sectionId) => {
-                        const section = wireframe.sections.find(s => s.id === sectionId);
-                        return section ? (
-                          <Badge variant="outline" key={sectionId} className="text-xs">
-                            {section.name || section.sectionType}
-                          </Badge>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-red-600">High</span>
+                  <Badge variant="outline" className="text-red-600">{severityCounts.high}</Badge>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        ) : (
-          <div className="h-[100px] border rounded-md flex items-center justify-center text-center p-4">
-            <div className="text-sm text-muted-foreground">
-              No recommendations found. Your layout looks good!
+                <Progress value={highProgress} className="h-1 bg-gray-100" indicatorClassName="bg-red-400" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-amber-600">Medium</span>
+                  <Badge variant="outline" className="text-amber-600">{severityCounts.medium}</Badge>
+                </div>
+                <Progress value={mediumProgress} className="h-1 bg-gray-100" indicatorClassName="bg-amber-400" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-blue-600">Low</span>
+                  <Badge variant="outline" className="text-blue-600">{severityCounts.low}</Badge>
+                </div>
+                <Progress value={lowProgress} className="h-1 bg-gray-100" indicatorClassName="bg-blue-400" />
+              </div>
             </div>
           </div>
-        )}
-      </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            {analysisResult.recommendations.map(recommendation => (
+              <Card
+                key={recommendation.id}
+                className={`cursor-pointer transition-colors ${
+                  recommendation.id === selectedRecommendation ? 'border-primary ring-1 ring-primary' : ''
+                }`}
+                onClick={() => setSelectedRecommendation(recommendation.id)}
+              >
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-sm">{recommendation.title}</CardTitle>
+                    <Badge 
+                      className={`
+                        ${recommendation.severity === 'high' ? 'bg-red-100 text-red-800' : ''}
+                        ${recommendation.severity === 'medium' ? 'bg-amber-100 text-amber-800' : ''}
+                        ${recommendation.severity === 'low' ? 'bg-blue-100 text-blue-800' : ''}
+                      `}
+                    >
+                      {recommendation.severity}
+                    </Badge>
+                  </div>
+                  <CardDescription className="line-clamp-2 text-xs">
+                    {recommendation.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="text-xs text-muted-foreground">
+                    {recommendation.affectedSections.length > 0 ? (
+                      `${recommendation.affectedSections.length} affected section${
+                        recommendation.affectedSections.length > 1 ? 's' : ''
+                      }`
+                    ) : (
+                      'Global improvement'
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          {activeRecommendation && (
+            <Card>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm">Recommendation Details</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="mb-4">
+                  <h4 className="text-xs font-medium mb-1">Description</h4>
+                  <p className="text-sm">{activeRecommendation.description}</p>
+                </div>
+                
+                {activeRecommendation.suggestedFix && (
+                  <div className="mb-4">
+                    <h4 className="text-xs font-medium mb-1">Suggested Fix</h4>
+                    <p className="text-sm">{activeRecommendation.suggestedFix}</p>
+                  </div>
+                )}
+                
+                <Button 
+                  onClick={handleApplyRecommendation}
+                  className="w-full"
+                >
+                  Apply Recommendation
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-md flex items-center text-sm text-red-800">
+          <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span>Error: {error.message}</span>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default LayoutAnalysisPanel;

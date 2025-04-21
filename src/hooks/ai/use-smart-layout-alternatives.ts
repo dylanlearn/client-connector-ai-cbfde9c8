@@ -68,23 +68,20 @@ export function useSmartLayoutAlternatives({
   /**
    * Apply a selected layout alternative to the wireframe
    */
-  const applyAlternative = useCallback((wireframe: WireframeData, alternativeId: string): WireframeData | null => {
-    if (!generationResult) {
-      if (showToasts) {
-        toast.error('No layout alternatives have been generated');
-      }
-      return null;
-    }
-    
+  const applyAlternative = useCallback((
+    wireframe: WireframeData, 
+    alternativeId: string,
+    alternatives: LayoutAlternative[]
+  ): WireframeData | null => {
     try {
       const updatedWireframe = SmartLayoutGeneratorService.applyLayoutAlternative(
         wireframe,
         alternativeId,
-        generationResult.alternatives
+        alternatives
       );
       
       if (showToasts) {
-        const alternative = generationResult.alternatives.find(alt => alt.id === alternativeId);
+        const alternative = alternatives.find(alt => alt.id === alternativeId);
         toast.success(`Applied layout alternative: ${alternative?.name || 'Selected layout'}`);
       }
       
@@ -99,7 +96,7 @@ export function useSmartLayoutAlternatives({
       
       return null;
     }
-  }, [generationResult, showToasts]);
+  }, [showToasts]);
   
   /**
    * Reset the generator state

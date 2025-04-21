@@ -1,210 +1,234 @@
 
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { supabase } from '@/integrations/supabase/client';
-import { AIFeatureType, selectModelForFeature } from '@/services/ai/ai-model-selector';
-import { v4 as uuidv4 } from 'uuid';
+import { WireframeData, WireframeSection, WireframeComponent } from '../wireframe-types';
 
-export interface SectionContent {
-  title?: string;
-  heading?: string;
-  subheading?: string;
-  description?: string;
-  ctaText?: string;
-  bullets?: string[];
-  testimonial?: string;
-  author?: string;
-  statLabel?: string;
-  statValue?: string;
+// Define required types for content generation
+export interface ContentGenerationRequest {
+  wireframe: WireframeData;
+  tone?: 'professional' | 'friendly' | 'enthusiastic' | 'technical' | 'formal';
+  length?: 'brief' | 'moderate' | 'detailed';
+  context?: Record<string, any>;
+}
+
+export interface SectionContentGenerationRequest extends ContentGenerationRequest {
+  section: WireframeSection;
+}
+
+export interface ComponentContent {
+  text?: string;
+  props?: Record<string, any>;
 }
 
 export interface GeneratedSectionContent {
   sectionId: string;
   sectionType: string;
-  content: SectionContent;
+  heading?: string;
+  description?: string;
+  content: Record<string, ComponentContent>;
 }
 
-export interface ContentGenerationOptions {
-  tone?: 'professional' | 'friendly' | 'enthusiastic' | 'technical' | 'formal';
-  contentLength?: 'brief' | 'moderate' | 'detailed';
-  includeCallToAction?: boolean;
-  targetAudience?: string;
-  industry?: string;
-  keywords?: string[];
+export interface GeneratedContent {
+  sectionContent: GeneratedSectionContent[];
+  metaData?: Record<string, any>;
+}
+
+export interface PlaceholderTextOptions {
+  type: 'heading' | 'paragraph' | 'button' | 'label' | 'list';
+  context?: string;
+  length?: 'short' | 'medium' | 'long';
+  tone?: string;
 }
 
 /**
- * Service for generating contextually-aware content for wireframes
+ * Service for generating contextually aware content for wireframes
  */
-export class ContextAwareContentService {
+export const ContextAwareContentService = {
   /**
    * Generate content for an entire wireframe
    */
-  static async generateContentForWireframe(
-    wireframe: WireframeData,
-    options: ContentGenerationOptions = {}
-  ): Promise<GeneratedSectionContent[]> {
-    try {
-      // Generate content for each section
-      const contentPromises = wireframe.sections.map(section => 
-        this.generateContentForSection(section, wireframe, options)
-      );
+  generateWireframeContent: async (request: ContentGenerationRequest): Promise<GeneratedContent> => {
+    // In a real implementation, this would connect to an API or AI service
+    // For this demo, we'll simulate a response with mock data
+    
+    const { wireframe, tone = 'professional', length = 'moderate' } = request;
+    
+    // Create content for each section
+    const sectionContent: GeneratedSectionContent[] = wireframe.sections.map(section => {
+      const contentByComponentId: Record<string, ComponentContent> = {};
       
-      const sectionsContent = await Promise.all(contentPromises);
-      return sectionsContent;
+      // Generate content for each component
+      section.components.forEach(component => {
+        contentByComponentId[component.id] = generateComponentContent(component, section, wireframe, tone, length);
+      });
       
-    } catch (error) {
-      console.error('Error generating content for wireframe:', error);
-      return [];
-    }
-  }
+      return {
+        sectionId: section.id,
+        sectionType: section.sectionType,
+        heading: generateSectionHeading(section, wireframe),
+        description: generateSectionDescription(section, wireframe),
+        content: contentByComponentId
+      };
+    });
+    
+    return {
+      sectionContent,
+      metaData: {
+        generatedAt: new Date().toISOString(),
+        tone,
+        length
+      }
+    };
+  },
   
   /**
    * Generate content for a specific section
    */
-  static async generateContentForSection(
-    section: WireframeSection,
-    wireframeContext: WireframeData,
-    options: ContentGenerationOptions = {}
-  ): Promise<GeneratedSectionContent> {
-    try {
-      const model = selectModelForFeature(AIFeatureType.ContentGeneration);
-      
-      // Determine content needs based on section type
-      const contentNeeds = this.determineSectionContentNeeds(section);
-      
-      const promptContent = `
-        Generate content for a wireframe section with the following context:
-        
-        Wireframe Title: ${wireframeContext.title}
-        Wireframe Description: ${wireframeContext.description || 'Not provided'}
-        Section Type: ${section.sectionType || 'Generic section'}
-        
-        Content Requirements:
-        ${contentNeeds.map(need => `- ${need}`).join('\n')}
-        
-        Content Style:
-        - Tone: ${options.tone || 'professional'}
-        - Length: ${options.contentLength || 'moderate'}
-        - Include Call to Action: ${options.includeCallToAction ? 'Yes' : 'No'}
-        ${options.targetAudience ? `- Target Audience: ${options.targetAudience}` : ''}
-        ${options.industry ? `- Industry: ${options.industry}` : ''}
-        ${options.keywords?.length ? `- Keywords to include: ${options.keywords.join(', ')}` : ''}
-        
-        Return a JSON object with these fields (only include fields relevant to the section type):
-        {
-          "title": "Section title",
-          "heading": "Main heading",
-          "subheading": "Supporting subheading",
-          "description": "Paragraph text content",
-          "ctaText": "Call to action button text",
-          "bullets": ["Bullet point 1", "Bullet point 2"],
-          "testimonial": "Testimonial text",
-          "author": "Testimonial author",
-          "statLabel": "Statistic label",
-          "statValue": "Statistic value"
-        }
-      `;
-      
-      const { data, error } = await supabase.functions.invoke("generate-with-openai", {
-        body: {
-          messages: [{
-            role: "user",
-            content: promptContent
-          }],
-          systemPrompt: "You are an expert copywriter specializing in creating compelling website content that is concise, engaging, and tailored to the specific section of a wireframe.",
-          temperature: 0.7,
-          model
-        },
-      });
-      
-      if (error) throw new Error(`Content generation error: ${error.message}`);
-      
-      // Parse the response and construct the content object
-      const content = JSON.parse(data.response);
-      
-      return {
-        sectionId: section.id,
-        sectionType: section.sectionType || 'generic',
-        content
-      };
-      
-    } catch (error) {
-      console.error('Error generating content for section:', error);
-      
-      // Return a minimal valid object in case of error
-      return {
-        sectionId: section.id,
-        sectionType: section.sectionType || 'generic',
-        content: {
-          heading: `Placeholder heading for ${section.sectionType || 'section'}`,
-          description: 'Content generation failed. Please try again.'
-        }
-      };
-    }
-  }
+  generateSectionContent: async (
+    request: SectionContentGenerationRequest
+  ): Promise<GeneratedSectionContent> => {
+    const { wireframe, section, tone = 'professional', length = 'moderate' } = request;
+    
+    const contentByComponentId: Record<string, ComponentContent> = {};
+    
+    // Generate content for each component
+    section.components.forEach(component => {
+      contentByComponentId[component.id] = generateComponentContent(component, section, wireframe, tone, length);
+    });
+    
+    return {
+      sectionId: section.id,
+      sectionType: section.sectionType,
+      heading: generateSectionHeading(section, wireframe),
+      description: generateSectionDescription(section, wireframe),
+      content: contentByComponentId
+    };
+  },
   
   /**
-   * Determine what content fields are needed based on section type
+   * Generate placeholder text for a specific context
    */
-  private static determineSectionContentNeeds(section: WireframeSection): string[] {
-    const sectionType = section.sectionType?.toLowerCase() || '';
-    const needs: string[] = [];
+  generatePlaceholderText: async (options: PlaceholderTextOptions): Promise<string> => {
+    const { type, context = '', length = 'medium', tone = 'professional' } = options;
     
-    // Common content needs
-    needs.push('Section title (if appropriate)');
+    // In a real implementation, this would use AI to generate appropriate placeholder text
+    // For this demo, we'll return predetermined text based on the options
     
-    // Type-specific content needs
-    if (sectionType.includes('hero') || sectionType.includes('header')) {
-      needs.push('Compelling main heading');
-      needs.push('Brief, engaging subheading');
-      needs.push('Clear call to action text');
-    } 
-    else if (sectionType.includes('feature') || sectionType.includes('benefit')) {
-      needs.push('Feature/benefit heading');
-      needs.push('Concise description of value proposition');
-      needs.push('Supporting details (2-3 bullet points if appropriate)');
-    }
-    else if (sectionType.includes('about')) {
-      needs.push('About section heading');
-      needs.push('Company/product story or description');
-    }
-    else if (sectionType.includes('testimonial')) {
-      needs.push('Brief, impactful testimonial quote');
-      needs.push('Testimonial author name');
-      needs.push('Author role or company (if appropriate)');
-    }
-    else if (sectionType.includes('stat') || sectionType.includes('metrics')) {
-      needs.push('Statistic value (number or percentage)');
-      needs.push('Statistic label or description');
-    }
-    else if (sectionType.includes('cta') || sectionType.includes('contact')) {
-      needs.push('Call to action heading');
-      needs.push('Supporting text explaining value');
-      needs.push('Button or link text');
-    }
-    else if (sectionType.includes('pricing') || sectionType.includes('plan')) {
-      needs.push('Plan name/tier');
-      needs.push('Brief plan description');
-      needs.push('Key features (3-5 bullet points)');
-      needs.push('Call to action for plan selection');
-    }
-    else if (sectionType.includes('faq')) {
-      needs.push('Question text');
-      needs.push('Answer text');
-    }
-    else if (sectionType.includes('footer')) {
-      needs.push('Footer tagline or slogan (if appropriate)');
-      needs.push('Copyright text');
-    }
-    else {
-      // Generic section with no specific type
-      needs.push('Appropriate heading for general content');
-      needs.push('Supporting paragraph text');
-      if (section.components?.some(c => c.type === 'button' || c.type === 'cta')) {
-        needs.push('Call to action text');
-      }
-    }
+    const contextPrefix = context ? `${context} ` : '';
     
-    return needs;
+    switch (type) {
+      case 'heading':
+        return length === 'short' ? 
+          `${contextPrefix}Main Heading` : 
+          `${contextPrefix}Comprehensive Solution for Your Needs`;
+        
+      case 'paragraph':
+        if (length === 'short') {
+          return `${contextPrefix}This is a brief description of the content.`;
+        } else if (length === 'medium') {
+          return `${contextPrefix}This is a moderate-length description that provides more details about the content and explains its value to users.`;
+        } else {
+          return `${contextPrefix}This is a detailed explanation that thoroughly covers the topic at hand. It includes comprehensive information about features, benefits, and use cases. The text is designed to be informative and engaging, providing the reader with all the necessary context to understand the subject matter.`;
+        }
+        
+      case 'button':
+        return `${contextPrefix}${tone === 'enthusiastic' ? 'Get Started Now!' : 'Learn More'}`;
+        
+      case 'label':
+        return `${contextPrefix}${type}`;
+        
+      case 'list':
+        if (length === 'short') {
+          return 'Item 1, Item 2, Item 3';
+        } else {
+          return 'Feature 1: Description, Feature 2: Description, Feature 3: Description';
+        }
+        
+      default:
+        return `${contextPrefix}Placeholder text`;
+    }
+  }
+};
+
+// Helper functions to generate content
+function generateComponentContent(
+  component: WireframeComponent,
+  section: WireframeSection,
+  wireframe: WireframeData,
+  tone: string,
+  length: string
+): ComponentContent {
+  // In a real implementation, this would use AI to generate appropriate content
+  // For this demo, we'll return content based on component type
+  
+  switch (component.type) {
+    case 'heading':
+      return {
+        text: `${section.sectionType} Heading for ${wireframe.title}`
+      };
+      
+    case 'paragraph':
+      return {
+        text: length === 'brief' 
+          ? `Brief description for ${section.sectionType}.`
+          : `This is a ${length} description for the ${section.sectionType} section of ${wireframe.title}. The content is written in a ${tone} tone to match your brand's voice.`
+      };
+      
+    case 'button':
+      return {
+        text: tone === 'enthusiastic' 
+          ? 'Get Started Now!' 
+          : 'Learn More'
+      };
+      
+    case 'image':
+      return {
+        props: {
+          alt: `Image for ${section.sectionType}`
+        }
+      };
+      
+    default:
+      return {
+        text: `Content for ${component.type}`
+      };
+  }
+}
+
+function generateSectionHeading(section: WireframeSection, wireframe: WireframeData): string {
+  // Generate heading based on section type
+  switch (section.sectionType) {
+    case 'hero':
+      return `${wireframe.title} - Main Heading`;
+    case 'features':
+      return 'Key Features';
+    case 'about':
+      return 'About Us';
+    case 'pricing':
+      return 'Pricing Plans';
+    case 'testimonials':
+      return 'What Our Clients Say';
+    case 'contact':
+      return 'Get In Touch';
+    default:
+      return `${section.sectionType} Section`;
+  }
+}
+
+function generateSectionDescription(section: WireframeSection, wireframe: WireframeData): string {
+  // Generate description based on section type
+  switch (section.sectionType) {
+    case 'hero':
+      return `Main description for ${wireframe.title}`;
+    case 'features':
+      return 'Discover the powerful features that set us apart';
+    case 'about':
+      return 'Learn more about our company and mission';
+    case 'pricing':
+      return 'Choose the right plan for your needs';
+    case 'testimonials':
+      return 'Read feedback from our satisfied customers';
+    case 'contact':
+      return 'We would love to hear from you';
+    default:
+      return `Description for ${section.sectionType} section`;
   }
 }

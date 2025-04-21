@@ -1,34 +1,28 @@
 
 import { useState, useCallback } from 'react';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  LayoutAnalyzerService, 
-  LayoutAnalysisResult, 
-  LayoutRecommendation 
-} from '@/services/ai/design/layout-analysis/layout-analyzer-service';
+import { LayoutAnalyzerService, LayoutAnalysisResult } from '@/services/ai/design/layout-analysis/layout-analyzer-service';
 import { toast } from 'sonner';
+import { LayoutRecommendation } from '@/components/wireframe/intelligence/LayoutAnalysisPanel';
 
 interface UseLayoutIntelligenceOptions {
   showToasts?: boolean;
-  autoAnalyze?: boolean;
 }
 
 /**
- * Hook for interacting with the Layout Analyzer Service to get intelligent design recommendations
+ * Hook for using the Layout Analyzer Service
  */
 export function useLayoutIntelligence({
-  showToasts = true,
-  autoAnalyze = false
+  showToasts = true
 }: UseLayoutIntelligenceOptions = {}) {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [analysisResult, setAnalysisResult] = useState<LayoutAnalysisResult | null>(null);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<LayoutRecommendation | null>(null);
   const [error, setError] = useState<Error | null>(null);
   
   /**
-   * Analyze a wireframe layout
+   * Analyze a wireframe for layout issues and recommendations
    */
-  const analyzeLayout = useCallback(async (wireframe: WireframeData) => {
+  const analyzeLayout = useCallback(async (wireframe: WireframeData): Promise<LayoutAnalysisResult | null> => {
     setIsAnalyzing(true);
     setError(null);
     
@@ -36,13 +30,17 @@ export function useLayoutIntelligence({
       const result = await LayoutAnalyzerService.analyzeLayout(wireframe);
       setAnalysisResult(result);
       
-      if (showToasts && result.recommendations.length > 0) {
-        toast.success(`Layout analysis complete: ${result.recommendations.length} recommendations available`);
+      if (showToasts) {
+        if (result.recommendations.length === 0) {
+          toast.success('No layout issues found. Your layout looks great!');
+        } else {
+          toast.info(`Found ${result.recommendations.length} layout recommendations.`);
+        }
       }
       
       return result;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error during layout analysis');
+      const error = err instanceof Error ? err : new Error('Unknown error analyzing layout');
       setError(error);
       
       if (showToasts) {
@@ -56,86 +54,122 @@ export function useLayoutIntelligence({
   }, [showToasts]);
   
   /**
-   * Analyze a specific section
+   * Apply a layout recommendation to the wireframe
    */
-  const analyzeSection = useCallback(async (section: WireframeSection) => {
-    setError(null);
-    
-    try {
-      return await LayoutAnalyzerService.analyzeSection(section);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error during section analysis');
-      setError(error);
+  const applyRecommendation = useCallback(
+    async (wireframe: WireframeData, recommendation: LayoutRecommendation): Promise<WireframeData | null> => {
+      setError(null);
       
-      if (showToasts) {
-        toast.error('Error analyzing section: ' + error.message);
+      try {
+        // In a real implementation, this would intelligently modify the wireframe
+        // based on the specific recommendation
+        // For this demo, we'll make some basic modifications
+        
+        const updatedWireframe = JSON.parse(JSON.stringify(wireframe)) as WireframeData;
+        
+        // Apply recommendation based on its category
+        switch (recommendation.category) {
+          case 'spacing':
+            updatedWireframe.sections = updatedWireframe.sections.map(section => ({
+              ...section,
+              layout: {
+                ...section.layout,
+                gap: 24
+              },
+              style: {
+                ...section.style,
+                padding: '40px 24px'
+              }
+            }));
+            break;
+            
+          case 'alignment':
+            updatedWireframe.sections = updatedWireframe.sections.map(section => ({
+              ...section,
+              layout: {
+                ...section.layout,
+                alignment: 'center',
+                justifyContent: 'center'
+              },
+              style: {
+                ...section.style,
+                textAlign: 'center'
+              }
+            }));
+            break;
+            
+          case 'hierarchy':
+            // Update section order based on importance
+            updatedWireframe.sections.sort((a, b) => {
+              if (a.sectionType === 'hero') return -1;
+              if (b.sectionType === 'hero') return 1;
+              if (a.sectionType === 'features') return -1;
+              if (b.sectionType === 'features') return 1;
+              return 0;
+            });
+            break;
+            
+          case 'visual-balance':
+            // Apply consistent styling to create balance
+            updatedWireframe.sections = updatedWireframe.sections.map(section => ({
+              ...section,
+              layout: {
+                ...section.layout,
+                columns: 2,
+                gap: 32
+              }
+            }));
+            break;
+            
+          case 'responsiveness':
+            // Ensure mobile considerations
+            updatedWireframe.mobileConsiderations = "Layout adjusted for mobile viewports. All sections stack vertically on small screens.";
+            break;
+            
+          default:
+            // Generic improvements
+            updatedWireframe.sections = updatedWireframe.sections.map(section => ({
+              ...section,
+              style: {
+                ...section.style,
+                maxWidth: '1200px',
+                margin: '0 auto'
+              }
+            }));
+        }
+        
+        if (showToasts) {
+          toast.success(`Applied recommendation: ${recommendation.title}`);
+        }
+        
+        return updatedWireframe;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Unknown error applying recommendation');
+        setError(error);
+        
+        if (showToasts) {
+          toast.error('Error applying recommendation: ' + error.message);
+        }
+        
+        return null;
       }
-      
-      return [];
-    }
-  }, [showToasts]);
-  
-  /**
-   * Apply a layout recommendation
-   */
-  const applyRecommendation = useCallback(async (
-    wireframe: WireframeData, 
-    recommendationId: string
-  ): Promise<WireframeData | null> => {
-    setError(null);
-    
-    try {
-      const recommendation = analysisResult?.recommendations.find(r => r.id === recommendationId);
-      
-      if (!recommendation) {
-        throw new Error('Recommendation not found');
-      }
-      
-      setSelectedRecommendation(recommendation);
-      
-      const updatedWireframe = await LayoutAnalyzerService.applyRecommendation(
-        wireframe, 
-        recommendationId
-      );
-      
-      if (showToasts) {
-        toast.success(`Applied recommendation: ${recommendation.description}`);
-      }
-      
-      // After applying a recommendation, re-analyze the layout
-      analyzeLayout(updatedWireframe);
-      
-      return updatedWireframe;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error applying recommendation');
-      setError(error);
-      
-      if (showToasts) {
-        toast.error('Error applying recommendation: ' + error.message);
-      }
-      
-      return null;
-    } finally {
-      setSelectedRecommendation(null);
-    }
-  }, [analysisResult, analyzeLayout, showToasts]);
+    },
+    [showToasts]
+  );
   
   /**
    * Clear the current analysis
    */
   const clearAnalysis = useCallback(() => {
     setAnalysisResult(null);
-    setSelectedRecommendation(null);
     setError(null);
   }, []);
   
   return {
     isAnalyzing,
     analysisResult,
-    selectedRecommendation,
     error,
     analyzeLayout,
-    analyzeSection,
     applyRecommendation,
     clearAnalysis
   };

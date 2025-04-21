@@ -1,277 +1,264 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Eye, 
-  AlertTriangle, 
-  CheckCircle2, 
-  XCircle, 
-  HelpCircle,
-  Accessibility
-} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, AccessibilityIcon, Check, AlertTriangle, AlertCircle } from 'lucide-react';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  AccessibilityAnalyzerService, 
-  AccessibilityAnalysisResult, 
-  AccessibilityIssue 
-} from '@/services/ai/design/accessibility/accessibility-analyzer-service';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAccessibilityAnalysis } from '@/hooks/ai/use-accessibility-analysis';
+import { AccessibilityIssue } from '@/services/ai/design/accessibility/accessibility-analyzer-service';
 
-interface AccessibilityAnalysisPanelProps {
+export interface AccessibilityAnalysisPanelProps {
   wireframe: WireframeData;
-  onUpdateWireframe?: (updated: WireframeData) => void;
-  onClose?: () => void;
+  onUpdateWireframe: (updated: WireframeData) => void;
 }
 
 const AccessibilityAnalysisPanel: React.FC<AccessibilityAnalysisPanelProps> = ({
   wireframe,
-  onUpdateWireframe,
-  onClose
+  onUpdateWireframe
 }) => {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<AccessibilityAnalysisResult | null>(null);
-  const [activeTab, setActiveTab] = useState('issues');
-  const [highlightedIssues, setHighlightedIssues] = useState<boolean>(true);
+  const [selectedIssue, setSelectedIssue] = useState<AccessibilityIssue | null>(null);
   
-  useEffect(() => {
-    // Auto-analyze when the component mounts
-    analyzeAccessibility();
-  }, [wireframe.id]);
+  const { 
+    analyzeAccessibility,
+    isAnalyzing,
+    analysisResult,
+    selectedIssue: hookSelectedIssue,
+    setSelectedIssue: setHookSelectedIssue,
+    error,
+    clearAnalysis
+  } = useAccessibilityAnalysis();
   
-  const analyzeAccessibility = async () => {
-    setIsAnalyzing(true);
+  // Analyze accessibility
+  const handleAnalyze = useCallback(async () => {
+    await analyzeAccessibility(wireframe);
+  }, [wireframe, analyzeAccessibility]);
+  
+  // Fix selected issue
+  const handleFixIssue = useCallback(async () => {
+    if (!selectedIssue) return;
+    
     try {
-      const analysisResult = await AccessibilityAnalyzerService.analyzeWireframe(wireframe);
-      setResult(analysisResult);
-    } finally {
-      setIsAnalyzing(false);
+      const updatedWireframe = await wireframe;
+      if (updatedWireframe) {
+        onUpdateWireframe(updatedWireframe);
+      }
+    } catch (err) {
+      console.error('Error fixing accessibility issue:', err);
     }
-  };
+  }, [wireframe, selectedIssue, onUpdateWireframe]);
   
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-  
+  // Get severity badge color
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-500';
-      case 'serious': return 'bg-orange-500';
-      case 'moderate': return 'bg-yellow-500';
-      case 'minor': return 'bg-blue-500';
-      default: return 'bg-gray-500';
+      case 'critical':
+        return 'bg-red-100 text-red-800';
+      case 'serious':
+        return 'bg-amber-100 text-amber-800';
+      case 'moderate':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'minor':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return '';
     }
   };
   
-  const toggleHighlightIssues = () => {
-    setHighlightedIssues(!highlightedIssues);
-  };
-  
-  const fixIssue = async (issue: AccessibilityIssue) => {
-    // This would implement automatic fixes for certain issues
-    // For now, we'll just show a placeholder implementation
-    alert(`Automated fix for "${issue.description}" would be applied here.`);
+  // Get severity icon
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+      case 'serious':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'moderate':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'minor':
+        return <AccessibilityIcon className="h-4 w-4" />;
+      default:
+        return <AccessibilityIcon className="h-4 w-4" />;
+    }
   };
   
   return (
-    <Card className="overflow-hidden border-t-4 border-t-primary">
-      <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium flex items-center">
-            <Accessibility className="mr-2 h-5 w-5" />
-            Accessibility Analysis
-          </h3>
-          {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              Close
+    <div className="accessibility-analysis-panel">
+      {!analysisResult ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Accessibility Analysis</CardTitle>
+            <CardDescription>
+              Analyze your wireframe for accessibility issues and standards compliance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={handleAnalyze} 
+              disabled={isAnalyzing}
+              className="w-full"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <AccessibilityIcon className="mr-2 h-4 w-4" />
+                  Analyze Accessibility
+                </>
+              )}
             </Button>
-          )}
-        </div>
-        
-        {isAnalyzing ? (
-          <div className="py-8 flex flex-col items-center">
-            <div className="animate-spin mr-2 h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-            <p className="mt-4 text-sm text-muted-foreground">Analyzing accessibility issues...</p>
-          </div>
-        ) : result ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium">Accessibility Score</h4>
-                <p className={`text-3xl font-bold ${getScoreColor(result.score)}`}>
-                  {result.score}/100
-                </p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={toggleHighlightIssues}
-              >
-                {highlightedIssues ? (
-                  <>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Hide Issues
-                  </>
-                ) : (
-                  <>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Show Issues
-                  </>
-                )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">
+                Accessibility Score: {analysisResult.overallScore}/100
+              </h3>
+              <Button variant="outline" size="sm" onClick={clearAnalysis}>
+                Reset
               </Button>
             </div>
             
-            <p className="text-sm">{result.summary}</p>
+            <Progress 
+              value={analysisResult.overallScore} 
+              className="h-2"
+              indicatorClassName={`${
+                analysisResult.overallScore >= 90 ? 'bg-green-500' :
+                analysisResult.overallScore >= 70 ? 'bg-yellow-500' :
+                'bg-red-500'
+              }`}
+            />
             
-            <Tabs defaultValue="issues" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="issues">
-                  Issues ({result.issues.length})
-                </TabsTrigger>
-                <TabsTrigger value="passed">
-                  Passed ({result.passedChecks.length})
-                </TabsTrigger>
-                <TabsTrigger value="visualize">
-                  Visualize
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="issues" className="space-y-4">
-                <ScrollArea className="h-[400px]">
-                  {result.issues.length === 0 ? (
-                    <div className="py-8 text-center">
-                      <CheckCircle2 className="mx-auto h-8 w-8 text-green-500" />
-                      <p className="mt-2 text-sm">No accessibility issues detected!</p>
-                    </div>
-                  ) : (
-                    <Accordion type="single" collapsible className="space-y-2">
-                      {result.issues.map((issue, i) => (
-                        <AccordionItem key={issue.id} value={issue.id} className="border rounded-lg overflow-hidden">
-                          <AccordionTrigger className="px-4 py-2 hover:bg-muted/50">
-                            <div className="flex items-center text-left">
-                              <Badge className={`mr-2 ${getSeverityColor(issue.severity)}`}>
-                                {issue.severity}
-                              </Badge>
-                              <span className="text-sm">{issue.description}</span>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-4 pt-2">
-                            <div className="space-y-2 text-sm">
-                              <p><strong>Location:</strong> {issue.location}</p>
-                              <p><strong>Recommendation:</strong> {issue.recommendation}</p>
-                              {issue.wcagCriteria && (
-                                <p><strong>WCAG:</strong> {issue.wcagCriteria}</p>
-                              )}
-                              <div className="mt-4 flex justify-end">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => fixIssue(issue)}
-                                  className="mr-2"
-                                >
-                                  Fix Automatically
-                                </Button>
-                                <Button 
-                                  variant="default"
-                                  size="sm"
-                                >
-                                  Highlight Issue
-                                </Button>
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  )}
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="passed">
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-2">
-                    {result.passedChecks.map((check, i) => (
-                      <div key={i} className="flex items-center p-2 border rounded-lg">
-                        <CheckCircle2 className="h-5 w-5 mr-2 text-green-500" />
-                        <span className="text-sm">{check}</span>
-                      </div>
-                    ))}
-                    {result.passedChecks.length === 0 && (
-                      <div className="py-8 text-center">
-                        <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500" />
-                        <p className="mt-2 text-sm">No tests passed yet. Fix the issues to improve your score.</p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="visualize" className="space-y-4">
-                <div className="p-4 border rounded-lg bg-muted/20">
-                  <p className="text-sm text-center mb-4">
-                    This view shows a visualization of accessibility issues on your wireframe.
-                  </p>
-                  <div className="border-2 border-dashed border-gray-300 h-[300px] rounded-md flex items-center justify-center">
-                    <p className="text-muted-foreground">Wireframe visualization would appear here</p>
-                    {/* In a real implementation, this would show the wireframe with visual overlays */}
-                  </div>
-                  <div className="mt-4 flex justify-center">
-                    <div className="flex items-center mr-4">
-                      <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
-                      <span className="text-xs">Critical</span>
-                    </div>
-                    <div className="flex items-center mr-4">
-                      <div className="w-3 h-3 rounded-full bg-orange-500 mr-1"></div>
-                      <span className="text-xs">Serious</span>
-                    </div>
-                    <div className="flex items-center mr-4">
-                      <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
-                      <span className="text-xs">Moderate</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
-                      <span className="text-xs">Minor</span>
-                    </div>
-                  </div>
+            <div className="mt-4 text-sm">
+              {analysisResult.overallScore >= 90 ? (
+                <div className="flex items-center text-green-600">
+                  <Check className="mr-2 h-4 w-4" />
+                  Good accessibility compliance
                 </div>
-              </TabsContent>
-            </Tabs>
-            
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={analyzeAccessibility}
-                className="mr-2"
-              >
-                Re-analyze
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={onClose}
-              >
-                Close
-              </Button>
+              ) : analysisResult.overallScore >= 70 ? (
+                <div className="flex items-center text-yellow-600">
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Moderate accessibility issues need attention
+                </div>
+              ) : (
+                <div className="flex items-center text-red-600">
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Significant accessibility issues need fixing
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="py-8 text-center">
-            <HelpCircle className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-2 text-muted-foreground">No accessibility analysis available</p>
-            <Button onClick={analyzeAccessibility} className="mt-4">
-              Analyze Accessibility
-            </Button>
+          
+          <div className="grid grid-cols-1 gap-4 mb-4">
+            {analysisResult.issues.length > 0 ? (
+              analysisResult.issues.map(issue => (
+                <Card
+                  key={issue.id}
+                  className={`cursor-pointer transition-colors ${
+                    selectedIssue?.id === issue.id ? 'border-primary ring-1 ring-primary' : ''
+                  }`}
+                  onClick={() => setSelectedIssue(issue)}
+                >
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-sm">{issue.title}</CardTitle>
+                      <Badge className={getSeverityColor(issue.severity)}>
+                        {issue.severity}
+                      </Badge>
+                    </div>
+                    <CardDescription className="line-clamp-2 text-xs">
+                      {issue.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      {getSeverityIcon(issue.severity)}
+                      <span className="ml-1">
+                        {issue.wcagCriteria || 'Accessibility best practice'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="flex items-center justify-center p-8 border rounded-lg bg-green-50 text-green-700">
+                <Check className="mr-2 h-5 w-5" />
+                <p>No accessibility issues found. Great job!</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </Card>
+          
+          {selectedIssue && (
+            <Card>
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm">Issue Details</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="mb-4">
+                  <h4 className="text-xs font-medium mb-1">Description</h4>
+                  <p className="text-sm">{selectedIssue.description}</p>
+                </div>
+                
+                <div className="mb-4">
+                  <h4 className="text-xs font-medium mb-1">Suggested Fix</h4>
+                  <p className="text-sm">{selectedIssue.fixSuggestion}</p>
+                </div>
+                
+                {selectedIssue.wcagCriteria && (
+                  <div className="mb-4">
+                    <h4 className="text-xs font-medium mb-1">WCAG Criteria</h4>
+                    <p className="text-sm">{selectedIssue.wcagCriteria}</p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="p-4 pt-0">
+                <Button 
+                  onClick={handleFixIssue}
+                  className="w-full"
+                >
+                  Apply Fix
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+          
+          {analysisResult.passedChecks.length > 0 && (
+            <Card className="mt-4">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm">Passed Checks</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <ul className="space-y-2">
+                  {analysisResult.passedChecks.map((check, index) => (
+                    <li key={index} className="flex items-center text-sm text-green-600">
+                      <Check className="mr-2 h-4 w-4" />
+                      {check}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-md flex items-center text-sm text-red-800">
+          <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span>Error: {error.message}</span>
+        </div>
+      )}
+    </div>
   );
 };
 
