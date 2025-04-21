@@ -1,9 +1,27 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 
-type ContainerBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type ContainerBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-interface ContainerQueryInfo {
+export interface ContainerBreakpoints {
+  xs: number;
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+  '2xl': number;
+}
+
+export const DEFAULT_BREAKPOINTS: ContainerBreakpoints = {
+  xs: 384,
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  '2xl': 1536
+};
+
+export interface ContainerQueryInfo {
   size: { width: number; height: number };
   breakpoint: ContainerBreakpoint;
   isExtraSmall: boolean;
@@ -12,12 +30,15 @@ interface ContainerQueryInfo {
   isLarge: boolean;
   isExtraLarge: boolean;
   is2XL: boolean;
+  aspectRatio: number;
 }
 
 /**
  * Hook for tracking container dimensions and applying responsive design at the component level
  */
-export function useContainerQuery<T extends HTMLElement = HTMLDivElement>() {
+export function useContainerQuery<T extends HTMLElement = HTMLDivElement>(
+  customBreakpoints?: Partial<ContainerBreakpoints>
+) {
   const containerRef = useRef<T | null>(null);
   const [containerInfo, setContainerInfo] = useState<ContainerQueryInfo>({
     size: { width: 0, height: 0 },
@@ -28,21 +49,28 @@ export function useContainerQuery<T extends HTMLElement = HTMLDivElement>() {
     isLarge: false,
     isExtraLarge: false,
     is2XL: false,
+    aspectRatio: 1,
   });
   
+  // Merge custom breakpoints with defaults
+  const breakpoints = customBreakpoints 
+    ? { ...DEFAULT_BREAKPOINTS, ...customBreakpoints }
+    : DEFAULT_BREAKPOINTS;
+  
   const getBreakpoint = useCallback((width: number): ContainerBreakpoint => {
-    if (width < 384) return 'xs';
-    if (width < 640) return 'sm';
-    if (width < 768) return 'md';
-    if (width < 1024) return 'lg';
-    if (width < 1280) return 'xl';
+    if (width < breakpoints.xs) return 'xs';
+    if (width < breakpoints.sm) return 'sm';
+    if (width < breakpoints.md) return 'md';
+    if (width < breakpoints.lg) return 'lg';
+    if (width < breakpoints.xl) return 'xl';
     return '2xl';
-  }, []);
+  }, [breakpoints]);
   
   const updateContainerInfo = useCallback(() => {
     if (containerRef.current) {
       const { offsetWidth, offsetHeight } = containerRef.current;
       const breakpoint = getBreakpoint(offsetWidth);
+      const aspectRatio = offsetWidth / Math.max(offsetHeight, 1);
       
       setContainerInfo({
         size: { width: offsetWidth, height: offsetHeight },
@@ -53,6 +81,7 @@ export function useContainerQuery<T extends HTMLElement = HTMLDivElement>() {
         isLarge: breakpoint === 'lg',
         isExtraLarge: breakpoint === 'xl',
         is2XL: breakpoint === '2xl',
+        aspectRatio,
       });
     }
   }, [getBreakpoint]);

@@ -1,6 +1,6 @@
 
 import React, { ReactNode } from 'react';
-import { useContainerQuery, ContainerBreakpoints } from '@/hooks/use-container-query';
+import { useContainerQuery } from '@/hooks/use-container-query';
 import { cn } from '@/lib/utils';
 
 export type ContainerQueryCondition = 
@@ -24,7 +24,6 @@ interface ContainerQueryProps {
   condition: ContainerQueryCondition;
   fallback?: ReactNode;
   className?: string;
-  breakpoints?: Partial<ContainerBreakpoints>;
   debug?: boolean;
 }
 
@@ -36,12 +35,11 @@ export function ContainerQuery({
   condition,
   fallback = null,
   className,
-  breakpoints,
   debug = false
 }: ContainerQueryProps) {
-  const [containerRef, containerInfo] = useContainerQuery(breakpoints);
+  const [containerRef, containerInfo] = useContainerQuery();
   
-  const { isExtraSmall, isSmall, isMedium, isLarge, isExtraLarge } = containerInfo;
+  const { isExtraSmall, isSmall, isMedium, isLarge, isExtraLarge, aspectRatio } = containerInfo;
   
   // Evaluate the condition
   let conditionMet = false;

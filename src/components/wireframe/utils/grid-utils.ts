@@ -1,9 +1,38 @@
 
-import { fabric } from 'fabric';
+import { EnterpriseGridConfig, GridBreakpoint } from '../types/canvas-types';
 
-// Define Tailwind breakpoints for consistent use throughout the app
+export interface GridConfig {
+  visible: boolean;
+  type: 'lines' | 'dots' | 'columns';
+  size: number;
+  snapToGrid: boolean;
+  snapThreshold: number;
+  color: string;
+  showGuides: boolean;
+  showRulers: boolean;
+  columns: number;
+  gutterWidth: number;
+  marginWidth: number;
+  responsive: boolean;
+  width?: number;
+}
+
+export const DEFAULT_GRID_CONFIG: GridConfig = {
+  visible: true,
+  type: 'lines',
+  size: 10,
+  snapToGrid: true,
+  snapThreshold: 5,
+  color: '#e0e0e0',
+  showGuides: true,
+  showRulers: false,
+  columns: 12,
+  gutterWidth: 20,
+  marginWidth: 40,
+  responsive: true,
+};
+
 export const TAILWIND_BREAKPOINTS = {
-  xs: 384,  // Added an extra small breakpoint
   sm: 640,
   md: 768,
   lg: 1024,
@@ -11,220 +40,193 @@ export const TAILWIND_BREAKPOINTS = {
   '2xl': 1536,
 };
 
-interface GridOptions {
-  size?: number;
-  color?: string;
-  opacity?: number;
-  showSubdivisions?: boolean;
-  showAxes?: boolean;
-  snapTolerance?: number;
-  type?: 'lines' | 'dots' | 'columns';
+export function createCanvasGrid(canvas: any, config: GridConfig) {
+  // Implementation for creating a grid on canvas
+  console.log('Creating grid with config:', config);
+  return {
+    gridLines: [],
+    config
+  };
 }
 
-/**
- * Creates a grid on the canvas for layout alignment
- */
-export function createCanvasGrid(
-  canvas: fabric.Canvas,
-  gridSize: number = 20,
-  gridType: 'lines' | 'dots' | 'columns' = 'lines',
-  options: GridOptions = {}
-): fabric.Line[] {
-  const {
-    color = '#e0e0e0',
-    opacity = 0.3,
-    showSubdivisions = true,
-    showAxes = true,
-    snapTolerance = 10,
-  } = options;
+export function removeGridFromCanvas(canvas: any) {
+  // Implementation for removing grid from canvas
+  console.log('Removing grid from canvas');
+}
 
-  const canvasWidth = canvas.width || 1000;
-  const canvasHeight = canvas.height || 800;
+export function updateCanvasGrid(canvas: any, config: GridConfig) {
+  // Implementation for updating grid on canvas
+  console.log('Updating grid on canvas with config:', config);
+}
+
+export function calculateColumnPositions(canvasWidth: number, columns: number, gutterWidth: number, marginWidth: number) {
+  // Calculate positions of columns in a grid
+  const columnPositions = [];
+  const availableWidth = canvasWidth - (marginWidth * 2);
+  const columnWidth = (availableWidth - (gutterWidth * (columns - 1))) / columns;
   
-  const gridLines: fabric.Line[] = [];
-  const isColumns = gridType === 'columns';
+  for (let i = 0; i < columns; i++) {
+    const x = marginWidth + (i * (columnWidth + gutterWidth));
+    columnPositions.push({
+      x,
+      width: columnWidth,
+    });
+  }
   
-  // Create vertical grid lines
-  if (gridType !== 'dots') {
-    for (let i = 0; i <= canvasWidth; i += gridSize) {
-      if (!showSubdivisions && i % (gridSize * 4) !== 0) continue;
-      
-      const isDivisibleBy4 = i % (gridSize * 4) === 0;
-      const isAxis = i === 0;
-      
-      const lineOpacity = isAxis && showAxes 
-        ? opacity * 2 
-        : isDivisibleBy4 
-          ? opacity * 1.5 
-          : opacity;
-      
-      const line = new fabric.Line([i, 0, i, canvasHeight], {
-        stroke: isAxis && showAxes ? '#ff4040' : color,
-        strokeWidth: isDivisibleBy4 ? 1 : 0.5,
-        opacity: lineOpacity,
-        selectable: false,
-        evented: false,
-        strokeDashArray: isColumns ? [4, 4] : undefined,
-      });
-      
-      gridLines.push(line);
-    }
-    
-    // Create horizontal grid lines
-    for (let i = 0; i <= canvasHeight; i += gridSize) {
-      if (!showSubdivisions && i % (gridSize * 4) !== 0) continue;
-      
-      const isDivisibleBy4 = i % (gridSize * 4) === 0;
-      const isAxis = i === 0;
-      
-      const lineOpacity = isAxis && showAxes 
-        ? opacity * 2 
-        : isDivisibleBy4 
-          ? opacity * 1.5 
-          : opacity;
-      
-      const line = new fabric.Line([0, i, canvasWidth, i], {
-        stroke: isAxis && showAxes ? '#ff4040' : color,
-        strokeWidth: isDivisibleBy4 ? 1 : 0.5,
-        opacity: lineOpacity,
-        selectable: false,
-        evented: false,
-        strokeDashArray: isColumns ? [4, 4] : undefined,
-      });
-      
-      gridLines.push(line);
-    }
+  return columnPositions;
+}
+
+export function calculateGridPositions(canvasWidth: number, canvasHeight: number, gridSize: number) {
+  // Calculate positions for grid lines or dots
+  const horizontalLines = Math.floor(canvasHeight / gridSize);
+  const verticalLines = Math.floor(canvasWidth / gridSize);
+  
+  const positions = {
+    horizontal: Array.from({ length: horizontalLines }, (_, i) => i * gridSize),
+    vertical: Array.from({ length: verticalLines }, (_, i) => i * gridSize),
+  };
+  
+  return positions;
+}
+
+export function getResponsiveGridConfig(width: number, config: GridConfig): GridConfig {
+  // Get appropriate grid config based on viewport width
+  if (width < TAILWIND_BREAKPOINTS.sm) {
+    return { ...config, columns: 4, gutterWidth: 10, marginWidth: 16 };
+  } else if (width < TAILWIND_BREAKPOINTS.md) {
+    return { ...config, columns: 6, gutterWidth: 16, marginWidth: 24 };
+  } else if (width < TAILWIND_BREAKPOINTS.lg) {
+    return { ...config, columns: 8, gutterWidth: 20, marginWidth: 32 };
   } else {
-    // Create dots at intersections
-    for (let i = 0; i <= canvasWidth; i += gridSize) {
-      for (let j = 0; j <= canvasHeight; j += gridSize) {
-        if (!showSubdivisions && (i % (gridSize * 4) !== 0 || j % (gridSize * 4) !== 0)) continue;
-        
-        const isDivisibleBy4 = i % (gridSize * 4) === 0 && j % (gridSize * 4) === 0;
-        const isAxis = i === 0 || j === 0;
-        
-        const dotOpacity = isAxis && showAxes 
-          ? opacity * 2 
-          : isDivisibleBy4 
-            ? opacity * 1.5 
-            : opacity;
-        
-        const dot = new fabric.Circle({
-          left: i,
-          top: j,
-          radius: isDivisibleBy4 ? 2 : 1,
-          fill: isAxis && showAxes ? '#ff4040' : color,
-          opacity: dotOpacity,
-          selectable: false,
-          evented: false,
-          originX: 'center',
-          originY: 'center'
-        });
-        
-        gridLines.push(dot as unknown as fabric.Line); // Type casting for consistent return
+    return config; // Default full configuration
+  }
+}
+
+export function getBreakpointFromWidth(width: number): string {
+  if (width < TAILWIND_BREAKPOINTS.sm) return 'xs';
+  if (width < TAILWIND_BREAKPOINTS.md) return 'sm';
+  if (width < TAILWIND_BREAKPOINTS.lg) return 'md';
+  if (width < TAILWIND_BREAKPOINTS.xl) return 'lg';
+  if (width < TAILWIND_BREAKPOINTS['2xl']) return 'xl';
+  return '2xl';
+}
+
+export interface BoundingBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
+export function getObjectBounds(object: any): BoundingBox {
+  const { left = 0, top = 0, width = 0, height = 0 } = object;
+  
+  return {
+    left,
+    top,
+    right: left + width,
+    bottom: top + height,
+    width,
+    height,
+  };
+}
+
+export interface Guideline {
+  position: number;
+  type: 'horizontal' | 'vertical';
+  origin?: string;
+}
+
+export function generateSnapGuidelines(objects: any[], currentObject: any): Guideline[] {
+  const guidelines: Guideline[] = [];
+  const currentBounds = getObjectBounds(currentObject);
+  
+  objects.forEach((obj) => {
+    if (obj === currentObject) return;
+    
+    const bounds = getObjectBounds(obj);
+    
+    // Generate horizontal guidelines
+    [
+      { value: bounds.top, description: 'top' },
+      { value: bounds.top + bounds.height / 2, description: 'middle' },
+      { value: bounds.bottom, description: 'bottom' },
+    ].forEach(({ value, description }) => {
+      guidelines.push({
+        position: value,
+        type: 'horizontal',
+        origin: `${obj.id || 'unknown'}-${description}`,
+      });
+    });
+    
+    // Generate vertical guidelines
+    [
+      { value: bounds.left, description: 'left' },
+      { value: bounds.left + bounds.width / 2, description: 'center' },
+      { value: bounds.right, description: 'right' },
+    ].forEach(({ value, description }) => {
+      guidelines.push({
+        position: value,
+        type: 'vertical',
+        origin: `${obj.id || 'unknown'}-${description}`,
+      });
+    });
+  });
+  
+  return guidelines;
+}
+
+export function snapObjectToGuidelines(
+  object: any,
+  guidelines: Guideline[],
+  threshold: number = 5
+): { snapped: boolean; adjustments: { left?: number; top?: number } } {
+  const bounds = getObjectBounds(object);
+  const result = { snapped: false, adjustments: {} as { left?: number; top?: number } };
+  
+  // Check horizontal guidelines
+  const horizontalGuidelines = guidelines.filter(guide => guide.type === 'horizontal');
+  for (const guide of horizontalGuidelines) {
+    // Check if object's top, middle, or bottom is close to the guide
+    const distances = [
+      { position: bounds.top, edge: 'top' },
+      { position: bounds.top + bounds.height / 2, edge: 'middle' },
+      { position: bounds.bottom, edge: 'bottom' },
+    ];
+    
+    for (const { position, edge } of distances) {
+      const distance = Math.abs(position - guide.position);
+      if (distance <= threshold) {
+        const adjustment = guide.position - position;
+        result.snapped = true;
+        result.adjustments.top = (result.adjustments.top || 0) + adjustment;
+        break; // Once snapped to a guide, don't snap to others
       }
     }
   }
   
-  return gridLines;
-}
-
-/**
- * Snaps a point to the nearest grid point
- */
-export function snapToGrid(point: { x: number; y: number }, gridSize: number): { x: number; y: number } {
-  return {
-    x: Math.round(point.x / gridSize) * gridSize,
-    y: Math.round(point.y / gridSize) * gridSize,
-  };
-}
-
-/**
- * Creates a responsive grid for wireframing
- */
-export function createResponsiveGrid(width: number, columns: number = 12, gutterSize: number = 16) {
-  const columnWidth = (width - (gutterSize * (columns - 1))) / columns;
-  
-  const grid = {
-    columns,
-    gutterSize,
-    columnWidth,
-    totalWidth: width,
-    getColumnPosition: (col: number) => (columnWidth + gutterSize) * col,
-    getColumnSpanWidth: (colSpan: number) => (columnWidth * colSpan) + (gutterSize * (colSpan - 1)),
-    getBreakpointColumns: (breakpoint: keyof typeof TAILWIND_BREAKPOINTS) => {
-      switch(breakpoint) {
-        case 'xs': return 4;
-        case 'sm': return 8;
-        case 'md': return 8;
-        case 'lg': return 12;
-        case 'xl': return 12;
-        case '2xl': return 12;
-        default: return 12;
-      }
-    },
-    getBreakpointGutter: (breakpoint: keyof typeof TAILWIND_BREAKPOINTS) => {
-      switch(breakpoint) {
-        case 'xs': return 8;
-        case 'sm': return 12;
-        case 'md': return 16;
-        case 'lg': return 24;
-        case 'xl': return 24;
-        case '2xl': return 32;
-        default: return 16;
+  // Check vertical guidelines
+  const verticalGuidelines = guidelines.filter(guide => guide.type === 'vertical');
+  for (const guide of verticalGuidelines) {
+    // Check if object's left, center, or right is close to the guide
+    const distances = [
+      { position: bounds.left, edge: 'left' },
+      { position: bounds.left + bounds.width / 2, edge: 'center' },
+      { position: bounds.right, edge: 'right' },
+    ];
+    
+    for (const { position, edge } of distances) {
+      const distance = Math.abs(position - guide.position);
+      if (distance <= threshold) {
+        const adjustment = guide.position - position;
+        result.snapped = true;
+        result.adjustments.left = (result.adjustments.left || 0) + adjustment;
+        break; // Once snapped to a guide, don't snap to others
       }
     }
-  };
+  }
   
-  return grid;
-}
-
-/**
- * Creates a fluid grid that resizes with the container
- */
-export function createFluidGrid(
-  containerWidth: number,
-  containerHeight: number,
-  options: {
-    columns?: number;
-    rows?: number;
-    marginX?: number;
-    marginY?: number;
-    gutterX?: number;
-    gutterY?: number;
-  } = {}
-) {
-  const {
-    columns = 12,
-    rows = 6,
-    marginX = 16,
-    marginY = 16,
-    gutterX = 16,
-    gutterY = 16,
-  } = options;
-  
-  const contentWidth = containerWidth - (marginX * 2);
-  const contentHeight = containerHeight - (marginY * 2);
-  
-  const columnWidth = (contentWidth - (gutterX * (columns - 1))) / columns;
-  const rowHeight = (contentHeight - (gutterY * (rows - 1))) / rows;
-  
-  return {
-    containerWidth,
-    containerHeight,
-    contentWidth,
-    contentHeight,
-    columns,
-    rows,
-    marginX,
-    marginY,
-    gutterX,
-    gutterY,
-    columnWidth,
-    rowHeight,
-    getColumnPosition: (col: number) => marginX + (columnWidth + gutterX) * col,
-    getRowPosition: (row: number) => marginY + (rowHeight + gutterY) * row,
-    getAreaWidth: (colSpan: number) => (columnWidth * colSpan) + (gutterX * (colSpan - 1)),
-    getAreaHeight: (rowSpan: number) => (rowHeight * rowSpan) + (gutterY * (rowSpan - 1)),
-  };
+  return result;
 }

@@ -51,6 +51,9 @@ export async function getSystemStatus(): Promise<SystemStatus> {
   };
 }
 
+/**
+ * Retrieves system metrics from all components
+ */
 export async function getSystemMetrics() {
   const status = await getSystemStatus();
   
