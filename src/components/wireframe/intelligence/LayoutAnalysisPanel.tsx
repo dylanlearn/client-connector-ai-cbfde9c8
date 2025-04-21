@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Check, AlertCircle, HelpCircle, ArrowRight } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { LayoutRecommendation } from '@/services/ai/design/layout-analysis/layout-analyzer-service';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, ArrowUpRight, AlertTriangle, ThumbsUp, Sparkles } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 interface LayoutAnalysisPanelProps {
   wireframe: WireframeData;
@@ -14,8 +15,8 @@ interface LayoutAnalysisPanelProps {
   score: number;
   insightSummary: string;
   onApplyRecommendation: (recommendationId: string) => void;
-  isAnalyzing?: boolean;
   onRefreshAnalysis: () => void;
+  isAnalyzing: boolean;
 }
 
 export default function LayoutAnalysisPanel({
@@ -24,132 +25,150 @@ export default function LayoutAnalysisPanel({
   score,
   insightSummary,
   onApplyRecommendation,
-  isAnalyzing = false,
-  onRefreshAnalysis
+  onRefreshAnalysis,
+  isAnalyzing
 }: LayoutAnalysisPanelProps) {
-  const recommendationsByType = {
-    critical: recommendations.filter(r => r.type === 'critical'),
-    improvement: recommendations.filter(r => r.type === 'improvement'),
-    suggestion: recommendations.filter(r => r.type === 'suggestion')
+  // Function to get appropriate color based on score
+  const getScoreColor = (score: number) => {
+    if (score >= 0.8) return 'text-green-500';
+    if (score >= 0.6) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+  
+  // Function to get appropriate color for the progress bar
+  const getProgressColor = (score: number) => {
+    if (score >= 0.8) return 'bg-green-500';
+    if (score >= 0.6) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+  
+  // Function to get severity badge for recommendations
+  const getSeverityBadge = (severity: string) => {
+    const badgeStyles: Record<string, any> = {
+      high: { variant: 'destructive', icon: <AlertTriangle className="h-3 w-3 mr-1" /> },
+      medium: { variant: 'outline', icon: null },
+      low: { variant: 'secondary', icon: null },
+      positive: { variant: 'default', icon: <ThumbsUp className="h-3 w-3 mr-1" /> },
+    };
+    
+    const style = badgeStyles[severity.toLowerCase()] || badgeStyles.medium;
+    
+    return (
+      <Badge variant={style.variant as any} className="ml-2 flex items-center">
+        {style.icon}
+        {severity}
+      </Badge>
+    );
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <div className="space-y-4">
+      {/* Layout Score and Summary */}
+      <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Layout Intelligence</CardTitle>
-            <CardDescription>AI-powered layout analysis and recommendations</CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant={getScoreVariant(score)} className="px-3 py-1">
-              Score: {Math.round(score * 100)}
-            </Badge>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onRefreshAnalysis}
-              disabled={isAnalyzing}
-            >
-              {isAnalyzing ? 'Analyzing...' : 'Refresh Analysis'}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4 p-3 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground">{insightSummary}</p>
+          <h3 className="text-sm font-medium">Layout Analysis</h3>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onRefreshAnalysis} 
+            disabled={isAnalyzing}
+          >
+            <RefreshCw className={`h-3 w-3 mr-1 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
         
-        {recommendations.length === 0 && !isAnalyzing && (
-          <div className="text-center py-6">
-            <HelpCircle className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-            <p className="mt-2 text-muted-foreground">No recommendations found. Your layout looks great!</p>
+        {isAnalyzing ? (
+          <div className="h-[50px] flex items-center justify-center">
+            <div className="animate-pulse flex gap-2 items-center">
+              <div className="h-4 w-4 rounded-full bg-primary animate-bounce"></div>
+              <span className="text-sm text-muted-foreground">Analyzing layout...</span>
+            </div>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <Progress value={score * 100} className={getProgressColor(score)} />
+              </div>
+              <span className={`text-sm font-medium ${getScoreColor(score)}`}>
+                {Math.round(score * 100)}%
+              </span>
+            </div>
+            
+            <p className="text-xs text-muted-foreground">{insightSummary}</p>
+          </>
         )}
+      </div>
+      
+      <Separator />
+      
+      {/* Recommendations */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium flex items-center">
+          <Sparkles className="h-3 w-3 mr-1 text-primary" />
+          Layout Recommendations 
+          <span className="text-xs text-muted-foreground ml-2">
+            ({recommendations.length})
+          </span>
+        </h3>
         
-        {isAnalyzing && (
-          <div className="flex justify-center items-center py-6">
-            <div className="animate-pulse flex flex-col items-center">
-              <div className="h-12 w-12 rounded-full bg-muted" />
-              <div className="h-4 w-32 mt-4 bg-muted rounded" />
-              <div className="h-3 w-24 mt-2 bg-muted rounded" />
+        {isAnalyzing ? (
+          <div className="space-y-2">
+            <div className="h-20 border rounded-md animate-pulse bg-muted/20"></div>
+            <div className="h-20 border rounded-md animate-pulse bg-muted/20"></div>
+          </div>
+        ) : recommendations.length > 0 ? (
+          <ScrollArea className="h-[300px]">
+            <div className="space-y-2">
+              {recommendations.map((recommendation) => (
+                <div 
+                  key={recommendation.id}
+                  className="border rounded-md p-3 hover:border-primary transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center">
+                        <h4 className="text-sm font-medium">{recommendation.title}</h4>
+                        {getSeverityBadge(recommendation.severity)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{recommendation.description}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="ml-2"
+                      onClick={() => onApplyRecommendation(recommendation.id)}
+                    >
+                      <ArrowUpRight className="h-4 w-4" />
+                      <span className="sr-only">Apply</span>
+                    </Button>
+                  </div>
+                  
+                  {recommendation.affectedSections && recommendation.affectedSections.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {recommendation.affectedSections.map((sectionId) => {
+                        const section = wireframe.sections.find(s => s.id === sectionId);
+                        return section ? (
+                          <Badge variant="outline" key={sectionId} className="text-xs">
+                            {section.name || section.sectionType}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        ) : (
+          <div className="h-[100px] border rounded-md flex items-center justify-center text-center p-4">
+            <div className="text-sm text-muted-foreground">
+              No recommendations found. Your layout looks good!
             </div>
           </div>
         )}
-        
-        {!isAnalyzing && recommendations.length > 0 && (
-          <div className="space-y-6">
-            {Object.entries(recommendationsByType).map(([type, recs]) => 
-              recs.length > 0 && (
-                <div key={type} className="space-y-3">
-                  <h3 className="text-sm font-medium flex items-center">
-                    {type === 'critical' && <AlertCircle className="w-4 h-4 mr-1 text-destructive" />}
-                    {type === 'improvement' && <ArrowRight className="w-4 h-4 mr-1 text-amber-500" />}
-                    {type === 'suggestion' && <Check className="w-4 h-4 mr-1 text-emerald-500" />}
-                    {type.charAt(0).toUpperCase() + type.slice(1)} ({recs.length})
-                  </h3>
-                  
-                  {recs.map(recommendation => (
-                    <RecommendationCard
-                      key={recommendation.id}
-                      recommendation={recommendation}
-                      onApply={() => onApplyRecommendation(recommendation.id)}
-                    />
-                  ))}
-                </div>
-              )
-            )}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-between border-t px-6 py-3">
-        <p className="text-xs text-muted-foreground">
-          Analyzing {wireframe.sections.length} sections for optimal layout
-        </p>
-        <p className="text-xs font-medium">
-          AI Layout Intelligence v1.0
-        </p>
-      </CardFooter>
-    </Card>
-  );
-}
-
-interface RecommendationCardProps {
-  recommendation: LayoutRecommendation;
-  onApply: () => void;
-}
-
-function RecommendationCard({ recommendation, onApply }: RecommendationCardProps) {
-  return (
-    <div className="border rounded-md p-3 bg-card">
-      <div className="flex justify-between items-start">
-        <div>
-          <h4 className="text-sm font-medium">{recommendation.description}</h4>
-          <p className="text-xs text-muted-foreground mt-1">{recommendation.rationale}</p>
-        </div>
-        <Button 
-          variant="secondary" 
-          size="sm"
-          onClick={onApply}
-          className="whitespace-nowrap ml-2"
-        >
-          Apply
-        </Button>
       </div>
-      {recommendation.section && (
-        <div className="mt-2">
-          <Badge variant="outline" className="text-xs">
-            Section: {recommendation.section}
-          </Badge>
-        </div>
-      )}
     </div>
   );
-}
-
-function getScoreVariant(score: number): 'default' | 'outline' | 'secondary' | 'destructive' {
-  if (score < 0.4) return 'destructive';
-  if (score < 0.7) return 'secondary';
-  return 'default';
 }

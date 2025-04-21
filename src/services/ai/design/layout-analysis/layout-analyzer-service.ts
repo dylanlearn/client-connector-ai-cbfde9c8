@@ -1,261 +1,302 @@
 
+import { v4 as uuidv4 } from 'uuid';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
+/**
+ * Interface for layout recommendation
+ */
+export interface LayoutRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'high' | 'medium' | 'low' | 'positive';
+  category: 'spacing' | 'alignment' | 'hierarchy' | 'balance' | 'consistency' | 'accessibility' | 'responsive';
+  affectedSections?: string[];
+  suggestedAction: string;
+  before?: any;
+  after?: any;
+}
+
+/**
+ * Interface for layout analysis result
+ */
 export interface LayoutAnalysisResult {
   score: number;
   recommendations: LayoutRecommendation[];
   insightSummary: string;
-}
-
-export interface LayoutRecommendation {
-  id: string;
-  type: 'critical' | 'improvement' | 'suggestion';
-  section?: string;
-  description: string;
-  rationale: string;
-  beforeImageUrl?: string;
-  afterImageUrl?: string;
-  appliedScore?: number;
+  detailedAnalysis?: any;
 }
 
 /**
- * Service for analyzing wireframe layouts and providing intelligent recommendations
- * based on design principles, hierarchy, balance, and alignment.
+ * Service for analyzing wireframe layouts and providing actionable recommendations
  */
 export const LayoutAnalyzerService = {
   /**
-   * Analyze a complete wireframe layout and provide recommendations
+   * Analyze a wireframe layout
    */
-  analyzeLayout: async (wireframe: WireframeData): Promise<LayoutAnalysisResult> => {
+  async analyzeLayout(wireframe: WireframeData): Promise<LayoutAnalysisResult> {
     try {
-      // Calculate initial layout score
-      const initialScore = calculateLayoutScore(wireframe);
+      // In a real implementation, this would make an AI API call
+      // For now, we'll simulate an analysis with placeholder recommendations
       
-      // Generate recommendations by analyzing various aspects
-      const recommendations = [
-        ...analyzeHierarchy(wireframe),
-        ...analyzeBalance(wireframe),
-        ...analyzeSpacing(wireframe),
-        ...analyzeAlignment(wireframe),
-        ...analyzeVisualFlow(wireframe),
-        ...analyzeReadability(wireframe)
-      ];
+      // Generate a baseline score between 0.5 and 1.0
+      const baselineScore = 0.5 + Math.random() * 0.5;
       
-      // Sort recommendations by type (critical first)
-      recommendations.sort((a, b) => {
-        const priority = { critical: 0, improvement: 1, suggestion: 2 };
-        return priority[a.type] - priority[b.type];
-      });
+      // Generate some sample recommendations
+      const recommendations = generateSampleRecommendations(wireframe);
       
+      // Generate a summary
+      const insightSummary = generateLayoutAnalysisSummary(baselineScore, recommendations.length);
+      
+      // Return the analysis result
       return {
-        score: initialScore,
+        score: baselineScore,
         recommendations,
-        insightSummary: generateInsightSummary(initialScore, recommendations)
+        insightSummary,
+        detailedAnalysis: {
+          sectionScores: wireframe.sections.map(section => ({
+            sectionId: section.id,
+            score: 0.5 + Math.random() * 0.5
+          }))
+        }
       };
     } catch (error) {
       console.error('Error analyzing layout:', error);
-      return {
-        score: 0.5,
-        recommendations: [
-          {
-            id: 'error-1',
-            type: 'critical',
-            description: 'Unable to analyze layout completely',
-            rationale: 'An error occurred during layout analysis.'
-          }
-        ],
-        insightSummary: 'Layout analysis encountered an error.'
-      };
+      throw error;
     }
   },
   
   /**
-   * Analyze a specific section's layout
+   * Analyze a specific wireframe section
    */
-  analyzeSection: async (section: WireframeSection): Promise<LayoutRecommendation[]> => {
+  async analyzeSection(section: WireframeSection): Promise<LayoutRecommendation[]> {
     try {
+      // In a real implementation, this would make an AI API call
+      // For now, we'll return some sample recommendations for this section
+      
       return [
-        ...analyzeSectionHierarchy(section),
-        ...analyzeSectionBalance(section),
-        ...analyzeSectionSpacing(section)
+        {
+          id: uuidv4(),
+          title: 'Improve Section Spacing',
+          description: 'The elements in this section could benefit from more consistent spacing to improve readability and visual hierarchy.',
+          severity: 'medium',
+          category: 'spacing',
+          affectedSections: [section.id],
+          suggestedAction: 'Increase padding between elements by 16px',
+        },
+        {
+          id: uuidv4(),
+          title: 'Enhance Text Contrast',
+          description: 'Consider improving the text contrast in this section to make it more readable.',
+          severity: 'low',
+          category: 'accessibility',
+          affectedSections: [section.id],
+          suggestedAction: 'Increase contrast ratio to at least 4.5:1',
+        }
       ];
     } catch (error) {
-      console.error('Error analyzing section layout:', error);
-      return [{
-        id: 'section-error-1',
-        type: 'critical',
-        section: section.id,
-        description: 'Unable to analyze section layout',
-        rationale: 'An error occurred during section analysis.'
-      }];
+      console.error('Error analyzing section:', error);
+      throw error;
     }
   },
   
   /**
-   * Apply a specific layout recommendation
+   * Apply a recommendation to a wireframe
    */
-  applyRecommendation: async (
-    wireframe: WireframeData, 
+  async applyRecommendation(
+    wireframe: WireframeData,
     recommendationId: string
-  ): Promise<WireframeData> => {
-    // This would apply the chosen recommendation to the wireframe
-    // For now, we'll return a copy of the wireframe with minimal changes
-    const updatedWireframe = { ...wireframe };
-    
-    // In a production implementation, this would make specific changes
-    // based on the recommendation type
-    
-    return updatedWireframe;
+  ): Promise<WireframeData> {
+    try {
+      // In a real implementation, this would apply the specific recommendation
+      // For now, we'll just make a simple modification to simulate an improvement
+      
+      // Create a deep copy of the wireframe to avoid mutations
+      const updatedWireframe = JSON.parse(JSON.stringify(wireframe));
+      
+      // Generate a mock recommendation to apply (in a real system, this would be fetched)
+      const mockRecommendations = generateSampleRecommendations(wireframe);
+      const recommendation = mockRecommendations.find(r => r.id === recommendationId);
+      
+      if (!recommendation) {
+        throw new Error('Recommendation not found');
+      }
+      
+      // Apply recommendation based on category
+      if (recommendation.affectedSections && recommendation.affectedSections.length > 0) {
+        for (const sectionId of recommendation.affectedSections) {
+          const sectionIndex = updatedWireframe.sections.findIndex(
+            (s: WireframeSection) => s.id === sectionId
+          );
+          
+          if (sectionIndex >= 0) {
+            const section = updatedWireframe.sections[sectionIndex];
+            
+            // Apply changes based on recommendation category
+            switch (recommendation.category) {
+              case 'spacing':
+                // Add padding or adjust spacing
+                section.style = section.style || {};
+                section.style.padding = '1.5rem';
+                break;
+                
+              case 'alignment':
+                // Adjust alignment
+                section.style = section.style || {};
+                section.style.textAlign = 'center';
+                break;
+                
+              case 'hierarchy':
+                // Simulate improving the hierarchy
+                if (section.components && section.components.length > 0) {
+                  section.components.sort((a, b) => (b.type === 'heading' ? 1 : -1));
+                }
+                break;
+                
+              case 'balance':
+                // Adjust layout for better balance
+                section.layout = section.layout || {};
+                if (typeof section.layout === 'object') {
+                  section.layout.alignItems = 'center';
+                  section.layout.justifyContent = 'center';
+                }
+                break;
+                
+              case 'consistency':
+                // Apply consistent styling
+                break;
+                
+              case 'accessibility':
+                // Improve accessibility
+                section.style = section.style || {};
+                section.style.color = '#000000';
+                section.backgroundColor = '#ffffff';
+                break;
+                
+              case 'responsive':
+                // Enhance responsiveness
+                break;
+            }
+          }
+        }
+      }
+      
+      return updatedWireframe;
+    } catch (error) {
+      console.error('Error applying recommendation:', error);
+      throw error;
+    }
   }
 };
 
-// Helper functions for layout analysis
-
-function calculateLayoutScore(wireframe: WireframeData): number {
-  // A real implementation would evaluate multiple factors
-  // For this prototype, we'll use a placeholder score
-  
-  if (!wireframe || !wireframe.sections) return 0.5;
-  
-  // Calculate based on number of sections (more complex logic would be used in production)
-  const sectionCount = wireframe.sections.length;
-  
-  // Basic scoring algorithm - more sophisticated in production
-  return Math.min(0.85, 0.4 + (sectionCount / 10));
-}
-
-function analyzeHierarchy(wireframe: WireframeData): LayoutRecommendation[] {
-  const recommendations: LayoutRecommendation[] = [];
-  
+/**
+ * Helper function to generate sample layout recommendations
+ */
+function generateSampleRecommendations(wireframe: WireframeData): LayoutRecommendation[] {
   if (!wireframe.sections || wireframe.sections.length === 0) {
-    return [{
-      id: 'hierarchy-1',
-      type: 'critical',
-      description: 'Add sections to establish visual hierarchy',
-      rationale: 'The wireframe lacks content sections. Add a hero section and supporting content to create visual hierarchy.'
-    }];
+    return [];
   }
   
-  // Check for heading structure
-  const hasHeroSection = wireframe.sections.some(s => 
-    s.sectionType?.toLowerCase() === 'hero' || 
-    s.type?.toLowerCase() === 'hero'
-  );
+  const sections = wireframe.sections;
+  const recommendations: LayoutRecommendation[] = [];
   
-  if (!hasHeroSection) {
+  // Add spacing recommendations
+  if (sections.length >= 2) {
     recommendations.push({
-      id: 'hierarchy-2',
-      type: 'improvement',
-      description: 'Add a hero section for better hierarchy',
-      rationale: 'A hero section helps establish visual hierarchy and draws attention to key messaging.'
+      id: uuidv4(),
+      title: 'Improve Section Spacing',
+      description: 'Add consistent spacing between sections to improve visual flow and readability.',
+      severity: 'medium',
+      category: 'spacing',
+      affectedSections: [sections[0].id, sections[1].id],
+      suggestedAction: 'Add 64px margin between sections'
     });
   }
   
-  return recommendations;
-}
-
-function analyzeBalance(wireframe: WireframeData): LayoutRecommendation[] {
-  const recommendations: LayoutRecommendation[] = [];
-  
-  // Check section distribution
-  if (wireframe.sections && wireframe.sections.length > 1) {
-    const sectionTypes = new Set(wireframe.sections.map(s => s.sectionType || s.type));
-    
-    if (sectionTypes.size < 2) {
-      recommendations.push({
-        id: 'balance-1',
-        type: 'suggestion',
-        description: 'Add variety to section types',
-        rationale: 'Using different section types creates visual interest and better content balance.'
-      });
-    }
+  // Add hierarchy recommendation
+  if (sections.length >= 1) {
+    recommendations.push({
+      id: uuidv4(),
+      title: 'Enhance Visual Hierarchy',
+      description: 'Improve the visual hierarchy of the page by adjusting typography sizes and weights.',
+      severity: 'low',
+      category: 'hierarchy',
+      affectedSections: [sections[0].id],
+      suggestedAction: 'Increase heading size and add more contrast with body text'
+    });
   }
   
+  // Add balance recommendation for first section
+  if (sections.length >= 1) {
+    recommendations.push({
+      id: uuidv4(),
+      title: 'Improve Layout Balance',
+      description: 'The current layout feels slightly off-balance. Consider redistributing elements more evenly.',
+      severity: 'high',
+      category: 'balance',
+      affectedSections: [sections[0].id],
+      suggestedAction: 'Center align content and adjust column widths'
+    });
+  }
+  
+  // Add accessibility recommendation
+  const randomSectionIndex = Math.floor(Math.random() * sections.length);
+  recommendations.push({
+    id: uuidv4(),
+    title: 'Enhance Text Contrast',
+    description: 'Improve accessibility by increasing text contrast against the background.',
+    severity: 'high',
+    category: 'accessibility',
+    affectedSections: [sections[randomSectionIndex].id],
+    suggestedAction: 'Increase contrast ratio to 4.5:1 or higher'
+  });
+  
+  // Add positive recommendation
+  recommendations.push({
+    id: uuidv4(),
+    title: 'Effective Use of White Space',
+    description: 'The current use of white space is effective in creating a clean and modern look.',
+    severity: 'positive',
+    category: 'spacing',
+    suggestedAction: 'No action needed, continue with this approach'
+  });
+  
+  // Add consistency recommendation
+  if (sections.length >= 3) {
+    recommendations.push({
+      id: uuidv4(),
+      title: 'Maintain Consistent Styling',
+      description: 'Ensure consistent styling across all sections for a cohesive look and feel.',
+      severity: 'medium',
+      category: 'consistency',
+      affectedSections: [sections[0].id, sections[1].id, sections[2].id],
+      suggestedAction: 'Apply consistent padding, typography and color usage'
+    });
+  }
+  
+  // Add responsive recommendation
+  recommendations.push({
+    id: uuidv4(),
+    title: 'Improve Mobile Responsiveness',
+    description: 'Some sections may not display optimally on mobile devices. Consider adjusting the layout.',
+    severity: 'medium',
+    category: 'responsive',
+    affectedSections: sections.slice(0, 2).map(s => s.id),
+    suggestedAction: 'Convert multi-column layouts to single column on mobile screens'
+  });
+  
   return recommendations;
 }
 
-function analyzeSpacing(wireframe: WireframeData): LayoutRecommendation[] {
-  // Analyze spacing consistency
-  return [{
-    id: 'spacing-1',
-    type: 'suggestion',
-    description: 'Maintain consistent spacing between sections',
-    rationale: 'Consistent spacing improves visual harmony and readability.'
-  }];
-}
-
-function analyzeAlignment(wireframe: WireframeData): LayoutRecommendation[] {
-  // Check alignment consistency
-  return [{
-    id: 'alignment-1',
-    type: 'improvement',
-    description: 'Align elements to a consistent grid',
-    rationale: 'Grid-aligned elements create a cleaner, more professional appearance.'
-  }];
-}
-
-function analyzeVisualFlow(wireframe: WireframeData): LayoutRecommendation[] {
-  // Check visual flow and content progression
-  return [{
-    id: 'flow-1',
-    type: 'suggestion',
-    description: 'Ensure logical content flow from top to bottom',
-    rationale: 'Arrange sections to guide users naturally through your content narrative.'
-  }];
-}
-
-function analyzeReadability(wireframe: WireframeData): LayoutRecommendation[] {
-  // Check content readability
-  return [{
-    id: 'readability-1',
-    type: 'improvement',
-    description: 'Ensure sufficient contrast for text elements',
-    rationale: 'High contrast text improves readability and accessibility.'
-  }];
-}
-
-// Section-specific analysis functions
-
-function analyzeSectionHierarchy(section: WireframeSection): LayoutRecommendation[] {
-  return [{
-    id: `section-hierarchy-${section.id}`,
-    type: 'suggestion',
-    section: section.id,
-    description: 'Establish clear heading hierarchy within section',
-    rationale: 'Clear heading structure improves content organization and scanability.'
-  }];
-}
-
-function analyzeSectionBalance(section: WireframeSection): LayoutRecommendation[] {
-  return [{
-    id: `section-balance-${section.id}`,
-    type: 'suggestion',
-    section: section.id,
-    description: 'Balance visual elements within section',
-    rationale: 'Well-balanced sections create visual harmony and improve focus.'
-  }];
-}
-
-function analyzeSectionSpacing(section: WireframeSection): LayoutRecommendation[] {
-  return [{
-    id: `section-spacing-${section.id}`,
-    type: 'improvement',
-    section: section.id,
-    description: 'Adjust inner spacing for better content flow',
-    rationale: 'Appropriate spacing between elements improves readability and visual comfort.'
-  }];
-}
-
-function generateInsightSummary(score: number, recommendations: LayoutRecommendation[]): string {
-  const criticalCount = recommendations.filter(r => r.type === 'critical').length;
-  const improvementCount = recommendations.filter(r => r.type === 'improvement').length;
-  const suggestionCount = recommendations.filter(r => r.type === 'suggestion').length;
-  
-  if (score < 0.4) {
-    return `Your layout needs significant improvements. Address ${criticalCount} critical issues to establish better design foundations.`;
-  } else if (score < 0.7) {
-    return `Your layout has a solid foundation but could be enhanced. Consider ${improvementCount} improvements to refine your design.`;
+/**
+ * Generate a summary based on score and recommendations
+ */
+function generateLayoutAnalysisSummary(score: number, recommendationCount: number): string {
+  if (score >= 0.8) {
+    return `Your layout demonstrates strong design principles with ${recommendationCount} minor opportunities for enhancement. Overall, the design shows excellent visual hierarchy and balance.`;
+  } else if (score >= 0.6) {
+    return `Your layout is good with ${recommendationCount} recommendations to bring it to the next level. Focus on improving spacing and hierarchy for better results.`;
   } else {
-    return `Your layout demonstrates good design principles. Review ${suggestionCount} suggestions for final polish.`;
+    return `Your layout has ${recommendationCount} actionable recommendations that can significantly improve its effectiveness. Prioritize addressing spacing and accessibility issues.`;
   }
 }

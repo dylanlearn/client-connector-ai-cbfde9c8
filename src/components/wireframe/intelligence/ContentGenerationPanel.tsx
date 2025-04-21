@@ -1,14 +1,25 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { GeneratedSectionContent } from '@/services/ai/wireframe/content/context-aware-content-service';
-import { Wand2, TextQuote, Check, RefreshCcw } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sparkles, Type, Check } from 'lucide-react';
 
 interface ContentGenerationPanelProps {
   wireframe: WireframeData;
@@ -17,7 +28,7 @@ interface ContentGenerationPanelProps {
   onGenerateContent: () => void;
   onGenerateSectionContent: (sectionId: string) => void;
   onApplyContent: () => void;
-  selectedSectionId: string | null;
+  selectedSectionId?: string | null;
 }
 
 export default function ContentGenerationPanel({
@@ -29,289 +40,249 @@ export default function ContentGenerationPanel({
   onApplyContent,
   selectedSectionId
 }: ContentGenerationPanelProps) {
-  const [industryContext, setIndustryContext] = useState('technology');
-  const [brandVoice, setBrandVoice] = useState<'formal' | 'casual' | 'technical' | 'friendly' | 'authoritative' | 'playful'>('formal');
-  const [contentLength, setContentLength] = useState<'short' | 'medium' | 'long'>('medium');
-  const [activeTab, setActiveTab] = useState('settings');
+  const [brandVoice, setBrandVoice] = useState<string>('conversational');
+  const [selectedSection, setSelectedSection] = useState<string | null>(selectedSectionId || null);
   
-  const selectedSection = selectedSectionId 
-    ? wireframe.sections.find(s => s.id === selectedSectionId)
-    : null;
-    
-  const selectedSectionContent = selectedSectionId
-    ? generatedContent.find(c => c.sectionId === selectedSectionId)
-    : null;
-    
-  const availableSections = wireframe.sections.map(section => ({
-    id: section.id,
-    name: section.title || section.sectionType || section.type || 'Unnamed Section'
-  }));
+  // When selectedSectionId prop changes, update the internal state
+  React.useEffect(() => {
+    if (selectedSectionId) {
+      setSelectedSection(selectedSectionId);
+    }
+  }, [selectedSectionId]);
   
-  // Calculate how many sections have content
-  const sectionsWithContent = new Set(generatedContent.map(c => c.sectionId));
-  const sectionsWithContentCount = [...sectionsWithContent].length;
+  const handleSectionSelect = (sectionId: string) => {
+    setSelectedSection(sectionId);
+  };
+  
+  const handleGenerateForSection = () => {
+    if (selectedSection) {
+      onGenerateSectionContent(selectedSection);
+    }
+  };
+  
+  // Find the content for the selected section
+  const selectedSectionContent = selectedSection ? 
+    generatedContent.find(content => content.sectionId === selectedSection) : null;
+  
+  // Find the section object from the wireframe
+  const sectionObject = selectedSection ?
+    wireframe.sections.find(section => section.id === selectedSection) : null;
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Content Generation</CardTitle>
-            <CardDescription>AI-powered contextual content creation</CardDescription>
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Content Generation Settings</h3>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Brand Voice</label>
+            <Select value={brandVoice} onValueChange={setBrandVoice}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select voice" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="conversational">Conversational</SelectItem>
+                <SelectItem value="formal">Formal</SelectItem>
+                <SelectItem value="technical">Technical</SelectItem>
+                <SelectItem value="friendly">Friendly</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Section</label>
+            <Select 
+              value={selectedSection || ''} 
+              onValueChange={handleSectionSelect}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select section" />
+              </SelectTrigger>
+              <SelectContent>
+                {wireframe.sections.map((section) => (
+                  <SelectItem key={section.id} value={section.id}>
+                    {section.name || section.sectionType}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
           <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onGenerateContent}
-            disabled={isGenerating}
+            onClick={onGenerateContent} 
+            disabled={isGenerating} 
+            className="flex-1"
           >
-            {isGenerating ? 'Generating...' : (
+            {isGenerating ? (
               <>
-                <Wand2 className="w-4 h-4 mr-2" />
-                Generate All Content
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-1" />
+                Generate for All Sections
               </>
             )}
           </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleGenerateForSection} 
+            disabled={isGenerating || !selectedSection}
+            className="flex-1"
+          >
+            <Type className="h-4 w-4 mr-1" />
+            Generate for Section
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="content">
-              Generated Content {sectionsWithContentCount > 0 && `(${sectionsWithContentCount})`}
-            </TabsTrigger>
-          </TabsList>
+      </div>
+      
+      <Separator className="my-4" />
+      
+      {isGenerating ? (
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+        </div>
+      ) : generatedContent.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-medium">Generated Content</h3>
+            <Button size="sm" onClick={onApplyContent} variant="default">
+              <Check className="h-3 w-3 mr-1" />
+              Apply All Content
+            </Button>
+          </div>
           
-          <TabsContent value="settings">
-            <div className="space-y-4">
-              <div>
-                <Label>Industry Context</Label>
-                <Select value={industryContext} onValueChange={setIndustryContext}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select industry" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="technology">Technology</SelectItem>
-                    <SelectItem value="healthcare">Healthcare</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="ecommerce">E-commerce</SelectItem>
-                    <SelectItem value="creative">Creative Agency</SelectItem>
-                    <SelectItem value="nonprofit">Nonprofit</SelectItem>
-                    <SelectItem value="real-estate">Real Estate</SelectItem>
-                  </SelectContent>
-                </Select>
+          <ScrollArea className="h-[300px] rounded-md border p-2">
+            {selectedSection && selectedSectionContent ? (
+              <Card>
+                <CardHeader className="px-4 py-2">
+                  <CardTitle className="text-sm">
+                    {sectionObject?.name || sectionObject?.sectionType || 'Section Content'}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    AI generated content for {sectionObject?.sectionType} section
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-4 py-2 space-y-2 text-sm">
+                  {renderContentPreview(selectedSectionContent.content)}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {generatedContent.map((content) => {
+                  const section = wireframe.sections.find(s => s.id === content.sectionId);
+                  return (
+                    <Card key={content.sectionId} className="cursor-pointer hover:border-primary"
+                      onClick={() => setSelectedSection(content.sectionId)}>
+                      <CardHeader className="px-4 py-2">
+                        <CardTitle className="text-sm">{section?.name || section?.sectionType}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-4 py-2">
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {content.content.heading || content.content.body?.substring(0, 50) + '...'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
+            )}
+          </ScrollArea>
+        </div>
+      ) : (
+        <div className="text-center py-6 text-muted-foreground text-sm">
+          <Type className="mx-auto h-8 w-8 mb-2 opacity-50" />
+          <p>No content generated yet. Click the generate button to create content for your wireframe.</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
-              <div>
-                <Label>Brand Voice</Label>
-                <Select value={brandVoice} onValueChange={(value) => setBrandVoice(value as any)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select voice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="formal">Formal</SelectItem>
-                    <SelectItem value="casual">Casual</SelectItem>
-                    <SelectItem value="technical">Technical</SelectItem>
-                    <SelectItem value="friendly">Friendly</SelectItem>
-                    <SelectItem value="authoritative">Authoritative</SelectItem>
-                    <SelectItem value="playful">Playful</SelectItem>
-                  </SelectContent>
-                </Select>
+// Helper function to render content preview based on content type
+function renderContentPreview(content: any) {
+  return (
+    <div className="space-y-2">
+      {content.heading && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Heading:</div>
+          <div className="font-medium">{content.heading}</div>
+        </div>
+      )}
+      
+      {content.subheading && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Subheading:</div>
+          <div>{content.subheading}</div>
+        </div>
+      )}
+      
+      {content.body && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Body:</div>
+          <div className="text-xs">{content.body}</div>
+        </div>
+      )}
+      
+      {content.ctaPrimary && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Primary CTA:</div>
+          <div className="text-xs font-medium">{content.ctaPrimary}</div>
+        </div>
+      )}
+      
+      {content.ctaSecondary && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Secondary CTA:</div>
+          <div className="text-xs">{content.ctaSecondary}</div>
+        </div>
+      )}
+      
+      {content.features && content.features.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Features:</div>
+          <ul className="text-xs list-disc pl-4">
+            {content.features.map((feature: string, index: number) => (
+              <li key={index}>{feature}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      
+      {content.stats && content.stats.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Stats:</div>
+          <div className="grid grid-cols-2 gap-1">
+            {content.stats.map((stat: any, index: number) => (
+              <div key={index} className="text-xs">
+                <span className="font-bold">{stat.value}</span> {stat.label}
               </div>
-              
-              <div>
-                <Label>Content Length</Label>
-                <Select value={contentLength} onValueChange={(value) => setContentLength(value as any)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select length" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="short">Short</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="long">Long</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="pt-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  These settings will be applied when generating content for all sections.
-                </p>
-                
-                <Button 
-                  className="w-full" 
-                  onClick={onGenerateContent}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? 'Generating...' : (
-                    <>
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      Generate Content for All Sections
-                    </>
-                  )}
-                </Button>
-              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {content.testimonials && content.testimonials.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground">Testimonials:</div>
+          {content.testimonials.map((testimonial: any, index: number) => (
+            <div key={index} className="text-xs italic mb-1">
+              "{testimonial.quote}" - {testimonial.author}
+              {testimonial.position && <span>, {testimonial.position}</span>}
             </div>
-          </TabsContent>
-          
-          <TabsContent value="content">
-            {generatedContent.length === 0 && !isGenerating && (
-              <div className="text-center py-10">
-                <TextQuote className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <p className="mt-2 text-muted-foreground">
-                  No content generated yet. Use the settings tab to start generation.
-                </p>
-              </div>
-            )}
-            
-            {isGenerating && (
-              <div className="flex justify-center items-center py-10">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="h-12 w-12 rounded-full bg-muted" />
-                  <div className="h-4 w-40 mt-4 bg-muted rounded" />
-                  <div className="h-3 w-32 mt-2 bg-muted rounded" />
-                </div>
-              </div>
-            )}
-            
-            {!isGenerating && generatedContent.length > 0 && (
-              <div className="space-y-6">
-                {/* Content overview */}
-                <div className="flex justify-between items-center">
-                  <p>
-                    <span className="text-sm font-medium">
-                      {sectionsWithContentCount} of {wireframe.sections.length} sections
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      have generated content
-                    </span>
-                  </p>
-                  
-                  <Button 
-                    onClick={onApplyContent}
-                    size="sm"
-                    disabled={generatedContent.length === 0}
-                  >
-                    <Check className="w-4 h-4 mr-2" />
-                    Apply All Content
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                {/* Content preview for selected section */}
-                <div>
-                  <h3 className="text-sm font-medium mb-2">Preview Section Content</h3>
-                  
-                  <Select
-                    value={selectedSectionId || ''}
-                    onValueChange={onGenerateSectionContent}
-                  >
-                    <SelectTrigger className="mb-3">
-                      <SelectValue placeholder="Select a section" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSections.map(section => (
-                        <SelectItem key={section.id} value={section.id}>
-                          {section.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {selectedSection && selectedSectionContent ? (
-                    <div className="border rounded-md p-4">
-                      {selectedSectionContent.content.heading && (
-                        <h2 className="text-lg font-bold mb-1">
-                          {selectedSectionContent.content.heading}
-                        </h2>
-                      )}
-                      
-                      {selectedSectionContent.content.subheading && (
-                        <p className="text-sm mb-3">
-                          {selectedSectionContent.content.subheading}
-                        </p>
-                      )}
-                      
-                      {selectedSectionContent.content.body && (
-                        <p className="text-sm text-muted-foreground mb-3">
-                          {selectedSectionContent.content.body}
-                        </p>
-                      )}
-                      
-                      {selectedSectionContent.content.ctaPrimary && (
-                        <div className="flex gap-2 mt-3">
-                          <div className="bg-primary text-xs text-primary-foreground px-3 py-1 rounded">
-                            {selectedSectionContent.content.ctaPrimary}
-                          </div>
-                          
-                          {selectedSectionContent.content.ctaSecondary && (
-                            <div className="bg-secondary text-xs text-secondary-foreground px-3 py-1 rounded">
-                              {selectedSectionContent.content.ctaSecondary}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      {selectedSectionContent.content.listItems && selectedSectionContent.content.listItems.length > 0 && (
-                        <div className="mt-3">
-                          <h3 className="text-xs font-medium mb-1">List Items:</h3>
-                          <ul className="list-disc list-inside text-xs space-y-1 pl-2">
-                            {selectedSectionContent.content.listItems.map((item, i) => (
-                              <li key={i}>{item}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      <div className="mt-4 flex justify-end">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => onGenerateSectionContent(selectedSectionId!)}
-                        >
-                          <RefreshCcw className="w-3 h-3 mr-1" />
-                          Regenerate
-                        </Button>
-                      </div>
-                    </div>
-                  ) : selectedSectionId ? (
-                    <div className="border border-dashed rounded-md p-8 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        No content generated for this section yet.
-                      </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onGenerateSectionContent(selectedSectionId)}
-                        className="mt-2"
-                      >
-                        Generate Content
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="border border-dashed rounded-md p-8 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Select a section to preview or generate content
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      <CardFooter className="flex justify-between border-t px-6 py-3">
-        <p className="text-xs text-muted-foreground">
-          Contextual content generation powered by AI
-        </p>
-        <p className="text-xs font-medium">
-          AI Content Generator v1.0
-        </p>
-      </CardFooter>
-    </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
