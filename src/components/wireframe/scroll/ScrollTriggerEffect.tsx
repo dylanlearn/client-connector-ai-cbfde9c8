@@ -1,147 +1,137 @@
 
-import React, { useRef, useEffect, useState, useCallback, ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useRef, useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
-interface ScrollTriggerEffectProps {
-  children: ReactNode;
-  className?: string;
-  threshold?: number;
-  rootMargin?: string;
-  effect?: 'fade' | 'slide-up' | 'slide-left' | 'scale' | 'none';
-  customEffectClass?: string;
-  delay?: number;
-  duration?: number;
-  triggerOnce?: boolean;
-  debugMode?: boolean;
+interface ScrollTrigger {
+  position: number; // Percentage position (0-100)
+  label: string;
 }
 
-type EffectState = 'hidden' | 'visible' | 'triggered';
+interface ScrollTriggerEffectProps {
+  height?: number;
+  triggers: ScrollTrigger[];
+}
 
-/**
- * A component that applies effects when elements scroll into view
- */
-export const ScrollTriggerEffect: React.FC<ScrollTriggerEffectProps> = ({
-  children,
-  className,
-  threshold = 0.1,
-  rootMargin = '0px',
-  effect = 'fade',
-  customEffectClass,
-  delay = 0,
-  duration = 500,
-  triggerOnce = true,
-  debugMode = false
+const ScrollTriggerEffect: React.FC<ScrollTriggerEffectProps> = ({ 
+  height = 400, 
+  triggers = [] 
 }) => {
-  const elementRef = useRef<HTMLDivElement>(null);
-  const [effectState, setEffectState] = useState<EffectState>('hidden');
-  const [isIntersecting, setIsIntersecting] = useState<boolean>(false);
-  const [hasTriggered, setHasTriggered] = useState<boolean>(false);
-  const observer = useRef<IntersectionObserver | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollPercent, setScrollPercent] = useState(0);
+  const [triggeredItems, setTriggeredItems] = useState<string[]>([]);
   
-  // Handle intersection
-  const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [entry] = entries;
-    if (entry.isIntersecting) {
-      setIsIntersecting(true);
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    
+    const element = containerRef.current;
+    const maxScroll = element.scrollHeight - element.clientHeight;
+    const currentPercent = (element.scrollTop / maxScroll) * 100;
+    
+    setScrollPercent(currentPercent);
+    
+    // Check which triggers have been activated
+    const activatedTriggers = triggers
+      .filter(trigger => currentPercent >= trigger.position)
+      .map(trigger => trigger.label);
       
-      // Trigger the effect if it hasn't triggered or if we're not using triggerOnce
-      if (!hasTriggered || !triggerOnce) {
-        setTimeout(() => {
-          setEffectState('triggered');
-          setHasTriggered(true);
-        }, delay);
-      }
-    } else {
-      setIsIntersecting(false);
-      
-      // Reset effect if triggerOnce is false
-      if (!triggerOnce && hasTriggered) {
-        setEffectState('hidden');
-      }
-    }
-  }, [hasTriggered, triggerOnce, delay]);
-  
-  // Set up intersection observer
-  useEffect(() => {
-    if (!elementRef.current) return;
-    
-    observer.current = new IntersectionObserver(handleIntersection, {
-      root: null,
-      rootMargin,
-      threshold
-    });
-    
-    observer.current.observe(elementRef.current);
-    
-    return () => {
-      if (observer.current) {
-        observer.current.disconnect();
-      }
-    };
-  }, [handleIntersection, rootMargin, threshold]);
-  
-  // Generate effect classes
-  const getEffectClasses = () => {
-    if (customEffectClass) return customEffectClass;
-    
-    switch (effect) {
-      case 'fade':
-        return cn(
-          'transition-opacity duration-[var(--duration)]',
-          effectState === 'hidden' && 'opacity-0',
-          effectState === 'triggered' && 'opacity-100'
-        );
-      case 'slide-up':
-        return cn(
-          'transition-transform transition-opacity duration-[var(--duration)]',
-          effectState === 'hidden' && 'translate-y-8 opacity-0',
-          effectState === 'triggered' && 'translate-y-0 opacity-100'
-        );
-      case 'slide-left':
-        return cn(
-          'transition-transform transition-opacity duration-[var(--duration)]',
-          effectState === 'hidden' && 'translate-x-8 opacity-0',
-          effectState === 'triggered' && 'translate-x-0 opacity-100'
-        );
-      case 'scale':
-        return cn(
-          'transition-transform transition-opacity duration-[var(--duration)]',
-          effectState === 'hidden' && 'scale-95 opacity-0',
-          effectState === 'triggered' && 'scale-100 opacity-100'
-        );
-      case 'none':
-        return '';
-      default:
-        return '';
-    }
+    setTriggeredItems(activatedTriggers);
   };
   
+  // Sort triggers by position
+  const sortedTriggers = [...triggers].sort((a, b) => a.position - b.position);
+  
   return (
-    <div
-      ref={elementRef}
-      className={cn(
-        "scroll-trigger-effect",
-        getEffectClasses(),
-        className
-      )}
-      style={{ 
-        '--duration': `${duration}ms`,
-        position: 'relative'
-      } as React.CSSProperties}
-    >
-      {children}
-      
-      {/* Debugging indicator */}
-      {debugMode && (
-        <div 
-          className={cn(
-            "absolute -top-6 -right-2 px-2 py-0.5 rounded text-white text-xs font-mono z-50",
-            isIntersecting ? "bg-green-500" : "bg-red-500"
-          )}
-        >
-          {isIntersecting ? 'Visible' : 'Hidden'}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="text-sm">
+          Scroll Position: {Math.round(scrollPercent)}%
         </div>
-      )}
+        <div className="flex gap-2">
+          {triggeredItems.length > 0 ? (
+            triggeredItems.map(trigger => (
+              <Badge key={trigger} variant="default">
+                {trigger} Triggered
+              </Badge>
+            ))
+          ) : (
+            <Badge variant="outline">No Triggers Active</Badge>
+          )}
+        </div>
+      </div>
+      
+      <Progress value={scrollPercent} className="h-2" />
+      
+      <Card className="overflow-hidden border border-border">
+        <div
+          ref={containerRef}
+          className="overflow-auto scrollbar-thin"
+          style={{ height }}
+          onScroll={handleScroll}
+        >
+          <div className="relative p-4" style={{ height: height * 2 }}>
+            <div className="absolute inset-x-0 h-full">
+              {/* Trigger markers */}
+              {sortedTriggers.map((trigger, index) => (
+                <div
+                  key={index}
+                  className="absolute left-0 right-0 p-4 transition-all duration-500"
+                  style={{ 
+                    top: `${trigger.position}%`, 
+                    transform: triggeredItems.includes(trigger.label) 
+                      ? 'translateX(0)' 
+                      : 'translateX(-10px)',
+                    opacity: triggeredItems.includes(trigger.label) ? 1 : 0.5
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`h-4 w-4 rounded-full ${
+                      triggeredItems.includes(trigger.label) 
+                        ? 'bg-primary' 
+                        : 'bg-muted'
+                    }`} />
+                    <div className="text-sm font-medium">
+                      {trigger.label} ({trigger.position}%)
+                    </div>
+                  </div>
+                  
+                  {triggeredItems.includes(trigger.label) && (
+                    <div className="mt-2 p-3 bg-primary/5 rounded-md border border-primary/10 animate-fadeIn">
+                      <p className="text-sm">
+                        This content appears when you scroll to the {trigger.position}% mark.
+                        Different sections can reveal as the user scrolls through the page.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {/* Bottom reached indicator */}
+              <div
+                className="absolute left-0 right-0 bottom-0 p-4 transition-all duration-1000"
+                style={{
+                  opacity: scrollPercent > 95 ? 1 : 0,
+                  transform: scrollPercent > 95 ? 'translateY(0)' : 'translateY(20px)',
+                }}
+              >
+                <div className="p-3 bg-green-100 rounded-md border border-green-200">
+                  <p className="text-sm font-medium text-green-800">
+                    You've reached the bottom of the content!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+      
+      <div className="text-sm text-muted-foreground">
+        <p>
+          Scroll down in the box above to trigger different events at {sortedTriggers.map(t => `${t.position}%`).join(', ')} 
+          scroll positions.
+        </p>
+      </div>
     </div>
   );
 };
