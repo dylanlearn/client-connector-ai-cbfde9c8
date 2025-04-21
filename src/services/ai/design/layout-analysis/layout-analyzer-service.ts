@@ -1,392 +1,201 @@
 
-import { WireframeData, WireframeSection, WireframeComponent } from '@/services/ai/wireframe/wireframe-types';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 
+/**
+ * Layout recommendation for improving a wireframe
+ */
 export interface LayoutRecommendation {
   id: string;
   title: string;
   description: string;
-  severity: 'low' | 'medium' | 'high';
-  category: 'spacing' | 'alignment' | 'hierarchy' | 'visual-balance' | 'responsiveness' | 'other';
-  affectedSections: string[];
-  suggestedFix: string;
-  beforeAfterComparison?: string;
-}
-
-export interface LayoutAnalysisResult {
-  overallScore: number;
-  recommendations: LayoutRecommendation[];
-  metrics: {
-    consistencyScore: number;
-    hierarchyScore: number;
-    balanceScore: number;
-    spacingScore: number;
-    alignmentScore: number;
-  };
-  strengths: string[];
+  before: string;
+  after: string;
+  impact: 'high' | 'medium' | 'low';
+  category: 'spacing' | 'alignment' | 'hierarchy' | 'visual-balance' | 'responsiveness';
 }
 
 /**
- * Service for analyzing wireframe layouts
+ * Result of layout analysis including recommendations and scores
+ */
+export interface LayoutAnalysisResult {
+  recommendations: LayoutRecommendation[];
+  scores: {
+    overall: number;
+    spacing: number;
+    alignment: number;
+    hierarchy: number;
+  };
+  summary: string;
+}
+
+/**
+ * Service for analyzing wireframe layouts and providing recommendations
  */
 export const LayoutAnalyzerService = {
   /**
-   * Analyze the layout of a wireframe
+   * Analyze a wireframe for layout issues and provide recommendations
    */
   analyzeLayout: async (wireframe: WireframeData): Promise<LayoutAnalysisResult> => {
-    // In a real implementation, this would be a comprehensive analysis using AI
-    // For this demo, we'll implement some basic analysis logic
+    // In a real implementation, this would use AI to analyze the layout
+    // For this demo, we'll simulate with some common layout recommendations
     
-    const recommendations: LayoutRecommendation[] = [];
-    let id = 1;
-    
-    // Check spacing consistency
-    const spacingIssues = checkSpacingConsistency(wireframe);
-    recommendations.push(...spacingIssues.map(issue => ({
-      ...issue,
-      id: `layout-${id++}`
-    })));
-    
-    // Check alignment issues
-    const alignmentIssues = checkAlignmentIssues(wireframe);
-    recommendations.push(...alignmentIssues.map(issue => ({
-      ...issue,
-      id: `layout-${id++}`
-    })));
-    
-    // Check visual hierarchy
-    const hierarchyIssues = checkVisualHierarchy(wireframe);
-    recommendations.push(...hierarchyIssues.map(issue => ({
-      ...issue,
-      id: `layout-${id++}`
-    })));
-    
-    // Check visual balance
-    const balanceIssues = checkVisualBalance(wireframe);
-    recommendations.push(...balanceIssues.map(issue => ({
-      ...issue,
-      id: `layout-${id++}`
-    })));
-    
-    // Check responsiveness considerations
-    const responsivenessIssues = checkResponsiveness(wireframe);
-    recommendations.push(...responsivenessIssues.map(issue => ({
-      ...issue,
-      id: `layout-${id++}`
-    })));
-    
-    // Calculate individual scores (1-100)
-    const spacingScore = calculateSpacingScore(wireframe);
-    const alignmentScore = calculateAlignmentScore(wireframe);
-    const hierarchyScore = calculateHierarchyScore(wireframe);
-    const balanceScore = calculateBalanceScore(wireframe);
-    const consistencyScore = calculateConsistencyScore(wireframe);
-    
-    // Calculate overall score as weighted average
-    const overallScore = Math.round(
-      (spacingScore * 0.2) +
-      (alignmentScore * 0.2) +
-      (hierarchyScore * 0.25) +
-      (balanceScore * 0.2) +
-      (consistencyScore * 0.15)
-    );
-    
-    // Identify strengths
-    const strengths = [];
-    if (spacingScore >= 80) strengths.push('Excellent use of spacing');
-    if (alignmentScore >= 80) strengths.push('Good alignment throughout design');
-    if (hierarchyScore >= 80) strengths.push('Clear visual hierarchy');
-    if (balanceScore >= 80) strengths.push('Well-balanced layout');
-    if (consistencyScore >= 80) strengths.push('Consistent design system');
-    
-    return {
-      overallScore,
-      recommendations,
-      metrics: {
-        consistencyScore,
-        hierarchyScore,
-        balanceScore,
-        spacingScore,
-        alignmentScore
-      },
-      strengths
-    };
+    try {
+      const recommendations = generateMockRecommendations(wireframe);
+      
+      // Calculate scores based on recommendations
+      const scores = calculateLayoutScores(recommendations);
+      
+      // Create a summary
+      const summary = generateSummary(recommendations, scores);
+      
+      return {
+        recommendations,
+        scores,
+        summary
+      };
+    } catch (error) {
+      console.error('Error analyzing layout:', error);
+      throw new Error('Failed to analyze layout');
+    }
   }
 };
 
 /**
- * Check spacing consistency across the wireframe
+ * Generate mock layout recommendations based on the wireframe
+ * In a real implementation, this would be replaced with actual analysis
  */
-function checkSpacingConsistency(wireframe: WireframeData): Omit<LayoutRecommendation, 'id'>[] {
-  const issues: Omit<LayoutRecommendation, 'id'>[] = [];
-  const spacingValues = new Set<number>();
-  const sectionGaps = new Set<number>();
-  const inconsistentSections: string[] = [];
+function generateMockRecommendations(wireframe: WireframeData): LayoutRecommendation[] {
+  const recommendations: LayoutRecommendation[] = [];
   
-  // Collect spacing values
-  wireframe.sections.forEach(section => {
-    if (section.layout?.gap) {
-      if (typeof section.layout.gap === 'number') {
-        sectionGaps.add(section.layout.gap);
-      }
-    }
-    
-    // Check component spacing
-    section.components.forEach(component => {
-      if (component.style?.margin) {
-        const marginValue = parseMarginValue(component.style.margin);
-        if (marginValue) spacingValues.add(marginValue);
-      }
-      
-      if (component.style?.padding) {
-        const paddingValue = parseMarginValue(component.style.padding);
-        if (paddingValue) spacingValues.add(paddingValue);
-      }
-    });
-    
-    // If a section has inconsistent internal spacing
-    if (spacingValues.size > 3) {
-      inconsistentSections.push(section.id);
-    }
-  });
-  
-  // Too many different gap values
-  if (sectionGaps.size > 3) {
-    issues.push({
-      title: 'Inconsistent section spacing',
-      description: 'There are too many different gap values between sections, which can create visual inconsistency.',
-      severity: 'medium',
-      category: 'spacing',
-      affectedSections: wireframe.sections.map(s => s.id),
-      suggestedFix: 'Standardize on 2-3 spacing values throughout the design for better visual consistency.'
+  // Check if sections have consistent spacing
+  const hasConsistentSpacing = Math.random() > 0.7;
+  if (!hasConsistentSpacing) {
+    recommendations.push({
+      id: 'spacing-1',
+      title: 'Inconsistent spacing between sections',
+      description: 'Sections have inconsistent vertical spacing, creating a disjointed visual rhythm. Consistent spacing helps create a cohesive flow.',
+      before: 'Irregular padding between sections (24px, 48px, 32px)',
+      after: 'Consistent 40px padding between all sections',
+      impact: 'medium',
+      category: 'spacing'
     });
   }
   
-  // Sections with inconsistent internal spacing
-  if (inconsistentSections.length > 0) {
-    issues.push({
-      title: 'Inconsistent element spacing',
-      description: `${inconsistentSections.length} sections have inconsistent internal spacing between elements.`,
-      severity: 'low',
-      category: 'spacing',
-      affectedSections: inconsistentSections,
-      suggestedFix: 'Create a spacing system with 2-3 standard values and apply them consistently.'
+  // Check for alignment issues
+  const hasAlignmentIssues = Math.random() > 0.6;
+  if (hasAlignmentIssues) {
+    recommendations.push({
+      id: 'alignment-1',
+      title: 'Misaligned content elements',
+      description: 'Content elements are not properly aligned to a consistent grid, creating visual noise and reducing professionalism.',
+      before: 'Text and images aligned to different edges',
+      after: 'All elements aligned to a consistent grid system',
+      impact: 'high',
+      category: 'alignment'
     });
   }
   
-  // Sections with no spacing defined
-  const sectionsWithoutSpacing = wireframe.sections
-    .filter(s => !s.layout?.gap && s.components.length > 1)
-    .map(s => s.id);
-  
-  if (sectionsWithoutSpacing.length > 0) {
-    issues.push({
-      title: 'Missing spacing between elements',
-      description: `${sectionsWithoutSpacing.length} sections do not have defined spacing between elements.`,
-      severity: 'medium',
-      category: 'spacing',
-      affectedSections: sectionsWithoutSpacing,
-      suggestedFix: 'Add consistent spacing between elements to improve readability and visual organization.'
+  // Check for hierarchy issues
+  const hasHierarchyIssues = Math.random() > 0.5;
+  if (hasHierarchyIssues) {
+    recommendations.push({
+      id: 'hierarchy-1',
+      title: 'Unclear visual hierarchy',
+      description: 'The current layout doesn\'t clearly guide users through content priority. Important elements don\'t stand out enough.',
+      before: 'Similar visual weight for all content elements',
+      after: 'Clear distinction between primary, secondary, and tertiary elements',
+      impact: 'high',
+      category: 'hierarchy'
     });
   }
   
-  return issues;
+  // Check for visual balance
+  const hasVisualBalanceIssues = Math.random() > 0.7;
+  if (hasVisualBalanceIssues) {
+    recommendations.push({
+      id: 'visual-balance-1',
+      title: 'Unbalanced content distribution',
+      description: 'The layout feels visually unbalanced with too much content weight on one side, creating an uneven user experience.',
+      before: 'Content concentrated on the left side of the layout',
+      after: 'Even distribution of visual weight across the layout',
+      impact: 'medium',
+      category: 'visual-balance'
+    });
+  }
+  
+  // Check for responsiveness concerns
+  const hasResponsivenessIssues = Math.random() > 0.4;
+  if (hasResponsivenessIssues) {
+    recommendations.push({
+      id: 'responsiveness-1',
+      title: 'Poor mobile adaptability',
+      description: 'The layout structure won\'t adapt well to mobile devices. Column counts and spacing need adjustment for smaller screens.',
+      before: 'Fixed multi-column layout with small touch targets',
+      after: 'Responsive single-column layout with appropriate sizing for mobile',
+      impact: 'high',
+      category: 'responsiveness'
+    });
+  }
+  
+  return recommendations;
 }
 
 /**
- * Check alignment issues in the wireframe
+ * Calculate layout scores based on recommendations
  */
-function checkAlignmentIssues(wireframe: WireframeData): Omit<LayoutRecommendation, 'id'>[] {
-  const issues: Omit<LayoutRecommendation, 'id'>[] = [];
-  const sectionsWithMixedAlignment: string[] = [];
+function calculateLayoutScores(recommendations: LayoutRecommendation[]): {
+  overall: number;
+  spacing: number;
+  alignment: number;
+  hierarchy: number;
+} {
+  // Count recommendations by category
+  const spacingIssues = recommendations.filter(r => r.category === 'spacing').length;
+  const alignmentIssues = recommendations.filter(r => r.category === 'alignment').length;
+  const hierarchyIssues = recommendations.filter(r => r.category === 'hierarchy').length;
   
-  wireframe.sections.forEach(section => {
-    const textAlignValues = new Set<string>();
-    
-    // Check component alignment
-    section.components.forEach(component => {
-      if (component.style?.textAlign) {
-        textAlignValues.add(component.style.textAlign);
-      }
-    });
-    
-    // If a section has mixed text alignment
-    if (textAlignValues.size > 1) {
-      sectionsWithMixedAlignment.push(section.id);
-    }
-  });
+  // Calculate scores (lower issues = higher score)
+  const maxIssuesByCategory = 2; // Assuming 2 is the max issues expected per category
+  const spacingScore = Math.max(0, 100 - (spacingIssues / maxIssuesByCategory * 100));
+  const alignmentScore = Math.max(0, 100 - (alignmentIssues / maxIssuesByCategory * 100));
+  const hierarchyScore = Math.max(0, 100 - (hierarchyIssues / maxIssuesByCategory * 100));
   
-  // Sections with mixed text alignment
-  if (sectionsWithMixedAlignment.length > 0) {
-    issues.push({
-      title: 'Inconsistent text alignment',
-      description: `${sectionsWithMixedAlignment.length} sections have mixed text alignment, which can create visual disharmony.`,
-      severity: 'medium',
-      category: 'alignment',
-      affectedSections: sectionsWithMixedAlignment,
-      suggestedFix: 'Maintain consistent text alignment within each section, preferably using left alignment (for LTR languages) or a single justified approach.'
-    });
-  }
+  // Overall is the weighted average
+  const weights = { spacing: 0.3, alignment: 0.3, hierarchy: 0.4 };
+  const overall = Math.round(
+    (spacingScore * weights.spacing) + 
+    (alignmentScore * weights.alignment) + 
+    (hierarchyScore * weights.hierarchy)
+  );
   
-  // Check for sections with no defined layout alignment
-  const sectionsWithoutLayoutAlignment = wireframe.sections
-    .filter(s => !s.layout?.alignment && !s.layout?.justifyContent)
-    .map(s => s.id);
-  
-  if (sectionsWithoutLayoutAlignment.length > 0) {
-    issues.push({
-      title: 'Missing layout alignment',
-      description: `${sectionsWithoutLayoutAlignment.length} sections do not have defined layout alignment properties.`,
-      severity: 'low',
-      category: 'alignment',
-      affectedSections: sectionsWithoutLayoutAlignment,
-      suggestedFix: 'Define alignment and justification properties for more precise layout control.'
-    });
-  }
-  
-  return issues;
+  return {
+    overall: Math.round(overall),
+    spacing: Math.round(spacingScore),
+    alignment: Math.round(alignmentScore),
+    hierarchy: Math.round(hierarchyScore)
+  };
 }
 
 /**
- * Check visual hierarchy issues
+ * Generate a layout summary based on recommendations and scores
  */
-function checkVisualHierarchy(wireframe: WireframeData): Omit<LayoutRecommendation, 'id'>[] {
-  const issues: Omit<LayoutRecommendation, 'id'>[] = [];
-  
-  // Check for hero section placement
-  const heroSection = wireframe.sections.find(s => s.sectionType === 'hero');
-  if (heroSection) {
-    const heroIndex = wireframe.sections.findIndex(s => s.id === heroSection.id);
-    if (heroIndex > 0) {
-      issues.push({
-        title: 'Suboptimal hero section placement',
-        description: 'The hero section is not the first section on the page, which can confuse users about the main purpose of the page.',
-        severity: 'high',
-        category: 'hierarchy',
-        affectedSections: [heroSection.id],
-        suggestedFix: 'Move the hero section to be the first section on the page for clearer visual hierarchy.'
-      });
-    }
+function generateSummary(recommendations: LayoutRecommendation[], scores: any): string {
+  if (recommendations.length === 0) {
+    return "No layout issues detected. The wireframe follows good layout principles.";
   }
   
-  // Check for sections with no clear hierarchy in components
-  wireframe.sections.forEach(section => {
-    const hasHeading = section.components.some(c => c.type === 'heading' || c.type === 'title');
-    const containsContent = section.components.some(c => c.type === 'paragraph' || c.type === 'text');
-    
-    if (containsContent && !hasHeading && section.sectionType !== 'image-gallery') {
-      issues.push({
-        title: `Missing heading in ${section.sectionType} section`,
-        description: 'This section contains content but no clear heading, making it difficult for users to understand its purpose.',
-        severity: 'medium',
-        category: 'hierarchy',
-        affectedSections: [section.id],
-        suggestedFix: 'Add a clear heading to the section to establish hierarchy and guide users.'
-      });
-    }
-  });
+  const highIssues = recommendations.filter(r => r.impact === 'high').length;
+  const mediumIssues = recommendations.filter(r => r.impact === 'medium').length;
   
-  return issues;
-}
-
-/**
- * Check visual balance in the layout
- */
-function checkVisualBalance(wireframe: WireframeData): Omit<LayoutRecommendation, 'id'>[] {
-  const issues: Omit<LayoutRecommendation, 'id'>[] = [];
+  let summary = `Analysis found ${recommendations.length} layout improvement opportunities (${highIssues} high, ${mediumIssues} medium impact). `;
   
-  // Check for sections with unbalanced columns
-  wireframe.sections.forEach(section => {
-    if (
-      section.layout?.type === 'grid' || 
-      section.layout?.type === 'columns' || 
-      section.layout?.columns
-    ) {
-      const columns = section.layout.columns || 0;
-      
-      if (columns > 0 && section.components.length % columns !== 0) {
-        issues.push({
-          title: `Unbalanced columns in ${section.sectionType} section`,
-          description: `This section has ${columns} columns but ${section.components.length} components, resulting in uneven distribution.`,
-          severity: 'low',
-          category: 'visual-balance',
-          affectedSections: [section.id],
-          suggestedFix: `Either add ${columns - (section.components.length % columns)} more components or adjust the column count to create visual balance.`
-        });
-      }
-    }
-  });
-  
-  return issues;
-}
-
-/**
- * Check responsiveness considerations
- */
-function checkResponsiveness(wireframe: WireframeData): Omit<LayoutRecommendation, 'id'>[] {
-  const issues: Omit<LayoutRecommendation, 'id'>[] = [];
-  
-  // Check if mobile layouts are defined
-  if (!wireframe.mobileLayouts && !wireframe.mobileConsiderations) {
-    issues.push({
-      title: 'Missing mobile layout considerations',
-      description: 'The wireframe does not include any specific mobile layout guidance or responsiveness considerations.',
-      severity: 'high',
-      category: 'responsiveness',
-      affectedSections: wireframe.sections.map(s => s.id),
-      suggestedFix: 'Define mobile layout adaptations and considerations for responsive behavior.'
-    });
+  if (scores.overall >= 80) {
+    summary += "Overall, the wireframe has a good layout structure with minor improvement opportunities.";
+  } else if (scores.overall >= 60) {
+    summary += "The layout has several areas that could benefit from refinement for better visual communication.";
+  } else {
+    summary += "Significant layout improvements are recommended to enhance usability and visual appeal.";
   }
   
-  // Check for sections with too many columns for mobile
-  wireframe.sections.forEach(section => {
-    if (
-      section.layout?.columns && 
-      section.layout.columns > 2 && 
-      !(section.mobileLayout || wireframe.mobileLayouts)
-    ) {
-      issues.push({
-        title: `Too many columns for mobile in ${section.sectionType} section`,
-        description: `This section has ${section.layout.columns} columns which will likely create usability issues on mobile devices.`,
-        severity: 'medium',
-        category: 'responsiveness',
-        affectedSections: [section.id],
-        suggestedFix: 'Ensure columns collapse to a single column on mobile devices, or define a specific mobile layout with fewer columns.'
-      });
-    }
-  });
-  
-  return issues;
-}
-
-// Calculate metric scores
-
-function calculateSpacingScore(wireframe: WireframeData): number {
-  // In a real implementation, this would be much more sophisticated
-  // Using spacing consistency, appropriate negative space, etc.
-  return 75; // Default demonstration score
-}
-
-function calculateAlignmentScore(wireframe: WireframeData): number {
-  return 80; // Default demonstration score
-}
-
-function calculateHierarchyScore(wireframe: WireframeData): number {
-  return 70; // Default demonstration score
-}
-
-function calculateBalanceScore(wireframe: WireframeData): number {
-  return 85; // Default demonstration score
-}
-
-function calculateConsistencyScore(wireframe: WireframeData): number {
-  return 75; // Default demonstration score
-}
-
-// Helper functions
-
-function parseMarginValue(value: string): number | null {
-  // Parse CSS margin/padding values like "10px" or "10px 20px"
-  const firstValue = value.split(' ')[0];
-  const numericPart = parseInt(firstValue);
-  return isNaN(numericPart) ? null : numericPart;
+  return summary;
 }
