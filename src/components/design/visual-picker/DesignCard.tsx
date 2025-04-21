@@ -4,8 +4,19 @@ import { cn } from '@/lib/utils';
 import { CheckIcon, XIcon } from 'lucide-react';
 import { DesignOption } from '../AnimatedVisualPicker';
 
+// Extend the DesignOption interface to include the properties used in this component
+interface ExtendedDesignOption extends DesignOption {
+  colorScheme?: Record<string, string>;
+  typography?: {
+    headings: string;
+    body: string;
+  };
+  layoutStyle?: string;
+  toneDescriptor?: string;
+}
+
 interface DesignCardProps {
-  currentOption: DesignOption;
+  currentOption: ExtendedDesignOption;
   direction: string;
   isLiked: Record<string, boolean>;
   offsetX: number;
@@ -87,7 +98,7 @@ export const DesignCard: React.FC<DesignCardProps> = ({
                     <div 
                       key={key}
                       className="w-6 h-6 rounded-full" 
-                      style={{ backgroundColor: color }}
+                      style={{ backgroundColor: color as string }}
                       title={`${key}: ${color}`}
                     ></div>
                   ))}

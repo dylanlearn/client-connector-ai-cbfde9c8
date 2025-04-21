@@ -8,6 +8,14 @@ export interface DesignOption {
   category: string;
   icon?: React.ComponentType;
   preview?: string;
+  // Add optional properties to fix type errors
+  colorScheme?: Record<string, string>;
+  typography?: {
+    headings: string;
+    body: string;
+  };
+  layoutStyle?: string;
+  toneDescriptor?: string;
 }
 
 // Re-export components from the new locations

@@ -6,9 +6,20 @@ import { DesignOption } from "../AnimatedVisualPicker";
 import { DesignCard } from "./DesignCard";
 import { ActionButtons } from "./ActionButtons";
 
+// Extended design option interface to match the properties used in DesignCard
+export interface ExtendedDesignOption extends DesignOption {
+  colorScheme?: Record<string, string>;
+  typography?: {
+    headings: string;
+    body: string;
+  };
+  layoutStyle?: string;
+  toneDescriptor?: string;
+}
+
 interface AnimatedVisualPickerProps {
-  options: DesignOption[];
-  onSelect: (option: DesignOption) => void;
+  options: ExtendedDesignOption[];
+  onSelect: (option: ExtendedDesignOption) => void;
   category: DesignOption["category"];
   className?: string;
 }
