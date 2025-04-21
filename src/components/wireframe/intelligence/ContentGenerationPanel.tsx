@@ -1,74 +1,56 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { 
-  FileText, 
-  Sparkles, 
-  Check, 
-  PanelRight,
-  FileEdit,
-  PencilRuler
-} from 'lucide-react';
-import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { useContentGeneration } from '@/hooks/ai/use-content-generation';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from '@/lib/utils';
+import { useContentGeneration } from '@/hooks/ai/use-content-generation';
+import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface ContentGenerationPanelProps {
   wireframe: WireframeData;
-  onUpdateWireframe: (updated: WireframeData) => void;
+  onUpdateWireframe: (updatedWireframe: WireframeData) => void;
 }
+
+type ContentTone = "professional" | "friendly" | "enthusiastic" | "technical" | "formal";
 
 const ContentGenerationPanel: React.FC<ContentGenerationPanelProps> = ({
   wireframe,
   onUpdateWireframe
 }) => {
-  const { 
+  const [activeTab, setActiveTab] = useState<string>('full-wireframe');
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [contextPrompt, setContextPrompt] = useState<string>('');
+  const [tone, setTone] = useState<ContentTone>("professional");
+  
+  const {
     isGenerating,
+    generationResult,
+    error,
     generateContent,
     generateSectionContent
   } = useContentGeneration();
   
-  const [activeTab, setActiveTab] = useState('page');
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  const [contentTone, setContentTone] = useState('professional');
-  const [contentStyle, setContentStyle] = useState('concise');
-  const [customInstructions, setCustomInstructions] = useState('');
-  
   const handleGenerateFullContent = async () => {
     const result = await generateContent({
       wireframe,
-      tone: contentTone,
-      style: contentStyle,
-      customInstructions: customInstructions.trim() || undefined
+      tone: tone as ContentTone,
+      context: contextPrompt
     });
     
     if (result) {
+      // Apply the generated content to the wireframe
+      // Note: The result doesn't have sections, it has content for the whole wireframe
       const updatedWireframe = {
         ...wireframe,
-        sections: wireframe.sections.map(section => {
-          const sectionContent = result.sections.find(s => s.sectionId === section.id);
-          if (sectionContent) {
-            return {
-              ...section,
-              ...sectionContent.content
-            };
-          }
-          return section;
-        })
+        title: result.title || wireframe.title,
+        description: result.description || wireframe.description
       };
       
       onUpdateWireframe(updatedWireframe);
@@ -84,216 +66,175 @@ const ContentGenerationPanel: React.FC<ContentGenerationPanelProps> = ({
     const result = await generateSectionContent({
       wireframe,
       section,
-      tone: contentTone,
-      style: contentStyle,
-      customInstructions: customInstructions.trim() || undefined
+      tone: tone as ContentTone,
+      context: contextPrompt
     });
     
     if (result) {
+      // Apply the generated content to the section
       const updatedWireframe = {
         ...wireframe,
-        sections: wireframe.sections.map(s => {
-          if (s.id === selectedSection) {
-            return {
-              ...s,
-              ...result.content
-            };
-          }
-          return s;
-        })
+        sections: wireframe.sections.map(s => 
+          s.id === selectedSection 
+            ? { 
+                ...s, 
+                ...result.sectionContent 
+              } 
+            : s
+        )
       };
       
       onUpdateWireframe(updatedWireframe);
     }
   };
   
-  const renderSectionSelector = () => {
-    return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium">Select Section</h3>
-          <Select 
-            value={selectedSection || ''} 
-            onValueChange={setSelectedSection}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Choose section to generate content" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Available Sections</SelectLabel>
-                {wireframe.sections.map(section => (
-                  <SelectItem key={section.id} value={section.id}>
-                    {section.name || section.sectionType}
-                    {section.title && ` - ${section.title}`}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {selectedSection && (
-          <Button 
-            onClick={handleGenerateSectionContent} 
-            disabled={isGenerating}
-            className="w-full"
-          >
-            {isGenerating ? (
-              <>
-                <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-1" />
-                Generate Content for Section
-              </>
-            )}
-          </Button>
-        )}
-      </div>
-    );
-  };
-  
-  const renderFullPageGenerator = () => {
-    return (
-      <div className="space-y-4">
-        <Card className="bg-slate-50">
-          <CardContent className="p-4 space-y-2">
-            <h3 className="text-sm font-medium">Page Content Generator</h3>
-            <p className="text-xs text-muted-foreground">
-              Generate consistent content for all sections based on wireframe layout and purpose.
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Button 
-          onClick={handleGenerateFullContent} 
-          disabled={isGenerating}
-          className="w-full"
-        >
-          {isGenerating ? (
-            <>
-              <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <FileText className="h-4 w-4 mr-1" />
-              Generate Full Page Content
-            </>
-          )}
-        </Button>
-      </div>
-    );
-  };
-  
-  const renderSettings = () => {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Tone</h3>
-            <Select value={contentTone} onValueChange={setContentTone}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="friendly">Friendly</SelectItem>
-                <SelectItem value="casual">Casual</SelectItem>
-                <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
-                <SelectItem value="formal">Formal</SelectItem>
-                <SelectItem value="technical">Technical</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Style</h3>
-            <Select value={contentStyle} onValueChange={setContentStyle}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="concise">Concise</SelectItem>
-                <SelectItem value="detailed">Detailed</SelectItem>
-                <SelectItem value="persuasive">Persuasive</SelectItem>
-                <SelectItem value="informative">Informative</SelectItem>
-                <SelectItem value="narrative">Narrative</SelectItem>
-                <SelectItem value="descriptive">Descriptive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium">Custom Instructions</h3>
-          <Textarea
-            placeholder="Add specific instructions for content generation (optional)"
-            value={customInstructions}
-            onChange={e => setCustomInstructions(e.target.value)}
-            rows={3}
-            className="resize-none"
-          />
-        </div>
-      </div>
-    );
-  };
-  
-  if (isGenerating) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-medium">Content Generation</h3>
-          <Skeleton className="h-8 w-24" />
-        </div>
-        
-        <div className="space-y-3">
-          <Skeleton className="h-[100px] w-full" />
-          <Skeleton className="h-[100px] w-full" />
-          <Skeleton className="h-[100px] w-full" />
-        </div>
-      </div>
-    );
-  }
+  // Find selected section if any
+  const sectionData = selectedSection 
+    ? wireframe.sections.find(s => s.id === selectedSection) 
+    : null;
   
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium">Content Generation</h3>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 w-full">
-          <TabsTrigger value="page" className="flex-1">
-            <FileText className="h-4 w-4 mr-1" />
-            Page
-          </TabsTrigger>
-          <TabsTrigger value="section" className="flex-1">
-            <PanelRight className="h-4 w-4 mr-1" />
-            Section
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex-1">
-            <PencilRuler className="h-4 w-4 mr-1" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Content Generation</CardTitle>
+        <CardDescription>
+          Generate contextually relevant content for your wireframe
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="full-wireframe">Full Wireframe</TabsTrigger>
+            <TabsTrigger value="section">Single Section</TabsTrigger>
+          </TabsList>
+          
+          <div className="mb-4">
+            <Label htmlFor="context">Context/Instructions</Label>
+            <Textarea 
+              id="context" 
+              placeholder="Add any specific direction or context for the content generation..."
+              value={contextPrompt}
+              onChange={(e) => setContextPrompt(e.target.value)}
+              className="h-24"
+            />
+          </div>
+          
+          <div className="mb-6 flex gap-4 items-center">
+            <div className="flex-1">
+              <Label htmlFor="tone">Tone of Voice</Label>
+              <Select value={tone} onValueChange={(value: ContentTone) => setTone(value)}>
+                <SelectTrigger id="tone">
+                  <SelectValue placeholder="Select tone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professional">Professional</SelectItem>
+                  <SelectItem value="friendly">Friendly</SelectItem>
+                  <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
+                  <SelectItem value="technical">Technical</SelectItem>
+                  <SelectItem value="formal">Formal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <TabsContent value="full-wireframe">
+            <Button 
+              onClick={handleGenerateFullContent} 
+              disabled={isGenerating}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Content...
+                </>
+              ) : (
+                <>Generate Full Wireframe Content</>
+              )}
+            </Button>
+          </TabsContent>
+          
+          <TabsContent value="section">
+            <div className="mb-4">
+              <Label htmlFor="section">Select Section</Label>
+              <Select 
+                value={selectedSection || ''} 
+                onValueChange={setSelectedSection}
+              >
+                <SelectTrigger id="section">
+                  <SelectValue placeholder="Choose a section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {wireframe.sections.map(section => (
+                    <SelectItem key={section.id} value={section.id}>
+                      {section.name || section.sectionType}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button 
+              onClick={handleGenerateSectionContent} 
+              disabled={isGenerating || !selectedSection}
+              className="w-full"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Generating Section Content...
+                </>
+              ) : (
+                <>Generate Section Content</>
+              )}
+            </Button>
+          </TabsContent>
+        </Tabs>
         
-        <TabsContent value="page">
-          {renderFullPageGenerator()}
-        </TabsContent>
+        {error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {error.message}
+            </AlertDescription>
+          </Alert>
+        )}
         
-        <TabsContent value="section">
-          {renderSectionSelector()}
-        </TabsContent>
-        
-        <TabsContent value="settings">
-          {renderSettings()}
-        </TabsContent>
-      </Tabs>
-    </div>
+        {generationResult && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Generated Content</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-64">
+                  <div className="space-y-4">
+                    {activeTab === 'full-wireframe' ? (
+                      <>
+                        <div>
+                          <Badge>Title</Badge>
+                          <p className="mt-1">{(generationResult as any).title || "No title generated"}</p>
+                        </div>
+                        <div>
+                          <Badge>Description</Badge>
+                          <p className="mt-1">{(generationResult as any).description || "No description generated"}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div>
+                        <Badge>{sectionData?.sectionType || "Section"} Content</Badge>
+                        <p className="mt-1">{JSON.stringify((generationResult as any).sectionContent || {})}</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
