@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
 import { 
@@ -9,7 +8,7 @@ import {
 } from '@/services/ai/wireframe/content/context-aware-content-service';
 import { toast } from 'sonner';
 
-// Define our own interfaces that match what we actually use in the components
+// Update the interfaces to include the missing properties
 export interface GeneratedContent {
   pageTitle: string;
   pageDescription: string;
@@ -57,7 +56,12 @@ export function useContentGeneration({
         pageTitle: result.pageTitle || request.wireframe.title || '',
         pageDescription: result.pageDescription || request.wireframe.description || '',
         contentSections: Array.isArray(result.contentSections) 
-          ? result.contentSections 
+          ? result.contentSections.map(section => ({
+              sectionId: section.id || '',
+              name: section.name || '',
+              content: section.content || '',
+              ...section
+            }))
           : []
       };
       
@@ -97,7 +101,8 @@ export function useContentGeneration({
       // Transform service result to our expected interface format
       const formattedResult: GeneratedSectionContent = {
         name: result.name || request.section.name || '',
-        content: typeof result.content === 'string' ? result.content : ''
+        content: typeof result.content === 'string' ? result.content : '',
+        ...result
       };
       
       setGenerationResult(formattedResult);
