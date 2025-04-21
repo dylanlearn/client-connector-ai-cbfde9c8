@@ -66,3 +66,6 @@ export function recordError(error: Error, category: string, metadata?: Record<st
     metadata
   };
 }
+
+// Re-export initialization functions from monitoring-initializer
+export { initializeErrorHandling, initializeMonitoringSystem } from './monitoring-initializer';

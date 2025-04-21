@@ -4,14 +4,16 @@ export {
   getApiMetrics,
   getApiUsageMetrics,
   recordApiUsage,
-  recordApiError
+  recordApiError,
+  recordClientError
 } from './monitoring/api-usage';
 
 export {
-  recordClientError,
+  recordClientError as recordErrorWithDetails,
   handleApiError,
   ErrorReporter,
-  recordError
+  recordError,
+  initializeErrorHandling
 } from './monitoring/error-handling';
 
 // Re-export types and functions separately to avoid name collision

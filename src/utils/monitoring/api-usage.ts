@@ -1,3 +1,4 @@
+
 // API usage monitoring utilities
 
 /**
@@ -53,4 +54,38 @@ export function recordApiError(endpoint: string, error: Error, statusCode: numbe
   // Implementation would store this information for monitoring
   console.error(`API Error: ${endpoint} - ${error.message} - ${statusCode}`);
   return true;
+}
+
+/**
+ * Records client-side errors for monitoring
+ */
+export function recordClientError(
+  error: Error | string, 
+  stack?: string, 
+  componentName?: string, 
+  userId?: string, 
+  metadata?: Record<string, any>
+) {
+  // Convert string errors to Error objects for consistency
+  const errorObj = typeof error === 'string' ? new Error(error) : error;
+  const errorStack = stack || errorObj.stack;
+  
+  // Log to console in development
+  console.error(`Client Error${componentName ? ` in ${componentName}` : ''}:`, errorObj, metadata);
+  
+  // In a real app, this would send to a monitoring service
+  const errorData = {
+    message: errorObj.message,
+    stack: errorStack,
+    component: componentName,
+    userId,
+    timestamp: new Date().toISOString(),
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+    ...metadata
+  };
+
+  // This would normally be an API call to record the error
+  // For now just return a promise that resolves with the error data
+  return Promise.resolve(errorData);
 }
