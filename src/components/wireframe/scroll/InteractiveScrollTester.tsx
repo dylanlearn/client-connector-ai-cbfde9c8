@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollAreaVisualizer } from './';
-import { ScrollTriggerEffect } from './';
+import ScrollAreaVisualizer from './ScrollAreaVisualizer';
+import ScrollTriggerEffect from './ScrollTriggerEffect';
 
 interface InteractiveScrollTesterProps {
   title?: string;
@@ -10,6 +11,13 @@ interface InteractiveScrollTesterProps {
 
 const InteractiveScrollTester: React.FC<InteractiveScrollTesterProps> = ({ title = "Interactive Scroll Tester" }) => {
   const [activeTab, setActiveTab] = useState<string>("scroll-area");
+
+  // Define default triggers for the ScrollTriggerEffect component
+  const defaultTriggers = [
+    { position: 25, label: "Header" },
+    { position: 50, label: "Content" },
+    { position: 75, label: "Footer" }
+  ];
 
   return (
     <Card>
@@ -40,7 +48,7 @@ const InteractiveScrollTester: React.FC<InteractiveScrollTesterProps> = ({ title
           </TabsContent>
           
           <TabsContent value="scroll-trigger">
-            <ScrollTriggerEffect />
+            <ScrollTriggerEffect triggers={defaultTriggers} />
           </TabsContent>
         </Tabs>
       </CardContent>
