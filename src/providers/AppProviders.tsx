@@ -18,16 +18,16 @@ interface AppProvidersProps {
 export const AppProviders = ({ children }: AppProvidersProps) => {
   return (
     <QueryProvider>
-      <AuthProvider>
-        <ProfileProvider>
+      <ProfileProvider>
+        <AuthProvider>
           <VisualStateProvider>
             <DesignProcessProvider>
               {children}
               <Toaster richColors position="top-right" />
             </DesignProcessProvider>
           </VisualStateProvider>
-        </ProfileProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ProfileProvider>
     </QueryProvider>
   );
 };
