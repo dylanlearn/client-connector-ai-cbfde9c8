@@ -6,17 +6,50 @@ import { MonitoringControls } from '../controls/MonitoringControls';
 interface ConfigurationPanelProps {
   redisConnected?: boolean;
   onSaveChanges?: () => Promise<void>;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  onPeriodChange?: (period: 'hour' | 'day' | 'week') => void;
+  selectedPeriod?: 'hour' | 'day' | 'week';
+  autoRefresh?: boolean;
+  onAutoRefreshToggle?: (enabled: boolean) => void;
 }
 
-export function ConfigurationPanel({ redisConnected, onSaveChanges }: ConfigurationPanelProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<'hour' | 'day' | 'week'>('day');
-  const [autoRefresh, setAutoRefresh] = useState(false);
+export function ConfigurationPanel({ 
+  redisConnected, 
+  onSaveChanges,
+  onRefresh,
+  isRefreshing = false,
+  selectedPeriod = 'day',
+  onPeriodChange,
+  autoRefresh = false,
+  onAutoRefreshToggle
+}: ConfigurationPanelProps) {
+  const [localIsRefreshing, setLocalIsRefreshing] = useState(false);
+  const [localSelectedPeriod, setLocalSelectedPeriod] = useState<'hour' | 'day' | 'week'>(selectedPeriod);
+  const [localAutoRefresh, setLocalAutoRefresh] = useState(autoRefresh);
 
   const handleRefresh = () => {
-    setIsRefreshing(true);
+    setLocalIsRefreshing(true);
     // Simulate refresh
-    setTimeout(() => setIsRefreshing(false), 1000);
+    setTimeout(() => setLocalIsRefreshing(false), 1000);
+    
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+  
+  const handlePeriodChange = (period: 'hour' | 'day' | 'week') => {
+    setLocalSelectedPeriod(period);
+    if (onPeriodChange) {
+      onPeriodChange(period);
+    }
+  };
+  
+  const handleAutoRefreshToggle = (enabled: boolean) => {
+    setLocalAutoRefresh(enabled);
+    if (onAutoRefreshToggle) {
+      onAutoRefreshToggle(enabled);
+    }
   };
 
   return (
@@ -29,11 +62,11 @@ export function ConfigurationPanel({ redisConnected, onSaveChanges }: Configurat
           redisConnected={redisConnected} 
           onConfigUpdate={onSaveChanges}
           onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
-          onPeriodChange={setSelectedPeriod}
-          selectedPeriod={selectedPeriod}
-          autoRefresh={autoRefresh}
-          onAutoRefreshToggle={setAutoRefresh}
+          isRefreshing={isRefreshing || localIsRefreshing}
+          onPeriodChange={handlePeriodChange}
+          selectedPeriod={localSelectedPeriod}
+          autoRefresh={localAutoRefresh}
+          onAutoRefreshToggle={handleAutoRefreshToggle}
         />
       </CardContent>
     </Card>

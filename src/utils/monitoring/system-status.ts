@@ -48,3 +48,30 @@ export async function getSystemStatus(): Promise<SystemStatus> {
     lastUpdated: new Date().toISOString()
   };
 }
+
+export async function getSystemMetrics() {
+  // This function would fetch detailed system metrics
+  // For now, we'll return simulated data
+  return {
+    cpu: {
+      usage: '32%',
+      temperature: '45°C',
+      processes: 124
+    },
+    memory: {
+      used: '4.2GB',
+      total: '16GB',
+      percentage: '26%'
+    },
+    network: {
+      inbound: '1.2MB/s',
+      outbound: '0.8MB/s',
+      activeConnections: 38
+    },
+    storage: {
+      read: '15MB/s',
+      write: '8MB/s',
+      ioWait: '0.5%'
+    }
+  };
+}
