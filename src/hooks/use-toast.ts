@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 export type ToastVariant = "default" | "destructive" | "success";
 
 export type Toast = {
-  id: string;
+  id?: string; // Make id optional since it's generated automatically
   title?: React.ReactNode;
   description: React.ReactNode;
   action?: React.ReactNode;
@@ -13,6 +13,7 @@ export type Toast = {
 };
 
 type ToasterToast = Toast & {
+  id: string; // Inside ToasterToast, id is required
   removed?: boolean;
   onOpenChange?: (open: boolean) => void;
 };
@@ -33,7 +34,7 @@ export const toastStore = {
     this.listeners.forEach(listener => listener(this.toasts));
   },
   add: function (toast: Toast) {
-    const id = crypto.randomUUID();
+    const id = toast.id || crypto.randomUUID();
     const newToast = { ...toast, id };
     this.toasts = [newToast, ...this.toasts].slice(0, TOAST_LIMIT);
     this.notify();
@@ -49,6 +50,7 @@ export const toastStore = {
   },
 };
 
+// Add variant helpers to toast function
 export function toast(props: Omit<Toast, "id">) {
   const id = toastStore.add({
     ...props,
@@ -61,6 +63,21 @@ export function toast(props: Omit<Toast, "id">) {
     update: (props: Toast) => toastStore.update(id, props)
   };
 }
+
+// Add convenience methods for different variants
+toast.success = (props: string | Omit<Toast, "id" | "variant">) => {
+  if (typeof props === "string") {
+    return toast({ description: props, variant: "success" });
+  }
+  return toast({ ...props, variant: "success" });
+};
+
+toast.error = (props: string | Omit<Toast, "id" | "variant">) => {
+  if (typeof props === "string") {
+    return toast({ description: props, variant: "destructive" });
+  }
+  return toast({ ...props, variant: "destructive" });
+};
 
 toast.dismiss = (id?: string) => {
   if (id) {

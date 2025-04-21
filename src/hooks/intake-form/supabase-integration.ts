@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { IntakeFormData } from "@/types/intake-form";
 import { SupabaseIntegrationOptions } from "./types";
@@ -46,7 +45,6 @@ export const saveFormToSupabase = async (
       
       if (retries >= maxRetries) {
         options.toast.toast({
-          title: "Sync Error",
           description: "Failed to save your changes. Will retry automatically.",
           variant: "destructive",
         });

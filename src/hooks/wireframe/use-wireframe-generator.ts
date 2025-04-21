@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Toast } from '@/hooks/use-toast';
+import { toast, Toast } from '@/hooks/use-toast';
 import { 
   WireframeGenerationParams, 
   WireframeGenerationResult 
@@ -11,7 +11,7 @@ import { DebugLogger } from '@/utils/monitoring/debug-logger';
 export const useWireframeGenerator = (
   creativityLevel: number, 
   setCurrentWireframe: (wireframe: WireframeGenerationResult | null) => void, 
-  toastFn: (props: Toast) => string
+  toastFn: (props: Omit<Toast, "id">) => any = toast
 ) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);

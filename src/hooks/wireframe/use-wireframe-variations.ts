@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast'; 
+import { toast, Toast } from '@/hooks/use-toast'; 
 import { useWireframeGenerator } from '@/hooks/wireframe/use-wireframe-generator';
 import { 
   WireframeData, 
@@ -10,13 +10,13 @@ import {
 export function useWireframeVariations() {
   const [variations, setVariations] = useState<WireframeGenerationResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { toast } = useToast();
+  const { toast: showToast } = useToast();
   
   // We'll reuse the wireframe generator logic but won't use its state management
   const { generateWireframe: baseGenerateWireframe } = useWireframeGenerator(
     8, // Default creativity level
     () => {}, // We'll handle setting the current wireframe ourselves
-    toast
+    (toastProps) => toast(toastProps)
   );
   
   /**
@@ -86,7 +86,7 @@ export function useWireframeVariations() {
     } finally {
       setIsGenerating(false);
     }
-  }, [baseGenerateWireframe, toast]);
+  }, [baseGenerateWireframe]);
   
   /**
    * Clear all variations
@@ -102,3 +102,6 @@ export function useWireframeVariations() {
     clearVariations
   };
 }
+
+// Add the missing import for useToast
+import { useToast } from '@/hooks/use-toast';

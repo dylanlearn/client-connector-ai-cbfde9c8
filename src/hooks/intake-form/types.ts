@@ -5,3 +5,8 @@ export interface ToastAdapter {
     (props: { title?: string; description: string; variant?: "default" | "destructive" | "success" }): void;
   };
 }
+
+// Add the missing SupabaseIntegrationOptions interface
+export interface SupabaseIntegrationOptions {
+  toast: ToastAdapter;
+}

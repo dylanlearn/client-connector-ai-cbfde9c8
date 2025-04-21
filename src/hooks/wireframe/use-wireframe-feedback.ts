@@ -1,13 +1,13 @@
 
 import { useCallback } from "react";
-import { Toast } from "@/hooks/use-toast";
+import { toast, Toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
 
 export function useWireframeFeedback(
   wireframes: AIWireframe[],
   setWireframes: React.Dispatch<React.SetStateAction<AIWireframe[]>>,
-  showToast: (props: Toast) => string
+  showToast: (props: Omit<Toast, "id">) => string = toast
 ) {
   // Provide feedback on a wireframe
   const provideFeedback = useCallback(async (

@@ -1,12 +1,12 @@
 
 import { useCallback } from "react";
-import { Toast } from "@/hooks/use-toast";
+import { toast, Toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
 
 export function useWireframeStorage(
   setWireframes: React.Dispatch<React.SetStateAction<AIWireframe[]>>,
-  showToast: (props: Toast) => string
+  showToast: (props: Omit<Toast, "id">) => any = toast
 ) {
   // Load wireframes for a specific project
   const loadProjectWireframes = useCallback(async (projectId: string) => {
