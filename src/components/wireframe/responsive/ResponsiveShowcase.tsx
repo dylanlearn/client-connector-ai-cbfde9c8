@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useResponsive } from '@/hooks/use-responsive';
+import { useResponsive } from '@/contexts/ResponsiveContext';
 import ContainerQuery from './ContainerQuery';
 import { Badge } from '@/components/ui/badge';
 
@@ -74,7 +74,7 @@ const ResponsiveShowcase = () => {
             <div className="col-span-2">
               <h4 className="text-sm font-medium mb-2">Viewport Size</h4>
               <p className="text-xs text-muted-foreground">
-                {viewportWidth}px × {viewportHeight}px
+                {viewportWidth}px {'\u00D7'} {viewportHeight}px
               </p>
             </div>
             
@@ -91,7 +91,7 @@ const ResponsiveShowcase = () => {
                   debug
                 >
                   <div className="bg-green-100 p-4 flex items-center justify-center h-40 dark:bg-green-900/20">
-                    <span className="text-sm font-medium">Wide Container (aspect ratio > 1.5)</span>
+                    <span className="text-sm font-medium">Wide Container (aspect ratio {'>'} 1.5)</span>
                   </div>
                 </ContainerQuery>
                 <p className="text-xs text-center mt-2 text-muted-foreground">
