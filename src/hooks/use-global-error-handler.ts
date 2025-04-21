@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
@@ -62,7 +61,7 @@ export function useGlobalErrorHandler(options: ErrorHandlerOptions = {}) {
     if (mergedOptions.recordToDatabase) {
       try {
         await recordClientError(
-          normalizedError.message,
+          normalizedError,
           normalizedError.stack,
           `${mergedOptions.component}${context ? `: ${context}` : ''}`
         );

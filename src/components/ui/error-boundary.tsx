@@ -49,18 +49,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     });
     console.groupEnd();
     
-    recordClientError(
-      error.message,
-      error.stack,
-      componentName,
-      undefined,
-      { 
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-        location: window.location.href,
-        debug: true
-      }
-    ).catch(console.error);
+    recordClientError(error, error.stack, componentName, undefined, { 
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      location: window.location.href,
+      debug: true
+    }).catch(console.error);
     
     this.setState({
       error,

@@ -19,9 +19,7 @@ export function initializeErrorHandling(): void {
     recordClientError(
       error.message || 'Unhandled Promise Rejection',
       error.stack,
-      'Global', // componentName parameter
-      undefined, // userId parameter
-      { type: 'UnhandledRejection' } // metadata
+      'Global'
     ).catch(console.error);
   });
   
@@ -37,9 +35,7 @@ export function initializeErrorHandling(): void {
       recordClientError(
         event.error.message || 'Uncaught Error',
         event.error.stack,
-        'Global', // componentName parameter
-        undefined, // userId parameter
-        { type: 'UncaughtError' } // metadata
+        'Global'
       ).catch(console.error);
     }
   });
@@ -75,9 +71,7 @@ export function initializeErrorHandling(): void {
       recordClientError(
         `Network request failed: ${(error as Error).message}`,
         (error as Error).stack,
-        'API', // componentName parameter
-        undefined, // userId parameter
-        { type: 'NetworkError' } // metadata
+        'API'
       ).catch(console.error);
       
       throw error;

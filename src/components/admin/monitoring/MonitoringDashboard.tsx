@@ -1,12 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { SystemStatus } from '@/utils/monitoring/types';
 import { getSystemStatus, getSystemMetrics } from '@/utils/monitoring/system-status';
-import { getApiUsageMetrics } from '@/utils/monitoring/api-usage';
 import { StatusBadge } from './controls/StatusBadge';
 import { MonitoringControls } from './controls/MonitoringControls';
 import { ApiUsageMetrics } from './ApiUsageMetrics';
@@ -78,7 +75,6 @@ export function MonitoringDashboard() {
     );
   }
 
-  // Map system status to allowed status type
   const mapStatus = (status: string): 'healthy' | 'warning' | 'critical' | 'unknown' => {
     if (status === 'healthy') return 'healthy';
     if (status === 'warning') return 'warning';
@@ -92,13 +88,11 @@ export function MonitoringDashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">System Monitoring</h2>
-          <p className="text-muted-foreground">
-            Monitor system health, performance and errors
-          </p>
+          <p className="text-muted-foreground">Monitor system health, performance and errors</p>
         </div>
         
         <MonitoringControls 
-          onRefresh={handleRefresh} 
+          onRefresh={handleRefresh}
           isRefreshing={isLoading}
           onPeriodChange={handlePeriodChange}
           selectedPeriod={selectedPeriod}
@@ -106,7 +100,7 @@ export function MonitoringDashboard() {
           onAutoRefreshToggle={handleAutoRefreshToggle}
         />
       </div>
-
+      
       {systemStatus && (
         <div className="grid gap-6">
           <Card>
@@ -151,7 +145,7 @@ export function MonitoringDashboard() {
             </TabsList>
             
             <TabsContent value="usage" className="space-y-4 pt-4">
-              <ApiUsageMetrics />
+              <ApiUsageMetrics period={selectedPeriod} />
             </TabsContent>
             
             <TabsContent value="errors" className="space-y-4 pt-4">

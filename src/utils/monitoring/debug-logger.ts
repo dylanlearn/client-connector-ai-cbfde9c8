@@ -1,94 +1,40 @@
 
 /**
- * Debug Logger - Unified logging utility for the application
+ * Utility for structured debug logging
  */
-export class DebugLogger {
-  private static timers: Record<string, number> = {};
-  private static isDebugMode = process.env.NODE_ENV !== 'production';
-
+export const DebugLogger = {
   /**
-   * Log an informational message
+   * Log informational message
    */
-  static info(message: string, context?: { context?: string; metadata?: Record<string, any> }): void {
-    if (!this.isDebugMode) return;
-    
-    console.log(
-      `%c[INFO]%c ${message}`,
-      'color: #3182ce; font-weight: bold',
-      'color: inherit',
-      context ? context : ''
-    );
-  }
-
+  info(message: string, options?: { context?: string; metadata?: Record<string, any> }): void {
+    console.info(`[INFO] ${message}`, options?.metadata || {});
+  },
+  
   /**
-   * Log a warning message
+   * Log warning message
    */
-  static warn(message: string, context?: { context?: string; metadata?: Record<string, any> }): void {
-    console.warn(
-      `%c[WARN]%c ${message}`,
-      'color: #f59e0b; font-weight: bold',
-      'color: inherit',
-      context ? context : ''
-    );
-  }
-
+  warn(message: string, options?: { context?: string; metadata?: Record<string, any> }): void {
+    console.warn(`[WARN] ${message}`, options?.metadata || {});
+  },
+  
   /**
-   * Log an error message
+   * Log error message
    */
-  static error(
-    message: string, 
-    context?: { context?: string; metadata?: Record<string, any> }
-  ): void {
-    console.error(
-      `%c[ERROR]%c ${message}`,
-      'color: #e53e3e; font-weight: bold',
-      'color: inherit',
-      context ? context : ''
-    );
-  }
-
+  error(message: string, options?: { context?: string; metadata?: Record<string, any> }): void {
+    console.error(`[ERROR] ${message}`, options?.metadata || {});
+  },
+  
   /**
-   * Start a timer for performance measurement
+   * Start a timer for performance tracking
    */
-  static startTimer(id: string): void {
-    if (!this.isDebugMode) return;
-    this.timers[id] = performance.now();
-  }
-
+  startTimer(id: string): void {
+    console.time(id);
+  },
+  
   /**
-   * End a timer and log the elapsed time
+   * End a timer and log the duration
    */
-  static endTimer(id: string): number | null {
-    if (!this.isDebugMode) return null;
-    
-    if (!this.timers[id]) {
-      this.warn(`Timer "${id}" does not exist`);
-      return null;
-    }
-
-    const elapsed = performance.now() - this.timers[id];
-    const formattedTime = elapsed.toFixed(2);
-    
-    this.info(`${id}: ${formattedTime}ms`);
-    
-    delete this.timers[id];
-    return elapsed;
+  endTimer(id: string): void {
+    console.timeEnd(id);
   }
-
-  /**
-   * Group related logs together
-   */
-  static group(label: string, callback: () => void): void {
-    if (!this.isDebugMode) {
-      callback();
-      return;
-    }
-    
-    console.group(label);
-    callback();
-    console.groupEnd();
-  }
-}
-
-// Export as singleton instance and directly
-export default DebugLogger;
+};

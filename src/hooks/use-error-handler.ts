@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
@@ -33,16 +32,9 @@ export function useErrorHandler(options: { componentName?: string; showToast?: b
     
     // Record error for monitoring with enhanced metadata
     recordClientError(
-      errorMessage,
+      errorObj,
       errorObj.stack,
-      componentName,
-      undefined,
-      {
-        context,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        debug: true
-      }
+      componentName
     ).catch(e => DebugLogger.error('Failed to record client error', { metadata: { error: e }}));
     
     // Show toast notification if enabled

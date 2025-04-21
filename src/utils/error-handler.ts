@@ -69,12 +69,7 @@ export class ErrorHandler {
       error.message,
       error.context?.stack as string | undefined,
       componentName,
-      userId,
-      {
-        code: error.code,
-        timestamp: error.timestamp,
-        ...error.context
-      }
+      userId
     ).catch(console.error);
   }
   

@@ -30,13 +30,8 @@ export function AppErrorBoundary({ children, userId, onError }: AppErrorBoundary
     
     // If a userId was provided, include it in error tracking
     if (userId) {
-      recordClientError(
-        error.message,
-        error.stack,
-        "AppErrorBoundary",
-        userId,
-        { userId }  // Pass userId as metadata instead
-      ).catch(console.error);
+      recordClientError(error, error.stack, "AppErrorBoundary", userId)
+        .catch(e => console.error("Error recording client error:", e));
     }
   };
   

@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { recordClientError } from '@/utils/monitoring/api-usage';
 import { DebugLogger } from '@/utils/monitoring/debug-logger';
@@ -79,11 +78,10 @@ export class ErrorHandler {
     if (recordError) {
       try {
         await recordClientError(
-          normalizedError.message,
+          normalizedError,
           normalizedError.stack,
-          `${componentName}: ${context}`,
-          userId,
-          errorContext
+          componentName,
+          userId
         );
       } catch (recordingError) {
         // Don't let errors in recording cause more problems

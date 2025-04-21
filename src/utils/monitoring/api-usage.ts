@@ -24,33 +24,65 @@ export interface ApiMetrics {
 /**
  * Record a client-side error for monitoring purposes
  */
-export function recordClientError(error: Error, context?: Record<string, any>): void {
-  console.error('Client error:', error, context);
+export function recordClientError(
+  errorOrMessage: Error | string,
+  stackOrContext?: string | Record<string, any>,
+  componentName?: string,
+  userId?: string,
+  metadata?: Record<string, any>
+): Promise<boolean> {
+  // Normalize parameters
+  const errorMessage = errorOrMessage instanceof Error ? errorOrMessage.message : errorOrMessage;
+  const stack = errorOrMessage instanceof Error ? errorOrMessage.stack : 
+                (typeof stackOrContext === 'string' ? stackOrContext : undefined);
+  const context = typeof stackOrContext === 'object' ? stackOrContext : 
+                 (metadata || (componentName && typeof componentName === 'object' ? componentName : {}));
+
+  // Handle backward compatibility
+  const normalizedComponentName = typeof componentName === 'string' ? componentName : 'Unknown';
+  const normalizedUserId = userId;
+  const normalizedMetadata = metadata || {};
+
+  console.error('Client error:', errorMessage, {
+    stack,
+    componentName: normalizedComponentName,
+    userId: normalizedUserId,
+    context,
+    ...normalizedMetadata
+  });
+  
   // In a real implementation, this would send the error to a monitoring service
-  try {
-    // Simulate sending error data to the server
-    const errorData = {
-      message: error.message,
-      stack: error.stack,
-      context,
-      timestamp: new Date().toISOString(),
-      url: window.location.href,
-      userAgent: navigator.userAgent
-    };
-    
-    // Log for development purposes
-    console.debug('Error data to be sent:', errorData);
-    
-    // In production, we would send this to an endpoint:
-    // fetch('/api/client-errors', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(errorData)
-    // });
-  } catch (e) {
-    // Fail silently in the error reporter to avoid loops
-    console.error('Failed to report error:', e);
-  }
+  return new Promise<boolean>((resolve) => {
+    try {
+      // Simulate sending error data to the server
+      const errorData = {
+        message: errorMessage,
+        stack,
+        context,
+        componentName: normalizedComponentName,
+        userId: normalizedUserId,
+        timestamp: new Date().toISOString(),
+        url: typeof window !== 'undefined' ? window.location.href : '',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      };
+      
+      // Log for development purposes
+      console.debug('Error data to be sent:', errorData);
+      
+      // In production, we would send this to an endpoint:
+      // fetch('/api/client-errors', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(errorData)
+      // });
+      
+      resolve(true);
+    } catch (e) {
+      // Fail silently in the error reporter to avoid loops
+      console.error('Failed to report error:', e);
+      resolve(false);
+    }
+  });
 }
 
 /**
@@ -83,3 +115,6 @@ export async function getApiMetrics(period: 'hour' | 'day' | 'week' = 'day'): Pr
     timeSeriesData
   };
 }
+
+// Add an alias for getApiMetrics to maintain backward compatibility
+export const getApiUsageMetrics = getApiMetrics;
