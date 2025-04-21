@@ -1,245 +1,166 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BreakpointInheritanceProvider } from '@/components/wireframe/responsive/BreakpointInheritance';
-import ResponsivePreviewTool from '@/components/wireframe/responsive/ResponsivePreviewTool';
-import BreakpointDebugger from '@/components/wireframe/responsive/BreakpointDebugger';
-import StatePreviewSystem from '@/components/visual-states/StatePreviewSystem';
-import BatchStateManager from '@/components/visual-states/BatchStateManager';
-import { StatefulComponent } from '@/components/visual-states/StatefulComponent';
-import ScrollAreaVisualizer from '@/components/wireframe/scroll/ScrollAreaVisualizer';
-import InteractiveScrollTester from '@/components/wireframe/scroll/InteractiveScrollTester';
-import OverflowBehaviorDemo from '@/components/wireframe/scroll/OverflowBehaviorDemo';
-import ScrollTriggerEffect from '@/components/wireframe/scroll/ScrollTriggerEffect';
+import { ResponsiveProvider } from '@/contexts/ResponsiveContext';
 import { VisualStateProvider } from '@/contexts/VisualStateContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Layout, Smartphone, Palette, Box, ScrollText } from 'lucide-react';
+import { ScrollIcon, Smartphone, Tablet, Monitor, SplitSquareVertical } from 'lucide-react';
+import ScrollAreaVisualizer from '@/components/wireframe/scroll/ScrollAreaVisualizer';
+import StatePreview from '@/components/visual-states/StatePreview';
+import { StateTransitionPreview } from '@/components/visual-states/StateTransitionPreview';
+import StatefulComponent from '@/components/visual-states/StatefulComponent';
 
 /**
- * Dashboard showcasing all the new responsive wireframe enhancements
+ * Dashboard showcasing responsive enhancements and visual state management
  */
-export const ResponsiveEnhancementsDashboard = () => {
-  // Sample stateful button for demonstration
-  const StatefulButton = () => (
-    <StatefulComponent
-      defaultStyles="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all px-4 py-2 rounded text-white"
-      hoverStyles="bg-blue-600"
-      activeStyles="bg-blue-700 transform scale-95"
-      focusStyles="ring-2 ring-blue-500 ring-opacity-50"
-      disabledStyles="bg-gray-400 cursor-not-allowed"
-    >
-      Interactive Button
-    </StatefulComponent>
-  );
-  
-  // Sample responsive component for demonstration
-  const SampleResponsiveComponent = () => (
-    <div className="border p-4 rounded-md">
-      <h3 className="text-lg font-medium mb-2">Responsive Component</h3>
-      <div className="md:flex md:gap-4 space-y-2 md:space-y-0">
-        <div className="bg-blue-100 p-4 rounded">Box 1</div>
-        <div className="bg-green-100 p-4 rounded">Box 2</div>
-        <div className="bg-yellow-100 p-4 rounded">Box 3</div>
-      </div>
-      <p className="mt-2 text-sm text-gray-600">
-        This component changes layout based on screen size.
-      </p>
-    </div>
-  );
-  
+const ResponsiveEnhancementsDashboard: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('responsive');
+
   return (
-    <BreakpointInheritanceProvider>
-      <VisualStateProvider>
-        <div className="responsive-enhancements-dashboard p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Wireframe Enhancements Dashboard</h1>
-            <Badge variant="outline" className="text-sm">
-              Developer Preview
-            </Badge>
-          </div>
-          
-          <Tabs defaultValue="responsive" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="responsive" className="flex gap-2">
-                <Layout size={16} />
-                Responsive System
-              </TabsTrigger>
-              <TabsTrigger value="states" className="flex gap-2">
-                <Palette size={16} />
-                Visual States
-              </TabsTrigger>
-              <TabsTrigger value="scroll" className="flex gap-2">
-                <ScrollText size={16} />
-                Scroll & Overflow
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="responsive" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-2">Wireframe Enhancement System</h1>
+      <p className="text-muted-foreground mb-6">
+        Explore responsive behavior, visual states, and scrolling systems
+      </p>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="responsive">
+            <SplitSquareVertical className="mr-2 h-4 w-4" />
+            Responsive System
+          </TabsTrigger>
+          <TabsTrigger value="states">
+            <Tablet className="mr-2 h-4 w-4" />
+            Visual States
+          </TabsTrigger>
+          <TabsTrigger value="scroll">
+            <ScrollIcon className="mr-2 h-4 w-4" />
+            Scroll Visualization
+          </TabsTrigger>
+        </TabsList>
+        
+        <ResponsiveProvider>
+          <BreakpointInheritanceProvider>
+            <VisualStateProvider>
+              <TabsContent value="responsive" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Smartphone size={18} />
-                      Responsive Preview Tool
-                    </CardTitle>
+                    <CardTitle>Responsive Behavior System</CardTitle>
+                    <CardDescription>
+                      View how components adapt across different screen sizes with inheritance
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ResponsivePreviewTool
-                      properties={{
-                        layout: {
-                          base: 'flex-col',
-                          md: 'flex-row',
-                          lg: 'flex-row flex-wrap'
-                        },
-                        gap: {
-                          base: '0.5rem',
-                          md: '1rem',
-                          lg: '1.5rem'
-                        }
-                      }}
-                    >
-                      <SampleResponsiveComponent />
-                    </ResponsivePreviewTool>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Breakpoint Inheritance System</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">
-                      The breakpoint inheritance system allows responsive properties to cascade down through breakpoints.
-                      Resize the browser window to see how values are inherited based on the current breakpoint.
-                    </p>
-                    
-                    <BreakpointDebugger
-                      properties={{
-                        padding: {
-                          base: '1rem',
-                          md: '1.5rem',
-                          lg: '2rem'
-                        },
-                        columns: {
-                          base: 1,
-                          sm: 2,
-                          lg: 4
-                        },
-                        fontSize: {
-                          base: '14px',
-                          md: '16px',
-                          xl: '18px'
-                        }
-                      }}
-                      showDetails={true}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="states" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>State Preview System</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <StatePreviewSystem>
-                      <StatefulButton />
-                    </StatePreviewSystem>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Batch State Manager</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <BatchStateManager />
-                  </CardContent>
-                </Card>
-                
-                <Card className="lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Visual State Documentation</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                      {['default', 'hover', 'active', 'focus', 'disabled'].map((state) => (
-                        <StatefulComponent 
-                          key={state} 
-                          forceState={state as any}
-                          className="border rounded-md p-4"
-                        >
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Device Preview</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex gap-4 justify-around">
                           <div className="text-center">
-                            <div className="mb-2">
-                              <StatefulButton />
-                            </div>
-                            <Badge variant="secondary">
-                              {state}
-                            </Badge>
+                            <Smartphone className="mx-auto h-8 w-8 text-primary" />
+                            <span className="text-xs font-medium">Mobile</span>
                           </div>
-                        </StatefulComponent>
-                      ))}
+                          <div className="text-center">
+                            <Tablet className="mx-auto h-8 w-8 text-primary" />
+                            <span className="text-xs font-medium">Tablet</span>
+                          </div>
+                          <div className="text-center">
+                            <Monitor className="mx-auto h-8 w-8 text-primary" />
+                            <span className="text-xs font-medium">Desktop</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">Breakpoint Inheritance</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground">
+                            Properties cascade from smaller to larger breakpoints unless overridden
+                          </p>
+                          <div className="mt-2 flex gap-2">
+                            <div className="p-2 bg-primary/10 text-xs rounded">xs → sm → md</div>
+                            <div className="p-2 bg-primary/10 text-xs rounded">md → lg → xl</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Responsive Component Demo</CardTitle>
+                      </CardHeader>
+                      <CardContent className="border rounded-md p-4">
+                        <div className="p-4 bg-muted rounded-md">
+                          <p className="text-center text-sm">
+                            This component adapts to screen size.
+                            Resize your browser window to see changes.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="states" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Visual States System</CardTitle>
+                    <CardDescription>
+                      Preview and test different component states and transitions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-6">
+                        <StatePreview
+                          component={<button className="px-4 py-2 w-full">Button Example</button>}
+                          defaultStyles="bg-primary text-primary-foreground rounded"
+                          hoverStyles="bg-primary/90"
+                          activeStyles="bg-primary/80"
+                          focusStyles="ring-2 ring-primary ring-offset-2 outline-none"
+                          disabledStyles="bg-muted text-muted-foreground cursor-not-allowed"
+                          showAllStates={true}
+                        />
+                        
+                        <StatePreview
+                          component={<div className="w-full p-3 text-center">Card Component</div>}
+                          defaultStyles="bg-card border rounded shadow-sm"
+                          hoverStyles="shadow-md"
+                          activeStyles="bg-muted"
+                          focusStyles="ring-2 ring-primary/30 outline-none"
+                          disabledStyles="opacity-50 bg-muted"
+                        />
+                      </div>
+                      
+                      <StateTransitionPreview />
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="scroll" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              </TabsContent>
+              
+              <TabsContent value="scroll" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Scroll Area Visualization</CardTitle>
+                    <CardTitle>Scroll Visualization System</CardTitle>
+                    <CardDescription>
+                      Test and visualize scrollable areas and scroll-triggered effects
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ScrollAreaVisualizer
-                      height={300}
-                      showControls={true}
-                      highlightScrollbars={true}
-                      showScrollPosition={true}
-                    >
-                      <div className="p-4 space-y-4">
-                        {Array.from({ length: 10 }).map((_, i) => (
-                          <div key={i} className="border p-4 rounded-md">
-                            <h3 className="font-medium">Scroll Item {i + 1}</h3>
-                            <p className="text-sm text-gray-600">
-                              This is scrollable content to demonstrate the scroll area visualizer.
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollAreaVisualizer>
+                    <ScrollAreaVisualizer />
                   </CardContent>
                 </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Overflow Behavior Demo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <OverflowBehaviorDemo />
-                  </CardContent>
-                </Card>
-                
-                <Card className="lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Interactive Scroll Tester</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <InteractiveScrollTester />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </VisualStateProvider>
-    </BreakpointInheritanceProvider>
+              </TabsContent>
+            </VisualStateProvider>
+          </BreakpointInheritanceProvider>
+        </ResponsiveProvider>
+      </Tabs>
+    </div>
   );
 };
 

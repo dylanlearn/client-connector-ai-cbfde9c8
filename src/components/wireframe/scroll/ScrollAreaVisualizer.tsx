@@ -1,272 +1,250 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ArrowDownUp, ArrowLeftRight } from 'lucide-react';
+import { ScrollIcon, MousePointerClick, ArrowUpDown } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useScrollTrigger } from '@/hooks/use-scroll-trigger';
 import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Spinner from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface ScrollAreaVisualizerProps {
-  children: React.ReactNode;
   className?: string;
-  height?: number | string;
-  width?: number | string;
+  defaultHeight?: number;
+  defaultWidth?: number;
   showControls?: boolean;
-  highlightScrollbars?: boolean;
-  showScrollPosition?: boolean;
-  horizontalScroll?: boolean;
-  verticalScroll?: boolean;
 }
 
-/**
- * A component for visualizing scrollable areas with debugging tools
- */
-export const ScrollAreaVisualizer: React.FC<ScrollAreaVisualizerProps> = ({
-  children,
+const ScrollAreaVisualizer: React.FC<ScrollAreaVisualizerProps> = ({
   className,
-  height = 300,
-  width = '100%',
+  defaultHeight = 300,
+  defaultWidth = '100%',
   showControls = true,
-  highlightScrollbars = true,
-  showScrollPosition = true,
-  horizontalScroll = true,
-  verticalScroll = true
 }) => {
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<string>('vertical');
+  const [areaHeight, setAreaHeight] = useState(defaultHeight);
+  const [contentHeight, setContentHeight] = useState(defaultHeight * 2);
+  const [showVisualizer, setShowVisualizer] = useState(true);
+  
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [scrollInfo, setScrollInfo] = useState({
-    scrollTop: 0,
-    scrollLeft: 0,
-    scrollHeight: 0,
-    scrollWidth: 0,
-    clientHeight: 0,
-    clientWidth: 0,
-    verticalPercentage: 0,
-    horizontalPercentage: 0,
-    hasVerticalScroll: false,
-    hasHorizontalScroll: false
+  
+  // Scroll trigger to demonstrate scroll-based effects
+  const { triggered } = useScrollTrigger({
+    target: containerRef,
+    triggerPoint: 20,
+    resetOnScrollBack: true,
   });
   
-  // Update scroll info when content scrolls
-  const handleScroll = () => {
-    if (!containerRef.current) return;
-    
-    const {
-      scrollTop,
-      scrollLeft,
-      scrollHeight,
-      scrollWidth,
-      clientHeight,
-      clientWidth
-    } = containerRef.current;
-    
-    const verticalPercentage = Math.min(100, (scrollTop / (scrollHeight - clientHeight)) * 100 || 0);
-    const horizontalPercentage = Math.min(100, (scrollLeft / (scrollWidth - clientWidth)) * 100 || 0);
-    const hasVerticalScroll = scrollHeight > clientHeight;
-    const hasHorizontalScroll = scrollWidth > clientWidth;
-    
-    setScrollInfo({
-      scrollTop,
-      scrollLeft,
-      scrollHeight,
-      scrollWidth,
-      clientHeight,
-      clientWidth,
-      verticalPercentage,
-      horizontalPercentage,
-      hasVerticalScroll,
-      hasHorizontalScroll
-    });
-  };
-  
-  // Update scroll position with slider
-  const handleVerticalSliderChange = ([value]: number[]) => {
-    if (!containerRef.current) return;
-    
-    const { scrollHeight, clientHeight } = containerRef.current;
-    const newScrollTop = ((scrollHeight - clientHeight) * value) / 100;
-    containerRef.current.scrollTop = newScrollTop;
-  };
-  
-  const handleHorizontalSliderChange = ([value]: number[]) => {
-    if (!containerRef.current) return;
-    
-    const { scrollWidth, clientWidth } = containerRef.current;
-    const newScrollLeft = ((scrollWidth - clientWidth) * value) / 100;
-    containerRef.current.scrollLeft = newScrollLeft;
-  };
-  
-  // Set up the scroll event listener
+  // Effect to reset scroll position when changing tabs
   useEffect(() => {
-    const containerElement = containerRef.current;
-    if (!containerElement) return;
-    
-    containerElement.addEventListener('scroll', handleScroll);
-    
-    // Initial scroll info update
-    setTimeout(() => {
-      setIsLoading(false);
-      handleScroll();
-    }, 100);
-    
-    return () => {
-      containerElement.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+      containerRef.current.scrollLeft = 0;
+    }
+  }, [activeTab]);
   
-  // Create scroll indicators
-  const renderScrollIndicators = () => (
-    <div className={cn("scroll-indicators flex items-center gap-4", !showScrollPosition && "hidden")}>
-      <div className="flex flex-col gap-1 text-xs">
-        <div className={cn(
-          "flex items-center",
-          !scrollInfo.hasVerticalScroll && "opacity-50"
-        )}>
-          <ArrowDownUp size={12} className="mr-1" />
-          <span className="font-mono">
-            {Math.round(scrollInfo.verticalPercentage)}%
-          </span>
-        </div>
-        <div className={cn(
-          "flex items-center", 
-          !scrollInfo.hasHorizontalScroll && "opacity-50"
-        )}>
-          <ArrowLeftRight size={12} className="mr-1" />
-          <span className="font-mono">
-            {Math.round(scrollInfo.horizontalPercentage)}%
-          </span>
-        </div>
-      </div>
-      
-      <div className="flex-1 text-xs whitespace-nowrap overflow-hidden overflow-ellipsis">
-        {scrollInfo.scrollHeight}×{scrollInfo.scrollWidth}px
-      </div>
-    </div>
-  );
+  // Calculate scroll percentage for visualization
+  const getScrollPercentage = () => {
+    if (!containerRef.current) return 0;
+    
+    if (activeTab === 'vertical') {
+      const scrollable = containerRef.current.scrollHeight - containerRef.current.clientHeight;
+      return (containerRef.current.scrollTop / scrollable) * 100;
+    } else {
+      const scrollable = containerRef.current.scrollWidth - containerRef.current.clientWidth;
+      return (containerRef.current.scrollLeft / scrollable) * 100;
+    }
+  };
   
-  // Render scroll controls
-  const renderScrollControls = () => (
-    <div className={cn("scroll-controls mt-3", !showControls && "hidden")}>
-      <Tabs defaultValue="vertical">
-        <TabsList className="w-full">
-          <TabsTrigger 
-            value="vertical" 
-            className="flex-1"
-            disabled={!scrollInfo.hasVerticalScroll}
+  // Generate content for horizontal scrolling demo
+  const renderHorizontalContent = () => {
+    return (
+      <div 
+        className="flex items-center gap-4 p-4" 
+        style={{ width: contentHeight * 2.5 }}
+      >
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex-shrink-0 flex items-center justify-center rounded-lg bg-muted transition-all duration-300",
+              triggered && i % 2 === 0 && "bg-primary/30"
+            )}
+            style={{ 
+              width: 180, 
+              height: areaHeight - 40,
+              transform: triggered && i % 3 === 0 ? 'translateY(-10px)' : 'none'
+            }}
           >
-            <ArrowDownUp size={12} className="mr-1" />
-            Vertical
-          </TabsTrigger>
-          <TabsTrigger 
-            value="horizontal" 
-            className="flex-1"
-            disabled={!scrollInfo.hasHorizontalScroll}
-          >
-            <ArrowLeftRight size={12} className="mr-1" />
-            Horizontal
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="vertical" className="pt-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 text-xs font-mono text-right">
-              {Math.round(scrollInfo.verticalPercentage)}%
-            </div>
-            <Slider
-              value={[scrollInfo.verticalPercentage]}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={handleVerticalSliderChange}
-              disabled={!scrollInfo.hasVerticalScroll}
-            />
-            <div className="text-xs font-mono w-12">
-              {scrollInfo.scrollTop}/{scrollInfo.scrollHeight - scrollInfo.clientHeight}
+            <div className="text-center">
+              <p className="font-medium">Card {i + 1}</p>
+              <p className="text-xs text-muted-foreground">Scroll to see effects</p>
             </div>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="horizontal" className="pt-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 text-xs font-mono text-right">
-              {Math.round(scrollInfo.horizontalPercentage)}%
-            </div>
-            <Slider
-              value={[scrollInfo.horizontalPercentage]}
-              min={0}
-              max={100}
-              step={1}
-              onValueChange={handleHorizontalSliderChange}
-              disabled={!scrollInfo.hasHorizontalScroll}
-            />
-            <div className="text-xs font-mono w-12">
-              {scrollInfo.scrollLeft}/{scrollInfo.scrollWidth - scrollInfo.clientWidth}
+        ))}
+      </div>
+    );
+  };
+  
+  // Generate content for vertical scrolling demo
+  const renderVerticalContent = () => {
+    return (
+      <div className="p-4 space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "flex flex-col items-center justify-center rounded-lg bg-muted p-4 transition-all duration-300",
+              triggered && i % 2 === 0 && "bg-primary/20"
+            )}
+            style={{ 
+              height: areaHeight / 2,
+              transform: triggered && i % 3 === 0 ? 'scale(1.02)' : 'none',
+              opacity: triggered && i === 2 ? 0.7 : 1
+            }}
+          >
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">Section {i + 1}</h3>
+              <p className="text-sm text-muted-foreground">
+                Scroll down to see how this section responds to scroll events.
+                Different sections can have different animations or effects.
+              </p>
+              {i === 0 && (
+                <div className={cn(
+                  "mt-4 px-4 py-2 bg-primary/10 rounded-md transition-all duration-500",
+                  triggered && "bg-primary text-primary-foreground"
+                )}>
+                  This element changes when scrolled
+                </div>
+              )}
             </div>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
+  
+  // Visual indicator for scroll position
+  const ScrollIndicator = () => {
+    const percent = getScrollPercentage();
+    
+    return (
+      <div className="mt-4 space-y-2">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>0%</span>
+          <span>Scroll position: {percent.toFixed(0)}%</span>
+          <span>100%</span>
+        </div>
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-100" 
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
   
   return (
-    <div className={cn("scroll-area-visualizer", className)}>
-      {showScrollPosition && renderScrollIndicators()}
-      
-      {/* Scroll Container */}
-      <div 
-        className={cn(
-          "scroll-container relative border rounded overflow-auto",
-          highlightScrollbars && "scrollbar-debug"
-        )}
-        style={{ 
-          height: typeof height === 'number' ? `${height}px` : height,
-          width: typeof width === 'number' ? `${width}px` : width
-        }}
-        ref={containerRef}
-      >
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
-            <Spinner size="md" />
-          </div>
-        )}
-        
-        {/* Scroll debug boundaries */}
-        <div className="relative">
-          {highlightScrollbars && (
-            <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-primary/20 z-10" />
+    <Card className={cn("scroll-area-visualizer", className)}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle>Scroll Area Visualizer</CardTitle>
+          {showControls && (
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="show-visualizer" 
+                checked={showVisualizer} 
+                onCheckedChange={setShowVisualizer}
+              />
+              <Label htmlFor="show-visualizer">Show Visualizer</Label>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+          <TabsList className="w-full">
+            <TabsTrigger value="vertical" className="flex-1">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              Vertical Scroll
+            </TabsTrigger>
+            <TabsTrigger value="horizontal" className="flex-1">
+              <ScrollIcon className="mr-2 h-4 w-4 rotate-90" />
+              Horizontal Scroll
+            </TabsTrigger>
+          </TabsList>
+          
+          {showControls && (
+            <div className="my-4 space-y-4 p-4 border rounded-md bg-muted/30">
+              <div className="space-y-2">
+                <Label>Container Height: {areaHeight}px</Label>
+                <Slider 
+                  value={[areaHeight]} 
+                  min={150} 
+                  max={500} 
+                  step={10} 
+                  onValueChange={values => setAreaHeight(values[0])}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Content Height: {contentHeight}px</Label>
+                <Slider 
+                  value={[contentHeight]} 
+                  min={areaHeight} 
+                  max={areaHeight * 3} 
+                  step={50} 
+                  onValueChange={values => setContentHeight(values[0])}
+                />
+              </div>
+            </div>
           )}
           
-          {/* Content */}
-          <div ref={contentRef}>
-            {children}
+          <div 
+            className={cn(
+              "relative border rounded-md overflow-hidden",
+              showVisualizer && "mt-4"
+            )}
+          >
+            <div
+              ref={containerRef}
+              className={cn(
+                "overflow-auto scroll-smooth",
+                activeTab === 'vertical' ? 'overflow-y-auto overflow-x-hidden' : 'overflow-x-auto overflow-y-hidden'
+              )}
+              style={{ 
+                height: areaHeight, 
+                width: defaultWidth
+              }}
+            >
+              <TabsContent value="vertical" className="m-0 outline-none">
+                {renderVerticalContent()}
+              </TabsContent>
+              
+              <TabsContent value="horizontal" className="m-0 h-full outline-none">
+                {renderHorizontalContent()}
+              </TabsContent>
+            </div>
+            
+            {showVisualizer && (
+              <div className="absolute top-4 right-4 p-2 bg-background/90 rounded-md border shadow-sm">
+                <MousePointerClick className="h-4 w-4 text-primary" />
+              </div>
+            )}
           </div>
-        </div>
-      </div>
-      
-      {showControls && renderScrollControls()}
-      
-      <style jsx>{`
-        .scrollbar-debug::-webkit-scrollbar {
-          width: 14px;
-          height: 14px;
-          background-color: rgba(0, 0, 0, 0.05);
-        }
+          
+          {showVisualizer && <ScrollIndicator />}
+        </Tabs>
         
-        .scrollbar-debug::-webkit-scrollbar-thumb {
-          background-color: rgba(0, 0, 0, 0.2);
-          border: 3px solid transparent;
-          border-radius: 7px;
-          background-clip: padding-box;
-        }
-        
-        .scrollbar-debug::-webkit-scrollbar-corner {
-          background-color: rgba(0, 0, 0, 0.05);
-        }
-      `}</style>
-    </div>
+        <style>
+          {`.scroll-area-visualizer .scroll-demo-item {
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out, background-color 0.3s ease-out;
+          }`}
+        </style>
+      </CardContent>
+    </Card>
   );
 };
 
