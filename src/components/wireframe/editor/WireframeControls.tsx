@@ -5,27 +5,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { 
-  WireframeData, 
-  WireframeGenerationParams
-} from '@/services/ai/wireframe/wireframe-types';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface WireframeControlsProps {
   projectId?: string;
-  onWireframeCreated?: (wireframe: WireframeData) => void;
-  generateWireframe: (params: WireframeGenerationParams) => Promise<any>;
+  onWireframeCreated?: (wireframe: any) => void;
+  generateWireframe: (params: any) => Promise<any>;
+  isGenerating?: boolean;
 }
 
 const WireframeControls: React.FC<WireframeControlsProps> = ({
   projectId,
   onWireframeCreated,
-  generateWireframe
+  generateWireframe,
+  isGenerating = false
 }) => {
-  // State
   const [prompt, setPrompt] = useState('');
   const [creativityLevel, setCreativityLevel] = useState(8);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [style, setStyle] = useState('modern');
   
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -33,13 +36,12 @@ const WireframeControls: React.FC<WireframeControlsProps> = ({
       return;
     }
     
-    setIsGenerating(true);
-    
     try {
       const result = await generateWireframe({
         description: prompt,
         projectId,
-        creativityLevel
+        creativityLevel,
+        style
       });
       
       if (result.wireframe && onWireframeCreated) {
@@ -47,8 +49,6 @@ const WireframeControls: React.FC<WireframeControlsProps> = ({
       }
     } catch (error) {
       console.error("Generation error:", error);
-    } finally {
-      setIsGenerating(false);
     }
   };
   
@@ -65,9 +65,28 @@ const WireframeControls: React.FC<WireframeControlsProps> = ({
         />
       </div>
       
+      <div>
+        <Label htmlFor="style">Style</Label>
+        <Select
+          value={style}
+          onValueChange={setStyle}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select style" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="modern">Modern</SelectItem>
+            <SelectItem value="minimalist">Minimalist</SelectItem>
+            <SelectItem value="classic">Classic</SelectItem>
+            <SelectItem value="bold">Bold</SelectItem>
+            <SelectItem value="playful">Playful</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <Label htmlFor="creativity">Creativity</Label>
+          <Label htmlFor="creativity">Creativity Level</Label>
           <span className="text-sm text-muted-foreground">{creativityLevel}/10</span>
         </div>
         <Slider
