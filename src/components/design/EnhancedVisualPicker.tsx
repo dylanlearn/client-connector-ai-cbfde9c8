@@ -1,336 +1,280 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { cn } from '@/lib/utils';
-import { VisualPicker, DesignOption } from './VisualPicker';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { CheckCircle, XCircle, Sliders, ArrowRight } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
-export interface VisualCalibrationOption extends DesignOption {
-  attributes?: Record<string, number | string>;
-  tags?: string[];
-  ranking?: number;
-  feedback?: 'positive' | 'negative' | null;
-}
+import React, { useState, useEffect } from 'react';
+import { VisualPicker, DesignOption } from './VisualPicker';
+import { DesignSuggestion } from '@/hooks/wireframe/use-wireframe-variations';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface EnhancedVisualPickerProps {
-  options: VisualCalibrationOption[];
-  onSelect?: (option: VisualCalibrationOption) => void;
-  onCalibrationComplete?: (results: {
-    selectedOptions: VisualCalibrationOption[];
-    calibrationParams: Record<string, number | string>;
-    userFeedback: Record<string, any>;
-  }) => void;
-  category?: string;
-  className?: string;
-  title?: string;
-  showRankingControls?: boolean;
-  maxSelections?: number;
-  calibrationSettings?: {
-    params: Array<{
-      name: string;
-      label: string;
-      min: number;
-      max: number;
-      step: number;
-      defaultValue: number;
-    }>;
-  };
+  onDesignSelected: (design: DesignSuggestion) => void;
 }
 
-export const EnhancedVisualPicker: React.FC<EnhancedVisualPickerProps> = ({
-  options,
-  onSelect,
-  onCalibrationComplete,
-  category = "design",
-  className,
-  title = "Select your preferences",
-  showRankingControls = true,
-  maxSelections = 3,
-  calibrationSettings
-}) => {
-  const [selectedOptions, setSelectedOptions] = useState<VisualCalibrationOption[]>([]);
-  const [optionFeedback, setOptionFeedback] = useState<Record<string, 'positive' | 'negative' | null>>({});
-  const [calibrationParams, setCalibrationParams] = useState<Record<string, number>>({});
-  const [currentView, setCurrentView] = useState<'selection' | 'calibration' | 'results'>('selection');
-  
-  // Initialize calibration parameters
-  useEffect(() => {
-    if (calibrationSettings?.params) {
-      const initialParams: Record<string, number> = {};
-      calibrationSettings.params.forEach(param => {
-        initialParams[param.name] = param.defaultValue;
-      });
-      setCalibrationParams(initialParams);
-    }
-  }, [calibrationSettings]);
+// Sample design options (you can expand these or load from an API)
+const colorSchemes: DesignOption[] = [
+  {
+    id: 'modern',
+    title: 'Modern & Minimal',
+    description: 'Clean, minimal design with soft neutrals and bold accents',
+    imageUrl: '/lovable-uploads/0507e956-3bf5-43ba-924e-9d353066ebad.png',
+    category: 'color'
+  },
+  {
+    id: 'vibrant',
+    title: 'Vibrant & Bold',
+    description: 'Energetic colors with high contrast and visual impact',
+    imageUrl: '/lovable-uploads/3ffcf93f-2dca-479f-867d-cc445acdac8d.png',
+    category: 'color'
+  },
+  {
+    id: 'earthy',
+    title: 'Earthy & Natural',
+    description: 'Nature-inspired palette with warm, grounding tones',
+    imageUrl: '/lovable-uploads/4efe39c0-e0e0-4c25-a11a-d9f9648b0495.png',
+    category: 'color'
+  }
+];
 
-  const handleOptionSelect = useCallback((option: VisualCalibrationOption) => {
-    setSelectedOptions(prev => {
-      // If option already selected, remove it
-      if (prev.find(o => o.id === option.id)) {
-        return prev.filter(o => o.id !== option.id);
-      }
-      
-      // If max selections reached, show warning and don't add
-      if (prev.length >= maxSelections) {
-        toast({
-          title: "Maximum selections reached",
-          description: `You can select up to ${maxSelections} options`,
-          variant: "destructive"
-        });
-        return prev;
-      }
-      
-      // Otherwise, add the option
-      return [...prev, option];
-    });
-    
-    if (onSelect) {
-      onSelect(option);
-    }
-  }, [maxSelections, onSelect]);
+const layoutOptions: DesignOption[] = [
+  {
+    id: 'minimal',
+    title: 'Minimal',
+    description: 'Clean, spacious layouts with plenty of whitespace',
+    imageUrl: '/lovable-uploads/9d1c9181-4f19-48e3-b424-cbe28ccb9ad1.png',
+    category: 'layout'
+  },
+  {
+    id: 'grid',
+    title: 'Grid-based',
+    description: 'Organized, structured layouts using a consistent grid system',
+    imageUrl: '/lovable-uploads/a3b75d3c-550b-44e0-b81b-4d74404d106c.png',
+    category: 'layout'
+  },
+  {
+    id: 'asymmetric',
+    title: 'Asymmetric',
+    description: 'Dynamic, engaging layouts with intentional imbalance',
+    imageUrl: '/lovable-uploads/d9eb0f5d-57b5-4d7e-8da0-23bc6c9c83f1.png',
+    category: 'layout'
+  }
+];
 
-  const handleFeedback = useCallback((optionId: string, feedback: 'positive' | 'negative') => {
-    setOptionFeedback(prev => ({
-      ...prev,
-      [optionId]: prev[optionId] === feedback ? null : feedback
-    }));
-    
-    // Update the option's feedback property
-    setSelectedOptions(prev => 
-      prev.map(opt => 
-        opt.id === optionId ? 
-          { ...opt, feedback: optionFeedback[optionId] === feedback ? null : feedback } : 
-          opt
-      )
-    );
-  }, [optionFeedback]);
+const typographyOptions: DesignOption[] = [
+  {
+    id: 'modern-sans',
+    title: 'Modern Sans-Serif',
+    description: 'Clean, minimal sans-serif typefaces for a contemporary look',
+    imageUrl: '/lovable-uploads/0392ac21-110f-484c-8f3d-5fcbb0dcefc6.png',
+    category: 'typography'
+  },
+  {
+    id: 'serif-mix',
+    title: 'Serif & Sans Mix',
+    description: 'Classic serif headings paired with sans-serif body text',
+    imageUrl: '/lovable-uploads/23ecc16f-a53c-43af-8d71-1034d90498b3.png',
+    category: 'typography'
+  },
+  {
+    id: 'display-accent',
+    title: 'Display Accents',
+    description: 'Distinctive display fonts for headings with readable body text',
+    imageUrl: '/lovable-uploads/480f7861-cc1e-41e1-9ee1-be7ba9aa52b9.png',
+    category: 'typography'
+  }
+];
 
-  const handleCalibrationChange = useCallback((param: string, value: number) => {
-    setCalibrationParams(prev => ({
-      ...prev,
-      [param]: value
-    }));
-  }, []);
-
-  const moveToCalibration = useCallback(() => {
-    if (selectedOptions.length === 0) {
-      toast({
-        title: "No selections made",
-        description: "Please select at least one option before proceeding",
-        variant: "destructive"
-      });
-      return;
-    }
-    setCurrentView('calibration');
-  }, [selectedOptions.length]);
-
-  const completeCalibration = useCallback(() => {
-    if (onCalibrationComplete) {
-      // Calculate overall user preferences based on selections and feedback
-      const userFeedback = {
-        positiveAttributes: {} as Record<string, number>,
-        negativeAttributes: {} as Record<string, number>,
-      };
-      
-      // Analyze selected options and their feedback to determine preference patterns
-      selectedOptions.forEach(option => {
-        if (option.attributes && option.feedback) {
-          Object.entries(option.attributes).forEach(([key, value]) => {
-            const target = option.feedback === 'positive' 
-              ? userFeedback.positiveAttributes 
-              : userFeedback.negativeAttributes;
-            
-            if (typeof value === 'number') {
-              target[key] = (target[key] || 0) + value;
-            }
-          });
-        }
-      });
-      
-      onCalibrationComplete({
-        selectedOptions,
-        calibrationParams,
-        userFeedback
-      });
-    }
-    setCurrentView('results');
-  }, [selectedOptions, calibrationParams, onCalibrationComplete]);
-
-  // Render different views based on current state
-  const renderContent = () => {
-    switch (currentView) {
-      case 'selection':
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-4">
-              <h3 className="text-xl font-semibold">{title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Select up to {maxSelections} options that you prefer
-              </p>
-            </div>
-            
-            <VisualPicker
-              options={options}
-              selectedId={selectedOptions.length > 0 ? selectedOptions[0].id : null}
-              onSelect={(id) => {
-                const option = options.find(o => o.id === id);
-                if (option) {
-                  handleOptionSelect(option as VisualCalibrationOption);
-                }
-              }}
-              category={category}
-              fullWidth
-              className={className}
-            />
-            
-            {selectedOptions.length > 0 && (
-              <div className="flex justify-end mt-6">
-                <Button 
-                  onClick={moveToCalibration}
-                  className="flex items-center"
-                >
-                  Next Step <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-        
-      case 'calibration':
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold">Fine-tune Your Preferences</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Rate your selections and adjust parameters to calibrate the result
-              </p>
-            </div>
-            
-            {/* Selected options with feedback controls */}
-            <div className="space-y-4">
-              <h4 className="text-md font-medium">Your Selections</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {selectedOptions.map(option => (
-                  <div 
-                    key={option.id} 
-                    className="border rounded-lg p-2 relative"
-                  >
-                    <div className="aspect-video w-full overflow-hidden mb-2">
-                      <img 
-                        src={option.imageUrl} 
-                        alt={option.title} 
-                        className="h-full w-full object-cover rounded-md"
-                      />
-                    </div>
-                    <div className="px-2">
-                      <h5 className="font-medium">{option.title}</h5>
-                      <p className="text-xs text-muted-foreground">{option.description}</p>
-                    </div>
-                    
-                    {showRankingControls && (
-                      <div className="flex justify-between mt-3 px-2 pb-2">
-                        <Button 
-                          variant={optionFeedback[option.id] === 'negative' ? "destructive" : "outline"}
-                          size="sm"
-                          className="rounded-full h-8 w-8 p-0"
-                          onClick={() => handleFeedback(option.id, 'negative')}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant={optionFeedback[option.id] === 'positive' ? "default" : "outline"} 
-                          size="sm"
-                          className="rounded-full h-8 w-8 p-0"
-                          onClick={() => handleFeedback(option.id, 'positive')}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* Calibration sliders if settings provided */}
-            {calibrationSettings?.params && (
-              <div className="space-y-6 mt-8">
-                <div className="flex items-center gap-2">
-                  <Sliders className="h-4 w-4" />
-                  <h4 className="text-md font-medium">Adjust Parameters</h4>
-                </div>
-                
-                {calibrationSettings.params.map(param => (
-                  <div key={param.name} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={param.name}>{param.label}</Label>
-                      <span className="text-sm font-medium">
-                        {calibrationParams[param.name] || param.defaultValue}
-                      </span>
-                    </div>
-                    <Slider
-                      id={param.name}
-                      min={param.min}
-                      max={param.max}
-                      step={param.step}
-                      value={[calibrationParams[param.name] || param.defaultValue]}
-                      onValueChange={([value]) => handleCalibrationChange(param.name, value)}
-                      className="w-full"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="flex justify-end gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setCurrentView('selection')}
-              >
-                Back
-              </Button>
-              <Button onClick={completeCalibration}>
-                Complete Calibration
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 'results':
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold">Calibration Complete</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your selections and preferences have been recorded
-              </p>
-            </div>
-            
-            <div className="flex items-center justify-center">
-              <CheckCircle className="text-green-500 h-16 w-16" />
-            </div>
-            
-            <div className="flex justify-center mt-6">
-              <Button 
-                onClick={() => setCurrentView('selection')}
-                variant="outline"
-              >
-                Start Over
-              </Button>
-            </div>
-          </div>
-        );
+// Component style options based on selected styles
+const getComponentStyles = (colorSchemeId: string, layoutId: string): Record<string, any> => {
+  // This would be more extensive in a real application
+  const baseStyles: Record<string, any> = {
+    button: {
+      borderRadius: '0.375rem',
+      padding: '0.75rem 1.5rem',
+    },
+    card: {
+      borderRadius: '0.5rem',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
     }
   };
   
+  // Adjust styles based on color scheme
+  if (colorSchemeId === 'modern') {
+    baseStyles.button.backgroundColor = '#3b82f6';
+  } else if (colorSchemeId === 'vibrant') {
+    baseStyles.button.backgroundColor = '#8b5cf6';
+  } else if (colorSchemeId === 'earthy') {
+    baseStyles.button.backgroundColor = '#65a30d';
+  }
+  
+  // Adjust styles based on layout
+  if (layoutId === 'minimal') {
+    baseStyles.card.padding = '2rem';
+  } else if (layoutId === 'grid') {
+    baseStyles.card.padding = '1.5rem';
+  } else if (layoutId === 'asymmetric') {
+    baseStyles.card.padding = '1rem 2rem';
+  }
+  
+  return baseStyles;
+};
+
+// Map colorSchemeId to actual color values
+const getColorScheme = (colorSchemeId: string): {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+} => {
+  switch (colorSchemeId) {
+    case 'modern':
+      return {
+        primary: '#3b82f6',
+        secondary: '#64748b',
+        accent: '#10b981',
+        background: '#ffffff',
+        text: '#1e293b'
+      };
+    case 'vibrant':
+      return {
+        primary: '#8b5cf6',
+        secondary: '#ec4899',
+        accent: '#f59e0b',
+        background: '#f8fafc',
+        text: '#0f172a'
+      };
+    case 'earthy':
+      return {
+        primary: '#65a30d',
+        secondary: '#854d0e',
+        accent: '#d97706',
+        background: '#f9fafb',
+        text: '#422006'
+      };
+    default:
+      return {
+        primary: '#3b82f6',
+        secondary: '#64748b',
+        accent: '#10b981',
+        background: '#ffffff',
+        text: '#1e293b'
+      };
+  }
+};
+
+// Map typographyId to actual font values
+const getTypography = (typographyId: string): {
+  headings: string;
+  body: string;
+} => {
+  switch (typographyId) {
+    case 'modern-sans':
+      return {
+        headings: 'Inter',
+        body: 'Inter'
+      };
+    case 'serif-mix':
+      return {
+        headings: 'Playfair Display',
+        body: 'Source Sans Pro'
+      };
+    case 'display-accent':
+      return {
+        headings: 'Montserrat',
+        body: 'Open Sans'
+      };
+    default:
+      return {
+        headings: 'Inter',
+        body: 'Inter'
+      };
+  }
+};
+
+export const EnhancedVisualPicker: React.FC<EnhancedVisualPickerProps> = ({
+  onDesignSelected
+}) => {
+  const [selectedColorScheme, setSelectedColorScheme] = useState<string | null>(null);
+  const [selectedLayout, setSelectedLayout] = useState<string | null>(null);
+  const [selectedTypography, setSelectedTypography] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('colors');
+  
+  // Update the design suggestion whenever a selection changes
+  useEffect(() => {
+    if (selectedColorScheme && selectedLayout && selectedTypography) {
+      const designSuggestion: DesignSuggestion = {
+        colorScheme: getColorScheme(selectedColorScheme),
+        typography: getTypography(selectedTypography),
+        layoutStyle: selectedLayout,
+        componentStyles: getComponentStyles(selectedColorScheme, selectedLayout),
+        toneDescriptor: selectedColorScheme === 'vibrant' ? 'energetic' : 
+                       selectedColorScheme === 'earthy' ? 'warm' : 'clean'
+      };
+      
+      onDesignSelected(designSuggestion);
+    }
+  }, [selectedColorScheme, selectedLayout, selectedTypography, onDesignSelected]);
+  
   return (
-    <div className={cn("enhanced-visual-picker p-4", className)}>
-      {renderContent()}
+    <div className="enhanced-visual-picker">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-3 mb-6">
+          <TabsTrigger value="colors">Color Scheme</TabsTrigger>
+          <TabsTrigger value="layouts">Layout Style</TabsTrigger>
+          <TabsTrigger value="typography">Typography</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="colors">
+          <Card>
+            <CardContent className="pt-6">
+              <VisualPicker 
+                options={colorSchemes} 
+                selectedId={selectedColorScheme}
+                onSelect={setSelectedColorScheme}
+                fullWidth
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="layouts">
+          <Card>
+            <CardContent className="pt-6">
+              <VisualPicker 
+                options={layoutOptions} 
+                selectedId={selectedLayout}
+                onSelect={setSelectedLayout}
+                fullWidth
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="typography">
+          <Card>
+            <CardContent className="pt-6">
+              <VisualPicker 
+                options={typographyOptions} 
+                selectedId={selectedTypography}
+                onSelect={setSelectedTypography}
+                fullWidth
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      {selectedColorScheme && selectedLayout && selectedTypography ? (
+        <div className="mt-6 p-4 bg-muted rounded-md">
+          <p className="text-sm text-muted-foreground mb-1">Selected Design</p>
+          <p className="font-medium">Color: {colorSchemes.find(o => o.id === selectedColorScheme)?.title}</p>
+          <p className="font-medium">Layout: {layoutOptions.find(o => o.id === selectedLayout)?.title}</p>
+          <p className="font-medium">Typography: {typographyOptions.find(o => o.id === selectedTypography)?.title}</p>
+        </div>
+      ) : (
+        <div className="mt-6 p-4 bg-muted rounded-md text-muted-foreground text-center">
+          Please select options from each category
+        </div>
+      )}
     </div>
   );
 };
-
-export default EnhancedVisualPicker;

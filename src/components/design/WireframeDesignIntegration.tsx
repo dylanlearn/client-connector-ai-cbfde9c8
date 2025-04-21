@@ -37,7 +37,7 @@ export const WireframeDesignIntegration: React.FC<WireframeDesignIntegrationProp
       onWireframeGenerated(wireframe);
     }
     
-    setCurrentDesign(design);
+    setCurrentDesign(currentDesign);
     setGeneratedWireframes(prev => [...prev, wireframe]);
     
     setActiveTab('preview');
