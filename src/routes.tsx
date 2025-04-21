@@ -63,7 +63,7 @@ const router = createBrowserRouter([
   // Dashboard routes (protected)
   {
     path: '/dashboard',
-    element: <ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
   },
   {
     path: '/projects',
@@ -75,35 +75,35 @@ const router = createBrowserRouter([
   },
   {
     path: '/wireframe-generator',
-    element: <ProtectedRoute><DashboardLayout><WireframeGenerator /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><WireframeGenerator /></ProtectedRoute>,
   },
   {
     path: '/clients',
-    element: <ProtectedRoute><DashboardLayout><Clients /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><Clients /></ProtectedRoute>,
   },
   {
     path: '/client-hub',
-    element: <ProtectedRoute><DashboardLayout><ClientHub /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><ClientHub /></ProtectedRoute>,
   },
   {
     path: '/analytics',
-    element: <ProtectedRoute><DashboardLayout><Analytics /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><Analytics /></ProtectedRoute>,
   },
   {
     path: '/feedback-analysis',
-    element: <ProtectedRoute><DashboardLayout><FeedbackAnalysis /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><FeedbackAnalysis /></ProtectedRoute>,
   },
   {
     path: '/design-process',
-    element: <ProtectedRoute><DashboardLayout><DesignProcessPage /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><DesignProcessPage /></ProtectedRoute>,
   },
   {
     path: '/ai-suggestions',
-    element: <ProtectedRoute><DashboardLayout><AIDesignSuggestions /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><AIDesignSuggestions /></ProtectedRoute>,
   },
   {
     path: '/website-analyzer',
-    element: <ProtectedRoute><DashboardLayout><WebsiteAnalyzer /></DashboardLayout></ProtectedRoute>,
+    element: <ProtectedRoute><WebsiteAnalyzer /></ProtectedRoute>,
   },
   {
     path: '/settings',
@@ -112,6 +112,10 @@ const router = createBrowserRouter([
   {
     path: '/admin',
     element: <ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>,
+  },
+  {
+    path: '/user/profile',
+    element: <ProtectedRoute><DashboardLayout><div className="container mx-auto py-10 px-4"><h1 className="text-3xl font-bold">User Profile</h1></div></DashboardLayout></ProtectedRoute>,
   },
 
   // Not found

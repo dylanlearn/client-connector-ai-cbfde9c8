@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +17,7 @@ export const UserMenu = () => {
     try {
       await signOut?.();
       navigate("/login");
+      toast.success("Successfully signed out");
     } catch (error) {
       toast.error("Failed to sign out. Please try again.");
     }

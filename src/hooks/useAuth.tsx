@@ -11,7 +11,6 @@ export function useAuth() {
   return {
     ...ctx,
     // Adding convenient error and loading fields for compatibility
-    // (If needed for form handling; otherwise these can be removed)
     error: undefined,
     isLoggedIn: !!ctx.user,
     signUp: async (email: string, password: string, name?: string, phoneNumber?: string) => {

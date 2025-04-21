@@ -1,5 +1,4 @@
 
-// Use unified useAuth
 import { ReactNode, useEffect, useRef } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,6 +42,7 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
       </div>
     );
   }
+  
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
