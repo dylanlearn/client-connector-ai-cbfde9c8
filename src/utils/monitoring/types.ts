@@ -40,3 +40,33 @@ export interface AlertConfiguration {
   criticalThreshold: number;
   enabled: boolean;
 }
+
+export interface ClientError {
+  id?: string;
+  message: string;
+  stackTrace?: string;
+  error_message?: string;
+  error_stack?: string;
+  componentName?: string;
+  component_name?: string;
+  userId?: string;
+  user_id?: string;
+  browser?: string;
+  browser_info?: string;
+  url?: string;
+  timestamp?: string;
+  resolved?: boolean;
+  resolution_notes?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface MonitoringConfiguration {
+  enabled: boolean;
+  errorThreshold: number;
+  warnThreshold: number;
+  notificationsEnabled: boolean;
+  checkInterval: number;
+  alertChannels?: string[];
+  enabledComponents?: { [key: string]: boolean };
+  [key: string]: string | number | boolean | string[] | { [key: string]: boolean } | undefined;
+}
