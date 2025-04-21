@@ -68,7 +68,7 @@ export function useContentGeneration(): UseContentGenerationReturn {
       const result = await ContextAwareContentService.generateWireframeContent(request);
       
       // Transform the contentSections to ensure they match the expected SectionContentResponse type
-      const transformedSections = result.contentSections?.map(section => {
+      const transformedSections: SectionContentResponse[] = result.contentSections?.map(section => {
         return {
           sectionId: section.id || '',
           name: section.name || '',
@@ -84,7 +84,7 @@ export function useContentGeneration(): UseContentGenerationReturn {
               })
             : [],
           ...section
-        } as SectionContentResponse;
+        };
       }) || [];
       
       return {
@@ -130,19 +130,21 @@ export function useContentGeneration(): UseContentGenerationReturn {
       
       const result = await ContextAwareContentService.generateSectionContent(request);
       
+      // Ensure components have the required content property
+      const transformedComponents: ComponentContent[] = Array.isArray(result.components) 
+        ? result.components.map(comp => {
+            return {
+              id: comp.id || undefined,
+              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+              ...comp
+            } as ComponentContent;
+          })
+        : [];
+      
       return {
         name: result.name || '',
         content: result.content || '',
-        // Ensure components array contains objects with content property
-        components: Array.isArray(result.components) 
-          ? result.components.map(comp => {
-              return {
-                id: comp.id || undefined,
-                content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-                ...comp
-              } as ComponentContent;
-            })
-          : [],
+        components: transformedComponents,
         ...result
       };
     } catch (e) {

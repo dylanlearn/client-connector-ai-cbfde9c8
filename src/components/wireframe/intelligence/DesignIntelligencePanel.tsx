@@ -89,6 +89,10 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
         <TabsContent value="content" className="pt-4">
           <ContentGenerationPanel 
             wireframe={wireframe}
+            onContentGenerated={(content) => {
+              // Handle generated content if needed
+              console.log('Content generated:', content);
+            }}
             onUpdate={onUpdateWireframe}
           />
         </TabsContent>
