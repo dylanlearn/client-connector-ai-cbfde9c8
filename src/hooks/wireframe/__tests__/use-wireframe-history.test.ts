@@ -1,49 +1,30 @@
-
 import { renderHook, act } from '@testing-library/react-hooks';
 import { vi } from 'vitest';
 import { useWireframeHistory } from "../use-wireframe-history";
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 
-// Mock wireframe data
-const mockWireframeData: WireframeData = {
-  id: 'test-id',
-  title: 'Test Wireframe',
-  description: 'Test description',
-  sections: [],
-  colorScheme: {
+// Helper function to create a complete mock WireframeData
+const createMockWireframe = (overrides: Partial<WireframeData> = {}): WireframeData => ({
+  id: overrides.id || 'test-id',
+  title: overrides.title || 'Test Wireframe',
+  description: overrides.description || 'Test description',
+  sections: overrides.sections || [],
+  colorScheme: overrides.colorScheme || {
     primary: '#3b82f6',
     secondary: '#10b981',
     accent: '#f59e0b',
     background: '#ffffff',
     text: '#000000'
   },
-  typography: {
+  typography: overrides.typography || {
     headings: 'sans-serif',
     body: 'sans-serif'
   }
-};
+});
 
 describe('useWireframeHistory hook', () => {
-  const createMockWireframe = (id: string): WireframeData => ({
-    id,
-    title: `Wireframe ${id}`,
-    description: `Description for wireframe ${id}`,
-    sections: [],
-    colorScheme: {
-      primary: '#3182CE',
-      secondary: '#805AD5',
-      accent: '#ED8936',
-      background: '#FFFFFF',
-      text: '#1A202C'
-    },
-    typography: {
-      headings: 'Inter',
-      body: 'Inter'
-    }
-  });
-
-  // Use the mock wireframe data
-  const initialWireframe = createMockWireframe('initial');
+  // Use the createMockWireframe function in all test cases
+  const initialWireframe = createMockWireframe();
   
   beforeEach(() => {
     // Reset any global state or mocks
@@ -58,8 +39,8 @@ describe('useWireframeHistory hook', () => {
   it('should update wireframe data', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
 
-    // Use a proper wireframe update object
-    const update = { title: 'Updated Title' };
+    // Use createMockWireframe to create a valid update
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
@@ -72,7 +53,7 @@ describe('useWireframeHistory hook', () => {
   it('should undo to previous state', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update = { title: 'Updated Title' };
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
@@ -87,7 +68,7 @@ describe('useWireframeHistory hook', () => {
   it('should redo to next state', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update = { title: 'Updated Title' };
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
@@ -103,7 +84,7 @@ describe('useWireframeHistory hook', () => {
   it('should clear history', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update = { title: 'Updated Title' };
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
@@ -117,7 +98,7 @@ describe('useWireframeHistory hook', () => {
   it('should not go back beyond the initial state', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update = { title: 'Updated Title' };
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
@@ -133,7 +114,7 @@ describe('useWireframeHistory hook', () => {
   it('should not go forward beyond the latest state', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update = { title: 'Updated Title' };
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
@@ -148,8 +129,8 @@ describe('useWireframeHistory hook', () => {
   it('should add to history when going back and updating', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update1 = { title: 'Updated Title 1' };
-    const update2 = { title: 'Updated Title 2' };
+    const update1 = createMockWireframe({ title: 'Updated Title 1' });
+    const update2 = createMockWireframe({ title: 'Updated Title 2' });
     
     act(() => {
       result.current.updateWireframe(update1, 'update title 1');
@@ -165,7 +146,7 @@ describe('useWireframeHistory hook', () => {
   it('should clear history', () => {
     const { result } = renderHook(() => useWireframeHistory(initialWireframe));
     
-    const update = { title: 'Updated Title' };
+    const update = createMockWireframe({ title: 'Updated Title' });
     
     act(() => {
       result.current.updateWireframe(update, 'update title');
