@@ -1,291 +1,369 @@
 
-import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { StatusBadge } from "./controls/StatusBadge";
-import { Button } from "@/components/ui/button";
-import { ArrowPathIcon, ServerIcon, ShieldExclamationIcon, CpuChipIcon } from "@heroicons/react/24/outline";
-import { toast } from "sonner";
-import { createRealtimeSubscription } from '@/utils/realtime-utils';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, Activity, Database, HardDrive, Cpu, Memory } from 'lucide-react';
+import { StatusBadge } from './controls/StatusBadge';
+import { AlertsPanel } from './panels/AlertsPanel';
+import { ErrorsPanel } from './panels/ErrorsPanel';
+import { PerformancePanel } from './panels/PerformancePanel';
+import { ConfigurationPanel } from './panels/ConfigurationPanel';
+import { supabase } from "@/integrations/supabase/client";
 import { SystemHealthCheck } from '@/types/supabase-audit';
+import { createRealtimeSubscription } from '@/utils/realtime-utils';
 
 export function MonitoringDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [loading, setLoading] = useState(true);
-  const [systemStatus, setSystemStatus] = useState({
-    api: { status: 'healthy', responseTime: 230 },
-    database: { status: 'healthy', connections: 12 },
-    storage: { status: 'healthy', usage: 45.2 },
-    memory: { status: 'healthy', usage: 35 },
-    cpu: { status: 'healthy', usage: 40 }
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [healthData, setHealthData] = useState<{
+    api: SystemHealthCheck | null,
+    database: SystemHealthCheck | null,
+    storage: SystemHealthCheck | null,
+    memory: SystemHealthCheck | null,
+    cpu: SystemHealthCheck | null
+  }>({
+    api: null,
+    database: null,
+    storage: null,
+    memory: null,
+    cpu: null
   });
-  
-  // Subscribe to realtime updates for system health checks
-  useEffect(() => {
-    // Get initial data
-    fetchSystemStatus();
+
+  // Function to map system health status to StatusBadge compatible status
+  const mapSystemHealthToStatusType = (status: string | undefined): 'healthy' | 'warning' | 'critical' | 'unknown' => {
+    if (!status) return 'unknown';
     
-    // Subscribe to health check updates
-    const { unsubscribe } = createRealtimeSubscription(
-      'system-health-checks',
+    switch (status.toLowerCase()) {
+      case 'healthy':
+      case 'ok':
+      case 'active':
+      case 'good':
+        return 'healthy';
+      case 'degraded':
+      case 'warning':
+      case 'warn':
+        return 'warning';
+      case 'unhealthy':
+      case 'error':
+      case 'critical':
+      case 'fail':
+      case 'failed':
+        return 'critical';
+      default:
+        return 'unknown';
+    }
+  };
+
+  const fetchHealthData = async () => {
+    setIsRefreshing(true);
+    try {
+      const { data: apiData, error: apiError } = await supabase
+        .from('system_health_checks')
+        .select('*')
+        .eq('component', 'api')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: dbData, error: dbError } = await supabase
+        .from('system_health_checks')
+        .select('*')
+        .eq('component', 'database')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: storageData, error: storageError } = await supabase
+        .from('system_health_checks')
+        .select('*')
+        .eq('component', 'storage')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: memoryData, error: memoryError } = await supabase
+        .from('system_health_checks')
+        .select('*')
+        .eq('component', 'memory')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const { data: cpuData, error: cpuError } = await supabase
+        .from('system_health_checks')
+        .select('*')
+        .eq('component', 'cpu')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      setHealthData({
+        api: apiData || null,
+        database: dbData || null,
+        storage: storageData || null,
+        memory: memoryData || null,
+        cpu: cpuData || null
+      });
+    } catch (error) {
+      console.error('Error fetching health data:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHealthData();
+
+    // Set up realtime subscriptions for health check updates
+    const apiSubscription = createRealtimeSubscription(
+      'system-health-api',
       'system_health_checks',
-      undefined,
+      "component=eq.api",
       (payload) => {
         if (payload.new) {
-          const healthCheck = payload.new as SystemHealthCheck;
-          
-          console.log('Received health check update:', healthCheck);
-          
-          // Update the component in the system status
-          setSystemStatus(prev => ({
-            ...prev,
-            [healthCheck.component]: {
-              ...prev[healthCheck.component as keyof typeof prev],
-              status: healthCheck.status
-            }
-          }));
-          
-          // Show toast for critical issues
-          if (healthCheck.status === 'critical' || healthCheck.status === 'unhealthy') {
-            toast.error(`${healthCheck.component} health check failed`, {
-              description: `The ${healthCheck.component} component is experiencing issues.`
-            });
-          }
+          setHealthData(prev => ({...prev, api: payload.new}));
         }
       }
     );
-    
-    // Cleanup subscription
+
+    const dbSubscription = createRealtimeSubscription(
+      'system-health-database',
+      'system_health_checks',
+      "component=eq.database",
+      (payload) => {
+        if (payload.new) {
+          setHealthData(prev => ({...prev, database: payload.new}));
+        }
+      }
+    );
+
+    const storageSubscription = createRealtimeSubscription(
+      'system-health-storage',
+      'system_health_checks',
+      "component=eq.storage",
+      (payload) => {
+        if (payload.new) {
+          setHealthData(prev => ({...prev, storage: payload.new}));
+        }
+      }
+    );
+
+    const memorySubscription = createRealtimeSubscription(
+      'system-health-memory',
+      'system_health_checks',
+      "component=eq.memory",
+      (payload) => {
+        if (payload.new) {
+          setHealthData(prev => ({...prev, memory: payload.new}));
+        }
+      }
+    );
+
+    const cpuSubscription = createRealtimeSubscription(
+      'system-health-cpu',
+      'system_health_checks',
+      "component=eq.cpu",
+      (payload) => {
+        if (payload.new) {
+          setHealthData(prev => ({...prev, cpu: payload.new}));
+        }
+      }
+    );
+
+    // Cleanup subscriptions
     return () => {
-      unsubscribe();
+      apiSubscription.unsubscribe();
+      dbSubscription.unsubscribe();
+      storageSubscription.unsubscribe();
+      memorySubscription.unsubscribe();
+      cpuSubscription.unsubscribe();
     };
   }, []);
-  
-  const fetchSystemStatus = async () => {
-    try {
-      setLoading(true);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Get latest health checks from database
-      const { data: healthChecks, error } = await supabase
-        .from('system_health_checks')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-        
-      if (error) {
-        console.error('Error fetching system status:', error);
-        return;
-      }
-      
-      // Process health checks
-      if (healthChecks && healthChecks.length > 0) {
-        const newStatus = { ...systemStatus };
-        
-        healthChecks.forEach(check => {
-          if (newStatus[check.component as keyof typeof newStatus]) {
-            newStatus[check.component as keyof typeof newStatus].status = check.status;
-          }
-        });
-        
-        setSystemStatus(newStatus);
-      }
-      
-      toast.success('System status refreshed');
-    } catch (err) {
-      console.error('Error fetching system status:', err);
-      toast.error('Failed to fetch system status');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">System Monitoring</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">System Monitoring Dashboard</h2>
         <Button 
+          size="sm" 
           variant="outline" 
-          onClick={fetchSystemStatus} 
-          disabled={loading}
+          onClick={fetchHealthData} 
+          disabled={isRefreshing}
+          className="flex items-center gap-1"
         >
-          <ArrowPathIcon className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
         </Button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">API Status</CardTitle>
-            <CardDescription className="text-xs">API health and response times</CardDescription>
+          <CardHeader className="py-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4 text-blue-500" />
+              API
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <StatusBadge status={systemStatus.api.status} />
-              <span className="text-sm text-muted-foreground">{systemStatus.api.responseTime}ms</span>
-            </div>
+          <CardContent className="py-2">
+            {isLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <div className="flex items-center justify-between">
+                <StatusBadge 
+                  status={mapSystemHealthToStatusType(healthData.api?.status)}
+                />
+                <span className="text-xs text-gray-500">
+                  {healthData.api?.response_time_ms ? `${healthData.api.response_time_ms}ms` : '---'}
+                </span>
+              </div>
+            )}
+            <p className="text-xs mt-2 text-gray-500">Monitor for sudden API response time increases or errors</p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Database</CardTitle>
-            <CardDescription className="text-xs">Database connections and query performance</CardDescription>
+          <CardHeader className="py-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Database className="h-4 w-4 text-purple-500" />
+              Database
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <StatusBadge status={systemStatus.database.status} />
-              <span className="text-sm text-muted-foreground">{systemStatus.database.connections} active</span>
-            </div>
+          <CardContent className="py-2">
+            {isLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <div className="flex items-center justify-between">
+                <StatusBadge 
+                  status={mapSystemHealthToStatusType(healthData.database?.status)} 
+                />
+                <span className="text-xs text-gray-500">
+                  {healthData.database?.response_time_ms ? `${healthData.database.response_time_ms}ms` : '---'}
+                </span>
+              </div>
+            )}
+            <p className="text-xs mt-2 text-gray-500">Watch for connection issues or slow query performance</p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Storage</CardTitle>
-            <CardDescription className="text-xs">Storage capacity and performance</CardDescription>
+          <CardHeader className="py-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-green-500" />
+              Storage
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <StatusBadge status={systemStatus.storage.status} />
-              <span className="text-sm text-muted-foreground">{systemStatus.storage.usage}% used</span>
-            </div>
+          <CardContent className="py-2">
+            {isLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <div className="flex items-center justify-between">
+                <StatusBadge 
+                  status={mapSystemHealthToStatusType(healthData.storage?.status)} 
+                />
+                <span className="text-xs text-gray-500">
+                  {healthData.storage?.response_time_ms ? `${healthData.storage.response_time_ms}ms` : '---'}
+                </span>
+              </div>
+            )}
+            <p className="text-xs mt-2 text-gray-500">Check for storage availability and upload/download issues</p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Memory Usage</CardTitle>
-            <CardDescription className="text-xs">System memory consumption</CardDescription>
+          <CardHeader className="py-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Memory className="h-4 w-4 text-yellow-500" />
+              Memory
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <StatusBadge status={systemStatus.memory.status} />
-              <span className="text-sm text-muted-foreground">{systemStatus.memory.usage}% used</span>
-            </div>
+          <CardContent className="py-2">
+            {isLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <div className="flex items-center justify-between">
+                <StatusBadge 
+                  status={mapSystemHealthToStatusType(healthData.memory?.status)} 
+                />
+                <span className="text-xs text-gray-500">
+                  {healthData.memory?.response_time_ms ? `${healthData.memory.response_time_ms}ms` : '---'}
+                </span>
+              </div>
+            )}
+            <p className="text-xs mt-2 text-gray-500">Track memory usage to prevent resource exhaustion</p>
           </CardContent>
         </Card>
-        
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">CPU Load</CardTitle>
-            <CardDescription className="text-xs">System CPU utilization</CardDescription>
+          <CardHeader className="py-4">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Cpu className="h-4 w-4 text-red-500" />
+              CPU
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <StatusBadge status={systemStatus.cpu.status} />
-              <span className="text-sm text-muted-foreground">{systemStatus.cpu.usage}% load</span>
-            </div>
+          <CardContent className="py-2">
+            {isLoading ? (
+              <Skeleton className="h-6 w-20" />
+            ) : (
+              <div className="flex items-center justify-between">
+                <StatusBadge 
+                  status={mapSystemHealthToStatusType(healthData.cpu?.status)} 
+                />
+                <span className="text-xs text-gray-500">
+                  {healthData.cpu?.response_time_ms ? `${healthData.cpu.response_time_ms}ms` : '---'}
+                </span>
+              </div>
+            )}
+            <p className="text-xs mt-2 text-gray-500">Monitor CPU spikes that may indicate processing bottlenecks</p>
           </CardContent>
         </Card>
       </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="configuration">Configuration</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mt-6">
+          <TabsContent value="overview">
             <Card>
               <CardHeader>
                 <CardTitle>System Overview</CardTitle>
-                <CardDescription>Key system metrics and health indicators</CardDescription>
+                <CardDescription>
+                  Real-time status of all system components
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <Alert>
-                    <ServerIcon className="h-4 w-4" />
-                    <AlertTitle>System is operational</AlertTitle>
-                    <AlertDescription>
-                      All components are running normally. Monitor for any changes in status.
-                    </AlertDescription>
-                  </Alert>
-                </div>
+                <p className="text-center py-12 text-muted-foreground">
+                  System monitoring active. View real-time health status of all components above.
+                </p>
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>What to Monitor</CardTitle>
-                <CardDescription>Key metrics for system health</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <h4 className="font-medium">API Response Times</h4>
-                  <p className="text-sm text-muted-foreground">Watch for sudden increases in response times which may indicate API issues.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium">Database Connections</h4>
-                  <p className="text-sm text-muted-foreground">Monitor connection count for potential connection leaks or overloads.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium">Error Rates</h4>
-                  <p className="text-sm text-muted-foreground">Track error rates across services to identify problematic components.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="alerts">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Alerts</CardTitle>
-              <CardDescription>Recent alerts and notifications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <ShieldExclamationIcon className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No active alerts</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  System is operating normally. No alerts have been triggered.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="performance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Metrics</CardTitle>
-              <CardDescription>System performance data and trends</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <CpuChipIcon className="h-12 w-12 mx-auto text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">Performance monitoring active</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Collecting performance metrics. Detailed graphs will appear here.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="config">
-          <Card>
-            <CardHeader>
-              <CardTitle>Monitoring Configuration</CardTitle>
-              <CardDescription>Adjust monitoring settings and thresholds</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Configure system monitoring parameters and notification thresholds.
-              </p>
-              <Button>Configure Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          </TabsContent>
+          
+          <TabsContent value="alerts">
+            <AlertsPanel />
+          </TabsContent>
+          
+          <TabsContent value="errors">
+            <ErrorsPanel />
+          </TabsContent>
+          
+          <TabsContent value="performance">
+            <PerformancePanel />
+          </TabsContent>
+          
+          <TabsContent value="configuration">
+            <ConfigurationPanel />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
