@@ -7,7 +7,7 @@ import { AIWireframe } from "@/services/ai/wireframe/wireframe-types";
 export function useWireframeFeedback(
   wireframes: AIWireframe[],
   setWireframes: React.Dispatch<React.SetStateAction<AIWireframe[]>>,
-  showToast: (props: Omit<Toast, "id">) => string = toast
+  showToast: (props: Omit<Toast, "id">) => any = toast
 ) {
   // Provide feedback on a wireframe
   const provideFeedback = useCallback(async (
