@@ -23,6 +23,9 @@ import WebsiteAnalyzer from './pages/design-analysis/WebsiteAnalyzer';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Settings from './pages/Settings';
 import AdminPanel from './pages/AdminPanel';
+import SupabaseAuditDashboard from './pages/admin/SupabaseAuditDashboard';
+import { MonitoringDashboard } from './components/admin/monitoring';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // Create a unified router with all routes
 const router = createBrowserRouter([
@@ -112,6 +115,26 @@ const router = createBrowserRouter([
   {
     path: '/admin',
     element: <ProtectedRoute adminOnly={true}><AdminPanel /></ProtectedRoute>,
+  },
+  // Add the missing admin routes
+  {
+    path: '/admin/supabase-audit',
+    element: <ProtectedRoute adminOnly={true}><SupabaseAuditDashboard /></ProtectedRoute>,
+  },
+  {
+    path: '/admin/audit-and-monitoring',
+    element: <ProtectedRoute adminOnly={true}>
+      <DashboardLayout>
+        <div className="container py-6">
+          <h1 className="text-3xl font-bold tracking-tight mb-6">System Audit & Monitoring</h1>
+          <MonitoringDashboard />
+        </div>
+      </DashboardLayout>
+    </ProtectedRoute>,
+  },
+  {
+    path: '/admin/analytics',
+    element: <ProtectedRoute adminOnly={true}><AdminAnalytics /></ProtectedRoute>,
   },
   {
     path: '/user/profile',
