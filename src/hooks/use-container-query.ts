@@ -1,108 +1,77 @@
 
-import { useState, useEffect, useRef, RefObject } from 'react';
-import { BreakpointKey } from '@/components/wireframe/utils/responsive-utils';
+import { useRef, useState, useCallback, useEffect } from 'react';
 
-export interface ContainerBreakpoints {
-  xs: number; // Extra small containers
-  sm: number; // Small containers
-  md: number; // Medium containers
-  lg: number; // Large containers
-  xl: number; // Extra large containers
-}
+type ContainerBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface ContainerSize {
-  width: number;
-  height: number;
-}
-
-export interface ContainerInfo {
-  size: ContainerSize;
-  breakpoint: BreakpointKey;
+interface ContainerQueryInfo {
+  size: { width: number; height: number };
+  breakpoint: ContainerBreakpoint;
   isExtraSmall: boolean;
   isSmall: boolean;
   isMedium: boolean;
   isLarge: boolean;
   isExtraLarge: boolean;
-  aspectRatio: number;
+  is2XL: boolean;
 }
 
-// Default breakpoints for containers (smaller than viewport breakpoints)
-const defaultContainerBreakpoints: ContainerBreakpoints = {
-  xs: 0,
-  sm: 384,
-  md: 576,
-  lg: 768,
-  xl: 960,
-};
-
-export function useContainerQuery<T extends HTMLElement = HTMLDivElement>(
-  customBreakpoints?: Partial<ContainerBreakpoints>
-): [RefObject<T>, ContainerInfo] {
-  const containerRef = useRef<T>(null);
-  const breakpoints: ContainerBreakpoints = {
-    ...defaultContainerBreakpoints,
-    ...customBreakpoints,
-  };
-  
-  const [containerInfo, setContainerInfo] = useState<ContainerInfo>({
+/**
+ * Hook for tracking container dimensions and applying responsive design at the component level
+ */
+export function useContainerQuery<T extends HTMLElement = HTMLDivElement>() {
+  const containerRef = useRef<T | null>(null);
+  const [containerInfo, setContainerInfo] = useState<ContainerQueryInfo>({
     size: { width: 0, height: 0 },
-    breakpoint: 'xs',
-    isExtraSmall: true,
+    breakpoint: 'md',
+    isExtraSmall: false,
     isSmall: false,
-    isMedium: false,
+    isMedium: true,
     isLarge: false,
     isExtraLarge: false,
-    aspectRatio: 1,
+    is2XL: false,
   });
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const updateContainerInfo = () => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      // Get the current dimensions
-      const rect = container.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
+  
+  const getBreakpoint = useCallback((width: number): ContainerBreakpoint => {
+    if (width < 384) return 'xs';
+    if (width < 640) return 'sm';
+    if (width < 768) return 'md';
+    if (width < 1024) return 'lg';
+    if (width < 1280) return 'xl';
+    return '2xl';
+  }, []);
+  
+  const updateContainerInfo = useCallback(() => {
+    if (containerRef.current) {
+      const { offsetWidth, offsetHeight } = containerRef.current;
+      const breakpoint = getBreakpoint(offsetWidth);
       
-      // Determine the current breakpoint
-      let breakpoint: BreakpointKey = 'xs';
-      if (width >= breakpoints.xl) breakpoint = 'xl';
-      else if (width >= breakpoints.lg) breakpoint = 'lg';
-      else if (width >= breakpoints.md) breakpoint = 'md';
-      else if (width >= breakpoints.sm) breakpoint = 'sm';
-      
-      // Update state with new info
       setContainerInfo({
-        size: { width, height },
+        size: { width: offsetWidth, height: offsetHeight },
         breakpoint,
-        isExtraSmall: width < breakpoints.sm,
-        isSmall: width >= breakpoints.sm && width < breakpoints.md,
-        isMedium: width >= breakpoints.md && width < breakpoints.lg,
-        isLarge: width >= breakpoints.lg && width < breakpoints.xl,
-        isExtraLarge: width >= breakpoints.xl,
-        aspectRatio: height > 0 ? width / height : 1,
+        isExtraSmall: breakpoint === 'xs',
+        isSmall: breakpoint === 'sm',
+        isMedium: breakpoint === 'md',
+        isLarge: breakpoint === 'lg',
+        isExtraLarge: breakpoint === 'xl',
+        is2XL: breakpoint === '2xl',
       });
-    };
-
-    // Initialize the observer
-    const resizeObserver = new ResizeObserver(() => {
-      updateContainerInfo();
-    });
-    
-    // Start observing the container
-    resizeObserver.observe(containerRef.current);
-    
+    }
+  }, [getBreakpoint]);
+  
+  useEffect(() => {
     // Initial measurement
     updateContainerInfo();
     
-    // Clean up
+    // Set up resize observer for container queries
+    const observer = new ResizeObserver(updateContainerInfo);
+    
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    
     return () => {
-      resizeObserver.disconnect();
+      observer.disconnect();
     };
-  }, [breakpoints]);
+  }, [updateContainerInfo]);
   
-  return [containerRef, containerInfo];
+  return [containerRef, containerInfo] as const;
 }

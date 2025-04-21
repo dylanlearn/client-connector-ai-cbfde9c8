@@ -1,77 +1,70 @@
 
-import { SystemStatus } from './types';
+export interface SystemStatus {
+  status: 'operational' | 'degraded' | 'outage';
+  components: Record<string, {
+    status: 'operational' | 'degraded' | 'outage';
+    metrics: Record<string, string | number>;
+  }>;
+  lastUpdated: string;
+}
 
 export async function getSystemStatus(): Promise<SystemStatus> {
-  // In a real app, this would be an API call to fetch real-time system status
-  // For now, we'll simulate different components and their health status
-  
+  // In a real application, this would fetch from an API
+  // For now, we'll return mock data
   return {
-    status: 'healthy',
+    status: 'operational',
     components: {
-      database: {
-        status: 'healthy',
+      'api': {
+        status: 'operational',
         metrics: {
-          connections: 12,
-          queryLatencyMs: 45,
-          errorRate: '0.02%'
-        },
-        lastUpdated: new Date().toISOString()
+          'responseTime': '142ms',
+          'requestsPerMinute': 120,
+          'errorRate': '0.2%'
+        }
       },
-      redis: {
-        status: 'healthy',
+      'database': {
+        status: 'operational',
         metrics: {
-          connections: 8,
-          memoryUsageMb: 24,
-          hitRate: '98.5%'
-        },
-        lastUpdated: new Date().toISOString()
+          'queryTime': '38ms',
+          'connections': 24,
+          'diskUsage': '32%'
+        }
       },
-      api: {
-        status: 'healthy',
+      'storage': {
+        status: 'operational',
         metrics: {
-          requestsPerMinute: 120,
-          avgResponseTimeMs: 85,
-          errorRate: '0.5%'
-        },
-        lastUpdated: new Date().toISOString()
+          'readSpeed': '12MB/s',
+          'writeSpeed': '8MB/s',
+          'availableSpace': '1.2TB'
+        }
       },
-      storage: {
-        status: 'healthy',
+      'auth': {
+        status: 'operational',
         metrics: {
-          usedSpaceGb: 1.2,
-          totalSpaceGb: 5,
-          filesCount: 3426
-        },
-        lastUpdated: new Date().toISOString()
-      },
+          'authTime': '220ms',
+          'activeUsers': 542,
+          'failedLogins': 3
+        }
+      }
     },
     lastUpdated: new Date().toISOString()
   };
 }
 
 export async function getSystemMetrics() {
-  // This function would fetch detailed system metrics
-  // For now, we'll return simulated data
+  const status = await getSystemStatus();
+  
+  // Extract metrics from all components
+  const metrics = Object.entries(status.components).reduce((acc, [key, component]) => {
+    return {
+      ...acc,
+      [key]: component.metrics
+    };
+  }, {});
+  
   return {
-    cpu: {
-      usage: '32%',
-      temperature: '45°C',
-      processes: 124
-    },
-    memory: {
-      used: '4.2GB',
-      total: '16GB',
-      percentage: '26%'
-    },
-    network: {
-      inbound: '1.2MB/s',
-      outbound: '0.8MB/s',
-      activeConnections: 38
-    },
-    storage: {
-      read: '15MB/s',
-      write: '8MB/s',
-      ioWait: '0.5%'
-    }
+    metrics,
+    status: status.status,
+    lastUpdated: status.lastUpdated
   };
 }

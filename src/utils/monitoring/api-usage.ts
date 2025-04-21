@@ -1,120 +1,105 @@
-
-export interface ApiUsage {
-  endpoint: string;
-  count: number;
-  averageTime: number;
-  errorRate: number;
-  timestamp: string;
-}
-
-export interface ApiMetrics {
-  totalRequests: number;
-  averageResponseTime: number;
-  errorRate: number;
-  topEndpoints: {
-    endpoint: string;
-    requests: number;
-  }[];
-  timeSeriesData: {
-    timestamp: string;
-    requests: number;
-  }[];
-}
-
 /**
- * Record a client-side error for monitoring purposes
+ * Records client-side errors to monitoring system
+ * @param error The error message or object
+ * @param stack Optional error stack trace
+ * @param context Optional context information
+ * @param userId Optional user ID for tracking
+ * @param metadata Optional additional data about the error
+ * @returns A Promise that resolves when the error is recorded
  */
-export function recordClientError(
-  errorOrMessage: Error | string,
-  stackOrContext?: string | Record<string, any>,
-  componentName?: string,
+export async function recordClientError(
+  error: string | Error,
+  stack?: string | null,
+  context?: string,
   userId?: string,
   metadata?: Record<string, any>
-): Promise<boolean> {
-  // Normalize parameters
-  const errorMessage = errorOrMessage instanceof Error ? errorOrMessage.message : errorOrMessage;
-  const stack = errorOrMessage instanceof Error ? errorOrMessage.stack : 
-                (typeof stackOrContext === 'string' ? stackOrContext : undefined);
-  const context = typeof stackOrContext === 'object' ? stackOrContext : 
-                 (metadata || (componentName && typeof componentName === 'object' ? componentName : {}));
-
-  // Handle backward compatibility
-  const normalizedComponentName = typeof componentName === 'string' ? componentName : 'Unknown';
-  const normalizedUserId = userId;
-  const normalizedMetadata = metadata || {};
-
-  console.error('Client error:', errorMessage, {
+): Promise<void> {
+  // Handle different parameter patterns for backward compatibility
+  let errorMessage: string;
+  let errorStack: string | null = null;
+  let errorContext: string | undefined = context;
+  let errorUserId: string | undefined = userId;
+  let errorMetadata: Record<string, any> | undefined = metadata;
+  
+  // Parse error parameter
+  if (typeof error === 'string') {
+    errorMessage = error;
+  } else {
+    errorMessage = error.message;
+    errorStack = error.stack || null;
+  }
+  
+  // If stack wasn't passed explicitly but is available on the error object
+  if (!stack && errorStack) {
+    stack = errorStack;
+  }
+  
+  // Log the error locally
+  console.error(`[Error Recording] ${errorMessage}`, {
     stack,
-    componentName: normalizedComponentName,
-    userId: normalizedUserId,
-    context,
-    ...normalizedMetadata
+    context: errorContext,
+    userId: errorUserId,
+    metadata: errorMetadata
   });
   
-  // In a real implementation, this would send the error to a monitoring service
-  return new Promise<boolean>((resolve) => {
-    try {
-      // Simulate sending error data to the server
-      const errorData = {
-        message: errorMessage,
-        stack,
-        context,
-        componentName: normalizedComponentName,
-        userId: normalizedUserId,
-        timestamp: new Date().toISOString(),
-        url: typeof window !== 'undefined' ? window.location.href : '',
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : ''
-      };
-      
-      // Log for development purposes
-      console.debug('Error data to be sent:', errorData);
-      
-      // In production, we would send this to an endpoint:
-      // fetch('/api/client-errors', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(errorData)
-      // });
-      
-      resolve(true);
-    } catch (e) {
-      // Fail silently in the error reporter to avoid loops
-      console.error('Failed to report error:', e);
-      resolve(false);
-    }
+  // In a real implementation, this would send the error to a backend service
+  // For now, we'll just return a resolved promise after a short delay
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, 100);
   });
 }
 
 /**
- * Fetch API usage metrics
+ * Get API usage metrics for the monitoring dashboard
  */
-export async function getApiMetrics(period: 'hour' | 'day' | 'week' = 'day'): Promise<ApiMetrics> {
-  // In a real app, this would fetch from an API
-  // For now, we'll return mock data
+export async function getApiUsageMetrics(period: string = 'day') {
+  // In a real app this would fetch from an API endpoint
+  // Here we'll return mock data based on the period
   
-  // Adjust the time range based on the period
-  const timePoints = period === 'hour' ? 24 : period === 'day' ? 24 : 7;
-  const timeSeriesData = Array.from({ length: timePoints }, (_, i) => {
-    return {
-      timestamp: new Date(Date.now() - (timePoints - i) * (period === 'hour' ? 60000 : period === 'day' ? 3600000 : 86400000)).toISOString(),
-      requests: Math.floor(Math.random() * 50) + 50
-    };
-  });
+  let dataPoints = 0;
+  let interval = '';
+  
+  switch (period) {
+    case 'hour':
+      dataPoints = 12;
+      interval = '5 minutes';
+      break;
+    case 'day':
+      dataPoints = 24;
+      interval = '1 hour';
+      break;
+    case 'week':
+      dataPoints = 7;
+      interval = '1 day';
+      break;
+    case 'month':
+      dataPoints = 30;
+      interval = '1 day';
+      break;
+    default:
+      dataPoints = 24;
+      interval = '1 hour';
+  }
+  
+  // Generate mock data
+  const apiCalls = Array.from({ length: dataPoints }, (_, i) => ({
+    timestamp: new Date(Date.now() - (i * (period === 'hour' ? 300000 : period === 'day' ? 3600000 : 86400000))).toISOString(),
+    totalCalls: Math.floor(Math.random() * 1000) + 500,
+    errorRate: Math.random() * 2,
+    avgResponseTime: Math.floor(Math.random() * 100) + 50,
+  })).reverse();
   
   return {
-    totalRequests: 2456,
-    averageResponseTime: 125,
-    errorRate: 0.8,
-    topEndpoints: [
-      { endpoint: '/api/users', requests: 532 },
-      { endpoint: '/api/projects', requests: 423 },
-      { endpoint: '/api/analytics', requests: 287 },
-      { endpoint: '/api/auth/session', requests: 245 },
-      { endpoint: '/api/integrations', requests: 169 }
-    ],
-    timeSeriesData
+    apiCalls,
+    summary: {
+      totalCalls: apiCalls.reduce((sum, item) => sum + item.totalCalls, 0),
+      avgErrorRate: Number((apiCalls.reduce((sum, item) => sum + item.errorRate, 0) / apiCalls.length).toFixed(2)),
+      avgResponseTime: Math.floor(apiCalls.reduce((sum, item) => sum + item.avgResponseTime, 0) / apiCalls.length),
+      interval,
+      period
+    }
   };
 }
 
-// Add an alias for getApiMetrics to maintain backward compatibility
-export const getApiUsageMetrics = getApiMetrics;
+// Keep backward compatibility
+export const getApiMetrics = getApiUsageMetrics;

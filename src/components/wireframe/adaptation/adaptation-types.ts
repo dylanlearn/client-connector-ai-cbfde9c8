@@ -2,146 +2,92 @@
 import { ReactNode } from 'react';
 
 /**
- * Size range thresholds for adaptive components
+ * Properties for adaptive elements that can change their appearance based on container size
  */
-export interface SizeThresholds {
-  compact: number; // Maximum width for compact mode
-  normal: number;  // Width between compact and expanded mode
-  expanded: number; // Minimum width for expanded mode
-}
-
-/**
- * Available adaptive transformations
- */
-export type AdaptiveTransformation = 
-  | 'hide'          // Hide the element completely
-  | 'collapse'      // Collapse to minimal representation
-  | 'truncate'      // Truncate text content
-  | 'stack'         // Stack elements vertically
-  | 'resize'        // Resize element proportionally
-  | 'reposition'    // Change position/alignment
-  | 'simplify'      // Remove non-essential content
-  | 'combine'       // Combine related elements
-  | 'prioritize';   // Show only high-priority elements
-
-/**
- * Space context information for adaptive decisions
- */
-export interface SpaceContext {
-  containerWidth: number;
-  containerHeight: number;
-  availableWidth: number;
-  availableHeight: number;
-  adaptiveState: 'compact' | 'normal' | 'expanded';
-  siblingCount?: number;
-  containerType?: string;
-  isOverflowing?: boolean;
-}
-
-/**
- * Rules for adaptive behavior
- */
-export interface AdaptiveRules {
-  // When to apply transformations based on available space
-  thresholds?: {
-    compact: number;  // px threshold for compact mode
-    expanded: number; // px threshold for expanded mode
-  };
-  
-  // Element-specific transformations
-  transformations?: {
-    [key: string]: {
-      compact?: AdaptiveTransformation[];
-      normal?: AdaptiveTransformation[];
-      expanded?: AdaptiveTransformation[];
-    };
-  };
-  
-  // Custom priorities for elements (higher = more important)
-  priorities?: {
-    [key: string]: number;
-  };
-
-  // Space allocation rules
-  spaceAllocation?: {
-    minSpacing?: number;        // Minimum spacing between elements
-    growthDistribution?: 'even' | 'proportional' | 'priority';
-    preserveAspectRatio?: boolean;
-  };
-  
-  // Responsive behavior
-  responsive?: {
-    mobileLayout?: 'stack' | 'grid' | 'hidden';
-    tabletLayout?: 'stack' | 'grid' | 'default';
-    reorderElements?: boolean;
-  };
-
-  // Content adaptation
-  content?: {
-    truncateText?: boolean;
-    maxLines?: number;
-    imageScaling?: 'contain' | 'cover' | 'none';
-    iconBehavior?: 'keep' | 'hideWithText' | 'replaceText';
-  };
-}
-
-/**
- * Props for adaptive elements
- */
-export interface AdaptiveElementProps {
+export interface AdaptiveElementProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Content to render
+   */
   children: ReactNode;
-  adaptivePriority?: number; // Higher = more important
-  adaptiveId?: string;       // ID for specific rules targeting
-  adaptiveType?: string;     // Element type for rule application
-  compact?: ReactNode;       // Alternative compact rendering
-  expanded?: ReactNode;      // Alternative expanded rendering
-  minWidth?: number;         // Minimum width before adapting
-  preserveOnCompact?: boolean; // Whether to preserve this element in compact mode
-  hideOnCompact?: boolean;    // Whether to hide in compact mode
-  stackOnCompact?: boolean;   // Whether to stack vertically in compact mode
-  truncateOnCompact?: boolean; // Whether to truncate text in compact mode
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-/**
- * Props for adaptive containers
- */
-export interface AdaptiveContainerProps {
-  children: ReactNode;
-  className?: string;
-  adaptiveRules?: AdaptiveRules;
+  
+  /**
+   * Priority level for adaptive decisions (higher priority elements maintain their size longer)
+   */
+  adaptivePriority?: number;
+  
+  /**
+   * Unique identifier for the adaptive element
+   */
+  adaptiveId?: string;
+  
+  /**
+   * Type of adaptive element for classification purposes
+   */
+  adaptiveType?: 'text' | 'image' | 'button' | 'container' | 'form' | string;
+  
+  /**
+   * Compact version of the element to render in small containers
+   */
+  compact?: ReactNode;
+  
+  /**
+   * Expanded version of the element to render in larger containers
+   */
+  expanded?: ReactNode;
+  
+  /**
+   * Minimum width before switching to compact mode
+   */
   minWidth?: number;
-  maxWidth?: number;
-  preserveHeight?: boolean;
-  debug?: boolean;
-  id?: string;
-  style?: React.CSSProperties;
+  
+  /**
+   * If true, element should be preserved even in compact views
+   */
+  preserveOnCompact?: boolean;
+  
+  /**
+   * If true, element will be hidden in compact views
+   */
+  hideOnCompact?: boolean;
+  
+  /**
+   * If true, element will change from horizontal to vertical layout in compact views
+   */
+  stackOnCompact?: boolean;
+  
+  /**
+   * If true, text content will be truncated in compact views
+   */
+  truncateOnCompact?: boolean;
 }
 
 /**
- * Props for adaptive layouts
+ * Configuration for the adaptive container system
  */
-export interface AdaptiveLayoutProps {
-  children: ReactNode;
-  className?: string;
-  adaptiveRules?: AdaptiveRules;
-  minColumns?: number;
-  maxColumns?: number;
-  gap?: number | string;
-  debug?: boolean;
-  style?: React.CSSProperties;
-}
-
-/**
- * Adaptation context provided to child components
- */
-export interface AdaptationContext {
-  containerSize: { width: number; height: number };
-  adaptiveState: 'compact' | 'normal' | 'expanded';
-  availableSpace: { width: number; height: number };
-  siblingCount: number;
-  registerElement: (id: string, priority: number) => void;
-  unregisterElement: (id: string) => void;
-  updateElementPriority: (id: string, priority: number) => void;
+export interface AdaptiveContainerConfig {
+  /**
+   * Breakpoint thresholds in pixels
+   */
+  breakpoints: {
+    xs: number;
+    sm: number;
+    md: number;
+    lg: number;
+    xl: number;
+  };
+  
+  /**
+   * Default adaptive behavior
+   */
+  defaultBehavior: {
+    hideNonEssential: boolean;
+    stackItems: boolean;
+    reduceSpacing: boolean;
+    truncateText: boolean;
+  };
+  
+  /**
+   * Types of elements to prioritize in compact views
+   */
+  priorityElements: string[];
 }
