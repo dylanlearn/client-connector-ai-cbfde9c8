@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ErrorResponse } from '@/types/error-types';
 import { AlertMessage } from '@/components/ui/alert-message';
@@ -7,6 +8,7 @@ import { useWireframeState } from '@/hooks/use-wireframe-state';
 import WireframePreviewSystem from './preview/WireframePreviewSystem';
 import WireframeControls from './editor/WireframeControls';
 import HistoryControls from './canvas/HistoryControls';
+import { useWireframeHistory } from '@/hooks/wireframe/use-wireframe-history';
 
 interface AdvancedWireframeGeneratorProps {
   projectId?: string;
@@ -35,6 +37,14 @@ export function AdvancedWireframeGenerator({
     showToasts: true,
     enhancedValidation: true
   });
+  
+  const {
+    currentData,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+  } = useWireframeHistory(initialWireframeData);
 
   const handleError = (errorResponse: ErrorResponse) => {
     const error = new Error(errorResponse.message || "Unknown error occurred");
@@ -91,10 +101,10 @@ export function AdvancedWireframeGenerator({
         <CardContent className="p-6">
           <div className="flex justify-end mb-4">
             <HistoryControls
-              canUndo={false}
-              canRedo={false}
-              onUndo={() => {}}
-              onRedo={() => {}}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={undo}
+              onRedo={redo}
             />
           </div>
           <WireframeControls

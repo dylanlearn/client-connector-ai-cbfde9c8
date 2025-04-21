@@ -8,7 +8,8 @@ export function useWireframeHistory(initialData: WireframeData | null = null) {
 
   const currentData = history[historyIndex];
 
-  const updateWireframe = useCallback((newData: WireframeData) => {
+  // Update wireframe function that accepts a message parameter for tracking changes
+  const updateWireframe = useCallback((newData: WireframeData, message?: string) => {
     setHistory(prev => {
       const newHistory = prev.slice(0, historyIndex + 1);
       return [...newHistory, newData];
@@ -16,17 +17,30 @@ export function useWireframeHistory(initialData: WireframeData | null = null) {
     setHistoryIndex(prev => prev + 1);
   }, [historyIndex]);
 
+  // Undo function
   const undo = useCallback(() => {
     if (historyIndex > 0) {
       setHistoryIndex(prev => prev - 1);
     }
   }, [historyIndex]);
 
+  // Redo function
   const redo = useCallback(() => {
     if (historyIndex < history.length - 1) {
       setHistoryIndex(prev => prev + 1);
     }
   }, [historyIndex, history.length]);
+
+  // Add aliases for the test
+  const goBack = undo;
+  const goForward = redo;
+
+  // Clear history function
+  const clearHistory = useCallback(() => {
+    const current = currentData;
+    setHistory(current ? [current] : []);
+    setHistoryIndex(0);
+  }, [currentData]);
 
   return {
     currentData,
@@ -35,6 +49,10 @@ export function useWireframeHistory(initialData: WireframeData | null = null) {
     updateWireframe,
     undo,
     redo,
+    // Add aliases for test compatibility
+    goBack,
+    goForward,
+    clearHistory,
     canUndo: historyIndex > 0,
     canRedo: historyIndex < history.length - 1
   };
