@@ -1,200 +1,169 @@
 
 import { useState, useCallback } from 'react';
+import { ContextAwareContentService, ContentGenerationRequest, SectionContentGenerationRequest } from '@/services/ai/wireframe/content/context-aware-content-service';
 import { WireframeData, WireframeSection } from '@/services/ai/wireframe/wireframe-types';
-import { 
-  ContextAwareContentService, 
-  ContentGenerationRequest,
-  SectionContentGenerationRequest,
-  PlaceholderTextOptions
-} from '@/services/ai/wireframe/content/context-aware-content-service';
-import { toast } from 'sonner';
 
-// Updated interfaces to match database schema and resolve TypeScript errors
-export interface ComponentContent {
+// Define required types for content generation
+interface ComponentContent {
   id?: string;
   content: string;
   [key: string]: any;
 }
 
-export interface GeneratedContent {
-  id?: string;
-  pageTitle: string;
-  pageDescription: string;
-  contentSections: Array<{
-    sectionId: string;
-    name: string;
-    content: string;
-    components?: ComponentContent[];
-    [key: string]: any;
-  }>;
-  [key: string]: any;
-}
-
-export interface GeneratedSectionContent {
-  id?: string;
+interface SectionContentResponse {
+  sectionId: string;
   name: string;
   content: string;
   components?: ComponentContent[];
   [key: string]: any;
 }
 
-interface UseContentGenerationOptions {
-  showToasts?: boolean;
+interface GeneratedContent {
+  pageTitle?: string;
+  pageDescription?: string;
+  contentSections?: SectionContentResponse[];
+  [key: string]: any;
+}
+
+interface GeneratedSectionContent {
+  content?: string;
+  components?: ComponentContent[];
+  [key: string]: any;
+}
+
+export interface UseContentGenerationReturn {
+  generateWireframeContent: (wireframe: WireframeData, prompt?: string) => Promise<GeneratedContent>;
+  generateSectionContent: (section: WireframeSection, wireframe?: WireframeData, prompt?: string) => Promise<GeneratedSectionContent>;
+  isGenerating: boolean;
+  error: Error | null;
 }
 
 /**
- * Hook for generating contextual wireframe content
+ * Hook for generating content for wireframes and sections
  */
-export function useContentGeneration({
-  showToasts = true
-}: UseContentGenerationOptions = {}) {
+export function useContentGeneration(): UseContentGenerationReturn {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationResult, setGenerationResult] = useState<GeneratedContent | GeneratedSectionContent | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  
+
   /**
    * Generate content for an entire wireframe
    */
-  const generateContent = useCallback(async (request: ContentGenerationRequest): Promise<GeneratedContent | null> => {
+  const generateWireframeContent = useCallback(async (
+    wireframe: WireframeData, 
+    prompt?: string
+  ): Promise<GeneratedContent> => {
     setIsGenerating(true);
     setError(null);
     
     try {
-      const result = await ContextAwareContentService.generateWireframeContent(request);
-      
-      // Transform service result to our expected interface format
-      const formattedResult: GeneratedContent = {
-        pageTitle: result.pageTitle || request.wireframe.title || '',
-        pageDescription: result.pageDescription || request.wireframe.description || '',
-        contentSections: Array.isArray(result.contentSections) 
-          ? result.contentSections.map(section => ({
-              sectionId: section.id || '',
-              name: section.name || '',
-              content: section.content || '',
-              components: Array.isArray(section.components) 
-                ? section.components.map(comp => ({
-                    id: comp.id || undefined,
-                    // Ensure every component has a content property
-                    content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-                    ...comp
-                  }) as ComponentContent[])
-                : [],
-              ...section
-            }))
-          : []
+      const request: ContentGenerationRequest = {
+        wireframe,
+        prompt,
+        options: {
+          detailLevel: 'standard',
+          tone: 'professional'
+        }
       };
       
-      setGenerationResult(formattedResult);
+      const result = await ContextAwareContentService.generateWireframeContent(request);
       
-      if (showToasts) {
-        toast.success('Content generated successfully!');
-      }
+      // Transform the contentSections to ensure they match the expected SectionContentResponse type
+      const transformedSections = result.contentSections?.map(section => {
+        return {
+          sectionId: section.id || '',
+          name: section.name || '',
+          content: section.content || '',
+          // Ensure components array contains objects with content property
+          components: Array.isArray(section.components) 
+            ? section.components.map(comp => {
+                return {
+                  id: comp.id || undefined,
+                  content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+                  ...comp
+                } as ComponentContent; // Use type assertion to single object, not array
+              })
+            : [],
+          ...section
+        } as SectionContentResponse;
+      }) || [];
       
-      return formattedResult;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error generating content');
-      setError(error);
-      
-      if (showToasts) {
-        toast.error('Error generating content: ' + error.message);
-      }
-      
-      return null;
+      return {
+        pageTitle: result.pageTitle || '',
+        pageDescription: result.pageDescription || '',
+        contentSections: transformedSections,
+        ...result
+      };
+    } catch (e) {
+      const errorInstance = e instanceof Error ? e : new Error(String(e));
+      setError(errorInstance);
+      return {
+        pageTitle: '',
+        pageDescription: '',
+        contentSections: []
+      };
     } finally {
       setIsGenerating(false);
     }
-  }, [showToasts]);
-  
+  }, []);
+
   /**
    * Generate content for a specific section
    */
   const generateSectionContent = useCallback(async (
-    request: SectionContentGenerationRequest
-  ): Promise<GeneratedSectionContent | null> => {
+    section: WireframeSection,
+    wireframe?: WireframeData,
+    prompt?: string
+  ): Promise<GeneratedSectionContent> => {
     setIsGenerating(true);
     setError(null);
     
     try {
+      const request: SectionContentGenerationRequest = {
+        section,
+        wireframe,
+        prompt,
+        options: {
+          detailLevel: 'standard',
+          tone: 'professional'
+        }
+      };
+      
       const result = await ContextAwareContentService.generateSectionContent(request);
       
-      // Transform service result to our expected interface format
-      const formattedResult: GeneratedSectionContent = {
-        name: result.name || request.section.name || '',
-        content: typeof result.content === 'string' ? result.content : '',
+      return {
+        name: result.name || '',
+        content: result.content || '',
+        // Ensure components array contains objects with content property
         components: Array.isArray(result.components) 
-          ? result.components.map(comp => ({
-              id: comp.id || undefined,
-              // Ensure every component has a content property
-              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-              ...comp
-            }) as ComponentContent[])
+          ? result.components.map(comp => {
+              return {
+                id: comp.id || undefined,
+                content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+                ...comp
+              } as ComponentContent; // Use type assertion to single object, not array
+            })
           : [],
         ...result
       };
-      
-      setGenerationResult(formattedResult);
-      
-      if (showToasts) {
-        toast.success(`Content generated for ${request.section.sectionType} section!`);
-      }
-      
-      return formattedResult;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error generating section content');
-      setError(error);
-      
-      if (showToasts) {
-        toast.error('Error generating section content: ' + error.message);
-      }
-      
-      return null;
+    } catch (e) {
+      const errorInstance = e instanceof Error ? e : new Error(String(e));
+      setError(errorInstance);
+      return {
+        content: '',
+        components: []
+      };
     } finally {
       setIsGenerating(false);
     }
-  }, [showToasts]);
-  
-  /**
-   * Generate placeholder text with specific parameters
-   */
-  const generatePlaceholderText = useCallback(async (
-    options: PlaceholderTextOptions
-  ): Promise<string> => {
-    setIsGenerating(true);
-    setError(null);
-    
-    try {
-      const result = await ContextAwareContentService.generatePlaceholderText(options);
-      
-      return result;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error generating placeholder text');
-      setError(error);
-      
-      if (showToasts) {
-        toast.error('Error generating placeholder text: ' + error.message);
-      }
-      
-      return '';
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [showToasts]);
-  
-  /**
-   * Clear any previous generation results
-   */
-  const clearResults = useCallback(() => {
-    setGenerationResult(null);
-    setError(null);
   }, []);
-  
+
   return {
-    isGenerating,
-    generationResult,
-    error,
-    generateContent,
+    generateWireframeContent,
     generateSectionContent,
-    generatePlaceholderText,
-    clearResults
+    isGenerating,
+    error
   };
 }
+
+// Export a default for compatibility with older imports
+export default useContentGeneration;
