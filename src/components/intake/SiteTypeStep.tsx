@@ -74,7 +74,6 @@ const SiteTypeStep = ({
     if (selectedType) {
       onNext();
       toast({
-        title: "Site Type Selected",
         description: `You selected ${siteTypes.find(t => t.id === selectedType)?.name}`,
         variant: "success",
       });
@@ -106,7 +105,6 @@ const SiteTypeStep = ({
                 setSelectedType(type.id);
                 setCanProceed(true);
                 toast({
-                  title: "Site Type Selected",
                   description: `You selected ${type.name}`,
                   variant: "success"
                 });

@@ -11,6 +11,7 @@ import {
   getSavedStep,
   hasInProgressForm as checkInProgressForm 
 } from "./storage-utils";
+import { getQuestionsBySiteType } from "./questions";
 
 /**
  * Main hook for managing the intake form
@@ -18,7 +19,7 @@ import {
  */
 export const useIntakeForm = () => {
   const { user } = useAuth();
-  const { toast } = useToast(); // This returns an object with a toast method
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   
   const {
@@ -39,8 +40,13 @@ export const useIntakeForm = () => {
     formDataCache,
     setFormData,
     setIsSaving,
-    { toast } // Pass the toast method as an object to match ToastAdapter interface
+    { toast }
   );
+
+  // Get specific questions based on site type
+  const getSpecificQuestionsByType = () => {
+    return getQuestionsBySiteType(formData.siteType);
+  };
 
   // Watch for formData changes and schedule save operations
   const handleUpdateFormData = useCallback((data: Partial<IntakeFormData>) => {
@@ -107,6 +113,8 @@ export const useIntakeForm = () => {
     getSavedStep,
     saveCurrentStep,
     hasInProgressForm,
-    formId
+    formId,
+    getSpecificQuestionsByType,
+    intakeData: formData
   };
 };

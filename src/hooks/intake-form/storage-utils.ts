@@ -1,92 +1,63 @@
 
-import { IntakeFormData } from "@/types/intake-form";
-import { v4 as uuidv4 } from "uuid";
+// Create storage utilities
+export const STORAGE_KEY = "intake_form_data";
+export const STEP_KEY = "intake_form_step";
 
-// The keys used for storing form data in localStorage
-export const STORAGE_KEY_FORM_DATA = "intakeFormData";
-export const STORAGE_KEY_FORM_STEP = "intakeFormStep";
-export const STORAGE_KEY_FORM_ID = "intakeFormId";
-
-/**
- * Loads form data from localStorage
- */
-export const loadFormData = (): IntakeFormData => {
-  const savedData = localStorage.getItem(STORAGE_KEY_FORM_DATA);
-  const formId = localStorage.getItem(STORAGE_KEY_FORM_ID) || uuidv4();
-  
-  if (!savedData) {
-    return { formId };
-  }
-  
+export const saveFormData = (data: any) => {
   try {
-    return JSON.parse(savedData);
-  } catch (e) {
-    console.error("Error parsing saved form data:", e);
-    return { formId };
-  }
-};
-
-/**
- * Saves form data to localStorage
- */
-export const saveFormData = (data: IntakeFormData): void => {
-  localStorage.setItem(STORAGE_KEY_FORM_DATA, JSON.stringify(data));
-};
-
-/**
- * Saves the current step to localStorage
- */
-export const saveStep = (step: number): void => {
-  localStorage.setItem(STORAGE_KEY_FORM_STEP, step.toString());
-};
-
-/**
- * Gets the current step from localStorage
- */
-export const getSavedStep = (): number => {
-  const savedStep = localStorage.getItem(STORAGE_KEY_FORM_STEP);
-  return savedStep ? parseInt(savedStep) : 1;
-};
-
-/**
- * Clears all form data from localStorage
- */
-export const clearFormStorage = (): void => {
-  localStorage.removeItem(STORAGE_KEY_FORM_DATA);
-  localStorage.removeItem(STORAGE_KEY_FORM_STEP);
-  localStorage.removeItem(STORAGE_KEY_FORM_ID);
-};
-
-/**
- * Gets the form ID from localStorage
- */
-export const getFormId = (): string => {
-  const savedFormId = localStorage.getItem(STORAGE_KEY_FORM_ID);
-  const formId = savedFormId || uuidv4();
-  
-  if (!savedFormId) {
-    localStorage.setItem(STORAGE_KEY_FORM_ID, formId);
-  }
-  
-  return formId;
-};
-
-/**
- * Checks if there's a form in progress
- */
-export const hasInProgressForm = (): boolean => {
-  const formData = localStorage.getItem(STORAGE_KEY_FORM_DATA);
-  const stepData = localStorage.getItem(STORAGE_KEY_FORM_STEP);
-  
-  if (!formData || !stepData) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      ...data,
+      lastUpdated: new Date().toISOString(),
+    }));
+    return true;
+  } catch (error) {
+    console.error("Error saving form data:", error);
     return false;
   }
-  
+};
+
+export const getFormData = () => {
   try {
-    const parsedData = JSON.parse(formData);
-    return Object.keys(parsedData).length > 1 && parseInt(stepData) > 1;
-  } catch (e) {
-    console.error("Error checking for in-progress form:", e);
+    const storedData = localStorage.getItem(STORAGE_KEY);
+    return storedData ? JSON.parse(storedData) : {};
+  } catch (error) {
+    console.error("Error getting form data:", error);
+    return {};
+  }
+};
+
+export const clearFormStorage = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STEP_KEY);
+  } catch (error) {
+    console.error("Error clearing form data:", error);
+  }
+};
+
+export const saveStep = (step: number) => {
+  try {
+    localStorage.setItem(STEP_KEY, step.toString());
+  } catch (error) {
+    console.error("Error saving step:", error);
+  }
+};
+
+export const getSavedStep = (): number => {
+  try {
+    const step = localStorage.getItem(STEP_KEY);
+    return step ? parseInt(step, 10) : 0;
+  } catch (error) {
+    console.error("Error getting saved step:", error);
+    return 0;
+  }
+};
+
+export const hasInProgressForm = (): boolean => {
+  try {
+    const formData = getFormData();
+    return Object.keys(formData).length > 0;
+  } catch {
     return false;
   }
 };

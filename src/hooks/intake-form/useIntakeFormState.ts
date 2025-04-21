@@ -1,57 +1,37 @@
 
-import { useState, useEffect, useRef, useCallback } from "react";
+// Create a new useIntakeFormState hook
+import { useState, useRef, useCallback } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { IntakeFormData } from "@/types/intake-form";
-import { loadFormData, saveFormData, getFormId } from "./storage-utils";
+import { getFormData, saveFormData } from "./storage-utils";
 
-/**
- * Hook for managing the intake form state with improved performance
- */
 export const useIntakeFormState = () => {
-  const [formData, setFormData] = useState<IntakeFormData>(() => loadFormData());
-  const [isLoading, setIsLoading] = useState(false);
+  // Retrieve stored data or create new empty object
+  const initialFormData = getFormData();
+  const [formData, setFormData] = useState<IntakeFormData>(initialFormData);
+  const formDataCache = useRef<IntakeFormData>({...initialFormData});
   const [isSaving, setIsSaving] = useState(false);
-  const formId = getFormId();
-  const formDataCache = useRef<IntakeFormData>(formData);
   
-  // Cache the form data
-  useEffect(() => {
-    formDataCache.current = formData;
-  }, [formData]);
-
-  // Load form data from localStorage on initial render only once
-  useEffect(() => {
-    const initialData = loadFormData();
-    setFormData(initialData);
-  }, []);
-
-  // Optimized update function with memoization
-  const updateFormData = useCallback((data: Partial<IntakeFormData>) => {
-    setFormData(prevData => {
-      const updatedData = {
-        ...prevData,
-        ...data,
-        lastUpdated: new Date().toISOString()
-      };
-      
-      // Only save if there are actual changes
-      if (JSON.stringify(prevData) !== JSON.stringify(updatedData)) {
-        saveFormData(updatedData);
-        formDataCache.current = updatedData;
-      }
-      
-      return updatedData;
+  // Generate a unique form ID if not exists
+  const formId = useRef(initialFormData.formId || uuidv4()).current;
+  
+  // Update form data - this will be wrapped by the main hook
+  const updateFormData = useCallback((data: Partial<IntakeFormData>): IntakeFormData => {
+    setFormData(prev => {
+      const updated = { ...prev, ...data };
+      formDataCache.current = updated;
+      saveFormData({...updated, formId});
+      return updated;
     });
     return formDataCache.current;
-  }, []);
-
+  }, [formId]);
+  
   return {
     formData,
-    formDataCache,
     setFormData,
+    formDataCache,
     updateFormData,
-    isLoading,
-    setIsLoading,
-    isSaving, 
+    isSaving,
     setIsSaving,
     formId
   };

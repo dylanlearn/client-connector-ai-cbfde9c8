@@ -44,8 +44,10 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
   // Validate at least one specific question answered
   useEffect(() => {
     let hasValid = false;
-    if (questions && questions.length && formData && formData.specificQuestions) {
-      hasValid = questions.some(q => formData.specificQuestions && formData.specificQuestions[q.id]);
+    if (questions && questions.length && formData) {
+      hasValid = questions.some(q => {
+        return formData.specificQuestions && formData.specificQuestions[q.id];
+      });
     }
     setLocalValid(hasValid);
     setCanProceed(hasValid);
@@ -54,14 +56,12 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
   const handleNext = () => {
     if (localValid) {
       toast({
-        title: "Details Saved",
         description: "Specific questions for your business type have been saved.",
         variant: "success",
       });
       onNext();
     } else {
       toast({
-        title: "Validation Error",
         description: "Please answer at least one question before continuing.",
         variant: "destructive",
       });
@@ -84,11 +84,12 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
                 render={({ field }) => (
                   <QuestionItem
                     question={question}
-                    fieldValue={field.value}
+                    fieldValue={formData?.specificQuestions?.[question.id]}
                     onChange={val => {
-                      field.onChange(val);
                       // Mark as valid if this is filled
-                      let valid = !!val || questions.some(q => formData?.specificQuestions && formData.specificQuestions[q.id]);
+                      const valid = !!val || questions.some(q => {
+                        return formData?.specificQuestions && formData.specificQuestions[q.id];
+                      });
                       setLocalValid(valid);
                       setCanProceed(valid);
                       // Save to parent

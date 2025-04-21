@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // Define the question item type
-interface Question {
+export interface Question {
   id: string;
   question: string;
   type: string;

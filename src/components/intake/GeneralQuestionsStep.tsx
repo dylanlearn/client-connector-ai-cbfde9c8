@@ -76,7 +76,6 @@ const GeneralQuestionsStep = ({ formData, updateFormData, onNext, onPrevious, is
   function onSubmit(values: z.infer<typeof formSchema>) {
     updateFormData(values);
     toast({
-      title: "Information Saved",
       description: "General project details have been updated.",
       variant: "success"
     });
