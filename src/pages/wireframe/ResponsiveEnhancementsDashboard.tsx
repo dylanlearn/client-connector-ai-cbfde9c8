@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BreakpointInheritanceProvider } from '@/components/wireframe/responsive/BreakpointInheritance';
 import { useStateTransitions } from '@/hooks/use-state-transitions';
-import { StatefulComponent } from '@/components/visual-states/StatefulComponent';
+import StatefulComponent from '@/components/visual-states/StatefulComponent';
 import { InteractiveScrollTester } from '@/components/wireframe/scroll';
 
 const ResponsiveEnhancementsDashboard: React.FC = () => {

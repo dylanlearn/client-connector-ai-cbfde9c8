@@ -2,154 +2,164 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollAreaVisualizer } from './ScrollAreaVisualizer';
-import { ScrollTriggerEffect } from './ScrollTriggerEffect';
+import { Slider } from '@/components/ui/slider';
+import ScrollAreaVisualizer from './ScrollAreaVisualizer';
+import ScrollTriggerEffect from './ScrollTriggerEffect';
 
 interface InteractiveScrollTesterProps {
   title?: string;
 }
 
-const InteractiveScrollTester: React.FC<InteractiveScrollTesterProps> = ({
-  title = 'Interactive Scroll Testing',
+const InteractiveScrollTester: React.FC<InteractiveScrollTesterProps> = ({ 
+  title = "Interactive Scroll Testing" 
 }) => {
-  const [activeTab, setActiveTab] = useState<string>('basic');
+  const [scrollHeight, setScrollHeight] = useState(400);
+  const [showScrollbarHighlights, setShowScrollbarHighlights] = useState(true);
+  const [showScrollPosition, setShowScrollPosition] = useState(true);
   
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="visualization">
           <TabsList className="mb-4">
-            <TabsTrigger value="basic">Basic Scrolling</TabsTrigger>
-            <TabsTrigger value="scrollTrigger">Scroll Triggers</TabsTrigger>
-            <TabsTrigger value="overflow">Overflow Behavior</TabsTrigger>
+            <TabsTrigger value="visualization">Scrollbars Visualization</TabsTrigger>
+            <TabsTrigger value="triggers">Scroll Triggers</TabsTrigger>
+            <TabsTrigger value="metrics">Scroll Metrics</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="basic" className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Test basic scrolling behavior with visualization of scroll position and controls.
-            </p>
-            
-            <ScrollAreaVisualizer
-              height={300}
-              showControls={true}
-              highlightScrollbars={true}
-              showScrollPosition={true}
-            />
+          <TabsContent value="visualization">
+            <div className="space-y-4">
+              <div className="flex gap-4 flex-wrap">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="show-scrollbars"
+                    checked={showScrollbarHighlights}
+                    onChange={(e) => setShowScrollbarHighlights(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="show-scrollbars" className="text-sm">Show Scrollbar Indicators</label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="show-position"
+                    checked={showScrollPosition}
+                    onChange={(e) => setShowScrollPosition(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="show-position" className="text-sm">Show Scroll Position</label>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Container Height: {scrollHeight}px</label>
+                <Slider
+                  min={200}
+                  max={600}
+                  step={50}
+                  value={[scrollHeight]}
+                  onValueChange={(value) => setScrollHeight(value[0])}
+                />
+              </div>
+              
+              <ScrollAreaVisualizer
+                height={scrollHeight}
+                width="100%"
+                showControls={true}
+                highlightScrollbars={showScrollbarHighlights}
+                showScrollPosition={showScrollPosition}
+              >
+                <div className="p-4 space-y-4">
+                  <h3 className="text-lg font-medium">Scroll Area Contents</h3>
+                  <p>This is a custom scrollable area with scroll visualization.</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array(6).fill(0).map((_, i) => (
+                      <div key={i} className="p-4 border rounded-md bg-white shadow-sm">
+                        <h4 className="font-medium">Item {i + 1}</h4>
+                        <p className="text-sm text-gray-500">
+                          Content for item {i + 1}. This is a card inside the scrollable area.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-md">
+                    <h4 className="font-medium text-blue-700">Scroll notification</h4>
+                    <p className="text-sm text-blue-600">
+                      You've scrolled to see this special notification!
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array(4).fill(0).map((_, i) => (
+                      <div key={`bottom-${i}`} className="p-4 border rounded-md bg-white shadow-sm">
+                        <h4 className="font-medium">Bottom Item {i + 1}</h4>
+                        <p className="text-sm text-gray-500">
+                          Content at the bottom of the scroll area.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="p-4 bg-green-50 border border-green-100 rounded-md">
+                    <h4 className="font-medium text-green-700">Bottom reached!</h4>
+                    <p className="text-sm text-green-600">
+                      You've scrolled all the way to the bottom!
+                    </p>
+                  </div>
+                </div>
+              </ScrollAreaVisualizer>
+            </div>
           </TabsContent>
           
-          <TabsContent value="scrollTrigger" className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Demonstrates elements that respond to scroll position using scroll triggers.
-            </p>
-            
-            <ScrollTriggerEffect 
-              height={400}
+          <TabsContent value="triggers">
+            <ScrollTriggerEffect
+              height={500}
               triggers={[
-                { position: 25, label: 'First Trigger' },
-                { position: 50, label: 'Middle Trigger' },
-                { position: 75, label: 'Late Trigger' }
+                { position: 20, label: 'Header' },
+                { position: 40, label: 'Content' },
+                { position: 60, label: 'Features' },
+                { position: 80, label: 'Footer' }
               ]}
             />
           </TabsContent>
           
-          <TabsContent value="overflow" className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Test how content behaves when it overflows in different dimensions.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium mb-2">Vertical Overflow</h3>
-                <ScrollAreaVisualizer 
-                  height={200}
-                  contentHeight={500}
-                  showControls={false}
-                />
+          <TabsContent value="metrics">
+            <div className="space-y-6">
+              <div className="p-4 bg-slate-50 rounded-md">
+                <h3 className="text-base font-medium mb-2">Scroll Performance Metrics</h3>
+                <p className="text-sm text-muted-foreground">
+                  This tab would display scroll performance metrics like frame rate, jank detection, 
+                  and smooth scrolling analytics for optimizing scrolling experiences.
+                </p>
               </div>
               
-              <div>
-                <h3 className="text-sm font-medium mb-2">Horizontal Overflow</h3>
-                <ScrollAreaVisualizer 
-                  height={200}
-                  showControls={false}
-                >
-                  <div style={{ width: '1000px', padding: '1rem' }}>
-                    <div className="flex gap-4 overflow-x-auto">
-                      {Array.from({ length: 10 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex-shrink-0 w-64 p-4 rounded-md bg-slate-100"
-                        >
-                          <h4 className="font-medium">Card {i + 1}</h4>
-                          <p className="text-sm text-gray-600">
-                            This content demonstrates horizontal scrolling behavior.
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-md">
+                  <h4 className="font-medium mb-2">Scroll Jank Detection</h4>
+                  <div className="h-[150px] bg-slate-50 rounded flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Jank measurement visualization<br />
+                      (Placeholder for metrics)
+                    </p>
                   </div>
-                </ScrollAreaVisualizer>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Both Directions</h3>
-                <ScrollAreaVisualizer
-                  height={200}
-                  showControls={false}
-                >
-                  <div style={{ width: '1000px', height: '400px', padding: '1rem' }}>
-                    <div className="grid grid-cols-5 gap-4">
-                      {Array.from({ length: 20 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="p-4 rounded-md bg-slate-100"
-                        >
-                          <h4 className="font-medium">Item {i + 1}</h4>
-                          <p className="text-sm text-gray-600">
-                            Scrolls in both directions.
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                </div>
+                
+                <div className="p-4 border rounded-md">
+                  <h4 className="font-medium mb-2">Frame Rate Analysis</h4>
+                  <div className="h-[150px] bg-slate-50 rounded flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Frame rate during scrolling<br />
+                      (Placeholder for metrics)
+                    </p>
                   </div>
-                </ScrollAreaVisualizer>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium mb-2">Nested Scrolling</h3>
-                <ScrollAreaVisualizer
-                  height={200}
-                  showControls={false}
-                >
-                  <div style={{ height: '400px', padding: '1rem' }}>
-                    <h3 className="text-lg font-medium mb-4">Outer Scroll Area</h3>
-                    <p className="mb-4">Scroll down to see the nested scroll area.</p>
-                    
-                    <div className="mt-20">
-                      <h4 className="font-medium mb-2">Nested Scroll Area:</h4>
-                      <div className="border border-slate-200 rounded-md overflow-hidden">
-                        <div style={{ height: '150px', overflow: 'auto' }}>
-                          <div style={{ height: '300px', padding: '1rem' }}>
-                            <p>This is a nested scrollable area inside the main scroll area.</p>
-                            <div className="mt-20">
-                              <p>You need to scroll to see this content.</p>
-                            </div>
-                            <div className="mt-20">
-                              <p>And scroll even more to see this text.</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-20">
-                      <p>More content after the nested scroll area.</p>
-                    </div>
-                  </div>
-                </ScrollAreaVisualizer>
+                </div>
               </div>
             </div>
           </TabsContent>
