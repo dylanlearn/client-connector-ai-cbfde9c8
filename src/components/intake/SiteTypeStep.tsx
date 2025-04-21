@@ -97,7 +97,6 @@ const SiteTypeStep = ({
           return (
             <Card
               key={type.id}
-              as="button"
               className={`p-4 w-full text-left flex flex-col justify-between border cursor-pointer transition-all duration-150 outline-none focus:ring-2 focus:ring-primary focus:border-primary ${selectedType === type.id ? "border-primary bg-primary/5" : ""}`}
               aria-checked={selectedType === type.id}
               aria-label={type.name}

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useFormContext } from 'react-hook-form';
-import { useIntakeForm } from '@/hooks/use-intake-form';
+import { useIntakeForm } from '@/hooks/intake-form';
 import { QuestionItem } from './QuestionItem';
 import { FormField } from '@/components/ui/form';
 import WireframeVisualizer from '@/components/wireframe/WireframeVisualizer';
@@ -94,7 +94,7 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
                       // Save to parent
                       updateFormData({
                         specificQuestions: {
-                          ...formData?.specificQuestions,
+                          ...(formData?.specificQuestions || {}),
                           [question.id]: val
                         }
                       });
