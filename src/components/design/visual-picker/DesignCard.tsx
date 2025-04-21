@@ -1,18 +1,17 @@
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Heart } from "lucide-react";
-import { DesignOption } from "../AnimatedVisualPicker";
-import { renderAnimationPreviewDemo, InteractionPreviewDemo } from "./PreviewDemos";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { CheckIcon, XIcon } from 'lucide-react';
+import { DesignOption } from '../AnimatedVisualPicker';
 
 interface DesignCardProps {
   currentOption: DesignOption;
-  direction: "" | "left" | "right";
+  direction: string;
   isLiked: Record<string, boolean>;
   offsetX: number;
   isDragging: boolean;
   isPreviewVisible: boolean;
-  setIsPreviewVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsPreviewVisible: (visible: boolean) => void;
   handleDragEnd: () => void;
   handleMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;
   handleMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
@@ -28,98 +27,91 @@ export const DesignCard: React.FC<DesignCardProps> = ({
   isDragging,
   isPreviewVisible,
   setIsPreviewVisible,
+  handleDragEnd,
   handleMouseDown,
   handleMouseMove,
   handleTouchStart,
-  handleTouchMove,
+  handleTouchMove
 }) => {
-  // Calculate rotation based on drag offset
-  const rotate = isDragging ? offsetX * 0.1 : 0;
-
   return (
-    <motion.div
-      key={currentOption.id}
-      className="absolute w-full h-full bg-white rounded-xl overflow-hidden shadow-lg cursor-grab active:cursor-grabbing"
+    <div 
+      className={cn(
+        "absolute inset-0 rounded-xl overflow-hidden shadow-lg cursor-grab transition-transform",
+        isDragging && "cursor-grabbing",
+        direction === "left" && "animate-slide-out-left",
+        direction === "right" && "animate-slide-out-right"
+      )}
       style={{ 
-        x: offsetX,
-        rotate: rotate,
-        perspective: 1000
+        transform: isDragging ? `translateX(${offsetX}px) rotate(${offsetX * 0.05}deg)` : undefined,
+        backgroundImage: `url(${currentOption.imageUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center"
       }}
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ 
-        x: direction === "left" ? -500 : direction === "right" ? 500 : 0,
-        rotate: direction === "left" ? -30 : direction === "right" ? 30 : 0,
-        opacity: 0,
-        transition: { duration: 0.3 }
-      }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
-      whileTap={{ cursor: "grabbing" }}
     >
-      {/* Like/Dislike indicators */}
-      {isDragging && offsetX > 50 && (
-        <div className="absolute top-4 right-4 bg-green-500 text-white p-2 rounded-full">
-          <Heart className="h-5 w-5 fill-white" />
-        </div>
-      )}
-      
-      {isDragging && offsetX < -50 && (
-        <div className="absolute top-4 left-4 bg-red-500 text-white p-2 rounded-full">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none"
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </div>
-      )}
-      
-      {/* Card content */}
-      <div className="h-[65%] bg-muted flex items-center justify-center overflow-hidden">
-        {(currentOption.category === "animation") ? (
-          <div className="w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
-            {renderAnimationPreviewDemo(currentOption)}
+      <div 
+        className="absolute inset-0 flex flex-col justify-between p-6 bg-gradient-to-t from-black/80 to-transparent"
+        onClick={() => setIsPreviewVisible(!isPreviewVisible)}
+      >
+        <div className="flex justify-between items-start">
+          <div className="bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+            {currentOption.title}
           </div>
-        ) : (currentOption.category === "interaction") ? (
-          <div className="w-full h-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
-            <InteractionPreviewDemo 
-              currentOption={currentOption}
-              isPreviewVisible={isPreviewVisible}
-              setIsPreviewVisible={setIsPreviewVisible}
-            />
-          </div>
-        ) : (
-          <img 
-            src={currentOption.imageUrl} 
-            alt={currentOption.title}
-            className="w-full h-full object-cover"
-          />
-        )}
+          
+          {isLiked[currentOption.id] !== undefined && (
+            <div 
+              className={cn(
+                "rounded-full p-2",
+                isLiked[currentOption.id] 
+                  ? "bg-green-500 text-white" 
+                  : "bg-red-500 text-white"
+              )}
+            >
+              {isLiked[currentOption.id] ? <CheckIcon size={16} /> : <XIcon size={16} />}
+            </div>
+          )}
+        </div>
         
-        {isLiked[currentOption.id] && (
-          <div className="absolute top-3 right-3 bg-red-500 text-white p-1.5 rounded-full">
-            <Heart className="h-5 w-5 fill-white" />
-          </div>
-        )}
+        <div className="bg-black/60 text-white p-3 rounded-lg backdrop-blur-sm">
+          <p className="font-bold text-lg">{currentOption.title}</p>
+          <p className="text-sm opacity-90">{currentOption.description}</p>
+          
+          {isPreviewVisible && (
+            <div className="mt-3 pt-3 border-t border-white/20">
+              {currentOption.colorScheme && (
+                <div className="flex gap-2 my-2">
+                  {Object.entries(currentOption.colorScheme).slice(0, 3).map(([key, color]) => (
+                    <div 
+                      key={key}
+                      className="w-6 h-6 rounded-full" 
+                      style={{ backgroundColor: color }}
+                      title={`${key}: ${color}`}
+                    ></div>
+                  ))}
+                </div>
+              )}
+              
+              {currentOption.typography && (
+                <p className="text-xs">
+                  {currentOption.typography.headings} / {currentOption.typography.body}
+                </p>
+              )}
+              
+              {currentOption.layoutStyle && (
+                <p className="text-xs">Layout: {currentOption.layoutStyle}</p>
+              )}
+              
+              {currentOption.toneDescriptor && (
+                <p className="text-xs">Tone: {currentOption.toneDescriptor}</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      
-      <div className="p-4">
-        <h4 className="text-lg font-semibold">{currentOption.title}</h4>
-        <p className="text-sm text-muted-foreground line-clamp-2">{currentOption.description}</p>
-      </div>
-    </motion.div>
+    </div>
   );
 };
 
