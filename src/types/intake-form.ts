@@ -13,6 +13,9 @@ export interface IntakeFormData {
   mainFeatures?: string;
   competitors?: string;
   
+  // For storing question responses
+  specificQuestions?: Record<string, any>;
+  
   // Business specific
   businessName?: string;
   businessDescription?: string;

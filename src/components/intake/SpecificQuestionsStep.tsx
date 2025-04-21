@@ -2,14 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useFormContext } from 'react-hook-form';
-import { useIntakeForm } from '@/hooks/intake-form';
 import { QuestionItem } from './QuestionItem';
 import { FormField } from '@/components/ui/form';
-import WireframeVisualizer from '@/components/wireframe/WireframeVisualizer';
 import { IntakeFormData } from '@/types/intake-form';
 import { Button } from '@/components/ui/button';
 import { toast } from "@/hooks/use-toast";
+import { getQuestionsBySiteType } from "@/hooks/intake-form/questions";
 
 // Unified props with validation, navigation, and a11y
 interface SpecificQuestionsStepProps {
@@ -33,13 +31,9 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
 }) => {
   // For schema: Place all validation here, e.g. require at least 1 filled value by default
   const [localValid, setLocalValid] = useState(false);
-  const { getSpecificQuestionsByType, intakeData } = useIntakeForm();
-
+  
   // Get questions based on the selected business type
-  const questions = getSpecificQuestionsByType();
-
-  // Use either passed in formData or intakeData from the hook
-  const displayData = formData || intakeData;
+  const questions = getQuestionsBySiteType(formData.siteType);
 
   // Validate at least one specific question answered
   useEffect(() => {
@@ -56,14 +50,12 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
   const handleNext = () => {
     if (localValid) {
       toast({
-        description: "Specific questions for your business type have been saved.",
-        variant: "success",
+        description: "Specific questions for your business type have been saved."
       });
       onNext();
     } else {
       toast({
-        description: "Please answer at least one question before continuing.",
-        variant: "destructive",
+        description: "Please answer at least one question before continuing."
       });
     }
   };
@@ -112,30 +104,17 @@ const SpecificQuestionsStep: React.FC<SpecificQuestionsStepProps> = ({
         )}
       </Card>
       {/* Preview section */}
-      {displayData && Object.keys(displayData).length > 0 && (
+      {formData && Object.keys(formData).length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-medium mb-4">Preview</h3>
           <Separator className="mb-6" />
-          <WireframeVisualizer 
-            wireframe={{
-              id: "preview",
-              title: displayData.projectName || displayData.businessName || "Business Preview",
-              description: displayData.projectDescription || displayData.businessDescription || "Based on your inputs",
-              sections: [],
-              colorScheme: {
-                primary: "#0070f3",
-                secondary: "#0070f3",
-                accent: "#0070f3",
-                background: "#ffffff",
-                text: "#000000"
-              },
-              typography: {
-                headings: "Inter",
-                body: "Inter"
-              }
-            }}
-            preview={true}
-          />
+          {/* Just a placeholder - the WireframeVisualizer component is not available */}
+          <div className="bg-gray-100 p-4 rounded border text-center">
+            <p>Preview based on your inputs</p>
+            <p className="text-sm text-gray-500">
+              {formData.projectName || formData.businessName || "Business Preview"}
+            </p>
+          </div>
         </Card>
       )}
 

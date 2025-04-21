@@ -43,11 +43,6 @@ export const useIntakeForm = () => {
     { toast }
   );
 
-  // Get specific questions based on site type
-  const getSpecificQuestionsByType = () => {
-    return getQuestionsBySiteType(formData.siteType);
-  };
-
   // Watch for formData changes and schedule save operations
   const handleUpdateFormData = useCallback((data: Partial<IntakeFormData>) => {
     const updated = updateFormData(data);
@@ -71,9 +66,7 @@ export const useIntakeForm = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({
-        title: "Error",
-        description: "Failed to submit the form. Please try again.",
-        variant: "destructive"
+        description: "Failed to submit the form. Please try again."
       });
       throw error;
     } finally {
@@ -113,8 +106,6 @@ export const useIntakeForm = () => {
     getSavedStep,
     saveCurrentStep,
     hasInProgressForm,
-    formId,
-    getSpecificQuestionsByType,
-    intakeData: formData
+    formId
   };
 };

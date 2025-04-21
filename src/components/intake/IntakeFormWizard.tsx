@@ -49,14 +49,12 @@ export default function IntakeFormWizard() {
     try {
       await submitForm();
       toast({
-        description: "We've received your intake submission. You'll hear from us soon.",
-        variant: "success",
+        description: "We've received your intake submission. You'll hear from us soon."
       });
       setCompleted(true);
     } catch {
       toast({
-        description: "Something went wrong, please try again.",
-        variant: "destructive",
+        description: "Something went wrong, please try again."
       });
     }
   };
@@ -65,7 +63,7 @@ export default function IntakeFormWizard() {
   const goToNextStep = () => {
     setStep(prev => {
       toast({
-        description: `Now on step: ${STEP_TITLES[Math.min(prev + 1, TOTAL_STEPS - 1)]}`,
+        description: `Now on step: ${STEP_TITLES[Math.min(prev + 1, TOTAL_STEPS - 1)]}`
       });
       return Math.min(prev + 1, TOTAL_STEPS - 1);
     });
@@ -73,7 +71,7 @@ export default function IntakeFormWizard() {
   const goToPrevStep = () => {
     setStep(prev => {
       toast({
-        description: `Back to step: ${STEP_TITLES[Math.max(prev - 1, 0)]}`,
+        description: `Back to step: ${STEP_TITLES[Math.max(prev - 1, 0)]}`
       });
       return Math.max(prev - 1, 0);
     });

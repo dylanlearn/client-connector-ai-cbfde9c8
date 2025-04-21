@@ -1,77 +1,87 @@
 
-import { type ToastActionElement } from "@/components/ui/toast";
-import React from "react";
-import { toast as sonnerToast } from "sonner";
+import { useState, useEffect, useRef } from "react";
 
-// Define the Toast type with correct properties
+export type ToastVariant = "default" | "destructive" | "success";
+
 export type Toast = {
-  id?: string;
-  title: React.ReactNode;
-  description?: React.ReactNode;
-  variant?: "default" | "destructive" | "success";
-  action?: ToastActionElement;
+  id: string;
+  title?: React.ReactNode;
+  description: React.ReactNode;
+  action?: React.ReactNode;
+  variant?: ToastVariant;
   duration?: number;
 };
 
-// Define the return type for useToast
-export interface UseToastReturnType {
-  toast: (props: Toast) => string;
-  toasts: Toast[];
-  dismiss: (toastId?: string) => void;
-}
+type ToasterToast = Toast & {
+  removed?: boolean;
+  onOpenChange?: (open: boolean) => void;
+};
 
-export function useToast(): UseToastReturnType {
-  // Store toasts in memory for rendering in the Toaster component
-  const toastsRef = React.useRef<Toast[]>([]);
-  const [toasts, setToasts] = React.useState<Toast[]>([]);
+const TOAST_LIMIT = 3;
+const TOAST_DURATION = 5000;
 
-  const dismiss = React.useCallback((toastId?: string) => {
-    setToasts((prevToasts) => {
-      if (toastId) {
-        toastsRef.current = prevToasts.filter((toast) => toast.id !== toastId);
-        return [...toastsRef.current];
-      }
-      toastsRef.current = [];
-      return [];
-    });
-  }, []);
+export const toastStore = {
+  toasts: [] as ToasterToast[],
+  listeners: [] as ((toasts: ToasterToast[]) => void)[],
+  subscribe: function (listener: (toasts: ToasterToast[]) => void) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  },
+  notify: function () {
+    this.listeners.forEach(listener => listener(this.toasts));
+  },
+  add: function (toast: Toast) {
+    const id = crypto.randomUUID();
+    const newToast = { ...toast, id };
+    this.toasts = [newToast, ...this.toasts].slice(0, TOAST_LIMIT);
+    this.notify();
+    return id;
+  },
+  remove: function (id: string) {
+    this.toasts = this.toasts.filter(t => t.id !== id);
+    this.notify();
+  },
+  update: function (id: string, toast: Toast) {
+    this.toasts = this.toasts.map(t => t.id === id ? { ...t, ...toast } : t);
+    this.notify();
+  },
+};
 
-  const toast = React.useCallback(
-    (props: Toast) => {
-      const id = Math.random().toString(36).substring(2, 9);
-      const newToast: Toast = {
-        id,
-        title: props.title || "",
-        description: props.description,
-        action: props.action,
-        variant: props.variant,
-        duration: props.duration
-      };
-
-      // Add toast to the state
-      setToasts((prev) => {
-        toastsRef.current = [...prev, newToast];
-        return [...toastsRef.current];
-      });
-
-      // Auto-dismiss toast after the specified duration (default 5s)
-      if (props.duration !== Infinity) {
-        setTimeout(() => {
-          dismiss(id);
-        }, props.duration || 5000);
-      }
-
-      return id;
-    },
-    [dismiss]
-  );
-
+export function toast(props: Omit<Toast, "id">) {
+  const id = toastStore.add({
+    ...props,
+    id: "",
+    duration: props.duration ?? TOAST_DURATION
+  });
   return {
-    toast,
-    toasts,
-    dismiss,
+    id,
+    dismiss: () => toastStore.remove(id),
+    update: (props: Toast) => toastStore.update(id, props)
   };
 }
 
-// Export the sonner toast function for direct usage
-export const toast = sonnerToast;
+toast.dismiss = (id?: string) => {
+  if (id) {
+    toastStore.remove(id);
+  } else {
+    toastStore.toasts.forEach(toast => {
+      toastStore.remove(toast.id);
+    });
+  }
+};
+
+export function useToast() {
+  const [toasts, setToasts] = useState<ToasterToast[]>([...toastStore.toasts]);
+  
+  useEffect(() => {
+    return toastStore.subscribe(setToasts);
+  }, []);
+
+  return {
+    toasts,
+    toast,
+    dismiss: toast.dismiss
+  };
+}
