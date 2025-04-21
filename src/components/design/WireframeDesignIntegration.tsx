@@ -1,12 +1,11 @@
-
-import React, { useState } from 'react';
+import React from 'react';
+import AIWireframeRenderer from '@/components/wireframe/AIWireframeRenderer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DesignWireframeBridge } from './DesignWireframeBridge';
 import { EnhancedVisualPicker } from './EnhancedVisualPicker';
 import { WireframeData, WireframeGenerationResult } from '@/services/ai/wireframe/wireframe-types';
 import { DesignSuggestion } from '@/hooks/wireframe/use-wireframe-variations';
-import { AIWireframeRenderer } from '@/components/wireframe/AIWireframeRenderer';
 import { Paintbrush, Layout, Wand2 } from 'lucide-react';
 
 interface WireframeDesignIntegrationProps {
@@ -37,7 +36,6 @@ export const WireframeDesignIntegration: React.FC<WireframeDesignIntegrationProp
     setCurrentDesign(design);
     setGeneratedWireframes(prev => [...prev, wireframe]);
     
-    // Switch to the preview tab to show the result
     setActiveTab('preview');
   };
   
