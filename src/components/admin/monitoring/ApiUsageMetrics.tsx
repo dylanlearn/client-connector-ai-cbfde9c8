@@ -6,7 +6,7 @@ import { ApiMetricsOverview } from "./api-metrics/ApiMetricsOverview";
 import { ApiRequestsTable } from "./api-metrics/ApiRequestsTable";
 import { toast } from "sonner";
 
-interface ApiUsageMetricsProps {
+export interface ApiUsageMetricsProps {
   refreshInterval?: number;
   limit?: number;
 }
@@ -39,7 +39,6 @@ export function ApiUsageMetrics({
     setError(null);
     
     try {
-      // Fetch the most recent API usage metrics
       const { data: metricsData, error: metricsError } = await supabase
         .from('api_usage_metrics')
         .select('*')
@@ -52,25 +51,16 @@ export function ApiUsageMetrics({
       
       setMetrics(metricsData || []);
       
-      // Calculate summary statistics
       if (metricsData && metricsData.length > 0) {
-        // Count by endpoint
         const endpointCounts: Record<string, number> = {};
-        // Count by status code
         const statusCounts: Record<string, number> = {};
-        // Calculate average response time
         let totalResponseTime = 0;
         
         metricsData.forEach((metric: ApiMetric) => {
-          // Endpoint counts
           endpointCounts[metric.endpoint] = (endpointCounts[metric.endpoint] || 0) + 1;
-          
-          // Status code counts
           const statusGroup = Math.floor(metric.status_code / 100) * 100;
           const statusKey = `${statusGroup}`;
           statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
-          
-          // Sum response times
           totalResponseTime += metric.response_time_ms;
         });
         
@@ -99,7 +89,6 @@ export function ApiUsageMetrics({
   useEffect(() => {
     fetchApiUsageData();
     
-    // Set up realtime subscription for api usage metrics
     const channel = supabase.channel('api-metrics')
       .on(
         'postgres_changes',
@@ -118,7 +107,6 @@ export function ApiUsageMetrics({
       )
       .subscribe();
     
-    // Still keep the refresh interval as a backup
     if (refreshInterval > 0) {
       const intervalId = setInterval(fetchApiUsageData, refreshInterval * 1000);
       return () => {

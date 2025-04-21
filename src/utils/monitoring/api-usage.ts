@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SystemMonitoringRecord } from './types';
+import { SystemMonitoringRecord, ClientError } from './types';
 
 /**
  * Fetch API usage metrics for a specified time period
@@ -73,6 +73,41 @@ export async function recordApiCall(
     });
   } catch (error) {
     console.error('Error recording API call:', error);
+  }
+}
+
+/**
+ * Record client error to the database
+ */
+export async function recordClientError(
+  errorMessage: string,
+  errorStack?: string,
+  componentName?: string,
+  userId?: string,
+  metadata?: Record<string, any>
+): Promise<void> {
+  try {
+    const clientError: ClientError = {
+      message: errorMessage,
+      error_message: errorMessage,
+      stackTrace: errorStack,
+      error_stack: errorStack,
+      componentName,
+      component_name: componentName,
+      userId,
+      user_id: userId,
+      browser_info: navigator?.userAgent || 'Unknown',
+      url: window?.location?.href,
+      timestamp: new Date().toISOString(),
+      metadata
+    };
+
+    const { error } = await supabase.from('client_errors').insert(clientError);
+    if (error) {
+      console.error('Failed to record client error:', error);
+    }
+  } catch (err) {
+    console.error('Error in recordClientError:', err);
   }
 }
 

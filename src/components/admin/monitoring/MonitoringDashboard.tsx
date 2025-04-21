@@ -78,6 +78,15 @@ export function MonitoringDashboard() {
     );
   }
 
+  // Map system status to allowed status type
+  const mapStatus = (status: string): 'healthy' | 'warning' | 'critical' | 'unknown' => {
+    if (status === 'healthy') return 'healthy';
+    if (status === 'warning') return 'warning';
+    if (status === 'critical') return 'critical';
+    if (status === 'error' || status === 'degraded' || status === 'unhealthy') return 'warning';
+    return 'unknown';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -104,7 +113,7 @@ export function MonitoringDashboard() {
             <CardHeader className="py-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">System Status</CardTitle>
-                <StatusBadge status={systemStatus.status} showText />
+                <StatusBadge status={mapStatus(systemStatus.status)} showText />
               </div>
             </CardHeader>
             <CardContent>
@@ -114,7 +123,7 @@ export function MonitoringDashboard() {
                     <CardHeader className="py-3 bg-muted/30">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-sm font-medium">{key}</CardTitle>
-                        <StatusBadge status={component.status} />
+                        <StatusBadge status={mapStatus(component.status)} />
                       </div>
                     </CardHeader>
                     <CardContent className="p-4">
@@ -142,7 +151,7 @@ export function MonitoringDashboard() {
             </TabsList>
             
             <TabsContent value="usage" className="space-y-4 pt-4">
-              <ApiUsageMetrics period={selectedPeriod} />
+              <ApiUsageMetrics />
             </TabsContent>
             
             <TabsContent value="errors" className="space-y-4 pt-4">

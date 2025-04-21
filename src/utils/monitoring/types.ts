@@ -8,7 +8,7 @@ export interface ComponentStatus {
 }
 
 export interface SystemStatus {
-  status: 'healthy' | 'warning' | 'critical' | 'unknown';
+  status: 'healthy' | 'warning' | 'critical' | 'error' | 'degraded' | 'unhealthy' | 'unknown';
   components: Record<string, ComponentStatus>;
   lastUpdated: string;
   incidents?: SystemIncident[];
@@ -41,6 +41,7 @@ export interface AlertConfiguration {
   enabled: boolean;
 }
 
+// Interface for client error recording
 export interface ClientError {
   id?: string;
   message: string;
