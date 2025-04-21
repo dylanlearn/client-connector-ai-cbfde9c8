@@ -64,7 +64,7 @@ export interface WireframeColorScheme {
   secondary: string;
   accent: string;
   background: string;
-  text?: string;
+  text: string; // Changed from optional to required to match ColorScheme
   [key: string]: any;
 }
 
@@ -134,4 +134,3 @@ export function normalizeWireframeGenerationParams(params: WireframeGenerationPa
     creativityLevel: params.creativityLevel || 5
   };
 }
-

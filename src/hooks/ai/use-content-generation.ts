@@ -74,9 +74,10 @@ export function useContentGeneration({
               components: Array.isArray(section.components) 
                 ? section.components.map(comp => ({
                     id: comp.id || undefined,
+                    // Ensure every component has a content property
                     content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
                     ...comp
-                  }))
+                  }) as ComponentContent[])
                 : [],
               ...section
             }))
@@ -123,9 +124,10 @@ export function useContentGeneration({
         components: Array.isArray(result.components) 
           ? result.components.map(comp => ({
               id: comp.id || undefined,
+              // Ensure every component has a content property
               content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
               ...comp
-            }))
+            }) as ComponentContent[])
           : [],
         ...result
       };
