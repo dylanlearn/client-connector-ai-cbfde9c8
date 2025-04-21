@@ -13,7 +13,7 @@ interface WireframeLoadingStateProps {
   }[];
 }
 
-const WireframeLoadingState: React.FC<WireframeLoadingStateProps> = ({ 
+const WireframeLoadingState: React.FC<WireframeLoadingStateProps> = ({
   message = "Generating wireframe...",
   progress,
   steps
@@ -22,7 +22,8 @@ const WireframeLoadingState: React.FC<WireframeLoadingStateProps> = ({
     <Card className="w-full">
       <CardContent className="pt-6">
         <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-          <LoadingSpinner size="xl" />
+          {/* Changed size="xl" to size="lg" */}
+          <LoadingSpinner size="lg" />
           <h3 className="text-lg font-medium">{message}</h3>
           
           {progress !== undefined && (
