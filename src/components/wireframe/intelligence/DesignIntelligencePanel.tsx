@@ -70,28 +70,28 @@ const DesignIntelligencePanel: React.FC<DesignIntelligencePanelProps> = ({
         <TabsContent value="layout" className="pt-4">
           <LayoutAnalysisPanel
             wireframe={wireframe}
-            onUpdateWireframe={onUpdateWireframe}
+            onUpdate={onUpdateWireframe}
           />
         </TabsContent>
         
         <TabsContent value="content" className="pt-4">
           <ContentGenerationPanel 
             wireframe={wireframe}
-            onUpdateWireframe={onUpdateWireframe}
+            onUpdate={onUpdateWireframe}
           />
         </TabsContent>
         
         <TabsContent value="accessibility" className="pt-4">
           <AccessibilityAnalysisPanel
             wireframe={wireframe}
-            onUpdateWireframe={onUpdateWireframe}
+            onUpdate={onUpdateWireframe}
           />
         </TabsContent>
         
         <TabsContent value="alternatives" className="pt-4">
           <SmartLayoutAlternativesPanel
             wireframe={wireframe}
-            onUpdateWireframe={onUpdateWireframe}
+            onUpdate={onUpdateWireframe}
           />
         </TabsContent>
       </Tabs>
