@@ -1,83 +1,108 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useResponsive } from '@/contexts/ResponsiveContext';
+import { useResponsive } from '@/hooks/use-responsive';
+import ContainerQuery from './ContainerQuery';
 import { Badge } from '@/components/ui/badge';
 
-interface ResponsiveShowcaseProps {
-  className?: string;
-}
-
-const ResponsiveShowcase: React.FC<ResponsiveShowcaseProps> = ({ className }) => {
+const ResponsiveShowcase = () => {
   const responsive = useResponsive();
-  const { 
-    currentBreakpoint, 
-    isExtraSmall, 
-    isSmall, 
+  
+  // Extract correct properties from responsive context
+  const {
+    currentBreakpoint,
+    isExtraSmall,
+    isSmall,
     isMedium,
     isLarge,
     isExtraLarge,
-    is2XL,
     viewportWidth,
     viewportHeight
   } = responsive;
-
-  // Derived properties for showcase
-  const isDesktop = isLarge || isExtraLarge || is2XL;
-  const isTablet = isMedium;
-  const isMobile = isExtraSmall || isSmall;
-  const orientation = viewportWidth > viewportHeight ? 'landscape' : 'portrait';
-  const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-
+  
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>Responsive System Showcase</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-medium mb-2">Current Breakpoint</h3>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant={currentBreakpoint === 'xs' ? "default" : "outline"}>xs</Badge>
-              <Badge variant={currentBreakpoint === 'sm' ? "default" : "outline"}>sm</Badge>
-              <Badge variant={currentBreakpoint === 'md' ? "default" : "outline"}>md</Badge>
-              <Badge variant={currentBreakpoint === 'lg' ? "default" : "outline"}>lg</Badge>
-              <Badge variant={currentBreakpoint === 'xl' ? "default" : "outline"}>xl</Badge>
-              <Badge variant={currentBreakpoint === '2xl' ? "default" : "outline"}>2xl</Badge>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Responsive Context Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-sm font-medium mb-2">Current Breakpoint</h4>
+              <Badge variant="outline" className="text-xs">
+                {currentBreakpoint}
+              </Badge>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium mb-2">Breakpoint Flags</h4>
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <span className="text-xs w-24">Extra Small:</span>
+                  <Badge variant={isExtraSmall ? "default" : "outline"} className="text-xs">
+                    {isExtraSmall ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-xs w-24">Small:</span>
+                  <Badge variant={isSmall ? "default" : "outline"} className="text-xs">
+                    {isSmall ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-xs w-24">Medium:</span>
+                  <Badge variant={isMedium ? "default" : "outline"} className="text-xs">
+                    {isMedium ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-xs w-24">Large:</span>
+                  <Badge variant={isLarge ? "default" : "outline"} className="text-xs">
+                    {isLarge ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-xs w-24">Extra Large:</span>
+                  <Badge variant={isExtraLarge ? "default" : "outline"} className="text-xs">
+                    {isExtraLarge ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            <div className="col-span-2">
+              <h4 className="text-sm font-medium mb-2">Viewport Size</h4>
+              <p className="text-xs text-muted-foreground">
+                {viewportWidth}px × {viewportHeight}px
+              </p>
+            </div>
+            
+            <div className="col-span-2">
+              <h4 className="text-sm font-medium mb-2">Container Query Demo</h4>
+              <div className="border rounded-md resize-x overflow-auto min-w-[200px] max-w-[800px] p-1">
+                <ContainerQuery 
+                  condition="wide" 
+                  fallback={
+                    <div className="bg-red-100 p-4 flex items-center justify-center h-40 dark:bg-red-900/20">
+                      <span className="text-sm font-medium">Narrow Container</span>
+                    </div>
+                  }
+                  debug
+                >
+                  <div className="bg-green-100 p-4 flex items-center justify-center h-40 dark:bg-green-900/20">
+                    <span className="text-sm font-medium">Wide Container (aspect ratio > 1.5)</span>
+                  </div>
+                </ContainerQuery>
+                <p className="text-xs text-center mt-2 text-muted-foreground">
+                  ↔️ Resize this container to see the content change
+                </p>
+              </div>
             </div>
           </div>
-          
-          <div>
-            <h3 className="text-lg font-medium mb-2">Device Type</h3>
-            <div className="flex gap-2">
-              <Badge variant={isMobile ? "default" : "outline"}>Mobile</Badge>
-              <Badge variant={isTablet ? "default" : "outline"}>Tablet</Badge>
-              <Badge variant={isDesktop ? "default" : "outline"}>Desktop</Badge>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-medium mb-2">Screen Properties</h3>
-            <ul className="space-y-1">
-              <li><span className="font-medium">Viewport:</span> {viewportWidth}×{viewportHeight}px</li>
-              <li><span className="font-medium">Orientation:</span> {orientation}</li>
-              <li><span className="font-medium">Pixel Ratio:</span> {devicePixelRatio.toFixed(2)}x</li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-medium mb-2">Responsive Demo</h3>
-            <div className="grid gap-4">
-              <div className="hidden sm:block">This is visible on sm screens and up</div>
-              <div className="hidden md:block">This is visible on md screens and up</div>
-              <div className="hidden lg:block">This is visible on lg screens and up</div>
-              <div className="block sm:hidden">This is only visible on xs screens</div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

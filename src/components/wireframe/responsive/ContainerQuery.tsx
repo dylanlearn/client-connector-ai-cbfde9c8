@@ -82,10 +82,10 @@ export function ContainerQuery({
       conditionMet = isMedium || isLarge;
       break;
     case 'wide':
-      conditionMet = containerInfo.aspectRatio > 1.5;
+      conditionMet = aspectRatio > 1.5;
       break;
     case 'narrow':
-      conditionMet = containerInfo.aspectRatio < 1;
+      conditionMet = aspectRatio < 1;
       break;
     default:
       conditionMet = false;

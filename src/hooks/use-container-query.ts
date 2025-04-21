@@ -1,106 +1,87 @@
 
-import { useRef, useState, useCallback, useEffect } from 'react';
-
-export type ContainerBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-
-export interface ContainerBreakpoints {
-  xs: number;
-  sm: number;
-  md: number;
-  lg: number;
-  xl: number;
-  '2xl': number;
-}
-
-export const DEFAULT_BREAKPOINTS: ContainerBreakpoints = {
-  xs: 384,
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536
-};
+import { useRef, useState, useEffect, RefObject } from 'react';
 
 export interface ContainerQueryInfo {
-  size: { width: number; height: number };
-  breakpoint: ContainerBreakpoint;
   isExtraSmall: boolean;
   isSmall: boolean;
   isMedium: boolean;
   isLarge: boolean;
   isExtraLarge: boolean;
-  is2XL: boolean;
+  size: {
+    width: number;
+    height: number;
+  };
   aspectRatio: number;
+  breakpoint: string;
 }
 
-/**
- * Hook for tracking container dimensions and applying responsive design at the component level
- */
-export function useContainerQuery<T extends HTMLElement = HTMLDivElement>(
-  customBreakpoints?: Partial<ContainerBreakpoints>
-) {
-  const containerRef = useRef<T | null>(null);
+export function useContainerQuery(): [RefObject<HTMLDivElement>, ContainerQueryInfo] {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [containerInfo, setContainerInfo] = useState<ContainerQueryInfo>({
-    size: { width: 0, height: 0 },
-    breakpoint: 'md',
     isExtraSmall: false,
     isSmall: false,
-    isMedium: true,
+    isMedium: false,
     isLarge: false,
     isExtraLarge: false,
-    is2XL: false,
+    size: { width: 0, height: 0 },
     aspectRatio: 1,
+    breakpoint: 'md'
   });
-  
-  // Merge custom breakpoints with defaults
-  const breakpoints = customBreakpoints 
-    ? { ...DEFAULT_BREAKPOINTS, ...customBreakpoints }
-    : DEFAULT_BREAKPOINTS;
-  
-  const getBreakpoint = useCallback((width: number): ContainerBreakpoint => {
-    if (width < breakpoints.xs) return 'xs';
-    if (width < breakpoints.sm) return 'sm';
-    if (width < breakpoints.md) return 'md';
-    if (width < breakpoints.lg) return 'lg';
-    if (width < breakpoints.xl) return 'xl';
-    return '2xl';
-  }, [breakpoints]);
-  
-  const updateContainerInfo = useCallback(() => {
-    if (containerRef.current) {
-      const { offsetWidth, offsetHeight } = containerRef.current;
-      const breakpoint = getBreakpoint(offsetWidth);
-      const aspectRatio = offsetWidth / Math.max(offsetHeight, 1);
-      
-      setContainerInfo({
-        size: { width: offsetWidth, height: offsetHeight },
-        breakpoint,
-        isExtraSmall: breakpoint === 'xs',
-        isSmall: breakpoint === 'sm',
-        isMedium: breakpoint === 'md',
-        isLarge: breakpoint === 'lg',
-        isExtraLarge: breakpoint === 'xl',
-        is2XL: breakpoint === '2xl',
-        aspectRatio,
-      });
-    }
-  }, [getBreakpoint]);
-  
+
   useEffect(() => {
-    // Initial measurement
-    updateContainerInfo();
-    
-    // Set up resize observer for container queries
-    const observer = new ResizeObserver(updateContainerInfo);
-    
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-    
-    return () => {
-      observer.disconnect();
+    if (!containerRef.current) return;
+
+    const updateContainerInfo = () => {
+      if (!containerRef.current) return;
+
+      const { offsetWidth, offsetHeight } = containerRef.current;
+
+      // Calculate aspect ratio
+      const aspectRatio = offsetWidth / offsetHeight;
+      
+      // Determine container size category
+      const isExtraSmall = offsetWidth < 384;
+      const isSmall = offsetWidth >= 384 && offsetWidth < 640;
+      const isMedium = offsetWidth >= 640 && offsetWidth < 768;
+      const isLarge = offsetWidth >= 768 && offsetWidth < 1024;
+      const isExtraLarge = offsetWidth >= 1024;
+
+      // Determine breakpoint name
+      let breakpoint = 'md';
+      if (isExtraSmall) breakpoint = 'xs';
+      else if (isSmall) breakpoint = 'sm';
+      else if (isMedium) breakpoint = 'md';
+      else if (isLarge) breakpoint = 'lg';
+      else breakpoint = 'xl';
+
+      setContainerInfo({
+        isExtraSmall,
+        isSmall,
+        isMedium,
+        isLarge,
+        isExtraLarge,
+        size: { width: offsetWidth, height: offsetHeight },
+        aspectRatio,
+        breakpoint
+      });
     };
-  }, [updateContainerInfo]);
-  
-  return [containerRef, containerInfo] as const;
+
+    // Initial update
+    updateContainerInfo();
+
+    // Set up ResizeObserver
+    const resizeObserver = new ResizeObserver(() => {
+      updateContainerInfo();
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  return [containerRef, containerInfo];
 }
+
+export default useContainerQuery;

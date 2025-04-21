@@ -8,7 +8,7 @@ import {
   DEFAULT_GRID_CONFIG, 
   calculateColumnPositions,
   calculateGridPositions
-} from '@/components/wireframe/utils/grid-utils';
+} from '@/utils/monitoring/grid-utils';
 
 export type GridType = 'lines' | 'dots' | 'columns' | 'custom';
 
@@ -76,7 +76,7 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
     
     if (config.type === 'columns') {
       return {
-        vertical: calculateColumnPositions(width, config.size, 0, 0),
+        vertical: calculateColumnPositions(width, 12, 20, 40), // Using default values
         horizontal: []
       };
     } else {
@@ -147,7 +147,10 @@ export const EnhancedGridSystem: React.FC<EnhancedGridSystemProps> = ({
                   "text-xs h-7 px-2",
                   breakpoint.color ? `bg-${breakpoint.color}` : ""
                 )}
-                onClick={() => onConfigChange?.({ currentBreakpoint: breakpoint.name })}
+                onClick={() => onConfigChange?.({ 
+                  // Use a property that exists in GridConfig
+                  currentBreakpoint: breakpoint.name 
+                })}
                 title={`${breakpoint.name} (${breakpoint.width}px)`}
               >
                 {breakpoint.name}

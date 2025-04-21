@@ -2,7 +2,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '@/components/wireframe/utils/types';
-import { createCanvasGrid } from '@/components/wireframe/utils/grid-utils';
+import { createCanvasGrid } from '@/utils/monitoring/grid-utils';
 
 export interface UseCanvasEngineOptions {
   containerId?: string;
@@ -54,9 +54,9 @@ export function useCanvasEngine(options: UseCanvasEngineOptions = {}) {
     setIsInitialized(true);
     
     if (config.showGrid) {
-      // Fix: Pass only the required arguments to createCanvasGrid
-      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
-      gridLines.forEach(line => fabricCanvas.add(line));
+      // Fix: Use the correct arguments for createCanvasGrid
+      const gridResult = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
+      gridResult.gridLines.forEach(line => fabricCanvas.add(line));
     }
     
     return fabricCanvas;

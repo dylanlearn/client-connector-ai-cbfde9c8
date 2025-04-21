@@ -1,9 +1,19 @@
 
-// This file is kept for backward compatibility
-// It re-exports all monitoring utilities from the new module structure
+// Re-export from monitoring folder
+export { 
+  getApiMetrics,
+  getApiUsageMetrics,
+  recordApiUsage,
+  recordApiError
+} from './monitoring/api-usage';
 
-export * from './monitoring/index';
-export * from './monitoring/system-status';
-export * from './monitoring/types';
-export * from './monitoring/api-usage';
+export {
+  recordClientError,
+  handleApiError,
+  ErrorReporter,
+  recordError
+} from './monitoring/error-handling';
 
+// Re-export types and functions separately to avoid name collision
+export type { SystemStatus } from './monitoring/system-status';
+export { getSystemStatus, getSystemMetrics } from './monitoring/system-status';

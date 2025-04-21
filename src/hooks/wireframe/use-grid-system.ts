@@ -1,16 +1,21 @@
 
-import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useCallback, useEffect, useState } from 'react';
+import { fabric } from 'fabric';
 import { 
   GridConfig, 
-  DEFAULT_GRID_CONFIG
-} from '@/components/wireframe/utils/grid-utils';
+  DEFAULT_GRID_CONFIG,
+  createCanvasGrid,
+  removeGridFromCanvas,
+  updateCanvasGrid
+} from '@/utils/monitoring/grid-utils';
 
-/**
- * Hook for managing grid system settings
- */
-export function useGridSystem(initialConfig?: Partial<GridConfig>) {
-  const { toast } = useToast();
+interface UseGridSystemOptions {
+  initialConfig?: Partial<GridConfig>;
+  canvas: fabric.Canvas | null;
+}
+
+export function useGridSystem({ initialConfig = {}, canvas }: UseGridSystemOptions) {
+  // Initialize grid config with defaults and any provided overrides
   const [gridConfig, setGridConfig] = useState<GridConfig>({
     ...DEFAULT_GRID_CONFIG,
     ...initialConfig
@@ -19,81 +24,107 @@ export function useGridSystem(initialConfig?: Partial<GridConfig>) {
   // Toggle grid visibility
   const toggleGridVisibility = useCallback(() => {
     setGridConfig(prev => {
-      const updated = { ...prev, visible: !prev.visible };
+      const newVisibility = !prev.visible;
       
-      toast({
-        title: updated.visible ? 'Grid Enabled' : 'Grid Disabled',
-        description: updated.visible 
-          ? 'Grid is now visible.' 
-          : 'Grid is now hidden.'
-      });
+      if (canvas) {
+        if (newVisibility) {
+          // Show grid
+          const gridResult = createCanvasGrid(canvas, prev.size, prev.type);
+          gridResult.gridLines.forEach(line => {
+            canvas.add(line);
+            canvas.sendToBack(line);
+          });
+        } else {
+          // Hide grid
+          removeGridFromCanvas(canvas);
+        }
+        canvas.renderAll();
+      }
       
-      return updated;
+      return { ...prev, visible: newVisibility };
     });
-  }, [toast]);
+  }, [canvas]);
   
   // Toggle snap to grid
   const toggleSnapToGrid = useCallback(() => {
-    setGridConfig(prev => {
-      const updated = { ...prev, snapToGrid: !prev.snapToGrid };
-      
-      toast({
-        title: updated.snapToGrid ? 'Snap to Grid Enabled' : 'Snap to Grid Disabled',
-        description: updated.snapToGrid 
-          ? 'Elements will snap to grid points.' 
-          : 'Elements can be placed freely.'
-      });
-      
-      return updated;
-    });
-  }, [toast]);
+    setGridConfig(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }));
+  }, []);
   
   // Set grid size
   const setGridSize = useCallback((size: number) => {
-    setGridConfig(prev => ({ ...prev, size }));
-    
-    toast({
-      title: 'Grid Size Updated',
-      description: `Grid size set to ${size}px.`
+    setGridConfig(prev => {
+      if (canvas && prev.visible) {
+        const gridResult = updateCanvasGrid(canvas, size, prev.type);
+        canvas.renderAll();
+      }
+      return { ...prev, size };
     });
-  }, [toast]);
+  }, [canvas]);
   
   // Set grid type
   const setGridType = useCallback((type: 'lines' | 'dots' | 'columns') => {
-    setGridConfig(prev => ({ ...prev, type }));
-    
-    toast({
-      title: 'Grid Type Changed',
-      description: `Grid type set to ${type}.`
+    setGridConfig(prev => {
+      if (canvas && prev.visible) {
+        const gridResult = updateCanvasGrid(canvas, prev.size, type);
+        canvas.renderAll();
+      }
+      return { ...prev, type };
     });
-  }, [toast]);
+  }, [canvas]);
   
-  // Set grid color
-  const setGridColor = useCallback((color: string) => {
-    setGridConfig(prev => ({ ...prev, color }));
-  }, []);
-  
-  // Set columns
-  const setColumns = useCallback((columns: number) => {
-    setGridConfig(prev => ({ ...prev, columns }));
+  // Update column settings for column grid
+  const updateColumnSettings = useCallback((columns: number, gutterWidth: number, marginWidth: number) => {
+    setGridConfig(prev => ({ ...prev }));
     
-    toast({
-      title: 'Grid Columns Updated',
-      description: `Grid now has ${columns} columns.`
+    // Implementation would depend on how you want to handle column grids
+  }, []);
+  
+  // Update the entire grid config
+  const updateGridConfig = useCallback((newConfig: Partial<GridConfig>) => {
+    setGridConfig(prev => {
+      const updated = { ...prev, ...newConfig };
+      
+      // If visibility changed
+      if (canvas && prev.visible !== updated.visible) {
+        if (updated.visible) {
+          // Show grid
+          const gridResult = createCanvasGrid(canvas, updated.size, updated.type);
+          gridResult.gridLines.forEach(line => {
+            canvas.add(line);
+            canvas.sendToBack(line);
+          });
+        } else {
+          // Hide grid
+          removeGridFromCanvas(canvas);
+        }
+      } 
+      // If grid is visible and size or type changed
+      else if (canvas && updated.visible && 
+               (prev.size !== updated.size || prev.type !== updated.type)) {
+        const gridResult = updateCanvasGrid(canvas, updated.size, updated.type);
+        canvas.renderAll();
+      }
+      
+      return updated;
     });
-  }, [toast]);
+  }, [canvas]);
   
-  // Set responsive grid config
-  const setResponsiveGridConfig = useCallback((width: number) => {
-    // Implementation would depend on the grid-utils implementation
-    // For now, just update the width
-    setGridConfig(prev => ({ ...prev, width }));
-  }, []);
-  
-  // Update grid config
-  const updateGridConfig = useCallback((config: Partial<GridConfig>) => {
-    setGridConfig(prev => ({ ...prev, ...config }));
-  }, []);
+  // Initialize or update grid when canvas changes
+  useEffect(() => {
+    if (canvas && gridConfig.visible) {
+      // Clear any existing grid
+      removeGridFromCanvas(canvas);
+      
+      // Create new grid
+      const gridResult = createCanvasGrid(canvas, gridConfig.size, gridConfig.type);
+      gridResult.gridLines.forEach(line => {
+        canvas.add(line);
+        canvas.sendToBack(line);
+      });
+      
+      canvas.renderAll();
+    }
+  }, [canvas, gridConfig.visible]);
   
   return {
     gridConfig,
@@ -101,11 +132,7 @@ export function useGridSystem(initialConfig?: Partial<GridConfig>) {
     toggleSnapToGrid,
     setGridSize,
     setGridType,
-    setGridColor,
-    setColumns,
-    setResponsiveGridConfig,
+    updateColumnSettings,
     updateGridConfig
   };
 }
-
-export default useGridSystem;

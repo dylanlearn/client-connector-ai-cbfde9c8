@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
 import { WireframeCanvasConfig } from '../utils/types';
-import { createCanvasGrid } from '../utils/grid-utils';
+import { createCanvasGrid } from '@/utils/monitoring/grid-utils';
 
 interface WireframeCanvasEngineProps {
   width?: number;
@@ -47,9 +47,9 @@ const WireframeCanvasEngine: React.FC<WireframeCanvasEngineProps> = ({ width = 1
     setIsInitialized(true);
 
     if (config.showGrid) {
-      // Fix: Pass only the required arguments to createCanvasGrid
-      const gridLines = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
-      gridLines.forEach(line => fabricCanvas.add(line));
+      // Fix: Use the correct arguments for createCanvasGrid
+      const gridResult = createCanvasGrid(fabricCanvas, config.gridSize, config.gridType);
+      gridResult.gridLines.forEach(line => fabricCanvas.add(line));
     }
 
     return () => {
