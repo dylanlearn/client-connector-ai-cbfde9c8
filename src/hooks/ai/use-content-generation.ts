@@ -15,8 +15,8 @@ export interface GeneratedContent {
   pageDescription: string;
   contentSections: Array<{
     sectionId: string;
-    name?: string;
-    content?: string;
+    name: string;
+    content: string;
     [key: string]: any;
   }>;
   [key: string]: any;
