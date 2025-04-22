@@ -76,22 +76,28 @@ export function useContentGeneration(): UseContentGenerationReturn {
       const transformedSections: SectionContentResponse[] = (result.contentSections || []).map(section => {
         // Ensure components array contains objects with content property
         const processedComponents: ComponentContent[] = Array.isArray(section.components) 
-          ? section.components.map(comp => ({
-              id: comp.id || undefined,
-              // Ensure every component has a content property
-              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-              ...comp
-            }))
+          ? section.components.map(comp => {
+              // Create a new object with required content property
+              const componentWithContent: ComponentContent = {
+                id: comp.id || undefined,
+                // Ensure every component has a content property
+                content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+                ...comp
+              };
+              return componentWithContent;
+            })
           : [];
         
-        return {
-          // Ensure the sectionId property exists (required by SectionContentResponse)
+        // Create section response with required sectionId property
+        const sectionResponse: SectionContentResponse = {
           sectionId: section.id || '',
           name: section.name || '',
           content: section.content || '',
           components: processedComponents,
           ...section
         };
+        
+        return sectionResponse;
       });
       
       const generatedContent: GeneratedContent = {
@@ -141,12 +147,16 @@ export function useContentGeneration(): UseContentGenerationReturn {
       
       // Ensure components have the required content property
       const transformedComponents: ComponentContent[] = Array.isArray(result.components) 
-        ? result.components.map(comp => ({
-            id: comp.id || undefined,
-            // Ensure every component has a content property
-            content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
-            ...comp
-          }))
+        ? result.components.map(comp => {
+            // Create a new object with required content property
+            const componentWithContent: ComponentContent = {
+              id: comp.id || undefined,
+              // Ensure every component has a content property
+              content: typeof comp.content === 'string' ? comp.content : JSON.stringify(comp),
+              ...comp
+            };
+            return componentWithContent;
+          })
         : [];
       
       const generatedSectionContent: GeneratedSectionContent = {
