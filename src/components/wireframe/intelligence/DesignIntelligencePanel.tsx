@@ -4,6 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WireframeData } from '@/services/ai/wireframe/wireframe-types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Braces, FileBarChart, Brush, Boxes, LayoutGrid, MoveHorizontal, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+// Import components properly
 import StyleConsistencyPanel from './StyleConsistencyPanel';
 import DesignDecisionPanel from './DesignDecisionPanel';
 import ContentGenerationPanel from './ContentGenerationPanel';
@@ -12,7 +15,6 @@ import ContentStructureAnalysisPanel from './ContentStructureAnalysisPanel';
 import OptimizationPanel from './OptimizationPanel';
 import ComponentCompositionPanel from './ComponentCompositionPanel';
 import ComponentConstraintPanel from './ComponentConstraintPanel';
-import { Button } from '@/components/ui/button';
 
 interface DesignIntelligencePanelProps {
   wireframe: WireframeData;
