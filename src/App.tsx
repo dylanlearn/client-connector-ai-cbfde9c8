@@ -1,10 +1,20 @@
 
-import React from 'react';
-import { RouterProvider } from 'react-router-dom';
-import router from './routes';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import WireframeEditorDemo from './pages/WireframeEditorDemo';
+import AdvancedWireframeGeneratorPage from './pages/project-detail/AdvancedWireframeGeneratorPage';
+import ComponentVariantLogicDemo from './pages/ComponentVariantLogicDemo';
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/wireframe-demo" element={<WireframeEditorDemo />} />
+        <Route path="/project/:projectId/wireframe" element={<AdvancedWireframeGeneratorPage />} />
+        <Route path="/variant-logic" element={<ComponentVariantLogicDemo />} />
+        <Route path="/" element={<ComponentVariantLogicDemo />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
